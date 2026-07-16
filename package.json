@@ -1,8 +1,14 @@
 {
   "name": "tutuca-mb-dev",
   "private": true,
-  "description": "Dev dependencies for tutuca-mb: happy-dom (moon test --target js) and esbuild (playground/dist assembly).",
+  "description": "Dev dependencies for tutuca-mb: happy-dom (moon test --target js), esbuild + CodeMirror (playground/dist editor bundle).",
   "devDependencies": {
+    "@codemirror/commands": "^6.10.4",
+    "@codemirror/language": "^6.12.4",
+    "@codemirror/lint": "^6.9.7",
+    "@codemirror/state": "^6.7.1",
+    "@codemirror/view": "^6.43.6",
+    "@lezer/highlight": "^1.2.3",
     "esbuild": "^0.28.1",
     "happy-dom": "^20.10.6"
   }
