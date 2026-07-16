@@ -22,7 +22,13 @@ const WORKER = ensureCompiler();
 const WEB = join(REPO, "playground/web");
 const TOOLCHAIN = "v0.10.3+16975d007"; // must match the vendored/fetched moonc-web.cjs (see fetch-compiler.mjs)
 
-// packages a user may import directly (distinct aliases — no browser/browser clash)
+// packages a user may import directly (distinct aliases — no browser/browser clash).
+// The value+path runtime lives in the `core/` package (marianoguerra/tutuca/core),
+// but examples import it as @tutuca. The in-browser moonc aliases a direct import
+// by the .mi's own package name (it has no moon.pkg to re-alias core -> @tutuca the
+// way the library's packages do), so we expose the module-ROOT package instead
+// (marianoguerra/tutuca, name -> alias @tutuca), a thin facade that re-exports
+// core's value types (see reexport.mbt). Its .mi is lib/tutuca.mi.
 const DIRECT = [
   ["host", "playground/host/host"],
   ["component", "component/component"],
@@ -67,16 +73,7 @@ function assembleTarget(t, demoPkg) {
   const fsdir = join(OUT, "fs", t);
   const std = walk(bundleDir(t), ".mi");
   for (const [rel, abs] of std) { const d = join(fsdir, "std", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
-  // The value+path core lives in the `core/` package (marianoguerra/tutuca/core),
-  // but user code imports it as @tutuca (the alias the library's own moon.pkg
-  // files use). buildPackage derives a direct import's alias from the last path
-  // segment of its .mi name, so expose core's .mi as `tutuca.mi` (-> @tutuca) and
-  // drop the now-empty module-root package's own tutuca.mi. Mirrors the
-  // `-i core/core.mi:tutuca` that moon emits for every core importer.
-  const lib = walk(buildDir(t), ".mi")
-    .filter(([r]) => !/_test|\/test\//.test(r) && !r.includes("/demo/"))
-    .filter(([r]) => r !== "tutuca.mi")
-    .map(([r, abs]) => (r === "core/core.mi" ? ["tutuca.mi", abs] : [r, abs]));
+  const lib = walk(buildDir(t), ".mi").filter(([r]) => !/_test|\/test\//.test(r) && !r.includes("/demo/"));
   for (const [rel, abs] of lib) { const d = join(fsdir, "lib", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
   const closure = linkClosure(t, demoPkg);
   const coreRel = [];

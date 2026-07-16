@@ -123,6 +123,11 @@ pub fn tasks() -> Array[Task] {
         moon("build · js playground host", [
           "build", "--target", "js", "playground/host",
         ]),
+        // Likewise the module-root facade package (marianoguerra/tutuca) is not
+        // reachable from the demo build roots, so it is not in the default build
+        // set. assemble.mjs exposes its .mi to user code as @tutuca (it re-exports
+        // core's value types — see reexport.mbt), so build it explicitly.
+        moon("build · js root facade", ["build", "--target", "js", "."]),
         {
           label: "assemble dist/playground",
           prog: "node",
@@ -156,6 +161,11 @@ fn build_commands() -> Array[Command] {
     moon("build · js playground host", [
       "build", "--target", "js", "playground/host",
     ]),
+    // Nor is the module-root facade package (marianoguerra/tutuca): nothing
+    // imports it, so it is unreachable from the demo build roots. assemble.mjs
+    // exposes its .mi to playground user code as @tutuca (it re-exports core's
+    // value types — see reexport.mbt), so build it explicitly here.
+    moon("build · js root facade", ["build", "--target", "js", "."]),
   ]
 }
 

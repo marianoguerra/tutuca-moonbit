@@ -1,6 +1,10 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "marianoguerra/tutuca"
 
+import {
+  "marianoguerra/tutuca/core",
+}
+
 // Values
 
 // Errors
@@ -8,6 +12,9 @@ package "marianoguerra/tutuca"
 // Types and methods
 
 // Type aliases
+pub using @core {type RequestOpts}
+
+pub using @core {type Value}
 
 // Traits
 

@@ -1,4 +1,8 @@
 import {
+  "marianoguerra/tutuca/core",
+}
+
+import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
 } for "test"
