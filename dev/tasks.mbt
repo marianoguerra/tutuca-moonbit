@@ -131,7 +131,12 @@ pub fn tasks() -> Array[Task] {
       name: "playground",
       about: "assemble dist/playground/ (in-browser MoonBit playground): build the js library + mount host, then collect the compiler + prebuilt .core/.mi + web shell",
       commands: [
-        moon("build · js (lib + playground host)", ["build", "--target", "js"]),
+        moon("build · js library", ["build", "--target", "js"]),
+        // `moon build --target js` alone does not build playground/host (it is
+        // not in the default build set); assemble.mjs needs its host.core.
+        moon("build · js playground host", [
+          "build", "--target", "js", "playground/host",
+        ]),
         {
           label: "assemble dist/playground",
           prog: "node",
@@ -160,6 +165,11 @@ fn build_commands() -> Array[Command] {
     moon("build · wasm-gc", ["build", "--target", "wasm-gc"]),
     moon("build · native cli", ["build", "--target", "native", "cmd/main"]),
     moon("build · js", ["build", "--target", "js"]),
+    // playground/host is not in the default js build set; the playground
+    // assembly (dist) needs its host.core, and this doubles as a build-smoke.
+    moon("build · js playground host", [
+      "build", "--target", "js", "playground/host",
+    ]),
   ]
 }
 
@@ -277,8 +287,8 @@ fn dist_steps() -> Array[Step] {
   // The in-browser playground compiler payload (assemble.mjs), reused by the
   // landing site's embedded <mb-playground> elements, then the landing site
   // itself — which becomes the dist root index.html (assemble-site.mjs).
-  // `moon build --target js` already ran via build_commands above, so the
-  // playground host + library artifacts assemble.mjs collects are present.
+  // build_commands above built the js library AND playground/host, so the host
+  // core + library artifacts assemble.mjs collects are present.
   steps.push(
     Run({
       label: "assemble dist/playground",
