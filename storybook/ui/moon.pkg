@@ -7,7 +7,7 @@
 // Lint is injected as a callback (host passes cli's check_component) so this
 // package need not depend on the CLI — avoids a storybook <-> cli cycle.
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/vdom",

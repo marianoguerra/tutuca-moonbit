@@ -2,8 +2,8 @@
 package "marianoguerra/tutuca/storybook/examples"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
 }
 
 // Values
@@ -39,7 +39,7 @@ pub fn file_picker_module() -> @component.ModuleDef
 
 pub fn filter_paginate_module() -> @component.ModuleDef
 
-pub fn items() -> Array[@tutuca.Value]
+pub fn items() -> Array[@core.Value]
 
 pub fn json_module() -> @component.ModuleDef
 
@@ -123,7 +123,7 @@ pub struct ExampleModule {
   example_title : String?
   init : Bool
 }
-pub fn ExampleModule::root_args(Self) -> Map[String, @tutuca.Value]
+pub fn ExampleModule::root_args(Self) -> Map[String, @core.Value]
 
 // Type aliases
 

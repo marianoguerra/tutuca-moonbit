@@ -5,7 +5,7 @@
 // exported `on_event` on each event, which routes to the app held here.
 // Validate: moon check --target wasm-gc app/wasm
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom/wasm" @wdom,

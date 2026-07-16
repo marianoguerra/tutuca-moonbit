@@ -2,16 +2,16 @@
 package "marianoguerra/tutuca/testing/harness"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
 }
 
 // Values
-pub fn mount(@component.ModuleDef, String, args? : Map[String, @tutuca.Value]) -> Harness raise
+pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value]) -> Harness raise
 
 pub fn mount_example(@component.ModuleDef, String) -> Harness raise
 
@@ -27,16 +27,16 @@ pub fn Harness::check(Self, String, Bool, nth? : Int) -> Unit raise
 pub fn Harness::checked_of(Self, String, nth? : Int) -> Bool raise
 pub fn Harness::click(Self, String, nth? : Int) -> Unit raise
 pub fn Harness::drag(Self, String, Int, Int) -> Unit raise
-pub fn Harness::drive_value(Self) -> @tutuca.Value
+pub fn Harness::drive_value(Self) -> @core.Value
 pub fn Harness::find(Self, String, nth? : Int) -> @memdom.MemNode raise
 pub fn Harness::find_all(Self, String) -> Array[@memdom.MemNode]
 pub fn Harness::fire(Self, String, @render.DomEvent, nth? : Int) -> Unit raise
 pub fn Harness::html(Self) -> String
-pub fn Harness::key_down(Self, String, String, value? : @tutuca.Value, nth? : Int) -> Unit raise
+pub fn Harness::key_down(Self, String, String, value? : @core.Value, nth? : Int) -> Unit raise
 pub fn Harness::ns_of(Self, String, nth? : Int) -> String raise
 pub fn Harness::prop(Self, String, String, nth? : Int) -> @vdom.AttrValue? raise
 pub fn Harness::render_count(Self) -> Int
-pub fn Harness::send_at_root(Self, String, args? : Array[@tutuca.Value]) -> Unit
+pub fn Harness::send_at_root(Self, String, args? : Array[@core.Value]) -> Unit
 pub fn Harness::styles(Self) -> String
 pub fn Harness::text(Self, String, nth? : Int) -> String raise
 pub fn Harness::texts(Self, String) -> Array[String]

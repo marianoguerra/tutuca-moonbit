@@ -94,6 +94,8 @@ pub fn run_help(String?, GlobalOpts) -> Emit
 
 pub fn run_install_skill(Array[String], GlobalOpts) -> Outcome
 
+pub fn run_storybook(Array[String], GlobalOpts) -> Outcome
+
 pub let skill_files : Array[(String, String)]
 
 pub fn stub(String, Array[String]) -> Emit
@@ -171,6 +173,7 @@ pub(all) enum Outcome {
   Done(Emit)
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
+  ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PositionalSpec {

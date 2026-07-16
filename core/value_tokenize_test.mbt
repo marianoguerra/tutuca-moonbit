@@ -3,7 +3,7 @@
 ///|
 test "splits on whitespace" {
   assert_true(
-    @tutuca.tokenize_value("equals? .view detail") ==
+    @core.tokenize_value("equals? .view detail") ==
     ["equals?", ".view", "detail"],
   )
 }
@@ -11,7 +11,7 @@ test "splits on whitespace" {
 ///|
 test "keeps a quoted literal with spaces as one token" {
   assert_true(
-    @tutuca.tokenize_value("equals? .name 'John Doe'") ==
+    @core.tokenize_value("equals? .name 'John Doe'") ==
     ["equals?", ".name", "'John Doe'"],
   )
 }
@@ -19,17 +19,17 @@ test "keeps a quoted literal with spaces as one token" {
 ///|
 test "keeps an escaped quote inside the token" {
   assert_true(
-    @tutuca.tokenize_value("equals? .name 'it\\'s here'") ==
+    @core.tokenize_value("equals? .name 'it\\'s here'") ==
     ["equals?", ".name", "'it\\'s here'"],
   )
 }
 
 ///|
 test "keeps a $'…' template as a single token" {
-  assert_true(@tutuca.tokenize_value("$'a {.b} c' .d") == ["$'a {.b} c'", ".d"])
+  assert_true(@core.tokenize_value("$'a {.b} c' .d") == ["$'a {.b} c'", ".d"])
 }
 
 ///|
 test "empty string yields no tokens" {
-  assert_true(@tutuca.tokenize_value("") == ([] : Array[String]))
+  assert_true(@core.tokenize_value("") == ([] : Array[String]))
 }

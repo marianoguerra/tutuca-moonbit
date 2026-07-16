@@ -1,10 +1,4 @@
 import {
-  "moonbitlang/core/string",
-}
-
-import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
-  "moonbitlang/quickcheck" @qc,
-  "moonbitlang/quickcheck/gen",
 } for "test"

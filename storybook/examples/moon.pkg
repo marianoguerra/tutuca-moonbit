@@ -8,7 +8,7 @@
 // (../ + ../ui, hosted by demo/storybook_wasm) and the CLI (`tutuca render` /
 // `tutuca lint` via plan_with_module).
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/inspector",

@@ -27,49 +27,49 @@ fn Lcg::below(self : Lcg, n : Int) -> Int {
 }
 
 ///|
-fn gen_scalar() -> @gen.Gen[@tutuca.Value] {
+fn gen_scalar() -> @gen.Gen[@core.Value] {
   @gen.one_of([
     @gen.one_of_array([
-      @tutuca.Value::Null,
-      @tutuca.Value::Bool(true),
-      @tutuca.Value::Bool(false),
+      @core.Value::Null,
+      @core.Value::Bool(true),
+      @core.Value::Bool(false),
     ]),
-    @gen.int_range(0, 100).fmap(n => @tutuca.Value::Num(n.to_double())),
-    @gen.one_of_array(["x", "y", "hello", ""]).fmap(s => @tutuca.Value::Str(s)),
+    @gen.int_range(0, 100).fmap(n => @core.Value::Num(n.to_double())),
+    @gen.one_of_array(["x", "y", "hello", ""]).fmap(s => @core.Value::Str(s)),
   ])
 }
 
 ///|
-fn gen_entry(depth : Int) -> @gen.Gen[(String, @tutuca.Value)] {
+fn gen_entry(depth : Int) -> @gen.Gen[(String, @core.Value)] {
   @gen.one_of_array(["a", "b", "c", "items", "sel"]).bind(k => {
     gen_value(depth - 1).fmap(v => (k, v))
   })
 }
 
 ///|
-fn gen_vmap(depth : Int) -> @gen.Gen[@tutuca.Value] {
+fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
   @gen.int_range(1, 4).bind(k => {
     gen_entry(depth)
     .array_with_size(k)
     .fmap(entries => {
-      let m : Map[String, @tutuca.Value] = {}
+      let m : Map[String, @core.Value] = {}
       for e in entries {
         m[e.0] = e.1
       }
-      @tutuca.Value::Map(m)
+      @core.Value::Map(m)
     })
   })
 }
 
 ///|
-fn gen_vlist(depth : Int) -> @gen.Gen[@tutuca.Value] {
+fn gen_vlist(depth : Int) -> @gen.Gen[@core.Value] {
   @gen.int_range(1, 4).bind(k => {
-    gen_value(depth - 1).array_with_size(k).fmap(a => @tutuca.Value::List(a))
+    gen_value(depth - 1).array_with_size(k).fmap(a => @core.Value::List(a))
   })
 }
 
 ///|
-fn gen_value(depth : Int) -> @gen.Gen[@tutuca.Value] {
+fn gen_value(depth : Int) -> @gen.Gen[@core.Value] {
   if depth <= 0 {
     gen_scalar()
   } else {
@@ -83,7 +83,7 @@ fn gen_value(depth : Int) -> @gen.Gen[@tutuca.Value] {
 }
 
 ///|
-fn map_keys(m : Map[String, @tutuca.Value]) -> Array[String] {
+fn map_keys(m : Map[String, @core.Value]) -> Array[String] {
   let keys : Array[String] = []
   for k, _v in m {
     keys.push(k)
@@ -96,8 +96,8 @@ fn map_keys(m : Map[String, @tutuca.Value]) -> Array[String] {
 /// children. At a map field holding a keyed container it sometimes addresses
 /// the item as SeqStep / EachRenderItStep, or plants a live "zz-sel" key
 /// sibling and addresses it as SeqAccessStep.
-fn derive_path(root : @tutuca.Value, rng : Lcg) -> Array[@tutuca.Step] {
-  let steps : Array[@tutuca.Step] = []
+fn derive_path(root : @core.Value, rng : Lcg) -> Array[@core.Step] {
+  let steps : Array[@core.Step] = []
   let mut cur = root
   for _hop in 0..<6 {
     guard cur is Map(m) && !m.is_empty() else { break }
@@ -117,7 +117,7 @@ fn derive_path(root : @tutuca.Value, rng : Lcg) -> Array[@tutuca.Step] {
             0 => steps.push(SeqStep(field=k, key=KStr(ck)))
             1 => steps.push(EachRenderItStep(field=k, key=KStr(ck)))
             _ => {
-              m["zz-sel"] = @tutuca.Value::Str(ck)
+              m["zz-sel"] = @core.Value::Str(ck)
               steps.push(SeqAccessStep(seq_field=k, key_field="zz-sel"))
             }
           }
@@ -151,7 +151,7 @@ fn derive_path(root : @tutuca.Value, rng : Lcg) -> Array[@tutuca.Step] {
 ///|
 /// Mutate one step into a guaranteed miss ("zz-missing" is never a real
 /// field; 9999 is beyond any generated container).
-fn invalidate(steps : Array[@tutuca.Step], rng : Lcg) -> Array[@tutuca.Step] {
+fn invalidate(steps : Array[@core.Step], rng : Lcg) -> Array[@core.Step] {
   if steps.is_empty() {
     return [FieldStep("zz-missing")]
   }
@@ -171,7 +171,7 @@ fn invalidate(steps : Array[@tutuca.Step], rng : Lcg) -> Array[@tutuca.Step] {
 }
 
 ///|
-fn gen_tree_and_path() -> @gen.Gen[(@tutuca.Value, Array[@tutuca.Step])] {
+fn gen_tree_and_path() -> @gen.Gen[(@core.Value, Array[@core.Step])] {
   gen_value(3).bind(tree => {
     @gen.int_range(0, 1073741823).fmap(seed => {
       let rng = Lcg::{ state: seed.reinterpret_as_uint() }
@@ -182,14 +182,14 @@ fn gen_tree_and_path() -> @gen.Gen[(@tutuca.Value, Array[@tutuca.Step])] {
 
 ///|
 fn gen_tree_path_value() -> @gen.Gen[
-  (@tutuca.Value, Array[@tutuca.Step], @tutuca.Value),
+  (@core.Value, Array[@core.Step], @core.Value),
 ] {
   gen_tree_and_path().bind(tp => gen_value(1).fmap(v => (tp.0, tp.1, v)))
 }
 
 ///|
-fn as_v(n : &@tutuca.PathNode) -> @tutuca.Value {
-  n.as_value().unwrap_or(@tutuca.Value::Null)
+fn as_v(n : &@core.PathNode) -> @core.Value {
+  n.as_value().unwrap_or(@core.Value::Null)
 }
 
 ///|
@@ -197,8 +197,8 @@ test "property: derived paths resolve; get-put restores the same tree" {
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       match p.lookup(root) {
         Some(leaf) => as_v(p.set_value(root, leaf)) == tree
         None => false
@@ -213,8 +213,8 @@ test "property: put-get reads back the written value" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       match p.lookup(p.set_value(root, v)) {
         Some(leaf) => as_v(leaf) == v
         None => false
@@ -231,8 +231,8 @@ test "property: put-put — the last write wins" {
       gen_tree_path_value().bind(tpv => gen_value(1).fmap(v2 => (tpv, v2))),
       x => {
         let ((tree, steps, v1), v2) = x
-        let root : &@tutuca.PathNode = tree
-        let p = @tutuca.Path::new(steps~)
+        let root : &@core.PathNode = tree
+        let p = @core.Path::new(steps~)
         as_v(p.set_value(p.set_value(root, v1), v2)) ==
         as_v(p.set_value(root, v2))
       },
@@ -252,8 +252,8 @@ test "property: put through an unresolvable path is physically identity" {
         let ((tree, steps, v), seed) = x
         let rng = Lcg::{ state: seed.reinterpret_as_uint() }
         let bad = invalidate(steps, rng)
-        let root : &@tutuca.PathNode = tree
-        let p = @tutuca.Path::new(steps=bad)
+        let root : &@core.PathNode = tree
+        let p = @core.Path::new(steps=bad)
         p.lookup(root) is None && physical_equal(p.set_value(root, v), root)
       },
     ),
@@ -266,8 +266,8 @@ test "property: compact preserves addressing for lookup and set_value" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       let c = p.compact()
       let same_lookup = match (p.lookup(root), c.lookup(root)) {
         (Some(a), Some(b)) => as_v(a) == as_v(b)
@@ -285,8 +285,8 @@ test "property: pin_keys preserves lookup, is idempotent, no-op stays physical" 
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       let pinned = p.pin_keys(root)
       let same_lookup = match (p.lookup(root), pinned.lookup(root)) {
         (Some(a), Some(b)) => as_v(a) == as_v(b)
@@ -309,8 +309,8 @@ test "property: resolve_chain coherence" {
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       let chain = p.resolve_chain(root)
       let head_ok = chain.length() > 0 && physical_equal(chain[0], root)
       let full_ok = match p.lookup(root) {
@@ -330,8 +330,8 @@ test "property: set_value shares first-level siblings physically" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@tutuca.PathNode = tree
-      let p = @tutuca.Path::new(steps~)
+      let root : &@core.PathNode = tree
+      let p = @core.Path::new(steps~)
       let root2 = p.set_value(root, v)
       guard steps is [first_step, ..] else { return true }
       guard step_field(first_step) is Some(f) else { return true }
@@ -355,7 +355,7 @@ test "property: set_value shares first-level siblings physically" {
 }
 
 ///|
-fn step_field(step : @tutuca.Step) -> String? {
+fn step_field(step : @core.Step) -> String? {
   match step {
     FieldStep(f) => Some(f)
     SeqStep(field~, ..) => Some(field)

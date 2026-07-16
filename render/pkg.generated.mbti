@@ -2,15 +2,15 @@
 package "marianoguerra/tutuca/render"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/vdom",
   "moonbitlang/core/debug",
 }
 
 // Values
-pub fn build_stack(@tutuca.Path, RenderStack) -> RenderStack?
+pub fn build_stack(@core.Path, RenderStack) -> RenderStack?
 
 pub fn clean_vdom(@vdom.Vdom) -> @vdom.Vdom?
 
@@ -18,7 +18,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(N, String, N, &Boundaries, ma
 
 pub fn render(@anode.ANode, RenderStack, RenderCtx) -> @vdom.Vdom?
 
-pub fn render_root(@tutuca.Value, RenderStack, RenderCtx) -> @vdom.Vdom?
+pub fn render_root(@core.Value, RenderStack, RenderCtx) -> @vdom.Vdom?
 
 pub fn render_view(@anode.View, RenderStack, RenderCtx) -> @vdom.Vdom
 
@@ -34,25 +34,25 @@ pub(all) struct CompiledView {
 
 pub(all) struct DomEvent {
   name : String
-  value : @tutuca.Value
+  value : @core.Value
   key : String
   key_code : Int
   alt : Bool
   shift : Bool
   ctrl_or_cmd : Bool
   meta : Bool
-  drag_info : @tutuca.Value
+  drag_info : @core.Value
 } derive(@debug.Debug)
-pub fn DomEvent::new(name~ : String, value? : @tutuca.Value, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @tutuca.Value) -> Self
+pub fn DomEvent::new(name~ : String, value? : @core.Value, key? : String, key_code? : Int, alt? : Bool, shift? : Bool, ctrl_or_cmd? : Bool, meta? : Bool, drag_info? : @core.Value) -> Self
 
 pub(all) struct EventDispatch {
-  path : @tutuca.DispatchPath
+  path : @core.DispatchPath
   handlers : Array[@anode.NodeEvent]
 }
 
 pub(all) enum Meta {
   Comp(nid~ : Int?, cid~ : Int, vid~ : String)
-  Each(nid~ : Int, key~ : @tutuca.PathKey)
+  Each(nid~ : Int, key~ : @core.PathKey)
   Scope(nid~ : Int)
 } derive(Eq, @debug.Debug)
 pub fn Meta::parse(String) -> Self?
@@ -63,16 +63,16 @@ pub(all) struct NullViewResolver {
 pub impl ViewResolver for NullViewResolver
 
 pub struct RenderCache {
-  mut cur : Map[String, (@tutuca.Value, @component.DynBinds?, @vdom.Vdom)]
-  mut prev : Map[String, (@tutuca.Value, @component.DynBinds?, @vdom.Vdom)]
+  mut cur : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]
+  mut prev : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]
   mut hit : Int
   mut miss : Int
 }
 pub fn RenderCache::evict(Self) -> (Int, Int)
-pub fn RenderCache::get(Self, String, @tutuca.Value, @component.DynBinds?) -> @vdom.Vdom?
+pub fn RenderCache::get(Self, String, @core.Value, @component.DynBinds?) -> @vdom.Vdom?
 pub fn RenderCache::new() -> Self
 pub fn RenderCache::next_generation(Self) -> Unit
-pub fn RenderCache::set(Self, String, @tutuca.Value, @component.DynBinds?, @vdom.Vdom) -> Unit
+pub fn RenderCache::set(Self, String, @core.Value, @component.DynBinds?, @vdom.Vdom) -> Unit
 
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
@@ -82,8 +82,8 @@ pub(all) struct RenderCtx {
 pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_once? : Map[Int, @vdom.Vdom], render_cache? : RenderCache) -> Self
 
 pub(all) struct RenderStack {
-  it : @tutuca.Value
-  binds : Map[String, @tutuca.Value]
+  it : @core.Value
+  binds : Map[String, @core.Value]
   parent : RenderStack?
   view_names : Array[String]
   is_frame : Bool
@@ -91,10 +91,10 @@ pub(all) struct RenderStack {
   dyn_binds : @component.DynBinds?
   event : DomEvent?
 }
-pub fn RenderStack::enter(Self, @tutuca.Value, Map[String, @tutuca.Value], is_frame? : Bool) -> Self
-pub fn RenderStack::new(@tutuca.Value, binds? : Map[String, @tutuca.Value], comps? : @component.Components, event? : DomEvent) -> Self
+pub fn RenderStack::enter(Self, @core.Value, Map[String, @core.Value], is_frame? : Bool) -> Self
+pub fn RenderStack::new(@core.Value, binds? : Map[String, @core.Value], comps? : @component.Components, event? : DomEvent) -> Self
 pub fn RenderStack::push_view_name(Self, String) -> Self
-pub impl @tutuca.Stack for RenderStack
+pub impl @core.Stack for RenderStack
 
 pub(all) struct ResolvedView {
   node : @anode.ANode
@@ -126,7 +126,7 @@ pub(open) trait Boundaries {
 pub impl Boundaries for @component.Components
 
 pub(open) trait ViewResolver {
-  fn resolve_view(Self, Array[String], @tutuca.Value) -> ResolvedView?
+  fn resolve_view(Self, Array[String], @core.Value) -> ResolvedView?
 }
 pub impl ViewResolver for @component.Components
 

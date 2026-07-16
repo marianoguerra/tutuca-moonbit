@@ -2,7 +2,7 @@
 // tools/tutuca.js + tools/cli/. Never touches argv/fs/stdio itself so it stays
 // target-agnostic and testable; cmd/main is the native shell that does I/O.
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/lint",

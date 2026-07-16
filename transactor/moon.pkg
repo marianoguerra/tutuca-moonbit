@@ -1,3 +1,3 @@
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
 }

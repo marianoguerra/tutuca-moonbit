@@ -2,8 +2,8 @@
 package "marianoguerra/tutuca/app"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/vdom",
@@ -33,15 +33,15 @@ pub struct App[N] {
 pub fn[N : @vdom.DomWalk] App::dispatch(Self[N], N, @render.DomEvent) -> Bool
 pub fn[N] App::drain_batched(Self[N], max_per_batch~ : Int, () -> Unit) -> Unit
 pub fn[N] App::event_names(Self[N]) -> Array[String]
-pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdom.RenderOpts[N], args? : Map[String, @tutuca.Value]) -> Self[N] raise
-pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @tutuca.Value, N, @vdom.RenderOpts[N]) -> Self[N] raise
-pub fn[N] App::root_value(Self[N]) -> @tutuca.Value?
-pub fn[N] App::send_at_root(Self[N], String, args? : Array[@tutuca.Value]) -> Unit
+pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdom.RenderOpts[N], args? : Map[String, @core.Value]) -> Self[N] raise
+pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @core.Value, N, @vdom.RenderOpts[N]) -> Self[N] raise
+pub fn[N] App::root_value(Self[N]) -> @core.Value?
+pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value]) -> Unit
 pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
 
 pub struct DragState[N] {
   node : N
-  info : @tutuca.Value
+  info : @core.Value
 }
 
 pub(all) struct ScopeRequests {

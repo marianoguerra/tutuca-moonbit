@@ -2,7 +2,7 @@
 // translate real events into DomEvents. Validate with:
 // moon check --target js / moon test --target js app/browser (needs happy-dom).
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom/browser",

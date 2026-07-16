@@ -3,34 +3,29 @@
 
 ///|
 priv struct RecordingCtx {
-  base : @tutuca.DispatchPath
-  sends : Array[(Array[@tutuca.Step], String, Bool)]
+  base : @core.DispatchPath
+  sends : Array[(Array[@core.Step], String, Bool)]
 }
 
 ///|
-impl @tutuca.Ctx for RecordingCtx with fn path(self) {
+impl @core.Ctx for RecordingCtx with fn path(self) {
   self.base
 }
 
 ///|
-impl @tutuca.Ctx for RecordingCtx with fn send_at_path(self, path, name, _args) {
+impl @core.Ctx for RecordingCtx with fn send_at_path(self, path, name, _args) {
   self.sends.push((path.to_transaction_path().steps, name, false))
 }
 
 ///|
-impl @tutuca.Ctx for RecordingCtx with fn bubble_at_path(
-  self,
-  path,
-  name,
-  _args,
-) {
+impl @core.Ctx for RecordingCtx with fn bubble_at_path(self, path, name, _args) {
   self.sends.push((path.to_transaction_path().steps, name, true))
 }
 
 ///|
 test "ctx.at builds a relative path and sends/bubbles at it" {
   let ctx = RecordingCtx::{
-    base: @tutuca.DispatchPath::of_steps([FieldStep("root")]),
+    base: @core.DispatchPath::of_steps([FieldStep("root")]),
     sends: [],
   }
   // field / index / key chain

@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/anode"
 
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core",
   "moonbit-community/html/src",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
@@ -50,28 +50,28 @@ pub fn ANode::is_constant(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool
 pub fn ANode::optimize(Self) -> Unit
 pub fn ANode::parse(String, ParseContext) -> Self?
-pub fn ANode::set_data_attr(Self, String, @tutuca.Lit) -> Unit
+pub fn ANode::set_data_attr(Self, String, @core.Lit) -> Unit
 pub fn ANode::wrap_node(Self, Self) -> Unit
 
 pub(all) enum AttrItem {
-  Plain(name~ : String, val~ : @tutuca.Val)
-  ConstA(name~ : String, val~ : @tutuca.Val)
-  RawHtml(val~ : @tutuca.Val?)
+  Plain(name~ : String, val~ : @core.Val)
+  ConstA(name~ : String, val~ : @core.Val)
+  RawHtml(val~ : @core.Val?)
   If(IfAttr)
 } derive(@debug.Debug)
 
 pub(all) struct AttrParseResult {
   attrs : Attrs
   wrappers : Array[WrapperAttr]
-  text_child : @tutuca.Val?
+  text_child : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) enum Attrs {
-  ConstAttrs(Map[String, @tutuca.Lit])
+  ConstAttrs(Map[String, @core.Lit])
   DynAttrs(Array[AttrItem])
 } derive(@debug.Debug)
 pub fn Attrs::is_constant(Self) -> Bool
-pub fn Attrs::set_data_attr(Self, String, @tutuca.Lit) -> Unit
+pub fn Attrs::set_data_attr(Self, String, @core.Lit) -> Unit
 pub fn Attrs::to_macro_vars(Self) -> Map[String, String]
 
 pub(all) enum BadValueRole {
@@ -79,7 +79,7 @@ pub(all) enum BadValueRole {
   Attr(name~ : String)
   Directive(name~ : String)
   IfDirective(name~ : String)
-  ValueIssue(@tutuca.IssueRole)
+  ValueIssue(@core.IssueRole)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum DeprecatedSyntax {
@@ -106,16 +106,16 @@ pub(all) struct FragmentData {
 
 pub(all) struct IfAttr {
   name : String
-  cond_val : @tutuca.Val
-  mut then_val : @tutuca.Val?
-  mut else_val : @tutuca.Val?
+  cond_val : @core.Val
+  mut then_val : @core.Val?
+  mut else_val : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) struct IterInfo {
-  val : @tutuca.Val
-  mut when_val : @tutuca.Val?
-  mut loop_with_val : @tutuca.Val?
-  mut enrich_with_val : @tutuca.Val?
+  val : @core.Val
+  mut when_val : @core.Val?
+  mut loop_with_val : @core.Val?
+  mut enrich_with_val : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) struct Macro {
@@ -130,7 +130,7 @@ pub(all) struct MacroData {
   slots : Map[String, ANode]
   px : ParseContext
   mut node : ANode?
-  data_attrs : Map[String, @tutuca.Lit]
+  data_attrs : Map[String, @core.Lit]
 }
 pub impl @debug.Debug for MacroData
 
@@ -142,7 +142,7 @@ pub(all) struct MacroFrame {
 
 pub(all) struct NodeEvent {
   name : String
-  handler : @tutuca.HandlerParse
+  handler : @core.HandlerParse
   modifiers : Array[String]
 } derive(@debug.Debug)
 
@@ -162,7 +162,7 @@ pub struct ParseContext {
   macro_nodes : Array[ANode]
   parent : ParseContext?
   frame : MacroFrame?
-  mut val_ctx : @tutuca.ParseCtx?
+  mut val_ctx : @core.ParseCtx?
   mut current_tag : String?
   cache_const_nodes : Bool
   handler : &ParseHandler
@@ -184,13 +184,13 @@ pub(all) enum ParseIssue {
 
 pub(all) struct RenderData {
   node_id : Int
-  val : @tutuca.Val
-  view_val : @tutuca.Val?
+  val : @core.Val
+  view_val : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) struct RenderItData {
   node_id : Int
-  view_val : @tutuca.Val?
+  view_val : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) struct RenderOnceData {
@@ -200,7 +200,7 @@ pub(all) struct RenderOnceData {
 
 pub(all) struct RenderTextData {
   node_id : Int?
-  val : @tutuca.Val
+  val : @core.Val
 } derive(@debug.Debug)
 
 pub(all) struct SlotData {
@@ -219,7 +219,7 @@ pub(all) struct View {
   mut anode : ANode?
   mut ctx : ParseContext?
 }
-pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @tutuca.Lit) -> Unit raise MacroError
+pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @core.Lit) -> Unit raise MacroError
 pub fn View::new(String, raw_view? : String, style? : String) -> Self
 
 pub(all) struct WarnHandler {
@@ -228,17 +228,17 @@ pub impl ParseHandler for WarnHandler
 
 pub(all) struct WrapData {
   node_id : Int?
-  val : @tutuca.Val
+  val : @core.Val
   mut node : ANode
 } derive(@debug.Debug)
 
 pub(all) struct WrapperAttr {
   kind : WrapperKind
   raw : String
-  val : @tutuca.Val?
-  mut enrich_with_val : @tutuca.Val?
-  mut when_val : @tutuca.Val?
-  mut loop_with_val : @tutuca.Val?
+  val : @core.Val?
+  mut enrich_with_val : @core.Val?
+  mut when_val : @core.Val?
+  mut loop_with_val : @core.Val?
 } derive(@debug.Debug)
 
 pub(all) enum WrapperKind {

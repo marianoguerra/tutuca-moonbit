@@ -1,5 +1,5 @@
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/render",

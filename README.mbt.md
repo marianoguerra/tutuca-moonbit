@@ -15,7 +15,7 @@ and formal `spec.mbt`. From the bottom up:
 
 | Layer | Package(s) | What it does |
 |---|---|---|
-| **Value language** | root `marianoguerra/tutuca` (`value_*.mbt`, `path_*.mbt`) | The tutuca value syntax — parse/tokenize/eval — plus the reactive path/dispatch system (COW spine rebuild, handler dispatch, change sets). |
+| **Value language** | `core/` — `marianoguerra/tutuca/core` (`value_*.mbt`, `path_*.mbt`) | The tutuca value syntax — parse/tokenize/eval — plus the reactive path/dispatch system (COW spine rebuild, handler dispatch, change sets). |
 | **Templates** | `anode/` | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |

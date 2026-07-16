@@ -1,0 +1,8 @@
+import {
+  "moonbitlang/core/string",
+}
+
+import {
+  "moonbitlang/quickcheck" @qc,
+  "moonbitlang/quickcheck/gen",
+} for "test"

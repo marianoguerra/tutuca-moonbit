@@ -16,7 +16,12 @@ You can browse and install extra skills here:
   `_wbtest.mbt`).
 
 - In the toplevel directory, there is a `moon.mod` file listing module
-  metadata.
+  metadata. The toplevel package itself is intentionally minimal (just the
+  `README.mbt.md` doctest) — the foundational value language + path/dispatch
+  runtime lives in `core/` (imported everywhere as `@tutuca` via
+  `"marianoguerra/tutuca/core" @tutuca`). It is one package by necessity: its
+  `value_*` and `path_*` types form a single dependency cycle that can't be
+  split across an import edge (see `core/spec.mbt`).
 
 ## Coding convention
 

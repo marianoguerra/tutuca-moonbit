@@ -2,7 +2,7 @@
 package "marianoguerra/tutuca/transactor"
 
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core",
   "moonbitlang/core/debug",
 }
 
@@ -47,50 +47,50 @@ pub(all) enum ObserveMatch {
 pub(all) struct ObserveRecord {
   kind : ObserveKind
   name : String
-  args : Array[@tutuca.Value]
-  path : @tutuca.Path
-  path_keys : Array[@tutuca.StepKey]
-  target_path : @tutuca.DispatchPath
+  args : Array[@core.Value]
+  path : @core.Path
+  path_keys : Array[@core.StepKey]
+  target_path : @core.DispatchPath
   matched : ObserveMatch
-  before : @tutuca.Value?
-  after : @tutuca.Value?
+  before : @core.Value?
+  after : @core.Value?
   seq : Int
 }
 
-pub(all) struct RequestHandler((Array[@tutuca.Value], (Result[@tutuca.Value, @tutuca.Value]) -> Unit) -> Unit)
+pub(all) struct RequestHandler((Array[@core.Value], (Result[@core.Value, @core.Value]) -> Unit) -> Unit)
 
 pub struct Transaction {
-  path : @tutuca.DispatchPath
-  bucket : @tutuca.HandlerBucket
+  path : @core.DispatchPath
+  bucket : @core.HandlerBucket
   name : String
-  args : Array[@tutuca.Value]
-  target_path : @tutuca.DispatchPath
+  args : Array[@core.Value]
+  target_path : @core.DispatchPath
   mut bubbles : Bool
   skip_self : Bool
-  txn_path : @tutuca.Path?
+  txn_path : @core.Path?
   parent : Transaction?
   // private fields
 }
 pub fn Transaction::completion(Self) -> Completion
 
 pub struct Transactor {
-  mut root : &@tutuca.PathNode
+  mut root : &@core.PathNode
   // private fields
 }
 pub fn Transactor::has_pending(Self) -> Bool
-pub fn Transactor::new(&@tutuca.PathNode, requests? : &Requests) -> Self
+pub fn Transactor::new(&@core.PathNode, requests? : &Requests) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
-pub fn Transactor::on_change(Self, (&@tutuca.PathNode, &@tutuca.PathNode) -> Unit) -> Unit
+pub fn Transactor::on_change(Self, (&@core.PathNode, &@core.PathNode) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
-pub fn Transactor::push_input(Self, @tutuca.DispatchPath, String, Array[@tutuca.Value], parent? : Transaction) -> Transaction
-pub fn Transactor::push_request(Self, @tutuca.DispatchPath, String, Array[@tutuca.Value], opts? : @tutuca.RequestOpts, parent? : Transaction) -> Unit
-pub fn Transactor::push_send(Self, @tutuca.DispatchPath, String, Array[@tutuca.Value], parent? : Transaction, skip_self? : Bool, bubbles? : Bool) -> Transaction
+pub fn Transactor::push_input(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction) -> Transaction
+pub fn Transactor::push_request(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.RequestOpts, parent? : Transaction) -> Unit
+pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, skip_self? : Bool, bubbles? : Bool) -> Transaction
 pub fn Transactor::settle(Self, max_turns? : Int) -> Unit
 
 // Type aliases
 
 // Traits
 pub(open) trait Requests {
-  fn request_for(Self, &@tutuca.PathNode, String) -> RequestHandler? = _
+  fn request_for(Self, &@core.PathNode, String) -> RequestHandler? = _
 }
 

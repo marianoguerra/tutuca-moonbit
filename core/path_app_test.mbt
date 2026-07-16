@@ -13,20 +13,20 @@ priv struct Sheet {
 }
 
 ///|
-fn sheet(title : String) -> &@tutuca.PathNode {
+fn sheet(title : String) -> &@core.PathNode {
   Sheet::{ title, }
 }
 
 ///|
-impl @tutuca.PathNode for Sheet with fn field(self, name) {
+impl @core.PathNode for Sheet with fn field(self, name) {
   match name {
-    "title" => Some(@tutuca.Value::Str(self.title) as &@tutuca.PathNode)
+    "title" => Some(@core.Value::Str(self.title) as &@core.PathNode)
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for Sheet with fn with_field(self, name, v) {
+impl @core.PathNode for Sheet with fn with_field(self, name, v) {
   ignore(self)
   match (name, v.as_value()) {
     ("title", Some(Str(s))) => Some(sheet(s))
@@ -35,11 +35,11 @@ impl @tutuca.PathNode for Sheet with fn with_field(self, name, v) {
 }
 
 ///|
-impl @tutuca.PathNode for Sheet with fn handler(self, bucket, name) {
+impl @core.PathNode for Sheet with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        @core.Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(sheet(s))
             _ => None
@@ -47,20 +47,20 @@ impl @tutuca.PathNode for Sheet with fn handler(self, bucket, name) {
         }),
       )
     // a handler that decides nothing changed answers None
-    (Receive, "noop") => Some(@tutuca.Handler((_args, _ctx) => None))
+    (Receive, "noop") => Some(@core.Handler((_args, _ctx) => None))
     (Receive, "$unknown") =>
-      Some(@tutuca.Handler((_args, _ctx) => Some(sheet("\{self.title}?"))))
+      Some(@core.Handler((_args, _ctx) => Some(sheet("\{self.title}?"))))
     _ => None
   }
 }
 
 ///|
 priv struct Sheets {
-  items : Map[String, &@tutuca.PathNode]
+  items : Map[String, &@core.PathNode]
 }
 
 ///|
-impl @tutuca.PathNode for Sheets with fn item(self, key) {
+impl @core.PathNode for Sheets with fn item(self, key) {
   match key {
     KStr(k) => self.items.get(k)
     KInt(_) => None
@@ -68,13 +68,13 @@ impl @tutuca.PathNode for Sheets with fn item(self, key) {
 }
 
 ///|
-impl @tutuca.PathNode for Sheets with fn with_item(self, key, v) {
+impl @core.PathNode for Sheets with fn with_item(self, key, v) {
   match key {
     KStr(k) =>
       if self.items.contains(k) {
         let items = self.items.copy()
         items[k] = v
-        Some(Sheets::{ items, } as &@tutuca.PathNode)
+        Some(Sheets::{ items, } as &@core.PathNode)
       } else {
         None
       }
@@ -84,28 +84,27 @@ impl @tutuca.PathNode for Sheets with fn with_item(self, key, v) {
 
 ///|
 priv struct App {
-  sheets : &@tutuca.PathNode // a Sheets box
+  sheets : &@core.PathNode // a Sheets box
   sel_id : String
 }
 
 ///|
-impl @tutuca.PathNode for App with fn field(self, name) {
+impl @core.PathNode for App with fn field(self, name) {
   match name {
     "sheets" => Some(self.sheets)
-    "selId" => Some(@tutuca.Value::Str(self.sel_id) as &@tutuca.PathNode)
+    "selId" => Some(@core.Value::Str(self.sel_id) as &@core.PathNode)
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for App with fn with_field(self, name, v) {
+impl @core.PathNode for App with fn with_field(self, name, v) {
   match name {
-    "sheets" =>
-      Some(App::{ sheets: v, sel_id: self.sel_id } as &@tutuca.PathNode)
+    "sheets" => Some(App::{ sheets: v, sel_id: self.sel_id } as &@core.PathNode)
     "selId" =>
       match v.as_value() {
         Some(Str(s)) =>
-          Some(App::{ sheets: self.sheets, sel_id: s } as &@tutuca.PathNode)
+          Some(App::{ sheets: self.sheets, sel_id: s } as &@core.PathNode)
         _ => None
       }
     _ => None
@@ -113,7 +112,7 @@ impl @tutuca.PathNode for App with fn with_field(self, name, v) {
 }
 
 ///|
-fn make_app(sel_id : String) -> &@tutuca.PathNode {
+fn make_app(sel_id : String) -> &@core.PathNode {
   App::{
     sheets: Sheets::{ items: { "a": sheet("first"), "b": sheet("second") } },
     sel_id,
@@ -121,14 +120,14 @@ fn make_app(sel_id : String) -> &@tutuca.PathNode {
 }
 
 ///|
-fn sel_path() -> @tutuca.Path {
-  @tutuca.Path::new(steps=[SeqAccessStep(seq_field="sheets", key_field="selId")])
+fn sel_path() -> @core.Path {
+  @core.Path::new(steps=[SeqAccessStep(seq_field="sheets", key_field="selId")])
 }
 
 ///|
-fn title_of(root : &@tutuca.PathNode, key : String) -> @tutuca.Value? {
+fn title_of(root : &@core.PathNode, key : String) -> @core.Value? {
   match
-    @tutuca.Path::new(steps=[
+    @core.Path::new(steps=[
       SeqStep(field="sheets", key=KStr(key)),
       FieldStep("title"),
     ]).lookup(root) {
@@ -150,17 +149,17 @@ test "SeqAccessStep traverses typed structs like Value trees" {
 test "update invokes the leaf handler and rebuilds the spine" {
   let root = make_app("b")
   let root2 = sel_path().update(root, Receive, "rename", [
-    @tutuca.Value::Str("renamed"),
+    @core.Value::Str("renamed"),
   ])
   assert_true(!physical_equal(root2, root))
   assert_true(title_of(root2, "b") is Some(Str("renamed")))
   // the old tree is untouched
   assert_true(title_of(root, "b") is Some(Str("second")))
   // the off-path sibling sheet is physically shared between old and new root
-  let old_a = @tutuca.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
+  let old_a = @core.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
     root,
   )
-  let new_a = @tutuca.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
+  let new_a = @core.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
     root2,
   )
   guard (old_a, new_a) is (Some(oa), Some(na)) else { fail("sheet a missing") }
@@ -199,7 +198,7 @@ test "pin_keys works across struct impls" {
   // the selection moves; the pinned path still updates the request-time item
   let moved = make_app("a")
   let moved2 = pinned.update(moved, Receive, "rename", [
-    @tutuca.Value::Str("late-response"),
+    @core.Value::Str("late-response"),
   ])
   assert_true(title_of(moved2, "b") is Some(Str("late-response")))
   assert_true(title_of(moved2, "a") is Some(Str("first")))

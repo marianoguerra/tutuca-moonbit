@@ -2,17 +2,15 @@
 package "marianoguerra/tutuca/playground/host_wasm"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/component",
-  "mizchi/js/core",
 }
 
 // Values
 pub fn classes_json() -> String
 
-pub fn mount(@component.ModuleDef, String, root? : String, args? : Map[String, @tutuca.Value]) -> Unit
+pub fn mount(@component.ModuleDef, String, root? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> Unit
 
-pub fn on_event(@core.Any) -> Unit
+pub fn on_event(@mizchi/js/core.Any) -> Unit
 
 pub fn state_json() -> String
 

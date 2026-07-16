@@ -6,7 +6,7 @@
 // sequence behind `mount`, and exposes the live app's state as JSON for the
 // playground inspector.
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/app/browser" @glue,

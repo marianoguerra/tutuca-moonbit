@@ -1,5 +1,5 @@
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "moonbit-community/html/src" @html5,
 }
 

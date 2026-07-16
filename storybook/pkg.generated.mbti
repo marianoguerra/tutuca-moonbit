@@ -2,8 +2,8 @@
 package "marianoguerra/tutuca/storybook"
 
 import {
-  "marianoguerra/tutuca",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
 }
 
 // Values
@@ -30,7 +30,7 @@ pub(all) struct Story {
   description : String
   module_ : @component.ModuleDef
   root : String
-  args : Map[String, @tutuca.Value]
+  args : Map[String, @core.Value]
   renderable : Bool
   init : Bool
 }

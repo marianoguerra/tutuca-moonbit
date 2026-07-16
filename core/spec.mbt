@@ -4,8 +4,9 @@
 // and the value_*_test.mbt suites define the contract.
 //
 // Why the value layer (this file, value_*.mbt) and the path layer
-// (path_spec.mbt, path_*.mbt) share ONE package instead of splitting into
-// value/ and path/ subpackages: their core types form a single dependency
+// (path_spec.mbt, path_*.mbt) share ONE package (this `core/` package)
+// instead of splitting into value/ and path/ subpackages: their core types
+// form a single dependency
 // cycle that MoonBit packages cannot express across an import edge —
 // Obj::obj_handler returns Handler (path side), Handler carries &Ctx and
 // &PathNode, Ctx returns DispatchPath (whose Steps carry Val), and
