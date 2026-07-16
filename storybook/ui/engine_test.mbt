@@ -70,6 +70,103 @@ test "init-driven story loads its data after mount" {
 }
 
 ///|
+/// A fixture `loadState`/`persistState` pair standing in for the browser
+/// history handlers the wasm host wires: `loadState` returns a fixed snapshot,
+/// `persistState` is a no-op. Lets the headless test drive the URL-restore path.
+fn url_fixture(
+  story : String,
+  focus : String,
+  filter : String,
+) -> Map[String, @component.RequestFn] {
+  {
+    "loadState": @component.RequestFn((_args, respond) => respond(
+      Ok(Map({ "story": Str(story), "focus": Str(focus), "filter": Str(filter) })),
+    )),
+    "persistState": @component.RequestFn((_args, respond) => respond(Ok(Null))),
+  }
+}
+
+///|
+/// Read a top-level field off the started gallery's root instance.
+fn[N] root_field(app : @app.App[N], name : String) -> @tutuca.Value {
+  match app.root_value() {
+    Some(Obj(o)) => o.obj_field(name).unwrap_or(Null)
+    _ => Null
+  }
+}
+
+///|
+test "fuzzy_match: substring, subsequence budget, and empty query" {
+  // empty query matches anything
+  assert_true(fuzzy_match("", "whatever"))
+  // direct substring, case-insensitive
+  assert_true(fuzzy_match("Count", "counter"))
+  assert_true(fuzzy_match("light", "traffic light basics"))
+  // near-contiguous subsequence within budget (t-r-a-f: gap of 1)
+  assert_true(fuzzy_match("trf", "traffic"))
+  // the same letters spread far apart exceed the query-scaled gap budget
+  assert_false(fuzzy_match("tft", "traffic light"))
+  // scattered letters across a long string exceed the gap budget
+  assert_false(fuzzy_match("counter", "composition and views example"))
+  // a query absent from the target never matches
+  assert_false(fuzzy_match("zzz", "traffic light"))
+}
+
+///|
+test "storybook renders the filter box, focus buttons, and collapse toggle" {
+  let sections = pick(["counter", "traffic-light", "lint-errors"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let _app = mount(sections, container, @vdom.RenderOpts::new(doc), lint=lint_text)
+  let html = container.to_html()
+  // the sidebar filter input
+  assert_true(html.contains("placeholder=\"Filter\""))
+  // the "hide sections" collapse toggle in the (shown) sidebar header
+  assert_true(html.contains("«"))
+  // a focus button for the active renderable story's pane (counter)
+  assert_true(html.contains("Focus this story"))
+}
+
+///|
+test "URL state restores the selected story, focus, and filter" {
+  let sections = pick(["counter", "traffic-light", "tabbed-ui"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  // restore: select traffic-light, focus tabbed-ui, filter "counter"
+  let app = mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    lint=lint_text,
+    url_handlers=url_fixture("traffic-light", "tabbed-ui", "counter"),
+  )
+  // selection + focus id came from the URL, overriding the default (counter)
+  assert_true(root_field(app, "active") == Str("traffic-light"))
+  assert_true(root_field(app, "focus") == Str("tabbed-ui"))
+  assert_true(root_field(app, "filter") == Str("counter"))
+  // focusValue holds the focused story's live instance (rendered in the overlay)
+  assert_true(root_field(app, "focusValue") is Obj(_))
+}
+
+///|
+test "empty URL state keeps the default selection and clears focus" {
+  let sections = pick(["counter", "traffic-light"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    lint=lint_text,
+    url_handlers=url_fixture("", "", ""),
+  )
+  // default selection is the first story; no focus
+  assert_true(root_field(app, "active") == Str("counter"))
+  assert_true(root_field(app, "focus") == Str(""))
+  assert_true(root_field(app, "focusValue") is Null)
+}
+
+///|
 test "lint callback surfaces findings for the lint-errors story" {
   // the callback the host wires must produce non-empty text for a component
   // that has lint issues, so the Lint panel is not blank.

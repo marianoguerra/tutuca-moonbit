@@ -4,6 +4,7 @@
 // from the CLI's check_component, injected as the mount() lint callback.
 // Build: moon build --target wasm-gc demo/storybook_wasm
 import {
+  "marianoguerra/tutuca",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/cli",
@@ -21,7 +22,7 @@ options(
   "is-main": true,
   link: {
     "wasm-gc": {
-      "exports": [ "mount", "on_event" ],
+      "exports": [ "mount", "on_event", "on_popstate" ],
       "use-js-builtin-string": true,
     },
   },

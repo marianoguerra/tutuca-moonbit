@@ -29,8 +29,18 @@
     -->
     <script type="module">
       import { loadWasm, applyMargaui } from "./loader.mjs";
+      // Register the <emoji-picker> custom element used by the
+      // web-component-custom-event story (the JS docs load it on the demo page).
+      import("https://cdn.jsdelivr.net/npm/emoji-picker-element@1/index.js").catch(
+        (err) => console.warn("emoji-picker-element load skipped:", err),
+      );
       const exports = await loadWasm("./storybook_wasm.wasm");
       exports.mount();
+      // Re-restore selection/filter/focus on Back/Forward. tutuca has no
+      // lifecycle, so the host re-sends `init` (which re-reads the URL).
+      // Programmatic push/replaceState don't fire popstate, so this only runs
+      // on real navigation.
+      window.addEventListener("popstate", () => exports.on_popstate());
       await applyMargaui();
     </script>
   </body>
