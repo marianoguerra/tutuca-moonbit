@@ -26,8 +26,13 @@ const STYLE = `
     border-radius: var(--standard-border-radius, 6px);
     overflow: hidden;
     background: var(--accent-bg, #f5f7ff);
+    /* Keep the whole playground on screen: cap it at 80vh. The editor and
+       preview scroll internally rather than growing the page. */
+    max-height: 80vh;
   }
-  .editor { display: flex; flex-direction: column; min-height: 20rem; min-width: 0; }
+  /* Cap the editor so a long example scrolls in place instead of stretching
+     the row (CodeMirror auto-grows to its content otherwise). */
+  .editor { display: flex; flex-direction: column; min-height: 20rem; max-height: 80vh; min-width: 0; }
   .toolbar {
     display: flex; align-items: center; gap: 0.5rem;
     padding: 0.35rem 0.5rem;
@@ -53,7 +58,10 @@ const STYLE = `
   .preview { min-width: 0; border-left: 1px solid var(--border-color, #898ea4); background: var(--bg, #fff); }
   .preview iframe { width: 100%; height: 100%; min-height: 20rem; border: 0; }
   @media (max-width: 768px) {
-    .wrap { grid-template-columns: 1fr; }
+    /* Stacked layout: editor above preview. Drop the 80vh cap so the preview
+       isn't clipped — each pane keeps its own min-height instead. */
+    .wrap { grid-template-columns: 1fr; max-height: none; }
+    .editor { max-height: none; }
     .preview { border-left: 0; border-top: 1px solid var(--border-color, #898ea4); }
   }
 `;

@@ -21,7 +21,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="toggle", components=[panel],
-    examples=[{ component: "Panel", title: "Closed", args: {}, view: None }],
+    examples=[{ component: "Panel", title: "Closed", args: Map::new(), view: None }],
   )
 }
 
