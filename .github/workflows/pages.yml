@@ -1,0 +1,77 @@
+# Build the self-contained `dist/` and publish it as the root of GitHub Pages.
+# `cmd/dev -- dist` assembles dist/index.html (landing page) + the js/wasm
+# demos, storybook, playground, and CLI binary; this deploys that folder as-is.
+#
+# Enable once in the repo: Settings → Pages → Build and deployment →
+# Source = "GitHub Actions".
+#
+# NOTE — playground live-compile coupling: the precompiled demos (counter,
+# examples, storybook, wasm) work regardless of toolchain. The in-browser
+# playground editor compiles against the pinned @moonbit/moonc-worker (see
+# playground/build/fetch-compiler.mjs) and needs the installed `moon` to match
+# that build. This job installs the latest toolchain; if the live playground
+# mismatches, pin it by setting MOONBIT_INSTALL_VERSION to the matching nightly
+# (uncomment below) and keep it in sync with the moonc-web pin.
+name: Deploy dist to GitHub Pages
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Least privilege needed to publish to Pages.
+permissions:
+  contents: read
+  pages: write
+  id-token: write
+
+# One deploy at a time; let a newer push supersede an in-flight run.
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    # env:
+    #   MOONBIT_INSTALL_VERSION: "<nightly matching the moonc-web pin>"
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Update MoonBit dependencies
+        run: |
+          moon version --all
+          moon update
+
+      - name: Install npm dependencies
+        run: npm install
+
+      - name: Build dist
+        run: moon run --target native cmd/dev -- dist
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: dist
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4

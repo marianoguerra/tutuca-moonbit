@@ -21,5 +21,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-mb/compare/v0.1.0...HEAD
-[0.1.0]: https://github.com/marianoguerra/tutuca-mb/releases/tag/v0.1.0
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.1.0...HEAD
+[0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0

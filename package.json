@@ -1,8 +1,9 @@
 {
   "name": "tutuca-mb-dev",
   "private": true,
-  "description": "Dev dependencies for tutuca-mb js-target tests (moon test --target js needs happy-dom).",
+  "description": "Dev dependencies for tutuca-mb: happy-dom (moon test --target js) and esbuild (playground/dist assembly).",
   "devDependencies": {
+    "esbuild": "^0.28.1",
     "happy-dom": "^20.10.6"
   }
 }
