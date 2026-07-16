@@ -5,7 +5,7 @@
 // ./runtime.js (both shared with the embeddable <mb-playground> element used by
 // the landing site).
 
-import { errorDiagnostics, makeCompiler, mount } from "./runtime.js";
+import { errorDiagnostics, makeCompiler, mount, mountWasm } from "./runtime.js";
 import { createEditor } from "./editor.bundle.js";
 
 const $ = (s) => document.querySelector(s);
@@ -17,6 +17,13 @@ const diags = $("#diagnostics");
 const stateOut = $("#state");
 const activity = $("#activity");
 const preview = $("#preview");
+const targetSel = $("#target");
+
+// Which targets the assembled payload actually carries (the wasm-gc option is
+// only real when the site was built with WASMGC=1). Filled in at boot from the
+// manifest so the toggle can't offer a backend the worker can't load.
+let availableTargets = ["js"];
+const currentTarget = () => targetSel.value;
 
 function setStatus(msg, cls) {
   status.textContent = msg;
@@ -24,15 +31,22 @@ function setStatus(msg, cls) {
 }
 
 // --- preview: fresh realm per run, wired to the state/activity inspector ---
-function mountPreview(jsText) {
+function inspectorOnState() {
   const activityLog = [];
-  mount(preview, jsText, {
-    onState: (s) => {
-      stateOut.textContent = tryPretty(s);
-      activityLog.push(s);
-      activity.textContent = activityLog.map((v, i) => `${i}: ${v}`).join("\n");
-    },
-  });
+  return (s) => {
+    stateOut.textContent = tryPretty(s);
+    activityLog.push(s);
+    activity.textContent = activityLog.map((v, i) => `${i}: ${v}`).join("\n");
+  };
+}
+
+function mountPreview(jsText) {
+  mount(preview, jsText, { onState: inspectorOnState() });
+}
+
+// wasm-gc: `result` is a wasm binary, not JS text — instantiate + drive from wasm.
+async function mountPreviewWasm(wasmBytes) {
+  await mountWasm(preview, wasmBytes, { onState: inspectorOnState() });
 }
 
 function tryPretty(s) {
@@ -44,9 +58,11 @@ let compiling = false;
 async function run() {
   if (compiling) return;
   compiling = true;
-  setStatus("compiling…", "busy");
+  const target = currentTarget();
+  setStatus(`compiling (${target})…`, "busy");
   diags.textContent = "";
   try {
+    await compiler.init(target); // switch the worker's payload if the target changed
     const r = await compiler.compile(editor.getValue());
     const errs = errorDiagnostics(r.diagnostics);
     diags.textContent = (r.diagnostics || []).join("\n\n");
@@ -55,12 +71,18 @@ async function run() {
       setStatus(`compile errors (${errs.length})`, "error");
       return;
     }
-    const js = new TextDecoder().decode(r.result);
-    mountPreview(js);
-    setStatus(`ok — compiled + linked in ${r.ms} ms`, "ok");
+    if (target === "wasm-gc") {
+      // linkCore returned a wasm binary; instantiate + drive the DOM from wasm.
+      // A string-ABI mismatch in the vendored in-browser linker currently makes
+      // this throw a WebAssembly.CompileError — surfaced in the diagnostics pane.
+      await mountPreviewWasm(r.result);
+    } else {
+      mountPreview(new TextDecoder().decode(r.result));
+    }
+    setStatus(`ok — compiled + linked (${target}) in ${r.ms} ms`, "ok");
   } catch (e) {
-    setStatus("worker error", "error");
-    diags.textContent = String(e.message || e);
+    setStatus(target === "wasm-gc" ? "wasm instantiate failed" : "worker error", "error");
+    diags.textContent = String(e.stack || e.message || e);
     editor.setDiagnostics([]);
   } finally {
     compiling = false;
@@ -70,17 +92,31 @@ async function run() {
 // Ctrl/⌘+Enter (run) and Tab-indent are handled inside the editor's keymap.
 $("#run").addEventListener("click", run);
 
-// example picker
+// example picker — the js and wasm-gc backends need differently-shaped user
+// modules (js self-mounts from `main`; wasm-gc exports host wrappers), so each
+// target has its own example set.
 const examplesSel = $("#examples");
-const EXAMPLES = window.EXAMPLES || {};
-for (const name of Object.keys(EXAMPLES)) {
-  const opt = document.createElement("option");
-  opt.value = name;
-  opt.textContent = name;
-  examplesSel.appendChild(opt);
+const exampleSet = () => (currentTarget() === "wasm-gc" ? window.EXAMPLES_WASM : window.EXAMPLES) || {};
+function fillExamples() {
+  const set = exampleSet();
+  examplesSel.innerHTML = "";
+  for (const name of Object.keys(set)) {
+    const opt = document.createElement("option");
+    opt.value = name;
+    opt.textContent = name;
+    examplesSel.appendChild(opt);
+  }
 }
 examplesSel.addEventListener("change", () => {
-  editor.setValue(EXAMPLES[examplesSel.value]);
+  editor.setValue(exampleSet()[examplesSel.value]);
+  run();
+});
+
+// target toggle — swap the worker payload + reload a target-appropriate example.
+targetSel.addEventListener("change", () => {
+  fillExamples();
+  const set = exampleSet();
+  editor.setValue(set[Object.keys(set)[0]] || editor.getValue());
   run();
 });
 
@@ -88,8 +124,20 @@ examplesSel.addEventListener("change", () => {
 (async () => {
   setStatus("loading compiler…", "busy");
   try {
-    const info = await compiler.init("js");
-    setStatus(`ready (compiler + ${info.std + info.lib} interfaces, ${info.cores} cores). Ctrl/⌘+Enter to run.`, "ok");
+    // The manifest lists the targets the payload actually carries; hide any
+    // toggle option the build didn't assemble (wasm-gc needs a WASMGC=1 build).
+    try {
+      const manifest = await (await fetch("./manifest.json")).json();
+      availableTargets = Object.keys(manifest.targets || { js: 1 });
+    } catch {}
+    for (const opt of targetSel.options) {
+      opt.disabled = !availableTargets.includes(opt.value);
+    }
+    if (!availableTargets.includes(targetSel.value)) targetSel.value = "js";
+    fillExamples();
+    const info = await compiler.init(currentTarget());
+    const wasmNote = availableTargets.includes("wasm-gc") ? "" : " (wasm-gc: rebuild with WASMGC=1)";
+    setStatus(`ready (compiler + ${info.std + info.lib} interfaces, ${info.cores} cores). Ctrl/⌘+Enter to run.${wasmNote}`, "ok");
     run();
   } catch (e) {
     setStatus("failed to load compiler", "error");

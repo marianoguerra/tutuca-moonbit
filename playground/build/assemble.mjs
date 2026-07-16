@@ -76,10 +76,17 @@ function assembleTarget(t, demoPkg) {
     const d = join(fsdir, rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d);
     coreRel.push(rel);
   }
+  const host = t === "wasm-gc"
+    ? { core: "playground/host_wasm/host_wasm.core", mi: "playground/host_wasm/host_wasm" }
+    : { core: "playground/host/host.core", mi: "playground/host/host" };
   const hostRel = "cores/" + String(coreRel.length).padStart(3, "0") + "_playground_host.core";
-  cpSync(join(buildDir(t), "playground/host/host.core"), join(fsdir, hostRel));
+  cpSync(join(buildDir(t), host.core), join(fsdir, hostRel));
   coreRel.push(hostRel);
-  const directMi = new Set(DIRECT.map(([, sub]) => `lib/${sub}.mi`));
+  const directList = DIRECT.map(([, sub]) => sub === "playground/host/host" ? host.mi : sub);
+  const directMi = new Set(directList.map((sub) => `lib/${sub}.mi`));
+  // wasm-gc user modules name @core.Any (the on_event signature), so mizchi's
+  // js/core must be a DIRECT import — its alias is the last path segment, `core`.
+  if (t === "wasm-gc") directMi.add("lib/.mooncakes/mizchi/js/core/core.mi");
   return {
     target: t,
     direct: [...directMi].filter((p) => existsSync(join(fsdir, p))),

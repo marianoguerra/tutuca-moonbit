@@ -63,13 +63,18 @@ function compile(userCode) {
     enableValueTracing: false,
     noOpt: false,
   });
-  if (!bp.core) return { ok: false, diagnostics: bp.diagnostics, ms: Date.now() - t0 };
+  if (!bp.core) return { ok: false, target: fs.target, diagnostics: bp.diagnostics, ms: Date.now() - t0 };
+  // js links to a runnable JS module (nothing to export — `main` self-mounts).
+  // wasm-gc has no callable `main` from JS: the host facade is driven through
+  // exported wrappers, so those must be named as link exports.
+  const exportedFunctions =
+    fs.target === "wasm-gc" ? ["mount", "on_event", "state_json", "classes_json"] : [];
   const lk = moonc.linkCore({
     coreFiles: [...fs.cores, bp.core],
     main: fs.userPkg,
     pkgSources: [fs.userPkg + ":."],
     target: fs.target,
-    exportedFunctions: [],
+    exportedFunctions,
     outputFormat: "wasm",
     testMode: false,
     debug: false,
@@ -78,7 +83,7 @@ function compile(userCode) {
     sources: {},
     stopOnMain: false,
   });
-  return { ok: true, diagnostics: bp.diagnostics, result: lk.result, ms: Date.now() - t0 };
+  return { ok: true, target: fs.target, diagnostics: bp.diagnostics, result: lk.result, ms: Date.now() - t0 };
 }
 
 self.onmessage = async (e) => {
