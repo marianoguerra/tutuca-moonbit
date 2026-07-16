@@ -44,11 +44,11 @@ fn no_lint(_c : @component.Component) -> String {
 /// in margaui's theme.css). Data, not a dependency — nothing imports margaui.
 fn margaui_themes() -> Array[String] {
   [
-    "light", "dark", "abyss", "acid", "aqua", "autumn", "black", "bumblebee",
-    "business", "caramellatte", "cmyk", "coffee", "corporate", "cupcake",
-    "cyberpunk", "dim", "dracula", "emerald", "fantasy", "forest", "garden",
-    "halloween", "lemonade", "lofi", "luxury", "night", "nord", "pastel", "retro",
-    "silk", "sunset", "synthwave", "valentine", "winter", "wireframe",
+    "light", "dark", "abyss", "acid", "aqua", "autumn", "black", "bumblebee", "business",
+    "caramellatte", "cmyk", "coffee", "corporate", "cupcake", "cyberpunk", "dim",
+    "dracula", "emerald", "fantasy", "forest", "garden", "halloween", "lemonade",
+    "lofi", "luxury", "night", "nord", "pastel", "retro", "silk", "sunset", "synthwave",
+    "valentine", "winter", "wireframe",
   ]
 }
 
@@ -138,10 +138,12 @@ pub fn fuzzy_match(query : String, target : String) -> Bool {
 }
 
 ///|
-/// Recompute sidebar visibility from `filter`: each story's `vN` flag (nav row
-/// shown) and each section's `gvK` flag (header shown when any of its rows
-/// match). An empty filter shows everything. `filter_text`/`sec_of` are aligned
-/// with the global story index N used for the `sN`/`vN` fields.
+/// Recompute sidebar visibility from `filter` AND each section's collapse state
+/// (`cK`): a row `vN` shows when it passes the filter and its group is open; a
+/// header `gvK` shows when any of its rows match the filter (ignoring collapse,
+/// so a collapsed group that still matches stays visible to be reopened). An
+/// empty filter shows every open group's rows. `filter_text`/`sec_of` are
+/// aligned with the global story index N used for the `sN`/`vN` fields.
 fn apply_filter(
   inst : @component.Instance,
   filter : String,
@@ -152,12 +154,19 @@ fn apply_filter(
   let mut out = inst.set("filter", Str(filter))
   let active = filter != ""
   let sec_any = Array::make(num_sections, false)
+  let collapsed = Array::make(num_sections, false)
+  for k in 0..<num_sections {
+    collapsed[k] = match out.get("c\{k}") {
+      Bool(b) => b
+      _ => false
+    }
+  }
   for i in 0..<filter_text.length() {
     let m = !active || fuzzy_match(filter, filter_text[i])
-    out = out.set("v\{i}", Bool(m))
     if m {
       sec_any[sec_of[i]] = true
     }
+    out = out.set("v\{i}", Bool(m && !collapsed[sec_of[i]]))
   }
   for k in 0..<num_sections {
     out = out.set("gv\{k}", Bool(!active || sec_any[k]))
@@ -201,19 +210,25 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   )
   sb.write_string("</div>")
   // --- normal layout, hidden while a story is focused ---
-  sb.write_string("<div class=\"flex min-h-screen\" @hide=\"truthy? .focus\">")
+  // `h-screen overflow-hidden` pins the shell to the viewport so the sidebar
+  // list and the content pane each scroll on their own (min-h-screen grows with
+  // content, which would scroll the whole page and never the entry list).
+  sb.write_string(
+    "<div class=\"flex h-screen overflow-hidden\" @hide=\"truthy? .focus\">",
+  )
   // collapsed rail: a single button to bring the sidebar back
   sb.write_string(
     "<button class=\"btn btn-ghost btn-sm self-start m-2\" title=\"Show sections\"" +
     " @show=\".sidebarCollapsed\" @on.click=\"$toggleSidebarCollapsed\">»</button>",
   )
-  // sidebar
+  // sidebar: a fixed-height column — the header stays put, the entry list below
+  // it scrolls.
   sb.write_string(
-    "<aside class=\"w-64 shrink-0 border-r border-base-300 p-3 overflow-y-auto\" @hide=\".sidebarCollapsed\">",
+    "<aside class=\"w-64 shrink-0 border-r border-base-300 p-3 flex flex-col overflow-hidden\" @hide=\".sidebarCollapsed\">",
   )
   // Header row: collapse toggle, the filter box (fills the space the old
   // "Storybook" title used), and the theme switcher.
-  sb.write_string("<div class=\"flex items-center gap-2 mb-3\">")
+  sb.write_string("<div class=\"flex items-center gap-2 mb-3 shrink-0\">")
   sb.write_string(
     "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\"$toggleSidebarCollapsed\">«</button>",
   )
@@ -228,12 +243,20 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
     sb.write_string("<option value=\"\{name}\">\{name}</option>")
   }
   sb.write_string("</select></div>")
+  // scrollable entry list: takes the remaining sidebar height and scrolls when
+  // the sections overflow it.
+  sb.write_string("<div class=\"flex-1 overflow-y-auto -mr-1 pr-1\">")
   let mut idx = 0
   let mut sec_index = 0
   for sec in sections {
     sb.write_string("<div class=\"mb-3\" @show=\".gv\{sec_index}\">")
+    // clickable group header: the caret reflects `.cK`, the click toggles it.
     sb.write_string(
-      "<div class=\"text-xs font-semibold uppercase opacity-50 mb-1\">\{esc(sec.title)}</div>",
+      "<div class=\"text-xs font-semibold uppercase opacity-50 mb-1 flex items-center gap-1 cursor-pointer select-none hover:opacity-80\"" +
+      " title=\"Collapse or expand\" @on.click=\"onToggleSection \{sec_index}\">" +
+      "<span class=\"inline-block w-3\" @show=\".c\{sec_index}\">▸</span>" +
+      "<span class=\"inline-block w-3\" @hide=\".c\{sec_index}\">▾</span>" +
+      "<span class=\"grow\">\{esc(sec.title)}</span></div>",
     )
     for s in sec.stories {
       filter_text.push("\{s.title} \{s.section} \{s.description}")
@@ -257,6 +280,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
     sb.write_string("</div>")
     sec_index = sec_index + 1
   }
+  sb.write_string("</div>")
   sb.write_string("</aside>")
   // content panes
   sb.write_string("<main class=\"flex-1 p-4 overflow-y-auto\">")
@@ -308,6 +332,8 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   sb.write_string("</main></div></div>")
   for k in 0..<num_sections {
     fields["gv\{k}"] = @component.FieldSpec::of_default(Bool(true))
+    // per-section collapse flag (groups start expanded)
+    fields["c\{k}"] = @component.FieldSpec::of_default(Bool(false))
   }
   // Sidebar filter: recompute row/header visibility and persist the filter.
   let on_filter : @component.InstanceHandler = (inst, args, ctx) => {
@@ -324,6 +350,32 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   }
   let input : Map[String, @component.InstanceHandler] = {
     "onFilter": on_filter,
+    // Collapse/expand a group in place (no URL change, matching the JS
+    // storybook): flip its `cK` flag, then recompute so its rows hide/show under
+    // the current filter.
+    "onToggleSection": (inst, args, _ctx) => {
+      let k = match args {
+        [Num(n), ..] => n.to_int()
+        _ => -1
+      }
+      if k < 0 || k >= num_sections {
+        return Some(inst)
+      }
+      let collapsed = match inst.get("c\{k}") {
+        Bool(b) => b
+        _ => false
+      }
+      let out = inst.set("c\{k}", Bool(!collapsed))
+      Some(
+        apply_filter(
+          out,
+          str_field(out, "filter"),
+          filter_text,
+          sec_of,
+          num_sections,
+        ),
+      )
+    },
     "onClearFilter": (inst, _args, ctx) => {
       ctx.request(
         "persistState",
@@ -422,7 +474,9 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
           out = apply_filter(out, filter, filter_text, sec_of, num_sections)
           match id_to_field.get(focus) {
             Some(fld) =>
-              out = out.set("focus", Str(focus)).set("focusValue", inst.get(fld))
+              out = out
+                .set("focus", Str(focus))
+                .set("focusValue", inst.get(fld))
             None => ()
           }
           Some(out)

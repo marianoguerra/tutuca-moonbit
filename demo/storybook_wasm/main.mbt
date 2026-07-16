@@ -115,7 +115,6 @@ fn ensure_theme_link(name : String) -> Unit {
   link._set("id", @core.any(id))
   link._set("href", @core.any("\{theme_base_url}\{name}.css"))
   let _ = doc._get("head")._call("append", [link])
-
 }
 
 ///|
@@ -130,7 +129,6 @@ fn apply_theme(name : String) -> Unit {
     ._get("document")
     ._get("documentElement")
     ._call("setAttribute", [@core.any("data-theme"), @core.any(name)])
-
 }
 
 ///|
@@ -209,7 +207,6 @@ fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
   let _ = g
     ._get("history")
     ._call(verb, [@core.null(), @core.any(""), @core.any(url)])
-
 }
 
 ///|

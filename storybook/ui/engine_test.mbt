@@ -80,19 +80,21 @@ fn url_fixture(
   story : String,
   focus : String,
   filter : String,
-  theme~ : String = "",
+  theme? : String = "",
 ) -> Map[String, @component.RequestFn] {
   {
-    "loadState": @component.RequestFn((_args, respond) => respond(
-      Ok(
-        Map({
-          "story": Str(story),
-          "focus": Str(focus),
-          "filter": Str(filter),
-          "theme": Str(theme),
-        }),
-      ),
-    )),
+    "loadState": @component.RequestFn((_args, respond) => {
+      respond(
+        Ok(
+          Map({
+            "story": Str(story),
+            "focus": Str(focus),
+            "filter": Str(filter),
+            "theme": Str(theme),
+          }),
+        ),
+      )
+    }),
     "persistState": @component.RequestFn((_args, respond) => respond(Ok(Null))),
   }
 }
@@ -128,7 +130,12 @@ test "storybook renders the filter box, focus buttons, and collapse toggle" {
   let sections = pick(["counter", "traffic-light", "lint-errors"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(sections, container, @vdom.RenderOpts::new(doc), lint=lint_text)
+  let _app = mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    lint=lint_text,
+  )
   let html = container.to_html()
   // the sidebar filter input
   assert_true(html.contains("placeholder=\"Filter\""))
@@ -136,6 +143,9 @@ test "storybook renders the filter box, focus buttons, and collapse toggle" {
   assert_true(html.contains("«"))
   // a focus button for the active renderable story's pane (counter)
   assert_true(html.contains("Focus this story"))
+  // collapsible group headers render the expand caret (groups start open;
+  // @on.click handlers are directives, consumed at parse and not in the HTML)
+  assert_true(html.contains("▾"))
 }
 
 ///|
