@@ -1,0 +1,41 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/storybook"
+
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+}
+
+// Values
+pub fn dry_run_json(Array[Section]) -> Json
+
+pub fn dry_run_text(Array[Section]) -> String
+
+pub fn sections_of(Array[Story]) -> Array[Section]
+
+pub fn stories() -> Array[Story]
+
+// Errors
+
+// Types and methods
+pub(all) struct Section {
+  title : String
+  stories : Array[Story]
+}
+
+pub(all) struct Story {
+  id : String
+  title : String
+  section : String
+  description : String
+  module_ : @component.ModuleDef
+  root : String
+  args : Map[String, @tutuca.Value]
+  renderable : Bool
+  init : Bool
+}
+
+// Type aliases
+
+// Traits
+

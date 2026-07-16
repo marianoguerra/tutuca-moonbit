@@ -1,0 +1,25 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/storybook/ui"
+
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/storybook",
+  "marianoguerra/tutuca/vdom",
+}
+
+// Values
+pub fn fuzzy_match(String, String) -> Bool
+
+pub fn[N : @vdom.DomWalk] mount(Array[@storybook.Section], N, @vdom.RenderOpts[N], lint? : (@component.Component) -> String, url_handlers? : Map[String, @component.RequestFn]) -> @app.App[N] raise
+
+pub fn shell_component(Array[@storybook.Section]) -> @component.Component
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+
