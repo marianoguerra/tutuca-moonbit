@@ -45,8 +45,11 @@ test "storybook mounts sidebar + first preview" {
   assert_true(html.contains("nav-traffic-light"))
   assert_true(html.contains("nav-tabbed-ui"))
   assert_true(html.contains("nav-lint-errors"))
-  // the shell title and at least one rendered instance (data-cid stamped)
-  assert_true(html.contains("Storybook"))
+  // entries show the human title + description (from meta_for), not the slug
+  assert_true(html.contains("Traffic Light"))
+  assert_true(html.contains("Cycle a light through red, orange, and green"))
+  // the filter box chrome and at least one rendered instance (data-cid stamped)
+  assert_true(html.contains("placeholder=\"Filter\""))
   assert_true(html.contains("data-cid"))
 }
 
@@ -77,10 +80,18 @@ fn url_fixture(
   story : String,
   focus : String,
   filter : String,
+  theme~ : String = "",
 ) -> Map[String, @component.RequestFn] {
   {
     "loadState": @component.RequestFn((_args, respond) => respond(
-      Ok(Map({ "story": Str(story), "focus": Str(focus), "filter": Str(filter) })),
+      Ok(
+        Map({
+          "story": Str(story),
+          "focus": Str(focus),
+          "filter": Str(filter),
+          "theme": Str(theme),
+        }),
+      ),
     )),
     "persistState": @component.RequestFn((_args, respond) => respond(Ok(Null))),
   }
@@ -146,6 +157,22 @@ test "URL state restores the selected story, focus, and filter" {
   assert_true(root_field(app, "filter") == Str("counter"))
   // focusValue holds the focused story's live instance (rendered in the overlay)
   assert_true(root_field(app, "focusValue") is Obj(_))
+}
+
+///|
+test "URL state restores the theme into the switcher" {
+  let sections = pick(["counter", "traffic-light"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = mount(
+    sections,
+    container,
+    @vdom.RenderOpts::new(doc),
+    lint=lint_text,
+    url_handlers=url_fixture("", "", "", theme="dracula"),
+  )
+  // the resolved theme name syncs the switcher's shown value
+  assert_true(root_field(app, "theme") == Str("dracula"))
 }
 
 ///|

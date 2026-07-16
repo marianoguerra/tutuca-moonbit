@@ -37,6 +37,22 @@ fn no_lint(_c : @component.Component) -> String {
 }
 
 ///|
+/// The margaui palette names offered by the theme switcher, mirroring
+/// `margaui/dist/themes/*.css` (the JS storybook's MARGAUI_THEMES). Switching a
+/// theme is just flipping `document.documentElement.dataset.theme`; the host's
+/// `applyTheme` handler loads the palette stylesheet on demand (light/dark ship
+/// in margaui's theme.css). Data, not a dependency — nothing imports margaui.
+fn margaui_themes() -> Array[String] {
+  [
+    "light", "dark", "abyss", "acid", "aqua", "autumn", "black", "bumblebee",
+    "business", "caramellatte", "cmyk", "coffee", "corporate", "cupcake",
+    "cyberpunk", "dim", "dracula", "emerald", "fantasy", "forest", "garden",
+    "halloween", "lemonade", "lofi", "luxury", "night", "nord", "pastel", "retro",
+    "silk", "sunset", "synthwave", "valentine", "winter", "wireframe",
+  ]
+}
+
+///|
 /// Read a string field, defaulting to "" for any non-string (or missing) value.
 fn str_field(inst : @component.Instance, name : String) -> String {
   match inst.get(name) {
@@ -59,17 +75,27 @@ fn str_of(v : @tutuca.Value?) -> String {
 /// Assemble the URL snapshot the host persists: the current selection, focus,
 /// and filter, with any one of them overridden by the change the calling
 /// handler is about to make (`this` is still the pre-change instance).
+/// `theme` is deliberately absent from the base snapshot: the host merges these
+/// keys into the existing query string, so omitting `theme` leaves an
+/// already-chosen `?theme=` alone (otherwise typing in the filter would drop
+/// it). Only `onSelectTheme` passes it, adding the key.
 fn snapshot(
   inst : @component.Instance,
   story? : String,
   focus? : String,
   filter? : String,
+  theme? : String,
 ) -> @tutuca.Value {
-  Map({
+  let m : Map[String, @tutuca.Value] = {
     "story": Str(story.unwrap_or(str_field(inst, "active"))),
     "focus": Str(focus.unwrap_or(str_field(inst, "focus"))),
     "filter": Str(filter.unwrap_or(str_field(inst, "filter"))),
-  })
+  }
+  match theme {
+    Some(t) => m["theme"] = Str(t)
+    None => ()
+  }
+  Map(m)
 }
 
 ///|
@@ -150,6 +176,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
     "focus": @component.FieldSpec::of_default(Str("")),
     "focusValue": @component.FieldSpec::of_default(Null),
     "sidebarCollapsed": @component.FieldSpec::of_default(Bool(false)),
+    "theme": @component.FieldSpec::of_default(Str("")),
   }
   // Metadata captured by the handler closures, aligned with the global story
   // index N: the id, the fuzzy-match haystack, and the owning section index.
@@ -184,15 +211,23 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   sb.write_string(
     "<aside class=\"w-64 shrink-0 border-r border-base-300 p-3 overflow-y-auto\" @hide=\".sidebarCollapsed\">",
   )
+  // Header row: collapse toggle, the filter box (fills the space the old
+  // "Storybook" title used), and the theme switcher.
   sb.write_string("<div class=\"flex items-center gap-2 mb-3\">")
   sb.write_string(
     "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\"$toggleSidebarCollapsed\">«</button>",
   )
-  sb.write_string("<h1 class=\"text-lg font-bold flex-1\">Storybook</h1></div>")
   sb.write_string(
-    "<input class=\"input input-sm w-full mb-3\" type=\"search\" placeholder=\"Filter\"" +
+    "<input class=\"input input-sm flex-1 min-w-0\" type=\"search\" placeholder=\"Filter\"" +
     " :value=\".filter\" @on.input=\"onFilter value\" @on.keydown+cancel=\"onClearFilter\" />",
   )
+  sb.write_string(
+    "<select class=\"select select-sm w-auto\" title=\"Theme\" :value=\".theme\" @on.input=\"onSelectTheme value\">",
+  )
+  for name in margaui_themes() {
+    sb.write_string("<option value=\"\{name}\">\{name}</option>")
+  }
+  sb.write_string("</select></div>")
   let mut idx = 0
   let mut sec_index = 0
   for sec in sections {
@@ -204,12 +239,18 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
       filter_text.push("\{s.title} \{s.section} \{s.description}")
       sec_of.push(sec_index)
       let id = esc_attr(s.id)
+      let desc_html = if s.description == "" {
+        ""
+      } else {
+        "<div class=\"text-xs opacity-60 truncate\">\{esc(s.description)}</div>"
+      }
       sb.write_string(
-        "<a id=\"nav-\{s.id}\" @show=\".v\{idx}\"" +
+        "<a id=\"nav-\{s.id}\" @show=\".v\{idx}\" title=\"\{esc_attr(s.description)}\"" +
         " @if.class=\"equals? .active '\{id}'\"" +
-        " @then=\"'block px-2 py-1 rounded text-sm cursor-pointer bg-primary text-primary-content'\"" +
-        " @else=\"'block px-2 py-1 rounded text-sm cursor-pointer hover:bg-base-200'\"" +
-        " @on.click=\"onSelect '\{id}'\">\{esc(s.title)}</a>",
+        " @then=\"'block px-2 py-1 rounded cursor-pointer bg-primary text-primary-content'\"" +
+        " @else=\"'block px-2 py-1 rounded cursor-pointer hover:bg-base-200'\"" +
+        " @on.click=\"onSelect '\{id}'\">" +
+        "<div class=\"text-sm font-medium\">\{esc(s.title)}</div>\{desc_html}</a>",
       )
       idx = idx + 1
     }
@@ -330,6 +371,23 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
       )
       Some(inst.set("focus", Str("")).set("focusValue", Null))
     },
+    // Switching the palette is a document effect (set data-theme, load the
+    // stylesheet), so it goes out as a request the host owns; the field only
+    // syncs the switcher's shown value. theme is added to the persisted snapshot
+    // here (and only here) so it enters the URL.
+    "onSelectTheme": (inst, args, ctx) => {
+      let value = match args {
+        [Str(v), ..] => v
+        _ => ""
+      }
+      ctx.request("applyTheme", [Str(value)], @tutuca.RequestOpts::new())
+      ctx.request(
+        "persistState",
+        [snapshot(inst, theme=value), Bool(false)],
+        @tutuca.RequestOpts::new(),
+      )
+      Some(inst.set("theme", Str(value)))
+    },
   }
   // On init (and Back/Forward, when the host re-sends it) restore selection,
   // filter, and focus from the URL, then fan `init` out to the panes that load
@@ -347,12 +405,15 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   let response : Map[String, @component.InstanceHandler] = {
     "loadState": (inst, args, _ctx) => {
       match args {
-        // success: the host returns { story, focus, filter }
+        // success: the host returns { story, focus, filter, theme }. The host
+        // already resolved+applied the theme (URL param, else OS preference) on
+        // the document; storing it here only syncs the switcher's shown value.
         [Map(state), ..] => {
           let story = str_of(state.get("story"))
           let focus = str_of(state.get("focus"))
           let filter = str_of(state.get("filter"))
-          let mut out = inst
+          let theme = str_of(state.get("theme"))
+          let mut out = inst.set("theme", Str(theme))
           // Any story id selects its pane (renderable panes and lint fixtures
           // alike); an id that matches nothing just leaves every pane hidden.
           if story != "" {

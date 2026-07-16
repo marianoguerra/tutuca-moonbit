@@ -45,12 +45,17 @@ fn url_request_handlers() -> Map[String, @component.RequestFn] {
       let get = fn(k : String) -> @tutuca.Value {
         Str(params.get(k).unwrap_or(""))
       }
+      // Resolve+apply the starting theme (URL param, else the OS preference) so
+      // margaui's dark palette shows when the OS is dark; return the resolved
+      // name so the switcher displays it.
+      let theme = resolve_theme(params.get("theme").unwrap_or(""))
       respond(
         Ok(
           Map({
             "story": get("story"),
             "focus": get("focus"),
             "filter": get("filter"),
+            "theme": Str(theme),
           }),
         ),
       )
@@ -62,7 +67,79 @@ fn url_request_handlers() -> Map[String, @component.RequestFn] {
       }
       respond(Ok(Null))
     }),
+    // Switch the margaui palette: load its stylesheet (if not bundled) and flip
+    // document.documentElement's data-theme.
+    "applyTheme": @component.RequestFn((args, respond) => {
+      match args {
+        [Str(name), ..] => apply_theme(name)
+        _ => ()
+      }
+      respond(Ok(Null))
+    }),
   }
+}
+
+///|
+/// Where margaui publishes its per-palette stylesheets. light + dark ship in the
+/// theme.css already on the page; the rest are fetched on first selection.
+let theme_base_url : String = "https://marianoguerra.github.io/margaui/themes/"
+
+///|
+/// "dark" when the OS prefers a dark scheme, else "light".
+fn os_theme() -> String {
+  let mm = @core.global_this()._call("matchMedia", [
+    @core.any("(prefers-color-scheme: dark)"),
+  ])
+  if @core.is_nullish(mm) {
+    "light"
+  } else if mm._get("matches").to_string() == "true" {
+    "dark"
+  } else {
+    "light"
+  }
+}
+
+///|
+/// Load a palette's stylesheet once (light/dark are bundled, so skipped).
+fn ensure_theme_link(name : String) -> Unit {
+  if name == "light" || name == "dark" {
+    return
+  }
+  let doc = @core.global_this()._get("document")
+  let id = "tutuca-theme-\{name}"
+  if !@core.is_nullish(doc._call("getElementById", [@core.any(id)])) {
+    return
+  }
+  let link = doc._call("createElement", [@core.any("link")])
+  link._set("rel", @core.any("stylesheet"))
+  link._set("id", @core.any(id))
+  link._set("href", @core.any("\{theme_base_url}\{name}.css"))
+  let _ = doc._get("head")._call("append", [link])
+
+}
+
+///|
+/// Apply a palette: ensure its stylesheet is loaded, then set data-theme (which
+/// every margaui utility reads through var(--color-*)).
+fn apply_theme(name : String) -> Unit {
+  if name == "" {
+    return
+  }
+  ensure_theme_link(name)
+  let _ = @core.global_this()
+    ._get("document")
+    ._get("documentElement")
+    ._call("setAttribute", [@core.any("data-theme"), @core.any(name)])
+
+}
+
+///|
+/// Pick the starting theme — the URL param if present, else the OS preference —
+/// apply it, and return the resolved name.
+fn resolve_theme(from_url : String) -> String {
+  let name = if from_url != "" { from_url } else { os_theme() }
+  apply_theme(name)
+  name
 }
 
 ///|
@@ -103,22 +180,29 @@ fn parse_query(search : String) -> Map[String, String] {
 }
 
 ///|
-/// Write the { story, focus, filter } snapshot into the URL query string
-/// (omitting empty keys) and push or replace the history entry. Built as a
-/// string and handed to history.pushState — no URL/URLSearchParams constructor,
-/// which `mizchi/js/core` doesn't expose on wasm-gc.
+/// Merge the snapshot into the CURRENT query string — set non-empty keys, delete
+/// empty ones, leave keys the snapshot doesn't mention (e.g. `theme` while the
+/// filter changes) untouched — then push or replace the history entry. Built as
+/// a string and handed to history.pushState (no URL/URLSearchParams constructor,
+/// which `mizchi/js/core` doesn't expose on wasm-gc).
 fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
-  let parts : Array[String] = []
-  for k in ["story", "focus", "filter"] {
-    let v = match m.get(k) {
-      Some(Str(s)) => s
+  let g = @core.global_this()
+  let cur = parse_query(g._get("location")._get("search").to_string())
+  for k, v in m {
+    let s = match v {
+      Str(x) => x
       _ => ""
     }
-    if v != "" {
-      parts.push("\{k}=\{uri_encode(v)}")
+    if s == "" {
+      cur.remove(k)
+    } else {
+      cur[k] = s
     }
   }
-  let g = @core.global_this()
+  let parts : Array[String] = []
+  for k, v in cur {
+    parts.push("\{uri_encode(k)}=\{uri_encode(v)}")
+  }
   let path = g._get("location")._get("pathname").to_string()
   let url = if parts.is_empty() { path } else { path + "?" + parts.join("&") }
   let verb = if push { "pushState" } else { "replaceState" }
