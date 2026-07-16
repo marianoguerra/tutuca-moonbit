@@ -280,7 +280,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
 
 ///|
 pub fn json_module() -> @component.ModuleDef {
-  let reg = JsonReg::{ comps: Map::new() }
+  let reg = JsonReg::{ comps: Map([]) }
   let null = json_null_comp()
   let bool_ = json_bool_comp()
   let string = json_string_comp()
@@ -304,14 +304,14 @@ pub fn json_module() -> @component.ModuleDef {
       {
         component: "JsonArray",
         title: "Empty Array With Selector",
-        args: { "items": List([selector.make(Map::new()).to_value()]) },
+        args: { "items": List([selector.make(Map([])).to_value()]) },
         view: None,
       },
-      { component: "JsonObject", title: "Object", args: Map::new(), view: None },
+      { component: "JsonObject", title: "Object", args: Map([]), view: None },
       {
         component: "JsonSelector",
         title: "Type Selector",
-        args: Map::new(),
+        args: Map([]),
         view: None,
       },
       {

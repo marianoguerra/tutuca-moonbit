@@ -13,7 +13,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="greeter", components=[greeter],
-    examples=[{ component: "Greeter", title: "Default", args: Map::new(), view: None }],
+    examples=[{ component: "Greeter", title: "Default", args: Map([]), view: None }],
   )
 }
 

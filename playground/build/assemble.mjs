@@ -67,7 +67,16 @@ function assembleTarget(t, demoPkg) {
   const fsdir = join(OUT, "fs", t);
   const std = walk(bundleDir(t), ".mi");
   for (const [rel, abs] of std) { const d = join(fsdir, "std", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
-  const lib = walk(buildDir(t), ".mi").filter(([r]) => !/_test|\/test\//.test(r) && !r.includes("/demo/"));
+  // The value+path core lives in the `core/` package (marianoguerra/tutuca/core),
+  // but user code imports it as @tutuca (the alias the library's own moon.pkg
+  // files use). buildPackage derives a direct import's alias from the last path
+  // segment of its .mi name, so expose core's .mi as `tutuca.mi` (-> @tutuca) and
+  // drop the now-empty module-root package's own tutuca.mi. Mirrors the
+  // `-i core/core.mi:tutuca` that moon emits for every core importer.
+  const lib = walk(buildDir(t), ".mi")
+    .filter(([r]) => !/_test|\/test\//.test(r) && !r.includes("/demo/"))
+    .filter(([r]) => r !== "tutuca.mi")
+    .map(([r, abs]) => (r === "core/core.mi" ? ["tutuca.mi", abs] : [r, abs]));
   for (const [rel, abs] of lib) { const d = join(fsdir, "lib", rel); mkdirSync(dirname(d), { recursive: true }); cpSync(abs, d); }
   const closure = linkClosure(t, demoPkg);
   const coreRel = [];

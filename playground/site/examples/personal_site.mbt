@@ -414,8 +414,8 @@ fn root_comp() -> @component.Component {
       "allEntries": @component.FieldSpec::of_default(List([])),
       "allCategories": @component.FieldSpec::of_default(List([])),
       "allRoles": @component.FieldSpec::of_default(List([])),
-      "selectedCategories": @component.FieldSpec::of_default(Map(Map::new())),
-      "selectedRoles": @component.FieldSpec::of_default(Map(Map::new())),
+      "selectedCategories": @component.FieldSpec::of_default(Map(Map([]))),
+      "selectedRoles": @component.FieldSpec::of_default(Map(Map([]))),
       "featuredFirst": @component.FieldSpec::of_default(Bool(true)),
       "sortByEnd": @component.FieldSpec::of_default(Bool(false)),
       "sortAsc": @component.FieldSpec::of_default(Bool(false)),
@@ -706,7 +706,7 @@ pub fn personal_site_module() -> @component.ModuleDef {
     components=[root, entry, alt_url],
     requests~,
     examples=[
-      { component: "Root", title: "Default (Loading)", args: Map::new(), view: None },
+      { component: "Root", title: "Default (Loading)", args: Map([]), view: None },
       {
         component: "AltUrl",
         title: "Alt URL",

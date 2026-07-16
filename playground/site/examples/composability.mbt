@@ -70,7 +70,7 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
           List(a) => a.copy()
           _ => []
         }
-        items.push(item.make(Map::new()).to_value())
+        items.push(item.make(Map([])).to_value())
         Some(inst.set("items", List(items)))
       },
     },
@@ -233,7 +233,7 @@ fn composability_module() -> @component.ModuleDef {
       tree_item,
     ],
     examples=[
-      { component: "Composability", title: "Default", args: Map::new(), view: None },
+      { component: "Composability", title: "Default", args: Map([]), view: None },
     ],
   )
 }

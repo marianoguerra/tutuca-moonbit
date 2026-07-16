@@ -25,7 +25,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
-    examples=[{ component: "Counter", title: "Basic", args: Map::new(), view: None }],
+    examples=[{ component: "Counter", title: "Basic", args: Map([]), view: None }],
   )
 }
 

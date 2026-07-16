@@ -143,7 +143,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
           _ => ""
         }
         match reg.get(type_comp_name(id)) {
-          Some(c) => Some(c.make(Map::new()))
+          Some(c) => Some(c.make(Map([])))
           None => Some(inst)
         }
       },
@@ -692,7 +692,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         match vw_id_to_name().get(id) {
           Some(cname) =>
             match reg.get(cname) {
-              Some(c) => Some(vw_instance_with_editing(c.make(Map::new())))
+              Some(c) => Some(vw_instance_with_editing(c.make(Map([]))))
               None => Some(inst)
             }
           None => Some(inst)
@@ -746,7 +746,7 @@ fn cap(s : String) -> String {
 fn vw_macros() -> Map[String, @anode.Macro] {
   {
     "btn-toggle-expand": {
-      defaults: Map::new(),
+      defaults: Map([]),
       raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\"$toggleExpanded\">" +
       "<span @show=\".expanded\">▽</span><span @hide=\".expanded\">▷</span></button>",
     },
@@ -778,7 +778,7 @@ fn vw_macros() -> Map[String, @anode.Macro] {
 
 ///|
 pub fn visual_wasm_module() -> @component.ModuleDef {
-  let reg = VwReg::{ comps: Map::new() }
+  let reg = VwReg::{ comps: Map([]) }
   let comps : Array[@component.Component] = []
   fn add(c : @component.Component) -> @component.Component {
     reg.comps[c.name] = c
@@ -814,11 +814,11 @@ pub fn visual_wasm_module() -> @component.ModuleDef {
     components=comps,
     macros=vw_macros(),
     examples=[
-      { component: "Module", title: "Empty Module", args: Map::new(), view: None },
+      { component: "Module", title: "Empty Module", args: Map([]), view: None },
       {
         component: "InstructionPicker",
         title: "Instruction Picker",
-        args: Map::new(),
+        args: Map([]),
         view: None,
       },
     ],
