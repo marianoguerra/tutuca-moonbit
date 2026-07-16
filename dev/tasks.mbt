@@ -50,24 +50,10 @@ fn moon(label : String, args : Array[String]) -> Command {
 const COUNTER_JS = "_build/js/debug/build/demo/counter/counter.js"
 
 ///|
-const EXAMPLES_JS = "_build/js/debug/build/demo/examples/examples.js"
-
-///|
 const COUNTER_WASM = "_build/wasm-gc/debug/build/demo/counter_wasm/counter_wasm.wasm"
 
 ///|
-const EXAMPLES_WASM = "_build/wasm-gc/debug/build/demo/examples_wasm/examples_wasm.wasm"
-
-///|
 const STORYBOOK_WASM = "_build/wasm-gc/debug/build/demo/storybook_wasm/storybook_wasm.wasm"
-
-///|
-/// The js `<script src>` in demo/examples/index.html, replaced with the wasm
-/// module loader for the examples-wasm dist page.
-const EXAMPLES_JS_SCRIPT = "<script src=\"../../_build/js/debug/build/demo/examples/examples.js\"></script>"
-
-///|
-const EXAMPLES_WASM_SCRIPT = "<script type=\"module\">import { loadWasm, applyMargaui } from \"./loader.mjs\"; const e = await loadWasm(\"./examples_wasm.wasm\"); e.mount(); await applyMargaui();</script>"
 
 ///|
 // moon names the native executable `.exe` on every OS, including Linux.
@@ -209,12 +195,9 @@ fn dist_steps() -> Array[Step] {
   steps.push(Mkdir(DIST))
   steps.push(Mkdir("\{DIST}/counter"))
   steps.push(Mkdir("\{DIST}/counter-wasm"))
-  steps.push(Mkdir("\{DIST}/examples"))
-  steps.push(Mkdir("\{DIST}/examples-wasm"))
   steps.push(Mkdir("\{DIST}/storybook"))
   steps.push(Mkdir("\{DIST}/cli"))
   steps.push(Copy(from=COUNTER_JS, to="\{DIST}/counter/counter.js"))
-  steps.push(Copy(from=EXAMPLES_JS, to="\{DIST}/examples/examples.js"))
   steps.push(Copy(from=NATIVE_BIN, to="\{DIST}/cli/tutuca"))
   // wasm counter: the .wasm plus its loader + host page. index.html already
   // loads ./loader.mjs and ./counter_wasm.wasm relative to its folder, so the
@@ -232,25 +215,6 @@ fn dist_steps() -> Array[Step] {
     Copy(
       from="demo/counter_wasm/index.html",
       to="\{DIST}/counter-wasm/index.html",
-    ),
-  )
-  // examples-wasm: the .wasm + the shared loader; the page reuses the styled
-  // demo/examples/index.html with its <script src> swapped for the wasm loader.
-  steps.push(
-    Copy(from=EXAMPLES_WASM, to="\{DIST}/examples-wasm/examples_wasm.wasm"),
-  )
-  steps.push(
-    Copy(
-      from="demo/counter_wasm/loader.mjs",
-      to="\{DIST}/examples-wasm/loader.mjs",
-    ),
-  )
-  steps.push(
-    WriteRewritten(
-      from="demo/examples/index.html",
-      to="\{DIST}/examples-wasm/index.html",
-      old_src=EXAMPLES_JS_SCRIPT,
-      new_src=EXAMPLES_WASM_SCRIPT,
     ),
   )
   // storybook: the gallery host page loads ./loader.mjs and ./storybook_wasm.wasm
@@ -274,14 +238,6 @@ fn dist_steps() -> Array[Step] {
       to="\{DIST}/counter/index.html",
       old_src="../../" + COUNTER_JS,
       new_src="./counter.js",
-    ),
-  )
-  steps.push(
-    WriteRewritten(
-      from="demo/examples/index.html",
-      to="\{DIST}/examples/index.html",
-      old_src="../../" + EXAMPLES_JS,
-      new_src="./examples.js",
     ),
   )
   // The in-browser playground compiler payload (assemble.mjs), reused by the

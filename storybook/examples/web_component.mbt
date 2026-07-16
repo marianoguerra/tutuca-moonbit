@@ -18,7 +18,7 @@ fn emoji_picker_comp() -> @component.Component {
       #|  </p>
       #|  <p class="label" @show="truthy? .current">Selected emoji:</p>
       #|  <span class="current text-9xl" @show="truthy? .current" @text=".current"></span>
-      #|  <button class="btn btn-sm toggle" @on.click="$toggleIsPickerVisible">
+      #|  <button class="btn btn-sm toggle-btn" @on.click="$toggleIsPickerVisible">
       #|    Toggle Picker
       #|  </button>
       #|  <emoji-picker @show=".isPickerVisible"></emoji-picker>

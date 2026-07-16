@@ -2,12 +2,12 @@
 test "push-view: one field flips EVERY nested Entry to its edit view" {
   let h = @harness.mount_example(push_view_module(), "Read Only")
   // main view: read-only cards, and no Entry edit inputs anywhere
-  inspect(h.text(".toggle"), content="Set Edit Mode")
+  inspect(h.text(".toggle-btn"), content="Set Edit Mode")
   inspect(h.find_all(".card-title").length(), content="14")
   inspect(h.find_all("input.title").length(), content="0")
-  h.click(".toggle")
+  h.click(".toggle-btn")
   // edit view: every Entry now renders its `edit` view — two inputs each
-  inspect(h.text(".toggle"), content="Set Read Only")
+  inspect(h.text(".toggle-btn"), content="Set Read Only")
   inspect(h.find_all(".card-title").length(), content="0")
   inspect(h.find_all("input.title").length(), content="14")
 }

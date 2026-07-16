@@ -1,9 +1,10 @@
 // The registry of ported examples: name -> (ModuleDef, root component).
 //
 // One list, consumed by three things:
-//   - the browser host  (demo/examples) — mounts one by ?name=
-//   - the headless tests (*_test.mbt)   — mount and drive them
-//   - the CLI           (plan_with_module) — `render` / `lint` / `show`
+//   - the storybook gallery (storybook/ + storybook/ui) — grouped into sections
+//     and mounted as one live app (demo/storybook_wasm)
+//   - the headless tests    (*_test.mbt) — mount and drive them
+//   - the CLI               (plan_with_module) — `render` / `lint` / `show`
 //
 // Names match the JS file they were ported from (docs/examples/<name>.js).
 
@@ -153,16 +154,6 @@ fn ex(
   init? : Bool = false,
 ) -> ExampleModule {
   { name, root, module_, example_title: title, init }
-}
-
-///|
-pub fn find_example(name : String) -> ExampleModule? {
-  for e in all_examples() {
-    if e.name == name {
-      return Some(e)
-    }
-  }
-  None
 }
 
 ///|

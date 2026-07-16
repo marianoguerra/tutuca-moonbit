@@ -37,7 +37,7 @@ fn push_view_comp() -> @component.Component {
       #|    <input type="search" class="input" :value=".query"
       #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
       #|      placeholder="Filter entries" />
-      #|    <button class="btn bnt-sm btn-primary toggle" @text="$getToggleLabel" @on.click="$toggleView"></button>
+      #|    <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="$toggleView"></button>
       #|  </div>
       #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @push-view=".view">
       #|    <x render-each=".items" @when="filterItem"></x>

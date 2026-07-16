@@ -1,6 +1,6 @@
 // The margaui pipeline's MB half, end-to-end: mount a real example (compiled
 // views, macros expanded) and collect the class set exactly like
-// demo/examples/main.mbt does before handing it to margaui's compiler.
+// demo/storybook_wasm/main.mbt does before handing it to margaui's compiler.
 
 ///|
 fn collected_classes(h : @harness.Harness) -> Set[String] {

@@ -4,8 +4,9 @@
 // getRequestHandlers / getExamples exports.
 //
 // Target-agnostic on purpose: the modules are plain values, so the same
-// definition drives the headless tests here, the browser host (demo/examples)
-// and the CLI (`tutuca render` / `tutuca lint` via plan_with_module).
+// definition drives the headless tests here, the storybook gallery
+// (../ + ../ui, hosted by demo/storybook_wasm) and the CLI (`tutuca render` /
+// `tutuca lint` via plan_with_module).
 import {
   "marianoguerra/tutuca",
   "marianoguerra/tutuca/anode",

@@ -9,7 +9,7 @@
 import {
   "marianoguerra/tutuca",
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/examples" @ex,
+  "marianoguerra/tutuca/storybook/examples" @ex,
 }
 
 import {

@@ -1,9 +1,13 @@
-# examples
+# storybook/examples
 
 MoonBit ports of the JS docs examples (`docs/examples/*.js` in the tutuca
 repo), one file per topic. Each exports a `<name>_module() -> ModuleDef` — the
 analogue of the JS module's `getComponents` / `getMacros` /
 `getRequestHandlers` / `getExamples` exports.
+
+These modules are the story set for the storybook gallery: the parent
+`storybook/` package groups them into sections and `storybook/ui` mounts the
+whole registry as one live gallery app.
 
 One `ModuleDef` value drives three things, so a passing test and a working page
 are the same artifact:
@@ -11,15 +15,17 @@ are the same artifact:
 - the **headless tests** here (`*_test.mbt`) — mount the module as a live app on
   the in-memory DOM, dispatch real click/input/keydown/drag events through the
   transactor, and assert the resulting DOM;
-- the **browser host** (`demo/examples`) — mounts one by `?name=`;
+- the **storybook gallery** (`storybook/` + `storybook/ui`, hosted by
+  `demo/storybook_wasm`) — grouped into sections and mounted as one app;
 - the **CLI** (`cli.plan_with_module`) — `render`, `lint`, `show`.
 
 ## Running them
 
 ```sh
-moon test examples                     # the headless suite
-moon build --target js                 # then serve the REPO ROOT:
-python3 -m http.server 8901            # http://localhost:8901/demo/examples/
+moon test storybook/examples           # the headless suite
+# the whole gallery, compiled to wasm and served:
+moon run --target native cmd/dev -- dist
+./dist/cli/tutuca storybook            # or serve dist/ and open /storybook/
 ```
 
 ## Porting rules (how a JS example becomes a MoonBit one)

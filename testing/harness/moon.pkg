@@ -16,5 +16,5 @@ import {
 
 // Demo/verification test drives a real example module end to end.
 import {
-  "marianoguerra/tutuca/examples",
+  "marianoguerra/tutuca/storybook/examples",
 } for "test"

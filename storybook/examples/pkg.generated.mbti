@@ -1,5 +1,5 @@
 // Generated using `moon info`, DON'T EDIT IT
-package "marianoguerra/tutuca/examples"
+package "marianoguerra/tutuca/storybook/examples"
 
 import {
   "marianoguerra/tutuca",
@@ -38,8 +38,6 @@ pub fn failing_request_handlers() -> Map[String, @component.RequestFn]
 pub fn file_picker_module() -> @component.ModuleDef
 
 pub fn filter_paginate_module() -> @component.ModuleDef
-
-pub fn find_example(String) -> ExampleModule?
 
 pub fn items() -> Array[@tutuca.Value]
 

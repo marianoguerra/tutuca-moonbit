@@ -137,9 +137,9 @@ test "web-component: the custom event's detail selects the emoji" {
 test "web-component: toggle shows and hides the picker element" {
   let h = @harness.mount_example(web_component_module(), "Default")
   inspect(h.find_all("emoji-picker").length(), content="0")
-  h.click(".toggle")
+  h.click(".toggle-btn")
   inspect(h.find_all("emoji-picker").length(), content="1")
-  h.click(".toggle")
+  h.click(".toggle-btn")
   inspect(h.find_all("emoji-picker").length(), content="0")
 }
 

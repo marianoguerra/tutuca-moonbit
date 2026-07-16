@@ -165,7 +165,7 @@ fn show_hide_comp() -> @component.Component {
     name="ShowHide",
     view=(
       #|<section class="flex flex-col gap-2">
-      #|  <button class="btn btn-primary toggle" @on.click="$toggleIsOpen" @text="$label"></button>
+      #|  <button class="btn btn-primary toggle-btn" @on.click="$toggleIsOpen" @text="$label"></button>
       #|  <div class="card p-3 border details" @show=".isOpen">
       #|    <p>Details panel &mdash; only visible when <code>isOpen</code> is true.</p>
       #|    <button class="btn btn-sm bump" @on.click="$incCount">Click me</button>

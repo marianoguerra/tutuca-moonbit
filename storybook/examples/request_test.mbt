@@ -60,7 +60,7 @@ test "request-example: loaded items filter and switch views like any others" {
   )
   h.type_into("input", "")
   // @push-view=".view" flips every loaded Entry into its edit view at once
-  h.click(".toggle")
+  h.click(".toggle-btn")
   inspect(h.find_all("input.title").length(), content="3")
   inspect(h.find_all(".card-title").length(), content="0")
 }

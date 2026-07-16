@@ -29,7 +29,7 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
       #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
       #|      placeholder="Filter entries" />
       #|    <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
-      #|    <button class="btn bnt-sm btn-primary toggle" @text=".view" @on.click="$toggleView"></button>
+      #|    <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="$toggleView"></button>
       #|  </div>
       #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @hide=".isLoading" @push-view=".view">
       #|    <x render-each=".items" @when="filterItem"></x>

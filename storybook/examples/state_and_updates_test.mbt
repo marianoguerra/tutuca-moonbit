@@ -104,7 +104,7 @@ test "event-modifiers: +send fires only on Enter, +cancel only on Escape" {
 ///|
 test "show-hide: @show / @hide add and remove the node" {
   let h = @harness.mount(show_hide_module(), "ShowHide")
-  inspect(h.text(".toggle"), content="Show details")
+  inspect(h.text(".toggle-btn"), content="Show details")
   inspect(h.find_all(".details").length(), content="0")
   inspect(h.text(".hint"), content="(details are hidden)")
   // <x text=".count" @show=".isOpen"> — the @show on a render op emits no DOM
@@ -114,8 +114,8 @@ test "show-hide: @show / @hide add and remove the node" {
       #|Count, only when open:
     ),
   )
-  h.click(".toggle")
-  inspect(h.text(".toggle"), content="Hide details")
+  h.click(".toggle-btn")
+  inspect(h.text(".toggle-btn"), content="Hide details")
   inspect(h.find_all(".details").length(), content="1")
   inspect(h.find_all(".hint").length(), content="0")
   inspect(h.text(".peek"), content="Count, only when open: 0")
