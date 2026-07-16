@@ -1,0 +1,169 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/component"
+
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn component(name~ : String, view~ : String, style? : String, common_style? : String, global_style? : String, views? : Map[String, String], view_styles? : Map[String, String], fields? : Map[String, FieldSpec], input? : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?], receive? : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?], bubble? : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?], response? : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?], alter? : Map[String, (Instance, Array[@tutuca.Value]) -> @tutuca.Value], methods? : Map[String, (Instance, Array[@tutuca.Value]) -> @tutuca.Value], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
+
+pub fn resolve_dyn_producer(Component, String) -> DynProducer?
+
+// Errors
+
+// Types and methods
+pub struct Component {
+  id : Int
+  name : String
+  views : Map[String, @anode.View]
+  common_style : String
+  global_style : String
+  fields : Map[String, FieldSpec]
+  input : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?]
+  receive : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?]
+  bubble : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?]
+  response : Map[String, (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?]
+  alter : Map[String, (Instance, Array[@tutuca.Value]) -> @tutuca.Value]
+  methods : Map[String, (Instance, Array[@tutuca.Value]) -> @tutuca.Value]
+  raw_provide : Map[String, String]
+  raw_lookup : Map[String, LookupSpec]
+  provide : Map[String, ProvideInfo]
+  lookup : Map[String, LookupInfo]
+  mut scope : ComponentStack?
+}
+pub fn Component::compile(Self) -> Unit raise
+pub fn Component::compile_style(Self) -> String
+pub fn Component::for_type(name~ : String, view~ : String, style? : String, views? : Map[String, String], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Self
+pub fn Component::get_view(Self, String?) -> @anode.View?
+pub fn Component::make(Self, Map[String, @tutuca.Value]) -> Instance
+
+pub struct ComponentStack {
+  comps : Components
+  parent : ComponentStack?
+  by_name : Map[String, Component]
+  reqs : Map[String, RequestFn]
+  macros : Map[String, @anode.Macro]
+}
+pub fn ComponentStack::compile_all(Self) -> Unit raise
+pub fn ComponentStack::enter(Self) -> Self
+pub fn ComponentStack::lookup_component(Self, String) -> Component?
+pub fn ComponentStack::lookup_request(Self, String) -> RequestFn?
+pub fn ComponentStack::new(comps? : Components) -> Self
+pub fn ComponentStack::register_components(Self, Array[Component], aliases? : Map[String, String]) -> Unit
+pub fn ComponentStack::register_macros(Self, Map[String, @anode.Macro]) -> Unit
+pub fn ComponentStack::register_request_handlers(Self, Map[String, RequestFn]) -> Unit
+pub impl @anode.MacroScope for ComponentStack
+
+pub struct Components {
+  by_id : Map[Int, Component]
+}
+pub fn Components::collect_classes(Self) -> Array[String]
+pub fn Components::compile_styles(Self) -> String
+pub fn Components::get_comp_for(Self, @tutuca.Value) -> Component?
+pub fn Components::get_component_for_id(Self, Int) -> Component?
+pub fn Components::new() -> Self
+pub fn Components::register(Self, Component) -> Unit
+
+pub(all) struct DynBinds {
+  binds : Map[ProvideKey, @tutuca.Value]
+  parent : DynBinds?
+}
+pub fn DynBinds::lookup(Self, ProvideKey) -> @tutuca.Value?
+
+pub(all) struct DynProducer {
+  producer : Int
+  steps : Array[@tutuca.Step]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ExampleDef {
+  component : String
+  title : String
+  args : Map[String, @tutuca.Value]
+  view : String?
+}
+
+pub(all) enum FieldKind {
+  FBool
+  FText
+  FInt
+  FFloat
+  FList
+  FMap
+  FAny
+  FComp(comp~ : String, args~ : Map[String, @tutuca.Value])
+  FSet
+  FOMap
+} derive(@debug.Debug)
+
+pub(all) struct FieldSpec {
+  kind : FieldKind
+  default : @tutuca.Value
+} derive(@debug.Debug)
+pub fn FieldSpec::coerce_or_default(Self, @tutuca.Value) -> @tutuca.Value
+pub fn FieldSpec::comp(String, args? : Map[String, @tutuca.Value]) -> Self
+pub fn FieldSpec::of_default(@tutuca.Value) -> Self
+pub fn FieldSpec::omap(default? : Map[String, @tutuca.Value]) -> Self
+pub fn FieldSpec::set(members? : Array[String]) -> Self
+
+pub struct Instance {
+  comp : Component
+  fields : Map[String, @tutuca.Value]
+}
+pub fn Instance::get(Self, String) -> @tutuca.Value
+pub fn Instance::set(Self, String, @tutuca.Value) -> Self
+pub fn Instance::to_value(Self) -> @tutuca.Value
+pub impl @tutuca.Obj for Instance
+
+pub(all) struct LookupInfo {
+  name : String
+  comp_name : String
+  provide_name : String
+  default_val : @tutuca.Val?
+  mut producer_key : ProducerKeyMemo
+} derive(@debug.Debug)
+pub fn LookupInfo::resolve_producer_key(Self, ComponentStack?) -> ProvideKey?
+
+pub(all) struct LookupSpec {
+  source : String
+  default : String?
+} derive(@debug.Debug)
+
+pub(all) struct ModuleDef {
+  name : String
+  components : Array[Component]
+  macros : Map[String, @anode.Macro]
+  requests : Map[String, RequestFn]
+  examples : Array[ExampleDef]
+}
+pub fn ModuleDef::build_scope(Self) -> ComponentStack raise
+pub fn ModuleDef::new(name~ : String, components~ : Array[Component], macros? : Map[String, @anode.Macro], requests? : Map[String, RequestFn], examples? : Array[ExampleDef]) -> Self
+pub fn ModuleDef::register_into(Self, ComponentStack) -> Unit
+
+pub(all) enum ProducerKeyMemo {
+  Pending
+  Done(ProvideKey?)
+} derive(@debug.Debug)
+
+pub(all) struct ProvideInfo {
+  name : String
+  val : @tutuca.Val
+  key : ProvideKey
+} derive(@debug.Debug)
+
+pub(all) struct ProvideKey {
+  comp : Int
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+
+pub(all) struct RequestFn((Array[@tutuca.Value], (Result[@tutuca.Value, @tutuca.Value]) -> Unit) -> Unit)
+
+// Type aliases
+pub type InstanceHandler = (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?
+
+pub type MethodFn = (Instance, Array[@tutuca.Value]) -> @tutuca.Value
+
+// Traits
+

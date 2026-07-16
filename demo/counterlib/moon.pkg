@@ -1,0 +1,7 @@
+// The demo module (target-agnostic): the Counter component + its ModuleDef.
+// One module value drives BOTH the browser app (demo/counter) and the
+// embedded CLI (demo/counter_cli).
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+}

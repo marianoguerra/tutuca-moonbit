@@ -1,0 +1,92 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tutuca-mb playground</title>
+    <style>
+      * { box-sizing: border-box; }
+      /* let the UA theme canvas, text, form controls and scrollbars for us */
+      html { color-scheme: light dark; }
+      html, body { margin: 0; height: 100%; }
+      body {
+        font-family: system-ui, sans-serif;
+        display: grid;
+        grid-template-rows: auto 1fr;
+        height: 100vh;
+      }
+      header {
+        padding: 0.5rem 1rem;
+        border-bottom: 1px solid #ddd;
+        display: flex;
+        align-items: center;
+        gap: 1rem;
+      }
+      header h1 { font-size: 1rem; margin: 0; font-family: ui-monospace, monospace; }
+      #run { padding: 0.3rem 0.9rem; font-size: 0.85rem; cursor: pointer; }
+      #status { font-size: 0.8rem; }
+      #status.busy { color: #b58900; }
+      #status.ok { color: #2a7; }
+      #status.error { color: #c33; }
+      main {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        min-height: 0;
+      }
+      .pane { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid #ddd; }
+      #editor { flex: 1; min-height: 0; overflow: hidden; }
+      #editor .cm-editor { height: 100%; }
+      #diagnostics {
+        max-height: 30%;
+        overflow: auto;
+        border-top: 1px solid #ddd;
+        padding: 0.5rem 0.75rem;
+        font-family: ui-monospace, monospace;
+        font-size: 12px;
+        white-space: pre-wrap;
+        color: #c33;
+      }
+      .right { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
+      #preview { overflow: auto; }
+      #preview iframe { width: 100%; height: 100%; border: 0; }
+      .inspector { border-top: 1px solid #ddd; max-height: 45%; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; }
+      .inspector section { padding: 0.5rem 0.75rem; border-right: 1px solid #eee; }
+      .inspector h2 { font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin: 0 0 0.35rem; }
+      .inspector pre { margin: 0; font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
+      /* dark mode: the UA handles bg/text/controls; recolour the hardcoded
+         light borders and accents so the chrome stays coherent with the editor. */
+      @media (prefers-color-scheme: dark) {
+        header { border-bottom-color: #30363d; }
+        .pane { border-right-color: #30363d; }
+        #diagnostics { border-top-color: #30363d; color: #ff7b72; }
+        #preview { background: #0d1117; }
+        .inspector { border-top-color: #30363d; }
+        .inspector section { border-right-color: #21262d; }
+      }
+    </style>
+  </head>
+  <body>
+    <header>
+      <h1>tutuca-mb</h1>
+      <button id="run">Run ▶</button>
+      <select id="examples" title="Load an example"></select>
+      <span id="status"></span>
+    </header>
+    <main>
+      <div class="pane">
+        <div id="editor"></div>
+        <div id="diagnostics"></div>
+      </div>
+      <div class="pane right" style="border-right: 0">
+        <div id="preview"></div>
+        <div class="inspector">
+          <section><h2>State</h2><pre id="state"></pre></section>
+          <section style="border-right: 0"><h2>Activity</h2><pre id="activity"></pre></section>
+        </div>
+      </div>
+    </main>
+    <!-- starter module — authored in MoonBit, compiled in your browser -->
+    <script src="./starter.js"></script>
+    <script type="module" src="./driver.js"></script>
+  </body>
+</html>

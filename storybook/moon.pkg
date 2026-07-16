@@ -1,0 +1,17 @@
+// Storybook — pure model + registry half (the structured-data layer, kept
+// free of app/vdom so the CLI can import it for `--dry-run` without pulling in
+// the runtime). The interactive gallery lives in `storybook/ui`.
+//
+// A "story" is a compiled example: the MoonBit port has no runtime *.dev.js
+// discovery (it compiles AOT and the native CLI can't load user code), so the
+// story set is the already-compiled example registry (examples/), grouped into
+// labelled sections here.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/examples" @ex,
+}
+
+import {
+  "moonbitlang/core/json",
+} for "test"

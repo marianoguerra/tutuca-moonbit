@@ -1,0 +1,59 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/inspector"
+
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/transactor",
+}
+
+// Values
+pub fn component_summary(@component.Component) -> @tutuca.Value
+
+pub fn deep_expand(@tutuca.Value) -> @tutuca.Value
+
+pub fn finding_value(String, String, String, String, suggestion? : String) -> @tutuca.Value
+
+pub fn get_components() -> Array[@component.Component]
+
+pub fn inspector_module() -> @component.ModuleDef
+
+pub fn instance_snapshot(@component.Instance) -> @tutuca.Value
+
+pub fn path_keys_label(Array[@tutuca.StepKey]) -> String
+
+// Errors
+
+// Types and methods
+pub struct Inspector {
+  comps : Map[String, @component.Component]
+}
+pub fn Inspector::build_inspector_views(Self, @tutuca.Value, comps? : @component.Components, lint_findings? : Array[@tutuca.Value]) -> InspectorViews
+pub fn Inspector::classify(Self, @tutuca.Value) -> @tutuca.Value
+pub fn Inspector::classify_schema(Self, @tutuca.Value) -> @tutuca.Value
+pub fn Inspector::component_view(Self, @tutuca.Value) -> @tutuca.Value
+pub fn Inspector::components(Self) -> Array[@component.Component]
+pub fn Inspector::explore_instance(Self, @component.Instance, lint_findings? : Array[@tutuca.Value]) -> @tutuca.Value
+pub fn Inspector::inspect_component(Self, @component.Component) -> @tutuca.Value
+pub fn Inspector::inspect_instance(Self, @component.Instance) -> @tutuca.Value
+pub fn Inspector::inspect_value(Self, @tutuca.Value) -> @tutuca.Value
+pub fn Inspector::inspect_value_as_instance(Self, @tutuca.Value, @component.Component?) -> @tutuca.Value
+pub fn Inspector::lint_report(Self, Array[@tutuca.Value], title? : String, path? : String) -> @tutuca.Value
+pub fn Inspector::make_inspect(Self, @component.Components) -> (@tutuca.Value) -> @tutuca.Value
+pub fn Inspector::module_(Self) -> @component.ModuleDef
+pub fn Inspector::new() -> Self
+pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@tutuca.Value) -> @tutuca.Value, path_label? : String, time? : String) -> @tutuca.Value
+pub fn Inspector::schema_view(Self, @tutuca.Value) -> @tutuca.Value
+
+pub struct InspectorViews {
+  instance_view : @tutuca.Value
+  component_view : @tutuca.Value
+  lint_view : @tutuca.Value
+  has_component : Bool
+  has_lint : Bool
+}
+
+// Type aliases
+
+// Traits
+

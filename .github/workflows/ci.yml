@@ -1,0 +1,38 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+jobs:
+  check-and-test:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v5
+
+      - name: Set up Node (happy-dom for js-target tests)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+
+      - name: Set up MoonBit
+        run: |
+          curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
+
+      - name: Update MoonBit dependencies
+        run: |
+          moon version --all
+          moon update
+
+      - name: Install npm dev dependencies
+        run: npm install
+
+      # `ci` runs `check` then `test` across all three targets
+      # (wasm-gc, js/happy-dom, native) — the single source of truth lives in
+      # dev/tasks.mbt. See AGENTS.md "Targets".
+      - name: Check + test (all targets)
+        run: moon run --target native cmd/dev -- ci

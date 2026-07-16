@@ -1,0 +1,11 @@
+// wasm-gc DOM adapter: implements the vdom DomNode/DomWalk traits over the real
+// browser DOM, reached from wasm-gc through mizchi/js's @core.Any (backed by the
+// `jscore` import namespace) plus a small `tdom` FFI for the typed reads @core
+// can't express on wasm-gc. The js-backend equivalent is vdom/browser; this is
+// its wasm twin. Build/validate: moon check --target wasm-gc vdom/wasm
+import {
+  "marianoguerra/tutuca/vdom",
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"

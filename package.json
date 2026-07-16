@@ -1,0 +1,8 @@
+{
+  "name": "tutuca-mb-dev",
+  "private": true,
+  "description": "Dev dependencies for tutuca-mb js-target tests (moon test --target js needs happy-dom).",
+  "devDependencies": {
+    "happy-dom": "^20.10.6"
+  }
+}

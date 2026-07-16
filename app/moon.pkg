@@ -1,0 +1,12 @@
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/vdom",
+}
+
+import {
+  "marianoguerra/tutuca/vdom/memdom",
+} for "test"

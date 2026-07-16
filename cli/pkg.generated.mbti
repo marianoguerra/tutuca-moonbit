@@ -1,0 +1,193 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/cli"
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/lint",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub const CODE_FORMAT_UNKNOWN : String = "ERR_FORMAT_UNKNOWN"
+
+pub const CODE_FORMAT_UNSUPPORTED : String = "ERR_FORMAT_UNSUPPORTED"
+
+pub const CODE_INTERNAL : String = "ERR_INTERNAL"
+
+pub const CODE_MODULE_LOAD_FAILED : String = "ERR_MODULE_LOAD_FAILED"
+
+pub const CODE_MODULE_SHAPE_MISMATCH : String = "EXAMPLES_SHAPE_MISMATCH"
+
+pub const CODE_SKILL_ASSETS_MISSING : String = "ERR_SKILL_ASSETS_MISSING"
+
+pub const CODE_SKILL_TARGET_EXISTS : String = "ERR_SKILL_TARGET_EXISTS"
+
+pub const CODE_USAGE_BAD_FLAG_VALUE : String = "ERR_USAGE_BAD_FLAG_VALUE"
+
+pub const CODE_USAGE_MISSING_ARGUMENT : String = "ERR_USAGE_MISSING_ARGUMENT"
+
+pub const CODE_USAGE_MISSING_MODULE : String = "ERR_USAGE_MISSING_MODULE"
+
+pub const CODE_USAGE_MUTUALLY_EXCLUSIVE : String = "ERR_USAGE_MUTUALLY_EXCLUSIVE"
+
+pub const CODE_USAGE_UNKNOWN_COMMAND : String = "ERR_USAGE_UNKNOWN_COMMAND"
+
+pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
+
+pub const VERSION : String = "0.1.0"
+
+pub fn agent_context_text() -> String
+
+pub fn check_component(@component.Component) -> Array[LintFinding]
+
+pub fn command_names() -> Array[String]
+
+pub let commands : Array[CommandSpec]
+
+pub fn did_you_mean(String, Array[String]) -> @lint.Suggestion?
+
+pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
+
+pub let error_codes : Array[String]
+
+pub fn error_emit(GlobalOpts, ErrShape) -> Emit
+
+pub fn extract_globals(Array[String]) -> Result[(GlobalOpts, Array[String]), (GlobalOpts, ErrShape)]
+
+pub fn feedback_missing_message(GlobalOpts) -> Emit
+
+pub fn feedback_paths(String) -> (String, String)
+
+pub fn feedback_record_line(String, String, String) -> String
+
+pub fn feedback_success_line(String) -> String
+
+pub fn find_command(String) -> CommandSpec?
+
+pub fn finding_message(@lint.Finding) -> String
+
+pub let format_names : Array[String]
+
+pub let global_flag_names : Array[String]
+
+pub fn install_skill_success(String) -> String
+
+pub fn install_skill_target_exists(GlobalOpts, String) -> Emit
+
+pub fn iso8601_utc(UInt64) -> String
+
+pub fn lint_code_name(@lint.LintCode) -> String
+
+pub let lint_rules : Array[LintRule]
+
+pub fn overview() -> String
+
+pub fn plan(Array[String]) -> Outcome
+
+pub fn plan_with_module(Array[String], @component.ModuleDef?) -> Outcome
+
+pub fn render_error(GlobalOpts, ErrShape) -> String
+
+pub fn run_feedback(Array[String], GlobalOpts) -> Outcome
+
+pub fn run_help(String?, GlobalOpts) -> Emit
+
+pub fn run_install_skill(Array[String], GlobalOpts) -> Outcome
+
+pub let skill_files : Array[(String, String)]
+
+pub fn stub(String, Array[String]) -> Emit
+
+pub fn suggestion_to_message(@lint.Suggestion?) -> String?
+
+// Errors
+
+// Types and methods
+pub(all) enum CmdImpl {
+  Wired
+  Stub(Array[String])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CommandSpec {
+  name : String
+  describe : String
+  needs_module : Bool
+  needs_env : Bool
+  default_format : String?
+  flags : Array[FlagSpec]
+  positionals : Array[PositionalSpec]
+  impl_ : CmdImpl
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Emit {
+  out : String
+  err : String
+  exit_code : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ErrShape {
+  code : String
+  message : String
+  suggestion : @lint.Suggestion?
+  hint : String?
+  where_ : String?
+  exit_code : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct FlagSpec {
+  name : String
+  short : String?
+  type_ : String
+  enum_ : Array[String]?
+  description : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct GlobalOpts {
+  format : String?
+  output : String?
+  pretty : Bool
+  module_path : String?
+  help : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LintFinding {
+  code : String
+  level : @lint.LintLevel
+  where_ : String
+  message : String
+  suggestion : @lint.Suggestion?
+}
+pub fn LintFinding::line(Self) -> String
+pub fn LintFinding::to_json_value(Self) -> Json
+
+pub(all) struct LintRule {
+  code : String
+  level : String
+  group : String
+  summary : String
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Outcome {
+  Done(Emit)
+  Feedback(GlobalOpts, message~ : String?)
+  InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct PositionalSpec {
+  name : String
+  required : Bool
+  description : String?
+  note : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct SkillInstallPlan {
+  target_rel : String
+  user_scope : Bool
+  force : Bool
+  files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

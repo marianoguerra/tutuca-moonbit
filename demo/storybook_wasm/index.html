@@ -1,0 +1,37 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tutuca-mb — storybook (wasm)</title>
+    <!-- margaui theme variables (light + dark), same source the JS docs use -->
+    <link
+      rel="stylesheet"
+      href="https://marianoguerra.github.io/margaui/themes/theme.css"
+    />
+    <style>
+      body {
+        font-family: system-ui, sans-serif;
+        margin: 0;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!--
+      The storybook gallery running as WebAssembly (wasm-gc). Build + assemble:
+        moon run --target native cmd/dev -- dist
+      then serve dist/ and open storybook/. Or serve it with the CLI:
+        dist/cli/tutuca storybook --port 4321
+      For a raw build:
+        moon build --target wasm-gc demo/storybook_wasm
+      (needs a browser with the JS String Builtins proposal, e.g. Chrome).
+    -->
+    <script type="module">
+      import { loadWasm, applyMargaui } from "./loader.mjs";
+      const exports = await loadWasm("./storybook_wasm.wasm");
+      exports.mount();
+      await applyMargaui();
+    </script>
+  </body>
+</html>

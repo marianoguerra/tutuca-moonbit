@@ -1,0 +1,264 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/anode"
+
+import {
+  "marianoguerra/tutuca",
+  "moonbit-community/html/src",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/set",
+}
+
+// Values
+pub fn condense_childs_whites(Array[ANode]) -> Array[ANode]
+
+pub fn maybe_fragment(Array[ANode]) -> ANode
+
+pub fn optimize_node(ANode) -> ANode
+
+pub fn parse_attributes(Array[(String, String)], ParseContext, parse_all? : Bool) -> AttrParseResult
+
+pub fn parse_fragment(String) -> (@src.Document, Array[Int])
+
+// Errors
+pub suberror MacroError {
+  RecursiveMacro(String)
+}
+
+// Types and methods
+pub(all) enum ANode {
+  Text(TextData)
+  Comment(TextData)
+  Dom(DomData)
+  Fragment(FragmentData)
+  RenderText(RenderTextData)
+  Render(RenderData)
+  RenderIt(RenderItData)
+  Show(WrapData)
+  Hide(WrapData)
+  PushView(WrapData)
+  Slot(SlotData)
+  Scope(WrapData)
+  Each(EachData)
+  MacroCall(MacroData)
+  RenderOnce(RenderOnceData)
+} derive(@debug.Debug)
+pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
+pub fn ANode::condense_whitespace(Self, replacement? : String) -> Unit
+pub fn ANode::from_dom(@src.Document, Int, ParseContext) -> Self?
+pub fn ANode::has_newline(Self) -> Bool
+pub fn ANode::is_constant(Self) -> Bool
+pub fn ANode::is_whitespace(Self) -> Bool
+pub fn ANode::optimize(Self) -> Unit
+pub fn ANode::parse(String, ParseContext) -> Self?
+pub fn ANode::set_data_attr(Self, String, @tutuca.Lit) -> Unit
+pub fn ANode::wrap_node(Self, Self) -> Unit
+
+pub(all) enum AttrItem {
+  Plain(name~ : String, val~ : @tutuca.Val)
+  ConstA(name~ : String, val~ : @tutuca.Val)
+  RawHtml(val~ : @tutuca.Val?)
+  If(IfAttr)
+} derive(@debug.Debug)
+
+pub(all) struct AttrParseResult {
+  attrs : Attrs
+  wrappers : Array[WrapperAttr]
+  text_child : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) enum Attrs {
+  ConstAttrs(Map[String, @tutuca.Lit])
+  DynAttrs(Array[AttrItem])
+} derive(@debug.Debug)
+pub fn Attrs::is_constant(Self) -> Bool
+pub fn Attrs::set_data_attr(Self, String, @tutuca.Lit) -> Unit
+pub fn Attrs::to_macro_vars(Self) -> Map[String, String]
+
+pub(all) enum BadValueRole {
+  XOp(op~ : String)
+  Attr(name~ : String)
+  Directive(name~ : String)
+  IfDirective(name~ : String)
+  ValueIssue(@tutuca.IssueRole)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum DeprecatedSyntax {
+  BareXDirective(op~ : String, name~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DomData {
+  tag : String
+  attrs : Attrs
+  childs : Array[ANode]
+  ns : Ns?
+} derive(@debug.Debug)
+
+pub(all) struct EachData {
+  node_id : Int
+  iter_info : IterInfo
+  mut node : ANode
+  mut from_render_each : Bool
+} derive(@debug.Debug)
+
+pub(all) struct FragmentData {
+  childs : Array[ANode]
+} derive(@debug.Debug)
+
+pub(all) struct IfAttr {
+  name : String
+  cond_val : @tutuca.Val
+  mut then_val : @tutuca.Val?
+  mut else_val : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) struct IterInfo {
+  val : @tutuca.Val
+  mut when_val : @tutuca.Val?
+  mut loop_with_val : @tutuca.Val?
+  mut enrich_with_val : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) struct Macro {
+  defaults : Map[String, String]
+  raw_view : String
+}
+pub fn Macro::expand(Self, ParseContext) -> ANode
+
+pub(all) struct MacroData {
+  name : String
+  attrs : Map[String, String]
+  slots : Map[String, ANode]
+  px : ParseContext
+  mut node : ANode?
+  data_attrs : Map[String, @tutuca.Lit]
+}
+pub impl @debug.Debug for MacroData
+
+pub(all) struct MacroFrame {
+  macro_name : String
+  macro_vars : Map[String, String]
+  macro_slots : Map[String, ANode]
+}
+
+pub(all) struct NodeEvent {
+  name : String
+  handler : @tutuca.HandlerParse
+  modifiers : Array[String]
+} derive(@debug.Debug)
+
+pub(all) struct NodeEvents {
+  id : Int
+  handlers : Array[NodeEvent]
+} derive(@debug.Debug)
+
+pub(all) enum Ns {
+  Svg
+  MathML
+} derive(Eq, @debug.Debug)
+
+pub struct ParseContext {
+  nodes : Array[ANode]
+  events : Array[NodeEvents]
+  macro_nodes : Array[ANode]
+  parent : ParseContext?
+  frame : MacroFrame?
+  mut val_ctx : @tutuca.ParseCtx?
+  mut current_tag : String?
+  cache_const_nodes : Bool
+  handler : &ParseHandler
+}
+pub fn ParseContext::compile(Self, &MacroScope) -> Unit raise MacroError
+pub fn ParseContext::enter_macro(Self, String, Map[String, String], Map[String, ANode]) -> Self
+pub fn ParseContext::is_inside_macro(Self, String) -> Bool
+pub fn ParseContext::new(handler? : &ParseHandler) -> Self
+pub fn ParseContext::new_macro_node(Self, String, Map[String, String], Array[ANode]) -> ANode
+pub fn ParseContext::register_events(Self) -> NodeEvents
+
+pub(all) enum ParseIssue {
+  UnknownDirective(name~ : String, value~ : String)
+  UnknownXOp(name~ : String, value~ : String)
+  UnknownXAttr(op~ : String, name~ : String, value~ : String)
+  XOpIgnoresChildren(op~ : String)
+  BadValue(role~ : BadValueRole, value~ : String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RenderData {
+  node_id : Int
+  val : @tutuca.Val
+  view_val : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) struct RenderItData {
+  node_id : Int
+  view_val : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) struct RenderOnceData {
+  node : ANode
+  id : Int
+} derive(@debug.Debug)
+
+pub(all) struct RenderTextData {
+  node_id : Int?
+  val : @tutuca.Val
+} derive(@debug.Debug)
+
+pub(all) struct SlotData {
+  name : String
+  mut node : ANode
+} derive(@debug.Debug)
+
+pub(all) struct TextData {
+  mut val : String
+} derive(@debug.Debug)
+
+pub(all) struct View {
+  name : String
+  raw_view : String
+  style : String
+  mut anode : ANode?
+  mut ctx : ParseContext?
+}
+pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @tutuca.Lit) -> Unit raise MacroError
+pub fn View::new(String, raw_view? : String, style? : String) -> Self
+
+pub(all) struct WarnHandler {
+}
+pub impl ParseHandler for WarnHandler
+
+pub(all) struct WrapData {
+  node_id : Int?
+  val : @tutuca.Val
+  mut node : ANode
+} derive(@debug.Debug)
+
+pub(all) struct WrapperAttr {
+  kind : WrapperKind
+  raw : String
+  val : @tutuca.Val?
+  mut enrich_with_val : @tutuca.Val?
+  mut when_val : @tutuca.Val?
+  mut loop_with_val : @tutuca.Val?
+} derive(@debug.Debug)
+
+pub(all) enum WrapperKind {
+  Show
+  Hide
+  Each
+  Scope
+  PushView
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+pub(open) trait MacroScope {
+  fn lookup_macro(Self, String) -> Macro?
+}
+
+pub(open) trait ParseHandler {
+  fn on_parse_issue(Self, ParseIssue, String?) -> Unit = _
+  fn on_deprecated_syntax(Self, DeprecatedSyntax, String?) -> Unit = _
+  fn on_attributes(Self, AttrParseResult, Bool, String) -> Unit = _
+}
+

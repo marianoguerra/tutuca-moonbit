@@ -1,0 +1,47 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dev"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn help_text() -> String
+
+pub fn plan(String) -> Array[Step]?
+
+pub fn rewrite(String, old_src~ : String, new_src~ : String) -> String
+
+pub fn skill_assets_source(Array[(String, String)]) -> String
+
+pub fn skill_embed_steps() -> Array[Step]
+
+pub fn tasks() -> Array[Task]
+
+// Errors
+
+// Types and methods
+pub struct Command {
+  label : String
+  prog : String
+  args : Array[String]
+} derive(Eq, @debug.Debug)
+
+pub enum Step {
+  Run(Command)
+  Mkdir(String)
+  Copy(from~ : String, to~ : String)
+  WriteRewritten(from~ : String, to~ : String, old_src~ : String, new_src~ : String)
+  GenSkillAssets(src_dir~ : String, to~ : String)
+} derive(Eq, @debug.Debug)
+
+pub struct Task {
+  name : String
+  about : String
+  commands : Array[Command]
+}
+
+// Type aliases
+
+// Traits
+

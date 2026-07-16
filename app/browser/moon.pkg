@@ -1,0 +1,20 @@
+// js-backend app glue: install DOM listeners for an App[BrowserNode] and
+// translate real events into DomEvents. Validate with:
+// moon check --target js / moon test --target js app/browser (needs happy-dom).
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom/browser",
+  "mizchi/js/core",
+  "moonbitlang/core/json",
+}
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom/browser" @bdom,
+  "mizchi/js/core",
+  "mizchi/js_browser/test_utils",
+} for "test"
+
+supported_targets = "js"

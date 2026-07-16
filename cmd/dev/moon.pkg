@@ -1,0 +1,19 @@
+// Native shell for the tutuca dev task runner: reads a task name from argv,
+// asks the pure marianoguerra/tutuca/dev package for the step plan, and runs it
+// (process spawns + file ops). All task knowledge lives in @dev; this file only
+// does argv, process spawning, fs, stdio and exit. Analog of cmd/main.
+// Run with: moon run --target native cmd/dev -- <task>
+import {
+  "marianoguerra/tutuca/dev" @tasks,
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/process",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)

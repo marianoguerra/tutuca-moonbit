@@ -1,0 +1,17 @@
+// Playground mount facade (js backend). A single package the freshly-compiled
+// user module imports under one alias (@host), so user code never has to import
+// BOTH vdom/browser and app/browser — whose default aliases (last path segment
+// "browser") collide and cannot be disambiguated by @moonbit/moonc-worker, which
+// has no way to set import aliases. The host wraps the whole mount + event-glue
+// sequence behind `mount`, and exposes the live app's state as JSON for the
+// playground inspector.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app/browser" @glue,
+  "marianoguerra/tutuca/vdom/browser" @bdom,
+  "mizchi/js_browser/dom",
+}
+
+supported_targets = "js"

@@ -1,0 +1,17 @@
+// Playground mount facade (wasm-gc backend) — the wasm twin of playground/host.
+// Same single-alias role (@hostw): the freshly-compiled user module imports only
+// this + @component/@tutuca, never both DOM adapters. The wasm event model is
+// inverted (JS installs delegated listeners that call the exported `on_event`),
+// and MoonBit closures can't cross into JS, so the inspector state is read back
+// through the exported `state_json`/`classes_json` rather than a JS callback.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"

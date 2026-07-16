@@ -1,0 +1,124 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/vdom"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn comment(String) -> Vdom
+
+pub fn diff_props(Map[String, AttrValue], Map[String, AttrValue]) -> Map[String, AttrValue?]?
+
+pub fn fragment(Array[Vdom]) -> Vdom
+
+pub fn h(String, attrs? : Map[String, AttrValue], childs? : Array[Vdom], key? : String, ns? : Ns) -> Vdom
+
+pub let html_ns : String
+
+pub let math_uri : String
+
+pub fn[N : DomNode] morph_children(N, Array[Vdom], Array[Vdom], RenderOpts[N]) -> Unit
+
+pub fn[N : DomNode] morph_node(N, Vdom, Vdom, RenderOpts[N]) -> N
+
+pub fn ns_from_dom_uri(String?) -> Ns?
+
+pub fn[N : DomNode] render(Vdom, N, RenderOpts[N], prev? : RenderResult[N]) -> RenderResult[N]
+
+pub let svg_uri : String
+
+pub fn text(String) -> Vdom
+
+pub fn[N : DomNode] to_dom(Vdom, RenderOpts[N]) -> N
+
+pub fn[N : DomNode] unmount(N) -> Unit
+
+// Errors
+
+// Types and methods
+pub(all) enum AttrValue {
+  Str(String)
+  Num(Double)
+  Bool(Bool)
+  Html(String)
+  Data(Json)
+} derive(Eq, @debug.Debug)
+pub fn AttrValue::int(Int) -> Self
+pub fn AttrValue::to_attr_string(Self) -> String
+
+pub(all) enum Ns {
+  Svg
+  MathMl
+  Other(String)
+} derive(Eq, @debug.Debug)
+pub fn Ns::from_uri(String) -> Self
+pub fn Ns::to_uri(Self) -> String
+
+pub(all) struct RenderOpts[N] {
+  document : N
+  ns : Ns?
+}
+pub fn[N] RenderOpts::new(N) -> Self[N]
+
+pub(all) struct RenderResult[N] {
+  vnode : Vdom
+  dom : N
+}
+
+pub(all) struct VElem {
+  tag : String
+  attrs : Map[String, AttrValue]
+  childs : Array[Vdom]
+  key : String?
+  ns : Ns?
+} derive(Eq, @debug.Debug)
+pub fn VElem::is_same_kind(Self, Self) -> Bool
+
+pub(all) enum Vdom {
+  Text(String)
+  Comment(String)
+  Fragment(Array[Vdom])
+  Node(VElem)
+} derive(Eq, @debug.Debug)
+pub fn Vdom::is_equal_to(Self, Self) -> Bool
+pub fn Vdom::key(Self) -> String?
+pub fn Vdom::node_type(Self) -> Int
+
+// Type aliases
+
+// Traits
+pub(open) trait DomNode {
+  fn create_element(Self, String, Ns?, String?) -> Self
+  fn create_text(Self, String) -> Self
+  fn create_comment(Self, String) -> Self
+  fn create_fragment(Self) -> Self
+  fn append_child(Self, Self) -> Unit
+  fn insert_before(Self, Self, Self?) -> Unit
+  fn remove_child(Self, Self) -> Unit
+  fn replace_child(Self, Self, Self) -> Unit
+  fn replace_children(Self) -> Unit
+  fn parent_node(Self) -> Self?
+  fn first_child(Self) -> Self?
+  fn next_sibling(Self) -> Self?
+  fn child_nodes(Self) -> Array[Self]
+  fn child_node_at(Self, Int) -> Self?
+  fn is_same_node(Self, Self) -> Bool
+  fn set_attribute(Self, String, String) -> Unit
+  fn remove_attribute(Self, String) -> Unit
+  fn has_property(Self, String) -> Bool
+  fn set_property(Self, String, AttrValue) -> Bool
+  fn set_inner_html(Self, String) -> Unit
+  fn get_inner_html(Self) -> String
+  fn set_data(Self, String) -> Unit
+  fn tag_name(Self) -> String
+  fn namespace_uri(Self) -> Ns?
+}
+
+pub(open) trait DomWalk : DomNode {
+  fn prev_sibling(Self) -> Self?
+  fn node_kind(Self) -> Int
+  fn char_data(Self) -> String
+  fn attribute(Self, String) -> String?
+}
+

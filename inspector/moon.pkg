@@ -1,0 +1,20 @@
+// Port of the tutuca inspector component library (src/components/ in the JS
+// repo, shipped there as `tutuca/components`): pure tutuca components that
+// render inspectors as collapsible trees — any Value, a JSON Schema, a
+// component descriptor snapshot, a live instance, lint findings, and dispatch
+// activity (transactor.observe).
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/transactor",
+  "moonbitlang/core/cmp",
+}
+
+// The headless harness (@harness) mounts the inspector module as a live app on
+// the in-memory DOM; the cli import powers the lint smoke test.
+import {
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/cli",
+  "moonbitlang/core/test",
+} for "test"

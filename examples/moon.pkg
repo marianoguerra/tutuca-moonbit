@@ -1,0 +1,25 @@
+// Ports of the JS docs examples (docs/examples/*.js in the tutuca repo), one
+// file per example. Each exports a `<name>_module() -> @component.ModuleDef`
+// — the MoonBit analogue of the JS module's getComponents / getMacros /
+// getRequestHandlers / getExamples exports.
+//
+// Target-agnostic on purpose: the modules are plain values, so the same
+// definition drives the headless tests here, the browser host (demo/examples)
+// and the CLI (`tutuca render` / `tutuca lint` via plan_with_module).
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/inspector",
+  "moonbitlang/core/cmp",
+  "moonbitlang/core/string",
+}
+
+// The headless harness (@harness) mounts a module as a live app on the
+// in-memory DOM and dispatches real events through it.
+import {
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/cli",
+  "moonbitlang/core/test",
+} for "test"

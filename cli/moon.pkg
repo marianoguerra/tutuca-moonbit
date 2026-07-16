@@ -1,0 +1,22 @@
+// Pure CLI core: argv in -> Emit (stdout/stderr text + exit code) out. Port of
+// tools/tutuca.js + tools/cli/. Never touches argv/fs/stdio itself so it stays
+// target-agnostic and testable; cmd/main is the native shell that does I/O.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/lint",
+  "moonbitlang/core/strconv",
+  "moonbitlang/core/string",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/storybook" @sb,
+}
+
+import {
+  "marianoguerra/tutuca/lint",
+  "moonbitlang/core/strconv",
+  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
+} for "test"

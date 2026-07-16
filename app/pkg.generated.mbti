@@ -1,0 +1,55 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/app"
+
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/vdom",
+}
+
+// Values
+pub fn[N : @vdom.DomWalk] dispatch_dom_event(@transactor.Transactor, N, String, N, @component.Components) -> Bool
+
+pub fn[N : @vdom.DomWalk] dispatch_event(@transactor.Transactor, N, @render.DomEvent, N, @component.Components) -> Bool
+
+// Errors
+
+// Types and methods
+pub struct App[N] {
+  scope : @component.ComponentStack
+  transactor : @transactor.Transactor
+  root_node : N
+  opts : @vdom.RenderOpts[N]
+  mut prev : @vdom.RenderResult[N]?
+  mut dirty : Bool
+  mut render_count : Int
+  mut drag : DragState[N]?
+  mut cur_drag_over : N?
+  render_once : Map[Int, @vdom.Vdom]
+  render_cache : @render.RenderCache
+}
+pub fn[N : @vdom.DomWalk] App::dispatch(Self[N], N, @render.DomEvent) -> Bool
+pub fn[N] App::drain_batched(Self[N], max_per_batch~ : Int, () -> Unit) -> Unit
+pub fn[N] App::event_names(Self[N]) -> Array[String]
+pub fn[N : @vdom.DomWalk] App::from_module(@component.ModuleDef, String, N, @vdom.RenderOpts[N], args? : Map[String, @tutuca.Value]) -> Self[N] raise
+pub fn[N : @vdom.DomWalk] App::new(@component.ComponentStack, @tutuca.Value, N, @vdom.RenderOpts[N]) -> Self[N] raise
+pub fn[N] App::root_value(Self[N]) -> @tutuca.Value?
+pub fn[N] App::send_at_root(Self[N], String, args? : Array[@tutuca.Value]) -> Unit
+pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
+
+pub struct DragState[N] {
+  node : N
+  info : @tutuca.Value
+}
+
+pub(all) struct ScopeRequests {
+  comps : @component.Components
+}
+pub impl @transactor.Requests for ScopeRequests
+
+// Type aliases
+
+// Traits
+

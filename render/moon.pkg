@@ -1,0 +1,14 @@
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom",
+  "moonbitlang/core/json",
+  "moonbitlang/core/strconv",
+}
+
+import {
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/debug",
+} for "test"

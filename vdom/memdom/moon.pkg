@@ -1,0 +1,12 @@
+// In-memory DOM implementing the vdom DomNode trait. Backend-agnostic:
+// the primary test substrate for the renderer (no browser, no npm).
+import {
+  "marianoguerra/tutuca/vdom",
+}
+
+import {
+  "marianoguerra/tutuca/vdom",
+  "moonbitlang/quickcheck" @qc,
+  "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/debug",
+} for "test"

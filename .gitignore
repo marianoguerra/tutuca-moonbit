@@ -1,0 +1,22 @@
+# macOS
+.DS_Store
+
+# MoonBit build output and fetched dependencies
+_build/
+target/
+target
+.mooncakes/
+.moonagent/
+
+# npm (happy-dom for js-target tests; fetched playground compiler)
+node_modules/
+
+# Assembled distributables (regenerate with `cmd/dev -- dist`)
+dist/
+
+# Vendored MoonBit web compiler for the playground — fetched on build,
+# never committed (5+ MB, version-coupled; see playground/build/assemble.mjs)
+playground/vendor/moonc-web.cjs
+
+# Playwright-MCP browser session dumps
+.playwright-mcp/

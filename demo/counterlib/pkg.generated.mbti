@@ -1,0 +1,20 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/counterlib"
+
+import {
+  "marianoguerra/tutuca/component",
+}
+
+// Values
+pub fn counter_comp() -> @component.Component
+
+pub fn module_def() -> @component.ModuleDef
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

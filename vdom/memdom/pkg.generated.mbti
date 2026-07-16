@@ -1,0 +1,47 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/vdom/memdom"
+
+import {
+  "marianoguerra/tutuca/vdom",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn document() -> MemNode
+
+pub fn dom_equal(MemNode, MemNode) -> Bool
+
+// Errors
+
+// Types and methods
+pub(all) enum MemKind {
+  Document
+  Element
+  TextNode
+  CommentNode
+  FragmentNode
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MemNode {
+  kind : MemKind
+  tag : String
+  ns : @vdom.Ns?
+  attrs : Map[String, String]
+  props : Map[String, @vdom.AttrValue]
+  childs : Array[MemNode]
+  mut parent : MemNode?
+  mut data : String
+  mut created_is : String?
+  mut dangerous_html : String?
+  mut inner_html_sets : Int
+}
+pub fn MemNode::get_attribute(Self, String) -> String?
+pub fn MemNode::get_property(Self, String) -> @vdom.AttrValue?
+pub fn MemNode::to_html(Self) -> String
+pub impl @vdom.DomNode for MemNode
+pub impl @vdom.DomWalk for MemNode
+
+// Type aliases
+
+// Traits
+

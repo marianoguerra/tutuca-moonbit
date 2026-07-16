@@ -1,0 +1,20 @@
+// Headless test harness: mount a ModuleDef as a LIVE app on the in-memory DOM,
+// drive it with real events through the transactor, and read state/DOM back.
+// This is the reusable form of what examples/*_test.mbt exercise — an app
+// author's own `moon test` blocks import it the same way.
+//
+// Backend-agnostic (memdom runs on every target), so `moon test` covers it with
+// no browser and no server.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+}
+
+// Demo/verification test drives a real example module end to end.
+import {
+  "marianoguerra/tutuca/examples",
+} for "test"

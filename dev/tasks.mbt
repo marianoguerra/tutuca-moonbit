@@ -1,0 +1,374 @@
+// The single "place with all the tasks" for tutuca-mb. Each task plans an
+// ordered list of steps (spawn a process, or a file op for `dist`); cmd/dev
+// executes them in order and stops on the first failure. This replaces the raw
+// commands previously scattered across AGENTS.md / README / moon.pkg headers.
+
+///|
+/// One command to spawn: `prog` with `args`, announced under `label`.
+pub struct Command {
+  label : String
+  prog : String
+  args : Array[String]
+} derive(Eq, Debug)
+
+///|
+/// A single step in a task plan. Simple tasks are all `Run`; `dist` also emits
+/// the file ops. cmd/dev is the only place that turns these into real effects.
+pub enum Step {
+  Run(Command)
+  Mkdir(String)
+  Copy(from~ : String, to~ : String)
+  // copy `from` to `to`, replacing the first `old_src` with `new_src` (used to
+  // repoint the demo pages' <script src> at the sibling bundle in dist/).
+  WriteRewritten(
+    from~ : String,
+    to~ : String,
+    old_src~ : String,
+    new_src~ : String
+  )
+  // walk `src_dir`, read every file, and write the generated
+  // skill_assets_source(...) MoonBit module to `to` (skill-embed codegen).
+  GenSkillAssets(src_dir~ : String, to~ : String)
+} derive(Eq, Debug)
+
+///|
+/// A named task: an ordered list of commands run until one fails.
+pub struct Task {
+  name : String
+  about : String
+  commands : Array[Command]
+}
+
+///|
+fn moon(label : String, args : Array[String]) -> Command {
+  { label, prog: "moon", args }
+}
+
+// --- build-output and dist layout paths (moon's default debug build) ---
+
+///|
+const COUNTER_JS = "_build/js/debug/build/demo/counter/counter.js"
+
+///|
+const EXAMPLES_JS = "_build/js/debug/build/demo/examples/examples.js"
+
+///|
+const COUNTER_WASM = "_build/wasm-gc/debug/build/demo/counter_wasm/counter_wasm.wasm"
+
+///|
+const EXAMPLES_WASM = "_build/wasm-gc/debug/build/demo/examples_wasm/examples_wasm.wasm"
+
+///|
+const STORYBOOK_WASM = "_build/wasm-gc/debug/build/demo/storybook_wasm/storybook_wasm.wasm"
+
+///|
+/// The js `<script src>` in demo/examples/index.html, replaced with the wasm
+/// module loader for the examples-wasm dist page.
+const EXAMPLES_JS_SCRIPT = "<script src=\"../../_build/js/debug/build/demo/examples/examples.js\"></script>"
+
+///|
+const EXAMPLES_WASM_SCRIPT = "<script type=\"module\">import { loadWasm, applyMargaui } from \"./loader.mjs\"; const e = await loadWasm(\"./examples_wasm.wasm\"); e.mount(); await applyMargaui();</script>"
+
+///|
+// moon names the native executable `.exe` on every OS, including Linux.
+const NATIVE_BIN = "_build/native/debug/build/cmd/main/main.exe"
+
+///|
+const DIST = "dist"
+
+///|
+/// All base (non-composite) tasks, in display order. Composite/special tasks
+/// (`ci`, `dist`) are assembled in `plan`, so there is one source of truth.
+pub fn tasks() -> Array[Task] {
+  [
+    {
+      name: "check",
+      about: "type-check every backend (default, js, native)",
+      commands: [
+        moon("check · default", ["check"]),
+        moon("check · js", ["check", "--target", "js"]),
+        moon("check · native", ["check", "--target", "native"]),
+      ],
+    },
+    {
+      name: "fmt",
+      about: "format sources and regenerate .mbti interface files",
+      commands: [moon("fmt", ["fmt"]), moon("info", ["info"])],
+    },
+    {
+      name: "test",
+      about: "run tests across default, native, and js browser adapters",
+      commands: [
+        moon("test · default", ["test"]),
+        moon("test · native", ["test", "--target", "native"]),
+        moon("test · js browser adapters", [
+          "test", "--target", "js", "vdom/browser", "app/browser",
+        ]),
+      ],
+    },
+    {
+      name: "build",
+      about: "build all applicable targets (wasm-gc, native CLI, js)",
+      commands: build_commands(),
+    },
+    {
+      name: "coverage",
+      about: "run coverage analysis",
+      commands: [moon("coverage analyze", ["coverage", "analyze"])],
+    },
+    {
+      name: "fetch-moonc",
+      about: "fetch the gitignored in-browser MoonBit compiler (playground/vendor/moonc-web.cjs) from npm; see playground/vendor/README.md",
+      commands: [
+        {
+          label: "fetch playground compiler",
+          prog: "node",
+          args: ["playground/build/fetch-compiler.mjs"],
+        },
+      ],
+    },
+    {
+      name: "playground",
+      about: "assemble dist/playground/ (in-browser MoonBit playground): build the js library + mount host, then collect the compiler + prebuilt .core/.mi + web shell",
+      commands: [
+        moon("build · js (lib + playground host)", ["build", "--target", "js"]),
+        {
+          label: "assemble dist/playground",
+          prog: "node",
+          args: ["playground/build/assemble.mjs"],
+        },
+      ],
+    },
+    {
+      name: "setup",
+      about: "install js-test deps (happy-dom) and enable the git hooks",
+      commands: [
+        { label: "npm install", prog: "npm", args: ["install"] },
+        {
+          label: "enable git hooks",
+          prog: "git",
+          args: ["config", "core.hooksPath", ".githooks"],
+        },
+      ],
+    },
+  ]
+}
+
+///|
+fn build_commands() -> Array[Command] {
+  [
+    moon("build · wasm-gc", ["build", "--target", "wasm-gc"]),
+    moon("build · native cli", ["build", "--target", "native", "cmd/main"]),
+    moon("build · js", ["build", "--target", "js"]),
+  ]
+}
+
+///|
+/// Composite tasks: name -> (about, member base-task names) whose commands are
+/// concatenated.
+fn composites() -> Array[(String, String, Array[String])] {
+  // `build` is part of CI so wasm-gc codegen of the demo hosts (demo/*_wasm,
+  // driven by the app/wasm + vdom/wasm adapters) is smoke-tested: `check` only
+  // type-checks, but wasm-gc codegen fails on things check passes (e.g. a
+  // MoonBit closure crossing into JS). The wasm DOM adapters have no
+  // host-independent logic and can't be unit-tested without a browser host, so
+  // this build-smoke is their regression guard. It also codegens the js/native
+  // demo hosts, none of which have their own tests.
+  [
+    (
+      "ci",
+      "check + test + build (build-smokes every backend & demo)",
+      ["check", "test", "build"],
+    ),
+  ]
+}
+
+///|
+/// The `dist` step plan: build every target, then assemble a self-contained
+/// `dist/` folder (bundles + repointed demo pages + a landing index.html + the
+/// native CLI binary) that runs from any static file server.
+fn dist_steps() -> Array[Step] {
+  let steps : Array[Step] = []
+  // refresh the CLI's embedded skill assets before the native build
+  for step in skill_embed_steps() {
+    steps.push(step)
+  }
+  for cmd in build_commands() {
+    steps.push(Run(cmd))
+  }
+  steps.push(Mkdir(DIST))
+  steps.push(Mkdir("\{DIST}/counter"))
+  steps.push(Mkdir("\{DIST}/counter-wasm"))
+  steps.push(Mkdir("\{DIST}/examples"))
+  steps.push(Mkdir("\{DIST}/examples-wasm"))
+  steps.push(Mkdir("\{DIST}/storybook"))
+  steps.push(Mkdir("\{DIST}/cli"))
+  steps.push(Copy(from=COUNTER_JS, to="\{DIST}/counter/counter.js"))
+  steps.push(Copy(from=EXAMPLES_JS, to="\{DIST}/examples/examples.js"))
+  steps.push(Copy(from=NATIVE_BIN, to="\{DIST}/cli/tutuca"))
+  // wasm counter: the .wasm plus its loader + host page. index.html already
+  // loads ./loader.mjs and ./counter_wasm.wasm relative to its folder, so the
+  // page and loader copy verbatim (no rewrite).
+  steps.push(
+    Copy(from=COUNTER_WASM, to="\{DIST}/counter-wasm/counter_wasm.wasm"),
+  )
+  steps.push(
+    Copy(
+      from="demo/counter_wasm/loader.mjs",
+      to="\{DIST}/counter-wasm/loader.mjs",
+    ),
+  )
+  steps.push(
+    Copy(
+      from="demo/counter_wasm/index.html",
+      to="\{DIST}/counter-wasm/index.html",
+    ),
+  )
+  // examples-wasm: the .wasm + the shared loader; the page reuses the styled
+  // demo/examples/index.html with its <script src> swapped for the wasm loader.
+  steps.push(
+    Copy(from=EXAMPLES_WASM, to="\{DIST}/examples-wasm/examples_wasm.wasm"),
+  )
+  steps.push(
+    Copy(
+      from="demo/counter_wasm/loader.mjs",
+      to="\{DIST}/examples-wasm/loader.mjs",
+    ),
+  )
+  steps.push(
+    WriteRewritten(
+      from="demo/examples/index.html",
+      to="\{DIST}/examples-wasm/index.html",
+      old_src=EXAMPLES_JS_SCRIPT,
+      new_src=EXAMPLES_WASM_SCRIPT,
+    ),
+  )
+  // storybook: the gallery host page loads ./loader.mjs and ./storybook_wasm.wasm
+  // relative to its folder (like counter-wasm), so page + loader copy verbatim.
+  // This is also the bundle `tutuca storybook` serves (dist/storybook).
+  steps.push(
+    Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
+  )
+  steps.push(
+    Copy(from="demo/counter_wasm/loader.mjs", to="\{DIST}/storybook/loader.mjs"),
+  )
+  steps.push(
+    Copy(
+      from="demo/storybook_wasm/index.html",
+      to="\{DIST}/storybook/index.html",
+    ),
+  )
+  steps.push(
+    WriteRewritten(
+      from="demo/counter/index.html",
+      to="\{DIST}/counter/index.html",
+      old_src="../../" + COUNTER_JS,
+      new_src="./counter.js",
+    ),
+  )
+  steps.push(
+    WriteRewritten(
+      from="demo/examples/index.html",
+      to="\{DIST}/examples/index.html",
+      old_src="../../" + EXAMPLES_JS,
+      new_src="./examples.js",
+    ),
+  )
+  // The in-browser playground compiler payload (assemble.mjs), reused by the
+  // landing site's embedded <mb-playground> elements, then the landing site
+  // itself — which becomes the dist root index.html (assemble-site.mjs).
+  // `moon build --target js` already ran via build_commands above, so the
+  // playground host + library artifacts assemble.mjs collects are present.
+  steps.push(
+    Run({
+      label: "assemble dist/playground",
+      prog: "node",
+      args: ["playground/build/assemble.mjs"],
+    }),
+  )
+  steps.push(
+    Run({
+      label: "assemble landing site (dist root)",
+      prog: "node",
+      args: ["playground/build/assemble-site.mjs"],
+    }),
+  )
+  steps
+}
+
+///|
+/// Rewrite a demo page for dist by repointing its `<script src>` at the sibling
+/// bundle. Exact first-occurrence replace — robust and pure (no HTML parsing).
+pub fn rewrite(html : String, old_src~ : String, new_src~ : String) -> String {
+  html.replace(old=old_src, new=new_src)
+}
+
+///|
+/// Resolve a task name to the steps to run, or `None` if unknown.
+pub fn plan(name : String) -> Array[Step]? {
+  for task in tasks() {
+    if task.name == name {
+      return Some(task.commands.map(fn(c) { Run(c) }))
+    }
+  }
+  for entry in composites() {
+    let (cname, _, members) = entry
+    if cname == name {
+      let out : Array[Step] = []
+      for base in members {
+        // members always name real base tasks, so plan(base) is Some.
+        for step in plan(base).unwrap_or([]) {
+          out.push(step)
+        }
+      }
+      return Some(out)
+    }
+  }
+  if name == "dist" {
+    return Some(dist_steps())
+  }
+  if name == "skill-embed" {
+    return Some(skill_embed_steps())
+  }
+  None
+}
+
+///|
+/// Regenerate the CLI's embedded skill assets from skill/tutuca/. Run after
+/// editing the skill docs, before building the native CLI.
+pub fn skill_embed_steps() -> Array[Step] {
+  [GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt")]
+}
+
+///|
+/// Human-readable list of every task (base + ci + dist), for `--help` / unknown.
+pub fn help_text() -> String {
+  let sb = StringBuilder::new()
+  sb.write_string(
+    "Usage: moon run --target native cmd/dev -- <task>\n\nTasks:\n",
+  )
+  fn line(name : String, about : String) -> Unit {
+    sb.write_string("  ")
+    sb.write_string(name)
+    // pad to a fixed column, but always leave at least one space so a name
+    // wider than the column still separates from its description.
+    let gap = 12 - name.length()
+    let pad = if gap < 1 { 1 } else { gap }
+    for _ in 0..<pad {
+      sb.write_string(" ")
+    }
+    sb.write_string(about)
+    sb.write_string("\n")
+  }
+
+  for task in tasks() {
+    line(task.name, task.about)
+  }
+  for entry in composites() {
+    let (cname, about, _) = entry
+    line(cname, about)
+  }
+  line("dist", "build all + assemble a runnable dist/ folder")
+  line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
+  sb.to_string()
+}

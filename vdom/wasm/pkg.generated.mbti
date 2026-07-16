@@ -1,0 +1,23 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/vdom/wasm"
+
+import {
+  "marianoguerra/tutuca/vdom",
+  "mizchi/js/core",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct WasmNode(@core.Any)
+pub fn WasmNode::as_any(Self) -> @core.Any
+pub fn WasmNode::of_any(@core.Any) -> Self
+pub impl @vdom.DomNode for WasmNode
+pub impl @vdom.DomWalk for WasmNode
+
+// Type aliases
+
+// Traits
+

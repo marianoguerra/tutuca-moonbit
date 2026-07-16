@@ -1,0 +1,28 @@
+// wasm-gc host for the storybook gallery: the wasm twin of demo/examples_wasm,
+// but instead of mounting one example by ?name= it mounts the whole grouped
+// gallery (storybook/ui) as a single live app. Lint text for each pane comes
+// from the CLI's check_component, injected as the mount() lint callback.
+// Build: moon build --target wasm-gc demo/storybook_wasm
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/cli",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/storybook" @sb,
+  "marianoguerra/tutuca/storybook/ui" @sbui,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"
+
+options(
+  "is-main": true,
+  link: {
+    "wasm-gc": {
+      "exports": [ "mount", "on_event" ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

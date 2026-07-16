@@ -1,0 +1,17 @@
+// js-backend adapter: implements the vdom DomNode trait over the real DOM
+// via mizchi/js. Validate with: moon check --target js / moon test --target js vdom/browser
+// (tests need `npm i happy-dom` in the module root).
+import {
+  "marianoguerra/tutuca/vdom",
+  "mizchi/js/core",
+  "mizchi/js_browser/dom",
+}
+
+import {
+  "marianoguerra/tutuca/vdom",
+  "mizchi/js/core",
+  "mizchi/js_browser/dom",
+  "mizchi/js_browser/test_utils",
+} for "test"
+
+supported_targets = "js"

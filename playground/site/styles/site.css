@@ -1,0 +1,381 @@
+:root {
+  --sans-font:
+    -apple-system, BlinkMacSystemFont, "Avenir Next", Avenir, "Nimbus Sans L", Roboto,
+    "Noto Sans", "Segoe UI", Arial, Helvetica, "Helvetica Neue", sans-serif;
+  --bg: #fff;
+  --accent-bg: #f5f7ff;
+  --text: #212121;
+  --text-light: #585858;
+  --border-color: #898ea4;
+  --accent: #0d47a1;
+  --accent-hover: #1266e2;
+  --standard-border-radius: 5px;
+  --border-width: 1px;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    color-scheme: dark;
+    --bg: #212121;
+    --accent-bg: #2b2b2b;
+    --text: #dcdcdc;
+    --text-light: #ababab;
+    --border-color: #898ea4;
+    --accent: #ffb300;
+    --accent-hover: #ffe099;
+  }
+}
+
+html {
+  font-family: var(--sans-font);
+  scroll-behavior: smooth;
+}
+
+body {
+  color: var(--text);
+  background-color: var(--bg);
+  font-size: 1.15rem;
+  line-height: 1.5;
+  display: grid;
+  grid-template-columns: 1fr min(45rem, 90%) 1fr;
+  margin: 0;
+}
+
+body > * {
+  grid-column: 2;
+}
+
+body > header {
+  background-color: var(--accent-bg);
+  text-align: center;
+  padding: 2rem 0.5rem;
+  grid-column: 1 / -1;
+}
+
+body > header h1 {
+  max-width: 1200px;
+  margin: 1rem auto;
+}
+
+body > header p,
+body > header ul {
+  max-width: 72rem;
+  margin: 1rem auto;
+  text-align: left;
+}
+
+.hero-tagline {
+  font-size: 1.3rem;
+  color: var(--text-light);
+  text-align: center;
+  margin: 0.5rem auto 1.5rem auto;
+}
+
+.hero-actions {
+  display: flex;
+  justify-content: center;
+  gap: 1rem;
+  flex-wrap: wrap;
+  margin: 1.5rem auto;
+}
+
+.btn,
+.btn:visited {
+  display: inline-block;
+  padding: 0.6rem 1.3rem;
+  font-size: 1.05rem;
+  font-weight: 600;
+  text-decoration: none;
+  color: var(--accent);
+  background: var(--bg);
+  border: var(--border-width) solid var(--accent);
+  border-radius: var(--standard-border-radius);
+  transition:
+    background-color 0.15s ease,
+    color 0.15s ease,
+    border-color 0.15s ease;
+}
+
+.btn:hover {
+  border-color: var(--accent-hover);
+  color: var(--accent-hover);
+}
+
+.btn-primary,
+.btn-primary:visited {
+  color: var(--bg);
+  background: var(--accent);
+}
+
+.btn-primary:hover {
+  color: var(--bg);
+  background: var(--accent-hover);
+  border-color: var(--accent-hover);
+}
+
+.hero-highlights {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 0.5rem 1.5rem;
+  list-style: none;
+  padding: 0;
+  margin: 1.5rem auto 0 auto;
+  color: var(--text-light);
+  text-align: center;
+}
+
+.hero-highlights li {
+  position: relative;
+}
+
+.hero-highlights li + li::before {
+  content: "·";
+  position: absolute;
+  left: -0.9rem;
+  color: var(--border-color);
+}
+
+.hero-teaser {
+  max-width: 48rem;
+  margin: 1.5rem auto 0 auto;
+  text-align: left;
+  font-size: 0.9rem;
+}
+
+.hero-teaser code {
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+
+body > nav a,
+body > footer a {
+  text-decoration: none;
+}
+
+main {
+  padding-top: 1.5rem;
+  grid-column: 1 / -1;
+  padding-inline: 1em;
+}
+
+h1 {
+  font-size: 3rem;
+}
+
+h2 {
+  font-size: 2.6rem;
+  margin-top: 3rem;
+  text-align: center;
+}
+
+h3 {
+  font-size: 2rem;
+  margin-top: 3rem;
+  text-align: center;
+}
+
+h4 {
+  font-size: 1.5rem;
+  margin-top: 2rem;
+  text-align: center;
+}
+
+h1,
+h2,
+h3,
+h4 {
+  line-height: 1.1;
+}
+
+p,
+h1,
+h2,
+h3,
+h4 {
+  overflow-wrap: break-word;
+}
+
+@media only screen and (max-width: 720px) {
+  h1 {
+    font-size: 2.5rem;
+  }
+  h2 {
+    font-size: 2.1rem;
+  }
+  h3 {
+    font-size: 1.75rem;
+  }
+  h4 {
+    font-size: 1.35rem;
+  }
+  .hero-tagline {
+    font-size: 1.15rem;
+  }
+  .hero-teaser {
+    font-size: 0.8rem;
+  }
+}
+
+a,
+a:visited {
+  color: var(--accent);
+}
+
+a:hover {
+  text-decoration: none;
+}
+
+code,
+kbd,
+samp {
+  font-family: Consolas, Menlo, Monaco, monospace;
+  color: var(--accent);
+  background: var(--accent-bg);
+  border-radius: var(--standard-border-radius);
+  padding: 0.1rem 0.4rem;
+  white-space: nowrap;
+}
+
+kbd {
+  color: var(--text);
+  border: var(--border-width) solid var(--border-color);
+}
+
+pre {
+  padding: 1rem 1.4rem;
+  max-width: 100%;
+  overflow: auto;
+  background: var(--accent-bg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--standard-border-radius);
+}
+
+pre code {
+  color: var(--text);
+  background: none;
+  padding: 0;
+}
+
+section {
+  border-top: var(--border-width) solid var(--border-color);
+  border-bottom: var(--border-width) solid var(--border-color);
+  padding: 2rem 0;
+  margin: 3rem 0;
+}
+
+section > h2,
+section > h3,
+section > h4,
+section > p,
+section > ul,
+section > ol,
+section > pre,
+section > table {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+main > nav {
+  max-width: 72rem;
+  margin-inline: auto;
+}
+
+section + section,
+section:first-child {
+  border-top: 0;
+  padding-top: 0;
+}
+
+section + section {
+  margin-top: 0;
+}
+
+section:last-child {
+  border-bottom: 0;
+  padding-bottom: 0;
+}
+
+ol.roadmap {
+  list-style: none;
+  padding: 0;
+  counter-reset: roadmap;
+}
+
+ol.roadmap li {
+  counter-increment: roadmap;
+  padding: 0.75rem 1rem 0.75rem 3rem;
+  margin-bottom: 0.75rem;
+  background: var(--accent-bg);
+  border: var(--border-width) solid var(--border-color);
+  border-radius: var(--standard-border-radius);
+  position: relative;
+}
+
+ol.roadmap li::before {
+  content: counter(roadmap);
+  position: absolute;
+  left: 0.75rem;
+  font-weight: bold;
+  color: var(--accent);
+}
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  margin: 1.5rem auto;
+}
+
+th,
+td {
+  padding: 0.75rem 1rem;
+  text-align: left;
+  border-bottom: var(--border-width) solid var(--border-color);
+}
+
+th {
+  font-weight: bold;
+  background: var(--accent-bg);
+}
+
+tutuca-playground,
+html-playground {
+  margin: 2em 0;
+}
+
+body > nav {
+  grid-column: 1 / -1;
+  padding: 1rem 1rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  text-align: center;
+  display: flex;
+  justify-content: flex-end;
+  gap: 2em;
+  flex-wrap: wrap;
+}
+
+body > nav p {
+  margin: 0;
+}
+
+body > footer {
+  grid-column: 1 / -1;
+  margin-top: 4rem;
+  padding: 2rem 1rem 1.5rem 1rem;
+  color: var(--text-light);
+  font-size: 0.9rem;
+  text-align: center;
+  border-top: var(--border-width) solid var(--border-color);
+  display: flex;
+  justify-content: center;
+  gap: 2em;
+  flex-wrap: wrap;
+}
+
+@media only screen and (max-width: 720px) {
+  body > nav,
+  body > footer {
+    justify-content: center;
+    gap: 1em;
+  }
+}

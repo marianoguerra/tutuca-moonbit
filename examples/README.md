@@ -1,0 +1,91 @@
+# examples
+
+MoonBit ports of the JS docs examples (`docs/examples/*.js` in the tutuca
+repo), one file per topic. Each exports a `<name>_module() -> ModuleDef` — the
+analogue of the JS module's `getComponents` / `getMacros` /
+`getRequestHandlers` / `getExamples` exports.
+
+One `ModuleDef` value drives three things, so a passing test and a working page
+are the same artifact:
+
+- the **headless tests** here (`*_test.mbt`) — mount the module as a live app on
+  the in-memory DOM, dispatch real click/input/keydown/drag events through the
+  transactor, and assert the resulting DOM;
+- the **browser host** (`demo/examples`) — mounts one by `?name=`;
+- the **CLI** (`cli.plan_with_module`) — `render`, `lint`, `show`.
+
+## Running them
+
+```sh
+moon test examples                     # the headless suite
+moon build --target js                 # then serve the REPO ROOT:
+python3 -m http.server 8901            # http://localhost:8901/demo/examples/
+```
+
+## Porting rules (how a JS example becomes a MoonBit one)
+
+Views port **verbatim** — the generated field mutators keep their JS camelCase
+names (`setX`, `toggleX`, `pushInX`, `removeInXAt`), so the template strings are
+copied across unchanged. What changes is the JS *around* the view:
+
+| JS | MoonBit |
+|---|---|
+| `component({name, view, fields, …})` | `@component.component(name~, view~, fields~, …)` |
+| `fields: { count: 0 }` | `fields={ "count": FieldSpec::of_default(Num(0)) }` |
+| `fields: { kid: Kid.make({…}) }` | `fields={ "kid": FieldSpec::comp("Kid", args={…}) }` — resolved through the registration scope at `make()` time |
+| `methods: { m() {…} }` | `methods={ "m": (inst, args) => Value }` — **pure** |
+| `input`/`receive`/`bubble`/`response` | `(inst, args, ctx) => Instance?` — `None` = no change |
+| `statics: { fromData }` | a plain `fn` — nothing in the framework calls statics, in either language |
+| `@on.click="onAddItem Item"` (a component as an arg) | the handler **captures** the `Component` in its closure; the view just calls `onAddItem` |
+| `ctx.at.field("x").send(n, a)` | `ctx.send_at_path(ctx.path().concat([FieldStep("x")]), n, a)` |
+| `app.sendAtRoot("init")` | `app.send_at_root("init")` |
+| `async` request handler | `RequestFn((args, respond) => …)` — callback-style, `respond(Ok(v))` / `respond(Err(e))` |
+
+**Handlers that need `ctx` go in `input`, not `methods`.** JS appends `ctx` to
+every dispatched handler, so a `methods.submit(ctx)` can send messages. MoonBit
+splits `MethodFn` (pure — it is also evaluated in value positions like
+`@text="$label"`, where no event exists) from `InstanceHandler` (effectful, gets
+`ctx`). The tutorial already says the methods/input split is organizational, so
+this costs nothing.
+
+## What is ported
+
+Basics, state & updates, collections, rendering, macros, graphics,
+communication, dynamics, drag & drop, and all three big apps (`json`,
+`personal-site`, `visual-wasm`) — 40 modules, all covered by interaction tests.
+See `all_examples()` in `examples.mbt` for the list, in tutorial order.
+
+The big apps needed the runtime patterns the smaller examples established, at
+scale: a `reg` map for the mutual recursion / lookup-table dispatch (`json`'s 8
+types, `visual-wasm`'s ~75 components), self-replacement handlers, `^handler`
+macro indirection, and Map-backed sets standing in for `ISet`
+(`personal-site`). `visual-wasm` also drove the one remaining generated-mutator
+gap — `insertInItemsAt` — into the runtime.
+
+## Not ported
+
+- **`composability.js`** — composes the other example modules (ported as the
+  `composability` example). The JS `storybook.js` gallery is ported too, but
+  lives in its own `storybook/` package (a compiled gallery of this registry)
+  and is served by `tutuca storybook`, not as an example here.
+- **`lint-errors.js`** — an intentionally-broken corpus asserting ~55 lint codes.
+  The semantic component linter is a catalog (`cli/lint_rules.mbt`), not an
+  implementation, so there is nothing yet to assert against.
+- **`custom-collection.js`** — needs custom seq registration (JS `SEQ_INFO`),
+  not ported.
+- **`testing-example.js`** — its point is the JS `getTests()` harness, which has
+  no MoonBit counterpart (`moon test` is the harness here).
+- **`file-picker.js`, `web-component-custom-event.js`** — both need DOM objects
+  the value layer deliberately does not expose (`event.target.files`, a CDN
+  custom element). Portable only as browser-only examples.
+
+## Divergences worth knowing
+
+- **`@show` / `@hide` REMOVE the node.** They do not toggle visibility — both JS
+  (`anode.js` `ShowNode.render` returns `null`) and this port omit the node from
+  the output. The JS tutorial's prose says otherwise; the code does not.
+- **A null `@text` renders nothing**, not `"null"` — JS's vdom `addChild` drops
+  null children (`vdom.js:113`), and this port matches.
+- **Drag geometry.** JS measures the pointer against the target's bounding box to
+  drop above vs below. The value layer exposes no DOM objects, so `dnd.mbt`
+  derives the side from the drag direction instead.

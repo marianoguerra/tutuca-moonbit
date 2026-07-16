@@ -1,0 +1,21 @@
+// Storybook — interactive gallery half. Generates a single tutuca root
+// component (sidebar + per-story preview panes) and mounts it as a live app,
+// with each story's module registered in its OWN child scope so same-named
+// components across examples don't collide. Depends on the runtime (app/vdom);
+// the CLI imports the pure `storybook` package instead.
+//
+// Lint is injected as a callback (host passes cli's check_component) so this
+// package need not depend on the CLI — avoids a storybook <-> cli cycle.
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/storybook" @sb,
+}
+
+import {
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/cli",
+  "moonbitlang/core/test",
+} for "test"

@@ -1,0 +1,4 @@
+// Pure task registry for the project's dev tasks (check/fmt/test/build/…).
+// Data + a planner only: no argv, no process spawning, no I/O — so it stays
+// target-agnostic and snapshot-testable. cmd/dev is the native shell that runs
+// the planned commands. Analog of the cli/ + cmd/main split.

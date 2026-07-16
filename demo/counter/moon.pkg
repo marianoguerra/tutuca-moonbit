@@ -1,0 +1,16 @@
+// Browser demo entry: a counter app booted on the real document.
+// Build with `moon build --target js`, then serve the repo root and open
+// demo/counter/index.html (see that file for the script path).
+import {
+  "marianoguerra/tutuca/demo/counterlib",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/browser" @glue,
+  "marianoguerra/tutuca/vdom/browser" @bdom,
+  "mizchi/js_browser/dom",
+}
+
+supported_targets = "js"
+
+options(
+  "is-main": true,
+)

@@ -1,0 +1,27 @@
+// wasm-gc browser demo: the tutuca counter running as WebAssembly.
+// The DOM is driven from wasm through @core.Any (mizchi/js core, which works on
+// wasm-gc via the `jscore` import namespace) plus a small `tdom` FFI for the
+// bits @core can't do on wasm (typed reads + the event bridge). Events cannot
+// carry MoonBit closures across the wasm boundary, so JS calls the exported
+// `on_event` on each event instead.
+// Build: moon build --target wasm-gc demo/counter_wasm
+import {
+  "marianoguerra/tutuca/demo/counterlib",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"
+
+options(
+  "is-main": true,
+  link: {
+    "wasm-gc": {
+      "exports": [ "mount", "on_event" ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

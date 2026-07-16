@@ -1,0 +1,23 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tutuca-mb — counter (wasm)</title>
+  </head>
+  <body>
+    <div id="app"></div>
+    <!--
+      This demo runs the counter as WebAssembly (wasm-gc). Build + assemble:
+        moon run --target native cmd/dev -- dist
+      then serve dist/ and open counter-wasm/. For a raw build:
+        moon build --target wasm-gc demo/counter_wasm
+      (needs a browser with the JS String Builtins proposal, e.g. Chrome).
+    -->
+    <script type="module">
+      import { loadWasm } from "./loader.mjs";
+      const exports = await loadWasm("./counter_wasm.wasm");
+      exports.mount();
+    </script>
+  </body>
+</html>

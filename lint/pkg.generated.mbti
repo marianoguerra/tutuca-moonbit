@@ -1,0 +1,97 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/lint"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn check_collected(LintCollector) -> Array[Finding]
+
+pub fn closest_name(String, Array[String], max_distance? : Int) -> String?
+
+pub fn lint_html(String, fragment_context? : String, transparent_tag_prefixes? : Array[String]) -> Array[Finding]
+
+// Errors
+
+// Types and methods
+pub(all) struct AttrsRecord {
+  result : @anode.AttrParseResult
+  is_macro_call : Bool
+  tag : String
+} derive(@debug.Debug)
+
+pub(all) struct Finding {
+  code : LintCode
+  level : LintLevel
+  info : Array[(String, String)]
+  location : Location?
+  suggestion : Suggestion?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum LintCode {
+  UnknownDirective
+  UnknownXOp
+  UnknownXAttr
+  BadValue
+  UnsupportedExprSyntax
+  BindingMemberTooDeep
+  XOpIgnoresChildren
+  DeprecatedBareXDirective
+  MaybeAddAtPrefix
+  MaybeDropAtPrefix
+  HtmlTagNameHasUppercase
+  HtmlSvgTagWillLowercase
+  HtmlSvgAttrWillLowercase
+  HtmlMathmlAttrWillLowercase
+  HtmlTagNotAllowedInParent
+  HtmlTextNotAllowedInParent
+  HtmlVoidElementHasCloseTag
+  HtmlDuplicateForm
+  HtmlNestedInteractive
+  HtmlMisnestedFormatting
+  HtmlUnexpectedEndTag
+  HtmlDuplicateAttribute
+  HtmlAttributesOnEndTag
+  HtmlSelfClosingEndTag
+  HtmlMissingAttributeValue
+  HtmlCdataInHtmlNamespace
+  HtmlBogusComment
+  HtmlUnclosedBeforeEnd
+} derive(Eq, @debug.Debug)
+
+pub(all) struct LintCollector {
+  parse_issues : Array[(@anode.ParseIssue, String?)]
+  deprecations : Array[(@anode.DeprecatedSyntax, String?)]
+  attrs : Array[AttrsRecord]
+}
+pub fn LintCollector::new() -> Self
+pub impl @anode.ParseHandler for LintCollector
+
+pub(all) enum LintLevel {
+  Error
+  Warn
+  Hint
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Location {
+  line : Int
+  column : Int
+  offset : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Suggestion {
+  ReplaceName(from~ : String, to~ : String)
+  AddPrefix(from~ : String, to~ : String)
+  DropPrefix(from~ : String, to~ : String)
+  Remove(what~ : String)
+  Rephrase(from~ : String, text~ : String)
+  Rewrite(from~ : String, to~ : String)
+  Wrap(from~ : String, to~ : String)
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

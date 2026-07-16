@@ -1,0 +1,16 @@
+// wasm-gc app glue: install DOM listeners for an App[WasmNode] and translate
+// real events into DomEvents. The js twin is app/browser. Key difference: a
+// MoonBit closure cannot be handed to addEventListener across the wasm-gc
+// boundary, so JS registers the listener (tdom.add_listener) and calls the
+// exported `on_event` on each event, which routes to the app held here.
+// Validate: moon check --target wasm-gc app/wasm
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "wasm-gc"

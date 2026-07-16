@@ -1,0 +1,14 @@
+// The embedded-CLI demo: a project binary whose main hands its ModuleDef to
+// @cli.plan_with_module — the module-input story for native binaries.
+// Run with: moon run --target native demo/counter_cli -- list
+import {
+  "marianoguerra/tutuca/cli",
+  "marianoguerra/tutuca/demo/counterlib",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)

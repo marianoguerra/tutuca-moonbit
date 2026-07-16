@@ -1,0 +1,9 @@
+import {
+  "marianoguerra/tutuca",
+  "moonbit-community/html/src" @html5,
+}
+
+import {
+  "moonbitlang/quickcheck" @qc,
+  "moonbitlang/core/debug",
+} for "test"

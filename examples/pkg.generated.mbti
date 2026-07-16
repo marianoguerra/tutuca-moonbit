@@ -1,0 +1,133 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/examples"
+
+import {
+  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/component",
+}
+
+// Values
+pub fn all_examples() -> Array[ExampleModule]
+
+pub fn attribute_binding_module() -> @component.ModuleDef
+
+pub fn composability_module() -> @component.ModuleDef
+
+pub fn conditional_attributes_module() -> @component.ModuleDef
+
+pub fn counter_module() -> @component.ModuleDef
+
+pub fn custom_collection_module() -> @component.ModuleDef
+
+pub fn danger_set_inner_html_module() -> @component.ModuleDef
+
+pub fn dnd_module() -> @component.ModuleDef
+
+pub fn dynamic_bindings_module() -> @component.ModuleDef
+
+pub fn dynamic_path_module() -> @component.ModuleDef
+
+pub fn dynamic_selected_edit_module() -> @component.ModuleDef
+
+pub fn entry_module() -> @component.ModuleDef
+
+pub fn event_modifiers_module() -> @component.ModuleDef
+
+pub fn failing_request_handlers() -> Map[String, @component.RequestFn]
+
+pub fn file_picker_module() -> @component.ModuleDef
+
+pub fn filter_paginate_module() -> @component.ModuleDef
+
+pub fn find_example(String) -> ExampleModule?
+
+pub fn items() -> Array[@tutuca.Value]
+
+pub fn json_module() -> @component.ModuleDef
+
+pub fn lint_errors_module() -> @component.ModuleDef
+
+pub fn list_and_filter_module() -> @component.ModuleDef
+
+pub fn list_filter_enrich_module() -> @component.ModuleDef
+
+pub fn list_filter_enrich_with_module() -> @component.ModuleDef
+
+pub fn list_iteration_module() -> @component.ModuleDef
+
+pub fn macro_named_slots_module() -> @component.ModuleDef
+
+pub fn macro_params_module() -> @component.ModuleDef
+
+pub fn macro_slots_module() -> @component.ModuleDef
+
+pub fn macro_static_module() -> @component.ModuleDef
+
+pub fn mathml_formula_module() -> @component.ModuleDef
+
+pub fn minimum_viable_module() -> @component.ModuleDef
+
+pub fn multiple_views_module() -> @component.ModuleDef
+
+pub fn pagination_module() -> @component.ModuleDef
+
+pub fn personal_site_module() -> @component.ModuleDef
+
+pub fn pseudo_x_module() -> @component.ModuleDef
+
+pub fn push_view_module() -> @component.ModuleDef
+
+pub fn render_child_module() -> @component.ModuleDef
+
+pub fn render_with_scope_module() -> @component.ModuleDef
+
+pub fn request_module(requests? : Map[String, @component.RequestFn]) -> @component.ModuleDef
+
+pub fn send_receive_module() -> @component.ModuleDef
+
+pub fn seq_item_access_module() -> @component.ModuleDef
+
+pub fn show_hide_module() -> @component.ModuleDef
+
+pub fn static_view_module() -> @component.ModuleDef
+
+pub fn styles_module() -> @component.ModuleDef
+
+pub fn svg_bar_chart_module() -> @component.ModuleDef
+
+pub fn svg_icon_macro_module() -> @component.ModuleDef
+
+pub fn svg_interactive_module() -> @component.ModuleDef
+
+pub fn tabbed_ui_module() -> @component.ModuleDef
+
+pub fn text_directive_module() -> @component.ModuleDef
+
+pub fn todo_macros_module() -> @component.ModuleDef
+
+pub fn todo_module() -> @component.ModuleDef
+
+pub fn traffic_light_module() -> @component.ModuleDef
+
+pub fn tree_module() -> @component.ModuleDef
+
+pub fn visual_wasm_module() -> @component.ModuleDef
+
+pub fn web_component_module() -> @component.ModuleDef
+
+// Errors
+
+// Types and methods
+pub struct ExampleModule {
+  name : String
+  root : String
+  module_ : @component.ModuleDef
+  example_title : String?
+  init : Bool
+}
+pub fn ExampleModule::root_args(Self) -> Map[String, @tutuca.Value]
+
+// Type aliases
+
+// Traits
+

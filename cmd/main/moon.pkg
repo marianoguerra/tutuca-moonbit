@@ -1,0 +1,18 @@
+// Native shell for the tutuca CLI: argv/stdout/stderr/stdin/fs/exit only —
+// all command logic lives in the pure marianoguerra/tutuca/cli package.
+// Run with: moon run --target native cmd/main -- <args>
+import {
+  "marianoguerra/tutuca/cli",
+  "moonbitlang/async",
+  "moonbitlang/async/fs",
+  "moonbitlang/async/http",
+  "moonbitlang/async/socket",
+  "moonbitlang/async/stdio",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+options(
+  "is-main": true,
+)
