@@ -111,36 +111,20 @@ extern "js" fn prevent_default_ffi(e : @core.Any) -> Unit =
   #|(e) => e.preventDefault && e.preventDefault()
 
 ///|
-extern "js" fn touches_len_ffi(e : @core.Any) -> Int =
-  #|(e) => e.touches?.length ?? 0
+extern "js" fn has_prop_ffi(o : @core.Any, name : String) -> Bool =
+  #|(o, n) => n in o
 
 ///|
-extern "js" fn first_touch_ffi(e : @core.Any) -> @core.Any =
-  #|(e) => e.touches?.[0] ?? null
+extern "js" fn get_int_ffi(o : @core.Any, name : String) -> Int =
+  #|(o, n) => o[n] | 0
 
 ///|
-extern "js" fn touch_num_ffi(t : @core.Any, name : String) -> Double =
-  #|(t, n) => t[n] ?? 0
+extern "js" fn get_num_ffi(o : @core.Any, name : String) -> Double =
+  #|(o, n) => +(o[n] ?? 0)
 
 ///|
-extern "js" fn touch_target_ffi(t : @core.Any) -> @core.Any =
-  #|(t) => t.target ?? null
-
-///|
-extern "js" fn closest_draggable_ffi(target : @core.Any) -> @core.Any =
-  #|(t) => (t && t.closest && t.closest('[draggable="true"]')) ?? null
-
-///|
-extern "js" fn find_touch_ffi(e : @core.Any, id : Double) -> @core.Any =
-  #|(e, id) => {
-  #|  for (const list of [e.touches, e.changedTouches]) {
-  #|    if (!list) continue;
-  #|    for (const t of list) if (t.identifier === id) return t;
-  #|  }
-  #|  return null;
-  #|}
-
-///|
+/// Hit-test under the finger, descending shadow roots (the wasm twin's
+/// injected version is a plain document.elementFromPoint).
 extern "js" fn element_from_point_ffi(
   root : @core.Any,
   x : Double,
@@ -158,85 +142,21 @@ extern "js" fn element_from_point_ffi(
   #|}
 
 ///|
-priv struct TouchState {
-  id : Double
-  start_x : Double
-  start_y : Double
-  target : @core.Any
-  mut active : Bool
-}
-
-///|
-/// Touch → drag synthesis (JS App._handleTouchEvent): a single touch on a
-/// [draggable] element becomes dragstart once it moves >10px, dragover while
-/// moving (hit-testing under the finger), drop + dragend on release.
-fn handle_touch(
-  app : @app.App[@browser.BrowserNode],
-  touch : Ref[TouchState?],
-  ev : @core.Any,
-  name : String,
-) -> Unit {
-  fn fire(kind : String, target : @core.Any) {
-    if !is_null_ffi(target) {
+/// The shared touch -> drag machine (@touchdrag) wired to this backend's
+/// typed reads, hit-testing and dispatch.
+fn touch_drag_for(app : @app.App[@browser.BrowserNode]) -> @touchdrag.TouchDrag {
+  @touchdrag.TouchDrag::new({
+    has_prop: has_prop_ffi,
+    get_int: get_int_ffi,
+    get_num: get_num_ffi,
+    element_from_point: element_from_point_ffi,
+    fire: (kind, target) => {
       let _ = app.dispatch(
         @browser.BrowserNode::of_any(target),
         @render.DomEvent::new(name=kind),
       )
-    }
-  }
-
-  if name == "touchstart" {
-    if touch.val is Some(_) || touches_len_ffi(ev) != 1 {
-      return
-    }
-    let t = first_touch_ffi(ev)
-    if is_null_ffi(t) {
-      return
-    }
-    let draggable = closest_draggable_ffi(touch_target_ffi(t))
-    if is_null_ffi(draggable) {
-      return
-    }
-    touch.val = Some({
-      id: touch_num_ffi(t, "identifier"),
-      start_x: touch_num_ffi(t, "clientX"),
-      start_y: touch_num_ffi(t, "clientY"),
-      target: draggable,
-      active: false,
-    })
-    return
-  }
-  guard touch.val is Some(ts) else { return }
-  let t = find_touch_ffi(ev, ts.id)
-  if is_null_ffi(t) {
-    return
-  }
-  let x = touch_num_ffi(t, "clientX")
-  let y = touch_num_ffi(t, "clientY")
-  let root_any = app.root_node.as_any()
-  if name == "touchmove" {
-    if !ts.active {
-      let dx = x - ts.start_x
-      let dy = y - ts.start_y
-      if dx * dx + dy * dy < 100.0 {
-        return
-      }
-      ts.active = true
-      prevent_default_ffi(ev)
-      fire("dragstart", ts.target)
-    } else {
-      prevent_default_ffi(ev)
-      fire("dragover", element_from_point_ffi(root_any, x, y))
-    }
-  } else if name == "touchend" || name == "touchcancel" {
-    if ts.active {
-      if name == "touchend" {
-        fire("drop", element_from_point_ffi(root_any, x, y))
-      }
-      fire("dragend", ts.target)
-    }
-    touch.val = None
-  }
+    },
+  })
 }
 
 ///|
@@ -247,20 +167,16 @@ fn handle_touch(
 pub fn install(app : @app.App[@browser.BrowserNode]) -> Unit {
   let root_any = app.root_node.as_any()
   let names = app.event_names()
-  for
-    extra in [
-      "dragstart", "dragover", "dragend", "drop", "touchstart", "touchmove", "touchend",
-      "touchcancel",
-    ] {
+  for extra in @touchdrag.drag_touch_events() {
     if !names.contains(extra) {
       names.push(extra)
     }
   }
-  let touch : Ref[TouchState?] = { val: None }
+  let touch = touch_drag_for(app)
   for name in names {
     add_listener_ffi(root_any, name, ev => {
       if name.has_prefix("touch") {
-        handle_touch(app, touch, ev, name)
+        touch.handle(ev, name, app.root_node.as_any())
       } else {
         if name == "dragover" || name == "drop" {
           prevent_default_ffi(ev)

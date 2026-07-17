@@ -1,0 +1,10 @@
+// Backend-neutral touch -> drag synthesis shared by the two event-glue twins
+// (app/browser on js, app/wasm on wasm-gc). Everything expressible through
+// mizchi/js @core.Any lives here once; the few reads @core can't do on
+// wasm-gc (typed Int/Double/prop-membership) plus hit-testing and dispatch
+// are injected per backend via TouchOps.
+import {
+  "mizchi/js/core",
+}
+
+supported_targets = "-all+js+wasm-gc"

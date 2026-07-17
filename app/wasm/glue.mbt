@@ -41,19 +41,10 @@ extern "wasm" fn tdom_inject_css(
 let current_app : Ref[@app.App[@wdom.WasmNode]?] = Ref(None)
 
 ///|
-/// Live single-touch drag capture (touchstart .. touchend), mirroring the
-/// closure-captured Ref in app/browser. Global here since `on_event` is a
-/// top-level export with no closure to hold it.
-let touch_state : Ref[TouchState?] = Ref(None)
-
-///|
-priv struct TouchState {
-  id : Double
-  start_x : Double
-  start_y : Double
-  target : @core.Any
-  mut active : Bool
-}
+/// The live app's touch -> drag machine (see app/touchdrag), mirroring the
+/// closure-captured value in app/browser's install. Global here since
+/// `on_event` is a top-level export with no closure to hold it.
+let touch_state : Ref[@touchdrag.TouchDrag?] = Ref(None)
 
 ///|
 fn to_str(v : @core.Any) -> String {
@@ -140,60 +131,13 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
   )
 }
 
-// --- touch -> drag synthesis (app/browser App._handleTouchEvent) ---
+// --- touch -> drag synthesis (shared machine in app/touchdrag) ---
 
 ///|
-fn touches_len(ev : @core.Any) -> Int {
-  let ts = ev._get("touches")
-  if @core.is_nullish(ts) {
-    0
-  } else {
-    tdom_get_int(ts, "length")
-  }
-}
-
-///|
-fn first_touch(ev : @core.Any) -> @core.Any {
-  let ts = ev._get("touches")
-  if @core.is_nullish(ts) {
-    @core.null()
-  } else {
-    ts._get_by_index(0)
-  }
-}
-
-///|
-/// The nearest `[draggable="true"]` ancestor of a touch target, or null.
-fn closest_draggable(target : @core.Any) -> @core.Any {
-  if @core.is_nullish(target) || !tdom_has_prop(target, "closest") {
-    @core.null()
-  } else {
-    target._call("closest", [@core.any("[draggable=\"true\"]")])
-  }
-}
-
-///|
-/// Find the touch with `id` across touches/changedTouches, or null.
-fn find_touch(ev : @core.Any, id : Double) -> @core.Any {
-  for key in ["touches", "changedTouches"] {
-    let list = ev._get(key)
-    if !@core.is_nullish(list) {
-      let n = tdom_get_int(list, "length")
-      for i in 0..<n {
-        let t = list._get_by_index(i)
-        if tdom_get_num(t, "identifier") == id {
-          return t
-        }
-      }
-    }
-  }
-  @core.null()
-}
-
-///|
-/// Hit-test under the finger. Simplified vs app/browser: no shadow-DOM descent
-/// (the examples mount in the light DOM), so a plain document.elementFromPoint.
-fn element_from_point(x : Double, y : Double) -> @core.Any {
+/// Hit-test under the finger. Simplified vs app/browser's injected version:
+/// no shadow-DOM descent (the examples mount in the light DOM), so a plain
+/// document.elementFromPoint; `_root` is unused here.
+fn element_from_point(_root : @core.Any, x : Double, y : Double) -> @core.Any {
   let doc = @core.global_this()._get("document")
   if tdom_has_prop(doc, "elementFromPoint") {
     doc._call("elementFromPoint", [
@@ -206,79 +150,21 @@ fn element_from_point(x : Double, y : Double) -> @core.Any {
 }
 
 ///|
-fn dispatch_synthetic(
-  app : @app.App[@wdom.WasmNode],
-  kind : String,
-  target : @core.Any,
-) -> Unit {
-  if !@core.is_nullish(target) {
-    let _ = app.dispatch(
-      @wdom.WasmNode::of_any(target),
-      @render.DomEvent::new(name=kind),
-    )
-  }
-}
-
-///|
-/// A single touch on a [draggable] becomes dragstart once it moves >10px,
-/// dragover while moving (hit-testing under the finger), drop + dragend on
-/// release (app/browser App._handleTouchEvent).
-fn handle_touch(
-  app : @app.App[@wdom.WasmNode],
-  ev : @core.Any,
-  name : String,
-) -> Unit {
-  if name == "touchstart" {
-    if touch_state.val is Some(_) || touches_len(ev) != 1 {
-      return
-    }
-    let t = first_touch(ev)
-    if @core.is_nullish(t) {
-      return
-    }
-    let draggable = closest_draggable(t._get("target"))
-    if @core.is_nullish(draggable) {
-      return
-    }
-    touch_state.val = Some({
-      id: tdom_get_num(t, "identifier"),
-      start_x: tdom_get_num(t, "clientX"),
-      start_y: tdom_get_num(t, "clientY"),
-      target: draggable,
-      active: false,
-    })
-    return
-  }
-  guard touch_state.val is Some(ts) else { return }
-  let t = find_touch(ev, ts.id)
-  if @core.is_nullish(t) {
-    return
-  }
-  let x = tdom_get_num(t, "clientX")
-  let y = tdom_get_num(t, "clientY")
-  if name == "touchmove" {
-    if !ts.active {
-      let dx = x - ts.start_x
-      let dy = y - ts.start_y
-      if dx * dx + dy * dy < 100.0 {
-        return
-      }
-      ts.active = true
-      prevent_default(ev)
-      dispatch_synthetic(app, "dragstart", ts.target)
-    } else {
-      prevent_default(ev)
-      dispatch_synthetic(app, "dragover", element_from_point(x, y))
-    }
-  } else if name == "touchend" || name == "touchcancel" {
-    if ts.active {
-      if name == "touchend" {
-        dispatch_synthetic(app, "drop", element_from_point(x, y))
-      }
-      dispatch_synthetic(app, "dragend", ts.target)
-    }
-    touch_state.val = None
-  }
+/// The shared touch -> drag machine wired to this backend's typed reads,
+/// hit-testing and dispatch.
+fn touch_drag_for(app : @app.App[@wdom.WasmNode]) -> @touchdrag.TouchDrag {
+  @touchdrag.TouchDrag::new({
+    has_prop: tdom_has_prop,
+    get_int: tdom_get_int,
+    get_num: tdom_get_num,
+    element_from_point,
+    fire: (kind, target) => {
+      let _ = app.dispatch(
+        @wdom.WasmNode::of_any(target),
+        @render.DomEvent::new(name=kind),
+      )
+    },
+  })
 }
 
 ///|
@@ -287,14 +173,10 @@ fn handle_touch(
 /// listeners are wired on the JS side and call back through `on_event`.
 pub fn install(app : @app.App[@wdom.WasmNode]) -> Unit {
   current_app.val = Some(app)
-  touch_state.val = None
+  touch_state.val = Some(touch_drag_for(app))
   let root = app.root_node.as_any()
   let names = app.event_names()
-  for
-    extra in [
-      "dragstart", "dragover", "dragend", "drop", "touchstart", "touchmove", "touchend",
-      "touchcancel",
-    ] {
+  for extra in @touchdrag.drag_touch_events() {
     if !names.contains(extra) {
       names.push(extra)
     }
@@ -313,7 +195,10 @@ pub fn on_event(ev : @core.Any) -> Unit {
   guard current_app.val is Some(app) else { return }
   let name = to_str(ev._get("type"))
   if name.has_prefix("touch") {
-    handle_touch(app, ev, name)
+    match touch_state.val {
+      Some(touch) => touch.handle(ev, name, app.root_node.as_any())
+      None => ()
+    }
     return
   }
   if name == "dragover" || name == "drop" {

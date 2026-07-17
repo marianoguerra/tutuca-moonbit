@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/app/touchdrag"
+
+import {
+  "mizchi/js/core",
+}
+
+// Values
+pub fn drag_touch_events() -> Array[String]
+
+// Errors
+
+// Types and methods
+pub struct TouchDrag {
+  ops : TouchOps
+  // private fields
+}
+pub fn TouchDrag::handle(Self, @core.Any, String, @core.Any) -> Unit
+pub fn TouchDrag::new(TouchOps) -> Self
+
+pub(all) struct TouchOps {
+  has_prop : (@core.Any, String) -> Bool
+  get_int : (@core.Any, String) -> Int
+  get_num : (@core.Any, String) -> Double
+  element_from_point : (@core.Any, Double, Double) -> @core.Any
+  fire : (String, @core.Any) -> Unit
+}
+
+// Type aliases
+
+// Traits
+

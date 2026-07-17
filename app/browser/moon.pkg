@@ -4,6 +4,7 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/touchdrag",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom/browser",
   "mizchi/js/core",
