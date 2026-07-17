@@ -57,8 +57,27 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
+      # wasm-tools is needed by the dyncomp task (componentize the guest
+      # bundle: wasm-tools component embed/new). Prebuilt release binary —
+      # keep the pin roughly in sync with guests/counter/README.md.
+      - name: Install wasm-tools
+        run: |
+          WASM_TOOLS_VERSION=1.244.0
+          curl -fsSL "https://github.com/bytecodealliance/wasm-tools/releases/download/v${WASM_TOOLS_VERSION}/wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux.tar.gz" \
+            | tar -xz -C /tmp
+          mkdir -p "$HOME/.local/bin"
+          mv "/tmp/wasm-tools-${WASM_TOOLS_VERSION}-x86_64-linux/wasm-tools" "$HOME/.local/bin/"
+          echo "$HOME/.local/bin" >> "$GITHUB_PATH"
+
       - name: Build dist
         run: moon run --target native cmd/dev -- dist
+
+      # dynamic-wasm-component examples: builds the MoonBit counter guest
+      # bundle (moon -> wasm-tools -> jco) and copies it + the demo shell
+      # into dist/dyncomp and dist/storybook/counter (the storybook's
+      # "Dynamic" story loads it at runtime).
+      - name: Build dyncomp examples
+        run: moon run --target native cmd/dev -- dyncomp
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
