@@ -16,7 +16,7 @@ fn VwReg::get(self : VwReg, name : String) -> @component.Component? {
 fn VwReg::make_(
   self : VwReg,
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args).to_value()
@@ -244,7 +244,7 @@ fn vw_imm_instrs() -> Array[(String, String)] {
 ///|
 /// wasm label -> the const name that builds it, for the picker's dispatch.
 fn vw_id_to_name() -> Map[String, String] {
-  let m : Map[String, String] = {}
+  let m : Map[String, String] = Map([])
   for p in vw_plain_instrs() {
     m[p.1] = p.0
   }
@@ -646,7 +646,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "<label class=\"\{r.3} radio-label\"><input type=\"radio\" class=\"radio \{r.2} radio-xs r-\{r.0}\" @on.input=\"\{r.1}\" /> \{r.0}</label>",
     )
   }
-  let methods : Map[String, @component.MethodFn] = {}
+  let methods : Map[String, @component.MethodFn] = Map([])
   let cats = vw_categories()
   for r in radios {
     let section = r.0

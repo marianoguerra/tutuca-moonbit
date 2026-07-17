@@ -53,7 +53,7 @@ fn as_list(v : @tutuca.Value) -> Array[@tutuca.Value] {
 
 /// A Map-backed set: membership is key-presence.
 fn ps_set_of(members : Array[String]) -> Map[String, @tutuca.Value] {
-  let m : Map[String, @tutuca.Value] = {}
+  let m : Map[String, @tutuca.Value] = Map([])
   for s in members {
     m[s] = Bool(true)
   }
@@ -87,7 +87,7 @@ fn ps_set_toggle(
   set : Map[String, @tutuca.Value],
   entry : String,
 ) -> Map[String, @tutuca.Value] {
-  let out : Map[String, @tutuca.Value] = {}
+  let out : Map[String, @tutuca.Value] = Map([])
   for k, v in set {
     out[k] = v
   }
@@ -537,8 +537,8 @@ fn root_comp() -> @component.Component {
           _ => []
         }
         // collect + sort the distinct categories and roles
-        let cat_set : Map[String, Unit] = {}
-        let role_set : Map[String, Unit] = {}
+        let cat_set : Map[String, Unit] = Map([])
+        let role_set : Map[String, Unit] = Map([])
         for e in entries {
           match e {
             Obj(o) => {

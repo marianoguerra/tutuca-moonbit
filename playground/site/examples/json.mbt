@@ -14,7 +14,7 @@ priv struct JsonReg {
 fn JsonReg::make_(
   self : JsonReg,
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args).to_value()

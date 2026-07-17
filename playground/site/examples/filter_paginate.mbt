@@ -346,7 +346,7 @@ fn shared_people_comp() -> @component.Component {
 /// 3. COUPLED — one scan total. The enrich builds the page keys into `__keys__`
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
-  let alter : Map[String, @component.MethodFn] = {}
+  let alter : Map[String, @component.MethodFn] = Map([])
   alter["pagerInfo"] = (inst, _args) => {
     let q = fp_query(inst)
     let all : Array[Int] = []

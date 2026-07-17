@@ -31,7 +31,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
-    examples=[{ component: "Counter", title: "Basic", args: {}, view: None }],
+    examples=[{ component: "Counter", title: "Basic", args: Map([]), view: None }],
   )
 }
 
@@ -63,7 +63,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="toggle", components=[panel],
-    examples=[{ component: "Panel", title: "Closed", args: {}, view: None }],
+    examples=[{ component: "Panel", title: "Closed", args: Map([]), view: None }],
   )
 }
 
@@ -87,7 +87,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="greeter", components=[greeter],
-    examples=[{ component: "Greeter", title: "Default", args: {}, view: None }],
+    examples=[{ component: "Greeter", title: "Default", args: Map([]), view: None }],
   )
 }
 
@@ -131,7 +131,7 @@ fn build() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
-    examples=[{ component: "Counter", title: "Basic", args: {}, view: None }],
+    examples=[{ component: "Counter", title: "Basic", args: Map([]), view: None }],
   )
 }
 
