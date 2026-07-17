@@ -36,7 +36,10 @@ fn is_valid_tag_name(tag : String) -> Bool {
 }
 
 ///|
-pub fn ANode::from_dom(
+/// Convert one DOM node (JS ANode.fromDOM) — ANode::parse's recursion
+/// worker. None when the node contributes nothing (unsupported node kinds,
+/// failed <x> ops).
+fn ANode::from_dom(
   doc : @html5.Document,
   node_id : Int,
   px : ParseContext,

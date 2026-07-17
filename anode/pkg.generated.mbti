@@ -44,7 +44,6 @@ pub(all) enum ANode {
 } derive(@debug.Debug)
 pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
 pub fn ANode::condense_whitespace(Self, replacement? : String) -> Unit
-pub fn ANode::from_dom(@src.Document, Int, ParseContext) -> Self?
 pub fn ANode::has_newline(Self) -> Bool
 pub fn ANode::is_constant(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool

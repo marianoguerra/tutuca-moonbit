@@ -129,13 +129,6 @@ pub(open) trait ViewResolver {
 }
 
 ///|
-/// Always unresolved: `<x render*>` sites render nothing.
-pub(all) struct NullViewResolver {}
-
-///|
-declare pub impl ViewResolver for NullViewResolver
-
-///|
 /// Name → view-root map for tests and simple embedding. A None view name
 /// falls back to the "main" entry (mirroring the JS default view name).
 pub(all) struct ViewMap {

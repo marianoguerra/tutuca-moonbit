@@ -58,10 +58,6 @@ pub(all) enum Meta {
 pub fn Meta::parse(String) -> Self?
 pub fn Meta::to_comment_text(Self) -> String
 
-pub(all) struct NullViewResolver {
-}
-pub impl ViewResolver for NullViewResolver
-
 pub struct RenderCache {
   mut cur : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]
   mut prev : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]

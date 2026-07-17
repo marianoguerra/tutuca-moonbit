@@ -520,12 +520,3 @@ declare pub fn View::compile(
 /// several roots are whitespace-condensed into a fragment. None only when a
 /// single root is an `<x>` op whose value failed to parse (JS returns null).
 declare pub fn ANode::parse(html : String, px : ParseContext) -> ANode?
-
-///|
-/// Convert one DOM node (JS ANode.fromDOM). None when the node contributes
-/// nothing (unsupported node kinds, failed <x> ops).
-declare pub fn ANode::from_dom(
-  doc : @html5.Document,
-  node_id : Int,
-  px : ParseContext,
-) -> ANode?

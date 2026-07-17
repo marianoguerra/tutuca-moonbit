@@ -22,7 +22,7 @@ pub(all) enum MemKind {
   FragmentNode
 } derive(Eq, @debug.Debug)
 
-pub(all) struct MemNode {
+pub struct MemNode {
   kind : MemKind
   tag : String
   ns : @vdom.Ns?

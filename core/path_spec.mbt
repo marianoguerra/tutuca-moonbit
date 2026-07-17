@@ -289,6 +289,8 @@ declare pub fn Path::pin_keys(self : Path, root : &PathNode) -> Path
 ///|
 /// The abstract/dispatch projection: frame-only steps dropped (none exist
 /// yet — the hook is in place), EachRenderItStep abstracted to SeqStep.
+/// Ported for JS Path.compact parity; production callers all go through
+/// DispatchPath::compact — this one is exercised by tests only.
 declare pub fn Path::compact(self : Path) -> Path
 
 ///|

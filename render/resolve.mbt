@@ -1,8 +1,14 @@
-// ViewResolver implementations. TEMPORARY: this whole seam is replaced by
-// component/view resolution when the component layer lands (render-plan.md).
+// Component-less ViewResolver implementations (ViewMap here, ViewRegistry in
+// registry.mbt): the seam render's own tests and simple embeddings use. The
+// production resolver is @component.Components (components_impl.mbt).
 
 ///|
-pub impl ViewResolver for NullViewResolver with fn resolve_view(
+/// Always unresolved (`<x render*>` sites render nothing): RenderCtx::new's
+/// default when no resolver is passed.
+priv struct NullViewResolver {}
+
+///|
+impl ViewResolver for NullViewResolver with fn resolve_view(
   _self,
   _names,
   _value,

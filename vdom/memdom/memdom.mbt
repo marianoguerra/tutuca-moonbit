@@ -15,7 +15,7 @@ pub(all) enum MemKind {
 ///
 /// Never derive Debug/ToJson here: the `parent` back-pointer makes the
 /// derived printer recurse forever. Use `to_html` for output.
-pub(all) struct MemNode {
+pub struct MemNode {
   kind : MemKind
   tag : String
   ns : @vdom.Ns?
