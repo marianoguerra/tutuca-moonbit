@@ -24,7 +24,3 @@ fn build() -> @component.ModuleDef {
     examples=[{ component: "Panel", title: "Closed", args: Map([]), view: None }],
   )
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

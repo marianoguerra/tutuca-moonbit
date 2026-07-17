@@ -16,7 +16,3 @@ fn build() -> @component.ModuleDef {
     examples=[{ component: "Greeter", title: "Default", args: Map([]), view: None }],
   )
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

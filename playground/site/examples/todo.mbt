@@ -81,11 +81,16 @@ pub fn todo_module() -> @component.ModuleDef {
 }
 
 fn build() -> @component.ModuleDef {
-  todo_module()
-}
-
-fn main {
-  // mount the list (the module's first example is a single Item); starts empty,
-  // click "Add Task" to append editable rows
-  @host.mount(build(), "app", root="Items")
+  // The playground mounts the module's FIRST example, so lead with the Items
+  // list (starts empty — click "Add Task" to append editable rows). The full
+  // gallery (single Item, completed Item, …) still lives in todo_module().
+  let m = todo_module()
+  @component.ModuleDef::new(
+    name=m.name,
+    components=m.components,
+    examples=[
+      { component: "Items", title: "List", args: Map([]), view: None },
+      ..m.examples,
+    ],
+  )
 }

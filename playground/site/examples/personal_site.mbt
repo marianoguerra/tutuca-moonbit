@@ -720,7 +720,3 @@ pub fn personal_site_module() -> @component.ModuleDef {
 fn build() -> @component.ModuleDef {
   personal_site_module()
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

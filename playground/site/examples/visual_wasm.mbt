@@ -828,7 +828,3 @@ pub fn visual_wasm_module() -> @component.ModuleDef {
 fn build() -> @component.ModuleDef {
   visual_wasm_module()
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

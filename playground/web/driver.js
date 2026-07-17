@@ -92,11 +92,10 @@ async function run() {
 // Ctrl/⌘+Enter (run) and Tab-indent are handled inside the editor's keymap.
 $("#run").addEventListener("click", run);
 
-// example picker — the js and wasm-gc backends need differently-shaped user
-// modules (js self-mounts from `main`; wasm-gc exports host wrappers), so each
-// target has its own example set.
+// example picker — examples define only `build()`; the worker injects the
+// target boot glue, so ONE example set drives both backends.
 const examplesSel = $("#examples");
-const exampleSet = () => (currentTarget() === "wasm-gc" ? window.EXAMPLES_WASM : window.EXAMPLES) || {};
+const exampleSet = () => window.EXAMPLES || {};
 function fillExamples() {
   const set = exampleSet();
   examplesSel.innerHTML = "";
@@ -112,13 +111,9 @@ examplesSel.addEventListener("change", () => {
   run();
 });
 
-// target toggle — swap the worker payload + reload a target-appropriate example.
-targetSel.addEventListener("change", () => {
-  fillExamples();
-  const set = exampleSet();
-  editor.setValue(set[Object.keys(set)[0]] || editor.getValue());
-  run();
-});
+// target toggle — recompile the SAME source against the other backend (the
+// worker swaps its payload on init and injects that target's boot glue).
+targetSel.addEventListener("change", run);
 
 // --- boot ---
 (async () => {

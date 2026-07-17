@@ -241,7 +241,3 @@ fn composability_module() -> @component.ModuleDef {
 fn build() -> @component.ModuleDef {
   composability_module()
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

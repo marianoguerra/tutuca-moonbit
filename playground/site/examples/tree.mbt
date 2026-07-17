@@ -141,6 +141,3 @@ fn build() -> @component.ModuleDef {
 }
 
 ///|
-fn main {
-  @host.mount(build(), "app")
-}

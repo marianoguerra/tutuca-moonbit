@@ -479,7 +479,3 @@ pub fn filter_paginate_module() -> @component.ModuleDef {
 fn build() -> @component.ModuleDef {
   filter_paginate_module()
 }
-
-fn main {
-  @host.mount(build(), "app")
-}

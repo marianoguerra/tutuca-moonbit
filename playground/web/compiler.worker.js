@@ -19,6 +19,28 @@ let fs = null; // { std:[[name,bytes]], lib:[[name,bytes]], direct:[[name,bytes]
 
 const bytes = async (url) => new Uint8Array(await (await fetch(url)).arrayBuffer());
 
+// The editor holds ONLY the component (a `build() -> @component.ModuleDef`); the
+// target-specific boot glue is injected here as a second package file so one
+// source compiles on both backends. The glue differs for a fundamental reason —
+// the wasm/JS ABI boundary: js compiles to JS so `main` self-mounts and closures
+// cross freely, whereas wasm-gc has no JS-callable `main` (JS calls exported
+// wrappers) and closures can't cross (events delegate through exported
+// `on_event`). Kept in its own file so user diagnostics keep their line numbers.
+const BOOT = {
+  js: `fn main {
+  @host.mount(build(), "app")
+}
+`,
+  "wasm-gc": `pub fn mount() -> Unit { @host_wasm.mount(build(), "app") }
+pub fn on_event(ev : @core.Any) -> Unit { @host_wasm.on_event(ev) }
+pub fn state_json() -> String { @host_wasm.state_json() }
+pub fn classes_json() -> String { @host_wasm.classes_json() }
+fn main {
+
+}
+`,
+};
+
 async function init(manifestUrl, target) {
   // Load the CJS compiler by fetching + indirect-eval in global scope, so the
   // ambient CJS names (module/exports/require) resolve. (importScripts surfaces
@@ -50,8 +72,9 @@ async function init(manifestUrl, target) {
 
 function compile(userCode) {
   const t0 = Date.now();
+  const boot = BOOT[fs.target] || BOOT.js;
   const bp = moonc.buildPackage({
-    mbtFiles: [["main.mbt", userCode]],
+    mbtFiles: [["main.mbt", userCode], ["_boot.mbt", boot]],
     miFiles: fs.direct,
     indirectImportMiFiles: fs.lib,
     stdMiFiles: fs.std,

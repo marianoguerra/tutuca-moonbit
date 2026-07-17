@@ -96,7 +96,3 @@ fn dnd_items() -> Array[@tutuca.Value] {
     Str("ship the fours"), Str("plan the fives"),
   ]
 }
-
-fn main {
-  @host.mount(build(), "app")
-}
