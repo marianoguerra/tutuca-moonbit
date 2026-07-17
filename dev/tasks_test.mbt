@@ -36,9 +36,10 @@ test "plan resolves a base task to Run steps" {
 }
 
 ///|
-test "plan expands the ci composite into check ++ test ++ build steps" {
+test "plan expands the ci composite into its member tasks' steps" {
   let ci = @dev.plan("ci").unwrap_or([])
   let expected = @dev.plan("check").unwrap_or([]) +
+    @dev.plan("check-examples").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])
   assert_true(ci == expected)

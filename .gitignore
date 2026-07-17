@@ -20,3 +20,6 @@ playground/vendor/moonc-web.cjs
 
 # Playwright-MCP browser session dumps
 .playwright-mcp/
+
+# Throwaway scaffold used by scripts/check-playground-examples.mjs
+playground/_examples_check/

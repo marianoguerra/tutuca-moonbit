@@ -111,6 +111,17 @@ pub fn tasks() -> Array[Task] {
       commands: [moon("coverage analyze", ["coverage", "analyze"])],
     },
     {
+      name: "check-examples",
+      about: "compile-check the playground's editable examples (no moon package includes them)",
+      commands: [
+        {
+          label: "check · playground examples",
+          prog: "node",
+          args: ["scripts/check-playground-examples.mjs"],
+        },
+      ],
+    },
+    {
       name: "fetch-moonc",
       about: "fetch the gitignored in-browser MoonBit compiler (playground/vendor/moonc-web.cjs) from npm; see playground/vendor/README.md",
       commands: [
@@ -191,8 +202,8 @@ fn composites() -> Array[(String, String, Array[String])] {
   [
     (
       "ci",
-      "check + test + build (build-smokes every backend & demo)",
-      ["check", "test", "build"],
+      "check + check-examples + test + build (build-smokes every backend & demo)",
+      ["check", "check-examples", "test", "build"],
     ),
   ]
 }
