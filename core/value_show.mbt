@@ -20,12 +20,7 @@ fn val_source(val : Val) -> String {
         match part {
           Some(Const(lit=LStr(s), ..)) =>
             // Re-escape the raw text (the parse unescaped it once).
-            for c in s {
-              if c is ('\'' | '\\') {
-                buf.write_char('\\')
-              }
-              buf.write_char(c)
-            }
+            escape_str_into(buf, s)
           Some(v) => {
             buf.write_char('{')
             buf.write_string(val_source(v))

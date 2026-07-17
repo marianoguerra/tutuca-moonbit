@@ -8,15 +8,23 @@
 // ---------------------------------------------------------------------------
 
 ///|
+/// title/description/deprecated metadata fields, added in place (shared by
+/// schema_node_fields and the conditional component, which also both render
+/// the matching deprecated badge + title/description lines in their views).
+fn add_schema_meta_fields(f : Map[String, @component.FieldSpec]) -> Unit {
+  f["title"] = @component.FieldSpec::of_default(Str(""))
+  f["description"] = @component.FieldSpec::of_default(Str(""))
+  f["deprecated"] = @component.FieldSpec::of_default(Bool(false))
+}
+
+///|
 /// JS schemaNodeFields: the composite state plus a type label, constraint
 /// badges and title/description/deprecated metadata.
 fn schema_node_fields() -> Map[String, @component.FieldSpec] {
   let f = composite_fields()
   f["typeLabel"] = @component.FieldSpec::of_default(Str(""))
   f["badges"] = @component.FieldSpec::of_default(List([]))
-  f["title"] = @component.FieldSpec::of_default(Str(""))
-  f["description"] = @component.FieldSpec::of_default(Str(""))
-  f["deprecated"] = @component.FieldSpec::of_default(Bool(false))
+  add_schema_meta_fields(f)
   f
 }
 
@@ -688,16 +696,15 @@ fn Inspector::schema_combinator_from(
 ///|
 /// Conditional applicator: if / then / else as three labeled regions.
 fn schema_conditional_comp() -> @component.Component {
+  let fields : Map[String, @component.FieldSpec] = {
+    "ifNode": @component.FieldSpec::of_default(Null),
+    "thenNode": @component.FieldSpec::of_default(Null),
+    "elseNode": @component.FieldSpec::of_default(Null),
+  }
+  add_schema_meta_fields(fields)
   @component.component(
     name="SchemaConditional",
-    fields={
-      "ifNode": @component.FieldSpec::of_default(Null),
-      "thenNode": @component.FieldSpec::of_default(Null),
-      "elseNode": @component.FieldSpec::of_default(Null),
-      "title": @component.FieldSpec::of_default(Str("")),
-      "description": @component.FieldSpec::of_default(Str("")),
-      "deprecated": @component.FieldSpec::of_default(Bool(false)),
-    },
+    fields~,
     view=(
       #|<span class="font-mono text-sm leading-tight inline-block schema-conditional">
       #|  <span class="inline-flex items-center gap-2 flex-wrap">

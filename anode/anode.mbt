@@ -2,9 +2,17 @@
 // hierarchy's virtual dispatch (src/anode.js). See spec.mbt for contracts.
 
 ///|
+/// Template whitespace (the JS source's explicit ` \t\n\r` set — narrower
+/// than the value language's JS-\s set in core and the WHATWG tokenizer set
+/// in lint, both deliberate).
+fn is_tpl_space(c : Char) -> Bool {
+  c is (' ' | '\t' | '\n' | '\r')
+}
+
+///|
 fn is_whitespace_str(s : String) -> Bool {
   for c in s {
-    if !(c is (' ' | '\n' | '\t' | '\r')) {
+    if !is_tpl_space(c) {
       return false
     }
   }

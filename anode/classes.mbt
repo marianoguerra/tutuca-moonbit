@@ -16,9 +16,10 @@ fn add_classes(s : String, into : Set[String]) -> Unit {
   }
 
   for c in s {
-    match c {
-      ' ' | '\t' | '\n' | '\r' => flush()
-      _ => buf.write_char(c)
+    if is_tpl_space(c) {
+      flush()
+    } else {
+      buf.write_char(c)
     }
   }
   flush()

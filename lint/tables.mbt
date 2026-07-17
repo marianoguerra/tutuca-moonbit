@@ -136,6 +136,14 @@ let table_scope_tags : Set[String] = Set::from_array([
 let table_body_cell_tags : Set[String] = Set::from_array(["td", "th"])
 
 ///|
+/// Table-structural start tags that end the current caption/cell and
+/// reprocess in the table (§13.2.6.4.11 "in caption", §13.2.6.4.15 "in
+/// cell") — the same list in both modes.
+let caption_cell_breakout_tags : Set[String] = Set::from_array([
+  "caption", "col", "colgroup", "tbody", "td", "tfoot", "th", "thead", "tr",
+])
+
+///|
 /// §13.2.6.4.7 "generate implied end tags": these pop silently, without
 /// HTML_UNCLOSED_BEFORE_END.
 let implied_end_tags : Set[String] = Set::from_array([

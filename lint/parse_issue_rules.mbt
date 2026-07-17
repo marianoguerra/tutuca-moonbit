@@ -283,6 +283,8 @@ fn expr_kind_guidance(kind : ExprKind) -> String {
 }
 
 ///|
+/// Value-source whitespace (` \t\n\r`; the raw HTML scanner's scan_is_space
+/// deliberately differs — WHATWG tokenizer whitespace includes form feed).
 fn is_space(c : Char) -> Bool {
   c is (' ' | '\t' | '\n' | '\r')
 }

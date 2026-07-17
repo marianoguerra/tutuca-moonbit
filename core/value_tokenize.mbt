@@ -88,16 +88,23 @@ fn unescape_str(s : String) -> String {
 }
 
 ///|
-/// JS ConstVal.toString quoting: `'…'` with `'` and `\` escaped, one pass.
-fn escape_str_literal(s : String) -> String {
-  let buf = StringBuilder::new()
-  buf.write_char('\'')
+/// Escape `'` and `\` into `buf` (shared by ConstVal quoting and StrTpl
+/// re-escaping in value_show).
+fn escape_str_into(buf : StringBuilder, s : String) -> Unit {
   for c in s {
     if c is ('\'' | '\\') {
       buf.write_char('\\')
     }
     buf.write_char(c)
   }
+}
+
+///|
+/// JS ConstVal.toString quoting: `'…'` with `'` and `\` escaped, one pass.
+fn escape_str_literal(s : String) -> String {
+  let buf = StringBuilder::new()
+  buf.write_char('\'')
+  escape_str_into(buf, s)
   buf.write_char('\'')
   buf.to_string()
 }

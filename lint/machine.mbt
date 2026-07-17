@@ -987,16 +987,7 @@ fn Machine::start_in_caption(
   self_closing : Bool,
   start : Int,
 ) -> Unit {
-  if name
-    is ("caption"
-    | "col"
-    | "colgroup"
-    | "tbody"
-    | "td"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "tr") {
+  if caption_cell_breakout_tags.contains(name) {
     if self.has_in_table_scope("caption") {
       self.generate_implied_end_tags()
       self.pop_until_name("caption")
@@ -1151,16 +1142,7 @@ fn Machine::start_in_cell(
   self_closing : Bool,
   start : Int,
 ) -> Unit {
-  if name
-    is ("caption"
-    | "col"
-    | "colgroup"
-    | "tbody"
-    | "td"
-    | "tfoot"
-    | "th"
-    | "thead"
-    | "tr") {
+  if caption_cell_breakout_tags.contains(name) {
     if self.has_in_table_scope("td") || self.has_in_table_scope("th") {
       self.close_cell()
       self.dispatch_start_tag(name, raw, self_closing, start)
@@ -1455,16 +1437,19 @@ fn Machine::slice(self : Machine, start : Int, end : Int) -> String {
 }
 
 ///|
+fn Machine::has_non_ws(self : Machine, start : Int, end : Int) -> Bool {
+  for i in start..<end {
+    if !is_space(self.chars[i]) {
+      return true
+    }
+  }
+  false
+}
+
+///|
 fn Machine::handle_text(self : Machine, start : Int, end : Int) -> Unit {
   if self.insertion_mode is (InTable | InTableBody | InRow) {
-    let mut has_non_ws = false
-    for i in start..<end {
-      if !(self.chars[i] is (' ' | '\t' | '\n' | '\r')) {
-        has_non_ws = true
-        break
-      }
-    }
-    if has_non_ws {
+    if self.has_non_ws(start, end) {
       let s = self.slice(start, end)
       let snippet = if s.length() > 40 { s[0:40].to_owned() + "…" } else { s }
       self.report(HtmlTextNotAllowedInParent, Error, start, [
@@ -1475,14 +1460,7 @@ fn Machine::handle_text(self : Machine, start : Int, end : Int) -> Unit {
     return
   }
   if self.insertion_mode is InColumnGroup {
-    let mut has_non_ws = false
-    for i in start..<end {
-      if !(self.chars[i] is (' ' | '\t' | '\n' | '\r')) {
-        has_non_ws = true
-        break
-      }
-    }
-    if has_non_ws && self.current_name() == "colgroup" {
+    if self.has_non_ws(start, end) && self.current_name() == "colgroup" {
       // Implicit </colgroup> + reprocess as inTable.
       self.open_elements.pop() |> ignore
       self.insertion_mode = InTable

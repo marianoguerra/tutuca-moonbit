@@ -5,6 +5,8 @@
 // by the real tokenizer; this scanner only needs the happy shapes.
 
 ///|
+/// WHATWG tokenizer whitespace — includes form feed, unlike the
+/// value-source is_space in parse_issue_rules.
 fn scan_is_space(c : Char) -> Bool {
   c is (' ' | '\t' | '\n' | '\r' | '\u{c}')
 }

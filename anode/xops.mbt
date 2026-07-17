@@ -231,47 +231,33 @@ fn parse_render_each(
   let attr_parser = AttrParser::new(px)
   let each_attr = attr_parser.push_wrapper(Each, value, seq_val)
   attr_parser.each_attr = Some(each_attr)
-  let when_pair : (String, String)? = match get_named_item(attrs, "@when") {
-    Some(v) => Some(("@when", v))
-    None =>
-      match get_named_item(attrs, "when") {
-        Some(v) => Some(("when", v))
-        None => None
-      }
-  }
-  match when_pair {
-    Some((w_name, w_value)) => {
-      if !(w_name is ['@', ..]) {
-        px.handler.on_deprecated_syntax(
-          BareXDirective(op="render-each", name="when"),
-          px.current_tag,
-        )
-      }
-      attr_parser.parse_when(w_value)
+  // an `@`-prefixed or bare render-each directive attribute; the bare form
+  // works but gets a deprecation nudge
+  fn directive_attr(name : String, parse : (String) -> Unit) {
+    let pair : (String, String)? = match get_named_item(attrs, "@" + name) {
+      Some(v) => Some(("@" + name, v))
+      None =>
+        match get_named_item(attrs, name) {
+          Some(v) => Some((name, v))
+          None => None
+        }
     }
-    None => ()
-  }
-  let loop_pair : (String, String)? = match
-    get_named_item(attrs, "@loop-with") {
-    Some(v) => Some(("@loop-with", v))
-    None =>
-      match get_named_item(attrs, "loop-with") {
-        Some(v) => Some(("loop-with", v))
-        None => None
+    match pair {
+      Some((a_name, a_value)) => {
+        if !(a_name is ['@', ..]) {
+          px.handler.on_deprecated_syntax(
+            BareXDirective(op="render-each", name~),
+            px.current_tag,
+          )
+        }
+        parse(a_value)
       }
-  }
-  match loop_pair {
-    Some((l_name, l_value)) => {
-      if !(l_name is ['@', ..]) {
-        px.handler.on_deprecated_syntax(
-          BareXDirective(op="render-each", name="loop-with"),
-          px.current_tag,
-        )
-      }
-      attr_parser.parse_loop_with(l_value)
+      None => ()
     }
-    None => ()
   }
+
+  directive_attr("when", v => attr_parser.parse_when(v))
+  directive_attr("loop-with", v => attr_parser.parse_loop_with(v))
   px.add_node_if(seq_val, (id, val) => {
     Each({
       node_id: id,
