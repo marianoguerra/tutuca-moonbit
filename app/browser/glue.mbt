@@ -93,7 +93,7 @@ fn js_value(v : @core.Any) -> @tutuca.Value {
 
 ///|
 /// Translate a raw browser event into the backend-agnostic DomEvent.
-pub fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
+fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
   @render.DomEvent::new(
     name=event_type_ffi(ev),
     value=js_value(event_value_ffi(ev)),

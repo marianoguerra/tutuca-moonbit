@@ -35,22 +35,11 @@ fn spec_of(x : Int) -> ChildSpec {
 fn materialize(specs : Array[ChildSpec]) -> Array[@anode.ANode] {
   specs.map(s => {
     match s {
-      Ws(v) | Txt(v) => @anode.ANode::Text({ val: v })
-      Cmt(v) => @anode.ANode::Comment({ val: v })
-      BlockEl =>
-        @anode.ANode::Dom({
-          tag: "p",
-          attrs: ConstAttrs({}),
-          childs: [],
-          ns: None,
-        })
+      Ws(v) | Txt(v) => Text({ val: v })
+      Cmt(v) => Comment({ val: v })
+      BlockEl => Dom({ tag: "p", attrs: ConstAttrs({}), childs: [], ns: None })
       InlineEl =>
-        @anode.ANode::Dom({
-          tag: "span",
-          attrs: ConstAttrs({}),
-          childs: [],
-          ns: None,
-        })
+        Dom({ tag: "span", attrs: ConstAttrs({}), childs: [], ns: None })
     }
   })
 }

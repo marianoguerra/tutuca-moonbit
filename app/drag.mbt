@@ -132,7 +132,7 @@ fn[N : @vdom.DomWalk] App::handle_drag(
       let stack = @render.build_stack(path.to_transaction_path(), stack0).unwrap_or(
         stack0,
       )
-      self.drag = Some(DragState::{
+      self.drag = Some({
         node,
         info: Obj(DragInfoObj::{ drag_type, val: value, stack }),
       })

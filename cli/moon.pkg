@@ -15,8 +15,6 @@ import {
 }
 
 import {
-  "marianoguerra/tutuca/lint",
-  "moonbitlang/core/strconv",
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
 } for "test"

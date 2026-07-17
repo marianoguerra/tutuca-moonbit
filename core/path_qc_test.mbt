@@ -29,13 +29,9 @@ fn Lcg::below(self : Lcg, n : Int) -> Int {
 ///|
 fn gen_scalar() -> @gen.Gen[@core.Value] {
   @gen.one_of([
-    @gen.one_of_array([
-      @core.Value::Null,
-      @core.Value::Bool(true),
-      @core.Value::Bool(false),
-    ]),
-    @gen.int_range(0, 100).fmap(n => @core.Value::Num(n.to_double())),
-    @gen.one_of_array(["x", "y", "hello", ""]).fmap(s => @core.Value::Str(s)),
+    @gen.one_of_array([Null, Bool(true), Bool(false)]),
+    @gen.int_range(0, 100).fmap(n => Num(n.to_double())),
+    @gen.one_of_array(["x", "y", "hello", ""]).fmap(s => Str(s)),
   ])
 }
 
@@ -56,7 +52,7 @@ fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
       for e in entries {
         m[e.0] = e.1
       }
-      @core.Value::Map(m)
+      Map(m)
     })
   })
 }
@@ -64,7 +60,7 @@ fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
 ///|
 fn gen_vlist(depth : Int) -> @gen.Gen[@core.Value] {
   @gen.int_range(1, 4).bind(k => {
-    gen_value(depth - 1).array_with_size(k).fmap(a => @core.Value::List(a))
+    gen_value(depth - 1).array_with_size(k).fmap(a => List(a))
   })
 }
 
@@ -117,7 +113,7 @@ fn derive_path(root : @core.Value, rng : Lcg) -> Array[@core.Step] {
             0 => steps.push(SeqStep(field=k, key=KStr(ck)))
             1 => steps.push(EachRenderItStep(field=k, key=KStr(ck)))
             _ => {
-              m["zz-sel"] = @core.Value::Str(ck)
+              m["zz-sel"] = Str(ck)
               steps.push(SeqAccessStep(seq_field=k, key_field="zz-sel"))
             }
           }
@@ -189,7 +185,7 @@ fn gen_tree_path_value() -> @gen.Gen[
 
 ///|
 fn as_v(n : &@core.PathNode) -> @core.Value {
-  n.as_value().unwrap_or(@core.Value::Null)
+  n.as_value().unwrap_or(Null)
 }
 
 ///|

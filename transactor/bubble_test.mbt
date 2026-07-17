@@ -29,7 +29,7 @@ impl @tutuca.PathNode for Item with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "set-label") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(item_node(s, self.acked))
             _ => None
@@ -38,22 +38,22 @@ impl @tutuca.PathNode for Item with fn handler(self, bucket, name) {
       )
     (Receive, "poke") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
-          ctx.bubble("poked", [@tutuca.Value::Str(self.label)])
+        Handler((_args, ctx) => {
+          ctx.bubble("poked", [Str(self.label)])
           None
         }),
       )
     (Receive, "poke-stop") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           ctx.bubble("poked-stop", [])
           None
         }),
       )
     (Receive, "ack") =>
-      Some(@tutuca.Handler((_args, _ctx) => Some(item_node(self.label, true))))
+      Some(Handler((_args, _ctx) => Some(item_node(self.label, true))))
     (Receive, "$unknown") =>
-      Some(@tutuca.Handler((_args, _ctx) => Some(item_node("unknown!", false))))
+      Some(Handler((_args, _ctx) => Some(item_node("unknown!", false))))
     _ => None
   }
 }
@@ -86,7 +86,7 @@ impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Bubble, "poked") =>
       Some(
-        @tutuca.Handler((args, ctx) => {
+        Handler((args, ctx) => {
           // record the payload and how deep this hop's ctx.path is
           let from = match args {
             [Str(s), ..] => s
@@ -103,7 +103,7 @@ impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
       )
     (Bubble, "poked-stop") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           ctx.stop_propagation()
           Some(Panel::{ item: self.item, seen: "stopped" } as &@tutuca.PathNode)
         }),
@@ -141,7 +141,7 @@ impl @tutuca.PathNode for RootComp with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Bubble, "poked") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           // dispatch back to the fixed origin of the bubble
           ctx.send_at_path(ctx.target_path(), "ack", [])
           Some(
@@ -155,7 +155,7 @@ impl @tutuca.PathNode for RootComp with fn handler(self, bucket, name) {
       )
     (Bubble, "poked-stop") =>
       Some(
-        @tutuca.Handler((_args, _ctx) => {
+        Handler((_args, _ctx) => {
           Some(
             RootComp::{ panel: self.panel, seen: "should-never-fire" }
             as &@tutuca.PathNode,
@@ -185,8 +185,8 @@ fn scalar(
   steps : Array[@tutuca.Step],
 ) -> @tutuca.Value {
   match @tutuca.Path::new(steps~).lookup(root) {
-    Some(n) => n.as_value().unwrap_or(@tutuca.Value::Null)
-    None => @tutuca.Value::Null
+    Some(n) => n.as_value().unwrap_or(Null)
+    None => Null
   }
 }
 
@@ -198,11 +198,11 @@ fn assert_v(got : @tutuca.Value, want : @tutuca.Value) -> Unit raise {
 ///|
 test "send dispatches to the leaf's receive bucket" {
   let tx = @transactor.Transactor::new(make_tree())
-  let _ = tx.push_send(item_path(), "set-label", [@tutuca.Value::Str("hi")])
+  let _ = tx.push_send(item_path(), "set-label", [Str("hi")])
   tx.settle()
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("label")]),
-    @tutuca.Value::Str("hi"),
+    Str("hi"),
   )
 }
 
@@ -213,7 +213,7 @@ test "a named handler wins; missing name falls back to $unknown" {
   tx.settle()
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("label")]),
-    @tutuca.Value::Str("unknown!"),
+    Str("unknown!"),
   )
 }
 
@@ -239,17 +239,14 @@ test "bubble walks ancestors: path shortens per hop, target_path is fixed" {
   // Panel saw the bubble with a 1-hop path and the item's payload
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("seen")]),
-    @tutuca.Value::Str("poked:it1@1"),
+    Str("poked:it1@1"),
   )
   // Root saw it with a 0-hop path while target_path kept the full origin
-  assert_v(
-    scalar(tx.root, [FieldStep("seen")]),
-    @tutuca.Value::Str("root@path=0,target=2"),
-  )
+  assert_v(scalar(tx.root, [FieldStep("seen")]), Str("root@path=0,target=2"))
   // Root's send_at_path(target_path) reached the originating item
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("acked")]),
-    @tutuca.Value::Bool(true),
+    Bool(true),
   )
 }
 
@@ -260,9 +257,9 @@ test "stop_propagation halts the bubble before the root" {
   tx.settle()
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("seen")]),
-    @tutuca.Value::Str("stopped"),
+    Str("stopped"),
   )
-  assert_true(scalar(tx.root, [FieldStep("seen")]) == @tutuca.Value::Str(""))
+  assert_true(scalar(tx.root, [FieldStep("seen")]) == Str(""))
 }
 
 ///|
@@ -280,7 +277,7 @@ test "completion: subtree settles only after the whole bubble cascade" {
   // and the cascade really ran to the end before settling
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("acked")]),
-    @tutuca.Value::Bool(true),
+    Bool(true),
   )
 }
 
@@ -294,7 +291,7 @@ test "on_change fires once per root swap with new and old" {
     }
     swaps.val = swaps.val + 1
   })
-  let _ = tx.push_send(item_path(), "set-label", [@tutuca.Value::Str("x")])
+  let _ = tx.push_send(item_path(), "set-label", [Str("x")])
   let _ = tx.push_send(item_path(), "does-not-exist-anywhere", []) // $unknown fires -> swap
   tx.settle()
   assert_eq(swaps.val, 2)

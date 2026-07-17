@@ -218,11 +218,8 @@ test "compile parses provide/lookup and stamps view ids" {
       "bad": "not a field!",
     },
     lookup={
-      "active": @component.LookupSpec::{
-        source: "Workspace.active",
-        default: Some(".fallback"),
-      },
-      "broken": @component.LookupSpec::{ source: "nodot", default: None },
+      "active": { source: "Workspace.active", default: Some(".fallback") },
+      "broken": { source: "nodot", default: None },
     },
   )
   scope.register_components([ws])
@@ -317,7 +314,7 @@ impl @tutuca.Obj for Badge with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "relabel") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] =>
               Some(

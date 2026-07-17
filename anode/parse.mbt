@@ -187,17 +187,11 @@ fn make_wrapper_node(data : WrapperAttr, px : ParseContext) -> ANode? {
         Scope({ node_id: Some(id), val, node: empty_node() })
       })
     Show =>
-      data.val.map(val => {
-        ANode::Show({ node_id: None, val, node: empty_node() })
-      })
+      data.val.map(val => Show({ node_id: None, val, node: empty_node() }))
     Hide =>
-      data.val.map(val => {
-        ANode::Hide({ node_id: None, val, node: empty_node() })
-      })
+      data.val.map(val => Hide({ node_id: None, val, node: empty_node() }))
     PushView =>
-      data.val.map(val => {
-        ANode::PushView({ node_id: None, val, node: empty_node() })
-      })
+      data.val.map(val => PushView({ node_id: None, val, node: empty_node() }))
   }
   if node is Some(Each(d)) {
     d.iter_info.enrich_with_val = data.enrich_with_val

@@ -11,7 +11,7 @@ priv struct FieldStack {
 
 ///|
 impl @core.Stack for FieldStack with fn lookup_field_raw(self, name) {
-  self.fields.get(name).unwrap_or(@core.Value::Null)
+  self.fields.get(name).unwrap_or(Null)
 }
 
 ///|
@@ -23,7 +23,7 @@ priv struct MethodStack {
 
 ///|
 impl @core.Stack for MethodStack with fn lookup_method(self, name) {
-  self.methods.get(name).unwrap_or(@core.Value::Null)
+  self.methods.get(name).unwrap_or(Null)
 }
 
 ///|
@@ -57,7 +57,7 @@ test "predicate eval applies the function" {
 test "FieldVal.eval reads the raw field without invoking" {
   let ctx = @core.ParseCtx::new()
   let stack : FieldStack = {
-    fields: { "count": Num(7), "m": Fn(_args => @core.Value::Str("called")) },
+    fields: { "count": Num(7), "m": Fn(_args => Str("called")) },
   }
   guard @core.parse_text(".count", ctx) is Some(count)
   assert_true(count.eval(stack) is Num(7))
@@ -78,9 +78,7 @@ test "MethodVal.eval invokes the method" {
 ///|
 test "MethodVal.eval_as_handler hands back the raw function" {
   let ctx = @core.ParseCtx::new()
-  let stack : FieldStack = {
-    fields: { "inc": Fn(_args => @core.Value::Str("inc-marker")) },
-  }
+  let stack : FieldStack = { fields: { "inc": Fn(_args => Str("inc-marker")) } }
   guard @core.parse_text("$inc", ctx) is Some(v)
   guard v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))

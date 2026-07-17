@@ -79,7 +79,7 @@ pub fn did_you_mean(
   candidates : Array[String],
 ) -> @lint.Suggestion? {
   match @lint.closest_name(name, candidates) {
-    Some(to) => Some(@lint.Suggestion::ReplaceName(from=name, to~))
+    Some(to) => Some(ReplaceName(from=name, to~))
     None => None
   }
 }

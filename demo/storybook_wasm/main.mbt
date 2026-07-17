@@ -38,7 +38,7 @@ let current_app : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
 /// FFI — the same split as the JS storybook (mount.js owns the URL effects).
 fn url_request_handlers() -> Map[String, @component.RequestFn] {
   {
-    "loadState": @component.RequestFn((_args, respond) => {
+    "loadState": RequestFn((_args, respond) => {
       let params = parse_query(
         @core.global_this()._get("location")._get("search").to_string(),
       )
@@ -60,7 +60,7 @@ fn url_request_handlers() -> Map[String, @component.RequestFn] {
         ),
       )
     }),
-    "persistState": @component.RequestFn((args, respond) => {
+    "persistState": RequestFn((args, respond) => {
       match args {
         [Map(m), push] => write_url(m, push is Bool(true))
         _ => ()
@@ -69,7 +69,7 @@ fn url_request_handlers() -> Map[String, @component.RequestFn] {
     }),
     // Switch the margaui palette: load its stylesheet (if not bundled) and flip
     // document.documentElement's data-theme.
-    "applyTheme": @component.RequestFn((args, respond) => {
+    "applyTheme": RequestFn((args, respond) => {
       match args {
         [Str(name), ..] => apply_theme(name)
         _ => ()

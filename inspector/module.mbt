@@ -97,13 +97,6 @@ pub fn Inspector::components(self : Inspector) -> Array[@component.Component] {
   self.comps.values().collect()
 }
 
-///|
-/// JS `getComponents()` from components/index.js: the full deduped set, for
-/// embedding the inspectors into a host app's registration.
-pub fn get_components() -> Array[@component.Component] {
-  Inspector::new().components()
-}
-
 // ---------------------------------------------------------------------------
 // build-views.js — per-value inspector builder
 // ---------------------------------------------------------------------------
@@ -140,11 +133,11 @@ pub fn Inspector::build_inspector_views(
   let instance_view = self.inspect_value_as_instance(value, comp)
   let component_view = match comp {
     Some(c) => self.inspect_component(c)
-    None => @tutuca.Value::Null
+    None => Null
   }
   let lint_view = match lint_findings {
     Some(fs) => self.lint_report(fs)
-    None => @tutuca.Value::Null
+    None => Null
   }
   {
     instance_view,
@@ -381,7 +374,7 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
   let deep_zoo : @tutuca.Value = Map({
     "json": Map({ "ok": Bool(true), "n": Num(1) }),
     "items": List([Num(1), Num(2), Map({ "x": Num(99) })]),
-    "fn": Fn(_args => @tutuca.Value::Null),
+    "fn": Fn(_args => Null),
     "nothing": Null,
   })
   @component.ModuleDef::new(name="inspector", components=insp.components(), examples=[

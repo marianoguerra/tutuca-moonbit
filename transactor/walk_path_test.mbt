@@ -21,7 +21,7 @@ impl @tutuca.PathNode for CompNode with fn field(self, name) {
 
 ///|
 impl @tutuca.PathNode for CompNode with fn as_value(self) {
-  Some(@tutuca.Value::Obj(self))
+  Some(Obj(self))
 }
 
 ///|
@@ -29,7 +29,7 @@ impl @tutuca.PathNode for CompNode with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "walk") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           ctx.walk_path((id, _inst) => {
             self.collector.push(id)
             true
@@ -39,7 +39,7 @@ impl @tutuca.PathNode for CompNode with fn handler(self, bucket, name) {
       )
     (Receive, "walk1") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           // stop after the first (leaf) component
           ctx.walk_path((id, _inst) => {
             self.collector.push(id)

@@ -20,11 +20,6 @@ pub fn BrowserNode::from_document(doc : @dom.Document) -> BrowserNode {
 }
 
 ///|
-pub fn BrowserNode::from_node(node : @dom.Node) -> BrowserNode {
-  BrowserNode(node.as_any())
-}
-
-///|
 pub fn BrowserNode::from_element(el : @dom.Element) -> BrowserNode {
   BrowserNode(el.as_any())
 }

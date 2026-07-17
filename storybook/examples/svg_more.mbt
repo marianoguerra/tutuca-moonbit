@@ -75,10 +75,7 @@ fn bar_chart_comp() -> @component.Component {
             a.map(v => {
               match v {
                 // deterministic stand-in for Math.random, in the 10..99 range
-                Num(n) =>
-                  @tutuca.Value::Num(
-                    ((n.to_int() * 7 + 13) % 90 + 10).to_double(),
-                  )
+                Num(n) => Num(((n.to_int() * 7 + 13) % 90 + 10).to_double())
                 _ => v
               }
             })

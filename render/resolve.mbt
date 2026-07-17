@@ -35,7 +35,7 @@ pub impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
   let mut cid = 0
   for k, node in self.views {
     if k == name {
-      return Some(ResolvedView::{ node, cid, vid: name })
+      return Some({ node, cid, vid: name })
     }
     cid += 1
   }

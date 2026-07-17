@@ -83,7 +83,7 @@ fn url_fixture(
   theme? : String = "",
 ) -> Map[String, @component.RequestFn] {
   {
-    "loadState": @component.RequestFn((_args, respond) => {
+    "loadState": RequestFn((_args, respond) => {
       respond(
         Ok(
           Map({
@@ -95,7 +95,7 @@ fn url_fixture(
         ),
       )
     }),
-    "persistState": @component.RequestFn((_args, respond) => respond(Ok(Null))),
+    "persistState": RequestFn((_args, respond) => respond(Ok(Null))),
   }
 }
 

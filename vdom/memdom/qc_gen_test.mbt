@@ -34,20 +34,14 @@ fn gen_comment_node() -> @gen.Gen[@vdom.Vdom] {
 ///|
 fn gen_attr_pair() -> @gen.Gen[(String, @vdom.AttrValue)] {
   @gen.one_of([
-    @gen.one_of_array(["x", "id1", "hello"]).fmap(v => {
-      ("id", @vdom.AttrValue::Str(v))
-    }),
+    @gen.one_of_array(["x", "id1", "hello"]).fmap(v => ("id", Str(v))),
     @gen.one_of_array(["red", "blue", "big red"]).fmap(v => {
-      ("className", @vdom.AttrValue::Str(v))
+      ("className", Str(v))
     }),
-    @gen.one_of_array(["color: red", "margin: 5px"]).fmap(v => {
-      ("style", @vdom.AttrValue::Str(v))
-    }),
+    @gen.one_of_array(["color: red", "margin: 5px"]).fmap(v => ("style", Str(v))),
     @gen.int_range(0, 100).fmap(v => ("data-n", @vdom.AttrValue::int(v))),
-    @gen.one_of_array([true, false]).fmap(v => {
-      ("aria-hidden", @vdom.AttrValue::Bool(v))
-    }),
-    @gen.one_of_array(["v1", ""]).fmap(v => ("title", @vdom.AttrValue::Str(v))),
+    @gen.one_of_array([true, false]).fmap(v => ("aria-hidden", Bool(v))),
+    @gen.one_of_array(["v1", ""]).fmap(v => ("title", Str(v))),
   ])
 }
 

@@ -43,7 +43,7 @@ impl @core.Obj for Card with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
-        @core.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(card(s, tags=self.tags))
             _ => None
@@ -138,5 +138,5 @@ test "Obj equality, debug and method fields" {
   debug_inspect(c, content="RObj(\"Card{hey}\")")
   // pre-bound method Fn ignores the this-slot
   guard o.obj_field("shout") is Some(Fn(f)) else { fail("no method") }
-  assert_true(f([@core.Value::Null]) == Str("hey!"))
+  assert_true(f([Null]) == Str("hey!"))
 }

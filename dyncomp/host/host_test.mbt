@@ -282,7 +282,7 @@ test "guest request round-trips through a host RequestFn" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
   h.app.scope.register_request_handlers({
-    "double": @component.RequestFn((args, respond) => {
+    "double": RequestFn((args, respond) => {
       match args {
         [Num(n)] => respond(Ok(Num(n * 2.0)))
         _ => respond(Err(Str("bad args")))

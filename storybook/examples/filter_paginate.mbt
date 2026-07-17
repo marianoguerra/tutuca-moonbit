@@ -172,7 +172,7 @@ fn fp_ctx_lookup(
 
 ///|
 fn fp_num_keys(keys : Array[Int]) -> @tutuca.Value {
-  Map({ "keys": List(keys.map(k => @tutuca.Value::Num(k.to_double()))) })
+  Map({ "keys": List(keys.map(k => Num(k.to_double()))) })
 }
 
 ///|
@@ -342,7 +342,7 @@ fn coupled_people_comp() -> @component.Component {
     let page_keys = page_slice(all, start, int_field(inst, "pageSize"))
     Map({
       // consumed ONLY by the loop-with below
-      "__keys__": List(page_keys.map(k => @tutuca.Value::Num(k.to_double()))),
+      "__keys__": List(page_keys.map(k => Num(k.to_double()))),
       "isFirst": Bool(current <= 0),
       "isLast": Bool(current >= page_count - 1),
       "pageLabel": Str(fp_pager_label(current, page_count, all.length())),

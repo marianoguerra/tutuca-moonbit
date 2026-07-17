@@ -4,7 +4,7 @@
 ///|
 test "walk: parent, prev_sibling, kinds, char data and attributes" {
   let (c, o) = new_env()
-  let vdom = @vdom.h("div", attrs={ "data-cid": @vdom.AttrValue::Str("7") }, childs=[
+  let vdom = @vdom.h("div", attrs={ "data-cid": Str("7") }, childs=[
     @vdom.comment("§{\"$\":\"Comp\",\"cid\":0}§"),
     @vdom.comment("§{\"$\":\"Each\",\"nid\":1,\"sk\":\"b\"}§"),
     @vdom.h("button", childs=[@vdom.text("hi")]),

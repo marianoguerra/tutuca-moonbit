@@ -742,7 +742,7 @@ fn Inspector::schema_conditional_from(
   let node = (k : String) => {
     match m.get(k) {
       Some(s) => self.classify_schema(s)
-      None => @tutuca.Value::Null
+      None => Null
     }
   }
   let args : Map[String, @tutuca.Value] = {

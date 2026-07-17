@@ -676,7 +676,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       }
       inst
       .set("currentSection", Str(section))
-      .set("instructions", List(list.map(s => @tutuca.Value::Str(s))))
+      .set("instructions", List(list.map(s => Str(s))))
       .to_value()
     }
     methods["currentIs" + cap(section)] = (inst, _args) => {
@@ -696,7 +696,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     fields={
       "currentSection": @component.FieldSpec::of_default(Str("all")),
       "instructions": @component.FieldSpec::of_default(
-        List(vw_all_ids().map(s => @tutuca.Value::Str(s))),
+        List(vw_all_ids().map(s => Str(s))),
       ),
       "filter": @component.FieldSpec::of_default(Str("")),
     },

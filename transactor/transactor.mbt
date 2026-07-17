@@ -120,7 +120,7 @@ pub fn Transactor::push_send(
   bubbles? : Bool = false,
 ) -> Transaction {
   self.link(
-    Transaction::{
+    {
       transactor: self,
       path,
       bucket: Receive,
@@ -149,7 +149,7 @@ pub fn Transactor::push_input(
   parent? : Transaction,
 ) -> Transaction {
   self.link(
-    Transaction::{
+    {
       transactor: self,
       path,
       bucket: Input,
@@ -181,7 +181,7 @@ fn Transactor::push_bubble(
   target_path : @tutuca.DispatchPath,
 ) -> Transaction {
   self.link(
-    Transaction::{
+    {
       transactor: self,
       path,
       bucket: Bubble,
@@ -279,7 +279,7 @@ pub fn Transactor::push_request(
           opts.on_ok_name,
           match opts.on_ok_name {
             Some(_) => [v]
-            None => [v, @tutuca.Value::Null]
+            None => [v, Null]
           },
         )
       Err(e) =>
@@ -287,7 +287,7 @@ pub fn Transactor::push_request(
           opts.on_error_name,
           match opts.on_error_name {
             Some(_) => [e]
-            None => [@tutuca.Value::Null, e]
+            None => [Null, e]
           },
         )
     }
@@ -321,7 +321,7 @@ pub fn Transactor::push_request(
   }
   match found {
     Some(RequestHandler(f)) => f(args, respond)
-    None => respond(Err(@tutuca.Value::Str("Request not found: \{name}")))
+    None => respond(Err(Str("Request not found: \{name}")))
   }
 }
 

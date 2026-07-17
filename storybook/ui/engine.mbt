@@ -449,7 +449,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
     "init": (inst, _args, ctx) => {
       ctx.request("loadState", [], @tutuca.RequestOpts::new())
       for f in init_fields {
-        ctx.send_at_path(ctx.path().concat([@tutuca.FieldStep(f)]), "init", [])
+        ctx.send_at_path(ctx.path().concat([FieldStep(f)]), "init", [])
       }
       Some(inst)
     },

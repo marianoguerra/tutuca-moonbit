@@ -188,9 +188,9 @@ test "unary predicates parse to a PredicateVal" {
   for
     pair in [
       (@core.Pred::IsEmpty, "empty?"),
-      (@core.Pred::IsTruthy, "truthy?"),
-      (@core.Pred::IsFalsy, "falsy?"),
-      (@core.Pred::IsNull, "null?"),
+      (IsTruthy, "truthy?"),
+      (IsFalsy, "falsy?"),
+      (IsNull, "null?"),
     ] {
     let (expected, name) = pair
     guard @core.parse_bool("\{name} .items", ctx)

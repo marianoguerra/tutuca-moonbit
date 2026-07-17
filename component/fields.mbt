@@ -18,7 +18,7 @@ pub fn FieldSpec::comp(
   name : String,
   args? : Map[String, @tutuca.Value] = {},
 ) -> FieldSpec {
-  { kind: FComp(comp=name, args~), default: @tutuca.Value::Null }
+  { kind: FComp(comp=name, args~), default: Null }
 }
 
 ///|
@@ -26,7 +26,7 @@ pub fn FieldSpec::comp(
 /// (keyed by member, value Bool(true) — the ps_set_of shape). Coercion turns
 /// a List into a set and dedups; a Map is kept as-is.
 pub fn FieldSpec::set(members? : Array[String] = []) -> FieldSpec {
-  { kind: FSet, default: set_value(members.map(m => @tutuca.Value::Str(m))) }
+  { kind: FSet, default: set_value(members.map(m => Str(m))) }
 }
 
 ///|

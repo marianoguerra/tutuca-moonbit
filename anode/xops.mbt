@@ -53,8 +53,8 @@ fn XOp::ignores_children(self : XOp) -> Bool {
 /// Ops usable as wrapper attrs on other <x> ops (JS X_OPS[..].wrapper).
 fn xop_wrapper_kind(name : String) -> WrapperKind? {
   match name {
-    "show" => Some(WrapperKind::Show)
-    "hide" => Some(WrapperKind::Hide)
+    "show" => Some(Show)
+    "hide" => Some(Hide)
     _ => None
   }
 }
@@ -114,8 +114,7 @@ fn parse_x_op(
     None => None
   }
   let node : ANode? = match op {
-    Some(OpSlot) =>
-      Some(ANode::Slot({ name: value, node: maybe_fragment(childs) }))
+    Some(OpSlot) => Some(Slot({ name: value, node: maybe_fragment(childs) }))
     Some(OpText) =>
       px.add_node_if(parse_x_op_val(name, value, px, @tutuca.parse_text), (
         id,
@@ -203,8 +202,8 @@ fn process_x_extras(
     let (kind, val) = wrappers[i]
     let wrapper = px.add_node_if(val, (id, v) => {
       match kind {
-        Show => ANode::Show({ node_id: Some(id), val: v, node: empty_node() })
-        _ => ANode::Hide({ node_id: Some(id), val: v, node: empty_node() })
+        Show => Show({ node_id: Some(id), val: v, node: empty_node() })
+        _ => Hide({ node_id: Some(id), val: v, node: empty_node() })
       }
     })
     if wrapper is Some(w) {
@@ -230,7 +229,7 @@ fn parse_render_each(
   guard seq_val is Some(_) else { return None }
   let render_it = px.add_node(id => RenderIt({ node_id: id, view_val: as_val }))
   let attr_parser = AttrParser::new(px)
-  let each_attr = attr_parser.push_wrapper(WrapperKind::Each, value, seq_val)
+  let each_attr = attr_parser.push_wrapper(Each, value, seq_val)
   attr_parser.each_attr = Some(each_attr)
   let when_pair : (String, String)? = match get_named_item(attrs, "@when") {
     Some(v) => Some(("@when", v))

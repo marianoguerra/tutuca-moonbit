@@ -189,7 +189,7 @@ pub fn Inspector::explore_instance(
 ) -> @tutuca.Value {
   let lint_view = match lint_findings {
     Some(findings) => self.lint_report(findings)
-    None => @tutuca.Value::Null
+    None => Null
   }
   self.make_("InstanceExplorer", args={
     "instanceView": self.inspect_instance(inst),

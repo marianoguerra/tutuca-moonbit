@@ -120,7 +120,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_seq_entries(self) {
   match self.guest.seq_entries(self.handle) {
-    Some(entries) => Some(entries.map(e => (@tutuca.PathKey::KStr(e.0), e.1)))
+    Some(entries) => Some(entries.map(e => (KStr(e.0), e.1)))
     None => None
   }
 }
@@ -144,7 +144,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
   }
   guard declared else { return None }
   Some(
-    @tutuca.Handler((args, ctx) => {
+    Handler((args, ctx) => {
       // handles queued by earlier transactions are settled garbage by now
       collect_superseded()
       let result = self.guest.dispatch(self.handle, bucket, name, args)

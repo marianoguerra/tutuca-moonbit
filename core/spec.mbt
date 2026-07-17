@@ -171,7 +171,7 @@ impl Obj with fn obj_seq_entries(_self) {
 
 ///|
 impl Obj with fn obj_render_handler(_self, _name, _ns) {
-  Value::Null
+  Null
 }
 
 ///|
@@ -214,37 +214,37 @@ pub(open) trait Stack {
 
 ///|
 impl Stack with fn lookup_name(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn lookup_bind(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn lookup_dynamic(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn lookup_field_raw(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn lookup_method(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn lookup_type(_self, _name) {
-  Value::Null
+  Null
 }
 
 ///|
 impl Stack with fn get_handler_for(_self, _name, _namespace) {
-  Value::Null
+  Null
 }
 
 ///|
