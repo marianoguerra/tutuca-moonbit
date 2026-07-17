@@ -4,8 +4,9 @@
 // ordered .core link closure, and the mount-host core, plus a manifest telling
 // the shell how to drive buildPackage + linkCore. Also copies the web shell.
 //
-// Prereqs: `moon build --target js` and `moon build --target js playground/host`
-// have run (so _build/js has the artifacts). Run: node playground/build/assemble.mjs
+// Run: node playground/build/assemble.mjs  (assembles js + wasm-gc by default;
+// JS_ONLY=1 for js only). It runs the required `moon build` steps itself, so no
+// manual pre-build is needed.
 import { writeFileSync, mkdirSync, rmSync, readdirSync, statSync, cpSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
@@ -122,8 +123,18 @@ await esbuild({
 console.log("bundled editor.bundle.js");
 
 const manifest = { toolchain: TOOLCHAIN, targets: {} };
-const TARGETS = process.env.WASMGC ? [["js", "demo/counter"], ["wasm-gc", "demo/counter_wasm"]] : [["js", "demo/counter"]];
-for (const [t, demo] of TARGETS) {
+// By default assemble BOTH backends so the shipped playground offers the
+// wasm-gc toggle (its CompileError is intentionally surfaced — see
+// WASM_TARGET_STATUS.md). Set JS_ONLY=1 to assemble the js backend only.
+const TARGETS = process.env.JS_ONLY
+  ? [["js", "demo/counter", "playground/host"]]
+  : [["js", "demo/counter", "playground/host"], ["wasm-gc", "demo/counter_wasm", "playground/host_wasm"]];
+for (const [t, demo, hostPkg] of TARGETS) {
+  // Build the moon artifacts this target needs (project + its mount host) so a
+  // bare `node assemble.mjs` is self-contained — no manual pre-build step.
+  console.log("building moon artifacts for target", t, "...");
+  execSync(`moon build --target ${t}`, { cwd: REPO, stdio: "inherit" });
+  execSync(`moon build --target ${t} ${hostPkg}`, { cwd: REPO, stdio: "inherit" });
   console.log("assembling target", t, "...");
   manifest.targets[t] = assembleTarget(t, demo);
 }
