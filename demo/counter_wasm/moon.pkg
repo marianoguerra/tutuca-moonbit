@@ -7,10 +7,7 @@
 // Build: moon build --target wasm-gc demo/counter_wasm
 import {
   "marianoguerra/tutuca/demo/counterlib",
-  "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
-  "marianoguerra/tutuca/vdom",
-  "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
 }
 

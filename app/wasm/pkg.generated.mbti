@@ -3,17 +3,23 @@ package "marianoguerra/tutuca/app/wasm"
 
 import {
   "marianoguerra/tutuca/app",
-  "mizchi/js/core",
+  "marianoguerra/tutuca/component",
 }
 
 // Values
+pub fn document() -> @marianoguerra/tutuca/vdom/wasm.WasmNode
+
+pub fn element_by_id(@marianoguerra/tutuca/vdom/wasm.WasmNode, String) -> @marianoguerra/tutuca/vdom/wasm.WasmNode?
+
 pub fn inject_style(@marianoguerra/tutuca/vdom/wasm.WasmNode, String, String) -> Unit
 
 pub fn install(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]) -> Unit
 
 pub fn install_styles(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
 
-pub fn on_event(@core.Any) -> Unit
+pub fn mount_in(@component.ModuleDef, String, id? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]?
+
+pub fn on_event(@mizchi/js/core.Any) -> Unit
 
 // Errors
 

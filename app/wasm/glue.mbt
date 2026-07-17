@@ -327,6 +327,50 @@ pub fn on_event(ev : @core.Any) -> Unit {
 }
 
 ///|
+/// The browser document as a WasmNode.
+pub fn document() -> @wdom.WasmNode {
+  @wdom.WasmNode::of_any(@core.global_this()._get("document"))
+}
+
+///|
+/// Look up `#id` in the document; None when the element is missing.
+pub fn element_by_id(doc : @wdom.WasmNode, id : String) -> @wdom.WasmNode? {
+  let el = doc.as_any()._call("getElementById", [@core.any(id)])
+  if @core.is_nullish(el) {
+    None
+  } else {
+    Some(@wdom.WasmNode::of_any(el))
+  }
+}
+
+///|
+/// Standard wasm host boot, shared by the demo hosts: mount `root_name` from
+/// `m` on `#<id>` and install the event + style glue. Warns and returns None
+/// when the element is missing or the mount fails.
+pub fn mount_in(
+  m : @component.ModuleDef,
+  root_name : String,
+  id? : String = "app",
+  args? : Map[String, @tutuca.Value],
+) -> @app.App[@wdom.WasmNode]? {
+  let doc = document()
+  guard element_by_id(doc, id) is Some(root) else {
+    @tutuca.warn("tutuca(wasm): no #\{id} element")
+    return None
+  }
+  let opts = @vdom.RenderOpts::new(doc)
+  let app = @app.App::from_module(m, root_name, root, opts, args?) catch {
+    e => {
+      @tutuca.warn("tutuca(wasm): mount failed: \{e}")
+      return None
+    }
+  }
+  install(app)
+  install_styles(app, doc)
+  Some(app)
+}
+
+///|
 /// Compile every registered component's style into one <style id="tutuca-app">
 /// element in the document head (App.recompileStyles/injectCss). Idempotent.
 pub fn install_styles(

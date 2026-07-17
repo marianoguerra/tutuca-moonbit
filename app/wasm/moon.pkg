@@ -7,7 +7,9 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
   "moonbitlang/core/json",

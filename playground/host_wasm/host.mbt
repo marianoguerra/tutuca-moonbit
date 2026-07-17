@@ -15,14 +15,11 @@ pub fn mount(
   root? : String,
   args? : Map[String, @tutuca.Value],
 ) -> Unit {
-  let doc_any = @core.global_this()._get("document")
-  let root_el = doc_any._call("getElementById", [@core.any(root_id)])
-  if @core.is_nullish(root_el) {
-    println("playground(wasm): no #\{root_id} element")
+  let doc = @wglue.document()
+  guard @wglue.element_by_id(doc, root_id) is Some(root_node) else {
+    @tutuca.warn("playground(wasm): no #\{root_id} element")
     return
   }
-  let doc = @wdom.WasmNode::of_any(doc_any)
-  let root_node = @wdom.WasmNode::of_any(root_el)
   let opts = @vdom.RenderOpts::new(doc)
   let (root_name, root_args) = match root {
     Some(r) => (r, args.unwrap_or({}))

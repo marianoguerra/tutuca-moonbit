@@ -212,11 +212,9 @@ fn write_url(m : Map[String, @tutuca.Value], push : Bool) -> Unit {
 ///|
 /// Mount the whole gallery on #app. Called from JS once the DOM is ready.
 pub fn mount() -> Unit {
-  let g = @core.global_this()
-  let doc = g._get("document")
-  let root_el = doc._call("getElementById", [@core.any("app")])
-  if @core.is_nullish(root_el) {
-    println("no #app element")
+  let doc = @wglue.document()
+  guard @wglue.element_by_id(doc, "app") is Some(root) else {
+    @tutuca.warn("no #app element")
     return
   }
   let sections = @sb.sections_of(@sb.stories())
@@ -239,8 +237,7 @@ pub fn mount() -> Unit {
       },
     ],
   })
-  let root = @wdom.WasmNode::of_any(root_el)
-  let opts = @vdom.RenderOpts::new(@wdom.WasmNode::of_any(doc))
+  let opts = @vdom.RenderOpts::new(doc)
   let app = try! @sbui.mount(
     sections,
     root,
@@ -251,8 +248,8 @@ pub fn mount() -> Unit {
   current_app.val = Some(app)
   app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @wglue.install(app)
-  @wglue.install_styles(app, @wdom.WasmNode::of_any(doc))
-  @dhw.set_app(app, @wdom.WasmNode::of_any(doc))
+  @wglue.install_styles(app, doc)
+  @dhw.set_app(app, doc)
   // publish the collected margaui class set (gallery chrome + every example's
   // classes) for index.html's margaui compile step — same path as the other
   // wasm demos.

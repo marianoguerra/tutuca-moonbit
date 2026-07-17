@@ -10,7 +10,6 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
-  "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
 }

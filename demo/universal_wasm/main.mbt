@@ -453,23 +453,14 @@ pub fn refresh_classes() -> Unit {
 
 ///|
 pub fn mount() -> Unit {
-  let doc = @wdom.WasmNode::of_any(@core.global_this()._get("document"))
-  let root_el = doc.as_any()._call("getElementById", [@core.any("app")])
-  let root = @wdom.WasmNode::of_any(root_el)
-  let opts = @vdom.RenderOpts::new(doc)
-  let app = try! @app.App::from_module(
-    universal_module(),
-    "UniversalWasm",
-    root,
-    opts,
-  )
+  guard @wglue.mount_in(universal_module(), "UniversalWasm") is Some(app) else {
+    return
+  }
   app_ref.val = Some(app)
   // host-provided request services a dropped guest may call (e.g. "double",
   // used by the sample counter). The picker/list requests are in the module.
   app.scope.register_request_handlers(@dhw.shell_request_handlers())
-  @wglue.install(app)
-  @wglue.install_styles(app, doc)
-  @dhw.set_app(app, doc)
+  @dhw.set_app(app, @wglue.document())
   publish_classes()
 }
 

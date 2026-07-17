@@ -10,18 +10,7 @@ fn main {
 ///|
 /// Mount the counter on #app. Called from JS once the DOM is ready.
 pub fn mount() -> Unit {
-  let doc = @wdom.WasmNode::of_any(@core.global_this()._get("document"))
-  let root_el = doc.as_any()._call("getElementById", [@core.any("app")])
-  let root = @wdom.WasmNode::of_any(root_el)
-  let opts = @vdom.RenderOpts::new(doc)
-  let app = try! @app.App::from_module(
-    @counterlib.module_def(),
-    "Counter",
-    root,
-    opts,
-  )
-  @wglue.install(app)
-  @wglue.install_styles(app, doc)
+  let _ = @wglue.mount_in(@counterlib.module_def(), "Counter")
 }
 
 ///|

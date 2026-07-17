@@ -228,6 +228,8 @@ fn dist_steps() -> Array[Step] {
       from="demo/counter_wasm/loader.mjs",
       to="\{DIST}/counter-wasm/loader.mjs",
     ),
+  )
+  steps.push(
     Copy(
       from="demo/wasm-loader-lib.mjs",
       to="\{DIST}/counter-wasm/wasm-loader-lib.mjs",
@@ -253,6 +255,8 @@ fn dist_steps() -> Array[Step] {
       from="demo/storybook_wasm/loader.mjs",
       to="\{DIST}/storybook/loader.mjs",
     ),
+  )
+  steps.push(
     Copy(
       from="demo/wasm-loader-lib.mjs",
       to="\{DIST}/storybook/wasm-loader-lib.mjs",
