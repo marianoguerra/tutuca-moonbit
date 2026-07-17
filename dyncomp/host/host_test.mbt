@@ -377,6 +377,12 @@ test "event_names reflects a bundle registered after boot" {
 }
 
 ///|
+test "component_names lists the manifest's components in order" {
+  let (_, bundle) = mount_with_bundle(FakeGuest::new())
+  debug_inspect(bundle.component_names(), content="[\"Counter\", \"Pair\"]")
+}
+
+///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
     #|{"apiVersion": 1, "moduleName": "counterlib", "components": [

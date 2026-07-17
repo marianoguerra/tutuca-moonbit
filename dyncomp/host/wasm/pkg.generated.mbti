@@ -12,6 +12,8 @@ import {
 // Values
 pub fn app_root_value() -> @core.Value?
 
+pub fn bundle_component_names(String) -> Array[String]
+
 pub fn drop_bundle(String) -> Unit
 
 pub fn load(String) -> Int

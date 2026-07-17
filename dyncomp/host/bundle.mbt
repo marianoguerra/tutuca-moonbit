@@ -16,6 +16,14 @@ pub fn Bundle::module_name(self : Bundle) -> String {
 }
 
 ///|
+/// The bundle's component names, in manifest (declaration) order. Used by
+/// hosts that mount every declared component (e.g. the universal drop shell)
+/// rather than naming specific ones.
+pub fn Bundle::component_names(self : Bundle) -> Array[String] {
+  self.manifest.components.map(def => def.name)
+}
+
+///|
 /// Synthesize + register + compile the manifest's components into a child
 /// scope of `scope`. Safe after App::new: the shared registry is live, and
 /// compiling here means event_names()/styles reflect the new components.

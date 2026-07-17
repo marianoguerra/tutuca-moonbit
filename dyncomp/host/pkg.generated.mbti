@@ -29,6 +29,7 @@ pub struct Bundle {
   manifest : DynManifest
   comps : Map[String, (Int, DynComponentDef)]
 }
+pub fn Bundle::component_names(Self) -> Array[String]
 pub fn Bundle::drop_instance(Self, Int) -> Unit
 pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value]) -> DynObj?
 pub fn Bundle::migrate_instance(Self, @core.Value, String) -> DynObj?
