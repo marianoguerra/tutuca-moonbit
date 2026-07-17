@@ -1,6 +1,8 @@
-// The wasm-gc DOM node wrapper and its DomNode trait impl. Mirrors
-// vdom/browser's BrowserNode, but every DOM call goes through @core.Any's
-// wasm-gc reflection (_get/_set/_call, backed by the `jscore` imports).
+// The wasm-gc DOM node wrapper and its DomNode trait impl. TWIN of
+// vdom/browser/browser.mbt: mirrors it method-for-method, but every DOM call
+// goes through @core.Any's wasm-gc reflection (_get/_set/_call, backed by the
+// `jscore` imports). A fix to any DomNode method there almost certainly
+// applies here too.
 
 ///|
 /// A real DOM node (or document) reached from wasm-gc. Wraps the raw JS handle.
@@ -127,6 +129,9 @@ pub impl @vdom.DomNode for WasmNode with fn child_node_at(self, i) {
 }
 
 ///|
+/// Satisfies the DomNode contract (compare the underlying node, not the
+/// wrapper): @core.equal is the jscore `equal` import, which is JS `===` —
+/// the same semantics as the browser twin's isSameNode-style check.
 pub impl @vdom.DomNode for WasmNode with fn is_same_node(self, other) {
   @core.equal(self.0, other.0)
 }

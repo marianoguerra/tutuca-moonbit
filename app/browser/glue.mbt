@@ -3,6 +3,11 @@
 // each translating the raw event into a DomEvent and dispatching from its
 // target, plus drag/touch synthesis (a touch on a [draggable] becomes
 // dragstart/dragover/drop once it moves).
+//
+// TWIN: app/wasm/glue.mbt mirrors the event translation half of this file
+// (dom_event_of / event_value / the modifier reads) — the ctrl_or_cmd logic
+// drifted between them once already, so apply event-shape fixes to both.
+// The touch->drag machine itself is shared (app/touchdrag).
 
 ///|
 extern "js" fn add_listener_ffi(

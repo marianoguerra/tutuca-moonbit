@@ -1,3 +1,7 @@
+// TWIN: vdom/wasm/node.mbt mirrors this file method-for-method (same logic,
+// different FFI seam — extern "js" here, @core.Any reflection + tdom there).
+// A fix to any DomNode method here almost certainly applies there too.
+
 ///|
 /// A real DOM node (or document) for the js backend. Wraps the raw JS value;
 /// the orphan rule prevents implementing the vdom trait directly on

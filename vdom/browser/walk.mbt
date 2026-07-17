@@ -1,5 +1,5 @@
 // Read-side walk over the real DOM (the js bridge for event-path
-// reconstruction).
+// reconstruction). TWIN: vdom/wasm/walk.mbt mirrors this — fix both.
 
 ///|
 extern "js" fn char_data_ffi(node : @core.Any) -> String =

@@ -3,6 +3,10 @@
 // listener per event name (tdom.add_listener) that calls the exported
 // `on_event`, and we hold the live App here so `on_event` can dispatch into it.
 // Includes the drag/touch synthesis that app/browser has, so dnd examples work.
+//
+// TWIN: app/browser/glue.mbt mirrors the event translation half of this file
+// (dom_event_of / event_value / the modifier reads) — apply event-shape fixes
+// to both. The touch->drag machine itself is shared (app/touchdrag).
 
 ///|
 extern "wasm" fn tdom_has_prop(obj : @core.Any, name : String) -> Bool = "tdom" "has_prop"

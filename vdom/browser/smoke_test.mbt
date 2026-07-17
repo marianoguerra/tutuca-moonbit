@@ -11,6 +11,26 @@ fn env() -> (@browser.BrowserNode, @vdom.RenderOpts[@browser.BrowserNode]) {
 }
 
 ///|
+/// Pins the DomNode contract (dom_trait.mbt): wrappers are re-created per
+/// call, so is_same_node must compare the underlying node, never the wrapper.
+/// The wasm twin satisfies it via @core.equal (JS === in the jscore imports).
+test "browser: is_same_node compares the node, not the wrapper" {
+  let (c, o) = env()
+  let _ = @vdom.render(
+    @vdom.h("div", childs=[@vdom.h("span"), @vdom.h("span")]),
+    c,
+    o,
+  )
+  let root = @vdom.DomNode::child_nodes(c)[0]
+  // two independently-created wrappers of the same element
+  let a = @vdom.DomNode::child_nodes(root)[0]
+  let b = @vdom.DomNode::child_nodes(root)[0]
+  assert_true(@vdom.DomNode::is_same_node(a, b))
+  let other = @vdom.DomNode::child_nodes(root)[1]
+  assert_false(@vdom.DomNode::is_same_node(a, other))
+}
+
+///|
 test "browser: render, attributes and properties" {
   let (c, o) = env()
   let _ = @vdom.render(
