@@ -57,8 +57,8 @@ jobs:
       - name: Install npm dependencies
         run: npm install
 
-      # wasm-tools is needed by the dyncomp task (componentize the guest
-      # bundle: wasm-tools component embed/new). Prebuilt release binary —
+      # wasm-tools is needed to componentize the guest bundles
+      # (wasm-tools component embed/new). Prebuilt release binary —
       # keep the pin roughly in sync with guests/counter/README.md.
       - name: Install wasm-tools
         run: |
@@ -72,16 +72,20 @@ jobs:
       - name: Build dist
         run: moon run --target native cmd/dev -- dist
 
-      # dynamic-wasm-component examples: builds the MoonBit counter guest
-      # bundle (moon -> wasm-tools -> jco) and copies it + the demo shell
-      # into dist/dyncomp and dist/storybook/counter (the storybook's
-      # "Dynamic" story loads it at runtime).
-      - name: Build dyncomp examples
-        run: moon run --target native cmd/dev -- dyncomp
+      # storybook "Dynamic" story bundle: builds the MoonBit counter guest
+      # bundle (moon -> wasm-tools -> jco) into dist/storybook/counter, which
+      # the story loads at runtime.
+      - name: Build storybook dynamic bundle
+        run: moon run --target native cmd/dev -- storybook-bundle
 
-      # universal drag-and-drop demo: the wasm-gc drop shell + a sample
-      # single-file bundle (dist/universal/examples/counter.tutuca.tar.gz).
-      # Reuses the guest bundle the dyncomp task built.
+      # the universal demo also builds the Rust guest (polyglot sample), which
+      # needs the wasm32 target; cargo is preinstalled on the runner.
+      - name: Add Rust wasm target
+        run: rustup target add wasm32-unknown-unknown
+
+      # universal drag-and-drop demo: the wasm-gc drop shell + sample single-file
+      # bundles (counter, todo, and the Rust rust-counter, in
+      # dist/universal/examples/). Builds the guest bundles it packs.
       - name: Build universal demo
         run: moon run --target native cmd/dev -- universal
 

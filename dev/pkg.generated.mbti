@@ -6,8 +6,6 @@ import {
 }
 
 // Values
-pub fn dyncomp_steps() -> Array[Step]
-
 pub fn help_text() -> String
 
 pub fn plan(String) -> Array[Step]?
@@ -17,6 +15,8 @@ pub fn rewrite(String, old_src~ : String, new_src~ : String) -> String
 pub fn skill_assets_source(Array[(String, String)]) -> String
 
 pub fn skill_embed_steps() -> Array[Step]
+
+pub fn storybook_bundle_steps() -> Array[Step]
 
 pub fn tasks() -> Array[Task]
 

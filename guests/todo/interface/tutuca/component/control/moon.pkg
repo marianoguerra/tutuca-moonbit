@@ -1,0 +1,5 @@
+warnings = "-44"
+
+import {
+  "tutuca/component/interface/tutuca/component/values",
+}

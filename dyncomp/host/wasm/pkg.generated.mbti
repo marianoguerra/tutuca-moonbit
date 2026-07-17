@@ -20,6 +20,8 @@ pub fn load(String) -> Int
 
 pub fn load_from(@core.DispatchPath, String) -> Int
 
+pub fn loaded_components() -> Array[(String, String)]
+
 pub fn make_instance(String, String, args? : Map[String, @core.Value]) -> @core.Value?
 
 pub fn migrate_instance(String, String, @core.Value) -> @core.Value?

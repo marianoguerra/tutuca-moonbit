@@ -13,13 +13,16 @@
 <head>
   <meta charset="utf-8">
   <title>tutuca universal wasm components</title>
+  <!-- margaui theme variables (light + dark), same source the storybook uses -->
+  <link rel="stylesheet" href="https://marianoguerra.github.io/margaui/themes/theme.css" />
 </head>
 <body>
   <div id="app"></div>
   <script type="module">
-    import { loadWasm } from "./loader.mjs";
+    import { loadWasm, applyMargaui } from "./loader.mjs";
     const exports = await loadWasm("./universal_wasm.wasm");
-    exports.mount();
+    exports.mount();               // publishes __tutuca_classes (native views)
+    await applyMargaui();          // compile + inject <style id="margaui-css">
     globalThis.__tutuca_state = () => exports.state_json();
   </script>
 </body>

@@ -136,13 +136,17 @@ fn counter_def() -> ComponentDef {
       {
         name: "main",
         html: (
-          #|<div class="counter">
-          #|  <button class="dec" @on.click="dec">-</button>
-          #|  <span class="count" @text=".count"></span>
-          #|  <button class="inc" @on.click="inc">+</button>
-          #|  <button class="double" @on.click="double">double</button>
-          #|  <span class="label" @text="$label"></span>
-          #|  <ul class="history"><li @each=".history" @text="@value"></li></ul>
+          #|<div class="card bg-base-100 border border-base-300 shadow-sm counter">
+          #|  <div class="card-body gap-2 items-center p-4">
+          #|    <div class="join">
+          #|      <button class="btn btn-sm join-item dec" @on.click="dec">−</button>
+          #|      <span class="btn btn-sm join-item no-animation pointer-events-none count" @text=".count"></span>
+          #|      <button class="btn btn-sm join-item inc" @on.click="inc">+</button>
+          #|    </div>
+          #|    <button class="btn btn-sm btn-secondary double" @on.click="double">double</button>
+          #|    <span class="text-sm opacity-70 label" @text="$label"></span>
+          #|    <ul class="flex gap-1 flex-wrap history"><li class="badge badge-sm badge-ghost" @each=".history" @text="@value"></li></ul>
+          #|  </div>
           #|</div>
         ),
       },
@@ -151,7 +155,9 @@ fn counter_def() -> ComponentDef {
     receive_handlers: ["init", "sum"],
     response_handlers: ["double"],
     method_names: ["label"],
-    style: ".counter { display: inline-flex; gap: 0.5em; align-items: baseline; } .counter .history { display: inline-flex; gap: 0.3em; list-style: none; margin: 0; padding: 0; color: #999; }",
+    // styling is entirely margaui (daisyUI) classes above; the universal demo
+    // compiles them, so no scoped fallback CSS
+    style: "",
   }
 }
 
@@ -211,7 +217,7 @@ fn pair_def() -> ComponentDef {
       {
         name: "main",
         html: (
-          #|<div class="pair">
+          #|<div class="flex flex-col gap-2 pair">
           #|  <div class="left"><x render=".left"></div>
           #|  <div class="right"><x render=".right"></div>
           #|</div>
@@ -222,7 +228,7 @@ fn pair_def() -> ComponentDef {
     receive_handlers: ["init"],
     response_handlers: [],
     method_names: [],
-    style: ".pair { display: flex; flex-direction: column; gap: 0.5em; }",
+    style: "",
   }
 }
 

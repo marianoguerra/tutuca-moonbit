@@ -423,6 +423,21 @@ pub fn bundle_component_names(module_name : String) -> Array[String] {
 }
 
 ///|
+/// Every currently-loaded component as (module_name, component_name) pairs,
+/// across all registered bundles. Backs the universal demo's "listComponents"
+/// request so a picker can enumerate what can be mounted.
+pub fn loaded_components() -> Array[(String, String)] {
+  let out = []
+  for module_name, bid in by_name {
+    guard bundles.get(bid) is Some(bundle) else { continue }
+    for name in bundle.component_names() {
+      out.push((module_name, name))
+    }
+  }
+  out
+}
+
+///|
 /// Create an instance of a loaded bundle's component as a tree value.
 pub fn make_instance(
   module_name : String,

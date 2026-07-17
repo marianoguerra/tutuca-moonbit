@@ -26,6 +26,7 @@ options(
         "on_event",
         "dyncomp_on_loaded",
         "dyncomp_on_load_error",
+        "refresh_classes",
         "state_json",
       ],
       "use-js-builtin-string": true,

@@ -14,6 +14,8 @@ pub fn mount() -> Unit
 
 pub fn on_event(@core.Any) -> Unit
 
+pub fn refresh_classes() -> Unit
+
 pub fn state_json() -> String
 
 // Errors

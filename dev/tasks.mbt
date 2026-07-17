@@ -233,11 +233,14 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
   )
-  // the storybook host imports the dyncomp bridge (tcomp namespace), so it
-  // ships the dyncomp loader (a superset of the counter one) plus the
-  // counter guest bundle its Dynamic pane loads at runtime
+  // the storybook host imports the dynamic-component bridge (tcomp namespace),
+  // so it ships that loader plus the counter guest bundle its Dynamic pane
+  // loads at runtime
   steps.push(
-    Copy(from="demo/dyncomp_wasm/loader.mjs", to="\{DIST}/storybook/loader.mjs"),
+    Copy(
+      from="demo/storybook_wasm/loader.mjs",
+      to="\{DIST}/storybook/loader.mjs",
+    ),
   )
   steps.push(Mkdir("\{DIST}/storybook/counter"))
   steps.push(
@@ -247,7 +250,7 @@ fn dist_steps() -> Array[Step] {
     ),
   )
   // the counter guest bundle for the Dynamic pane is copied by the
-  // `dyncomp` task (it needs the component toolchain); without it the pane
+  // `storybook-bundle` task (it needs the component toolchain); without it the pane
   // shows a load error and everything else works.
   steps.push(
     WriteRewritten(
@@ -313,8 +316,8 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "skill-embed" {
     return Some(skill_embed_steps())
   }
-  if name == "dyncomp" {
-    return Some(dyncomp_steps())
+  if name == "storybook-bundle" {
+    return Some(storybook_bundle_steps())
   }
   if name == "universal" {
     return Some(universal_steps())
@@ -323,46 +326,28 @@ pub fn plan(name : String) -> Array[Step]? {
 }
 
 ///|
-const DYNCOMP_WASM = "_build/wasm-gc/debug/build/demo/dyncomp_wasm/dyncomp_wasm.wasm"
-
-///|
-/// Assemble the dynamic-wasm-component demo (dyncomp/DESIGN.md) into
-/// dist/dyncomp: the wasm-gc shell app plus the jco-transpiled counter guest
-/// bundle it loads at runtime. Kept out of `dist`: the guest pipeline needs
-/// the component toolchain (wasm-tools + @bytecodealliance/jco — see
-/// guests/counter/README.md), which plain dist users may not have.
-pub fn dyncomp_steps() -> Array[Step] {
+/// Build the jco-transpiled counter guest bundle and copy it into
+/// dist/storybook/counter, where the storybook "Dynamic" story loads it at
+/// runtime. Kept out of `dist`: the guest pipeline needs the component
+/// toolchain (wasm-tools + @bytecodealliance/jco — see guests/counter/README.md),
+/// which plain dist users may not have. (The standalone dyncomp demo page was
+/// removed — its loading UX lives in the universal demo, its state-migrating
+/// hot-swap in this storybook story.)
+pub fn storybook_bundle_steps() -> Array[Step] {
   let steps : Array[Step] = [
-    Run(
-      moon("build · wasm-gc dyncomp demo", [
-        "build", "--target", "wasm-gc", "demo/dyncomp_wasm",
-      ]),
-    ),
     Run({
       label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
       prog: "node",
       args: ["guests/counter/build.mjs"],
     }),
-    Mkdir("\{DIST}/dyncomp"),
-    Mkdir("\{DIST}/dyncomp/counter"),
-    Copy(from=DYNCOMP_WASM, to="\{DIST}/dyncomp/dyncomp_wasm.wasm"),
-    Copy(from="demo/dyncomp_wasm/loader.mjs", to="\{DIST}/dyncomp/loader.mjs"),
-    Copy(from="demo/dyncomp_wasm/index.html", to="\{DIST}/dyncomp/index.html"),
+    Mkdir("\{DIST}/storybook"),
+    Mkdir("\{DIST}/storybook/counter"),
   ]
-  // the same bundle also feeds the storybook Dynamic pane
-  steps.push(Mkdir("\{DIST}/storybook"))
-  steps.push(Mkdir("\{DIST}/storybook/counter"))
   for
     f in [
       "counter.component.js", "counter.component.core.wasm", "counter.component.core2.wasm",
       "counter.component.core3.wasm",
     ] {
-    steps.push(
-      Copy(
-        from="guests/counter/dist/js/\{f}",
-        to="\{DIST}/dyncomp/counter/\{f}",
-      ),
-    )
     steps.push(
       Copy(
         from="guests/counter/dist/js/\{f}",
@@ -378,9 +363,9 @@ const UNIVERSAL_WASM = "_build/wasm-gc/debug/build/demo/universal_wasm/universal
 
 ///|
 /// Assemble the universal wasm-component demo into dist/universal: the wasm-gc
-/// drop-shell app, its loader, and a sample single-file bundle
-/// (examples/counter.tutuca.tar.gz) to drag onto the page. Like `dyncomp`,
-/// kept out of `dist` — the guest bundle needs the component toolchain
+/// drop-shell app, its loader, and sample single-file bundles
+/// (examples/*.tutuca.tar.gz) to drag onto the page. Like `storybook-bundle`,
+/// kept out of `dist` — the guest bundles need the component toolchain
 /// (wasm-tools + @bytecodealliance/jco; see guests/counter/README.md).
 pub fn universal_steps() -> Array[Step] {
   [
@@ -394,6 +379,18 @@ pub fn universal_steps() -> Array[Step] {
       prog: "node",
       args: ["guests/counter/build.mjs"],
     }),
+    Run({
+      label: "build · todo guest bundle (wit-bindgen output → component → ESM)",
+      prog: "node",
+      args: ["guests/todo/build.mjs"],
+    }),
+    // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
+    // cargo + the wasm32-unknown-unknown target)
+    Run({
+      label: "build · rust-counter guest bundle (cargo → component → ESM)",
+      prog: "node",
+      args: ["guests/rust-counter/build.mjs"],
+    }),
     Mkdir("\{DIST}/universal"),
     Mkdir("\{DIST}/universal/examples"),
     Copy(from=UNIVERSAL_WASM, to="\{DIST}/universal/universal_wasm.wasm"),
@@ -405,12 +402,26 @@ pub fn universal_steps() -> Array[Step] {
       from="demo/universal_wasm/index.html",
       to="\{DIST}/universal/index.html",
     ),
-    // pack the guest's jco output into one droppable .tutuca.tar.gz
+    // pack each guest's jco output into one droppable .tutuca.tar.gz
     Run({
       label: "pack · counter bundle → examples/counter.tutuca.tar.gz",
       prog: "node",
       args: [
         "scripts/pack-bundle.mjs", "guests/counter/dist/js", "dist/universal/examples/counter.tutuca.tar.gz",
+      ],
+    }),
+    Run({
+      label: "pack · todo bundle → examples/todo.tutuca.tar.gz",
+      prog: "node",
+      args: [
+        "scripts/pack-bundle.mjs", "guests/todo/dist/js", "dist/universal/examples/todo.tutuca.tar.gz",
+      ],
+    }),
+    Run({
+      label: "pack · rust-counter bundle → examples/rust-counter.tutuca.tar.gz",
+      prog: "node",
+      args: [
+        "scripts/pack-bundle.mjs", "guests/rust-counter/dist/js", "dist/universal/examples/rust-counter.tutuca.tar.gz",
       ],
     }),
   ]
@@ -454,7 +465,7 @@ pub fn help_text() -> String {
   line("dist", "build all + assemble a runnable dist/ folder")
   line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
   line(
-    "dyncomp", "assemble the dynamic-component demo + guest bundle into dist/dyncomp",
+    "storybook-bundle", "build the counter guest bundle into dist/storybook/counter (the storybook Dynamic story)",
   )
   line(
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",

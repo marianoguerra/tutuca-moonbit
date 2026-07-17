@@ -28,12 +28,19 @@ impl Guest for Component {
                 name: "Counter".into(),
                 views: vec![ViewDef {
                     name: "main".into(),
-                    html: r#"<div class="counter">
-  <button class="dec" @on.click="dec">-</button>
-  <span class="count" @text=".count"></span>
-  <button class="inc" @on.click="inc">+</button>
-  <button class="double" @on.click="double">double</button>
-  <span class="label" @text="$label"></span>
+                    // margaui (daisyUI) classes, matching the universal demo's
+                    // styling; the "rust" badge marks this as the Rust guest
+                    html: r#"<div class="card bg-base-100 border border-base-300 shadow-sm counter">
+  <div class="card-body gap-2 items-center p-4">
+    <span class="badge badge-sm badge-warning">rust</span>
+    <div class="join">
+      <button class="btn btn-sm join-item dec" @on.click="dec">−</button>
+      <span class="btn btn-sm join-item no-animation pointer-events-none count" @text=".count"></span>
+      <button class="btn btn-sm join-item inc" @on.click="inc">+</button>
+    </div>
+    <button class="btn btn-sm btn-secondary double" @on.click="double">double</button>
+    <span class="text-sm opacity-70 label" @text="$label"></span>
+  </div>
 </div>"#
                         .into(),
                 }],
@@ -41,7 +48,8 @@ impl Guest for Component {
                 receive_handlers: vec!["init".into()],
                 response_handlers: vec!["double".into()],
                 method_names: vec!["label".into()],
-                style: ".counter { display: inline-flex; gap: 0.5em; }".into(),
+                // styling is entirely margaui (daisyUI) classes; no fallback CSS
+                style: "".into(),
             }],
         }
     }

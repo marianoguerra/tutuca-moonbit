@@ -258,6 +258,10 @@ export function createTcompImports(getExports) {
           return WebAssembly.compile(wasm);
         };
         await finishLoad(mod, getCoreModule, loadId);
+        // the bundle's views registered new margaui utility classes; re-publish
+        // and recompile so guest styling (e.g. the counter/todo cards) applies
+        getExports().refresh_classes?.();
+        await applyMargaui(true);
       } finally {
         URL.revokeObjectURL(url);
       }
@@ -353,16 +357,19 @@ export function createTcompImports(getExports) {
 // Compile the margaui class set the wasm module published on globalThis
 // (__tutuca_classes) into CSS and inject it (used by the storybook page,
 // which shares this loader for its tcomp imports).
-export async function applyMargaui() {
+export async function applyMargaui(force = false) {
   const classes = globalThis.__tutuca_classes ?? [];
-  if (!classes.length || document.getElementById("margaui-css")) return;
+  const existing = document.getElementById("margaui-css");
+  // first call: skip if nothing to do or already compiled. force=true (after a
+  // bundle loads) recompiles the now-larger class set, replacing the style.
+  if (!classes.length || (existing && !force)) return;
   try {
     const { compile } = await import("https://cdn.jsdelivr.net/npm/margaui/+esm");
     const css = await compile(classes);
-    const style = document.createElement("style");
+    const style = existing ?? document.createElement("style");
     style.id = "margaui-css";
     style.textContent = css;
-    document.head.appendChild(style);
+    if (!existing) document.head.appendChild(style);
   } catch (err) {
     console.warn("margaui compile skipped:", err);
   }
