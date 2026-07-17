@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/dyncomp/host/wasm"
 
 import {
   "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
   "moonbitlang/core/ref",
@@ -15,13 +16,21 @@ pub fn drop_bundle(String) -> Unit
 
 pub fn load(String) -> Int
 
+pub fn load_from(@core.DispatchPath, String) -> Int
+
 pub fn make_instance(String, String, args? : Map[String, @core.Value]) -> @core.Value?
+
+pub fn migrate_instance(String, String, @core.Value) -> @core.Value?
 
 pub fn on_load_error(Int, String) -> Unit
 
 pub fn on_loaded(Int, Int, String) -> Unit
 
 pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
+
+pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef
+
+pub fn shell_request_handlers() -> Map[String, @component.RequestFn]
 
 // Errors
 

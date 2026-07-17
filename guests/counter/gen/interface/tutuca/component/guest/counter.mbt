@@ -73,6 +73,16 @@ impl DynComponent for Counter with fn handle(self, bucket, name, _event, args) {
 }
 
 ///|
+/// Iterated by host `@each` over the instance itself (obj_seq_entries).
+impl DynComponent for Counter with fn seq_entries(self) {
+  let out = []
+  for i, n in self.history {
+    out.push(("h\{i}", @values.Value::Number(n)))
+  }
+  Some(out)
+}
+
+///|
 impl DynComponent for Counter with fn call_method(self, name, _args) {
   match name {
     "label" => @values.Value::Text("count is \{self.count}")
@@ -98,14 +108,23 @@ impl DynComponent for Counter with fn to_json(self) {
 ///|
 fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut count = 0.0
+  let history = []
   for arg in args {
     let (name, v) = arg
     match (name, v) {
       ("count", @values.Value::Number(n)) => count = n
+      // hot-swap migration hands the to-json projection back as args
+      ("history", @values.Value::List(h)) =>
+        for i in 0U..<@values.list_len(h) {
+          match @values.list_get(h, i) {
+            @values.Value::Number(n) => history.push(n)
+            _ => ()
+          }
+        }
       _ => ()
     }
   }
-  let c : Counter = { count, history: [] }
+  let c : Counter = { count, history }
   c as &DynComponent
 }
 

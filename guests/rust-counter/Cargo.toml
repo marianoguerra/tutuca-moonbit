@@ -1,0 +1,17 @@
+# Rust guest for tutuca:component — the polyglot proof (dyncomp/DESIGN.md):
+# the same WIT, no tutuca code at all. Build with build.mjs (cargo build
+# --target wasm32-unknown-unknown -> wasm-tools component new -> jco).
+[package]
+name = "rust-counter"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.59"
+
+[profile.release]
+opt-level = "s"
+lto = true

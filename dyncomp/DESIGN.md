@@ -1,13 +1,17 @@
 # Dynamic WebAssembly tutuca components
 
-Status: **Phases 0–3 done and green** (see results below). WIT:
-[`wit/tutuca-component.wit`](wit/tutuca-component.wit). Reference guest:
-[`../guests/counter/`](../guests/counter/README.md). Host: `dyncomp/host`
-(+ `dyncomp/host/wasm` bridge) with memdom tests (`moon test dyncomp/host`).
-Demo: `demo/dyncomp_wasm` — assemble with
-`moon run --target native cmd/dev -- dyncomp`, serve `dist/`, open
-`/dyncomp/`. Contract harness: `node --test dyncomp/test/harness.test.mjs`
-(+ `test/browser-smoke.html` served from the repo root).
+Status: **Phases 0–4 done and green** (see results below). WIT:
+[`wit/tutuca-component.wit`](wit/tutuca-component.wit). Guests:
+[`../guests/counter/`](../guests/counter/README.md) (MoonBit),
+[`../guests/rust-counter/`](../guests/rust-counter/) (Rust — the polyglot
+proof). Host: `dyncomp/host` (+ `dyncomp/host/wasm` bridge) with memdom
+tests (`moon test dyncomp/host`). Demos: `demo/dyncomp_wasm` and the
+storybook's "Dynamic" story — assemble with
+`moon run --target native cmd/dev -- dist` then `-- dyncomp`, serve
+`dist/`, open `/dyncomp/` or `/storybook/?story=dyncomp`. Contract
+harnesses: `node --test dyncomp/test/harness.test.mjs` (and
+`rust-harness.test.mjs`; `test/browser-smoke.html` served from the repo
+root).
 
 ## Goal
 
@@ -303,3 +307,50 @@ Remaining for later phases: guest `seq-entries` exercised end-to-end
 and drag/drop inside guest subtrees, markers nested inside compound
 values, bundle hot-swap, a storybook dynamic section, and an optional
 Rust guest.
+
+## Phase 4 results (2026-07-17) — the remaining work
+
+All verified in Chrome; `moon test` 702/702; node contract harnesses 9+1.
+
+- **seq-entries end-to-end**: `@each` over a guest INSTANCE (not a list
+  field) renders via `obj_seq_entries` → guest `seq-entries` — the shell's
+  `.seq` list iterates the counter's history both on memdom and in the
+  browser.
+- **Event modifiers in guest views work as-is** (they're parsed host-side
+  at view compile time): `@on.keydown+cancel` gates on Escape exactly like
+  local components — memdom-tested. (Modifier semantics live in
+  `app/app.mbt` `modifiers_pass`: keydown `+send`=Enter, `+cancel`=Escape,
+  ctrl/cmd/meta/alt on keydown+click.)
+- **Nested markers at any depth**: the wasm bridge decodes `{"$dyn": …}`
+  markers recursively inside lists/maps (`WasmGuest::json_to_value`), and
+  uses the same decoder for seq-entries and control-message args. (Host →
+  guest encoding of an Obj nested inside a compound is still unsupported —
+  `Value::to_json` drops it; top-level `with-field` covers the write path
+  that exists.)
+- **Bundle hot-swap with state migration**: reloading a module registers
+  the new bundle, the shell's `dyncompLoaded` handler migrates mounted
+  instances via `migrate_instance` (state-json protocol field → parsed
+  projection → constructor args — the counter keeps count AND history
+  across a brand-new wasm instance), and the old bundle drops after the
+  synchronous settle. Load completion routes to the LOADING component via
+  `load_from(ctx.path(), url)` (targeted transactor send), so any pane
+  anywhere in a tree can host bundles.
+- **Storybook "Dynamic" section**: the shared shell
+  (`@dhw.shell_module(bundle_url~)`) is a regular story in
+  demo/storybook_wasm; the pane loads/reloads bundles live inside the
+  gallery (`?story=dyncomp`). The storybook dist ships the dyncomp loader
+  (superset) and the `dyncomp` dev task copies the counter bundle into
+  `dist/storybook/counter/`.
+- **Rust guest** (`guests/rust-counter/`): the polyglot proof — the same
+  WIT implemented with `wit_bindgen::generate!`, zero tutuca code, built
+  via `cargo build --target wasm32-unknown-unknown` → `wasm-tools
+  component new` → jco (62 KB vs MoonBit's 38 KB). The node harness
+  drives it with the identical fake-host protocol
+  (`dyncomp/test/rust-harness.test.mjs`): manifest, functional handlers,
+  request buffering, response application, eq.
+
+Still open (small): drag/drop inside guest subtrees is expected to work
+(stock dispatch + drag_info in args) but has no test; host→guest encoding
+of instances nested inside compound values; a render-generation sweep as
+an alternative to explicit `destroy`; playground emission of dyncomp
+bundles (needs in-browser componentize).

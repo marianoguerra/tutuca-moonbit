@@ -4,7 +4,6 @@
 // counter_wasm import set with the `tcomp` namespace (loader.mjs).
 // Build: moon build --target wasm-gc demo/dyncomp_wasm
 import {
-  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,

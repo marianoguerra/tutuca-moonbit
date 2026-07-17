@@ -5,6 +5,7 @@
 // host never sees arena handles). Check: moon check --target wasm-gc dyncomp/host/wasm
 import {
   "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/host" @dyncomp,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,

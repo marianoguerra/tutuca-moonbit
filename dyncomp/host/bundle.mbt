@@ -88,6 +88,32 @@ pub fn Bundle::wrap_instance(
 }
 
 ///|
+/// Rebuild an instance in THIS bundle from an old guest value's JSON state
+/// projection (read through the state-json protocol field, so the old
+/// value may belong to a different — e.g. superseded — bundle). The new
+/// component's constructor decides which projected fields it accepts;
+/// unknown fields are ignored. None if `old` is not a guest value or the
+/// component is unknown.
+pub fn Bundle::migrate_instance(
+  self : Bundle,
+  old : @tutuca.Value,
+  component : String,
+) -> DynObj? {
+  guard old is Obj(o) else { return None }
+  guard o.obj_field(state_json_field) is Some(Str(json)) else { return None }
+  let j = @json.parse(json) catch { _ => return None }
+  let args : Map[String, @tutuca.Value] = {}
+  match j {
+    Object(fields) =>
+      for name, fv in fields {
+        args[name] = @tutuca.Value::from_json(fv)
+      }
+    _ => ()
+  }
+  self.make_instance(component, args~)
+}
+
+///|
 /// Drop one guest instance by handle (successor handles from dispatch are
 /// collected automatically — see collect_superseded; this is for instances
 /// the caller seeded and unmounted explicitly).

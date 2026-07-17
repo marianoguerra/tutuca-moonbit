@@ -233,15 +233,22 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
   )
+  // the storybook host imports the dyncomp bridge (tcomp namespace), so it
+  // ships the dyncomp loader (a superset of the counter one) plus the
+  // counter guest bundle its Dynamic pane loads at runtime
   steps.push(
-    Copy(from="demo/counter_wasm/loader.mjs", to="\{DIST}/storybook/loader.mjs"),
+    Copy(from="demo/dyncomp_wasm/loader.mjs", to="\{DIST}/storybook/loader.mjs"),
   )
+  steps.push(Mkdir("\{DIST}/storybook/counter"))
   steps.push(
     Copy(
       from="demo/storybook_wasm/index.html",
       to="\{DIST}/storybook/index.html",
     ),
   )
+  // the counter guest bundle for the Dynamic pane is copied by the
+  // `dyncomp` task (it needs the component toolchain); without it the pane
+  // shows a load error and everything else works.
   steps.push(
     WriteRewritten(
       from="demo/counter/index.html",
@@ -339,6 +346,9 @@ pub fn dyncomp_steps() -> Array[Step] {
     Copy(from="demo/dyncomp_wasm/loader.mjs", to="\{DIST}/dyncomp/loader.mjs"),
     Copy(from="demo/dyncomp_wasm/index.html", to="\{DIST}/dyncomp/index.html"),
   ]
+  // the same bundle also feeds the storybook Dynamic pane
+  steps.push(Mkdir("\{DIST}/storybook"))
+  steps.push(Mkdir("\{DIST}/storybook/counter"))
   for
     f in [
       "counter.component.js", "counter.component.core.wasm", "counter.component.core2.wasm",
@@ -348,6 +358,12 @@ pub fn dyncomp_steps() -> Array[Step] {
       Copy(
         from="guests/counter/dist/js/\{f}",
         to="\{DIST}/dyncomp/counter/\{f}",
+      ),
+    )
+    steps.push(
+      Copy(
+        from="guests/counter/dist/js/\{f}",
+        to="\{DIST}/storybook/counter/\{f}",
       ),
     )
   }

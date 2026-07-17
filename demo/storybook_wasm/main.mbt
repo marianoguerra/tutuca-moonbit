@@ -220,6 +220,25 @@ pub fn mount() -> Unit {
     return
   }
   let sections = @sb.sections_of(@sb.stories())
+  // a live pane hosting runtime-loaded wasm component bundles
+  // (dyncomp/DESIGN.md); load completion routes back to the pane itself
+  // via ctx.path(), so it works like any other story
+  sections.push({
+    title: "Dynamic",
+    stories: [
+      {
+        id: "dyncomp",
+        title: "Dynamic wasm components",
+        section: "Dynamic",
+        description: "load a tutuca:component bundle at runtime and mount its components; reloading hot-swaps with state migration",
+        module_: @dhw.shell_module(bundle_url="./counter/counter.component.js"),
+        root: "DynShell",
+        args: {},
+        renderable: true,
+        init: false,
+      },
+    ],
+  })
   let root = @wdom.WasmNode::of_any(root_el)
   let opts = @vdom.RenderOpts::new(@wdom.WasmNode::of_any(doc))
   let app = try! @sbui.mount(
@@ -230,8 +249,10 @@ pub fn mount() -> Unit {
     url_handlers=url_request_handlers(),
   )
   current_app.val = Some(app)
+  app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @wglue.install(app)
   @wglue.install_styles(app, @wdom.WasmNode::of_any(doc))
+  @dhw.set_app(app, @wdom.WasmNode::of_any(doc))
   // publish the collected margaui class set (gallery chrome + every example's
   // classes) for index.html's margaui compile step — same path as the other
   // wasm demos.
@@ -253,6 +274,20 @@ fn publish_classes(classes : Array[String]) -> Unit {
 /// The delegated DOM event entry point JS calls (via tdom.add_listener).
 pub fn on_event(ev : @core.Any) -> Unit {
   @wglue.on_event(ev)
+}
+
+///|
+pub fn dyncomp_on_loaded(
+  load_id : Int,
+  bundle_id : Int,
+  manifest_json : String,
+) -> Unit {
+  @dhw.on_loaded(load_id, bundle_id, manifest_json)
+}
+
+///|
+pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
+  @dhw.on_load_error(load_id, msg)
 }
 
 ///|

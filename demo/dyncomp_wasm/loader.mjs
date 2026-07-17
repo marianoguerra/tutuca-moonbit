@@ -307,6 +307,24 @@ export function createTcompImports(getExports) {
   };
 }
 
+// Compile the margaui class set the wasm module published on globalThis
+// (__tutuca_classes) into CSS and inject it (used by the storybook page,
+// which shares this loader for its tcomp imports).
+export async function applyMargaui() {
+  const classes = globalThis.__tutuca_classes ?? [];
+  if (!classes.length || document.getElementById("margaui-css")) return;
+  try {
+    const { compile } = await import("https://cdn.jsdelivr.net/npm/margaui/+esm");
+    const css = await compile(classes);
+    const style = document.createElement("style");
+    style.id = "margaui-css";
+    style.textContent = css;
+    document.head.appendChild(style);
+  } catch (err) {
+    console.warn("margaui compile skipped:", err);
+  }
+}
+
 export async function loadWasm(wasmUrl) {
   let exports = null;
   const imports = {

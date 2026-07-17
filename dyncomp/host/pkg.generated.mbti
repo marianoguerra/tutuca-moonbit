@@ -14,6 +14,8 @@ pub let handle_field : String
 
 pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest) -> Bundle raise
 
+pub let state_json_field : String
+
 pub fn superseded_count() -> Int
 
 pub let supported_api_version : Int
@@ -29,6 +31,7 @@ pub struct Bundle {
 }
 pub fn Bundle::drop_instance(Self, Int) -> Unit
 pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value]) -> DynObj?
+pub fn Bundle::migrate_instance(Self, @core.Value, String) -> DynObj?
 pub fn Bundle::module_name(Self) -> String
 pub fn Bundle::wrap_instance(Self, String, Int) -> @core.Value?
 

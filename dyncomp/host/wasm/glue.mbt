@@ -91,14 +91,6 @@ fn map_json(args : Map[String, @tutuca.Value]) -> String {
   Json::object(obj).stringify()
 }
 
-///|
-fn json_values(j : Json) -> Array[@tutuca.Value] {
-  match j {
-    Array(items) => items.map(@tutuca.Value::from_json)
-    _ => []
-  }
-}
-
 // --- the Guest impl over tcomp ---
 
 ///|
@@ -110,11 +102,10 @@ pub struct WasmGuest {
 }
 
 ///|
-/// Decode a JSON value from the bridge, wrapping top-level nested-child
-/// markers into DynObj values. Markers nested deeper inside lists/maps are
-/// not resolved in v0.1 (they decode as plain data).
-fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
-  let j = @json.parse(s) catch { _ => return Null }
+/// Recursively decode bridge JSON into a Value, wrapping nested-child
+/// markers ({"$dyn": {"handle": n, "comp": s}}) as DynObj values at ANY
+/// depth (inside lists/maps too).
+fn WasmGuest::json_to_value(self : WasmGuest, j : Json) -> @tutuca.Value {
   match j {
     Object(o) =>
       match o.get("$dyn") {
@@ -136,10 +127,23 @@ fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
             None => Null
           }
         }
-        _ => @tutuca.Value::from_json(j)
+        _ => {
+          let out : Map[String, @tutuca.Value] = {}
+          for name, v in o {
+            out[name] = self.json_to_value(v)
+          }
+          Map(out)
+        }
       }
+    Array(items) => List(items.map(v => self.json_to_value(v)))
     _ => @tutuca.Value::from_json(j)
   }
+}
+
+///|
+fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
+  let j = @json.parse(s) catch { _ => return Null }
+  self.json_to_value(j)
 }
 
 ///|
@@ -176,7 +180,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn seq_entries(self, handle) {
   let out = []
   for item in items {
     match item {
-      Array([String(key), v]) => out.push((key, @tutuca.Value::from_json(v)))
+      Array([String(key), v]) => out.push((key, self.json_to_value(v)))
       _ => ()
     }
   }
@@ -215,8 +219,8 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
           _ => continue
         }
         let args = match m.get("args") {
-          Some(a) => json_values(a)
-          None => []
+          Some(Array(items)) => items.map(v => self.json_to_value(v))
+          _ => []
         }
         match m.get("kind") {
           Some(String("emit")) => msgs.push(Emit(name, args))
@@ -294,8 +298,15 @@ pub fn set_app(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
 }
 
 ///|
+/// Where each in-flight load's completion messages should be dispatched
+/// (the loading component's own path, captured via ctx.path()); loads
+/// without a path notify the root.
+let notify_paths : Map[Int, @tutuca.DispatchPath] = {}
+
+///|
 /// Start loading a bundle (a jco-transpiled ESM URL). Completion arrives via
-/// the exported dyncomp_on_loaded / dyncomp_on_load_error callbacks.
+/// the exported dyncomp_on_loaded / dyncomp_on_load_error callbacks as a
+/// "dyncompLoaded" / "dyncompError" receive at the ROOT.
 pub fn load(url : String) -> Int {
   let id = next_load.val
   next_load.val = id + 1
@@ -304,13 +315,40 @@ pub fn load(url : String) -> Int {
 }
 
 ///|
-/// Wire this to the demo's exported `dyncomp_on_loaded`.
+/// Like load, but completion messages dispatch at `path` — pass ctx.path()
+/// from the loading handler so any component anywhere in the tree (e.g. a
+/// storybook pane) can host bundles without root-level plumbing.
+pub fn load_from(path : @tutuca.DispatchPath, url : String) -> Int {
+  let id = load(url)
+  notify_paths[id] = path
+  id
+}
+
+///|
+fn notify(load_id : Int, name : String, args : Array[@tutuca.Value]) -> Unit {
+  guard current.val is Some(app) else { return }
+  match notify_paths.get(load_id) {
+    Some(path) => {
+      notify_paths.remove(load_id) |> ignore
+      let _ = app.transactor.push_send(path, name, args)
+      app.transactor.settle()
+    }
+    None => app.send_at_root(name, args~)
+  }
+}
+
+///|
+/// Wire this to the demo's exported `dyncomp_on_loaded`. Reloading a module
+/// that is already registered hot-swaps it: the new bundle registers under
+/// the module name, the "dyncompLoaded" handler runs (migrating state via
+/// migrate_instance is the handler's choice), and the OLD bundle is dropped
+/// afterwards (the settle is synchronous, so migration reads the old guest
+/// before it goes away).
 pub fn on_loaded(
   load_id : Int,
   bundle_id : Int,
   manifest_json : String,
 ) -> Unit {
-  ignore(load_id)
   guard current.val is Some(app) else { return }
   let registered : Ref[@dyncomp.Bundle?] = { val: None }
   let bundle = try {
@@ -322,13 +360,14 @@ pub fn on_loaded(
     )
   } catch {
     _ => {
-      app.send_at_root("dyncompError", args=[
+      notify(load_id, "dyncompError", [
         Str("bundle rejected: bad manifest or view"),
       ])
       return
     }
   }
   registered.val = Some(bundle)
+  let old_bid = by_name.get(bundle.module_name())
   bundles[bundle_id] = bundle
   by_name[bundle.module_name()] = bundle_id
   // listeners for events only guest views use (loader dedups repeats),
@@ -338,15 +377,39 @@ pub fn on_loaded(
     Some(doc) => @wglue.install_styles(app, doc)
     None => ()
   }
-  app.send_at_root("dyncompLoaded", args=[Str(bundle.module_name())])
+  notify(load_id, "dyncompLoaded", [Str(bundle.module_name())])
+  // hot-swap: the handler above has settled; retire the superseded bundle
+  match old_bid {
+    Some(bid) =>
+      if bid != bundle_id {
+        bundles.remove(bid) |> ignore
+        tcomp_drop_bundle(bid)
+      }
+    None => ()
+  }
 }
 
 ///|
 /// Wire this to the demo's exported `dyncomp_on_load_error`.
 pub fn on_load_error(load_id : Int, msg : String) -> Unit {
-  ignore(load_id)
-  guard current.val is Some(app) else { return }
-  app.send_at_root("dyncompError", args=[Str(msg)])
+  notify(load_id, "dyncompError", [Str(msg)])
+}
+
+///|
+/// Rebuild an instance of a (re)loaded module from an old guest value's
+/// state projection — the hot-swap migration entry point (see
+/// Bundle::migrate_instance).
+pub fn migrate_instance(
+  module_name : String,
+  component : String,
+  old : @tutuca.Value,
+) -> @tutuca.Value? {
+  guard by_name.get(module_name) is Some(bid) else { return None }
+  guard bundles.get(bid) is Some(bundle) else { return None }
+  match bundle.migrate_instance(old, component) {
+    Some(d) => Some(d.to_value())
+    None => None
+  }
 }
 
 ///|

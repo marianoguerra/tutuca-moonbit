@@ -84,8 +84,13 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl Guest for FakeGuest with fn seq_entries(_self, _handle) {
-  None
+impl Guest for FakeGuest with fn seq_entries(self, handle) {
+  // counters iterate as a single ("h0", count) entry; pairs don't iterate
+  if self.pairs.contains(handle) {
+    None
+  } else {
+    Some([("h0", Num(self.counters.get(handle).unwrap()))])
+  }
 }
 
 ///|
@@ -102,6 +107,7 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
       }
     (Input, "notify") =>
       { next: None, msgs: [Emit("counterChanged", [Str("changed!")])] }
+    (Input, "reset") => { next: Some(self.alloc(0.0)), msgs: [] }
     _ => { next: None, msgs: [] }
   }
 }
@@ -165,11 +171,12 @@ fn counter_manifest() -> DynManifest {
               #|  <button class="double" @on.click="double">double</button>
               #|  <button class="notify" @on.click="notify">notify</button>
               #|  <span class="label" @text="$label"></span>
+              #|  <input class="kbd" @on.keydown+cancel="reset">
               #|</div>
             ),
           },
         ],
-        input_handlers: ["inc", "dec", "double", "notify"],
+        input_handlers: ["inc", "dec", "double", "notify", "reset"],
         receive_handlers: ["init"],
         response_handlers: ["double"],
         method_names: ["label"],
@@ -207,6 +214,7 @@ fn shell_module() -> @component.ModuleDef {
     view=(
       #|<div class="shell">
       #|  <span class="note" @text=".note"></span>
+      #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
       #|  <x render=".slot">
       #|</div>
     ),
@@ -309,6 +317,47 @@ test "nested guest children render and dispatch through two DynObj levels" {
   debug_inspect(h.texts(".count"), content="[\"2\", \"101\"]")
   // pair successors were created for each write-through
   assert_true(fake.pairs.length() >= 1)
+}
+
+///|
+test "event modifiers in guest views dispatch through stock parsing" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  inspect(h.text(".count"), content="5")
+  // @on.keydown+cancel="reset" — the modifier gates on Escape (host-side
+  // modifier semantics apply to guest views for free); Enter is filtered
+  h.key_down(".kbd", "Enter")
+  inspect(h.text(".count"), content="5")
+  h.key_down(".kbd", "Escape")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+test "host @each iterates a guest instance via seq-entries" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  debug_inspect(h.texts("li"), content="[\"10\"]")
+  h.click(".inc")
+  debug_inspect(h.texts("li"), content="[\"11\"]")
+}
+
+///|
+test "migrate_instance rebuilds state from the JSON projection" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard bundle.migrate_instance(a.to_value(), "Counter") is Some(b)
+  assert_true(a.handle() != b.handle())
+  assert_true(fake.counters.get(b.handle()) is Some(10.0))
+  // non-guest values don't migrate
+  assert_true(bundle.migrate_instance(Str("nope"), "Counter") is None)
 }
 
 ///|

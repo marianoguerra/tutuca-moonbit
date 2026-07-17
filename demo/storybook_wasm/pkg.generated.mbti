@@ -6,6 +6,10 @@ import {
 }
 
 // Values
+pub fn dyncomp_on_load_error(Int, String) -> Unit
+
+pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
+
 pub fn mount() -> Unit
 
 pub fn on_event(@core.Any) -> Unit

@@ -9,6 +9,7 @@ import {
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/cli",
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/storybook" @sb,
   "marianoguerra/tutuca/storybook/ui" @sbui,
   "marianoguerra/tutuca/vdom",
@@ -22,7 +23,13 @@ options(
   "is-main": true,
   link: {
     "wasm-gc": {
-      "exports": [ "mount", "on_event", "on_popstate" ],
+      "exports": [
+        "mount",
+        "on_event",
+        "on_popstate",
+        "dyncomp_on_loaded",
+        "dyncomp_on_load_error",
+      ],
       "use-js-builtin-string": true,
     },
   },

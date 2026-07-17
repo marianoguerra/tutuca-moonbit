@@ -19,6 +19,11 @@ pub struct DynObj {
 pub let handle_field : String = "__dyncomp_handle"
 
 ///|
+/// Protocol field answering the guest's JSON state projection (Str), used
+/// by hot-swap migration (Bundle::migrate_instance) and inspectors.
+pub let state_json_field : String = "__dyncomp_state_json"
+
+///|
 pub fn DynObj::new(
   comp_id : Int,
   def : DynComponentDef,
@@ -92,6 +97,8 @@ pub impl @tutuca.Obj for DynObj with fn component_id(self) {
 pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
   if name == handle_field {
     Some(Num(self.handle.to_double()))
+  } else if name == state_json_field {
+    Some(Str(self.guest.to_json_string(self.handle)))
   } else if self.def.method_names.contains(name) {
     Some(self.method_fn(name))
   } else {
