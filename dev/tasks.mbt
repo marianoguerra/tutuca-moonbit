@@ -228,6 +228,10 @@ fn dist_steps() -> Array[Step] {
       from="demo/counter_wasm/loader.mjs",
       to="\{DIST}/counter-wasm/loader.mjs",
     ),
+    Copy(
+      from="demo/wasm-loader-lib.mjs",
+      to="\{DIST}/counter-wasm/wasm-loader-lib.mjs",
+    ),
   )
   steps.push(
     Copy(
@@ -248,6 +252,10 @@ fn dist_steps() -> Array[Step] {
     Copy(
       from="demo/storybook_wasm/loader.mjs",
       to="\{DIST}/storybook/loader.mjs",
+    ),
+    Copy(
+      from="demo/wasm-loader-lib.mjs",
+      to="\{DIST}/storybook/wasm-loader-lib.mjs",
     ),
   )
   steps.push(Mkdir("\{DIST}/storybook/counter"))
@@ -405,6 +413,10 @@ pub fn universal_steps() -> Array[Step] {
     Copy(
       from="demo/universal_wasm/loader.mjs",
       to="\{DIST}/universal/loader.mjs",
+    ),
+    Copy(
+      from="demo/wasm-loader-lib.mjs",
+      to="\{DIST}/universal/wasm-loader-lib.mjs",
     ),
     Copy(
       from="demo/universal_wasm/index.html",
