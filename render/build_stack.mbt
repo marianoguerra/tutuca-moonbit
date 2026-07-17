@@ -103,7 +103,7 @@ pub fn build_stack(path : @tutuca.Path, stack : RenderStack) -> RenderStack? {
     guard @tutuca.step_get(prev_node, step) is Some(next_node) else { // bad path item (JS warns and returns null)
       return None
     }
-    let next = next_node.as_value().unwrap_or(@tutuca.Value::Null)
+    let next = next_node.as_value().unwrap_or(Null)
     st = step_enter_frame(step, st, next)
   }
   Some(st)

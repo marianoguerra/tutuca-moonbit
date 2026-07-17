@@ -79,6 +79,12 @@ jobs:
       - name: Build dyncomp examples
         run: moon run --target native cmd/dev -- dyncomp
 
+      # universal drag-and-drop demo: the wasm-gc drop shell + a sample
+      # single-file bundle (dist/universal/examples/counter.tutuca.tar.gz).
+      # Reuses the guest bundle the dyncomp task built.
+      - name: Build universal demo
+        run: moon run --target native cmd/dev -- universal
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

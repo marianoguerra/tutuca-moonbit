@@ -3,7 +3,7 @@
 
 ///|
 fn plain(step : @core.Step, origin? : Int) -> @core.DispatchStep {
-  @core.DispatchStep::Plain(step~, origin~)
+  Plain(step~, origin~)
 }
 
 ///|
@@ -85,8 +85,8 @@ test "teleported path addresses the producer's data (end to end)" {
   // The event path walks Toolbar's tree but the mutation must land on
   // Workspace.sheet (semantics.md §7).
   let root : &@core.PathNode = @core.Value::Map({
-    "sheet": @core.Value::Map({ "title": @core.Value::Str("Q1") }),
-    "panel": @core.Value::Map({ "toolbar": @core.Value::Null }),
+    "sheet": Map({ "title": Str("Q1") }),
+    "panel": Map({ "toolbar": Null }),
   })
   let dispatch = @core.DispatchPath::new(items=[
     plain(FieldStep("panel"), origin=1),

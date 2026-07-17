@@ -313,7 +313,7 @@ fn entry_from_data(
       Str(role)
     },
     "featured": Bool(featured),
-    "categories": List(cats.map(c => @tutuca.Value::Str(c))),
+    "categories": List(cats.map(c => Str(c))),
     "altUrls": List(
       alt_urls.map(a => {
         alt_url.make({ "label": Str(a.0), "url": Str(a.1) }).to_value()
@@ -543,9 +543,9 @@ fn root_comp() -> @component.Component {
               ),
             ),
           )
-          .set("allCategories", List(cats.map(c => @tutuca.Value::Str(c))))
+          .set("allCategories", List(cats.map(c => Str(c))))
           .set("selectedCategories", Map(ps_set_of(cats)))
-          .set("allRoles", List(roles.map(r => @tutuca.Value::Str(r))))
+          .set("allRoles", List(roles.map(r => Str(r))))
           .set("selectedRoles", Map(ps_set_of(roles))),
         )
       },
@@ -664,7 +664,7 @@ pub fn personal_site_module() -> @component.ModuleDef {
   let entry = ps_entry_comp()
   let root = root_comp()
   let requests : Map[String, @component.RequestFn] = {
-    "loadData": @component.RequestFn((_args, respond) => {
+    "loadData": RequestFn((_args, respond) => {
       respond(Ok(ps_fixture(entry, alt_url)))
     }),
   }

@@ -24,7 +24,7 @@ pub impl @transactor.Requests for ScopeRequests with fn request_for(
   guard self.comps.get_comp_for(v) is Some(comp) else { return None }
   guard comp.scope is Some(scope) else { return None }
   match scope.lookup_request(name) {
-    Some(@component.RequestFn(f)) => Some(@transactor.RequestHandler(f))
+    Some(RequestFn(f)) => Some(RequestHandler(f))
     None => None
   }
 }

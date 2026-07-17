@@ -84,7 +84,7 @@ pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
 /// app's scope at mount.
 pub fn shell_request_handlers() -> Map[String, @component.RequestFn] {
   {
-    "double": @component.RequestFn((args, respond) => {
+    "double": RequestFn((args, respond) => {
       match args {
         [Num(n)] => respond(Ok(Num(n * 2.0)))
         _ => respond(Err(Str("double: expected one number")))

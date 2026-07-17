@@ -1,0 +1,34 @@
+// wasm-gc "universal" host: a drag-and-drop loader for dynamic wasm tutuca
+// components (dyncomp/DESIGN.md). Drop a single `.tutuca.tar.gz` (a gzipped
+// tar of a guest's jco-transpiled bundle); the loader (loader.mjs) unpacks it
+// with the native DecompressionStream, instantiates the `tutuca:component`
+// guest, and this shell mounts every component the manifest declares.
+// Build: moon build --target wasm-gc demo/universal_wasm
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"
+
+options(
+  "is-main": true,
+  link: {
+    "wasm-gc": {
+      "exports": [
+        "mount",
+        "on_event",
+        "dyncomp_on_loaded",
+        "dyncomp_on_load_error",
+        "state_json",
+      ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

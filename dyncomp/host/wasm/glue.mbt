@@ -413,6 +413,16 @@ pub fn migrate_instance(
 }
 
 ///|
+/// The component names a loaded module declares, in manifest order. Empty if
+/// the module is not loaded. Lets a host mount every component of a freshly
+/// loaded bundle (the universal drop shell) without hard-coding names.
+pub fn bundle_component_names(module_name : String) -> Array[String] {
+  guard by_name.get(module_name) is Some(bid) else { return [] }
+  guard bundles.get(bid) is Some(bundle) else { return [] }
+  bundle.component_names()
+}
+
+///|
 /// Create an instance of a loaded bundle's component as a tree value.
 pub fn make_instance(
   module_name : String,

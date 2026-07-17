@@ -37,12 +37,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     name="Toolbar",
     view="<div class=\"toolbar\"><x render=\"*active\"></x></div>",
     fields={ "seen": @component.FieldSpec::of_default(Bool(false)) },
-    lookup={
-      "active": @component.LookupSpec::{
-        source: "Workspace.active",
-        default: None,
-      },
-    },
+    lookup={ "active": { source: "Workspace.active", default: None } },
     bubble=seen_bubble(),
   )
   let panel = @component.component(
@@ -190,9 +185,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
   let list = @component.component(
     name="RowList",
     view="<ul><li @each=\"*rows\"><x render-it></x></li></ul>",
-    lookup={
-      "rows": @component.LookupSpec::{ source: "Grid.rows", default: None },
-    },
+    lookup={ "rows": { source: "Grid.rows", default: None } },
   )
   let grid = @component.component(
     name="Grid",
@@ -247,9 +240,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
   let viewer = @component.component(
     name="Viewer",
     view="<div><x render=\"*sel\"></x></div>",
-    lookup={
-      "sel": @component.LookupSpec::{ source: "Deck.sel", default: None },
-    },
+    lookup={ "sel": { source: "Deck.sel", default: None } },
   )
   let deck = @component.component(
     name="Deck",
@@ -304,10 +295,7 @@ test "lookup default: a consumer without its producer falls back" {
     view="<div><x render=\"*active\"></x></div>",
     fields={ "backup": @component.FieldSpec::comp("Sheet") },
     lookup={
-      "active": @component.LookupSpec::{
-        source: "Workspace.active",
-        default: Some(".backup"),
-      },
+      "active": { source: "Workspace.active", default: Some(".backup") },
     },
   )
   scope.register_components([sheet_comp(), lonely])

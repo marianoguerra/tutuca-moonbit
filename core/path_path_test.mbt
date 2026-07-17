@@ -2,25 +2,25 @@
 
 ///|
 fn num(n : Double) -> @core.Value {
-  @core.Value::Num(n)
+  Num(n)
 }
 
 ///|
 fn str(s : String) -> @core.Value {
-  @core.Value::Str(s)
+  Str(s)
 }
 
 ///|
 fn vmap(m : Map[String, @core.Value]) -> @core.Value {
-  @core.Value::Map(m)
+  Map(m)
 }
 
 ///|
 /// The Value a path resolves to, Null when unresolvable (JS lookup dval).
 fn resolved(p : @core.Path, root : &@core.PathNode) -> @core.Value {
   match p.lookup(root) {
-    Some(n) => n.as_value().unwrap_or(@core.Value::Null)
-    None => @core.Value::Null
+    Some(n) => n.as_value().unwrap_or(Null)
+    None => Null
   }
 }
 
@@ -184,9 +184,7 @@ test "to_keys reports addressing steps; SeqAccessStep has no concrete key" {
 
 ///|
 test "lists index by KInt" {
-  let root : &@core.PathNode = vmap({
-    "items": @core.Value::List([num(10), num(20)]),
-  })
+  let root : &@core.PathNode = vmap({ "items": List([num(10), num(20)]) })
   let p = @core.Path::new(steps=[SeqStep(field="items", key=KInt(1))])
   assert_true(resolved(p, root) == num(20))
   assert_true(resolved(p, p.set_value(root, num(21))) == num(21))

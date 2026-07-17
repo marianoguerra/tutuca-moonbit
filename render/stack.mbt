@@ -71,7 +71,7 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
     view_names: self.view_names,
     is_frame: self.is_frame,
     comps: self.comps,
-    dyn_binds: Some(@component.DynBinds::{ binds, parent: self.dyn_binds }),
+    dyn_binds: Some({ binds, parent: self.dyn_binds }),
     event: self.event,
   }
 }

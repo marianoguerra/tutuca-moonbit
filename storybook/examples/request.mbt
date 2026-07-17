@@ -132,7 +132,7 @@ fn entries_from_response(
 /// synchronously; a real handler would call `respond` from its network callback.
 fn fixture_request_handlers() -> Map[String, @component.RequestFn] {
   {
-    "loadData": @component.RequestFn((_args, respond) => {
+    "loadData": RequestFn((_args, respond) => {
       respond(
         Ok(
           List([
@@ -160,7 +160,7 @@ fn fixture_request_handlers() -> Map[String, @component.RequestFn] {
 /// routing.
 pub fn failing_request_handlers() -> Map[String, @component.RequestFn] {
   {
-    "loadData": @component.RequestFn((_args, respond) => {
+    "loadData": RequestFn((_args, respond) => {
       respond(Err(Str("network is down")))
     }),
   }

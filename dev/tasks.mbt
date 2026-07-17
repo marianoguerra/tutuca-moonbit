@@ -316,6 +316,9 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "dyncomp" {
     return Some(dyncomp_steps())
   }
+  if name == "universal" {
+    return Some(universal_steps())
+  }
   None
 }
 
@@ -371,6 +374,49 @@ pub fn dyncomp_steps() -> Array[Step] {
 }
 
 ///|
+const UNIVERSAL_WASM = "_build/wasm-gc/debug/build/demo/universal_wasm/universal_wasm.wasm"
+
+///|
+/// Assemble the universal wasm-component demo into dist/universal: the wasm-gc
+/// drop-shell app, its loader, and a sample single-file bundle
+/// (examples/counter.tutuca.tar.gz) to drag onto the page. Like `dyncomp`,
+/// kept out of `dist` — the guest bundle needs the component toolchain
+/// (wasm-tools + @bytecodealliance/jco; see guests/counter/README.md).
+pub fn universal_steps() -> Array[Step] {
+  [
+    Run(
+      moon("build · wasm-gc universal demo", [
+        "build", "--target", "wasm-gc", "demo/universal_wasm",
+      ]),
+    ),
+    Run({
+      label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
+      prog: "node",
+      args: ["guests/counter/build.mjs"],
+    }),
+    Mkdir("\{DIST}/universal"),
+    Mkdir("\{DIST}/universal/examples"),
+    Copy(from=UNIVERSAL_WASM, to="\{DIST}/universal/universal_wasm.wasm"),
+    Copy(
+      from="demo/universal_wasm/loader.mjs",
+      to="\{DIST}/universal/loader.mjs",
+    ),
+    Copy(
+      from="demo/universal_wasm/index.html",
+      to="\{DIST}/universal/index.html",
+    ),
+    // pack the guest's jco output into one droppable .tutuca.tar.gz
+    Run({
+      label: "pack · counter bundle → examples/counter.tutuca.tar.gz",
+      prog: "node",
+      args: [
+        "scripts/pack-bundle.mjs", "guests/counter/dist/js", "dist/universal/examples/counter.tutuca.tar.gz",
+      ],
+    }),
+  ]
+}
+
+///|
 /// Regenerate the CLI's embedded skill assets from skill/tutuca/. Run after
 /// editing the skill docs, before building the native CLI.
 pub fn skill_embed_steps() -> Array[Step] {
@@ -409,6 +455,9 @@ pub fn help_text() -> String {
   line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
   line(
     "dyncomp", "assemble the dynamic-component demo + guest bundle into dist/dyncomp",
+  )
+  line(
+    "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
   )
   sb.to_string()
 }

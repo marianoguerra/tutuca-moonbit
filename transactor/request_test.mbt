@@ -27,7 +27,7 @@ impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Response, "load") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s), _] => Some(rsheet(s))
             [_, Str(e)] => Some(rsheet("err:\{e}"))
@@ -37,7 +37,7 @@ impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
       )
     (Response, "load-ok") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(rsheet("ok:\{s}"))
             _ => None
@@ -46,7 +46,7 @@ impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
       )
     (Response, "load-err") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(e)] => Some(rsheet("failed:\{e}"))
             _ => None
@@ -55,7 +55,7 @@ impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
       )
     (Receive, "load-sel") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           ctx.request("load", [], @tutuca.RequestOpts::new())
           None
         }),
@@ -121,7 +121,7 @@ impl @tutuca.PathNode for RApp with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "select") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(id)] =>
               Some(
@@ -133,7 +133,7 @@ impl @tutuca.PathNode for RApp with fn handler(self, bucket, name) {
       )
     (Receive, "clear") =>
       Some(
-        @tutuca.Handler((_args, _ctx) => {
+        Handler((_args, _ctx) => {
           Some(
             RApp::{ sheets: RSheets::{ items: {} }, sel_id: self.sel_id }
             as &@tutuca.PathNode,
@@ -160,17 +160,9 @@ impl @transactor.Requests for TestRequests with fn request_for(
 ) {
   match name {
     "load" =>
-      Some(
-        @transactor.RequestHandler((_args, respond) => {
-          self.pending.push(respond)
-        }),
-      )
+      Some(RequestHandler((_args, respond) => self.pending.push(respond)))
     "load-now" =>
-      Some(
-        @transactor.RequestHandler((_args, respond) => {
-          respond(Ok(@tutuca.Value::Str("now")))
-        }),
-      )
+      Some(RequestHandler((_args, respond) => respond(Ok(Str("now")))))
     _ => None
   }
 }
@@ -197,8 +189,8 @@ fn rtitle(root : &@tutuca.PathNode, key : String) -> @tutuca.Value {
       SeqStep(field="sheets", key=KStr(key)),
       FieldStep("title"),
     ]).lookup(root) {
-    Some(n) => n.as_value().unwrap_or(@tutuca.Value::Null)
-    None => @tutuca.Value::Null
+    Some(n) => n.as_value().unwrap_or(Null)
+    None => Null
   }
 }
 
@@ -214,7 +206,7 @@ test "a synchronous respond delivers the response without manual settle" {
     [],
     opts=@tutuca.RequestOpts::new(on_res_name="load"),
   )
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("now"))
+  assert_true(rtitle(tx.root, "b") == Str("now"))
 }
 
 ///|
@@ -223,13 +215,11 @@ test "the response lands on the request-time item even if the key moved" {
   let tx = @transactor.Transactor::new(make_rapp("b"), requests=reqs)
   tx.push_request(sel_dispatch(), "load", [])
   // the user switches selection while the request is in flight
-  let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [
-    @tutuca.Value::Str("a"),
-  ])
+  let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [Str("a")])
   tx.settle()
-  reqs.pending[0](Ok(@tutuca.Value::Str("late")))
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("late"))
-  assert_true(rtitle(tx.root, "a") == @tutuca.Value::Str("first"))
+  reqs.pending[0](Ok(Str("late")))
+  assert_true(rtitle(tx.root, "b") == Str("late"))
+  assert_true(rtitle(tx.root, "a") == Str("first"))
 }
 
 ///|
@@ -242,13 +232,11 @@ test "live_path re-evaluates the key on response" {
     [],
     opts=@tutuca.RequestOpts::new(live_path=true),
   )
-  let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [
-    @tutuca.Value::Str("a"),
-  ])
+  let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [Str("a")])
   tx.settle()
-  reqs.pending[0](Ok(@tutuca.Value::Str("late")))
-  assert_true(rtitle(tx.root, "a") == @tutuca.Value::Str("late"))
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("second"))
+  reqs.pending[0](Ok(Str("late")))
+  assert_true(rtitle(tx.root, "a") == Str("late"))
+  assert_true(rtitle(tx.root, "b") == Str("second"))
 }
 
 ///|
@@ -259,7 +247,7 @@ test "a pinned target deleted before the response is a physical no-op" {
   let _ = tx.push_send(@tutuca.DispatchPath::new(), "clear", [])
   tx.settle()
   let after_clear = tx.root
-  reqs.pending[0](Ok(@tutuca.Value::Str("late")))
+  reqs.pending[0](Ok(Str("late")))
   assert_true(physical_equal(tx.root, after_clear))
 }
 
@@ -276,8 +264,8 @@ test "on_ok_name / on_error_name route the response to specific handlers" {
       on_error_name="load-err",
     ),
   )
-  reqs.pending[0](Ok(@tutuca.Value::Str("v1")))
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("ok:v1"))
+  reqs.pending[0](Ok(Str("v1")))
+  assert_true(rtitle(tx.root, "b") == Str("ok:v1"))
   tx.push_request(
     sel_dispatch(),
     "load",
@@ -287,8 +275,8 @@ test "on_ok_name / on_error_name route the response to specific handlers" {
       on_error_name="load-err",
     ),
   )
-  reqs.pending[1](Err(@tutuca.Value::Str("boom")))
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("failed:boom"))
+  reqs.pending[1](Err(Str("boom")))
+  assert_true(rtitle(tx.root, "b") == Str("failed:boom"))
 }
 
 ///|
@@ -301,9 +289,7 @@ test "an unknown request responds with a not-found error" {
     [],
     opts=@tutuca.RequestOpts::new(on_res_name="load"),
   )
-  assert_true(
-    rtitle(tx.root, "b") == @tutuca.Value::Str("err:Request not found: nope"),
-  )
+  assert_true(rtitle(tx.root, "b") == Str("err:Request not found: nope"))
 }
 
 ///|
@@ -317,7 +303,7 @@ test "completion: a parent's subtree stays open until the response settles" {
   tx.settle()
   // the handler ran, but its request is still in flight
   assert_false(settled.val)
-  reqs.pending[0](Ok(@tutuca.Value::Str("done")))
+  reqs.pending[0](Ok(Str("done")))
   assert_true(settled.val)
-  assert_true(rtitle(tx.root, "b") == @tutuca.Value::Str("done"))
+  assert_true(rtitle(tx.root, "b") == Str("done"))
 }

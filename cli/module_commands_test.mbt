@@ -31,18 +31,13 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     fields={ "label": @component.FieldSpec::of_default(Str("hi")) },
   )
   @component.ModuleDef::new(name="demo", components=[card, item], examples=[
-    @component.ExampleDef::{
+    {
       component: "Card",
       title: "basic",
       args: { "title": Str("Hello") },
       view: None,
     },
-    @component.ExampleDef::{
-      component: "Item",
-      title: "plain",
-      args: {},
-      view: None,
-    },
+    { component: "Item", title: "plain", args: {}, view: None },
   ])
 }
 

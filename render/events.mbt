@@ -296,7 +296,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
     }
   }
   items.rev_in_place()
-  Some(EventDispatch::{
+  Some({
     path: @tutuca.DispatchPath::new(items~),
     handlers: handlers.unwrap_or([]),
   })

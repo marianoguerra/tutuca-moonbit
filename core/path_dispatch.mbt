@@ -11,7 +11,7 @@ pub fn DispatchPath::new(items? : Array[DispatchStep]) -> DispatchPath {
 
 ///|
 pub fn DispatchPath::of_steps(steps : Array[Step]) -> DispatchPath {
-  { items: steps.map(s => DispatchStep::Plain(step=s, origin=None)) }
+  { items: steps.map(s => Plain(step=s, origin=None)) }
 }
 
 ///|

@@ -20,6 +20,8 @@ pub fn skill_embed_steps() -> Array[Step]
 
 pub fn tasks() -> Array[Task]
 
+pub fn universal_steps() -> Array[Step]
+
 // Errors
 
 // Types and methods

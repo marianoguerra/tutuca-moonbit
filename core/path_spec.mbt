@@ -272,9 +272,8 @@ declare pub fn Path::set_value(
 
 ///|
 /// The nodes entered along the path, root included (index 0), stopping at
-/// the first unresolvable step. JS Path.resolveChain. No product consumer
-/// yet: it exists to power the transactor's `ctx.walk_path` (leaf→root
-/// component walk), still on the port backlog.
+/// the first unresolvable step. JS Path.resolveChain. Powers the
+/// transactor's `ctx.walk_path` (leaf→root component walk).
 declare pub fn Path::resolve_chain(
   self : Path,
   root : &PathNode,

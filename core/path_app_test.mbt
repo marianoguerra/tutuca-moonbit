@@ -39,7 +39,7 @@ impl @core.PathNode for Sheet with fn handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
-        @core.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(sheet(s))
             _ => None
@@ -47,9 +47,9 @@ impl @core.PathNode for Sheet with fn handler(self, bucket, name) {
         }),
       )
     // a handler that decides nothing changed answers None
-    (Receive, "noop") => Some(@core.Handler((_args, _ctx) => None))
+    (Receive, "noop") => Some(Handler((_args, _ctx) => None))
     (Receive, "$unknown") =>
-      Some(@core.Handler((_args, _ctx) => Some(sheet("\{self.title}?"))))
+      Some(Handler((_args, _ctx) => Some(sheet("\{self.title}?"))))
     _ => None
   }
 }
@@ -148,9 +148,7 @@ test "SeqAccessStep traverses typed structs like Value trees" {
 ///|
 test "update invokes the leaf handler and rebuilds the spine" {
   let root = make_app("b")
-  let root2 = sel_path().update(root, Receive, "rename", [
-    @core.Value::Str("renamed"),
-  ])
+  let root2 = sel_path().update(root, Receive, "rename", [Str("renamed")])
   assert_true(!physical_equal(root2, root))
   assert_true(title_of(root2, "b") is Some(Str("renamed")))
   // the old tree is untouched
@@ -197,9 +195,7 @@ test "pin_keys works across struct impls" {
   assert_true(pinned.steps is [SeqStep(field="sheets", key=KStr("b"))])
   // the selection moves; the pinned path still updates the request-time item
   let moved = make_app("a")
-  let moved2 = pinned.update(moved, Receive, "rename", [
-    @core.Value::Str("late-response"),
-  ])
+  let moved2 = pinned.update(moved, Receive, "rename", [Str("late-response")])
   assert_true(title_of(moved2, "b") is Some(Str("late-response")))
   assert_true(title_of(moved2, "a") is Some(Str("first")))
 }

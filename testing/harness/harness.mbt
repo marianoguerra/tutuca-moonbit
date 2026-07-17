@@ -64,7 +64,7 @@ pub fn Harness::html(self : Harness) -> String {
 /// every dispatched interaction has drained. `Null` if the root is not a value
 /// node. The state-oriented read-back that mirrors the JS `drive()` return.
 pub fn Harness::drive_value(self : Harness) -> @tutuca.Value {
-  self.app.root_value().unwrap_or(@tutuca.Value::Null)
+  self.app.root_value().unwrap_or(Null)
 }
 
 ///|

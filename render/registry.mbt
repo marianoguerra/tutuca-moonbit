@@ -26,7 +26,7 @@ pub fn ViewRegistry::add(
   let px = @anode.ParseContext::new()
   v.compile(px, EmptyMacroScope::{  }, cid=LNum(cid.to_double()))
   guard v.anode is Some(node) else { fail("view \{name} did not compile") }
-  self.by_name[name] = CompiledView::{ cid, vid: name, node, px }
+  self.by_name[name] = { cid, vid: name, node, px }
 }
 
 ///|
@@ -35,7 +35,7 @@ pub impl ViewResolver for ViewRegistry with fn resolve_view(self, names, _value)
     return None
   }
   match self.by_name.get(name) {
-    Some(cv) => Some(ResolvedView::{ node: cv.node, cid: cv.cid, vid: cv.vid })
+    Some(cv) => Some({ node: cv.node, cid: cv.cid, vid: cv.vid })
     None => None
   }
 }

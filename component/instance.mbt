@@ -93,7 +93,7 @@ pub impl @tutuca.Obj for Instance with fn obj_handler(self, bucket, name) {
   match bucket_map.get(name) {
     Some(h) =>
       Some(
-        @tutuca.Handler((args, ctx) => {
+        Handler((args, ctx) => {
           match h(self, args, ctx) {
             Some(inst) => Some(inst.to_value() as &@tutuca.PathNode)
             None => None
@@ -108,7 +108,7 @@ pub impl @tutuca.Obj for Instance with fn obj_handler(self, bucket, name) {
         match self.comp.methods.get(name) {
           Some(m) =>
             Some(
-              @tutuca.Handler((args, _ctx) => {
+              Handler((args, _ctx) => {
                 match m(self, args) {
                   Obj(_) as nv => Some(nv as &@tutuca.PathNode)
                   _ => None

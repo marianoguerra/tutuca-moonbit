@@ -134,21 +134,10 @@ fn observe_match_label(m : @transactor.ObserveMatch) -> String {
 }
 
 ///|
-/// A value → view function bound to a component registry: a component
-/// instance renders its field → value rows (InstanceInspector); any other
-/// value falls back to the plain data inspector (JS makeInspect).
-pub fn Inspector::make_inspect(
-  self : Inspector,
-  comps : @component.Components,
-) -> (@tutuca.Value) -> @tutuca.Value {
-  v => self.inspect_value_as_instance(v, comps.get_comp_for(v))
-}
-
-///|
 /// Turn an observer record into an ActivityEntry instance (JS recordToEntry).
-/// `inspect` builds the before/after value views (see `make_inspect`;
-/// defaults to the plain data inspector). `path_label` and `time` default to
-/// the full path label and `#seq`.
+/// `inspect` builds the before/after value views (defaults to the plain data
+/// inspector). `path_label` and `time` default to the full path label and
+/// `#seq`.
 pub fn Inspector::record_to_entry(
   self : Inspector,
   record : @transactor.ObserveRecord,
@@ -163,11 +152,11 @@ pub fn Inspector::record_to_entry(
   let has_after = record.after is Some(_)
   let before = match record.before {
     Some(b) => inspect_fn(b)
-    None => @tutuca.Value::Null
+    None => Null
   }
   let after = match record.after {
     Some(a) => inspect_fn(a)
-    None => @tutuca.Value::Null
+    None => Null
   }
   let seq = record.seq
   self.make_("ActivityEntry", args={

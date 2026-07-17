@@ -347,7 +347,7 @@ pub fn Inspector::component_view(
       let rows = fields.map(f => {
         let name = match f {
           Map(fm) => fm.get("name").unwrap_or(Null)
-          _ => @tutuca.Value::Null
+          _ => Null
         }
         let type_name = match f {
           Map(fm) => fm.get("type").unwrap_or(Str(""))
@@ -355,7 +355,7 @@ pub fn Inspector::component_view(
         }
         let dflt = match f {
           Map(fm) => fm.get("default").unwrap_or(Null)
-          _ => @tutuca.Value::Null
+          _ => Null
         }
         self.make_("CompField", args={
           "name": name,
@@ -397,7 +397,7 @@ pub fn Inspector::component_view(
               "name": vm.get("name").unwrap_or(Str("")),
               "rawView": vm.get("rawView").unwrap_or(Str("")),
             })
-          _ => @tutuca.Value::Null
+          _ => Null
         }
       })
       sections.push(

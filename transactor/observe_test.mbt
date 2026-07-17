@@ -25,7 +25,7 @@ impl @tutuca.Obj for OSheet with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
-        @tutuca.Handler((args, _ctx) => {
+        Handler((args, _ctx) => {
           match args {
             [Str(s)] => Some(osheet(s))
             _ => None
@@ -33,10 +33,10 @@ impl @tutuca.Obj for OSheet with fn obj_handler(self, bucket, name) {
         }),
       )
     (Receive, "$unknown") =>
-      Some(@tutuca.Handler((_args, _ctx) => Some(osheet("\{self.title}?"))))
+      Some(Handler((_args, _ctx) => Some(osheet("\{self.title}?"))))
     (Receive, "poke-up") =>
       Some(
-        @tutuca.Handler((_args, ctx) => {
+        Handler((_args, ctx) => {
           ctx.bubble("poked", [])
           None
         }),

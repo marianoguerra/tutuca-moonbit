@@ -282,7 +282,7 @@ test "guest request round-trips through a host RequestFn" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
   h.app.scope.register_request_handlers({
-    "double": @component.RequestFn((args, respond) => {
+    "double": RequestFn((args, respond) => {
       match args {
         [Num(n)] => respond(Ok(Num(n * 2.0)))
         _ => respond(Err(Str("bad args")))
@@ -374,6 +374,12 @@ test "event_names reflects a bundle registered after boot" {
   assert_false(h.app.event_names().contains("click"))
   let _ = register_bundle(h.app.scope, FakeGuest::new(), counter_manifest())
   assert_true(h.app.event_names().contains("click"))
+}
+
+///|
+test "component_names lists the manifest's components in order" {
+  let (_, bundle) = mount_with_bundle(FakeGuest::new())
+  debug_inspect(bundle.component_names(), content="[\"Counter\", \"Pair\"]")
 }
 
 ///|

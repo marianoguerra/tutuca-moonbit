@@ -139,9 +139,7 @@ test "requests resolve through the component's registration scope" {
   let scope = @component.ComponentStack::new()
   scope.register_components([item_comp(), panel_comp()])
   scope.register_request_handlers({
-    "load": @component.RequestFn((_args, respond) => {
-      respond(Ok(Str("from-request")))
-    }),
+    "load": RequestFn((_args, respond) => respond(Ok(Str("from-request")))),
   })
   scope.compile_all()
   guard scope.lookup_component("Panel") is Some(panel) else {

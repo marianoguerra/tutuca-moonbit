@@ -14,8 +14,6 @@ pub fn deep_expand(@core.Value) -> @core.Value
 
 pub fn finding_value(String, String, String, String, suggestion? : String) -> @core.Value
 
-pub fn get_components() -> Array[@component.Component]
-
 pub fn inspector_module() -> @component.ModuleDef
 
 pub fn instance_snapshot(@component.Instance) -> @core.Value
@@ -39,7 +37,6 @@ pub fn Inspector::inspect_instance(Self, @component.Instance) -> @core.Value
 pub fn Inspector::inspect_value(Self, @core.Value) -> @core.Value
 pub fn Inspector::inspect_value_as_instance(Self, @core.Value, @component.Component?) -> @core.Value
 pub fn Inspector::lint_report(Self, Array[@core.Value], title? : String, path? : String) -> @core.Value
-pub fn Inspector::make_inspect(Self, @component.Components) -> (@core.Value) -> @core.Value
 pub fn Inspector::module_(Self) -> @component.ModuleDef
 pub fn Inspector::new() -> Self
 pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value

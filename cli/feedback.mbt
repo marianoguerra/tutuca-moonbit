@@ -38,8 +38,7 @@ pub fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome {
             CODE_USAGE_UNKNOWN_FLAG,
             "Unknown flag '\{a}'",
             suggestion?=match did_you_mean(stripped, ["help"]) {
-              Some(_) =>
-                Some(@lint.Suggestion::ReplaceName(from=a, to="--help"))
+              Some(_) => Some(ReplaceName(from=a, to="--help"))
               None => None
             },
             hint="Valid flags: --help",

@@ -1,0 +1,26 @@
+<!doctype html>
+<!-- Universal wasm-component demo (dyncomp/DESIGN.md): the wasm counterpart of
+     the JS "universal" app (../../docs/universal.html). The shell app is
+     wasm-gc; drop a single `.tutuca.tar.gz` bundle (a gzipped tar of a guest's
+     jco-transpiled `tutuca:component` output) anywhere on the page and every
+     component its manifest declares is mounted live. No server round-trip: the
+     archive is gunzipped (native DecompressionStream) and untarred in-browser.
+     Build + assemble: moon run - -target native cmd/dev - - universal
+     then serve dist/ and open /universal/. A sample bundle is copied to
+     ./examples/counter.tutuca.tar.gz. Needs the JS String Builtins proposal
+     (e.g. Chrome). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tutuca universal wasm components</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { loadWasm } from "./loader.mjs";
+    const exports = await loadWasm("./universal_wasm.wasm");
+    exports.mount();
+    globalThis.__tutuca_state = () => exports.state_json();
+  </script>
+</body>
+</html>
