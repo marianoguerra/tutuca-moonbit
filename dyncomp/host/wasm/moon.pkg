@@ -10,6 +10,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
   "moonbitlang/core/json",
 }
 

@@ -115,6 +115,17 @@ fn json_value_str(s : String) -> @tutuca.Value {
 }
 
 ///|
+/// Mirrors app/browser's event_ctrl_or_cmd_ffi: the "primary modifier" is
+/// cmd on a Mac and ctrl elsewhere, so the same keypress means the same
+/// thing on both backends.
+fn event_ctrl_or_cmd(ev : @core.Any) -> Bool {
+  let nav = @core.global_this()._get("navigator")
+  let mac = !@core.is_nullish(nav) &&
+    to_str(nav._get("platform")).contains("Mac")
+  (mac && tdom_get_bool(ev, "metaKey")) || tdom_get_bool(ev, "ctrlKey")
+}
+
+///|
 /// Translate a raw browser event into the backend-agnostic DomEvent.
 fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
   @render.DomEvent::new(
@@ -124,7 +135,7 @@ fn dom_event_of(ev : @core.Any) -> @render.DomEvent {
     key_code=tdom_get_int(ev, "keyCode"),
     alt=tdom_get_bool(ev, "altKey"),
     shift=tdom_get_bool(ev, "shiftKey"),
-    ctrl_or_cmd=tdom_get_bool(ev, "ctrlKey") || tdom_get_bool(ev, "metaKey"),
+    ctrl_or_cmd=event_ctrl_or_cmd(ev),
     meta=tdom_get_bool(ev, "metaKey"),
   )
 }

@@ -100,8 +100,9 @@ pub fn Bundle::wrap_instance(
 /// projection (read through the state-json protocol field, so the old
 /// value may belong to a different — e.g. superseded — bundle). The new
 /// component's constructor decides which projected fields it accepts;
-/// unknown fields are ignored. None if `old` is not a guest value or the
-/// component is unknown.
+/// unknown fields are ignored. None if `old` is not a guest value, the
+/// component is unknown, or the state projection is not valid JSON (the
+/// caller then starts the new instance fresh instead of migrating).
 pub fn Bundle::migrate_instance(
   self : Bundle,
   old : @tutuca.Value,

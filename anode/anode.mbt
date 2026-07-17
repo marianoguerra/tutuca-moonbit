@@ -95,7 +95,7 @@ pub fn ANode::wrap_node(self : ANode, node : ANode) -> Unit {
     }
     Slot(d) => d.node = node
     Each(d) => d.node = node
-    _ => println("wrap_node not supported for \{to_repr(self)}")
+    _ => @tutuca.warn("wrap_node not supported for \{to_repr(self)}")
   }
 }
 

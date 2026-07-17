@@ -180,7 +180,7 @@ fn tpl_piece(v : Value) -> String {
 /// names (our Fn convention: element 0 is `this`).
 fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
   Fn(args => {
-    println("handler not found \{to_repr((ns, name))}")
+    warn("handler not found \{to_repr((ns, name))}")
     args.get(0).unwrap_or(Null)
   })
 }

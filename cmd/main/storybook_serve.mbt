@@ -144,8 +144,8 @@ async fn serve_error(
 /// Bind a server on 127.0.0.1:port, falling back to an OS-chosen free port when
 /// the requested one is taken.
 async fn bind_server(port : Int) -> @http.Server {
-  @http.Server(@socket.Addr::parse("127.0.0.1:\{port}")) catch {
-    _ => @http.Server(@socket.Addr::parse("127.0.0.1:0"))
+  Server(@socket.Addr::parse("127.0.0.1:\{port}")) catch {
+    _ => Server(@socket.Addr::parse("127.0.0.1:0"))
   }
 }
 

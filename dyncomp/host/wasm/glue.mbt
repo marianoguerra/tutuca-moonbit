@@ -71,8 +71,24 @@ extern "wasm" fn tcomp_drop_bundle(bundle : Int) -> Unit = "tcomp" "drop_bundle"
 // --- value codecs ---
 
 ///|
+/// A corrupt payload from the guest boundary is a bug worth seeing, not just
+/// an empty value: log it to the console before falling back. (The app-level
+/// "dyncompError" channel is load-scoped, and these failures happen
+/// mid-dispatch where re-entering the transactor isn't safe.)
+fn bad_payload(what : String, raw : String) -> Unit {
+  @core.log(
+    @core.any("tutuca dyncomp: guest \{what} returned invalid JSON: \{raw}"),
+  )
+}
+
+///|
 fn parse_value(s : String) -> @tutuca.Value {
-  let j = @json.parse(s) catch { _ => return Null }
+  let j = @json.parse(s) catch {
+    _ => {
+      bad_payload("value", s)
+      return Null
+    }
+  }
   @tutuca.Value::from_json(j)
 }
 
@@ -142,7 +158,12 @@ fn WasmGuest::json_to_value(self : WasmGuest, j : Json) -> @tutuca.Value {
 
 ///|
 fn WasmGuest::decode_value(self : WasmGuest, s : String) -> @tutuca.Value {
-  let j = @json.parse(s) catch { _ => return Null }
+  let j = @json.parse(s) catch {
+    _ => {
+      bad_payload("field value", s)
+      return Null
+    }
+  }
   self.json_to_value(j)
 }
 
@@ -175,7 +196,12 @@ pub impl @dyncomp.Guest for WasmGuest with fn get_field(self, handle, name) {
 pub impl @dyncomp.Guest for WasmGuest with fn seq_entries(self, handle) {
   let s = tcomp_seq_entries(self.bundle, handle)
   guard s != "" else { return None }
-  let j = @json.parse(s) catch { _ => return None }
+  let j = @json.parse(s) catch {
+    _ => {
+      bad_payload("seq_entries", s)
+      return None
+    }
+  }
   guard j is Array(items) else { return None }
   let out = []
   for item in items {
@@ -203,7 +229,12 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     args_json(args),
   )
   let empty : @dyncomp.DispatchResult = { next: None, msgs: [] }
-  let j = @json.parse(raw) catch { _ => return empty }
+  let j = @json.parse(raw) catch {
+    _ => {
+      bad_payload("dispatch result", raw)
+      return empty
+    }
+  }
   guard j is Object(o) else { return empty }
   let next = match o.get("next") {
     Some(Number(n, ..)) => Some(n.to_int())

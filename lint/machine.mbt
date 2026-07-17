@@ -210,13 +210,7 @@ fn Machine::current_name(self : Machine) -> String {
 }
 
 ///|
-fn Machine::push_el(
-  self : Machine,
-  raw : String,
-  ns : FNs,
-  start : Int,
-) -> Unit {
-  ignore(start)
+fn Machine::push_el(self : Machine, raw : String, ns : FNs) -> Unit {
   self.open_elements.push(self.mk_frame(raw.to_lower(), ns))
 }
 
@@ -505,7 +499,6 @@ fn Machine::start_tag_in_foreign(
   if self_closing {
     return // don't push
   }
-  ignore((raw, start))
   let frame = self.mk_frame(name, ns)
   // annotation-xml is an HTML integration point when encoding is text/html
   // or application/xhtml+xml; capture at push time.
@@ -607,7 +600,7 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
@@ -619,14 +612,14 @@ fn Machine::start_in_body(
       self.tag_not_allowed(Error, start, raw, top.name, "auto-close-implicit")
       self.open_elements.pop() |> ignore
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("pre" | "listing") {
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "form" {
@@ -644,7 +637,7 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "li" {
@@ -666,7 +659,7 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("dd" | "dt") {
@@ -688,14 +681,14 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "plaintext" {
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "button" {
@@ -704,7 +697,7 @@ fn Machine::start_in_body(
       self.generate_implied_end_tags()
       self.pop_until_name("button")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("a" | "nobr") {
@@ -716,12 +709,12 @@ fn Machine::start_in_body(
       ])
       self.run_adoption_agency(name)
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.active_formatting.push(self.current_node())
     return
   }
   if formatting_elements.contains(name) {
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.active_formatting.push(self.current_node())
     return
   }
@@ -729,7 +722,7 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InTable
     return
   }
@@ -756,7 +749,7 @@ fn Machine::start_in_body(
     if self.has_in_button_scope("p") {
       self.implicitly_close("p")
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     // §"in body": reached from a table mode via fall-through (the mode is
     // still the table one here), the select parses "in select in table" —
     // the JS linter shortcuts this to inSelect with an apologetic comment;
@@ -773,15 +766,15 @@ fn Machine::start_in_body(
     if self.current_name() == "option" {
       self.open_elements.pop() |> ignore
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("textarea" | "title") || raw_text_elements.contains(name) {
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name is ("math" | "svg") {
-    self.push_el(raw, if name == "svg" { NsSvg } else { NsMath }, start)
+    self.push_el(raw, if name == "svg" { NsSvg } else { NsMath })
     return
   }
   if name
@@ -802,7 +795,7 @@ fn Machine::start_in_body(
   if self_closing {
     return
   }
-  self.push_el(raw, NsHtml, start)
+  self.push_el(raw, NsHtml)
 }
 
 ///|
@@ -911,32 +904,32 @@ fn Machine::start_in_table(
   if name == "caption" {
     self.clear_stack_back_to_table()
     self.active_formatting.push(None) // marker
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InCaption
     return
   }
   if name == "colgroup" {
     self.clear_stack_back_to_table()
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InColumnGroup
     return
   }
   if name == "col" {
     self.clear_stack_back_to_table()
-    self.push_el("colgroup", NsHtml, start)
+    self.push_el("colgroup", NsHtml)
     self.insertion_mode = InColumnGroup
     self.dispatch_start_tag(name, raw, self_closing, start)
     return
   }
   if name is ("tbody" | "thead" | "tfoot") {
     self.clear_stack_back_to_table()
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InTableBody
     return
   }
   if name is ("td" | "th" | "tr") {
     self.clear_stack_back_to_table()
-    self.push_el("tbody", NsHtml, start)
+    self.push_el("tbody", NsHtml)
     self.insertion_mode = InTableBody
     self.dispatch_start_tag(name, raw, self_closing, start)
     return
@@ -1064,7 +1057,7 @@ fn Machine::start_in_table_body(
 ) -> Unit {
   if name == "tr" {
     self.clear_stack_back_to_table_body()
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InRow
     return
   }
@@ -1077,7 +1070,7 @@ fn Machine::start_in_table_body(
       "auto-close-implicit",
     )
     self.clear_stack_back_to_table_body()
-    self.push_el("tr", NsHtml, start)
+    self.push_el("tr", NsHtml)
     self.insertion_mode = InRow
     self.dispatch_start_tag(name, raw, self_closing, start)
     return
@@ -1119,7 +1112,7 @@ fn Machine::start_in_row(
 ) -> Unit {
   if table_body_cell_tags.contains(name) {
     self.clear_stack_back_to_table_row()
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     self.insertion_mode = InCell
     self.active_formatting.push(None)
     return
@@ -1204,7 +1197,7 @@ fn Machine::start_in_select(
     if self.current_name() == "option" {
       self.open_elements.pop() |> ignore
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "optgroup" {
@@ -1214,7 +1207,7 @@ fn Machine::start_in_select(
     if self.current_name() == "optgroup" {
       self.open_elements.pop() |> ignore
     }
-    self.push_el(raw, NsHtml, start)
+    self.push_el(raw, NsHtml)
     return
   }
   if name == "hr" {

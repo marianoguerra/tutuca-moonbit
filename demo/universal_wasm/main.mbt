@@ -375,7 +375,7 @@ fn universal_module() -> @component.ModuleDef {
   let list = component_list_comp()
   let shell = universal_shell_comp()
   let requests : Map[String, @component.RequestFn] = {
-    "listComponents": @component.RequestFn((_args, respond) => {
+    "listComponents": RequestFn((_args, respond) => {
       // the builtin flex list is always available (module "builtin"); the rest
       // are the components of loaded guest bundles
       let rows : Array[@tutuca.Value] = [
@@ -393,12 +393,12 @@ fn universal_module() -> @component.ModuleDef {
       }
       respond(Ok(List(rows)))
     }),
-    "componentPicker": @component.RequestFn((_args, respond) => {
+    "componentPicker": RequestFn((_args, respond) => {
       respond(Ok(picker.make({}).to_value()))
     }),
     // create a component instance by (module, name): builtins natively, guest
     // components through the dyncomp bridge
-    "makeComponent": @component.RequestFn((args, respond) => {
+    "makeComponent": RequestFn((args, respond) => {
       match args {
         [Str(m), Str(n)] =>
           if m == "builtin" {

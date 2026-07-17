@@ -10,6 +10,7 @@
 priv struct ModArgs {
   name : String? // first bare positional: component-name filter
   limit : Int?
+  bad_limit : String? // a --limit value that didn't parse as an integer
   title : String?
   view : String?
 }
@@ -18,6 +19,7 @@ priv struct ModArgs {
 fn parse_mod_args(args : Array[String]) -> ModArgs {
   let mut name : String? = None
   let mut limit : Int? = None
+  let mut bad_limit : String? = None
   let mut title : String? = None
   let mut view : String? = None
   let mut i = 0
@@ -29,12 +31,22 @@ fn parse_mod_args(args : Array[String]) -> ModArgs {
     None
   }
 
+  fn set_limit(v : String) {
+    let n : Int = @strconv.from_str(v) catch {
+      _ => {
+        bad_limit = Some(v)
+        return
+      }
+    }
+    limit = Some(n)
+  }
+
   while i < args.length() {
     let a = args[i]
     if a == "--limit" || a == "--title" || a == "--view" {
       let v = args.get(i + 1).unwrap_or("")
       match a {
-        "--limit" => limit = Some(@strconv.from_str(v) catch { _ => 0 })
+        "--limit" => set_limit(v)
         "--title" => title = Some(v)
         _ => view = Some(v)
       }
@@ -42,7 +54,7 @@ fn parse_mod_args(args : Array[String]) -> ModArgs {
       continue
     }
     match flag_value(a, "limit") {
-      Some(v) => limit = Some(@strconv.from_str(v) catch { _ => 0 })
+      Some(v) => set_limit(v)
       None =>
         match flag_value(a, "title") {
           Some(v) => title = Some(v)
@@ -55,7 +67,7 @@ fn parse_mod_args(args : Array[String]) -> ModArgs {
     }
     i += 1
   }
-  { name, limit, title, view }
+  { name, limit, bad_limit, title, view }
 }
 
 ///|
@@ -411,6 +423,17 @@ pub fn plan_with_module(
       match find_command(command) {
         Some(cmd) if cmd.needs_module && !opts.help => {
           let args = parse_mod_args(command_args)
+          if args.bad_limit is Some(v) {
+            return Done(
+              error_emit(
+                opts,
+                err(
+                  CODE_USAGE_BAD_FLAG_VALUE,
+                  "--limit expects an integer, got '\{v}'",
+                ),
+              ),
+            )
+          }
           // resolve the output format: explicit --format/--json, else the
           // command's default (JS emit() falls back to defaultFormat).
           let fmt = opts.format.unwrap_or(cmd.default_format.unwrap_or("cli"))

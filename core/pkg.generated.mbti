@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/core"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/ref",
 }
 
 // Values
@@ -37,6 +38,10 @@ pub fn step_put(&PathNode, Step, &PathNode) -> &PathNode?
 pub fn step_with_key(Step, PathKey) -> Step
 
 pub fn tokenize_value(String) -> Array[String]
+
+pub fn warn(String) -> Unit
+
+pub let warn_hook : @ref.Ref[(String) -> Unit]
 
 // Errors
 

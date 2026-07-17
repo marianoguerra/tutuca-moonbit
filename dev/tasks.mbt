@@ -71,9 +71,17 @@ pub fn tasks() -> Array[Task] {
       name: "check",
       about: "type-check every backend (default, js, native)",
       commands: [
-        moon("check · default", ["check"]),
-        moon("check · js", ["check", "--target", "js"]),
-        moon("check · native", ["check", "--target", "native"]),
+        // +unnecessary_annotation (warning 73) keeps redundant Type::/@pkg.
+        // prefixes from creeping back in
+        moon("check · default", [
+          "check", "--warn-list", "+unnecessary_annotation",
+        ]),
+        moon("check · js", [
+          "check", "--target", "js", "--warn-list", "+unnecessary_annotation",
+        ]),
+        moon("check · native", [
+          "check", "--target", "native", "--warn-list", "+unnecessary_annotation",
+        ]),
       ],
     },
     {

@@ -67,6 +67,16 @@ test "list respects --limit and signals truncation" {
 }
 
 ///|
+test "a non-integer --limit is a usage error, not a silent no-op" {
+  let e = run(["list", "--limit=abc"], demo_module())
+  assert_eq(e.exit_code, 1)
+  assert_true(e.err.contains("--limit expects an integer, got 'abc'"))
+  let spaced = run(["list", "--limit", "1x"], demo_module())
+  assert_eq(spaced.exit_code, 1)
+  assert_true(spaced.err.contains("--limit expects an integer, got '1x'"))
+}
+
+///|
 test "examples filters by the component-name positional" {
   let e = run(["examples", "Card"], demo_module())
   assert_eq(e.out, "Card — basic\n")
