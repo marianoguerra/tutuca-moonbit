@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn dyncomp_steps() -> Array[Step]
+
 pub fn help_text() -> String
 
 pub fn plan(String) -> Array[Step]?

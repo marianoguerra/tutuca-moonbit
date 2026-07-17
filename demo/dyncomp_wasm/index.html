@@ -1,0 +1,24 @@
+<!doctype html>
+<!-- Dynamic wasm components demo (dyncomp/DESIGN.md): the shell app is
+     wasm-gc; clicking "load counter bundle" imports the jco-transpiled
+     guests/counter component at runtime and mounts it into the tree.
+     Build + assemble: moon run - -target native cmd/dev - - dist
+     then serve dist/ and open /dyncomp/. Raw build:
+     moon build - -target wasm-gc demo/dyncomp_wasm (needs the JS String
+     Builtins proposal, e.g. Chrome; the counter bundle must be copied to
+     ./counter/ — see the dist task). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tutuca dynamic wasm components</title>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { loadWasm } from "./loader.mjs";
+    const exports = await loadWasm("./dyncomp_wasm.wasm");
+    exports.mount();
+    globalThis.__tutuca_state = () => exports.state_json();
+  </script>
+</body>
+</html>

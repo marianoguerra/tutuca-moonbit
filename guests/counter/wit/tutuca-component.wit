@@ -1,0 +1,185 @@
+/// tutuca:component — dynamic WebAssembly tutuca components.
+///
+/// A guest implementing the `dynamic-component` world is a *logic module*: it
+/// declares its components (views as tutuca HTML template strings, handler
+/// and method names, styles) in a manifest, and implements the handlers on an
+/// opaque-state `instance` resource. The HOST is the framework: it compiles
+/// the views with anode (`Component::for_type`), renders them, delegates
+/// events at the root, and drives the whole lifecycle. Guest state never
+/// crosses the boundary — the host reads fields lazily (`get-field`) while
+/// rendering and swaps in the NEW instance a handler returns (self in,
+/// self out), which is exactly tutuca's COW model.
+///
+/// The world imports no WASI — only the interfaces below — so bundles run in
+/// the browser via `jco transpile --instantiation async` with host-supplied
+/// imports.
+package tutuca:component@0.1.0;
+
+/// Dynamic values crossing the boundary. WIT has no recursive types, so
+/// scalars travel inline and compounds are u64 handles into a host-side
+/// arena, read/built through this interface. Handles are only valid for the
+/// duration of the current host->guest call: read handles go stale when the
+/// call returns, and freshly built handles must be handed back to the host
+/// (in a return value or an import argument) within the same call.
+/// `instance` payloads are guest-instance handles (see `guest.instance`),
+/// used for nested same-bundle child components.
+interface values {
+  variant value {
+    nil,
+    boolean(bool),
+    number(f64),
+    text(string),
+    %list(u64),
+    %map(u64),
+    %instance(u64),
+  }
+
+  // reads (any handle)
+  list-len: func(h: u64) -> u32;
+  list-get: func(h: u64, index: u32) -> value;
+  map-len: func(h: u64) -> u32;
+  map-keys: func(h: u64) -> list<string>;
+  map-get: func(h: u64, key: string) -> option<value>;
+
+  // construction (fresh handles)
+  list-new: func() -> u64;
+  list-push: func(h: u64, v: value);
+  map-new: func() -> u64;
+  map-set: func(h: u64, key: string, v: value);
+
+  // escape hatch for JSON-native guests; `instance` values serialize as null
+  to-json: func(v: value) -> string;
+  from-json: func(json: string) -> value;
+}
+
+/// Framework services available to a running handler. Calls are buffered by
+/// the host and applied through the dispatching handler's context when
+/// `handle-event` returns (tutuca ctx.bubble / ctx.send / ctx.request).
+/// `log` is immediate and always legal.
+interface control {
+  use values.{value};
+
+  enum log-level { debug, info, warn, error }
+
+  log: func(level: log-level, msg: string);
+
+  /// Bubble a message to the parent component in the host tree.
+  emit: func(name: string, args: list<value>);
+
+  /// Send a message to self: arrives as a later handle-event(receive, name, ...).
+  send: func(name: string, args: list<value>);
+
+  /// Fire a host-side request handler; its response arrives as a later
+  /// handle-event(response, name, ...) with args [result, error].
+  request: func(name: string, args: list<value>);
+
+  /// Create a same-bundle child instance and return its HOST-ASSIGNED token
+  /// (the only instance-token space; `value.instance` payloads use it).
+  /// Callable from constructors and handlers; the child becomes a field of
+  /// the parent (return it from get-field as instance(token), accept it in
+  /// with-field) and the host renders it with `<x render=".field">`.
+  make-instance: func(component: string, args: list<tuple<string, value>>) -> u64;
+
+  /// Release a child token that will no longer be returned from get-field.
+  drop-instance: func(token: u64);
+}
+
+interface guest {
+  use values.{value};
+
+  /// A named view in tutuca template syntax. The HOST parses it (anode):
+  /// event bindings are attributes resolved at view parse time, so
+  /// `input-handlers` names referenced by the markup dispatch back into
+  /// `instance.handle-event`. Every component needs a "main" view.
+  record view-def {
+    name: string,
+    html: string,
+  }
+
+  record component-def {
+    name: string,
+    views: list<view-def>,
+    /// Handler names the views' event attributes reference.
+    input-handlers: list<string>,
+    /// Message handlers (including "init", which the host sends on mount).
+    receive-handlers: list<string>,
+    /// Handlers for responses to `control.request` calls.
+    response-handlers: list<string>,
+    /// Names callable from view expressions via call-method (may be empty).
+    method-names: list<string>,
+    /// CSS for this component; the host injects it scoped by the generated
+    /// container class.
+    style: string,
+  }
+
+  record manifest {
+    /// Contract version; this document describes version 1.
+    api-version: u32,
+    module-name: string,
+    components: list<component-def>,
+  }
+
+  get-manifest: func() -> manifest;
+
+  /// The host-normalized DOM event handed to input handlers.
+  record dom-event {
+    name: string,
+    /// The event's value (input value, checkbox state, CustomEvent detail...).
+    payload: value,
+    key: string,
+    key-code: s32,
+    alt: bool,
+    shift: bool,
+    ctrl-or-cmd: bool,
+    meta: bool,
+    /// Drag metadata; nil when absent.
+    drag-info: value,
+  }
+
+  enum bucket { input, receive, response }
+
+  /// One guest component instance with OPAQUE state. Instances are
+  /// immutable by convention: handlers return a NEW instance (or none for
+  /// "unchanged") and the host swaps its wrapper — new instance, new
+  /// identity, which drives tutuca's change detection and render cache.
+  /// The host drops superseded handles once a transaction settles.
+  resource instance {
+    /// `component` is a component-def name from the manifest; `args` are
+    /// construction fields (host mount arguments).
+    constructor(component: string, args: list<tuple<string, value>>);
+
+    /// Lazy field read used while the host renders this instance's views
+    /// (and for path lookups). none = no such field.
+    get-field: func(name: string) -> option<value>;
+
+    /// Ordered entries so host `@each` can iterate the instance as a
+    /// sequence; none = not a sequence.
+    seq-entries: func() -> option<list<tuple<string, value>>>;
+
+    /// Self in, self out: return the successor instance, or none if the
+    /// event caused no state change.
+    handle-event: func(b: bucket, name: string, event: option<dom-event>,
+                       args: list<value>) -> option<instance>;
+
+    /// Pure render-time method call (view expressions). Must not mutate.
+    call-method: func(name: string, args: list<value>) -> value;
+
+    /// COW write-through: successor with one field replaced. Only needed
+    /// when host paths write THROUGH this instance to a nested child;
+    /// leaf components may return none (unsupported).
+    with-field: func(name: string, v: value) -> option<instance>;
+
+    /// Structural equality (host obj-eq).
+    eq: func(other: borrow<instance>) -> bool;
+
+    /// JSON projection of the state, for host inspection/state-json
+    /// (host Value::to-json cannot see opaque state).
+    to-json: func() -> string;
+  }
+}
+
+world dynamic-component {
+  import values;
+  import control;
+  export guest;
+}

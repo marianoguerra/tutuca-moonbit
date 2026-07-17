@@ -1,0 +1,15 @@
+// wasm-gc bridge for dyncomp/host: implements &Guest over the `tcomp` import
+// namespace (served by the demo loader's createTcompImports) and provides the
+// load/on_loaded lifecycle glue. Values cross the JS boundary as JSON strings
+// (the bridge keeps a JS-side arena for the guest's `values` imports, so the
+// host never sees arena handles). Check: moon check --target wasm-gc dyncomp/host/wasm
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "moonbitlang/core/json",
+}
+
+supported_targets = "wasm-gc"

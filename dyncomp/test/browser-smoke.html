@@ -1,0 +1,80 @@
+<!doctype html>
+<!-- Browser smoke test for the counter guest component.
+     Build first (node guests/counter/build.mjs), then serve the REPO ROOT
+     (e.g. python3 -m http.server) and open
+     /dyncomp/test/browser-smoke.html — it instantiates the jco-transpiled
+     component with a fake host arena and runs the same core assertions as
+     harness.test.mjs, reporting into #out and window.__smoke. -->
+<meta charset="utf-8">
+<title>tutuca:component browser smoke</title>
+<pre id="out">running…</pre>
+<script type="module">
+const out = [];
+const report = (line) => {
+  out.push(line);
+  document.getElementById('out').textContent = out.join('\n');
+};
+try {
+  const jsDir = new URL('../../guests/counter/dist/js/', import.meta.url);
+  const { instantiate } = await import(new URL('counter.component.js', jsDir));
+
+  const arena = new Map();
+  let nextHandle = 1n;
+  const put = (obj) => { const h = nextHandle++; arena.set(h, obj); return h; };
+  const values = {
+    listLen: (h) => arena.get(h).length >>> 0,
+    listGet: (h, i) => arena.get(h)[i],
+    mapLen: (h) => arena.get(h).size >>> 0,
+    mapKeys: (h) => [...arena.get(h).keys()],
+    mapGet: (h, k) => arena.get(h).get(k),
+    listNew: () => put([]),
+    listPush: (h, v) => arena.get(h).push(v),
+    mapNew: () => put(new Map()),
+    mapSet: (h, k, v) => arena.get(h).set(k, v),
+    toJson: (v) => JSON.stringify(v),
+    fromJson: (j) => ({ tag: 'text', val: j }),
+  };
+  const getCoreModule = (path) =>
+    WebAssembly.compileStreaming(fetch(new URL(path, jsDir)));
+  const root = await instantiate(getCoreModule, {
+    'tutuca:component/values@0.1.0': values,
+    'tutuca:component/values': values,
+  });
+  const guest = root.guest;
+
+  const assert = (cond, msg) => {
+    if (!cond) throw new Error('FAIL: ' + msg);
+    report('ok - ' + msg);
+  };
+
+  const m = guest.getManifest();
+  assert(m.moduleName === 'counterlib' && m.components[0].name === 'Counter',
+    'manifest crosses (module ' + m.moduleName + ')');
+  assert(/@on\.click="inc"/.test(m.components[0].views[0].html),
+    'view HTML with event attributes crosses');
+
+  const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
+  const b = new guest.Instance('Counter', []);
+  assert(a.getField('count').val === 10 && b.getField('count').val === 0,
+    'independent instances');
+
+  const a2 = a.handleEvent('input', 'inc', undefined, []);
+  assert(a2.getField('count').val === 11 && a.getField('count').val === 10,
+    'handle-event: new instance out, old unchanged');
+
+  const list = put([{ tag: 'number', val: 40 }, { tag: 'number', val: 2 }]);
+  const summed = b.handleEvent('receive', 'sum', undefined, [{ tag: 'list', val: list }]);
+  assert(summed.getField('count').val === 42, 'guest read host arena mid-dispatch (sum=42)');
+
+  const N = 1000;
+  const t0 = performance.now();
+  for (let i = 0; i < N; i++) a.getField('count');
+  report(`ok - ${N} get-field in ${(performance.now() - t0).toFixed(1)}ms`);
+
+  report('ALL BROWSER SMOKE CHECKS PASS');
+  window.__smoke = { ok: true, out };
+} catch (e) {
+  report(String(e?.stack || e));
+  window.__smoke = { ok: false, out };
+}
+</script>

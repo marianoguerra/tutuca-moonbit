@@ -1,0 +1,92 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/host"
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn collect_superseded() -> Unit
+
+pub let handle_field : String
+
+pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest) -> Bundle raise
+
+pub fn superseded_count() -> Int
+
+pub let supported_api_version : Int
+
+// Errors
+type ManifestError derive(@debug.Debug)
+
+// Types and methods
+pub struct Bundle {
+  guest : &Guest
+  manifest : DynManifest
+  comps : Map[String, (Int, DynComponentDef)]
+}
+pub fn Bundle::drop_instance(Self, Int) -> Unit
+pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value]) -> DynObj?
+pub fn Bundle::module_name(Self) -> String
+pub fn Bundle::wrap_instance(Self, String, Int) -> @core.Value?
+
+pub(all) enum ControlMsg {
+  Emit(String, Array[@core.Value])
+  Send(String, Array[@core.Value])
+  Request(String, Array[@core.Value])
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DispatchResult {
+  next : Int?
+  msgs : Array[ControlMsg]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DynComponentDef {
+  name : String
+  views : Array[DynViewDef]
+  input_handlers : Array[String]
+  receive_handlers : Array[String]
+  response_handlers : Array[String]
+  method_names : Array[String]
+  style : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DynManifest {
+  api_version : Int
+  module_name : String
+  components : Array[DynComponentDef]
+} derive(Eq, @debug.Debug)
+pub fn DynManifest::from_json_string(String) -> Self raise
+
+pub struct DynObj {
+  comp_id : Int
+  def : DynComponentDef
+  guest : &Guest
+  handle : Int
+}
+pub fn DynObj::handle(Self) -> Int
+pub fn DynObj::new(Int, DynComponentDef, &Guest, Int) -> Self
+pub fn DynObj::to_value(Self) -> @core.Value
+pub impl @core.Obj for DynObj
+
+pub(all) struct DynViewDef {
+  name : String
+  html : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+pub(open) trait Guest {
+  fn create(Self, String, Map[String, @core.Value]) -> Int
+  fn get_field(Self, Int, String) -> @core.Value?
+  fn seq_entries(Self, Int) -> Array[(String, @core.Value)]?
+  fn dispatch(Self, Int, @core.HandlerBucket, String, Array[@core.Value]) -> DispatchResult
+  fn call_method(Self, Int, String, Array[@core.Value]) -> @core.Value
+  fn with_field(Self, Int, String, @core.Value) -> Int?
+  fn to_json_string(Self, Int) -> String
+  fn drop_instance(Self, Int) -> Unit
+}
+

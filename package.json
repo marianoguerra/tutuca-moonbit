@@ -3,6 +3,7 @@
   "private": true,
   "description": "Dev dependencies for tutuca-mb: happy-dom (moon test --target js), esbuild + CodeMirror (playground/dist editor bundle).",
   "devDependencies": {
+    "@bytecodealliance/jco": "^1.25.2",
     "@codemirror/commands": "^6.10.4",
     "@codemirror/language": "^6.12.4",
     "@codemirror/lint": "^6.9.7",

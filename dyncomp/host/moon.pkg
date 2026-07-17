@@ -1,0 +1,17 @@
+// Host side of the dynamic-wasm-component design (dyncomp/DESIGN.md): wraps a
+// foreign `tutuca:component` guest instance in a DynObj (&Obj implementer)
+// and synthesizes real compiled components from the guest's manifest, so
+// render/dispatch/transactor treat guest components exactly like local ones.
+// Backend-agnostic: the wasm bridge implements &Guest over the `tcomp` FFI;
+// tests implement it with an in-process fake. Check: moon check dyncomp/host
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "moonbitlang/core/json",
+}
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/testing/harness",
+  "moonbitlang/core/debug",
+} for "test"

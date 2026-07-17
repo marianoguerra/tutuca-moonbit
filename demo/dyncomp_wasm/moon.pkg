@@ -1,0 +1,32 @@
+// wasm-gc browser demo for dynamic wasm components (dyncomp/DESIGN.md): a
+// shell app that loads a `tutuca:component` bundle (the jco-transpiled
+// guests/counter) by URL at runtime and mounts it into its tree. Extends the
+// counter_wasm import set with the `tcomp` namespace (loader.mjs).
+// Build: moon build --target wasm-gc demo/dyncomp_wasm
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"
+
+options(
+  "is-main": true,
+  link: {
+    "wasm-gc": {
+      "exports": [
+        "mount",
+        "on_event",
+        "dyncomp_on_loaded",
+        "dyncomp_on_load_error",
+        "state_json",
+      ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

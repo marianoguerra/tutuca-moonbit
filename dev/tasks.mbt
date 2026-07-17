@@ -306,7 +306,52 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "skill-embed" {
     return Some(skill_embed_steps())
   }
+  if name == "dyncomp" {
+    return Some(dyncomp_steps())
+  }
   None
+}
+
+///|
+const DYNCOMP_WASM = "_build/wasm-gc/debug/build/demo/dyncomp_wasm/dyncomp_wasm.wasm"
+
+///|
+/// Assemble the dynamic-wasm-component demo (dyncomp/DESIGN.md) into
+/// dist/dyncomp: the wasm-gc shell app plus the jco-transpiled counter guest
+/// bundle it loads at runtime. Kept out of `dist`: the guest pipeline needs
+/// the component toolchain (wasm-tools + @bytecodealliance/jco — see
+/// guests/counter/README.md), which plain dist users may not have.
+pub fn dyncomp_steps() -> Array[Step] {
+  let steps : Array[Step] = [
+    Run(
+      moon("build · wasm-gc dyncomp demo", [
+        "build", "--target", "wasm-gc", "demo/dyncomp_wasm",
+      ]),
+    ),
+    Run({
+      label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
+      prog: "node",
+      args: ["guests/counter/build.mjs"],
+    }),
+    Mkdir("\{DIST}/dyncomp"),
+    Mkdir("\{DIST}/dyncomp/counter"),
+    Copy(from=DYNCOMP_WASM, to="\{DIST}/dyncomp/dyncomp_wasm.wasm"),
+    Copy(from="demo/dyncomp_wasm/loader.mjs", to="\{DIST}/dyncomp/loader.mjs"),
+    Copy(from="demo/dyncomp_wasm/index.html", to="\{DIST}/dyncomp/index.html"),
+  ]
+  for
+    f in [
+      "counter.component.js", "counter.component.core.wasm", "counter.component.core2.wasm",
+      "counter.component.core3.wasm",
+    ] {
+    steps.push(
+      Copy(
+        from="guests/counter/dist/js/\{f}",
+        to="\{DIST}/dyncomp/counter/\{f}",
+      ),
+    )
+  }
+  steps
 }
 
 ///|
@@ -346,5 +391,8 @@ pub fn help_text() -> String {
   }
   line("dist", "build all + assemble a runnable dist/ folder")
   line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
+  line(
+    "dyncomp", "assemble the dynamic-component demo + guest bundle into dist/dyncomp",
+  )
   sb.to_string()
 }

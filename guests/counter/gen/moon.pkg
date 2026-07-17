@@ -1,0 +1,32 @@
+warnings = "-44"
+
+import {
+  "tutuca/component/gen/interface/tutuca/component/guest",
+}
+
+options(
+  link: {
+    "wasm": {
+      "export-memory-name": "memory",
+      "heap-start-address": 16,
+      "exports": [
+        "mbt_ffi_cabi_realloc:cabi_realloc",
+        "wasmExportConstructorInstance:tutuca:component/guest@0.1.0#[constructor]instance",
+        "wasmExportGetManifest:tutuca:component/guest@0.1.0#get-manifest",
+        "wasmExportGetManifestPostReturn:cabi_post_tutuca:component/guest@0.1.0#get-manifest",
+        "wasmExportInstanceDtor:tutuca:component/guest@0.1.0#[dtor]instance",
+        "wasmExportMethodInstanceCallMethod:tutuca:component/guest@0.1.0#[method]instance.call-method",
+        "wasmExportMethodInstanceCallMethodPostReturn:cabi_post_tutuca:component/guest@0.1.0#[method]instance.call-method",
+        "wasmExportMethodInstanceEq:tutuca:component/guest@0.1.0#[method]instance.eq",
+        "wasmExportMethodInstanceGetField:tutuca:component/guest@0.1.0#[method]instance.get-field",
+        "wasmExportMethodInstanceGetFieldPostReturn:cabi_post_tutuca:component/guest@0.1.0#[method]instance.get-field",
+        "wasmExportMethodInstanceHandleEvent:tutuca:component/guest@0.1.0#[method]instance.handle-event",
+        "wasmExportMethodInstanceSeqEntries:tutuca:component/guest@0.1.0#[method]instance.seq-entries",
+        "wasmExportMethodInstanceSeqEntriesPostReturn:cabi_post_tutuca:component/guest@0.1.0#[method]instance.seq-entries",
+        "wasmExportMethodInstanceToJson:tutuca:component/guest@0.1.0#[method]instance.to-json",
+        "wasmExportMethodInstanceToJsonPostReturn:cabi_post_tutuca:component/guest@0.1.0#[method]instance.to-json",
+        "wasmExportMethodInstanceWithField:tutuca:component/guest@0.1.0#[method]instance.with-field",
+      ],
+    },
+  },
+)
