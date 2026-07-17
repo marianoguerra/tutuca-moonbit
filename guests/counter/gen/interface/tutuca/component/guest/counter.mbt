@@ -1,4 +1,7 @@
-///| The counter guest module: opaque native state + tutuca view strings.
+///| HANDWRITTEN (not wit-bindgen output, unlike the sibling ffi/top files —
+/// regeneration must not touch it; see ../../../../../README.md).
+///
+/// The counter guest module: opaque native state + tutuca view strings.
 /// Exercises the whole `tutuca:component` surface: lazy field reads, list
 /// fields (host `@each`), a view method (`$label`), a request round trip
 /// (input "double" -> control.request -> response "double"), and nested

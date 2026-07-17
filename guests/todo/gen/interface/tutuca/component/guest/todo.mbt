@@ -1,4 +1,7 @@
-///| The todo guest module: a single `tutuca:component` with opaque native
+///| HANDWRITTEN (not wit-bindgen output, unlike the sibling ffi/top files —
+/// regeneration must not touch it; see ../../../../../README.md).
+///
+/// The todo guest module: a single `tutuca:component` with opaque native
 /// state (a list of items + a draft string), styled with margaui utility
 /// classes. Mirrors guests/counter — one struct implementing `DynComponent`
 /// plus a `dyn_module()` factory — but exercises per-item events: the host

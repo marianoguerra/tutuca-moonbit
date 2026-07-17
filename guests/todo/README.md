@@ -32,6 +32,12 @@ moon v0.10.x · wit-bindgen-cli 0.59.0 · wasm-tools 1.244.x ·
 `@bytecodealliance/jco` 1.25.x (repo devDependency; the bare `jco` npm name
 is a dependency-confusion placeholder — never install it).
 
+Regeneration overwrites only wit-bindgen's own outputs (`ffi.mbt`,
+`top.mbt`, `moon.pkg`, …). The handwritten files in the generated guest
+package — the component source and `sdk.mbt` — have names wit-bindgen never
+emits, but diff the tree after regenerating to be sure nothing was clobbered
+before committing.
+
 Regenerate bindings after a WIT or toolchain change with:
 
 ```sh
