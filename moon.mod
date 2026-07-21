@@ -25,3 +25,24 @@ import {
   "moonbitlang/async@0.20.1",
   "moonbit-community/html@0.1.2",
 }
+
+// What `moon publish` ships. Consumers get the library packages, the CLI
+// (cmd/main -> cli/) and the docs; they don't get the demo/playground/guest
+// hosts or the dev tooling, which only make sense inside this repo. storybook/
+// stays: cli/ and testing/harness both import it. Check with
+// `moon package --list`.
+
+options(
+  exclude: [
+    "guests",
+    "playground",
+    "demo",
+    "dyncomp",
+    "skill",
+    "scripts",
+    "dev",
+    "cmd/dev",
+    "package.json",
+    "package-lock.json",
+  ],
+)

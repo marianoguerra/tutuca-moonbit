@@ -8,6 +8,13 @@ It runs on all three MoonBit backends: **wasm-gc** (the default, for
 target-agnostic logic and the browser demos), **js** (the real-DOM adapter, via
 [mizchi/js](https://github.com/mizchi/js.mbt)), and **native** (the CLI).
 
+Live demos, playground and storybook:
+<https://marianoguerra.github.io/tutuca-moonbit/> — source:
+<https://github.com/marianoguerra/tutuca-moonbit>. The published mooncakes
+package carries the library, CLI and storybook packages; the demo, playground
+and wasm-component guest hosts live in the repo only (see `exclude` in
+`moon.mod`).
+
 ## What's in it
 
 tutuca is a stack of small packages, each a MoonBit package with its own tests
