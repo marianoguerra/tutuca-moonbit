@@ -123,7 +123,7 @@ test "no matching handler leaves everything untouched" {
   guard scope.lookup_component("Panel") is Some(panel) else {
     fail("Panel missing")
   }
-  let root = panel.make({})
+  let root = panel.make(Map([]))
   let container = mount(scope.comps, root.to_value())
   let tx = @transactor.Transactor::new(root.to_value())
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
@@ -145,7 +145,7 @@ test "requests resolve through the component's registration scope" {
   guard scope.lookup_component("Panel") is Some(panel) else {
     fail("Panel missing")
   }
-  let root = panel.make({})
+  let root = panel.make(Map([]))
   let tx = @transactor.Transactor::new(root.to_value(), requests=@app.ScopeRequests::{
     comps: scope.comps,
   })

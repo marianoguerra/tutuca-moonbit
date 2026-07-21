@@ -246,7 +246,7 @@ fn naive_people_comp() -> @component.Component {
     }
     let ctx = match args {
       [_, Map(c), ..] => c
-      _ => {}
+      _ => Map([])
     }
     let all : Array[Int] = []
     for i, v in seq {
@@ -286,7 +286,7 @@ fn shared_people_comp() -> @component.Component {
     }
     let ctx = match args {
       [_, Map(c), ..] => c
-      _ => {}
+      _ => Map([])
     }
     let current = match fp_ctx_lookup(ctx, "currentPage") {
       Num(n) => n.to_int()
@@ -324,7 +324,7 @@ fn shared_people_comp() -> @component.Component {
 /// 3. COUPLED — one scan total. The enrich builds the page keys into `__keys__`
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
-  let alter : Map[String, @component.MethodFn] = {}
+  let alter : Map[String, @component.MethodFn] = Map([])
   alter["pagerInfo"] = (inst, _args) => {
     let q = fp_query(inst)
     let all : Array[Int] = []
@@ -351,7 +351,7 @@ fn coupled_people_comp() -> @component.Component {
   alter["forwardKeys"] = (_inst, args) => {
     let ctx = match args {
       [_, Map(c), ..] => c
-      _ => {}
+      _ => Map([])
     }
     Map({ "keys": fp_ctx_lookup(ctx, "__keys__") })
   }

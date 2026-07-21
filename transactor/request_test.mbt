@@ -135,7 +135,7 @@ impl @tutuca.PathNode for RApp with fn handler(self, bucket, name) {
       Some(
         Handler((_args, _ctx) => {
           Some(
-            RApp::{ sheets: RSheets::{ items: {} }, sel_id: self.sel_id }
+            RApp::{ sheets: RSheets::{ items: Map([]) }, sel_id: self.sel_id }
             as &@tutuca.PathNode,
           )
         }),

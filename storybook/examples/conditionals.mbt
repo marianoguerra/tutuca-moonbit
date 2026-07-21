@@ -56,7 +56,7 @@ pub fn traffic_light_module() -> @component.ModuleDef {
     name="traffic-light",
     components=[traffic_light_comp()],
     examples=[
-      { component: "TrafficLight", title: "Red", args: {}, view: None },
+      { component: "TrafficLight", title: "Red", args: Map([]), view: None },
       {
         component: "TrafficLight",
         title: "Orange",
@@ -111,7 +111,7 @@ fn tabbed_ui_comp() -> @component.Component {
 ///|
 pub fn tabbed_ui_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="tabbed-ui", components=[tabbed_ui_comp()], examples=[
-    { component: "TabbedUI", title: "Overview", args: {}, view: None },
+    { component: "TabbedUI", title: "Overview", args: Map([]), view: None },
     {
       component: "TabbedUI",
       title: "Pricing",

@@ -34,7 +34,7 @@ fn VwReg::get(self : VwReg, name : String) -> @component.Component? {
 fn VwReg::make_(
   self : VwReg,
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args).to_value()
@@ -161,7 +161,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
           _ => ""
         }
         match reg.get(type_comp_name(id)) {
-          Some(c) => Some(c.make({}))
+          Some(c) => Some(c.make(Map([])))
           None => Some(inst)
         }
       },
@@ -262,7 +262,7 @@ fn vw_imm_instrs() -> Array[(String, String)] {
 ///|
 /// wasm label -> the const name that builds it, for the picker's dispatch.
 fn vw_id_to_name() -> Map[String, String] {
-  let m : Map[String, String] = {}
+  let m : Map[String, String] = Map([])
   for p in vw_plain_instrs() {
     m[p.1] = p.0
   }
@@ -664,7 +664,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "<label class=\"\{r.3} radio-label\"><input type=\"radio\" class=\"radio \{r.2} radio-xs r-\{r.0}\" @on.input=\"\{r.1}\" /> \{r.0}</label>",
     )
   }
-  let methods : Map[String, @component.MethodFn] = {}
+  let methods : Map[String, @component.MethodFn] = Map([])
   let cats = vw_categories()
   for r in radios {
     let section = r.0
@@ -710,7 +710,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         match vw_id_to_name().get(id) {
           Some(cname) =>
             match reg.get(cname) {
-              Some(c) => Some(vw_instance_with_editing(c.make({})))
+              Some(c) => Some(vw_instance_with_editing(c.make(Map([]))))
               None => Some(inst)
             }
           None => Some(inst)
@@ -764,7 +764,7 @@ fn cap(s : String) -> String {
 fn vw_macros() -> Map[String, @anode.Macro] {
   {
     "btn-toggle-expand": {
-      defaults: {},
+      defaults: Map([]),
       raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\"$toggleExpanded\">" +
       "<span @show=\".expanded\">▽</span><span @hide=\".expanded\">▷</span></button>",
     },
@@ -796,7 +796,7 @@ fn vw_macros() -> Map[String, @anode.Macro] {
 
 ///|
 pub fn visual_wasm_module() -> @component.ModuleDef {
-  let reg = VwReg::{ comps: {} }
+  let reg = VwReg::{ comps: Map([]) }
   let comps : Array[@component.Component] = []
   fn add(c : @component.Component) -> @component.Component {
     reg.comps[c.name] = c
@@ -832,11 +832,11 @@ pub fn visual_wasm_module() -> @component.ModuleDef {
     components=comps,
     macros=vw_macros(),
     examples=[
-      { component: "Module", title: "Empty Module", args: {}, view: None },
+      { component: "Module", title: "Empty Module", args: Map([]), view: None },
       {
         component: "InstructionPicker",
         title: "Instruction Picker",
-        args: {},
+        args: Map([]),
         view: None,
       },
     ],

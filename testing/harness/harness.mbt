@@ -18,7 +18,7 @@ pub struct Harness {
 pub fn mount(
   m : @component.ModuleDef,
   root : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> Harness raise {
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)

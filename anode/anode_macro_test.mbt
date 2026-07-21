@@ -35,7 +35,7 @@ test "expand simple macro" {
   )
   let px = @anode.ParseContext::new()
   let n = m.expand(
-    px.enter_macro("m", { "value": ".text", "oninput": "$setText" }, {}),
+    px.enter_macro("m", { "value": ".text", "oninput": "$setText" }, Map([])),
   )
   guard n is Dom(d)
   guard d.attrs is DynAttrs(items)
@@ -45,7 +45,7 @@ test "expand simple macro" {
   // Same macro expanded with other vars picks them up.
   let px2 = @anode.ParseContext::new()
   let n2 = m.expand(
-    px2.enter_macro("m", { "value": ".foo", "oninput": "$setFoo" }, {}),
+    px2.enter_macro("m", { "value": ".foo", "oninput": "$setFoo" }, Map([])),
   )
   guard n2 is Dom(d2)
   guard d2.attrs is DynAttrs(items2)
@@ -83,7 +83,7 @@ test "expand nested macro" {
 
 ///|
 test "reject directly recursive macro" {
-  let self_macro = mk_macro({}, "<div><x:self></x:self></div>")
+  let self_macro = mk_macro(Map([]), "<div><x:self></x:self></div>")
   try
     compile_view("<div><x:self></x:self></div>", { "self": self_macro })
     |> ignore
@@ -96,7 +96,7 @@ test "reject directly recursive macro" {
 
 ///|
 test "multiple instances at the same level are fine" {
-  let card = mk_macro({}, "<div class=\"card\"></div>")
+  let card = mk_macro(Map([]), "<div class=\"card\"></div>")
   let (_, px) = compile_view("<div><x:card></x:card><x:card></x:card></div>", {
     "card": card,
   })
@@ -105,9 +105,9 @@ test "multiple instances at the same level are fine" {
 
 ///|
 test "multiple instances across different macros are fine" {
-  let a = mk_macro({}, "<div class=\"a\"><x:c></x:c></div>")
-  let b = mk_macro({}, "<div class=\"b\"><x:a></x:a><x:c></x:c></div>")
-  let c = mk_macro({}, "<div class=\"c\"></div>")
+  let a = mk_macro(Map([]), "<div class=\"a\"><x:c></x:c></div>")
+  let b = mk_macro(Map([]), "<div class=\"b\"><x:a></x:a><x:c></x:c></div>")
+  let c = mk_macro(Map([]), "<div class=\"c\"></div>")
   let (_, px) = compile_view("<div><x:a></x:a><x:b></x:b><x:c></x:c></div>", {
     "a": a,
     "b": b,
@@ -118,9 +118,9 @@ test "multiple instances across different macros are fine" {
 
 ///|
 test "reject recursive macro through a chain" {
-  let a = mk_macro({}, "<div class=\"a\"><x:b></x:b></div>")
-  let b = mk_macro({}, "<div class=\"b\"><x:c></x:c></div>")
-  let c = mk_macro({}, "<div class=\"c\"><x:a></x:a></div>")
+  let a = mk_macro(Map([]), "<div class=\"a\"><x:b></x:b></div>")
+  let b = mk_macro(Map([]), "<div class=\"b\"><x:c></x:c></div>")
+  let c = mk_macro(Map([]), "<div class=\"c\"><x:a></x:a></div>")
   try
     compile_view("<div><x:a></x:a></div>", { "a": a, "b": b, "c": c }) |> ignore
   catch {
@@ -132,8 +132,8 @@ test "reject recursive macro through a chain" {
 
 ///|
 test "reject indirectly recursive macro" {
-  let a = mk_macro({}, "<div><x:b></x:b></div>")
-  let b = mk_macro({}, "<div><x:a></x:a></div>")
+  let a = mk_macro(Map([]), "<div><x:b></x:b></div>")
+  let b = mk_macro(Map([]), "<div><x:a></x:a></div>")
   try
     compile_view("<div><x:a></x:a></div>", { "a": a, "b": b }) |> ignore
   catch {
@@ -145,7 +145,7 @@ test "reject indirectly recursive macro" {
 
 ///|
 test "unknown macro compiles to a bad-macro comment" {
-  let (_, px) = compile_view("<div><x:nope></x:nope></div>", {})
+  let (_, px) = compile_view("<div><x:nope></x:nope></div>", Map([]))
   guard px.macro_nodes[0] is MacroCall(m)
   guard m.node is Some(Comment(c))
   assert_eq(c.val, "bad macro: nope")
@@ -166,7 +166,7 @@ test "parse macro slots" {
 ///|
 test "expand macro slot: default and override" {
   let post = mk_macro(
-    {},
+    Map([]),
     "<article><x:slot name=\"title\"><h1>My Post</h1></x:slot></article>",
   )
   // Default content

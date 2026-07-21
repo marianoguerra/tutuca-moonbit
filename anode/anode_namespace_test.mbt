@@ -55,7 +55,7 @@ test "dynamic :height on an svg rect" {
 
 ///|
 test "macro calls inside svg expand (lowercase and uppercase)" {
-  let bar = @anode.Macro::{ defaults: {}, raw_view: "<circle></circle>" }
+  let bar = @anode.Macro::{ defaults: Map([]), raw_view: "<circle></circle>" }
   for call in ["<x:bar></x:bar>", "<X:bar></X:bar>"] {
     let v = @anode.View::new("main", raw_view="<svg>" + call + "</svg>")
     let px = @anode.ParseContext::new()
@@ -72,7 +72,7 @@ test "expanded macro children inside svg keep the SVG namespace" {
   // NOTE: the macro body is parsed as an independent fragment, so whether its
   // elements pick up the surrounding SVG namespace depends on the expansion
   // parse — snapshot current behavior.
-  let bar = @anode.Macro::{ defaults: {}, raw_view: "<circle></circle>" }
+  let bar = @anode.Macro::{ defaults: Map([]), raw_view: "<circle></circle>" }
   let v = @anode.View::new("main", raw_view="<svg><x:bar></x:bar></svg>")
   let px = @anode.ParseContext::new()
   v.compile(px, NsScope::{ macros: { "bar": bar } })

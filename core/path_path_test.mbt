@@ -48,7 +48,7 @@ test "empty path resolves to the root and set_value replaces it" {
 test "compact drops frame-only steps; addressing is unaffected by them" {
   let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(42) }) })
   let p = @core.Path::new(steps=[
-    BindStep(binds={}),
+    BindStep(binds=Map([])),
     FieldStep("a"),
     BindStep(binds={ "key": str("x") }),
     FieldStep("b"),

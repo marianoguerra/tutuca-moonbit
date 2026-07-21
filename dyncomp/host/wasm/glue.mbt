@@ -100,7 +100,7 @@ fn args_json(args : Array[@tutuca.Value]) -> String {
 
 ///|
 fn map_json(args : Map[String, @tutuca.Value]) -> String {
-  let obj : Map[String, Json] = {}
+  let obj : Map[String, Json] = Map([])
   for name, v in args {
     obj[name] = v.to_json()
   }
@@ -144,7 +144,7 @@ fn WasmGuest::json_to_value(self : WasmGuest, j : Json) -> @tutuca.Value {
           }
         }
         _ => {
-          let out : Map[String, @tutuca.Value] = {}
+          let out : Map[String, @tutuca.Value] = Map([])
           for name, v in o {
             out[name] = self.json_to_value(v)
           }
@@ -313,10 +313,10 @@ let current : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
 let current_doc : Ref[@wdom.WasmNode?] = { val: None }
 
 ///|
-let bundles : Map[Int, @dyncomp.Bundle] = {}
+let bundles : Map[Int, @dyncomp.Bundle] = Map([])
 
 ///|
-let by_name : Map[String, Int] = {}
+let by_name : Map[String, Int] = Map([])
 
 ///|
 let next_load : Ref[Int] = { val: 1 }
@@ -332,7 +332,7 @@ pub fn set_app(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
 /// Where each in-flight load's completion messages should be dispatched
 /// (the loading component's own path, captured via ctx.path()); loads
 /// without a path notify the root.
-let notify_paths : Map[Int, @tutuca.DispatchPath] = {}
+let notify_paths : Map[Int, @tutuca.DispatchPath] = Map([])
 
 ///|
 /// Start loading a bundle (a jco-transpiled ESM URL). Completion arrives via
@@ -473,7 +473,7 @@ pub fn loaded_components() -> Array[(String, String)] {
 pub fn make_instance(
   module_name : String,
   component : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value? {
   guard by_name.get(module_name) is Some(bid) else { return None }
   guard bundles.get(bid) is Some(bundle) else { return None }

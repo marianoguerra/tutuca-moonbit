@@ -17,7 +17,7 @@ fn to_html(v : @vdom.Vdom) -> String {
 ///|
 fn render_html(
   html : String,
-  state? : @tutuca.Value = Map({}),
+  state? : @tutuca.Value = Map(Map([])),
   resolver? : &@render.ViewResolver,
 ) -> String {
   let stack = @render.RenderStack::new(state)
@@ -36,7 +36,7 @@ test "RenderOnce memoizes a constant subtree across passes" {
   let node = @anode.optimize_node(parse_node("<p class=\"x\">hi</p>"))
   guard node is RenderOnce(_)
   let ctx = @render.RenderCtx::new()
-  let stack = @render.RenderStack::new(Map({}))
+  let stack = @render.RenderStack::new(Map(Map([])))
   guard @render.render(node, stack, ctx) is Some(first)
   guard @render.render(node, stack, ctx) is Some(second)
   assert_true(physical_equal(first, second))
@@ -109,7 +109,7 @@ test "fragment root renders all children" {
 ///|
 test "svg subtree keeps its namespace" {
   let node = parse_node("<svg viewBox=\"0 0 1 1\"><circle/></svg>")
-  let stack = @render.RenderStack::new(Map({}))
+  let stack = @render.RenderStack::new(Map(Map([])))
   guard @render.render(node, stack, @render.RenderCtx::new()) is Some(v)
   guard v is Node(el)
   assert_true(el.ns is Some(Svg))
@@ -158,7 +158,7 @@ impl @anode.MacroScope for MacroTestScope with fn lookup_macro(self, name) {
 ///|
 test "compiled macro call renders its expansion" {
   let card = @anode.Macro::{
-    defaults: {},
+    defaults: Map([]),
     raw_view: "<div class=\"card\"><x:slot name=\"body\"><p>default</p></x:slot></div>",
   }
   let v = @anode.View::new(
@@ -167,7 +167,7 @@ test "compiled macro call renders its expansion" {
   )
   let px = @anode.ParseContext::new()
   v.compile(px, MacroTestScope::{ macros: { "card": card } })
-  let stack = @render.RenderStack::new(Map({}))
+  let stack = @render.RenderStack::new(Map(Map([])))
   let html = to_html(@render.render_view(v, stack, @render.RenderCtx::new()))
   // View::compile stamps data-vid on the root (JS strips data-* only in
   // renderToString's cleanAttrs pass, which is not ported).
@@ -188,7 +188,7 @@ test "RenderStack lookups: binds chain, it fields, view names" {
   assert_true(@tutuca.Stack::lookup_bind(grand, "key") is Num(0))
   assert_true(@tutuca.Stack::lookup_bind(grand, "missing") is Null)
   // a frame is a barrier: binds never cross a component boundary
-  let framed = child.enter(Str("comp"), {})
+  let framed = child.enter(Str("comp"), Map([]))
   assert_true(@tutuca.Stack::lookup_bind(framed, "key") is Null)
   // fields read the CURRENT item, per frame (JS this.it[name]): a scalar it
   // has no fields; the root frame's map does
@@ -223,7 +223,7 @@ test "state Fn fields back methods and handlers" {
 
 ///|
 fn state_of(pairs : Array[(String, @tutuca.Value)]) -> @tutuca.Value {
-  let m : Map[String, @tutuca.Value] = {}
+  let m : Map[String, @tutuca.Value] = Map([])
   for pair in pairs {
     m[pair.0] = pair.1
   }

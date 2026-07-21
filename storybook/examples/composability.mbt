@@ -17,7 +17,7 @@ fn example_args(
       return e.args
     }
   }
-  {}
+  Map([])
 }
 
 ///|
@@ -99,8 +99,8 @@ pub fn composability_module() -> @component.ModuleDef {
     components.append(m.components)
   }
   // the sub-apps' macros (visual-wasm) and request handlers (personal-site)
-  let macros : Map[String, @anode.Macro] = {}
-  let requests : Map[String, @component.RequestFn] = {}
+  let macros : Map[String, @anode.Macro] = Map([])
+  let requests : Map[String, @component.RequestFn] = Map([])
   for m in [todo, json, tree, personal_site, visual_wasm, dnd] {
     for k, v in m.macros {
       macros[k] = v
@@ -118,7 +118,7 @@ pub fn composability_module() -> @component.ModuleDef {
       {
         component: "Composability",
         title: "Default (To-Do tab)",
-        args: {},
+        args: Map([]),
         view: None,
       },
       {

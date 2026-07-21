@@ -13,7 +13,7 @@ impl @anode.MacroScope for OptScope with fn lookup_macro(self, name) {
 ///|
 fn optimize_view(
   raw_view : String,
-  macros? : Map[String, @anode.Macro] = {},
+  macros? : Map[String, @anode.Macro] = Map([]),
 ) -> @anode.View raise @anode.MacroError {
   let v = @anode.View::new("myView", raw_view~)
   let px = @anode.ParseContext::new()
@@ -102,7 +102,7 @@ test "push-view optimizes constant child" {
 ///|
 test "constant macro child gets wrapped by parent" {
   let card = @anode.Macro::{
-    defaults: {},
+    defaults: Map([]),
     raw_view: "<div class=\"card\"><p>static</p></div>",
   }
   let v = optimize_view(
@@ -116,7 +116,7 @@ test "constant macro child gets wrapped by parent" {
 ///|
 test "dynamic macro subtree gets optimized" {
   let card = @anode.Macro::{
-    defaults: {},
+    defaults: Map([]),
     raw_view: "<div>\n  <p>static</p>\n  <span :class=\".cls\">dyn</span>\n</div>",
   }
   let v = optimize_view("<div><x:card></x:card></div>", macros={ "card": card })

@@ -104,7 +104,7 @@ test "teleported path addresses the producer's data (end to end)" {
 ///|
 test "compact drops frame-only plains, keeps Dyn markers, preserves origins" {
   let p = @core.DispatchPath::new(items=[
-    plain(BindStep(binds={})),
+    plain(BindStep(binds=Map([]))),
     plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
     Dyn(producer=0, steps=[FieldStep("x")], interior=[1]),
   ])

@@ -394,7 +394,7 @@ fn universal_module() -> @component.ModuleDef {
       respond(Ok(List(rows)))
     }),
     "componentPicker": RequestFn((_args, respond) => {
-      respond(Ok(picker.make({}).to_value()))
+      respond(Ok(picker.make(Map([])).to_value()))
     }),
     // create a component instance by (module, name): builtins natively, guest
     // components through the dyncomp bridge
@@ -403,7 +403,7 @@ fn universal_module() -> @component.ModuleDef {
         [Str(m), Str(n)] =>
           if m == "builtin" {
             match n {
-              "ComponentList" => respond(Ok(list.make({}).to_value()))
+              "ComponentList" => respond(Ok(list.make(Map([])).to_value()))
               _ => respond(Err(Str("unknown builtin \{n}")))
             }
           } else {

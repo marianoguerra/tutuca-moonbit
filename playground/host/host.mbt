@@ -29,14 +29,14 @@ pub fn mount(
   }
   // pick the root component + args (explicit > first example > first component)
   let (root_name, root_args) = match root {
-    Some(r) => (r, args.unwrap_or({}))
+    Some(r) => (r, args.unwrap_or(Map([])))
     None =>
       match m.examples {
         [ex, ..] => (ex.component, args.unwrap_or(ex.args))
         [] =>
           // no examples: fall back to the module name; the module must contain a
           // component of that name, else from_module raises below.
-          (m.name, args.unwrap_or({}))
+          (m.name, args.unwrap_or(Map([])))
       }
   }
   let root_node = @bdom.BrowserNode::from_element(root_el)

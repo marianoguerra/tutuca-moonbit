@@ -139,7 +139,7 @@ pub fn file_picker_module() -> @component.ModuleDef {
     name="file-picker",
     components=[file_picker_comp()],
     examples=[
-      { component: "FilePicker", title: "Empty", args: {}, view: None },
+      { component: "FilePicker", title: "Empty", args: Map([]), view: None },
       {
         component: "FilePicker",
         title: "With a file",

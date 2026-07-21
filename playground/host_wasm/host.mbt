@@ -22,11 +22,11 @@ pub fn mount(
   }
   let opts = @vdom.RenderOpts::new(doc)
   let (root_name, root_args) = match root {
-    Some(r) => (r, args.unwrap_or({}))
+    Some(r) => (r, args.unwrap_or(Map([])))
     None =>
       match m.examples {
         [ex, ..] => (ex.component, args.unwrap_or(ex.args))
-        [] => (m.name, args.unwrap_or({}))
+        [] => (m.name, args.unwrap_or(Map([])))
       }
   }
   let app = @app.App::from_module(m, root_name, root_node, opts, args=root_args) catch {

@@ -309,9 +309,12 @@ test "@each iterates, @when filters" {
   let h = @harness.mount(fruits_module(), "Fruits", args={
     "items": List([Str("apple"), Str("watermelon"), Str("plum")]),
   })
-  debug_inspect(h.texts(".k"), content=(
-    #|["0", "2"]
-  ))
+  debug_inspect(
+    h.texts(".k"),
+    content=(
+      #|["0", "2"]
+    ),
+  )
   inspect(h.text("li"), content="0: apple")
 }
 ```
@@ -367,9 +370,12 @@ fn page_module() -> @component.ModuleDef {
 ///|
 test "one child value, two views of it" {
   let h = @harness.mount(page_module(), "Page")
-  debug_inspect(h.texts(".hello"), content=(
-    #|["Hello, reader!", "HELLO, reader!!!"]
-  ))
+  debug_inspect(
+    h.texts(".hello"),
+    content=(
+      #|["Hello, reader!", "HELLO, reader!!!"]
+    ),
+  )
 }
 ```
 
@@ -490,24 +496,23 @@ fn quotes_module() -> @component.ModuleDef {
       },
     },
   )
-  @component.ModuleDef::new(
-    name="quotes",
-    components=[quotes],
-    requests={
-      "loadQuotes": RequestFn((_args, respond) => respond(
-        Ok(List([Str("less, but better"), Str("fits in your head")])),
-      )),
-    },
-  )
+  @component.ModuleDef::new(name="quotes", components=[quotes], requests={
+    "loadQuotes": RequestFn((_args, respond) => {
+      respond(Ok(List([Str("less, but better"), Str("fits in your head")])))
+    }),
+  })
 }
 
 ///|
 test "request round-trip: init → request → response" {
   let h = @harness.mount(quotes_module(), "Quotes")
   h.send_at_root("init") // the host-driven lifecycle
-  debug_inspect(h.texts("li"), content=(
-    #|["less, but better", "fits in your head"]
-  ))
+  debug_inspect(
+    h.texts("li"),
+    content=(
+      #|["less, but better", "fits in your head"]
+    ),
+  )
   inspect(h.find_all(".loading").length(), content="0")
 }
 ```
@@ -547,9 +552,12 @@ fn badge_module() -> @component.ModuleDef {
 ///|
 test "macros: defaults, static and dynamic parameters" {
   let h = @harness.mount(badge_module(), "Features")
-  debug_inspect(h.texts(".badge"), content=(
-    #|["New", "Beta", "Soon"]
-  ))
+  debug_inspect(
+    h.texts(".badge"),
+    content=(
+      #|["New", "Beta", "Soon"]
+    ),
+  )
 }
 ```
 
@@ -570,8 +578,13 @@ fn main {
   let doc = @dom.window().document()
   guard doc.getElementById("app") is Some(root_el) else { return }
   let root_node = @bdom.BrowserNode::from_element(root_el)
-  let app = try! @app.App::from_module(m, "Counter", root_node, @bdom.opts_for(doc))
-  @glue.install(app)          // delegated event listeners at the root
+  let app = try! @app.App::from_module(
+    m,
+    "Counter",
+    root_node,
+    @bdom.opts_for(doc),
+  )
+  @glue.install(app) // delegated event listeners at the root
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
 }
 ```

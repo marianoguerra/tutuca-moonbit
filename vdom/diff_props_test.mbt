@@ -47,8 +47,8 @@ test "diff_props: application order is a-keys then b-only keys" {
 
 ///|
 test "diff_props: empty maps" {
-  let empty : Map[String, @vdom.AttrValue] = {}
-  assert_true(@vdom.diff_props(empty, {}) is None)
+  let empty : Map[String, @vdom.AttrValue] = Map([])
+  assert_true(@vdom.diff_props(empty, Map([])) is None)
   guard @vdom.diff_props(empty, { "a": Str("1") }) is Some(added)
   assert_true(added.get("a") is Some(Some(Str("1"))))
   guard @vdom.diff_props({ "a": Str("1") }, empty) is Some(removed)

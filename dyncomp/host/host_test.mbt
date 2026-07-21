@@ -15,7 +15,7 @@ priv struct FakeGuest {
 
 ///|
 fn FakeGuest::new() -> FakeGuest {
-  { counters: {}, pairs: {}, next: { val: 0 }, bundle: { val: None } }
+  { counters: Map([]), pairs: Map([]), next: { val: 0 }, bundle: { val: None } }
 }
 
 ///|

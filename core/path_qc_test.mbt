@@ -48,7 +48,7 @@ fn gen_vmap(depth : Int) -> @gen.Gen[@core.Value] {
     gen_entry(depth)
     .array_with_size(k)
     .fmap(entries => {
-      let m : Map[String, @core.Value] = {}
+      let m : Map[String, @core.Value] = Map([])
       for e in entries {
         m[e.0] = e.1
       }
@@ -99,7 +99,7 @@ fn derive_path(root : @core.Value, rng : Lcg) -> Array[@core.Step] {
     guard cur is Map(m) && !m.is_empty() else { break }
     // frame-only steps may appear anywhere and must not affect addressing
     if rng.below(4) == 0 {
-      steps.push(BindStep(binds={}))
+      steps.push(BindStep(binds=Map([])))
     }
     let keys = map_keys(m)
     let k = keys[rng.below(keys.length())]

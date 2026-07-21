@@ -84,7 +84,12 @@ pub fn styles_module() -> @component.ModuleDef {
     name="styles-example",
     components=[styles_example_root_comp(), styles_example_comp()],
     examples=[
-      { component: "StylesExampleRoot", title: "Default", args: {}, view: None },
+      {
+        component: "StylesExampleRoot",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
     ],
   )
 }

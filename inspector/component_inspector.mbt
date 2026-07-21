@@ -35,7 +35,7 @@ fn field_kind_name(k : @component.FieldKind) -> String {
 fn generated_method_names(
   fields : Map[String, @component.FieldSpec],
 ) -> Map[String, Bool] {
-  let out : Map[String, Bool] = {}
+  let out : Map[String, Bool] = Map([])
   for name, spec in fields {
     let u = if name.length() == 0 {
       name

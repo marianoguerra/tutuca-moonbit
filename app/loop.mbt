@@ -52,7 +52,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     render_count: 0,
     drag: None,
     cur_drag_over: None,
-    render_once: {},
+    render_once: Map([]),
     render_cache: @render.RenderCache::new(),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
@@ -77,7 +77,7 @@ pub fn[N : @vdom.DomWalk] App::from_module(
   root : String,
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> App[N] raise {
   let scope = @component.ComponentStack::new()
   m.register_into(scope)
@@ -224,7 +224,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
 /// Every event name any registered view listens to (JS genEventNames) — the
 /// set the backend glue installs listeners for.
 pub fn[N] App::event_names(self : App[N]) -> Array[String] {
-  let seen : Map[String, Unit] = {}
+  let seen : Map[String, Unit] = Map([])
   for _, comp in self.scope.comps.by_id {
     for _, view in comp.views {
       match view.ctx {

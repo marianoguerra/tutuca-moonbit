@@ -115,7 +115,7 @@ test "a stale path fails the rebuild instead of building a wrong stack" {
   let reg = @render.ViewRegistry::new()
   reg.add("main", "<div><x render=\".child\" as=\"detail\"></x></div>")
   reg.add("detail", "<button @on.click=\"hit\">x</button>")
-  let state : @tutuca.Value = Map({ "child": Map({}) })
+  let state : @tutuca.Value = Map({ "child": Map(Map([])) })
   let container = mount(reg, state)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   guard @render.from_node_and_event_name(btn, "click", container, reg)
@@ -123,7 +123,7 @@ test "a stale path fails the rebuild instead of building a wrong stack" {
     fail("no event info")
   }
   // the state moved on: the child is gone
-  let gone : @tutuca.Value = Map({})
+  let gone : @tutuca.Value = Map(Map([]))
   let stack = @render.RenderStack::new(gone)
   assert_true(@render.build_stack(ed.path.to_transaction_path(), stack) is None)
 }

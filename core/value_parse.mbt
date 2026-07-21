@@ -4,7 +4,7 @@
 
 ///|
 pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> ParseCtx {
-  { macro_vars: macro_vars.unwrap_or({}), issues: [] }
+  { macro_vars: macro_vars.unwrap_or(Map([])), issues: [] }
 }
 
 ///|

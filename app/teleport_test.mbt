@@ -87,7 +87,7 @@ test "dyn render: dispatch path keeps intermediates, txn path teleports" {
   guard scope.lookup_component("Workspace") is Some(ws) else {
     fail("no Workspace")
   }
-  let root = ws.make({})
+  let root = ws.make(Map([]))
   let container = mount(scope.comps, root.to_value())
   // `*active` really rendered the provided sheet through the lookup chain
   assert_true(container.to_html().contains("Q1"))
@@ -135,7 +135,7 @@ test "bubbling from a teleported leaf visits every intermediate component" {
   guard scope.lookup_component("Workspace") is Some(ws) else {
     fail("no Workspace")
   }
-  let root = ws.make({})
+  let root = ws.make(Map([]))
   let container = mount(scope.comps, root.to_value())
   guard find_el(container, "BUTTON", nth=1) is Some(poke_btn) else {
     fail("no poke button")
@@ -166,7 +166,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
   scope.register_components([sheet_comp(), solo])
   scope.compile_all()
   guard scope.lookup_component("Solo") is Some(solo_c) else { fail("no Solo") }
-  let root = solo_c.make({})
+  let root = solo_c.make(Map([]))
   let container = mount(scope.comps, root.to_value())
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   guard @render.from_node_and_event_name(btn, "click", container, scope.comps)
@@ -191,7 +191,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     name="Grid",
     view="<main><x render=\".list\"></x></main>",
     fields={
-      "rows": @component.FieldSpec::of_default(Map({})),
+      "rows": @component.FieldSpec::of_default(Map(Map([]))),
       "list": @component.FieldSpec::comp("RowList"),
     },
     provide={ "rows": ".rows" },
@@ -246,7 +246,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     name="Deck",
     view="<main><x render=\".viewer\"></x></main>",
     fields={
-      "sheets": @component.FieldSpec::of_default(Map({})),
+      "sheets": @component.FieldSpec::of_default(Map(Map([]))),
       "selId": @component.FieldSpec::of_default(Str("b")),
       "viewer": @component.FieldSpec::comp("Viewer"),
     },
@@ -303,7 +303,7 @@ test "lookup default: a consumer without its producer falls back" {
   guard scope.lookup_component("Lonely") is Some(lonely_c) else {
     fail("no Lonely")
   }
-  let root = lonely_c.make({})
+  let root = lonely_c.make(Map([]))
   // no Workspace above: the default expression resolves against the consumer
   let container = mount(scope.comps, root.to_value())
   assert_true(container.to_html().contains("Q1"))

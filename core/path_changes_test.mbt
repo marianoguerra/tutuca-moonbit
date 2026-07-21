@@ -8,6 +8,9 @@ priv struct RecordingCtx {
 }
 
 ///|
+extend RecordingCtx with @core.Ctx::{at}
+
+///|
 impl @core.Ctx for RecordingCtx with fn path(self) {
   self.base
 }

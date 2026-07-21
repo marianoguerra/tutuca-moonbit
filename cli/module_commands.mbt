@@ -195,7 +195,7 @@ fn run_examples(m : @component.ModuleDef, args : ModArgs, fmt : String) -> Emit 
 
 ///|
 fn show_component_json(comp : @component.Component) -> Json {
-  let fields : Map[String, Json] = {}
+  let fields : Map[String, Json] = Map([])
   for fname, spec in comp.fields {
     fields[fname] = Json::object({
       "kind": kind_name(spec.kind).to_json(),
@@ -206,11 +206,11 @@ fn show_component_json(comp : @component.Component) -> Json {
   for vname, _v in comp.views {
     views.push(vname)
   }
-  let provide : Map[String, Json] = {}
+  let provide : Map[String, Json] = Map([])
   for pname, p in comp.provide {
     provide[pname] = p.val.to_string().to_json()
   }
-  let lookup : Map[String, Json] = {}
+  let lookup : Map[String, Json] = Map([])
   for lname, lk in comp.lookup {
     lookup[lname] = "\{lk.comp_name}.\{lk.provide_name}".to_json()
   }

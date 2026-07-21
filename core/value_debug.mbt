@@ -23,7 +23,7 @@ fn value_repr(v : Value) -> ValueRepr {
     Str(s) => RStr(s)
     List(a) => RList(a.map(value_repr))
     Map(m) => {
-      let out : Map[String, ValueRepr] = {}
+      let out : Map[String, ValueRepr] = Map([])
       for k, x in m {
         out[k] = value_repr(x)
       }

@@ -51,7 +51,7 @@ fn gen_attrs() -> @gen.Gen[Map[String, @vdom.AttrValue]] {
     gen_attr_pair()
     .array_with_size(k)
     .fmap(pairs => {
-      let m : Map[String, @vdom.AttrValue] = {}
+      let m : Map[String, @vdom.AttrValue] = Map([])
       for p in pairs {
         m[p.0] = p.1
       }
@@ -127,7 +127,7 @@ fn gen_keyed_vdom() -> @gen.Gen[@vdom.Vdom] {
 fn copy_attrs(
   attrs : Map[String, @vdom.AttrValue],
 ) -> Map[String, @vdom.AttrValue] {
-  let m : Map[String, @vdom.AttrValue] = {}
+  let m : Map[String, @vdom.AttrValue] = Map([])
   for k, v in attrs {
     m[k] = v
   }

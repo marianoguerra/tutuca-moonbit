@@ -7,7 +7,7 @@
 ///|
 pub fn RenderStack::new(
   it : @tutuca.Value,
-  binds? : Map[String, @tutuca.Value] = {},
+  binds? : Map[String, @tutuca.Value] = Map([]),
   comps? : @component.Components,
   event? : DomEvent,
 ) -> RenderStack {
@@ -60,7 +60,7 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   if comp.provide.is_empty() {
     return self
   }
-  let binds : Map[@component.ProvideKey, @tutuca.Value] = {}
+  let binds : Map[@component.ProvideKey, @tutuca.Value] = Map([])
   for _, p in comp.provide {
     binds[p.key] = p.val.eval(self)
   }

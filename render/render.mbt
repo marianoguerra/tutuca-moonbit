@@ -74,7 +74,7 @@ pub fn render(
       let binds : Map[String, @tutuca.Value] = match
         call_handler(handler, stack.it, []) {
         Map(m) => m
-        _ => {}
+        _ => Map([])
       }
       // Prefix the subtree with a §Scope§ meta so event-path reconstruction
       // can replay this scope's binds (mirrors §Each§/§Comp§). A suppressed
@@ -162,7 +162,7 @@ fn render_site(
         }
         None => None
       }
-      match render(rv.node, stack.enter(value, {}), ctx) {
+      match render(rv.node, stack.enter(value, Map([])), ctx) {
         Some(body) => {
           let frag = @vdom.fragment([
             Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
@@ -360,7 +360,7 @@ fn eval_attrs(
   attrs : @anode.Attrs,
   stack : RenderStack,
 ) -> Map[String, @vdom.AttrValue] {
-  let out : Map[String, @vdom.AttrValue] = {}
+  let out : Map[String, @vdom.AttrValue] = Map([])
   fn put(name : String, v : @vdom.AttrValue?) {
     if v is Some(av) {
       out[name] = av

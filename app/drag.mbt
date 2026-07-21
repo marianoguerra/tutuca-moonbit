@@ -58,13 +58,13 @@ fn is_drag_event(name : String) -> Bool {
 fn[N : @vdom.DomWalk] closest_droptarget(node : N, root : N) -> N? {
   let mut cur = node
   for _hop in 0..<10000 {
-    if cur.is_same_node(root) {
+    if @vdom.DomNode::is_same_node(cur, root) {
       return None
     }
     if cur.attribute("data-droptarget") is Some(_) {
       return Some(cur)
     }
-    match cur.parent_node() {
+    match @vdom.DomNode::parent_node(cur) {
       Some(p) => cur = p
       None => return None
     }

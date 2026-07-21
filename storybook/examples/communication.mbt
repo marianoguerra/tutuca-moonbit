@@ -103,7 +103,7 @@ pub fn send_receive_module() -> @component.ModuleDef {
     name="send-receive",
     components=[send_receive_comp(), status_comp()],
     examples=[
-      { component: "SendReceive", title: "Default", args: {}, view: None },
+      { component: "SendReceive", title: "Default", args: Map([]), view: None },
     ],
   )
 }

@@ -15,7 +15,7 @@
 /// The pure snapshot of an instance: its component name plus a field → value
 /// Map in declaration order.
 pub fn instance_snapshot(inst : @component.Instance) -> @tutuca.Value {
-  let fields : Map[String, @tutuca.Value] = {}
+  let fields : Map[String, @tutuca.Value] = Map([])
   for name, _spec in inst.comp.fields {
     fields[name] = inst.get(name)
   }
@@ -29,7 +29,7 @@ fn value_snapshot(
   v : @tutuca.Value,
   comp : @component.Component,
 ) -> @tutuca.Value {
-  let fields : Map[String, @tutuca.Value] = {}
+  let fields : Map[String, @tutuca.Value] = Map([])
   for name, _spec in comp.fields {
     fields[name] = obj_get(v, name).unwrap_or(Null)
   }

@@ -96,7 +96,7 @@ let mathml_camel_attrs : Array[String] = ["definitionURL"]
 ///|
 /// lowercased name → canonical camelCase form (built once).
 let svg_attr_lowercase_to_camel : Map[String, String] = {
-  let m : Map[String, String] = {}
+  let m : Map[String, String] = Map([])
   for camel in standard_svg_camel_attrs {
     m[camel.to_lower()] = camel
   }
@@ -105,7 +105,7 @@ let svg_attr_lowercase_to_camel : Map[String, String] = {
 
 ///|
 let mathml_attr_lowercase_to_camel : Map[String, String] = {
-  let m : Map[String, String] = {}
+  let m : Map[String, String] = Map([])
   for camel in mathml_camel_attrs {
     m[camel.to_lower()] = camel
   }

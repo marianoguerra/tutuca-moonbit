@@ -51,6 +51,7 @@ Everything the framework computes with at runtime — field contents, handler
 arguments, event payloads — is a `Value`, a dynamic JSON-like sum type:
 
 ```mbt nocheck
+///|
 pub(all) enum Value {
   Null
   Bool(Bool)
@@ -58,8 +59,8 @@ pub(all) enum Value {
   Str(String)
   List(Array[Value])
   Map(Map[String, Value])
-  Fn((Array[Value]) -> Value)  // a handler in a value position
-  Obj(&Obj)                    // a component instance — see section 6
+  Fn((Array[Value]) -> Value) // a handler in a value position
+  Obj(&Obj) // a component instance — see section 6
 }
 ```
 
@@ -101,19 +102,20 @@ resolution rule. Parsing produces a `Val` AST — one variant per syntactic
 form:
 
 ```mbt nocheck
+///|
 pub(all) enum Val {
-  Const(lit~ : Lit, from_macro~ : Bool)      // 'text', 42, true
-  StrTpl(Array[Val?])                        // $'a {.b} c'
+  Const(lit~ : Lit, from_macro~ : Bool) // 'text', 42, true
+  StrTpl(Array[Val?]) // $'a {.b} c'
   Predicate(pred~ : Pred, args~ : Array[Val]) // truthy? .x / equals? .a .b
-  Name(String)                               // bare lowercase: input handler / event arg
+  Name(String) // bare lowercase: input handler / event arg
   HandlerName(name~ : String, ns~ : HandlerNamespace)
-  TypeName(String)                           // bare Uppercase
-  Bind(String)                               // @name
+  TypeName(String) // bare Uppercase
+  Bind(String) // @name
   BindMember(name~ : String, prop~ : String) // @name.member (one level)
-  Dyn(String)                                // *name
-  Field(String)                              // .name
-  Method(String)                             // $name
-  SeqAccess(seq~ : String, key~ : String)    // .seq[.key]
+  Dyn(String) // *name
+  Field(String) // .name
+  Method(String) // $name
+  SeqAccess(seq~ : String, key~ : String) // .seq[.key]
 }
 ```
 
@@ -125,28 +127,40 @@ issues (the linter reads them later) instead of failing:
 ///|
 test "parsing: one sigil, one Val variant" {
   let px = @tutuca.ParseCtx::new()
-  debug_inspect(@tutuca.parse_token(".count", px), content=(
-    #|Some(Field("count"))
-  ))
-  debug_inspect(@tutuca.parse_token("@key", px), content=(
-    #|Some(Bind("key"))
-  ))
+  debug_inspect(
+    @tutuca.parse_token(".count", px),
+    content=(
+      #|Some(Field("count"))
+    ),
+  )
+  debug_inspect(
+    @tutuca.parse_token("@key", px),
+    content=(
+      #|Some(Bind("key"))
+    ),
+  )
   // predicates are only legal in boolean slots (@show, @hide, @if, @when),
   // so they parse through parse_bool, not parse_text
-  debug_inspect(@tutuca.parse_bool("truthy? .msg", px), content=(
-    #|Some(Predicate(pred=IsTruthy, args=[Field("msg")]))
-  ))
-  debug_inspect(@tutuca.parse_text("$'hi {.name}!'", px), content=(
-    #|Some(
-    #|  StrTpl(
-    #|    [
-    #|      Some(Const(lit=LStr("hi "), from_macro=false)),
-    #|      Some(Field("name")),
-    #|      Some(Const(lit=LStr("!"), from_macro=false)),
-    #|    ],
-    #|  ),
-    #|)
-  ))
+  debug_inspect(
+    @tutuca.parse_bool("truthy? .msg", px),
+    content=(
+      #|Some(Predicate(pred=IsTruthy, args=[Field("msg")]))
+    ),
+  )
+  debug_inspect(
+    @tutuca.parse_text("$'hi {.name}!'", px),
+    content=(
+      #|Some(
+      #|  StrTpl(
+      #|    [
+      #|      Some(Const(lit=LStr("hi "), from_macro=false)),
+      #|      Some(Field("name")),
+      #|      Some(Const(lit=LStr("!"), from_macro=false)),
+      #|    ],
+      #|  ),
+      #|)
+    ),
+  )
 }
 ```
 
@@ -155,6 +169,7 @@ directly — it reads through the `Stack` trait, which has one lookup method
 per sigil:
 
 ```mbt nocheck
+///|
 pub(open) trait Stack {
   fn lookup_name(Self, String) -> Value = _
   fn lookup_bind(Self, String) -> Value = _
@@ -180,7 +195,7 @@ struct FieldMap {
 }
 
 ///|
-impl @tutuca.Stack for FieldMap with lookup_field_raw(self, name) {
+impl @tutuca.Stack for FieldMap with fn lookup_field_raw(self, name) {
   self.fields.get(name).unwrap_or(Null)
 }
 
@@ -189,19 +204,27 @@ test "eval: a Val reads state through the Stack trait" {
   let px = @tutuca.ParseCtx::new()
   let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") } }
   guard @tutuca.parse_token(".count", px) is Some(count)
-  debug_inspect(count.eval(stack), content=(
-    #|RNum(3)
-  ))
+  debug_inspect(
+    count.eval(stack),
+    content=(
+      #|RNum(3)
+    ),
+  )
   guard @tutuca.parse_text("$'hi {.name}!'", px) is Some(tpl)
-  debug_inspect(tpl.eval(stack), content=(
-    #|RStr("hi ada!")
-
-  ))
+  debug_inspect(
+    tpl.eval(stack),
+    content=(
+      #|RStr("hi ada!")
+    ),
+  )
   // a lookup the stack does not implement falls back to Null
   guard @tutuca.parse_token("@missing", px) is Some(bind)
-  debug_inspect(bind.eval(stack), content=(
-    #|RNull
-  ))
+  debug_inspect(
+    bind.eval(stack),
+    content=(
+      #|RNull
+    ),
+  )
 }
 ```
 
@@ -214,6 +237,7 @@ Independently of all the above, tutuca needs to produce and update a DOM.
 The `vdom` package defines the tree —
 
 ```mbt nocheck
+///|
 pub(all) enum Vdom {
   Text(String)
   Comment(String)
@@ -254,9 +278,12 @@ test "vdom: render then morph against the in-memory DOM" {
     opts,
     prev~,
   )
-  inspect(container.to_html(), content=(
-    #|<div><ul><li>two</li><li>one</li></ul></div>
-  ))
+  inspect(
+    container.to_html(),
+    content=(
+      #|<div><ul><li>two</li><li>one</li></ul></div>
+    ),
+  )
 }
 ```
 
@@ -270,18 +297,22 @@ are. The `anode` package parses a view string into an `ANode` — an AST that
 is *almost* HTML, plus the framework's directives as dedicated variants:
 
 ```mbt nocheck
+///|
 pub(all) enum ANode {
-  Text(TextData); Comment(TextData)
-  Dom(DomData)                 // tag + Attrs + childs
+  Text(TextData)
+  Comment(TextData)
+  Dom(DomData) // tag + Attrs + childs
   Fragment(FragmentData)
-  RenderText(RenderTextData)   // @text / <x text=…>
-  Render(RenderData)           // <x render=…>
-  RenderIt(RenderItData)       // <x render-it> (inside a loop)
-  Show(WrapData); Hide(WrapData) // @show / @hide wrap their node
-  PushView(WrapData); Scope(WrapData)
-  Slot(SlotData)               // <x:slot> inside a macro
-  Each(EachData)               // @each + @when/@enrich-with/@loop-with
-  MacroCall(MacroData)         // <x:name>
+  RenderText(RenderTextData) // @text / <x text=…>
+  Render(RenderData) // <x render=…>
+  RenderIt(RenderItData) // <x render-it> (inside a loop)
+  Show(WrapData)
+  Hide(WrapData) // @show / @hide wrap their node
+  PushView(WrapData)
+  Scope(WrapData)
+  Slot(SlotData) // <x:slot> inside a macro
+  Each(EachData) // @each + @when/@enrich-with/@loop-with
+  MacroCall(MacroData) // <x:name>
   RenderOnce(RenderOnceData)
 }
 ```
@@ -305,9 +336,12 @@ test "templates: directives become structure, events are hoisted out" {
     is Some(node)
   // @show wrapped the <p> in a Show node with the parsed Val
   guard node is Show(wrap)
-  debug_inspect(wrap.val, content=(
-    #|Field("visible")
-  ))
+  debug_inspect(
+    wrap.val,
+    content=(
+      #|Field("visible")
+    ),
+  )
   guard wrap.node is Dom(dom)
   inspect(dom.tag, content="p")
   // @on.click did NOT stay on the node as a listener: it was collected into
@@ -315,9 +349,12 @@ test "templates: directives become structure, events are hoisted out" {
   // (section 8) looks handlers up there.
   inspect(px.events.length(), content="1")
   inspect(px.events[0].handlers[0].name, content="click")
-  debug_inspect(px.events[0].handlers[0].handler.handler, content=(
-    #|HandlerName(name="hello", ns=Input)
-  ))
+  debug_inspect(
+    px.events[0].handlers[0].handler.handler,
+    content=(
+      #|HandlerName(name="hello", ns=Input)
+    ),
+  )
 }
 ```
 
@@ -352,9 +389,12 @@ test "render: template + value → vdom → HTML" {
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
   let _ = @vdom.render(vdom, container, @vdom.RenderOpts::new(doc))
-  inspect(container.to_html(), content=(
-    #|<div><p>Hello world!</p></div>
-  ))
+  inspect(
+    container.to_html(),
+    content=(
+      #|<div><p>Hello world!</p></div>
+    ),
+  )
 }
 ```
 
@@ -386,23 +426,29 @@ test "instances are copy-on-write values, visible through Obj" {
     ),
     fields={ "name": @component.FieldSpec::of_default(Str("world")) },
   )
-  let a = greeting.make({})
+  let a = greeting.make(Map([]))
   let b = a.set("name", Str("reader"))
-  debug_inspect(a.get("name"), content=(
-    #|RStr("world")
-
-  )) // the original is untouched
-  debug_inspect(b.get("name"), content=(
-    #|RStr("reader")
-
-  ))
+  debug_inspect(
+    a.get("name"),
+    content=(
+      #|RStr("world")
+    ),
+  ) // the original is untouched
+  debug_inspect(
+    b.get("name"),
+    content=(
+      #|RStr("reader")
+    ),
+  )
   // to_value() wraps the instance as Value::Obj(&Obj): a component instance
   // IS a node in the value tree
   guard b.to_value() is Obj(o)
-  debug_inspect(o.obj_field("name"), content=(
-    #|Some(RStr("reader"))
-
-  ))
+  debug_inspect(
+    o.obj_field("name"),
+    content=(
+      #|Some(RStr("reader"))
+    ),
+  )
   inspect(o.component_id() is Some(_), content="true")
 }
 ```
@@ -472,24 +518,28 @@ fn mailbox_module() -> @component.ModuleDef {
 test "Path::update: run a handler at a path, rebuild only the spine" {
   let m = mailbox_module()
   let _scope = m.build_scope() // registers components so FieldSpec::comp resolves
-  let root : @tutuca.Value = m.components[0].make({}).to_value()
+  let root : @tutuca.Value = m.components[0].make(Map([])).to_value()
   // dispatch `write` on the Receive bucket of the node at .note
   let path = @tutuca.Path::new(steps=[FieldStep("note")])
   let new_root = path.update(root, Receive, "write", [Str("dear reader")])
   // the new tree has the new text…
   guard new_root.field("note") is Some(note)
   guard note.as_value() is Some(Obj(o))
-  debug_inspect(o.obj_field("text"), content=(
-    #|Some(RStr("dear reader"))
-
-  ))
+  debug_inspect(
+    o.obj_field("text"),
+    content=(
+      #|Some(RStr("dear reader"))
+    ),
+  )
   // …and the original tree is untouched (copy-on-write, not mutation)
   guard root.field("note") is Some(old_note)
   guard old_note.as_value() is Some(Obj(old))
-  debug_inspect(old.obj_field("text"), content=(
-    #|Some(RStr(""))
-
-  ))
+  debug_inspect(
+    old.obj_field("text"),
+    content=(
+      #|Some(RStr(""))
+    ),
+  )
 }
 ```
 
@@ -527,7 +577,7 @@ queues `Transaction`s, and `settle()` runs them until quiet — each one a
 test "transactor: messages queue, settle produces one new root" {
   let m = mailbox_module()
   let _scope = m.build_scope()
-  let root : @tutuca.Value = m.components[0].make({}).to_value()
+  let root : @tutuca.Value = m.components[0].make(Map([])).to_value()
   let txr = @transactor.Transactor::new(root)
   let mut changes = 0
   txr.on_change((_before, _after) => changes = changes + 1)
@@ -540,10 +590,12 @@ test "transactor: messages queue, settle produces one new root" {
   inspect(changes, content="1")
   guard txr.root.field("note") is Some(note)
   guard note.as_value() is Some(Obj(o))
-  debug_inspect(o.obj_field("text"), content=(
-    #|Some(RStr("hello"))
-
-  ))
+  debug_inspect(
+    o.obj_field("text"),
+    content=(
+      #|Some(RStr("hello"))
+    ),
+  )
 }
 ```
 

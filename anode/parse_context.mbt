@@ -160,7 +160,7 @@ pub fn ParseContext::new_macro_node(
     slots,
     px: self,
     node: None,
-    data_attrs: {},
+    data_attrs: Map([]),
   })
   self.macro_nodes.push(node)
   node

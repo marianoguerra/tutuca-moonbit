@@ -127,7 +127,7 @@ pub fn svg_bar_chart_module() -> @component.ModuleDef {
     name="svg-bar-chart",
     components=[bar_chart_comp()],
     examples=[
-      { component: "BarChart", title: "Default", args: {}, view: None },
+      { component: "BarChart", title: "Default", args: Map([]), view: None },
       {
         component: "BarChart",
         title: "Single bar",
@@ -196,7 +196,7 @@ pub fn svg_icon_macro_module() -> @component.ModuleDef {
       "iconbolt": icon_macro("M13 2L3 14h7l-1 8 10-12h-7z"),
     },
     examples=[
-      { component: "IconGallery", title: "Default", args: {}, view: None },
+      { component: "IconGallery", title: "Default", args: Map([]), view: None },
       {
         component: "IconGallery",
         title: "Small",

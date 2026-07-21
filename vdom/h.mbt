@@ -53,12 +53,12 @@ pub fn fragment(childs : Array[Vdom]) -> Vdom {
 /// ```
 pub fn h(
   tag : String,
-  attrs? : Map[String, AttrValue] = {},
+  attrs? : Map[String, AttrValue] = Map([]),
   childs? : Array[Vdom] = [],
   key? : String,
   ns? : Ns,
 ) -> Vdom {
-  let props : Map[String, AttrValue] = {}
+  let props : Map[String, AttrValue] = Map([])
   let mut key = key
   let mut ns = ns
   for name, value in attrs {

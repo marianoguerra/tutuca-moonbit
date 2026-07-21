@@ -67,7 +67,7 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
     name="svg-interactive",
     components=[swatch_picker_comp()],
     examples=[
-      { component: "SwatchPicker", title: "Default", args: {}, view: None },
+      { component: "SwatchPicker", title: "Default", args: Map([]), view: None },
       {
         component: "SwatchPicker",
         title: "Blue selected",
@@ -144,7 +144,7 @@ pub fn mathml_formula_module() -> @component.ModuleDef {
     name="mathml-formula",
     components=[quadratic_comp()],
     examples=[
-      { component: "Quadratic", title: "Two roots", args: {}, view: None },
+      { component: "Quadratic", title: "Two roots", args: Map([]), view: None },
       {
         component: "Quadratic",
         title: "No real roots",

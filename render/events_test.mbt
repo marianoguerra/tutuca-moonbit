@@ -73,7 +73,7 @@ test "click on the root component: empty path, handlers found" {
 test "no handler for the event name aborts (stop_on_no_event)" {
   let reg = @render.ViewRegistry::new()
   reg.add("main", "<div><button @on.click=\"doIt\">go</button></div>")
-  let container = mount(reg, Map({}))
+  let container = mount(reg, Map(Map([])))
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   assert_true(
     @render.from_node_and_event_name(btn, "keydown", container, reg) is None,

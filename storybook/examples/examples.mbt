@@ -170,8 +170,8 @@ pub fn ExampleModule::root_args(
           return e.args
         }
       } nobreak {
-        {}
+        Map([])
       }
-    None => {}
+    None => Map([])
   }
 }

@@ -80,7 +80,7 @@ test "macro-expanded classes are collected from compiled views" {
   let v = @anode.View::new("main", raw_view="<div><x:chip></x:chip></div>")
   let macros : Map[String, @anode.Macro] = {
     "chip": {
-      defaults: {},
+      defaults: Map([]),
       raw_view: "<span class=\"badge badge-info\"></span>",
     },
   }

@@ -30,7 +30,7 @@ pub struct Inspector {
 fn Inspector::make_(
   self : Inspector,
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args).to_value()
@@ -43,7 +43,7 @@ fn Inspector::make_(
 /// Inspector reference these exact descriptors, so snapshots embedded in
 /// example args render through the same registered components.
 pub fn Inspector::new() -> Inspector {
-  let insp = Inspector::{ comps: {} }
+  let insp = Inspector::{ comps: Map([]) }
   for
     c in [
       // data / json layer
@@ -159,7 +159,7 @@ fn instance_args(
   v : @tutuca.Value,
   names : Array[String],
 ) -> Map[String, @tutuca.Value] {
-  let args : Map[String, @tutuca.Value] = {}
+  let args : Map[String, @tutuca.Value] = Map([])
   for name in names {
     match obj_get(v, name) {
       Some(field_val) => args[name] = field_val
@@ -489,7 +489,12 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
       ]),
       view: None,
     },
-    { component: "ActivityLog", title: "Activity Log", args: {}, view: None },
+    {
+      component: "ActivityLog",
+      title: "Activity Log",
+      args: Map([]),
+      view: None,
+    },
     {
       component: "ActivityEntry",
       title: "Activity Entry",

@@ -38,7 +38,7 @@ fn render_with_scope_comp() -> @component.Component {
               "len": Num(s.length().to_double()),
               "upper": Str(s.to_upper()),
             })
-          _ => Map({})
+          _ => Map(Map([]))
         }
       },
     },
@@ -51,7 +51,12 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
     name="render-with-scope",
     components=[render_with_scope_comp()],
     examples=[
-      { component: "RenderWithScope", title: "Default", args: {}, view: None },
+      {
+        component: "RenderWithScope",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "RenderWithScope",
         title: "Custom Text",

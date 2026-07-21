@@ -159,7 +159,7 @@ fn uri_encode(s : String) -> String {
 ///|
 /// Parse `?a=b&c=d` (leading `?` optional) into a map, decoding each value.
 fn parse_query(search : String) -> Map[String, String] {
-  let out : Map[String, String] = {}
+  let out : Map[String, String] = Map([])
   let s = if search.has_prefix("?") { search[1:].to_owned() } else { search }
   if s == "" {
     return out
@@ -231,7 +231,7 @@ pub fn mount() -> Unit {
         description: "load a tutuca:component bundle at runtime and mount its components; reloading hot-swaps with state migration",
         module_: @dhw.shell_module(bundle_url="./counter/counter.component.js"),
         root: "DynShell",
-        args: {},
+        args: Map([]),
         renderable: true,
         init: false,
       },

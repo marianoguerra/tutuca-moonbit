@@ -13,7 +13,7 @@ fn todo_comp() -> @component.Component {
       "done": @component.FieldSpec::of_default(Bool(false)),
       "count": @component.FieldSpec::of_default(Num(0)),
       "items": @component.FieldSpec::of_default(List([])),
-      "tags": @component.FieldSpec::of_default(Map({})),
+      "tags": @component.FieldSpec::of_default(Map(Map([]))),
     },
     receive={
       "rename": (inst, args, _ctx) => {
@@ -42,7 +42,7 @@ test "make fills defaults and coerces args" {
 ///|
 test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
   let comp = todo_comp()
-  let t0 = comp.make({})
+  let t0 = comp.make(Map([]))
   let t1 = t0.set("title", Str("x"))
   assert_true(t1.get("title") == Str("x"))
   assert_true(t0.get("title") == Str("untitled")) // COW
@@ -92,7 +92,7 @@ test "set field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
     "sel": @component.FieldSpec::set(members=["a", "b"]),
   })
   // default
-  let t = comp.make({})
+  let t = comp.make(Map([]))
   assert_true(t.get("sel") == Map({ "a": Bool(true), "b": Bool(true) }))
   // coerce a List arg (with a duplicate) into a deduped set
   let t2 = comp.make({ "sel": List([Str("x"), Str("x"), Str("y")]) })
@@ -134,7 +134,7 @@ test "omap field: keyed mutators over an ordered Map" {
   let comp = @component.component(name="Ordered", view="<div></div>", fields={
     "m": @component.FieldSpec::omap(default={ "x": Num(1) }),
   })
-  let t = comp.make({})
+  let t = comp.make(Map([]))
   assert_true(t.get("m") == Map({ "x": Num(1) }))
   // wrong-shape arg falls back to default
   assert_true(comp.make({ "m": Str("no") }).get("m") == Map({ "x": Num(1) }))
@@ -144,7 +144,7 @@ test "omap field: keyed mutators over an ordered Map" {
   assert_true(o2.obj_field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
   guard o.obj_field("deleteInMAt") is Some(Fn(del))
   guard del([Null, Str("x")]) is Obj(o3)
-  assert_true(o3.obj_field("m").unwrap() == Map({}))
+  assert_true(o3.obj_field("m").unwrap() == Map(Map([])))
 }
 
 ///|
@@ -283,7 +283,7 @@ test "FComp fields default through the registration scope" {
     fields={ "kid": @component.FieldSpec::comp("Child") },
   )
   scope.register_components([child, parent])
-  let p = parent.make({})
+  let p = parent.make(Map([]))
   guard p.get("kid") is Obj(o) else { fail("kid not made") }
   assert_true(o.obj_field("label") == Some(Str("hi")))
 }
@@ -342,7 +342,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
   // the registry resolves both hybrid halves from their values
   assert_true(scope.comps.get_comp_for(badge) is Some(c) && c.name == "Badge")
   assert_true(
-    scope.comps.get_comp_for(todo.make({}).to_value()) is Some(c2) &&
+    scope.comps.get_comp_for(todo.make(Map([])).to_value()) is Some(c2) &&
     c2.name == "Todo",
   )
   // and the typed struct dispatches through the same path machinery

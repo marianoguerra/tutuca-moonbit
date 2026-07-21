@@ -85,7 +85,7 @@ fn AttrParser::parse(
 /// Collapse an all-constant item list into the evaluated map (JS
 /// ConstAttrs.fromAttrs; every val is Const when has_dynamic stayed false).
 fn const_attrs_from_items(items : Array[AttrItem]) -> Attrs {
-  let m : Map[String, @tutuca.Lit] = {}
+  let m : Map[String, @tutuca.Lit] = Map([])
   for item in items {
     match item {
       ConstA(name~, val~) | Plain(name~, val~) =>
@@ -334,7 +334,7 @@ fn lit_plain_string(lit : @tutuca.Lit) -> String {
 
 ///|
 pub fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
-  let r : Map[String, String] = {}
+  let r : Map[String, String] = Map([])
   match self {
     // JS: new ConstVal(`${value}`).toString() — the evaluated scalar is
     // stringified first, so the result is always a quoted string literal.

@@ -47,7 +47,7 @@ fn field_v(a : @app.App[@memdom.MemNode], name : String) -> @tutuca.Value {
 
 ///|
 test "two-way input: value flows in, re-render morphs the DOM" {
-  let (a, container) = mk_app(text_editor(), {})
+  let (a, container) = mk_app(text_editor(), Map([]))
   assert_true(container.to_html().contains("start"))
   guard find_el(container, "INPUT") is Some(input) else { fail("no input") }
   assert_true(
@@ -65,7 +65,7 @@ test "two-way input: value flows in, re-render morphs the DOM" {
 
 ///|
 test "keydown+send modifier gates on Enter" {
-  let (a, container) = mk_app(text_editor(), {})
+  let (a, container) = mk_app(text_editor(), Map([]))
   guard find_el(container, "INPUT") is Some(input) else { fail("no input") }
   // a plain key: gated out, nothing changes
   assert_true(a.dispatch(input, @render.DomEvent::new(name="keydown", key="a")))
@@ -79,7 +79,7 @@ test "keydown+send modifier gates on Enter" {
 
 ///|
 test "click+ctrl gate and valueAsInt coercion" {
-  let (a, container) = mk_app(text_editor(), {})
+  let (a, container) = mk_app(text_editor(), Map([]))
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   // without ctrl: gated out
   assert_true(
@@ -147,7 +147,7 @@ test "event_names collects every listened event across views" {
   guard scope.lookup_component("Editor") is Some(c) else { fail("no Editor") }
   let a = @app.App::new(
     scope,
-    c.make({}).to_value(),
+    c.make(Map([])).to_value(),
     container,
     @vdom.RenderOpts::new(doc),
   )
@@ -184,7 +184,7 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
       },
     },
   )
-  let (a, container) = mk_app(chatty, {})
+  let (a, container) = mk_app(chatty, Map([]))
   assert_eq(a.render_count, 1) // the initial render
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))

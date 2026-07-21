@@ -125,20 +125,20 @@ pub fn todo_macros_module() -> @component.ModuleDef {
       "vbox": tm_vbox_macro(),
     },
     examples=[
-      { component: "Item", title: "Default Item", args: {}, view: None },
+      { component: "Item", title: "Default Item", args: Map([]), view: None },
       {
         component: "Item",
         title: "Completed Item",
         args: { "completed": Bool(true) },
         view: None,
       },
-      { component: "Items", title: "Empty List", args: {}, view: None },
+      { component: "Items", title: "Empty List", args: Map([]), view: None },
       {
         component: "Items",
         title: "Some Items",
         args: {
           "items": List([
-            item.make({}).to_value(),
+            item.make(Map([])).to_value(),
             item.make({ "completed": Bool(true) }).to_value(),
             item.make({ "completed": Bool(true), "text": Str("") }).to_value(),
           ]),

@@ -47,7 +47,9 @@ pub fn render_child_module() -> @component.ModuleDef {
   @component.ModuleDef::new(
     name="render-child",
     components=[page_comp(), greeting_comp()],
-    examples=[{ component: "Page", title: "Default", args: {}, view: None }],
+    examples=[
+      { component: "Page", title: "Default", args: Map([]), view: None },
+    ],
   )
 }
 
@@ -94,7 +96,7 @@ fn entry_comp() -> @component.Component {
 ///|
 pub fn entry_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="entry", components=[entry_comp()], examples=[
-    { component: "Entry", title: "Default", args: {}, view: None },
+    { component: "Entry", title: "Default", args: Map([]), view: None },
     {
       component: "Entry",
       title: "Custom",
@@ -130,7 +132,12 @@ pub fn multiple_views_module() -> @component.ModuleDef {
     name="multiple-views",
     components=[multiple_views_comp(), entry_comp()],
     examples=[
-      { component: "MultipleViews", title: "Default", args: {}, view: None },
+      {
+        component: "MultipleViews",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
     ],
   )
 }

@@ -37,9 +37,10 @@ fn materialize(specs : Array[ChildSpec]) -> Array[@anode.ANode] {
     match s {
       Ws(v) | Txt(v) => Text({ val: v })
       Cmt(v) => Comment({ val: v })
-      BlockEl => Dom({ tag: "p", attrs: ConstAttrs({}), childs: [], ns: None })
+      BlockEl =>
+        Dom({ tag: "p", attrs: ConstAttrs(Map([])), childs: [], ns: None })
       InlineEl =>
-        Dom({ tag: "span", attrs: ConstAttrs({}), childs: [], ns: None })
+        Dom({ tag: "span", attrs: ConstAttrs(Map([])), childs: [], ns: None })
     }
   })
 }

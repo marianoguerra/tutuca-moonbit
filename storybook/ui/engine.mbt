@@ -192,7 +192,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   // `id_to_field` maps a renderable story's id to its `sN` field (for focus).
   let filter_text : Array[String] = []
   let sec_of : Array[Int] = []
-  let id_to_field : Map[String, String] = {}
+  let id_to_field : Map[String, String] = Map([])
   let init_fields : Array[String] = []
   let num_sections = sections.length()
   let sb = StringBuilder::new()
@@ -509,7 +509,7 @@ pub fn[N : @vdom.DomWalk] mount(
   root_node : N,
   opts : @vdom.RenderOpts[N],
   lint? : (@component.Component) -> String = no_lint,
-  url_handlers? : Map[String, @component.RequestFn] = {},
+  url_handlers? : Map[String, @component.RequestFn] = Map([]),
 ) -> @app.App[N] raise {
   let root_scope = @component.ComponentStack::new()
   let shell = shell_component(sections)
@@ -517,7 +517,7 @@ pub fn[N : @vdom.DomWalk] mount(
   if !url_handlers.is_empty() {
     root_scope.register_request_handlers(url_handlers)
   }
-  let args : Map[String, @tutuca.Value] = {}
+  let args : Map[String, @tutuca.Value] = Map([])
   let mut idx = 0
   for sec in sections {
     for s in sec.stories {

@@ -11,7 +11,7 @@ fn board_comp() -> @component.Component {
       "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
       "</div>",
     fields={
-      "cards": @component.FieldSpec::of_default(Map({})),
+      "cards": @component.FieldSpec::of_default(Map(Map([]))),
       "received": @component.FieldSpec::of_default(Str("")),
       "from": @component.FieldSpec::of_default(Str("")),
       "kind": @component.FieldSpec::of_default(Str("")),

@@ -71,7 +71,7 @@ fn dse_root_comp() -> @component.Component {
       #|</div>
     ),
     fields={
-      "items": @component.FieldSpec::of_default(Map({})),
+      "items": @component.FieldSpec::of_default(Map(Map([]))),
       "selectedKey": @component.FieldSpec::of_default(Str("")),
       "editor": @component.FieldSpec::comp("Editor"),
     },

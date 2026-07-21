@@ -4,8 +4,8 @@
 pub fn ModuleDef::new(
   name~ : String,
   components~ : Array[Component],
-  macros? : Map[String, @anode.Macro] = {},
-  requests? : Map[String, RequestFn] = {},
+  macros? : Map[String, @anode.Macro] = Map([]),
+  requests? : Map[String, RequestFn] = Map([]),
   examples? : Array[ExampleDef] = [],
 ) -> ModuleDef {
   { name, components, macros, requests, examples }

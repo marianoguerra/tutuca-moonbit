@@ -46,7 +46,7 @@ pub fn web_component_module() -> @component.ModuleDef {
     name="web-component-custom-event",
     components=[emoji_picker_comp()],
     examples=[
-      { component: "EmojiPicker", title: "Default", args: {}, view: None },
+      { component: "EmojiPicker", title: "Default", args: Map([]), view: None },
     ],
   )
 }

@@ -242,7 +242,7 @@ pub fn Inspector::lint_report(
 ) -> @tutuca.Value {
   // group by component name, preserving first-seen order
   let order : Array[String] = []
-  let groups : Map[String, Array[@tutuca.Value]] = {}
+  let groups : Map[String, Array[@tutuca.Value]] = Map([])
   for f in findings {
     let comp_name = finding_component_name(finding_str(f, "where"))
     match groups.get(comp_name) {

@@ -51,7 +51,7 @@ pub impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
 ///|
 pub fn RenderCtx::new(
   view_resolver? : &ViewResolver,
-  render_once? : Map[Int, @vdom.Vdom] = {},
+  render_once? : Map[Int, @vdom.Vdom] = Map([]),
   render_cache? : RenderCache,
 ) -> RenderCtx {
   {

@@ -15,7 +15,7 @@
 
 ///|
 fn badge_macro() -> @anode.Macro {
-  { defaults: {}, raw_view: "<span class=\"badge badge-info\">New</span>" }
+  { defaults: Map([]), raw_view: "<span class=\"badge badge-info\">New</span>" }
 }
 
 ///|
@@ -42,7 +42,7 @@ pub fn macro_static_module() -> @component.ModuleDef {
     components=[static_macro_comp()],
     macros={ "badge": badge_macro() },
     examples=[
-      { component: "StaticMacro", title: "Default", args: {}, view: None },
+      { component: "StaticMacro", title: "Default", args: Map([]), view: None },
     ],
   )
 }
@@ -83,7 +83,7 @@ pub fn macro_params_module() -> @component.ModuleDef {
     components=[macro_params_comp()],
     macros={ "badge": param_badge_macro() },
     examples=[
-      { component: "MacroParams", title: "Default", args: {}, view: None },
+      { component: "MacroParams", title: "Default", args: Map([]), view: None },
       {
         component: "MacroParams",
         title: "Archived",
@@ -146,7 +146,7 @@ pub fn macro_slots_module() -> @component.ModuleDef {
     components=[macro_slots_comp()],
     macros={ "card": card_macro() },
     examples=[
-      { component: "MacroSlots", title: "Default", args: {}, view: None },
+      { component: "MacroSlots", title: "Default", args: Map([]), view: None },
     ],
   )
 }
@@ -207,7 +207,12 @@ pub fn macro_named_slots_module() -> @component.ModuleDef {
     components=[macro_named_slots_comp()],
     macros={ "panel": panel_macro() },
     examples=[
-      { component: "MacroNamedSlots", title: "Default", args: {}, view: None },
+      {
+        component: "MacroNamedSlots",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
     ],
   )
 }

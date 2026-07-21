@@ -12,7 +12,7 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     view="<div class=\"card\"><h2><x text=\".title\"></x></h2><x render=\".item\"></x></div>",
     fields={
       "title": @component.FieldSpec::of_default(Str("untitled")),
-      "sheet": @component.FieldSpec::of_default(Map({})),
+      "sheet": @component.FieldSpec::of_default(Map(Map([]))),
       "item": @component.FieldSpec::comp("Item"),
     },
     receive={
@@ -37,7 +37,7 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
       args: { "title": Str("Hello") },
       view: None,
     },
-    { component: "Item", title: "plain", args: {}, view: None },
+    { component: "Item", title: "plain", args: Map([]), view: None },
   ])
 }
 
@@ -207,7 +207,7 @@ test "lint flags unknown dynamic bindings, event modifiers and handler args" {
     view="<div><x text=\"*missing\"></x><button @on.click+shift=\"go value wat\">x</button></div>",
     input={ "go": (inst, _args, _ctx) => Some(inst) },
     provide={ "active": ".sheet" },
-    fields={ "sheet": @component.FieldSpec::of_default(Map({})) },
+    fields={ "sheet": @component.FieldSpec::of_default(Map(Map([]))) },
   )
   let m = @component.ModuleDef::new(name="dyns", components=[comp], examples=[])
   let e = run(["lint"], m)

@@ -12,7 +12,7 @@ impl @anode.MacroScope for EmptyMacroScope with fn lookup_macro(_self, _name) {
 
 ///|
 pub fn ViewRegistry::new() -> ViewRegistry {
-  { by_name: {} }
+  { by_name: Map([]) }
 }
 
 ///|

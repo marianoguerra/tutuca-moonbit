@@ -199,9 +199,9 @@ pub fn check_component(comp : @component.Component) -> Array[LintFinding] {
   let run : LintRun = {
     comp,
     out: [],
-    referenced_alters: {},
-    referenced_inputs: {},
-    referenced_dynamics: {},
+    referenced_alters: Map([]),
+    referenced_inputs: Map([]),
+    referenced_dynamics: Map([]),
   }
   check_provides_are_addressable(run)
   check_lookup_targets(run)
@@ -546,7 +546,7 @@ fn check_consistent_attrs(
     let skip_name_val = record.is_macro_call
     match record.result.attrs {
       DynAttrs(items) => {
-        let sources_by_name : Map[String, Array[String]] = {}
+        let sources_by_name : Map[String, Array[String]] = Map([])
         for item in items {
           match attr_item_name(item) {
             Some(name) if name != "data-eid" =>

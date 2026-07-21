@@ -28,7 +28,7 @@ priv struct JsonReg {
 fn JsonReg::make_(
   self : JsonReg,
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
     Some(c) => c.make(args).to_value()
@@ -294,7 +294,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
 
 ///|
 pub fn json_module() -> @component.ModuleDef {
-  let reg = JsonReg::{ comps: {} }
+  let reg = JsonReg::{ comps: Map([]) }
   let null = json_null_comp()
   let bool_ = json_bool_comp()
   let string = json_string_comp()
@@ -318,14 +318,14 @@ pub fn json_module() -> @component.ModuleDef {
       {
         component: "JsonArray",
         title: "Empty Array With Selector",
-        args: { "items": List([selector.make({}).to_value()]) },
+        args: { "items": List([selector.make(Map([])).to_value()]) },
         view: None,
       },
-      { component: "JsonObject", title: "Object", args: {}, view: None },
+      { component: "JsonObject", title: "Object", args: Map([]), view: None },
       {
         component: "JsonSelector",
         title: "Type Selector",
-        args: {},
+        args: Map([]),
         view: None,
       },
       {

@@ -48,7 +48,7 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
           List(a) => a.copy()
           _ => []
         }
-        items.push(item.make({}).to_value())
+        items.push(item.make(Map([])).to_value())
         Some(inst.set("items", List(items)))
       },
     },
@@ -62,20 +62,20 @@ pub fn todo_module() -> @component.ModuleDef {
     name="todo",
     components=[todo_items_comp(item), item],
     examples=[
-      { component: "Item", title: "Default Item", args: {}, view: None },
+      { component: "Item", title: "Default Item", args: Map([]), view: None },
       {
         component: "Item",
         title: "Completed Item",
         args: { "completed": Bool(true) },
         view: None,
       },
-      { component: "Items", title: "Default Items", args: {}, view: None },
+      { component: "Items", title: "Default Items", args: Map([]), view: None },
       {
         component: "Items",
         title: "Some Items",
         args: {
           "items": List([
-            item.make({}).to_value(),
+            item.make(Map([])).to_value(),
             item.make({ "completed": Bool(true) }).to_value(),
             item.make({ "completed": Bool(true), "text": Str("") }).to_value(),
           ]),

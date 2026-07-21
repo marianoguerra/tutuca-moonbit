@@ -112,7 +112,7 @@ fn seq_item_access_comp() -> @component.Component {
       #|</section>
     ),
     fields={
-      "byKey": @component.FieldSpec::of_default(Map({})),
+      "byKey": @component.FieldSpec::of_default(Map(Map([]))),
       "byIndex": @component.FieldSpec::of_default(List([])),
       "currentKey": @component.FieldSpec::of_default(Null),
       "currentIndex": @component.FieldSpec::of_default(Num(0)),
@@ -132,7 +132,7 @@ fn seq_item_access_comp() -> @component.Component {
 pub fn seq_item_access_module() -> @component.ModuleDef {
   let entry = entry_comp()
   let by_index = entries_of(entry)
-  let by_key : Map[String, @tutuca.Value] = {}
+  let by_key : Map[String, @tutuca.Value] = Map([])
   for i, v in by_index {
     by_key["key-\{i}"] = v
   }

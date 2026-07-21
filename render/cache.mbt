@@ -33,7 +33,7 @@ pub struct RenderCache {
 
 ///|
 pub fn RenderCache::new() -> RenderCache {
-  { cur: {}, prev: {}, hit: 0, miss: 0 }
+  { cur: Map([]), prev: Map([]), hit: 0, miss: 0 }
 }
 
 ///|
@@ -100,7 +100,7 @@ pub fn RenderCache::set(
 /// become `prev`; anything not re-hit this pass is dropped after it.
 pub fn RenderCache::next_generation(self : RenderCache) -> Unit {
   self.prev = self.cur
-  self.cur = {}
+  self.cur = Map([])
 }
 
 ///|
@@ -110,7 +110,7 @@ pub fn RenderCache::evict(self : RenderCache) -> (Int, Int) {
   let stats = (self.hit, self.miss)
   self.hit = 0
   self.miss = 0
-  self.cur = {}
-  self.prev = {}
+  self.cur = Map([])
+  self.prev = Map([])
   stats
 }

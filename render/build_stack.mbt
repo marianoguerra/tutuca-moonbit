@@ -65,13 +65,13 @@ fn step_enter_frame(
 ) -> RenderStack {
   match step {
     // component boundary: clean frame on the entered value
-    FieldStep(_) | SeqAccessStep(..) => stack.enter(next, {})
+    FieldStep(_) | SeqAccessStep(..) => stack.enter(next, Map([]))
     SeqStep(field=_, key~) => stack.enter(next, { "key": key_value(key) })
     // iterated render target: the @each item scope, then the component frame
     EachRenderItStep(field=_, key~) =>
       stack
       .enter(next, { "key": key_value(key), "value": next }, is_frame=false)
-      .enter(next, {})
+      .enter(next, Map([]))
     BindStep(binds~) => stack.enter(next, binds.copy(), is_frame=false)
     ScopeBindStep(val~) => {
       // re-evaluate the @enrich-with handler against the rebuilt stack so
@@ -80,7 +80,7 @@ fn step_enter_frame(
       let binds : Map[String, @tutuca.Value] = match
         call_handler(handler, stack.it, []) {
         Map(m) => m
-        _ => {}
+        _ => Map([])
       }
       stack.enter(next, binds, is_frame=false)
     }

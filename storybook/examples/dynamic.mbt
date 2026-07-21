@@ -102,7 +102,7 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
       {
         component: "EntryEditorAndSelector",
         title: "Default",
-        args: {},
+        args: Map([]),
         view: None,
       },
       {
@@ -206,7 +206,7 @@ pub fn dynamic_path_module() -> @component.ModuleDef {
     name="dynamic-path",
     components=[workspace_comp(), panel_comp(), toolbar_comp(), sheet_comp()],
     examples=[
-      { component: "Workspace", title: "Default", args: {}, view: None },
+      { component: "Workspace", title: "Default", args: Map([]), view: None },
     ],
   )
 }

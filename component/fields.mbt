@@ -16,7 +16,7 @@ pub fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec {
 ///|
 pub fn FieldSpec::comp(
   name : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> FieldSpec {
   { kind: FComp(comp=name, args~), default: Null }
 }
@@ -31,7 +31,9 @@ pub fn FieldSpec::set(members? : Array[String] = []) -> FieldSpec {
 
 ///|
 /// An ordered-map field (JS FieldOMap), backed by @tutuca.Value::Map.
-pub fn FieldSpec::omap(default? : Map[String, @tutuca.Value] = {}) -> FieldSpec {
+pub fn FieldSpec::omap(
+  default? : Map[String, @tutuca.Value] = Map([]),
+) -> FieldSpec {
   { kind: FOMap, default: Map(default) }
 }
 
@@ -39,7 +41,7 @@ pub fn FieldSpec::omap(default? : Map[String, @tutuca.Value] = {}) -> FieldSpec 
 /// Build a Map-backed set from member values: key = member display string,
 /// value = Bool(true). Duplicate members collapse (set semantics).
 fn set_value(members : Array[@tutuca.Value]) -> @tutuca.Value {
-  let m : Map[String, @tutuca.Value] = {}
+  let m : Map[String, @tutuca.Value] = Map([])
   for v in members {
     m[v.to_display_string()] = Bool(true)
   }

@@ -44,7 +44,7 @@ pub fn counter_comp() -> @component.Component {
 ///|
 pub fn module_def() -> @component.ModuleDef {
   @component.ModuleDef::new(name="counter-demo", components=[counter_comp()], examples=[
-    { component: "Counter", title: "fresh", args: {}, view: None },
+    { component: "Counter", title: "fresh", args: Map([]), view: None },
     {
       component: "Counter",
       title: "with history",

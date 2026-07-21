@@ -17,7 +17,7 @@ fn macro_compile(d : MacroData, scope : &MacroScope) -> Unit raise MacroError {
   match scope.lookup_macro(d.name) {
     None => d.node = Some(Comment({ val: "bad macro: \{d.name}" }))
     Some(m) => {
-      let vars : Map[String, String] = {}
+      let vars : Map[String, String] = Map([])
       for k, v in m.defaults {
         vars[k] = v
       }

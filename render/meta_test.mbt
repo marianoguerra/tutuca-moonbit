@@ -52,9 +52,9 @@ test "render_root emits the root Comp boundary with a null nid" {
   let px = @anode.ParseContext::new()
   let node = @anode.ANode::parse("<main>root</main>", px).unwrap()
   let resolver = @render.ViewMap::{ views: { "main": node } }
-  let stack = @render.RenderStack::new(Map({}))
+  let stack = @render.RenderStack::new(Map(Map([])))
   let ctx = @render.RenderCtx::new(view_resolver=resolver)
-  guard @render.render_root(Map({}), stack, ctx) is Some(v) else {
+  guard @render.render_root(Map(Map([])), stack, ctx) is Some(v) else {
     fail("root did not render")
   }
   let doc = @memdom.document()

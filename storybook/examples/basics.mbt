@@ -25,7 +25,7 @@ pub fn minimum_viable_module() -> @component.ModuleDef {
       {
         component: "MinimumViableComponent",
         title: "Default",
-        args: {},
+        args: Map([]),
         view: None,
       },
     ],
@@ -53,7 +53,7 @@ pub fn static_view_module() -> @component.ModuleDef {
       {
         component: "StaticViewComponent",
         title: "Default",
-        args: {},
+        args: Map([]),
         view: None,
       },
     ],
@@ -100,7 +100,12 @@ pub fn text_directive_module() -> @component.ModuleDef {
     name="text-directive",
     components=[text_directive_comp()],
     examples=[
-      { component: "TextDirective", title: "Defaults", args: {}, view: None },
+      {
+        component: "TextDirective",
+        title: "Defaults",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "TextDirective",
         title: "Custom Values",
@@ -139,7 +144,7 @@ pub fn danger_set_inner_html_module() -> @component.ModuleDef {
       {
         component: "DangerSetInnerHtml",
         title: "Default",
-        args: {},
+        args: Map([]),
         view: None,
       },
       {

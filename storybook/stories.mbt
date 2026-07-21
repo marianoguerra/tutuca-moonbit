@@ -247,7 +247,7 @@ pub fn stories() -> Array[Story] {
 /// Group stories into ordered sections (section_order first, then any
 /// leftover sections in first-seen order). Empty sections are dropped.
 pub fn sections_of(stories : Array[Story]) -> Array[Section] {
-  let by_name : Map[String, Array[Story]] = {}
+  let by_name : Map[String, Array[Story]] = Map([])
   let seen_order : Array[String] = []
   for s in stories {
     match by_name.get(s.section) {
@@ -259,7 +259,7 @@ pub fn sections_of(stories : Array[Story]) -> Array[Section] {
     }
   }
   let out : Array[Section] = []
-  let emitted : Map[String, Bool] = {}
+  let emitted : Map[String, Bool] = Map([])
   for name in section_order {
     match by_name.get(name) {
       Some(arr) => {

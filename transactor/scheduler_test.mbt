@@ -5,7 +5,7 @@
 
 ///|
 fn empty_root() -> &@tutuca.PathNode {
-  @tutuca.Value::Map({})
+  @tutuca.Value::Map(Map([]))
 }
 
 ///|

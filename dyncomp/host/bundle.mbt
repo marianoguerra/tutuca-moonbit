@@ -34,10 +34,10 @@ pub fn register_bundle(
   manifest : DynManifest,
 ) -> Bundle raise {
   let child = scope.enter()
-  let comps : Map[String, (Int, DynComponentDef)] = {}
+  let comps : Map[String, (Int, DynComponentDef)] = Map([])
   let synthesized = []
   for def in manifest.components {
-    let views : Map[String, String] = {}
+    let views : Map[String, String] = Map([])
     let mut main_view = ""
     for v in def.views {
       if v.name == "main" {
@@ -69,7 +69,7 @@ pub fn register_bundle(
 pub fn Bundle::make_instance(
   self : Bundle,
   component : String,
-  args? : Map[String, @tutuca.Value] = {},
+  args? : Map[String, @tutuca.Value] = Map([]),
 ) -> DynObj? {
   match self.comps.get(component) {
     Some((comp_id, def)) => {
@@ -111,7 +111,7 @@ pub fn Bundle::migrate_instance(
   guard old is Obj(o) else { return None }
   guard o.obj_field(state_json_field) is Some(Str(json)) else { return None }
   let j = @json.parse(json) catch { _ => return None }
-  let args : Map[String, @tutuca.Value] = {}
+  let args : Map[String, @tutuca.Value] = Map([])
   match j {
     Object(fields) =>
       for name, fv in fields {

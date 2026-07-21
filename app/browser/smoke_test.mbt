@@ -63,7 +63,7 @@ test "browser: real events drive the app through installed listeners" {
   guard scope.lookup_component("Counter") is Some(c) else { fail("no Counter") }
   let a = @app.App::new(
     scope,
-    c.make({}).to_value(),
+    c.make(Map([])).to_value(),
     container,
     @bdom.opts_for(doc),
   )
@@ -100,7 +100,7 @@ test "browser: styles are compiled into a head style element" {
   scope.register_components([styled])
   let a = @app.App::new(
     scope,
-    styled.make({}).to_value(),
+    styled.make(Map([])).to_value(),
     container,
     @bdom.opts_for(doc),
   )
@@ -151,7 +151,7 @@ test "browser: real drag events run the drag lifecycle" {
   }
   let a = @app.App::new(
     scope,
-    c.make({}).to_value(),
+    c.make(Map([])).to_value(),
     container,
     @bdom.opts_for(doc),
   )

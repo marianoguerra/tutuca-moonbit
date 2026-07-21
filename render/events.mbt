@@ -240,7 +240,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
 
   let mut cur = node
   let mut depth = 0
-  while !cur.is_same_node(root_node) && depth < max_depth {
+  while !@vdom.DomNode::is_same_node(cur, root_node) && depth < max_depth {
     if cur.node_kind() == 1 {
       match cur.attribute("data-eid") {
         Some(s) =>
@@ -290,7 +290,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
       }
     }
     depth += 1
-    match cur.parent_node() {
+    match @vdom.DomNode::parent_node(cur) {
       Some(p) => cur = p
       None => break
     }

@@ -234,17 +234,22 @@ pub fn lint_errors_module() -> @component.ModuleDef {
       },
     },
     examples=[
-      { component: "LintDemo", title: "AST lint errors", args: {}, view: None },
+      {
+        component: "LintDemo",
+        title: "AST lint errors",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "HtmlLintDemo",
         title: "HTML structural lint errors",
-        args: {},
+        args: Map([]),
         view: None,
       },
       {
         component: "ScopedStyleDemo",
         title: "Scoped-style top-level CSS errors",
-        args: {},
+        args: Map([]),
         view: None,
       },
     ],

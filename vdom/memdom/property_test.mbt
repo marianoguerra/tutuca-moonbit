@@ -107,7 +107,7 @@ test "property: keyed reorder preserves DOM node identity" {
       let r1 = @vdom.render(tree(keys), c, o)
       let root = c.childs[0]
       // key -> MemNode before the morph
-      let by_key : Map[String, @memdom.MemNode] = {}
+      let by_key : Map[String, @memdom.MemNode] = Map([])
       for child in root.childs {
         if child.get_attribute("id") is Some(k) {
           by_key[k] = child
@@ -134,7 +134,7 @@ fn apply_props_diff(
   a : Map[String, @vdom.AttrValue],
   diff : Map[String, @vdom.AttrValue?]?,
 ) -> Map[String, @vdom.AttrValue] {
-  let out : Map[String, @vdom.AttrValue] = {}
+  let out : Map[String, @vdom.AttrValue] = Map([])
   for k, v in a {
     out[k] = v
   }

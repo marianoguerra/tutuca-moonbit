@@ -57,7 +57,12 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
     name="attribute-binding",
     components=[attribute_binding_comp()],
     examples=[
-      { component: "AttributeBinding", title: "Default", args: {}, view: None },
+      {
+        component: "AttributeBinding",
+        title: "Default",
+        args: Map([]),
+        view: None,
+      },
     ],
   )
 }
@@ -145,7 +150,7 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
     name="event-modifiers",
     components=[event_modifiers_comp()],
     examples=[
-      { component: "EventModifiers", title: "Empty", args: {}, view: None },
+      { component: "EventModifiers", title: "Empty", args: Map([]), view: None },
       {
         component: "EventModifiers",
         title: "With Sent Search",
@@ -201,7 +206,7 @@ fn show_hide_comp() -> @component.Component {
 ///|
 pub fn show_hide_module() -> @component.ModuleDef {
   @component.ModuleDef::new(name="show-hide", components=[show_hide_comp()], examples=[
-    { component: "ShowHide", title: "Closed", args: {}, view: None },
+    { component: "ShowHide", title: "Closed", args: Map([]), view: None },
     {
       component: "ShowHide",
       title: "Open",

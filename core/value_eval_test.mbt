@@ -123,7 +123,7 @@ test "Value::is_truthy follows JS truthiness" {
   assert_true(@core.Value::Str("0").is_truthy()) // non-empty string
   assert_true(@core.Value::Num(-1).is_truthy())
   assert_true(@core.Value::List([]).is_truthy()) // objects always truthy
-  assert_true(@core.Value::Map({}).is_truthy())
+  assert_true(@core.Value::Map(Map([])).is_truthy())
 }
 
 ///|

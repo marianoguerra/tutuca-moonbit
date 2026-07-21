@@ -20,7 +20,7 @@
 ///|
 /// A Map-backed set: membership is key-presence.
 fn ps_set_of(members : Array[String]) -> Map[String, @tutuca.Value] {
-  let m : Map[String, @tutuca.Value] = {}
+  let m : Map[String, @tutuca.Value] = Map([])
   for s in members {
     m[s] = Bool(true)
   }
@@ -34,7 +34,7 @@ fn ps_set_field(
 ) -> Map[String, @tutuca.Value] {
   match inst.get(field) {
     Map(m) => m
-    _ => {}
+    _ => Map([])
   }
 }
 
@@ -54,7 +54,7 @@ fn ps_set_toggle(
   set : Map[String, @tutuca.Value],
   entry : String,
 ) -> Map[String, @tutuca.Value] {
-  let out : Map[String, @tutuca.Value] = {}
+  let out : Map[String, @tutuca.Value] = Map([])
   for k, v in set {
     out[k] = v
   }
@@ -381,8 +381,8 @@ fn root_comp() -> @component.Component {
       "allEntries": @component.FieldSpec::of_default(List([])),
       "allCategories": @component.FieldSpec::of_default(List([])),
       "allRoles": @component.FieldSpec::of_default(List([])),
-      "selectedCategories": @component.FieldSpec::of_default(Map({})),
-      "selectedRoles": @component.FieldSpec::of_default(Map({})),
+      "selectedCategories": @component.FieldSpec::of_default(Map(Map([]))),
+      "selectedRoles": @component.FieldSpec::of_default(Map(Map([]))),
       "featuredFirst": @component.FieldSpec::of_default(Bool(true)),
       "sortByEnd": @component.FieldSpec::of_default(Bool(false)),
       "sortAsc": @component.FieldSpec::of_default(Bool(false)),
@@ -504,8 +504,8 @@ fn root_comp() -> @component.Component {
           _ => []
         }
         // collect + sort the distinct categories and roles
-        let cat_set : Map[String, Unit] = {}
-        let role_set : Map[String, Unit] = {}
+        let cat_set : Map[String, Unit] = Map([])
+        let role_set : Map[String, Unit] = Map([])
         for e in entries {
           match e {
             Obj(o) => {
@@ -673,7 +673,12 @@ pub fn personal_site_module() -> @component.ModuleDef {
     components=[root, entry, alt_url],
     requests~,
     examples=[
-      { component: "Root", title: "Default (Loading)", args: {}, view: None },
+      {
+        component: "Root",
+        title: "Default (Loading)",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "AltUrl",
         title: "Alt URL",

@@ -58,7 +58,7 @@ fn playlist_comp() -> @component.Component {
     ),
     fields={
       "songs": @component.FieldSpec::of_default(
-        Obj(KeyedList::{ order: [], items: {} }),
+        Obj(KeyedList::{ order: [], items: Map([]) }),
       ),
     },
     methods={
@@ -71,7 +71,7 @@ fn playlist_comp() -> @component.Component {
           Obj(o) =>
             match o.obj_seq_entries() {
               Some(entries) => {
-                let mut next = KeyedList::{ order: [], items: {} }
+                let mut next = KeyedList::{ order: [], items: Map([]) }
                 for entry in entries {
                   let (pk, v) = entry
                   match pk {
@@ -92,7 +92,7 @@ fn playlist_comp() -> @component.Component {
 
 ///|
 fn demo_songs(song : @component.Component) -> KeyedList {
-  KeyedList::{ order: [], items: {} }
+  KeyedList::{ order: [], items: Map([]) }
   .set("intro", song.make({ "title": Str("Intro") }).to_value())
   .set("middle", song.make({ "title": Str("Middle Eight") }).to_value())
   .set("outro", song.make({ "title": Str("Outro") }).to_value())

@@ -176,7 +176,12 @@ pub fn request_module(
     components=[request_example_comp(entry), entry],
     requests~,
     examples=[
-      { component: "RequestExample", title: "Loaded", args: {}, view: None },
+      {
+        component: "RequestExample",
+        title: "Loaded",
+        args: Map([]),
+        view: None,
+      },
       {
         component: "RequestExample",
         title: "Loading",

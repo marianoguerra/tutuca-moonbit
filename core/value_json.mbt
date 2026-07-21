@@ -13,7 +13,7 @@ pub fn Value::from_json(j : Json) -> Value {
     String(s) => Str(s)
     Array(items) => List(items.map(i => Value::from_json(i)))
     Object(m) => {
-      let out : Map[String, Value] = {}
+      let out : Map[String, Value] = Map([])
       for k, item in m {
         out[k] = Value::from_json(item)
       }
@@ -33,7 +33,7 @@ pub fn Value::to_json(self : Value) -> Json {
     Str(s) => Json::string(s)
     List(items) => Json::array(items.map(i => i.to_json()))
     Map(m) => {
-      let obj : Map[String, Json] = {}
+      let obj : Map[String, Json] = Map([])
       for k, item in m {
         obj[k] = item.to_json()
       }

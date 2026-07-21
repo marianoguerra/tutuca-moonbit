@@ -244,17 +244,17 @@ pub fn component(
   style? : String = "",
   common_style? : String = "",
   global_style? : String = "",
-  views? : Map[String, String] = {},
-  view_styles? : Map[String, String] = {},
-  fields? : Map[String, FieldSpec] = {},
-  input? : Map[String, InstanceHandler] = {},
-  receive? : Map[String, InstanceHandler] = {},
-  bubble? : Map[String, InstanceHandler] = {},
-  response? : Map[String, InstanceHandler] = {},
-  alter? : Map[String, MethodFn] = {},
-  methods? : Map[String, MethodFn] = {},
-  provide? : Map[String, String] = {},
-  lookup? : Map[String, LookupSpec] = {},
+  views? : Map[String, String] = Map([]),
+  view_styles? : Map[String, String] = Map([]),
+  fields? : Map[String, FieldSpec] = Map([]),
+  input? : Map[String, InstanceHandler] = Map([]),
+  receive? : Map[String, InstanceHandler] = Map([]),
+  bubble? : Map[String, InstanceHandler] = Map([]),
+  response? : Map[String, InstanceHandler] = Map([]),
+  alter? : Map[String, MethodFn] = Map([]),
+  methods? : Map[String, MethodFn] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, LookupSpec] = Map([]),
 ) -> Component {
   let vs : Map[String, @anode.View] = {
     "main": @anode.View::new("main", raw_view=view, style~),
@@ -266,7 +266,7 @@ pub fn component(
       style=view_styles.get(vname).unwrap_or(""),
     )
   }
-  let all_methods : Map[String, MethodFn] = {}
+  let all_methods : Map[String, MethodFn] = Map([])
   gen_mutators(fields, all_methods)
   for k, m in methods {
     all_methods[k] = m // user methods win over generated mutators
@@ -286,8 +286,8 @@ pub fn component(
     methods: all_methods,
     raw_provide: provide,
     raw_lookup: lookup,
-    provide: {},
-    lookup: {},
+    provide: Map([]),
+    lookup: Map([]),
     scope: None,
   }
 }
@@ -297,9 +297,9 @@ pub fn Component::for_type(
   name~ : String,
   view~ : String,
   style? : String = "",
-  views? : Map[String, String] = {},
-  provide? : Map[String, String] = {},
-  lookup? : Map[String, LookupSpec] = {},
+  views? : Map[String, String] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, LookupSpec] = Map([]),
 ) -> Component {
   component(name~, view~, style~, views~, provide~, lookup~)
 }
@@ -373,7 +373,7 @@ pub fn Component::make(
   self : Component,
   args : Map[String, @tutuca.Value],
 ) -> Instance {
-  let fields : Map[String, @tutuca.Value] = {}
+  let fields : Map[String, @tutuca.Value] = Map([])
   for name, spec in self.fields {
     let v = match args.get(name) {
       Some(given) => spec.coerce_or_default(given)

@@ -3,7 +3,7 @@
 
 ///|
 pub fn Components::new() -> Components {
-  { by_id: {} }
+  { by_id: Map([]) }
 }
 
 ///|
@@ -74,22 +74,28 @@ pub fn ComponentStack::new(comps? : Components) -> ComponentStack {
       None => Components::new()
     },
     parent: None,
-    by_name: {},
-    reqs: {},
-    macros: {},
+    by_name: Map([]),
+    reqs: Map([]),
+    macros: Map([]),
   }
 }
 
 ///|
 pub fn ComponentStack::enter(self : ComponentStack) -> ComponentStack {
-  { comps: self.comps, parent: Some(self), by_name: {}, reqs: {}, macros: {} }
+  {
+    comps: self.comps,
+    parent: Some(self),
+    by_name: Map([]),
+    reqs: Map([]),
+    macros: Map([]),
+  }
 }
 
 ///|
 pub fn ComponentStack::register_components(
   self : ComponentStack,
   comps : Array[Component],
-  aliases? : Map[String, String] = {},
+  aliases? : Map[String, String] = Map([]),
 ) -> Unit {
   for comp in comps {
     comp.scope = Some(self.enter()) // fresh scope per comp (JS)

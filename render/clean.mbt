@@ -36,7 +36,7 @@ pub fn clean_vdom(v : @vdom.Vdom) -> @vdom.Vdom? {
       Some(@vdom.fragment(out))
     }
     Node(el) => {
-      let attrs : Map[String, @vdom.AttrValue] = {}
+      let attrs : Map[String, @vdom.AttrValue] = Map([])
       for name, av in el.attrs {
         if !is_internal_attr(name) {
           attrs[name] = av

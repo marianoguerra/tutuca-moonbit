@@ -10,7 +10,7 @@ pub fn diff_props(
   if physical_equal(a, b) {
     return None
   }
-  let diff : Map[String, AttrValue?] = {}
+  let diff : Map[String, AttrValue?] = Map([])
   for name, av in a {
     match b.get(name) {
       None => diff[name] = None
@@ -50,7 +50,7 @@ pub fn[N : DomNode] morph_node(
     (Node(s), Node(t)) if s.is_same_kind(t) => {
       let diff = match diff_props(s.attrs, t.attrs) {
         Some(d) => d
-        None => {}
+        None => Map([])
       }
       let has_value = diff.contains("value")
       let has_checked = diff.contains("checked")
@@ -134,7 +134,7 @@ pub fn[N : DomNode] morph_children(
     }
   }
   let dom_nodes = parent.child_nodes()
-  let old_key_map : Map[String, Int] = {}
+  let old_key_map : Map[String, Int] = Map([])
   for i in 0..<old_childs.length() {
     if old_childs[i].key() is Some(k) {
       old_key_map[k] = i
