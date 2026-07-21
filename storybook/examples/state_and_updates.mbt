@@ -157,9 +157,11 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@show` hides the host element when the value is falsy, `@hide` when truthy.
-/// The element stays in the DOM — only visibility toggles. Both also work
-/// directly on an `<x>` render op, wrapping the produced node with no extra DOM.
+/// `@show` keeps the host element only when the value is truthy, `@hide` only
+/// when falsy. The node is REMOVED from the output entirely (render returns
+/// None), not hidden with CSS — see the README "Divergences" note. Both also
+/// work directly on an `<x>` render op, wrapping the produced node with no
+/// extra DOM.
 fn show_hide_comp() -> @component.Component {
   @component.component(
     name="ShowHide",

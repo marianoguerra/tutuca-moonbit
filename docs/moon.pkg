@@ -1,0 +1,14 @@
+// Documentation package. The two .mbt.md guides are blackbox test files:
+// every code block tagged `mbt check` is compiled and run by `moon test docs`,
+// so the docs cannot drift from the API. `@tutuca` is the conventional alias
+// for the core package, matching storybook/examples.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/render",
+  "marianoguerra/tutuca/transactor",
+  "marianoguerra/tutuca/testing/harness",
+} for "test"
