@@ -13,6 +13,10 @@
 // they line up for any input, astral characters included.
 
 ///|
+/// The `id=` prefix that marks a `<template>` as a macro declaration.
+const MACRO_PREFIX = "macro:"
+
+///|
 /// A `<style>` element's span in the source, plus its extracted text.
 priv struct StyleRegion {
   start : Int // offset of '<'
@@ -32,6 +36,7 @@ priv enum StyleKind {
 /// A top-level `<template>`'s CONTENT span (between `>` and `</`).
 priv struct TplSpan {
   id : String?
+  attrs : Array[@html5.Attribute]
   start : Int
   end_ : Int
 }
@@ -168,6 +173,7 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
   let mut depth = 0
   let mut open_start = 0
   let mut open_id : String? = None
+  let mut open_attrs : Array[@html5.Attribute] = []
   let mut open_at = ""
   let mut stray : Char? = None
   let mut at_eof = false
@@ -184,6 +190,7 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
               if depth == 0 {
                 open_start = after
                 open_id = attr_of(attrs, "id")
+                open_attrs = attrs
                 open_at = match open_id {
                   Some(id) => " id=\"\{id}\""
                   None => ""
@@ -210,7 +217,12 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
         if name == "template" && depth > 0 {
           depth = depth - 1
           if depth == 0 {
-            templates.push({ id: open_id, start: open_start, end_: before })
+            templates.push({
+              id: open_id,
+              attrs: open_attrs,
+              start: open_start,
+              end_: before,
+            })
           }
         }
       Character(c) =>
@@ -236,6 +248,7 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
           style: "",
         },
       ],
+      macros: [],
       common_style,
       global_style,
     }
@@ -247,19 +260,42 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
   }
   let by_name : Map[String, RawView] = Map([])
   let others : Array[RawView] = []
+  let macros : Array[MacroDef] = []
+  let macro_names : Map[String, Bool] = Map([])
   let mut main : RawView? = None
   for t in templates {
+    let body = dedent(
+      slice_without_styles(chars, t.start, t.end_, styles)
+      .trim(chars="\n")
+      .to_owned(),
+    )
+    // `id="macro:name"` declares a macro rather than a view: its data-*
+    // attributes are the defaults for the `^var` references in the body.
+    if t.id is Some(id) && id.has_prefix(MACRO_PREFIX) {
+      let name = id[MACRO_PREFIX.length():].to_owned()
+      if name == "" {
+        raise BadMacroName(id)
+      }
+      if macro_names.contains(name) {
+        raise DuplicateMacro(name)
+      }
+      macro_names[name] = true
+      let defaults : Map[String, String] = Map([])
+      for a in t.attrs {
+        if a.name.has_prefix("data-") {
+          defaults[a.name[5:].to_owned()] = a.value
+        }
+      }
+      macros.push({ name, defaults, source: body })
+      continue
+    }
     let name = t.id.unwrap_or("main")
     if by_name.contains(name) {
       raise DuplicateView(name)
     }
     let view : RawView = {
       name,
-      source: dedent(
-        slice_without_styles(chars, t.start, t.end_, styles)
-        .trim(chars="\n")
-        .to_owned(),
-      ),
+      source: body,
       style: styles_within(t.start, t.end_, styles),
     }
     by_name[name] = view
@@ -270,7 +306,7 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
     }
   }
   guard main is Some(m) else { raise NoMainView }
-  { views: [m, ..others], common_style, global_style }
+  { views: [m, ..others], macros, common_style, global_style }
 }
 
 ///|

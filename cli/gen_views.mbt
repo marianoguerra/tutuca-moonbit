@@ -209,12 +209,12 @@ pub fn gen_views(
   let file = basename(input)
   try {
     let views = @viewgen.split_views(source)
-    let surface = @viewgen.view_surface(views.views)
+    let surface = @viewgen.view_surface(views.views, macros=views.macros)
     files.push((target, @viewgen.emit_module(name, file, views, surface)))
     // The compiled tree goes in its own module: it is by far the biggest
     // part of the output and nothing in the types file depends on it, so a
     // component that opts out just never references it.
-    if ir && @viewgen.ir_supported(views.views) {
+    if ir && @viewgen.ir_supported(views.views, macros=views.macros) {
       files.push(
         (ir_target(target), @viewgen.emit_ir_module(name, file, views)),
       )

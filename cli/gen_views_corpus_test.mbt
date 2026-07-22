@@ -41,6 +41,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
     let (cname, vname, source) = entry
     let set : @viewgen.ViewSet = {
       views: [{ name: "main", source, style: "" }],
+      macros: [],
       common_style: "",
       global_style: "",
     }

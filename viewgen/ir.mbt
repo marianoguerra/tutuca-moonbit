@@ -12,43 +12,75 @@
 //     View::from_ir / View::compile do at load time: cid depends on which
 //     component adopts the view, and optimization must follow the stamp.
 //
-// A view whose tree still holds a MacroCall CANNOT be emitted: macros are
-// registered from MoonBit at runtime, so the generator cannot expand them.
-// Such a view falls back to the phase-1 source path (`ir_supported`).
+// Macros declared in the view file (`<template id="macro:name">`) ARE
+// expanded here, at generation time — that is the point of declaring them in
+// the file. What the emitter then sees is a MacroCall wrapping its expansion;
+// since MacroData holds a ParseContext (not constructible from outside anode)
+// and the renderer only ever renders `d.node`, the call node is replaced by
+// its expansion before emitting. The expansion's own registered nodes live in
+// the same ParseContext, so node ids stay consistent.
 
 ///|
 /// True when every view in this set can be emitted as a tree. A single
 /// macro-using view sends the whole file back to the source path, so a
 /// component never mixes the two.
-pub fn ir_supported(views : Array[RawView]) -> Bool {
+pub fn ir_supported(
+  views : Array[RawView],
+  macros? : Array[MacroDef] = [],
+) -> Bool {
   for view in views {
-    let px = @anode.ParseContext::new(
-      handler=IssueCollector::{ issues: [] },
-      cache_const_nodes=false,
-    )
-    let v = @anode.View::new(view.name, raw_view=view.source)
-    v.compile(px, NoMacros::{  }) catch {
+    try compiled_tree(view, FileMacros::of(macros)) |> ignore catch {
       _ => return false
-    }
-    guard v.anode is Some(root) else { return false }
-    if has_macro_call(root) {
-      return false
     }
   }
   true
 }
 
 ///|
-fn has_macro_call(node : @anode.ANode) -> Bool {
+/// Replace every expanded MacroCall with its expansion. Semantically a no-op
+/// — render(MacroCall) renders exactly `d.node` — and it leaves a tree with
+/// no node type the emitter cannot express.
+fn strip_macro_calls(node : @anode.ANode) -> @anode.ANode raise GenError {
   match node {
-    MacroCall(_) => true
-    Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => false
-    Dom(d) => d.childs.iter().any(has_macro_call)
-    Fragment(d) => d.childs.iter().any(has_macro_call)
-    Show(d) | Hide(d) | PushView(d) | Scope(d) => has_macro_call(d.node)
-    Slot(d) => has_macro_call(d.node)
-    Each(d) => has_macro_call(d.node)
-    RenderOnce(d) => has_macro_call(d.node)
+    MacroCall(d) =>
+      match d.node {
+        Some(n) => strip_macro_calls(n)
+        None =>
+          raise ViewParseIssue(view="?", issue="unexpanded macro '\{d.name}'")
+      }
+    Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => node
+    Dom(d) => {
+      strip_childs(d.childs)
+      node
+    }
+    Fragment(d) => {
+      strip_childs(d.childs)
+      node
+    }
+    Show(d) | Hide(d) | PushView(d) | Scope(d) => {
+      d.node = strip_macro_calls(d.node)
+      node
+    }
+    Slot(d) => {
+      d.node = strip_macro_calls(d.node)
+      node
+    }
+    Each(d) => {
+      d.node = strip_macro_calls(d.node)
+      node
+    }
+    RenderOnce(d) => {
+      // Pre-optimization trees carry none of these; be total anyway.
+      let _ = strip_macro_calls(d.node)
+      node
+    }
+  }
+}
+
+///|
+fn strip_childs(childs : Array[@anode.ANode]) -> Unit raise GenError {
+  for i in 0..<childs.length() {
+    childs[i] = strip_macro_calls(childs[i])
   }
 }
 
@@ -333,8 +365,9 @@ pub fn emit_ir_module(
     "// data-cid onto it.\n" +
     "\n",
   )
+  let scope = FileMacros::of(views.macros)
   for view in views.views {
-    let (root, events) = compiled_tree(view)
+    let (root, events) = compiled_tree(view, scope)
     let fname = "\{v}_\{value_prefix(view.name)}_view_ir"
     out.write_string(
       "///|\n/// The compiled `\{view.name}` view.\nfn \{fname}() -> @anode.View {\n",
@@ -379,9 +412,10 @@ pub fn emit_ir_module(
 pub fn compiled_views(
   views : ViewSet,
 ) -> Map[String, @anode.View] raise GenError {
+  let scope = FileMacros::of(views.macros)
   let out : Map[String, @anode.View] = Map([])
   for view in views.views {
-    let (root, events) = compiled_tree(view)
+    let (root, events) = compiled_tree(view, scope)
     out[view.name] = @anode.View::from_ir(
       view.name,
       root,
@@ -398,19 +432,21 @@ pub fn compiled_views(
 /// which are load-time concerns.
 fn compiled_tree(
   view : RawView,
+  scope : FileMacros,
 ) -> (@anode.ANode, Array[@anode.NodeEvents]) raise GenError {
   let collector = IssueCollector::{ issues: [] }
   // Un-optimized: RenderOnce ids are process-global renderer memo keys, so
   // View::from_ir mints them at load time instead.
   let px = @anode.ParseContext::new(handler=collector, cache_const_nodes=false)
   let v = @anode.View::new(view.name, raw_view=view.source)
-  v.compile(px, NoMacros::{  }) catch {
+  v.compile(px, scope) catch {
     RecursiveMacro(n) =>
       raise ViewParseIssue(view=view.name, issue="recursive macro '\{n}'")
   }
   if collector.issues.length() > 0 {
     raise ViewParseIssue(view=view.name, issue=collector.issues[0])
   }
+  check_macros_resolved(view.name, px, scope)
   guard v.anode is Some(root) else { raise EmptyView(view.name) }
-  (root, px.events)
+  (strip_macro_calls(root), px.events)
 }

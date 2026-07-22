@@ -15,7 +15,7 @@ pub fn emit_module(String, String, ViewSet, Surface, debug_derive? : Bool) -> St
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 
-pub fn ir_supported(Array[RawView]) -> Bool
+pub fn ir_supported(Array[RawView], macros? : Array[MacroDef]) -> Bool
 
 pub fn split_views(String) -> ViewSet raise GenError
 
@@ -27,12 +27,14 @@ pub fn variant_name(String) -> String
 
 pub fn variants_for(Array[String]) -> Array[(String, String)] raise GenError
 
-pub fn view_surface(Array[RawView]) -> Surface raise GenError
+pub fn view_surface(Array[RawView], macros? : Array[MacroDef]) -> Surface raise GenError
 
 // Errors
 pub suberror GenError {
   StrayText(String)
   DuplicateView(String)
+  DuplicateMacro(String)
+  BadMacroName(String)
   NoMainView
   UnclosedTemplate(String)
   ViewParseIssue(view~ : String, issue~ : String)
@@ -56,6 +58,12 @@ pub(all) struct InputSig {
   sites : Array[String]
 } derive(Eq, @debug.Debug)
 
+pub(all) struct MacroDef {
+  name : String
+  defaults : Map[String, String]
+  source : String
+} derive(Eq, @debug.Debug)
+
 pub(all) struct RawView {
   name : String
   source : String
@@ -71,6 +79,7 @@ pub(all) struct Surface {
 
 pub(all) struct ViewSet {
   views : Array[RawView]
+  macros : Array[MacroDef]
   common_style : String
   global_style : String
 } derive(Eq, @debug.Debug)

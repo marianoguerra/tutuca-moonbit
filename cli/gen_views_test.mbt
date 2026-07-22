@@ -98,7 +98,10 @@ test "the compiled tree is a second file, unless --no-ir" {
 }
 
 ///|
-test "a view using a macro falls back to the source path" {
+test "a macro must be declared in the view file" {
+  // Macros used to be registered from MoonBit, which no generator could
+  // expand; now an undeclared one is an error naming the fix rather than a
+  // view that silently renders `bad macro: card`.
   let r = @cli.gen_views(
     "<x:card :title=\".a\"></x:card>",
     name="Counter",
@@ -106,8 +109,36 @@ test "a view using a macro falls back to the source path" {
     target="views/counter_view_gen.mbt",
     ir=true,
   )
+  guard r is Err(shape)
+  inspect(
+    shape.message,
+    content=(
+      #|views/counter.html: view "main": no macro named 'card' — declare it as <template id="macro:card">
+    ),
+  )
+}
+
+///|
+test "a declared macro is expanded into the compiled tree" {
+  let r = @cli.gen_views(
+    (
+      #|<template id="macro:card" data-tone="'plain'">
+      #|  <section class="card" :data-tone="^tone"><x:slot></x:slot></section>
+      #|</template>
+      #|<template><x:card tone="loud"><b>hi</b></x:card></template>
+    ),
+    name="Cards",
+    input="views/cards.html",
+    target="views/cards_view_gen.mbt",
+    ir=true,
+  )
   guard r is Ok(plan)
-  assert_eq(plan.files.length(), 1)
+  assert_eq(plan.files.length(), 2)
+  let ir = plan.files[1].1
+  // Expanded in place: the macro's <section> is in the tree and no macro
+  // node survives.
+  assert_true(ir.contains("tag: \"section\""))
+  assert_true(!ir.contains("MacroCall"))
 }
 
 ///|

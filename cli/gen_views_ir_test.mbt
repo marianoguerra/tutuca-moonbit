@@ -165,3 +165,71 @@ fn strip_cid(html : String) -> String {
   }
   out.to_string()
 }
+
+///|
+/// The same view twice: once with the macro declared in the FILE (expanded by
+/// the generator into the compiled tree), once with it registered from
+/// MoonBit and expanded at startup. The rendered output must not be able to
+/// tell the difference — that equivalence is what lets HTML-declared macros
+/// replace runtime-registered ones.
+let macro_view_html : String =
+  #|<template id="macro:badge" data-tone="'plain'">
+  #|  <span class="badge" :data-tone="^tone"><x text="^label"></x></span>
+  #|</template>
+  #|<template>
+  #|  <div><x:badge :label=".title" tone="loud"></x:badge></div>
+  #|</template>
+
+///|
+priv struct BadgeState {
+  title : String
+} derive(ToJson, FromJson)
+
+///|
+test "a file-declared macro renders like a MoonBit-registered one" {
+  let vs = @viewgen.split_views(macro_view_html)
+  let from_tree = @component.component(
+    name="BadgeTree",
+    compiled_views=@viewgen.compiled_views(vs),
+    init=BadgeState::{ title: "hi" },
+  )
+  // The runtime equivalent: the same macro body, registered as a value.
+  let from_macro = @component.component(
+    name="BadgeRuntime",
+    view=vs.views[0].source,
+    init=BadgeState::{ title: "hi" },
+  )
+  let scope = @component.ComponentStack::new()
+  scope.register_macros({
+    "badge": { defaults: vs.macros[0].defaults, raw_view: vs.macros[0].source },
+  })
+  scope.register_components([from_macro])
+  scope.compile_all()
+  let inst = from_macro.make(Map([]))
+  let want = @render.render_root(
+      inst,
+      @render.RenderStack::new(inst, comps=scope.comps),
+      @render.RenderCtx::new(view_resolver=scope.comps),
+    )
+    |> to_html
+  let got = render_comp(from_tree)
+  assert_eq(strip_cid(got), strip_cid(want))
+  // Not vacuous, and the call's `tone` beat the macro's default.
+  assert_true(want.contains("data-tone=\"loud\""))
+  assert_true(want.contains(">hi</span>"))
+}
+
+///|
+fn to_html(v : @vdom.Vdom?) -> String {
+  match v {
+    Some(v) =>
+      match @render.clean_vdom(v) {
+        Some(clean) => {
+          let doc = @memdom.document()
+          @vdom.to_dom(clean, @vdom.RenderOpts::new(doc)).to_html()
+        }
+        None => "<!-- nothing -->"
+      }
+    None => "<!-- nothing -->"
+  }
+}

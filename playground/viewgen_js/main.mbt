@@ -20,7 +20,7 @@ extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =
 fn generate_json(html : String, name : String) -> String {
   let obj : Map[String, Json] = try {
     let views = @viewgen.split_views(html)
-    let surface = @viewgen.view_surface(views.views)
+    let surface = @viewgen.view_surface(views.views, macros=views.macros)
     let m : Map[String, Json] = {
       "ok": true.to_json(),
       // No moon.pkg in the playground package to import
@@ -33,7 +33,7 @@ fn generate_json(html : String, name : String) -> String {
         debug_derive=false,
       ).to_json(),
     }
-    if @viewgen.ir_supported(views.views) {
+    if @viewgen.ir_supported(views.views, macros=views.macros) {
       m["ir"] = @viewgen.emit_ir_module(name, "view.html", views).to_json()
     }
     m

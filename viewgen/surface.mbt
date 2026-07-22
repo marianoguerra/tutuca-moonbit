@@ -34,11 +34,25 @@ impl @anode.ParseHandler for IssueCollector with fn on_parse_issue(
 }
 
 ///|
-priv struct NoMacros {}
+/// The macros the view file declares, as the parser's MacroScope. This is
+/// what lets `<x:card>` expand at GENERATION time — the whole reason macros
+/// are declared in the view file rather than registered from MoonBit.
+priv struct FileMacros {
+  by_name : Map[String, @anode.Macro]
+}
 
 ///|
-impl @anode.MacroScope for NoMacros with fn lookup_macro(_self, _name) {
-  None
+fn FileMacros::of(defs : Array[MacroDef]) -> FileMacros {
+  let by_name : Map[String, @anode.Macro] = Map([])
+  for d in defs {
+    by_name[d.name] = { defaults: d.defaults, raw_view: d.source }
+  }
+  { by_name, }
+}
+
+///|
+impl @anode.MacroScope for FileMacros with fn lookup_macro(self, name) {
+  self.by_name.get(name)
 }
 
 ///|
@@ -264,7 +278,11 @@ fn join_arg(a : ArgType, b : ArgType) -> ArgType {
 // ---------------------------------------------------------------------------
 
 ///|
-pub fn view_surface(views : Array[RawView]) -> Surface raise GenError {
+pub fn view_surface(
+  views : Array[RawView],
+  macros? : Array[MacroDef] = [],
+) -> Surface raise GenError {
+  let scope = FileMacros::of(macros)
   let methods = @set.Set::Set([], capacity=8)
   let fields = @set.Set::Set([], capacity=8)
   let ids = @set.Set::Set([], capacity=8)
@@ -275,10 +293,11 @@ pub fn view_surface(views : Array[RawView]) -> Surface raise GenError {
     let collector = IssueCollector::{ issues: [] }
     let px = @anode.ParseContext::new(handler=collector)
     let v = @anode.View::new(view.name, raw_view=view.source)
-    v.compile(px, NoMacros::{  }) catch {
+    v.compile(px, scope) catch {
       RecursiveMacro(name) =>
         raise ViewParseIssue(view=view.name, issue="recursive macro '\{name}'")
     }
+    check_macros_resolved(view.name, px, scope)
     if collector.issues.length() > 0 {
       raise ViewParseIssue(view=view.name, issue=collector.issues[0])
     }
@@ -343,4 +362,24 @@ fn sorted_by_name(m : Map[String, InputSig]) -> Array[InputSig] {
   }
   names.sort_by((a, b) => a.lexical_compare(b))
   names.map(n => m.get(n).unwrap())
+}
+
+///|
+/// A `<x:name>` with no matching declaration does NOT fail the parse: anode
+/// expands it to a `bad macro: name` comment, which would ship a silently
+/// broken view. Check the names against what the file declared instead, and
+/// turn a miss into a generation error naming the fix.
+fn check_macros_resolved(
+  vname : String,
+  px : @anode.ParseContext,
+  scope : FileMacros,
+) -> Unit raise GenError {
+  for node in px.macro_nodes {
+    if node is MacroCall(d) && !scope.by_name.contains(d.name) {
+      raise ViewParseIssue(
+        view=vname,
+        issue="no macro named '\{d.name}' — declare it as <template id=\"macro:\{d.name}\">",
+      )
+    }
+  }
 }

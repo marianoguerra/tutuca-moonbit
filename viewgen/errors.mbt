@@ -8,6 +8,8 @@ pub fn GenError::message(self : GenError) -> String {
   match self {
     StrayText(msg) => msg
     DuplicateView(name) => "two views are both named \"\{name}\""
+    DuplicateMacro(name) => "two macros are both named \"\{name}\""
+    BadMacroName(id) => "\"\{id}\" needs a name after `macro:`"
     NoMainView =>
       "no main view: give one <template> no id attribute, or id=\"main\""
     UnclosedTemplate(what) => "unclosed <template\{what}>"

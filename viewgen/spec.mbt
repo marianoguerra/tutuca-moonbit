@@ -19,9 +19,25 @@ pub(all) struct RawView {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// Every view in one input file, `main` first, plus the file-level styles.
+/// A macro declared in the view file as `<template id="macro:name">`. Its
+/// `data-*` attributes are the defaults for the `^var` references in the body
+/// (values are tutuca source, so a literal string default is `'24'`).
+///
+/// Declaring macros in the view file rather than registering them from
+/// MoonBit is what lets the generator EXPAND them: a macro whose body is a
+/// runtime value could never be compiled ahead of time.
+pub(all) struct MacroDef {
+  name : String
+  defaults : Map[String, String]
+  source : String
+} derive(Eq, @debug.Debug)
+
+///|
+/// Every view in one input file, `main` first, plus the macros it declares
+/// and the file-level styles.
 pub(all) struct ViewSet {
   views : Array[RawView]
+  macros : Array[MacroDef]
   common_style : String
   global_style : String
 } derive(Eq, @debug.Debug)
@@ -69,6 +85,10 @@ pub suberror GenError {
   StrayText(String)
   /// Two `<template>` elements claim the same view name.
   DuplicateView(String)
+  /// Two `<template id="macro:...">` elements claim the same macro name.
+  DuplicateMacro(String)
+  /// `id="macro:"` with nothing after the colon.
+  BadMacroName(String)
   /// Every `<template>` carries an id, so no view is the main one.
   NoMainView
   /// A `<template>` is never closed.
@@ -102,7 +122,10 @@ declare pub fn split_views(source : String) -> ViewSet raise GenError
 /// Compile the views and extract the typed surface. Every view is parsed into
 /// a FRESH @anode.ParseContext with a collecting handler — the same shadow
 /// discipline cli/lint_component.mbt uses, so no live component is touched.
-declare pub fn view_surface(views : Array[RawView]) -> Surface raise GenError
+declare pub fn view_surface(
+  views : Array[RawView],
+  macros? : Array[MacroDef],
+) -> Surface raise GenError
 
 ///|
 /// Emit the generated MoonBit module.
@@ -118,7 +141,10 @@ declare pub fn emit_module(
 /// True when every view can be emitted as a compiled tree. A view whose tree
 /// still holds a macro call cannot: macros are registered from MoonBit at
 /// runtime, so the generator cannot expand them.
-declare pub fn ir_supported(views : Array[RawView]) -> Bool
+declare pub fn ir_supported(
+  views : Array[RawView],
+  macros? : Array[MacroDef],
+) -> Bool
 
 ///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
