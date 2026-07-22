@@ -11,6 +11,10 @@ pub fn check_collected(LintCollector) -> Array[Finding]
 
 pub fn closest_name(String, Array[String], max_distance? : Int) -> String?
 
+pub fn finding_message(Finding) -> String
+
+pub fn lint_code_name(LintCode) -> String
+
 pub fn lint_html(String, fragment_context? : String, transparent_tag_prefixes? : Array[String]) -> Array[Finding]
 
 // Errors

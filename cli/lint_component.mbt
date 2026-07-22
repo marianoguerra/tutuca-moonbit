@@ -219,10 +219,10 @@ fn check_view(run : LintRun, vname : String, view : @anode.View) -> Unit {
   // Structural HTML lint on the raw template (JS checkHtmlStructure).
   for f in @lint.lint_html(view.raw_view) {
     run.out.push({
-      code: lint_code_name(f.code),
+      code: @lint.lint_code_name(f.code),
       level: f.level,
       where_: "\{comp.name}/\{vname}",
-      message: finding_message(f),
+      message: @lint.finding_message(f),
       suggestion: f.suggestion,
     })
   }
@@ -238,10 +238,10 @@ fn check_view(run : LintRun, vname : String, view : @anode.View) -> Unit {
   // Parse-issue rules + host bare directives (JS checkParseIssues).
   for f in @lint.check_collected(collector) {
     run.out.push({
-      code: lint_code_name(f.code),
+      code: @lint.lint_code_name(f.code),
       level: f.level,
       where_: "\{comp.name}/\{vname}",
-      message: finding_message(f),
+      message: @lint.finding_message(f),
       suggestion: f.suggestion,
     })
   }

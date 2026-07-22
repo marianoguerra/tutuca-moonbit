@@ -62,7 +62,7 @@ fn diagnostic_line(where_ : String, f : @lint.Finding) -> String {
     Warn => "warning"
     Hint => "hint"
   }
-  "\{lint_code_name(f.code)} (\{level}) \{where_}: \{finding_message(f)}"
+  "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}"
 }
 
 ///|

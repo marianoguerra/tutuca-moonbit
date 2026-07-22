@@ -66,8 +66,6 @@ pub fn feedback_success_line(String) -> String
 
 pub fn find_command(String) -> CommandSpec?
 
-pub fn finding_message(@lint.Finding) -> String
-
 pub let format_names : Array[String]
 
 pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
@@ -83,8 +81,6 @@ pub fn install_skill_target_exists(GlobalOpts, String) -> Emit
 pub fn is_view_path(String) -> Bool
 
 pub fn iso8601_utc(UInt64) -> String
-
-pub fn lint_code_name(@lint.LintCode) -> String
 
 pub let lint_rules : Array[LintRule]
 

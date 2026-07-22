@@ -1,13 +1,17 @@
+// Human messages for lint findings — the render side of the linter, so
+// callers (the CLI, the view generator) do not each reinvent the wording.
+// Moved here from cli/ so the lint package renders its own findings.
+// (Original header:)
 // Human messages for lint findings (port of tools/format/lint.js
 // lintIdToMessage) plus the LintCode → canonical rule-code mapping. The
-// structural/parse findings arrive as @lint.Finding (info pairs); the
+// structural/parse findings arrive as Finding (info pairs); the
 // component checker (lint_component.mbt) builds its messages at report time
 // with the same wording.
 
 ///|
-/// Canonical SCREAMING_SNAKE rule code for a @lint.LintCode — the names the
+/// Canonical SCREAMING_SNAKE rule code for a LintCode — the names the
 /// rule catalog (lint_rules.mbt), agent-context and the JS CLI use.
-pub fn lint_code_name(code : @lint.LintCode) -> String {
+pub fn lint_code_name(code : LintCode) -> String {
   match code {
     UnknownDirective => "UNKNOWN_DIRECTIVE"
     UnknownXOp => "UNKNOWN_X_OP"
@@ -82,7 +86,7 @@ fn tag_suffix(info : Array[(String, String)]) -> String {
 }
 
 ///|
-fn location_suffix(loc : @lint.Location?) -> String {
+fn location_suffix(loc : Location?) -> String {
   match loc {
     Some(l) => " at line \{l.line}, col \{l.column}"
     None => ""
@@ -148,9 +152,9 @@ fn html_action_phrase(action : String, tag : String, parent : String) -> String 
 }
 
 ///|
-/// Human message for a structural/parse @lint.Finding (port of
+/// Human message for a structural/parse Finding (port of
 /// lintIdToMessage for the codes the lint package emits).
-pub fn finding_message(f : @lint.Finding) -> String {
+pub fn finding_message(f : Finding) -> String {
   let info = f.info
   let loc = location_suffix(f.location)
   let tags = tag_suffix(info)
