@@ -4,7 +4,34 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
-## [Unreleased]
+## [0.3.1]
+
+### Added — ahead-of-time view compilation (`tutuca gen-views`)
+
+An optional AOT step: an `.html` file of views compiles into a companion
+MoonBit module of typed view surfaces, so a view's vocabulary stops being
+strings the compiler cannot see. This is **additive** — `component(view~)`
+still works unchanged; a component opts in by passing `compiled_views~`.
+
+- `tutuca gen-views <file.html>` emits two modules: the types
+  (`CounterInput` / `CounterMsg` with `of_dispatch`, whose payload types are
+  inferred from the `@on` call sites; `CounterMethod` bucket builders;
+  `CounterView` / `CounterId`; the field list) and the already-compiled
+  `@anode` tree (`counter_compiled_views()`), which lets `compiled_views~`
+  skip template parsing at startup. Adding an `@on` handler to the view and
+  regenerating turns the component's `update` match non-exhaustive — a
+  compile error where the string-matched `_ => None` arm used to do nothing.
+- One view file per module, naming several components with
+  `id="Counter:main"`. Macros are declared in the file
+  (`<template id="macro:icon">`) and expanded at generation time, so a macro
+  view compiles to a tree too.
+- `tutuca watch [path…]` regenerates managed view files on every save
+  (mizchi/fswatch).
+- The structural-HTML and parse-issue lint rules now also run at generation
+  time, and the lint package renders its own findings (message rendering
+  moved from `cli`).
+- The in-browser playground gains a View tab that generates the module the
+  Component tab imports, live.
 
 ### Changed — typed-state components (breaking)
 
