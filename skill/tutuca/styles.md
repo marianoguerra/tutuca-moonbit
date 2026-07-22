@@ -7,14 +7,17 @@ blocks or debugging CSS that silently doesn't apply.
 priv struct NoState {} derive(ToJson, FromJson)
 
 @component.component(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<p class=\"mine\">x</p>", style=".mine { color: red; }"),
+    "two": @anode.View::new("two", raw_view="<p class=\"mine\">two</p>", style=".mine { color: orange; }"),
+  },
   name="Styled",
-  view="<p class=\"mine\">x</p>",
   init=NoState::{  },
-  style=".mine { color: red; }",          // scoped to main view
-  common_style=".shared { color: yellow; }", // scoped to all views of this component
-  global_style=".app-thing { color: green; }", // global, no scoping
-  views={ "two": "<p class=\"mine\">two</p>" },
-  view_styles={ "two": ".mine { color: orange; }" }, // per-view scoped CSS
+  // scoped to main view
+  common_style=".shared { color: yellow; }",
+  // scoped to all views of this component
+  global_style=".app-thing { color: green; }",
+  // per-view scoped CSS,
 )
 ```
 

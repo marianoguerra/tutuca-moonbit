@@ -4,6 +4,39 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.4.0]
+
+### Changed — views are `@anode.View` values, not strings (breaking)
+
+`component(...)` and `Component::for_type(...)` no longer take `view~` /
+`views~` / `style~` / `view_styles~`. The view input is now
+`compiled_views~ : Map[String, @anode.View]` — a view is a built `@anode.View`,
+keyed by name (`"main"` renders by default), each carrying its own per-view
+style. Component-level `common_style` / `global_style` stay.
+
+Build the map either way:
+
+- **Ahead of time** (recommended) — `tutuca gen-views counter.html` emits
+  `counter_compiled_views()`; pass `compiled_views=counter_compiled_views()`.
+- **At runtime** — `@anode.View::new("main", raw_view="…", style~)` for a
+  genuinely dynamic view (e.g. the dyncomp guest bundle) or a test fixture.
+  This is the same primitive the generated code sits on.
+
+Migration: replace `view="…"` with
+`compiled_views={ "main": @anode.View::new("main", raw_view="…") }`, and add
+each `views` entry / `style` the same way; or move the views into an `.html`
+file and generate the map. The whole repo (examples, docs, inspector, demos)
+moved over; the demo shows the gen-views path end to end.
+
+### `tutuca watch`, HTML macros, multi-component files
+
+Also in this release (were staged as 0.3.1): `tutuca watch` regenerates view
+modules on save; macros are declared in the view file
+(`<template id="macro:…">`) and expanded at generation time; one view file
+names several components with `id="Counter:main"`; the structural-HTML and
+parse-issue lint rules run at generation time; the lint package renders its
+own findings.
+
 ## [0.3.1]
 
 ### Added — ahead-of-time view compilation (`tutuca gen-views`)

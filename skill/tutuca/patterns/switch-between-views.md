@@ -9,11 +9,11 @@ priv struct NoteState {
 } derive(ToJson, FromJson)
 
 @component.component(
-  name="Note",
-  view="<p @text=\".title\"></p>", // "main"
-  views={
-    "edit": "<input :value=\".title\" @on.input=\"$setTitle value\" />",
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<p @text=\".title\"></p>"),
+    "edit": @anode.View::new("edit", raw_view="<input :value=\".title\" @on.input=\"$setTitle value\" />"),
   },
+  name="Note",
   init=NoteState::{ title: "" },
 )
 ```

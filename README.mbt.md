@@ -34,11 +34,18 @@ and formal `spec.mbt`. From the bottom up:
 The `tutuca` CLI exposes `get` / `list` / `examples` / `show` / `lint` /
 `render` / `storybook` / `gen-views` / `install-skill`.
 
-## Ahead-of-time views (`gen-views`)
+## Views (`compiled_views` + `gen-views`)
 
-A component can keep its views in an `.html` file and compile them ahead of
-time into a companion MoonBit module, so the view's vocabulary stops being
-strings the compiler cannot see:
+`component(...)` takes its views as `compiled_views~ : Map[String,
+@anode.View]` — a view is a built `@anode.View`, never a raw string. There are
+two ways to build them: **ahead of time** with `tutuca gen-views` (the
+recommended path, below), or at runtime with `@anode.View::new("main",
+raw_view="…")` for a genuinely dynamic or throwaway view. The old string
+arguments (`view~` / `views~` / `style~`) were removed in 0.4.0.
+
+A component keeps its views in an `.html` file and compiles them ahead of time
+into a companion MoonBit module, so the view's vocabulary stops being strings
+the compiler cannot see:
 
 ```sh
 moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
@@ -51,7 +58,7 @@ template is that view's style; one at file level is the component's common
 style, or its global style with `data-global`.
 
 For a component named `Counter` the generated module declares
-`counter_main_view` / `counter_views()` (the sources, for `component()`),
+`counter_compiled_views()` (the built views, for `compiled_views~`),
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
 `CounterMsg::of_dispatch`), `CounterMethod` with `counter_mutate` /
@@ -115,7 +122,7 @@ event table each view parses into, as MoonBit literals. Pass it as
 ```moonbit nocheck
 @component.component(
   name="Counter",
-  compiled_views=counter_compiled_views(),   // instead of view~ / views~
+  compiled_views=counter_compiled_views(),
   init=CounterState::{ label: "Counter", count: 0, history: [] },
   update=...,
 )

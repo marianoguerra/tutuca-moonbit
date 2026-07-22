@@ -95,23 +95,27 @@ priv struct ThemeState {
 
 fn theme_comp() -> @component.Component {
   @component.component(
-    name="Theme",
-    view="<div><x render=\".child\"></x></div>",
-    init=ThemeState::{ color: "blue" },
-    specs={ "child": @component.FieldSpec::comp("Child") },
-    provide={ "color": ".color" },
-  )
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<div><x render=\".child\"></x></div>"),
+  },
+  name="Theme",
+  init=ThemeState::{ color: "blue" },
+  specs={ "child": @component.FieldSpec::comp("Child") },
+  provide={ "color": ".color" },
+)
 }
 
 priv struct NoState {} derive(ToJson, FromJson)
 
 fn child_comp() -> @component.Component {
   @component.component(
-    name="Child",
-    view="<p :style=\"$'color: {*color}'\">themed</p>",
-    init=NoState::{  },
-    lookup={ "color": { source: "Theme.color", default: Some("'gray'") } },
-  )
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<p :style=\"$'color: {*color}'\">themed</p>"),
+  },
+  name="Child",
+  init=NoState::{  },
+  lookup={ "color": { source: "Theme.color", default: Some("'gray'") } },
+)
 }
 ```
 
@@ -156,14 +160,17 @@ priv struct RootState {
 
 fn root_comp() -> @component.Component {
   @component.component(
-    name="Root",
-    view=..., // omitted
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=...),
+  },
+  name="Root",
+  // omitted
     init=RootState::{ items: {}, selectedKey: "" },
-    provide={
+  provide={
       "items": ".items",                  // the whole sequence
       "selected": ".items[.selectedKey]", // seq-access to one entry
     },
-  )
+)
 }
 ```
 

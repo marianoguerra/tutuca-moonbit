@@ -138,13 +138,15 @@ priv struct CounterState {
 
 fn counter_comp() -> @component.Component {
   @component.component(
-    name="Counter",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<button @on.click="$inc" @text=".count"></button>
-    ),
-    init=CounterState::{ count: 0 },
-    mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
-  )
+    )),
+  },
+  name="Counter",
+  init=CounterState::{ count: 0 },
+  mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
+)
 }
 
 pub fn counter_module() -> @component.ModuleDef {
@@ -380,19 +382,19 @@ priv struct MyCompState {
 } derive(ToJson, FromJson)
 
 @component.component(
-  name="MyComp",
-  // default view (registered as "main"); #| raw string starting at the tag
-  view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
     #|<p @text=".count"></p>
-  ),
-  views={ // additional views, name -> template
-    "edit": "<input :value=\".count\" @on.input=\"$setCount valueAsInt\" />",
-    "big": "<h1 @text=\".count\"></h1>",
+  ), style="p { color: blue; }"),
+    "edit": @anode.View::new("edit", raw_view="<input :value=\".count\" @on.input=\"$setCount valueAsInt\" />"),
+    "big": @anode.View::new("big", raw_view="<h1 @text=\".count\"></h1>", style="h1 { font-size: 4rem; }"),
   },
-  view_styles={ "big": "h1 { font-size: 4rem; }" }, // per-view scoped CSS
-  style="p { color: blue; }",                  // scoped to main view
-  common_style="p { font-family: sans-serif; }", // scoped to all views of this component
-  global_style="body { margin: 0; }",          // injected globally, no scoping
+  name="MyComp",
+  // scoped to main view
+  common_style="p { font-family: sans-serif; }",
+  // scoped to all views of this component
+  global_style="body { margin: 0; }",
+  // injected globally, no scoping
   // the struct's fields ARE the component's fields; init gives the defaults
   init=MyCompState::{ count: 0, items: [], isLoading: false, selected: Null },
   // ONE effectful dispatch match: (s, msg, ctx) => S?  (None = no change)
@@ -420,7 +422,7 @@ priv struct MyCompState {
   specs={ // Value-level slots & kind overrides — NOT in the struct
     "child": @component.FieldSpec::comp("Item"), // component-typed field
   },
-  // provide={ ... }, lookup={ ... }   // see advanced.md
+  // provide={ ... }, lookup={ ... }   // see advanced.md,
 )
 ```
 
@@ -785,8 +787,12 @@ pagination and the `@loop-with` → `loop_with` return shape, and the
 <x render=".item" @show=".isOpen"></x>          <!-- conditional wrap, see "Conditional Display" -->
 ```
 
-The top-level `view=` is registered under `"main"` (the default); extras
-go under `views={ "name": "..." }`. `as` selects which view of the
+A component's views come in through `compiled_views=` (a
+`Map[String, @anode.View]`), keyed by name — `"main"` is the one rendered by
+default. Author them in an `.html` file and generate the map with
+`tutuca gen-views` (see [cli.md](./cli.md)); for a runtime-built or test view,
+`@anode.View::new("main", raw_view="…")` is the same primitive. `as` selects
+which view of the
 rendered component to use, falling back to `main` if absent. It accepts the
 same dynamic values as `@push-view` (a literal name like `edit`, or `.field`,
 `*dyn`, `@bind`, `$handler`, `$'…{x}…'`), evaluated against the **host**
@@ -802,11 +808,11 @@ priv struct NoteState {
 } derive(ToJson, FromJson)
 
 @component.component(
-  name="Note",
-  view="<p @text=\".title\"></p>", // "main"
-  views={
-    "edit": "<input :value=\".title\" @on.input=\"$setTitle value\" />",
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<p @text=\".title\"></p>"),
+    "edit": @anode.View::new("edit", raw_view="<input :value=\".title\" @on.input=\"$setTitle value\" />"),
   },
+  name="Note",
   init=NoteState::{ title: "" },
 )
 ```

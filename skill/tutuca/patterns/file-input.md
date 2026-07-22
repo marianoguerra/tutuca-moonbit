@@ -15,8 +15,8 @@ priv struct FilePickerState {
 
 fn file_picker_comp() -> @component.Component {
   @component.component(
-    name="FilePicker",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <input type="file" @on.change="onPickFile value" />
       #|  <p @hide=".hasFile">No file selected yet.</p>
@@ -26,9 +26,11 @@ fn file_picker_comp() -> @component.Component {
       #|    <dt>Type</dt><dd @text=".type"></dd>
       #|  </dl>
       #|</section>
-    ),
-    init=FilePickerState::{ name: "", size: 0, type_: "", hasFile: false },
-    update=(s : FilePickerState, msg, _ctx) => match msg {
+    )),
+  },
+  name="FilePicker",
+  init=FilePickerState::{ name: "", size: 0, type_: "", hasFile: false },
+  update=(s : FilePickerState, msg, _ctx) => match msg {
       // for a file input, `value` is the picked file's metadata as a Map
       // (name/size/type/lastModified); Null when no file is selected
       Input("onPickFile", [Map(meta), ..]) =>
@@ -41,7 +43,7 @@ fn file_picker_comp() -> @component.Component {
       Input("onPickFile", _) => Some({ ..s, hasFile: false })
       _ => None
     },
-  )
+)
 }
 ```
 

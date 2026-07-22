@@ -9,27 +9,33 @@ priv struct NoState {} derive(ToJson, FromJson)
 // producer exposes a field (or a seq-access) as a dynamic
 fn workspace_comp() -> @component.Component {
   @component.component(
-    name="Workspace",
-    view=..., // renders .panel somewhere below
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=...),
+  },
+  name="Workspace",
+  // renders .panel somewhere below
     init=NoState::{  },
-    specs={
+  specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
       "panel": @component.FieldSpec::comp("Panel"),
     },
-    provide={ "active": ".sheet" }, // or ".items[.selectedKey]"
-  )
+  provide={ "active": ".sheet" },
+  // or ".items[.selectedKey]",
+)
 }
 
 // a distant consumer renders it as a target
 fn toolbar_comp() -> @component.Component {
   @component.component(
-    name="Toolbar",
-    view="<x render=\"*active\" as=\"edit\"></x>",
-    init=NoState::{  },
-    lookup={
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<x render=\"*active\" as=\"edit\"></x>"),
+  },
+  name="Toolbar",
+  init=NoState::{  },
+  lookup={
       "active": { source: "Workspace.active", default: Some(".missing") },
     },
-  )
+)
 }
 ```
 
