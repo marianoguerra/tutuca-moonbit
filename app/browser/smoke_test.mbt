@@ -37,9 +37,11 @@ fn counter_comp() -> @component.Component {
     name="Counter",
     view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel value\"></div>",
     init=SmokeCounterState::{ n: 0, label: "start" },
-    update=(s : SmokeCounterState, msg, _ctx) => match msg {
-      Input("bump", _) => Some({ ..s, n: s.n + 1 })
-      _ => None
+    update=(s : SmokeCounterState, msg, _ctx) => {
+      match msg {
+        Input("bump", _) => Some({ ..s, n: s.n + 1 })
+        _ => None
+      }
     },
   )
 }
@@ -60,12 +62,7 @@ test "browser: real events drive the app through installed listeners" {
   let scope = @component.ComponentStack::new()
   scope.register_components([counter_comp()])
   guard scope.lookup_component("Counter") is Some(c) else { fail("no Counter") }
-  let a = @app.App::new(
-    scope,
-    c.make(Map([])),
-    container,
-    @bdom.opts_for(doc),
-  )
+  let a = @app.App::new(scope, c.make(Map([])), container, @bdom.opts_for(doc))
   a.start()
   @browser.install(a)
   assert_true(inner_html_ffi(container.as_any()).contains("<span>0</span>"))
@@ -132,25 +129,22 @@ test "browser: real drag events run the drag lifecycle" {
     name="DropBoard",
     view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed dragInfo\">zone</div></div>",
     init=DropBoardState::{ landed_kind: "" },
-    update=(_s : DropBoardState, msg, _ctx) => match msg {
-      Input("landed", [Obj(info), ..]) =>
-        match info.obj_field("type") {
-          Some(Str(kind)) => Some({ landed_kind: kind })
-          _ => None
-        }
-      _ => None
+    update=(_s : DropBoardState, msg, _ctx) => {
+      match msg {
+        Input("landed", [Obj(info), ..]) =>
+          match info.obj_field("type") {
+            Some(Str(kind)) => Some({ landed_kind: kind })
+            _ => None
+          }
+        _ => None
+      }
     },
   )
   scope.register_components([board])
   guard scope.lookup_component("DropBoard") is Some(c) else {
     fail("no DropBoard")
   }
-  let a = @app.App::new(
-    scope,
-    c.make(Map([])),
-    container,
-    @bdom.opts_for(doc),
-  )
+  let a = @app.App::new(scope, c.make(Map([])), container, @bdom.opts_for(doc))
   a.start()
   @browser.install(a)
   let chip = query_ffi(container.as_any(), "span")
