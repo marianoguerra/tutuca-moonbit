@@ -16,14 +16,19 @@ priv struct TableRowState {
 ///|
 fn table_row_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<tr>
+          #|  <td class="name" @text=".name"></td>
+          #|  <td class="qty" @text=".qty"></td>
+          #|  <td class="price" @text=".price"></td>
+          #|</tr>
+        ),
+      ),
+    },
     name="TableRow",
-    view=(
-      #|<tr>
-      #|  <td class="name" @text=".name"></td>
-      #|  <td class="qty" @text=".qty"></td>
-      #|  <td class="price" @text=".price"></td>
-      #|</tr>
-    ),
     init=TableRowState::{ name: "", qty: 0, price: 0.0 },
   )
 }
@@ -38,15 +43,20 @@ priv struct ItemTableState {
 /// `<x>` here, since `<x>` is not valid inside `<tbody>`.
 fn item_table_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<table class="table">
+          #|  <thead><tr><th>Name</th><th>Qty</th><th>Price</th></tr></thead>
+          #|  <tbody>
+          #|    <tr @x render-each=".rows"></tr>
+          #|  </tbody>
+          #|</table>
+        ),
+      ),
+    },
     name="ItemTable",
-    view=(
-      #|<table class="table">
-      #|  <thead><tr><th>Name</th><th>Qty</th><th>Price</th></tr></thead>
-      #|  <tbody>
-      #|    <tr @x render-each=".rows"></tr>
-      #|  </tbody>
-      #|</table>
-    ),
     init=ItemTableState::{ rows: [] },
   )
 }
@@ -60,10 +70,15 @@ priv struct SelectOptionState {
 ///|
 fn select_option_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<option :value=".value" @text=".label"></option>
+        ),
+      ),
+    },
     name="SelectOption",
-    view=(
-      #|<option :value=".value" @text=".label"></option>
-    ),
     init=SelectOptionState::{ value: "", label: "" },
   )
 }
@@ -78,12 +93,17 @@ priv struct ItemSelectState {
 /// Same trick inside `<select>`: `<option @x render-each=".options">`.
 fn item_select_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<select class="select" :value=".current" @on.input="$setCurrent value">
+          #|  <option @x render-each=".options"></option>
+          #|</select>
+        ),
+      ),
+    },
     name="ItemSelect",
-    view=(
-      #|<select class="select" :value=".current" @on.input="$setCurrent value">
-      #|  <option @x render-each=".options"></option>
-      #|</select>
-    ),
     init=ItemSelectState::{ options: [], current: "" },
   )
 }
@@ -94,13 +114,18 @@ priv struct PseudoXNoState {} derive(ToJson, FromJson)
 ///|
 fn pseudo_x_demo_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div>
+          #|  <x render=".table"></x>
+          #|  <x render=".select"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="PseudoXDemo",
-    view=(
-      #|<div>
-      #|  <x render=".table"></x>
-      #|  <x render=".select"></x>
-      #|</div>
-    ),
     init=PseudoXNoState::{  },
     specs={
       "table": @component.FieldSpec::comp("ItemTable"),

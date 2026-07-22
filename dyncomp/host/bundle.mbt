@@ -37,20 +37,17 @@ pub fn register_bundle(
   let comps : Map[String, (Int, DynComponentDef)] = Map([])
   let synthesized = []
   for def in manifest.components {
-    let views : Map[String, String] = Map([])
-    let mut main_view = ""
+    // Guest view HTML arrives at runtime from the manifest, so it is parsed
+    // (View::new), not compiled ahead of time — the manifest's `main` view
+    // carries the component's scoped style.
+    let cviews : Map[String, @anode.View] = Map([])
     for v in def.views {
-      if v.name == "main" {
-        main_view = v.html
-      } else {
-        views[v.name] = v.html
-      }
+      let style = if v.name == "main" { def.style } else { "" }
+      cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
     }
     let comp = @component.Component::for_type(
       name=def.name,
-      view=main_view,
-      views~,
-      style=def.style,
+      compiled_views=cviews,
     )
     synthesized.push(comp)
     comps[def.name] = (comp.id, def)

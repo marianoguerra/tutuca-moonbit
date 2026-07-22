@@ -55,6 +55,30 @@ fn finding_component_name(where_ : String) -> String {
 /// suggestion, and the full finding Map via the data inspector (collapsed).
 fn lint_finding_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-1.5 py-1.5 leading-snug lint-finding">
+          #|  <div class="flex items-baseline gap-2 flex-wrap">
+          #|    <span :class="$levelBadgeClass" @text=".level"></span>
+          #|    <span class="text-sm text-base-content/90 finding-message" @text=".message"></span>
+          #|  </div>
+          #|  <div @show="$hasSuggestion" class="ml-3 flex items-baseline gap-1.5 text-xs text-base-content/60">
+          #|    <span>fix</span>
+          #|    <span class="font-mono finding-suggestion" @text=".suggestion"></span>
+          #|  </div>
+          #|  <div @show="$hasDetail" class="ml-3"><x render=".detail"></x></div>
+          #|</div>
+        ),
+      ),
+      "_palette": @anode.View::new(
+        "_palette",
+        raw_view=(
+          #|<span class="badge-soft badge-error badge-warning badge-neutral"></span>
+        ),
+      ),
+    },
     name="LintFinding",
     init=LintFindingState::{
       code: "",
@@ -75,25 +99,6 @@ fn lint_finding_comp() -> @component.Component {
       "hasSuggestion": (s : LintFindingState, _args) => Bool(s.suggestion != ""),
       "hasDetail": (s : LintFindingState, _args) => Bool(!(s.detail is Null)),
     },
-    // Decoy so the runtime-built soft badge colours survive the class scan.
-    views={
-      "_palette": (
-        #|<span class="badge-soft badge-error badge-warning badge-neutral"></span>
-      ),
-    },
-    view=(
-      #|<div class="flex flex-col gap-1.5 py-1.5 leading-snug lint-finding">
-      #|  <div class="flex items-baseline gap-2 flex-wrap">
-      #|    <span :class="$levelBadgeClass" @text=".level"></span>
-      #|    <span class="text-sm text-base-content/90 finding-message" @text=".message"></span>
-      #|  </div>
-      #|  <div @show="$hasSuggestion" class="ml-3 flex items-baseline gap-1.5 text-xs text-base-content/60">
-      #|    <span>fix</span>
-      #|    <span class="font-mono finding-suggestion" @text=".suggestion"></span>
-      #|  </div>
-      #|  <div @show="$hasDetail" class="ml-3"><x render=".detail"></x></div>
-      #|</div>
-    ),
   )
 }
 
@@ -102,6 +107,15 @@ fn lint_finding_comp() -> @component.Component {
 /// default when it has error-level findings.
 fn lint_component_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_composite_view(
+          type_class="font-semibold lint-component",
+          border_class="border-base-content/15",
+        ),
+      ),
+    },
     name="LintComponent",
     init=LintComponentState::{
       items: [],
@@ -132,10 +146,6 @@ fn lint_component_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_composite_view(
-      type_class="font-semibold lint-component",
-      border_class="border-base-content/15",
-    ),
   )
 }
 
@@ -153,6 +163,30 @@ fn count_label(n : Int, word : String) -> String {
 /// per-component groups (clean components are omitted).
 fn lint_report_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 lint-report">
+          #|  <div class="flex items-center gap-2 flex-wrap">
+          #|    <span class="font-semibold lint-title" @text=".title"></span>
+          #|    <span class="text-base-content/40 text-xs" @text=".path"></span>
+          #|    <span @show="$hasErrors" class="badge badge-sm badge-soft badge-error lint-errors" @text="$errText"></span>
+          #|    <span @show="$hasWarnings" class="badge badge-sm badge-soft badge-warning lint-warnings" @text="$warnText"></span>
+          #|    <span @show="$hasHints" class="badge badge-sm badge-soft badge-neutral lint-hints" @text="$hintText"></span>
+          #|    <span @show=".clean" class="badge badge-sm badge-soft badge-success lint-clean">✓ clean</span>
+          #|  </div>
+          #|  <x render-each=".components"></x>
+          #|</div>
+        ),
+      ),
+      "_palette": @anode.View::new(
+        "_palette",
+        raw_view=(
+          #|<span class="badge-soft badge-error badge-warning badge-neutral badge-success"></span>
+        ),
+      ),
+    },
     name="LintReport",
     init=LintReportState::{
       title: "",
@@ -177,25 +211,6 @@ fn lint_report_comp() -> @component.Component {
       "hasWarnings": (s : LintReportState, _args) => Bool(s.warnings > 0),
       "hasHints": (s : LintReportState, _args) => Bool(s.hints > 0),
     },
-    // Decoy so the runtime-absent soft tally colours are emitted.
-    views={
-      "_palette": (
-        #|<span class="badge-soft badge-error badge-warning badge-neutral badge-success"></span>
-      ),
-    },
-    view=(
-      #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 lint-report">
-      #|  <div class="flex items-center gap-2 flex-wrap">
-      #|    <span class="font-semibold lint-title" @text=".title"></span>
-      #|    <span class="text-base-content/40 text-xs" @text=".path"></span>
-      #|    <span @show="$hasErrors" class="badge badge-sm badge-soft badge-error lint-errors" @text="$errText"></span>
-      #|    <span @show="$hasWarnings" class="badge badge-sm badge-soft badge-warning lint-warnings" @text="$warnText"></span>
-      #|    <span @show="$hasHints" class="badge badge-sm badge-soft badge-neutral lint-hints" @text="$hintText"></span>
-      #|    <span @show=".clean" class="badge badge-sm badge-soft badge-success lint-clean">✓ clean</span>
-      #|  </div>
-      #|  <x render-each=".components"></x>
-      #|</div>
-    ),
   )
 }
 

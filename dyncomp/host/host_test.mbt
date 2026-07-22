@@ -210,14 +210,19 @@ fn counter_manifest() -> DynManifest {
 /// guest's bubbled control message, and nothing else.
 fn shell_module() -> @component.ModuleDef {
   let shell = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="shell">
+          #|  <span class="note" @text=".note"></span>
+          #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
+          #|  <x render=".slot">
+          #|</div>
+        ),
+      ),
+    },
     name="Shell",
-    view=(
-      #|<div class="shell">
-      #|  <span class="note" @text=".note"></span>
-      #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
-      #|  <x render=".slot">
-      #|</div>
-    ),
     init=TestShellState::{ slot: Null, note: "" },
     update=(s : TestShellState, msg, _ctx) => {
       match msg {

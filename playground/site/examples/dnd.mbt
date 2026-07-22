@@ -9,8 +9,8 @@ struct DnDState {
 
 fn build() -> @component.ModuleDef {
   let dnd = @component.component(
-    name="DnDExample",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3">
       #|  <input type="search" class="input" :value=".query"
       #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
@@ -25,23 +25,24 @@ fn build() -> @component.ModuleDef {
       #|    </div>
       #|  </div>
       #|</section>
-    ),
-    style=(
+    ), style=(
       #|[data-dragging="1"] { opacity: 0.5; }
       #|[data-draggingover="my-list-item"] {
       #|  border-top: 2rem solid transparent;
       #|  outline: 1px solid #77777777;
       #|  transition: 0.15s border-top ease;
       #|}
-    ),
-    init=DnDState::{ items: [], query: "" },
-    when={
+    )),
+  },
+  name="DnDExample",
+  init=DnDState::{ items: [], query: "" },
+  when={
       "filterItem": (s : DnDState, _key, item, _iter) => match item {
         Str(text) => text.contains(s.query)
         _ => true
       },
     },
-    update=(s : DnDState, msg, _ctx) => match msg {
+  update=(s : DnDState, msg, _ctx) => match msg {
       // args: [@key (the TARGET row's key), dragInfo]
       Input("onDropOnItem", [Num(t), Obj(di), ..]) => {
         let target = t.to_int()
@@ -57,7 +58,7 @@ fn build() -> @component.ModuleDef {
       }
       _ => None
     },
-  )
+)
   @component.ModuleDef::new(
     name="dnd-example", components=[dnd],
     examples=[

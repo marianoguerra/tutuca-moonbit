@@ -18,42 +18,48 @@ priv struct StylesNoState {} derive(ToJson, FromJson)
 ///|
 fn styles_example_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <p>View: main</p>
+          #|  <p class="mine">My Style</p>
+          #|  <p class="common">Common Style</p>
+          #|  <p class="styles-example-global-class">Global Style</p>
+          #|</section>
+        ),
+        style=(
+          #|.mine { color: red; }
+        ),
+      ),
+      "one": @anode.View::new(
+        "one",
+        raw_view=(
+          #|<section>
+          #|  <p>View: one</p>
+          #|  <p class="mine">My Style</p>
+          #|  <p class="common">Common Style</p>
+          #|  <p class="styles-example-global-class">Global Style</p>
+          #|</section>
+        ),
+      ),
+      "two": @anode.View::new(
+        "two",
+        raw_view=(
+          #|<section>
+          #|  <p>View: two</p>
+          #|  <p class="mine">My Style</p>
+          #|  <p class="common">Common Style</p>
+          #|  <p class="styles-example-global-class">Global Style</p>
+          #|</section>
+        ),
+        style=(
+          #|.mine { color: orange; text-decoration: underline; }
+        ),
+      ),
+    },
     name="StylesExample",
-    view=(
-      #|<section>
-      #|  <p>View: main</p>
-      #|  <p class="mine">My Style</p>
-      #|  <p class="common">Common Style</p>
-      #|  <p class="styles-example-global-class">Global Style</p>
-      #|</section>
-    ),
-    views={
-      "one": (
-        #|<section>
-        #|  <p>View: one</p>
-        #|  <p class="mine">My Style</p>
-        #|  <p class="common">Common Style</p>
-        #|  <p class="styles-example-global-class">Global Style</p>
-        #|</section>
-      ),
-      "two": (
-        #|<section>
-        #|  <p>View: two</p>
-        #|  <p class="mine">My Style</p>
-        #|  <p class="common">Common Style</p>
-        #|  <p class="styles-example-global-class">Global Style</p>
-        #|</section>
-      ),
-    },
-    // view "two" overrides `.mine`: red in main/one, orange+underlined here
-    view_styles={
-      "two": (
-        #|.mine { color: orange; text-decoration: underline; }
-      ),
-    },
-    style=(
-      #|.mine { color: red; }
-    ),
     common_style=(
       #|padding: 0.75rem;
       #|border: 1px solid currentColor;
@@ -70,14 +76,19 @@ fn styles_example_comp() -> @component.Component {
 ///|
 fn styles_example_root_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <x render=".value"></x>
+          #|  <x render=".value" as="one"></x>
+          #|  <x render=".value" as="two"></x>
+          #|</section>
+        ),
+      ),
+    },
     name="StylesExampleRoot",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <x render=".value"></x>
-      #|  <x render=".value" as="one"></x>
-      #|  <x render=".value" as="two"></x>
-      #|</section>
-    ),
     init=StylesNoState::{  },
     specs={ "value": @component.FieldSpec::comp("StylesExample") },
   )

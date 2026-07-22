@@ -23,17 +23,22 @@ priv struct RenderWithScopeState {
 /// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input class="input" :value=".text" @on.input="$setText value" />
+          #|  <div @enrich-with="enrichScope">
+          #|    <p>Text: <span class="v-text" @text=".text"></span></p>
+          #|    <p>Len: <span class="v-len" @text="@len"></span></p>
+          #|    <p>Upper: <span class="v-upper" @text="@upper"></span></p>
+          #|  </div>
+          #|</section>
+        ),
+      ),
+    },
     name="RenderWithScope",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input class="input" :value=".text" @on.input="$setText value" />
-      #|  <div @enrich-with="enrichScope">
-      #|    <p>Text: <span class="v-text" @text=".text"></span></p>
-      #|    <p>Len: <span class="v-len" @text="@len"></span></p>
-      #|    <p>Upper: <span class="v-upper" @text="@upper"></span></p>
-      #|  </div>
-      #|</section>
-    ),
     init=RenderWithScopeState::{ text: "Hello" },
     enrich_scope={
       "enrichScope": (s : RenderWithScopeState) => {
@@ -77,19 +82,24 @@ priv struct ListFilterEnrichState {
 /// value is Unit. Setting `binds["count"]` makes `@count` readable in the row.
 fn list_filter_enrich_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="search" class="input" :value=".query"
+          #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+          #|    placeholder="Filter entries" />
+          #|  <ul>
+          #|    <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
+          #|      <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> characters)
+          #|    </li>
+          #|  </ul>
+          #|</section>
+        ),
+      ),
+    },
     name="ListFilterEnrich",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Filter entries" />
-      #|  <ul>
-      #|    <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
-      #|      <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> characters)
-      #|    </li>
-      #|  </ul>
-      #|</section>
-    ),
     init=ListFilterEnrichState::{ items: [], query: "" },
     when={
       "filterItem": (s : ListFilterEnrichState, _key, value, _iter) => {
@@ -133,19 +143,24 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 /// before any filtering.
 fn list_filter_enrich_with_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="search" class="input" :value=".query"
+          #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+          #|    placeholder="Filter entries" />
+          #|  <ul>
+          #|    <li @each=".items" @when="filterItem" @enrich-with="enrichItem" @loop-with="getIterData">
+          #|      <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> / <x text="@total"></x>)
+          #|    </li>
+          #|  </ul>
+          #|</section>
+        ),
+      ),
+    },
     name="ListFilterEnrichWith",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Filter entries" />
-      #|  <ul>
-      #|    <li @each=".items" @when="filterItem" @enrich-with="enrichItem" @loop-with="getIterData">
-      #|      <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> / <x text="@total"></x>)
-      #|    </li>
-      #|  </ul>
-      #|</section>
-    ),
     init=ListFilterEnrichState::{ items: [], query: "" },
     loop_with={
       "getIterData": (s : ListFilterEnrichState, seq, _ctx) => {

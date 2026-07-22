@@ -43,8 +43,13 @@ priv struct SongState {
 ///|
 fn song_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<span class=\"song\" @text=\".title\"></span>",
+      ),
+    },
     name="Song",
-    view="<span class=\"song\" @text=\".title\"></span>",
     init=SongState::{ title: "" },
   )
 }
@@ -59,15 +64,20 @@ priv struct PlaylistState {
 ///|
 fn playlist_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<ul class="flex flex-col gap-1">
+          #|  <li @each=".songs" class="flex gap-2 items-center">
+          #|    <x render-it></x>
+          #|    <button class="btn btn-xs rm" @on.click="$removeSong @key">remove</button>
+          #|  </li>
+          #|</ul>
+        ),
+      ),
+    },
     name="Playlist",
-    view=(
-      #|<ul class="flex flex-col gap-1">
-      #|  <li @each=".songs" class="flex gap-2 items-center">
-      #|    <x render-it></x>
-      #|    <button class="btn btn-xs rm" @on.click="$removeSong @key">remove</button>
-      #|  </li>
-      #|</ul>
-    ),
     init=PlaylistState::{ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
     mutate={
       // The state only sees `&Obj`, so the removal REBUILDS the keyed

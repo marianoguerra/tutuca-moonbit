@@ -59,14 +59,19 @@ priv struct CounterState {
 ///|
 fn counter() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div>
+          #|  <button class="dec" @on.click="dec">-</button>
+          #|  <span class="count" @text=".count"></span>
+          #|  <button class="inc" @on.click="$inc">+</button>
+          #|</div>
+        ),
+      ),
+    },
     name="Counter",
-    view=(
-      #|<div>
-      #|  <button class="dec" @on.click="dec">-</button>
-      #|  <span class="count" @text=".count"></span>
-      #|  <button class="inc" @on.click="$inc">+</button>
-      #|</div>
-    ),
     init=CounterState::{ count: 0 },
     // views call update by bare name: @on.click="dec"
     update=(s : CounterState, msg, _ctx) => {
@@ -167,15 +172,20 @@ priv struct ProfileState {
 ///|
 fn profile_module() -> @component.ModuleDef {
   let profile = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <input class="who" :value=".name" @on.input="$setName value"
+          #|    :title="$'Editing {.name}'" />
+          #|  <button class="wave" @on.click="$toggleWaving">wave</button>
+          #|  <p class="out" @text="$'Hello, {.name}!'"></p>
+          #|</section>
+        ),
+      ),
+    },
     name="Profile",
-    view=(
-      #|<section>
-      #|  <input class="who" :value=".name" @on.input="$setName value"
-      #|    :title="$'Editing {.name}'" />
-      #|  <button class="wave" @on.click="$toggleWaving">wave</button>
-      #|  <p class="out" @text="$'Hello, {.name}!'"></p>
-      #|</section>
-    ),
     init=ProfileState::{ name: "world", waving: false },
   )
   @component.ModuleDef::new(name="profile", components=[profile])
@@ -211,16 +221,21 @@ priv struct SearchState {
 ///|
 fn search_module() -> @component.ModuleDef {
   let search = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <input class="q" :value=".draft"
+          #|    @on.input="$setDraft value"
+          #|    @on.keydown+send="$setSent value"
+          #|    @on.keydown+cancel="$resetDraft" />
+          #|  <p class="sent" @text=".sent"></p>
+          #|</section>
+        ),
+      ),
+    },
     name="Search",
-    view=(
-      #|<section>
-      #|  <input class="q" :value=".draft"
-      #|    @on.input="$setDraft value"
-      #|    @on.keydown+send="$setSent value"
-      #|    @on.keydown+cancel="$resetDraft" />
-      #|  <p class="sent" @text=".sent"></p>
-      #|</section>
-    ),
     init=SearchState::{ draft: "", sent: "" },
   )
   @component.ModuleDef::new(name="search", components=[search])
@@ -254,16 +269,21 @@ priv struct ToggleState {
 ///|
 fn toggle_module() -> @component.ModuleDef {
   let toggle = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <button class="flip" @on.click="$toggleOn"
+          #|    @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
+          #|  <p class="yes" @show=".on">it is ON</p>
+          #|  <p class="no" @hide=".on">it is OFF</p>
+          #|  <p class="msg" @show="truthy? .message" @text=".message"></p>
+          #|</section>
+        ),
+      ),
+    },
     name="Toggle",
-    view=(
-      #|<section>
-      #|  <button class="flip" @on.click="$toggleOn"
-      #|    @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
-      #|  <p class="yes" @show=".on">it is ON</p>
-      #|  <p class="no" @hide=".on">it is OFF</p>
-      #|  <p class="msg" @show="truthy? .message" @text=".message"></p>
-      #|</section>
-    ),
     init=ToggleState::{ on: false, message: Null },
   )
   @component.ModuleDef::new(name="toggle", components=[toggle])
@@ -307,14 +327,19 @@ priv struct FruitsState {
 ///|
 fn fruits_module() -> @component.ModuleDef {
   let fruits = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<ul>
+          #|  <li @each=".items" @when="notTooLong">
+          #|    <span class="k" @text="@key"></span>: <x text="@value"></x>
+          #|  </li>
+          #|</ul>
+        ),
+      ),
+    },
     name="Fruits",
-    view=(
-      #|<ul>
-      #|  <li @each=".items" @when="notTooLong">
-      #|    <span class="k" @text="@key"></span>: <x text="@value"></x>
-      #|  </li>
-      #|</ul>
-    ),
     init=FruitsState::{ items: [] },
     when={
       // (state, key, value, iter_data) -> Bool: true keeps the item
@@ -376,25 +401,36 @@ priv struct NoState {} derive(ToJson, FromJson)
 ///|
 fn page_module() -> @component.ModuleDef {
   let greeting = @component.component(
-    name="Greeting",
-    view=(
-      #|<p class="hello">Hello, <strong @text=".name"></strong>!</p>
-    ),
-    views={
-      "shout": (
-        #|<p class="hello">HELLO, <strong @text=".name"></strong>!!!</p>
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p class="hello">Hello, <strong @text=".name"></strong>!</p>
+        ),
+      ),
+      "shout": @anode.View::new(
+        "shout",
+        raw_view=(
+          #|<p class="hello">HELLO, <strong @text=".name"></strong>!!!</p>
+        ),
       ),
     },
+    name="Greeting",
     init=GreetingState::{ name: "world" },
   )
   let page = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <x render=".greeting"></x>
+          #|  <x render=".greeting" as="shout"></x>
+          #|</section>
+        ),
+      ),
+    },
     name="Page",
-    view=(
-      #|<section>
-      #|  <x render=".greeting"></x>
-      #|  <x render=".greeting" as="shout"></x>
-      #|</section>
-    ),
     init=NoState::{  },
     specs={
       "greeting": @component.FieldSpec::comp("Greeting", args={
@@ -456,10 +492,15 @@ priv struct ChatState {
 ///|
 fn chat_module() -> @component.ModuleDef {
   let status = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p class="status" @show="truthy? .message" @text=".message"></p>
+        ),
+      ),
+    },
     name="Status",
-    view=(
-      #|<p class="status" @show="truthy? .message" @text=".message"></p>
-    ),
     init=StatusState::{ message: "" },
     update=(_s : StatusState, msg, _ctx) => {
       match msg {
@@ -469,14 +510,19 @@ fn chat_module() -> @component.ModuleDef {
     },
   )
   let chat = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <x render=".status"></x>
+          #|  <input class="draft" :value=".draft" @on.input="$setDraft value" />
+          #|  <button class="send" @on.click="submit">send</button>
+          #|</section>
+        ),
+      ),
+    },
     name="Chat",
-    view=(
-      #|<section>
-      #|  <x render=".status"></x>
-      #|  <input class="draft" :value=".draft" @on.input="$setDraft value" />
-      #|  <button class="send" @on.click="submit">send</button>
-      #|</section>
-    ),
     init=ChatState::{ draft: "" },
     specs={ "status": @component.FieldSpec::comp("Status") },
     update=(s : ChatState, msg, ctx) => {
@@ -528,13 +574,18 @@ priv struct QuotesState {
 ///|
 fn quotes_module() -> @component.ModuleDef {
   let quotes = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <p class="loading" @show=".isLoading">Loading…</p>
+          #|  <ul><li @each=".items"><x text="@value"></x></li></ul>
+          #|</section>
+        ),
+      ),
+    },
     name="Quotes",
-    view=(
-      #|<section>
-      #|  <p class="loading" @show=".isLoading">Loading…</p>
-      #|  <ul><li @each=".items"><x text="@value"></x></li></ul>
-      #|</section>
-    ),
     init=QuotesState::{ items: [], isLoading: false },
     update=(s : QuotesState, msg, ctx) => {
       match msg {
@@ -591,14 +642,19 @@ fn badge_module() -> @component.ModuleDef {
     raw_view: "<span class=\"badge\" @text=\"^label\"></span>",
   }
   let features = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div>
+          #|  <span>Feature A</span> <x:badge></x:badge>
+          #|  <span>Feature B</span> <x:badge label="Beta"></x:badge>
+          #|  <span>Feature C</span> <x:badge :label=".status"></x:badge>
+          #|</div>
+        ),
+      ),
+    },
     name="Features",
-    view=(
-      #|<div>
-      #|  <span>Feature A</span> <x:badge></x:badge>
-      #|  <span>Feature B</span> <x:badge label="Beta"></x:badge>
-      #|  <span>Feature C</span> <x:badge :label=".status"></x:badge>
-      #|</div>
-    ),
     init=FeaturesState::{ status: "Soon" },
   )
   @component.ModuleDef::new(name="badges", components=[features], macros={

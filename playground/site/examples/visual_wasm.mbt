@@ -77,10 +77,12 @@ struct VwEmptyState {} derive(ToJson, FromJson)
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
   @component.component(
-    name~,
-    view="<span class=\"instr\">\{label}</span>",
-    init=VwEmptyState::{  },
-  )
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<span class=\"instr\">\{label}</span>"),
+  },
+  name~,
+  init=VwEmptyState::{  },
+)
 }
 
 ///|
@@ -93,11 +95,13 @@ struct VwImmState {
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
 fn vw_instr_imm(name : String, label : String) -> @component.Component {
   @component.component(
-    name~,
-    view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
-      "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>",
-    init=VwImmState::{ value: 0, rawValue: "0" },
-    mutate={
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
+      "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>"),
+  },
+  name~,
+  init=VwImmState::{ value: 0, rawValue: "0" },
+  mutate={
       "setFromRawValue": (s : VwImmState, args) => {
         let raw = match args {
           [Str(t), ..] => t
@@ -110,12 +114,12 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
         }
       },
     },
-    compute={
+  compute={
       "getInputWidth": (s : VwImmState, _args) => Str(
         "\{s.rawValue.length() + 2}em",
       ),
     },
-  )
+)
 }
 
 ///|
@@ -124,15 +128,15 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
 /// type component).
 fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
   @component.component(
-    name~,
-    view="<span class=\"font-italic text-amber-400 type\">\{label}</span>",
-    views={
-      "editor": "<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<span class=\"font-italic text-amber-400 type\">\{label}</span>"),
+    "editor": @anode.View::new("editor", raw_view="<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
       "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
-      "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>",
-    },
-    init=VwEmptyState::{  },
-    swap={
+      "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>"),
+  },
+  name~,
+  init=VwEmptyState::{  },
+  swap={
       "setType": (_s : VwEmptyState, args, _ctx) => {
         let id = match args {
           [Str(t), ..] => t
@@ -141,7 +145,7 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
         Some(vw_make_type(reg, type_comp_name(id)))
       },
     },
-  )
+)
 }
 
 ///|
@@ -307,12 +311,11 @@ struct VwTypesState {
 ///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="Types",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 types"><x render-each=".items"></x></div>
-    ),
-    views={
-      "editor": (
+    )),
+    "editor": @anode.View::new("editor", raw_view=(
         #|<div class="flex items-center types-editor">
         #|  <div class="flex items-center group type-entry" @each=".items">
         #|    <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 add-at" @on.click="$addItemAt @key">+</button>
@@ -321,10 +324,11 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         #|  </div>
         #|  <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 append" @on.click="$appendItem">+</button>
         #|</div>
-      ),
-    },
-    init=VwTypesState::{ items: [] },
-    mutate={
+      )),
+  },
+  name="Types",
+  init=VwTypesState::{ items: [] },
+  mutate={
       "addItemAt": (s : VwTypesState, args) => {
         let items = s.items.copy()
         let at = @cmp.minimum(
@@ -338,33 +342,33 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         { items: s.items + [vw_make_type(reg, "TypeI32")] }
       },
     },
-  )
+)
 }
 
 ///|
 fn vw_block_type_comp() -> @component.Component {
   @component.component(
-    name="BlockType",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-1 block-type">
       #|  <span class="font-mono text-gray-400 br">[</span><x render=".args"></x>
       #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns"></x><span class="font-mono text-gray-400 br">]</span>
       #|</div>
-    ),
-    views={
-      "editor": (
+    )),
+    "editor": @anode.View::new("editor", raw_view=(
         #|<div class="flex gap-1 items-center block-type-editor">
         #|  <span class="font-mono text-gray-400 br">[</span><x render=".args" as="editor"></x>
         #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns" as="editor"></x><span class="font-mono text-gray-400 br">]</span>
         #|</div>
-      ),
-    },
-    init=VwEmptyState::{  },
-    specs={
+      )),
+  },
+  name="BlockType",
+  init=VwEmptyState::{  },
+  specs={
       "args": @component.FieldSpec::comp("Types"),
       "returns": @component.FieldSpec::comp("Types"),
     },
-  )
+)
 }
 
 ///|
@@ -424,34 +428,38 @@ fn vw_container_init() -> VwContainerState {
 ///|
 fn vw_block_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="Block",
-    view=vw_blocklike_view("block"),
-    views={ "compact": "<section class=\"compact\">block ...</section>" },
-    init=vw_container_init(),
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate=vw_container_mutate(reg),
-    compute=vw_container_compute(),
-  )
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=vw_blocklike_view("block")),
+    "compact": @anode.View::new("compact", raw_view="<section class=\"compact\">block ...</section>"),
+  },
+  name="Block",
+  init=vw_container_init(),
+  specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+  mutate=vw_container_mutate(reg),
+  compute=vw_container_compute(),
+)
 }
 
 ///|
 fn vw_loop_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="Loop",
-    view=vw_blocklike_view("loop"),
-    views={ "compact": "<section class=\"compact\">loop ...</section>" },
-    init=vw_container_init(),
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate=vw_container_mutate(reg),
-    compute=vw_container_compute(),
-  )
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=vw_blocklike_view("loop")),
+    "compact": @anode.View::new("compact", raw_view="<section class=\"compact\">loop ...</section>"),
+  },
+  name="Loop",
+  init=vw_container_init(),
+  specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+  mutate=vw_container_mutate(reg),
+  compute=vw_container_compute(),
+)
 }
 
 ///|
 fn vw_func_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="Func",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="border-l border-l-gray-400 ml-1 pl-3 flex flex-col gap-3 blocklike func">
       #|  <div class="flex gap-3 items-center group header">
       #|    <x:btn-toggle-expand></x:btn-toggle-expand>
@@ -468,15 +476,17 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
       #|  <div class="flex flex-col gap-3 ro-items" @show="$expandedAndReadOnly"><x render-each=".items"></x></div>
       #|  <x:items-editing></x:items-editing>
       #|</section>
-    ),
-    init=vw_container_init(),
-    specs={
+    )),
+  },
+  name="Func",
+  init=vw_container_init(),
+  specs={
       "blockType": @component.FieldSpec::comp("BlockType"),
       "locals": @component.FieldSpec::comp("Types"),
     },
-    mutate=vw_container_mutate(reg),
-    compute=vw_container_compute(),
-  )
+  mutate=vw_container_mutate(reg),
+  compute=vw_container_compute(),
+)
 }
 
 ///|
@@ -495,8 +505,8 @@ struct VwIfState {
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="If",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="border-l border-l-gray-400 pl-3 ml-3 flex flex-col gap-3 blocklike if">
       #|  <div class="flex gap-3 items-center group header">
       #|    <x:btn-toggle-expand></x:btn-toggle-expand>
@@ -521,9 +531,11 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       #|    <span class="text-sm text-slate-400 kw">end</span>
       #|  </div>
       #|</section>
-    ),
-    views={ "compact": "<section class=\"compact\">if ...</section>" },
-    init=VwIfState::{
+    )),
+    "compact": @anode.View::new("compact", raw_view="<section class=\"compact\">if ...</section>"),
+  },
+  name="If",
+  init=VwIfState::{
       thn: [],
       else_: [],
       expanded: true,
@@ -531,8 +543,8 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       editingThn: false,
       editingElse: false,
     },
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate={
+  specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+  mutate={
       "addThnAt": (s : VwIfState, args) => {
         { ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) }
       },
@@ -546,7 +558,7 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
         { ..s, else_: s.else_ + [vw_make_picker(reg)] }
       },
     },
-  )
+)
 }
 
 ///|
@@ -561,8 +573,8 @@ struct VwSectionState {
 ///|
 fn vw_section_comp() -> @component.Component {
   @component.component(
-    name="Section",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3 wasm-section">
       #|  <p class="flex gap-3 items-center header">
       #|    <x:btn-toggle-expand></x:btn-toggle-expand>
@@ -571,20 +583,22 @@ fn vw_section_comp() -> @component.Component {
       #|  </p>
       #|  <div class="flex flex-col gap-3 ml-2 sec-items" @show=".expanded"><x render-each=".items"></x></div>
       #|</section>
-    ),
-    init=VwSectionState::{
+    )),
+  },
+  name="Section",
+  init=VwSectionState::{
       id: 0,
       name: "Section",
       items: [],
       expanded: true,
       defaultItem: Null,
     },
-    mutate={
+  mutate={
       "addDefaultItem": (s : VwSectionState, _args) => {
         { ..s, items: s.items + [vw_with_editing(s.defaultItem)] }
       },
     },
-  )
+)
 }
 
 ///|
@@ -611,17 +625,19 @@ fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
 ///|
 fn vw_memory_comp() -> @component.Component {
   @component.component(
-    name="Memory",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 items-center memory">
       #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
       #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="$setNFromString value" /></label>
       #|  <label class="input input-ghost outline-0 items-baseline h-auto">Max Pages
       #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="$setMFromString value" /></label>
       #|</div>
-    ),
-    init=VwMemoryState::{ n: 1, m: 1 },
-    mutate={
+    )),
+  },
+  name="Memory",
+  init=VwMemoryState::{ n: 1, m: 1 },
+  mutate={
       "setNFromString": (s : VwMemoryState, args) => {
         { ..s, n: vw_int_value(args, s.n) }
       },
@@ -629,21 +645,23 @@ fn vw_memory_comp() -> @component.Component {
         { ..s, m: vw_int_value(args, s.m) }
       },
     },
-  )
+)
 }
 
 ///|
 fn vw_module_comp() -> @component.Component {
   @component.component(
-    name="Module",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3 module">
       #|  <x render=".mem"></x>
       #|  <x render=".func"></x>
       #|</section>
-    ),
-    init=VwEmptyState::{  },
-    specs={
+    )),
+  },
+  name="Module",
+  init=VwEmptyState::{  },
+  specs={
       "mem": @component.FieldSpec::comp("Section", args={
         "id": Num(5),
         "name": Str("Memory"),
@@ -653,7 +671,7 @@ fn vw_module_comp() -> @component.Component {
         "name": Str("Functions"),
       }),
     },
-  )
+)
 }
 
 ///|
@@ -714,28 +732,30 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     )
   }
   @component.component(
-    name="InstructionPicker",
-    view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
+  compiled_views={
+    "main": @anode.View::new("main", raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
       "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"$setFilter value\" />" +
       "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
       "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
       // DIVERGENCE: pass @value (the id) directly instead of reading it off the
       // DOM target, which the value layer does not expose.
       "<button class=\"btn btn-block pick\" @each=\".instructions\" @loop-with=\"loopWith\" @when=\"whenMatch\" :data-value=\"@value\" @on.click=\"selectInstructionById @value\"><x text=\"@value\"></x></button>" +
-      "</div></section>",
-    init=VwPickerState::{
+      "</div></section>"),
+  },
+  name="InstructionPicker",
+  init=VwPickerState::{
       currentSection: "all",
       instructions: vw_all_ids().map(x => (Str(x) : @tutuca.Value)),
       filter: "",
     },
-    mutate~,
-    compute~,
-    loop_with={
+  mutate~,
+  compute~,
+  loop_with={
       "loopWith": (s : VwPickerState, _seq, _ctx) => @component.LoopWith::new(
         iter_data=Map({ "filter": Str(s.filter.to_lower()) }),
       ),
     },
-    when={
+  when={
       "whenMatch": (_s : VwPickerState, _key, value, iter) => match
         (value, iter) {
         (Str(v), Map(idata)) =>
@@ -746,7 +766,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         _ => true
       },
     },
-    swap={
+  swap={
       "selectInstructionById": (_s : VwPickerState, args, _ctx) => {
         let id = match args {
           [Str(t), ..] => t
@@ -762,7 +782,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         }
       },
     },
-  )
+)
 }
 
 ///|

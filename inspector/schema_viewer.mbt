@@ -15,6 +15,18 @@ priv struct SchemaViewerState {
 /// keeps the plain schema for inspection.
 fn schema_viewer_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="inline-flex flex-col items-start gap-1 schema-viewer">
+          #|  <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="$toggleShowRaw" @text="$toggleLabel"></button>
+          #|  <x render=".value" @hide=".showRaw"></x>
+          #|  <x render=".raw" @show=".showRaw"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="SchemaViewer",
     init=SchemaViewerState::{
       value: Null,
@@ -33,13 +45,6 @@ fn schema_viewer_comp() -> @component.Component {
         Str(if s.showRaw { "high-level view" } else { "raw schema" })
       },
     },
-    view=(
-      #|<div class="inline-flex flex-col items-start gap-1 schema-viewer">
-      #|  <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="$toggleShowRaw" @text="$toggleLabel"></button>
-      #|  <x render=".value" @hide=".showRaw"></x>
-      #|  <x render=".raw" @show=".showRaw"></x>
-      #|</div>
-    ),
   )
 }
 

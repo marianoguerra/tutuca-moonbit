@@ -34,8 +34,13 @@ priv struct SmokeCounterState {
 ///|
 fn counter_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel value\"></div>",
+      ),
+    },
     name="Counter",
-    view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel value\"></div>",
     init=SmokeCounterState::{ n: 0, label: "start" },
     update=(s : SmokeCounterState, msg, _ctx) => {
       match msg {
@@ -89,10 +94,15 @@ test "browser: styles are compiled into a head style element" {
   let container = @bdom.BrowserNode::from_element(doc.createElement("div"))
   let scope = @component.ComponentStack::new()
   let styled = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div>x</div>",
+        style="color: red",
+      ),
+    },
     name="Styled",
-    view="<div>x</div>",
     init=SmokeEmptyState::{  },
-    style="color: red",
   )
   scope.register_components([styled])
   let a = @app.App::new(
@@ -126,8 +136,13 @@ test "browser: real drag events run the drag lifecycle" {
   let container = @bdom.BrowserNode::from_element(doc.createElement("div"))
   let scope = @component.ComponentStack::new()
   let board = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed dragInfo\">zone</div></div>",
+      ),
+    },
     name="DropBoard",
-    view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed dragInfo\">zone</div></div>",
     init=DropBoardState::{ landed_kind: "" },
     update=(_s : DropBoardState, msg, _ctx) => {
       match msg {

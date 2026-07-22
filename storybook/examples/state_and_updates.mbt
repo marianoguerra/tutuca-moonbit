@@ -24,17 +24,22 @@ priv struct AttributeBindingState {
 /// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input class="input s" :value=".str" @on.input="$setStr value" :title="$'Content is {.str}'" />
+          #|  <input class="input n" type="number" :value=".num" @on.input="$setRawNumber value" />
+          #|  <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="$setBool value" />
+          #|  <p>String: <span class="o-str" @text=".str"></span></p>
+          #|  <p>Number: <span class="o-num" @text=".num"></span></p>
+          #|  <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
+          #|</section>
+        ),
+      ),
+    },
     name="AttributeBinding",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input class="input s" :value=".str" @on.input="$setStr value" :title="$'Content is {.str}'" />
-      #|  <input class="input n" type="number" :value=".num" @on.input="$setRawNumber value" />
-      #|  <input class="checkbox b" type="checkbox" :checked=".bool" @on.input="$setBool value" />
-      #|  <p>String: <span class="o-str" @text=".str"></span></p>
-      #|  <p>Number: <span class="o-num" @text=".num"></span></p>
-      #|  <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
-      #|</section>
-    ),
     init=AttributeBindingState::{
       str: "hello",
       num: 42,
@@ -86,18 +91,23 @@ priv struct ConditionalAttributesState {
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
 fn conditional_attributes_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <button
+          #|    @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'"
+          #|    @if.title=".isActive" @then.title="'Click to disable'" @else.title="'Click to enable'"
+          #|    @on.click="$toggleIsActive">
+          #|    <span class="on" @show=".isActive">Enabled</span>
+          #|    <span class="off" @hide=".isActive">Disabled</span>
+          #|  </button>
+          #|</section>
+        ),
+      ),
+    },
     name="ConditionalAttributes",
-    view=(
-      #|<section>
-      #|  <button
-      #|    @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'"
-      #|    @if.title=".isActive" @then.title="'Click to disable'" @else.title="'Click to enable'"
-      #|    @on.click="$toggleIsActive">
-      #|    <span class="on" @show=".isActive">Enabled</span>
-      #|    <span class="off" @hide=".isActive">Disabled</span>
-      #|  </button>
-      #|</section>
-    ),
     init=ConditionalAttributesState::{ isActive: true },
   )
 }
@@ -135,19 +145,24 @@ priv struct EventModifiersState {
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="search" class="input" :value=".query"
+          #|    @on.input="onInput value"
+          #|    @on.keydown+send="$setLastSentSearch value"
+          #|    @on.keydown+cancel="$resetQuery"
+          #|    placeholder="Search Query (Enter to send, Esc to clear)" />
+          #|  <p class="sent" @show="truthy? .lastSentSearch">
+          #|    Search: "<span class="sent-q" @text=".lastSentSearch"></span>"
+          #|  </p>
+          #|</section>
+        ),
+      ),
+    },
     name="EventModifiers",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="onInput value"
-      #|    @on.keydown+send="$setLastSentSearch value"
-      #|    @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Search Query (Enter to send, Esc to clear)" />
-      #|  <p class="sent" @show="truthy? .lastSentSearch">
-      #|    Search: "<span class="sent-q" @text=".lastSentSearch"></span>"
-      #|  </p>
-      #|</section>
-    ),
     init=EventModifiersState::{ query: "", lastSentSearch: Null },
     update=(s : EventModifiersState, msg, _ctx) => {
       match msg {
@@ -189,19 +204,24 @@ priv struct ShowHideState {
 /// extra DOM.
 fn show_hide_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-2">
+          #|  <button class="btn btn-primary toggle-btn" @on.click="$toggleIsOpen" @text="$label"></button>
+          #|  <div class="card p-3 border details" @show=".isOpen">
+          #|    <p>Details panel &mdash; only visible when <code>isOpen</code> is true.</p>
+          #|    <button class="btn btn-sm bump" @on.click="$incCount">Click me</button>
+          #|    <p>Clicked <x text=".count"></x> times.</p>
+          #|  </div>
+          #|  <p class="text-sm opacity-60 hint" @hide=".isOpen">(details are hidden)</p>
+          #|  <p class="peek">Count, only when open: <x text=".count" @show=".isOpen"></x></p>
+          #|</section>
+        ),
+      ),
+    },
     name="ShowHide",
-    view=(
-      #|<section class="flex flex-col gap-2">
-      #|  <button class="btn btn-primary toggle-btn" @on.click="$toggleIsOpen" @text="$label"></button>
-      #|  <div class="card p-3 border details" @show=".isOpen">
-      #|    <p>Details panel &mdash; only visible when <code>isOpen</code> is true.</p>
-      #|    <button class="btn btn-sm bump" @on.click="$incCount">Click me</button>
-      #|    <p>Clicked <x text=".count"></x> times.</p>
-      #|  </div>
-      #|  <p class="text-sm opacity-60 hint" @hide=".isOpen">(details are hidden)</p>
-      #|  <p class="peek">Count, only when open: <x text=".count" @show=".isOpen"></x></p>
-      #|</section>
-    ),
     init=ShowHideState::{ isOpen: false, count: 0 },
     compute={
       "label": (s : ShowHideState, _args) => {

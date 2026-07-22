@@ -63,6 +63,15 @@ impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
 ///|
 fn instance_fields_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_composite_view(
+          type_class="font-semibold instance-fields",
+          border_class="border-base-content/15",
+        ),
+      ),
+    },
     name="InstanceFields",
     init=InstanceFieldsState::{
       items: [],
@@ -77,10 +86,6 @@ fn instance_fields_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_composite_view(
-      type_class="font-semibold instance-fields",
-      border_class="border-base-content/15",
-    ),
   )
 }
 
@@ -90,6 +95,14 @@ fn instance_fields_comp() -> @component.Component {
 /// to the plain data inspector.
 fn instance_inspector_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="contents"><x render=".value"></x></span>
+        ),
+      ),
+    },
     name="InstanceInspector",
     init=WrapperState::{ value: Null },
     mutate={
@@ -97,9 +110,6 @@ fn instance_inspector_comp() -> @component.Component {
         value: toggle_wrapped(s.value),
       },
     },
-    view=(
-      #|<span class="contents"><x render=".value"></x></span>
-    ),
   )
 }
 
@@ -170,6 +180,50 @@ priv struct InstanceExplorerState {
 /// (LintReport). A tab only appears when it has content.
 fn instance_explorer_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
+          #|  <div role="tablist" class="tabs">
+          #|    <a role="tab"
+          #|      @if.class="equals? .activeTab 'instance'"
+          #|      @then="'tab tab-active tab-instance'"
+          #|      @else="'tab tab-instance'"
+          #|      @on.click="$setActiveTab 'instance'">
+          #|      Instance
+          #|    </a>
+          #|    <a role="tab" @show=".hasComponent"
+          #|      @if.class="equals? .activeTab 'component'"
+          #|      @then="'tab tab-active tab-component'"
+          #|      @else="'tab tab-component'"
+          #|      @on.click="$setActiveTab 'component'">
+          #|      Component
+          #|    </a>
+          #|    <a role="tab" @show=".hasLint"
+          #|      @if.class="equals? .activeTab 'lint'"
+          #|      @then="'tab tab-active tab-lint'"
+          #|      @else="'tab tab-lint'"
+          #|      @on.click="$setActiveTab 'lint'">
+          #|      Lint
+          #|    </a>
+          #|  </div>
+          #|  <div @show="equals? .activeTab 'instance'">
+          #|    <x render=".instanceView"></x>
+          #|  </div>
+          #|  <div @show="equals? .activeTab 'component'">
+          #|    <div @show=".hasComponent"><x render=".componentView"></x></div>
+          #|    <div @hide=".hasComponent" class="text-base-content/50 text-xs">
+          #|      Pass the Component descriptor to inspect its definition.
+          #|    </div>
+          #|  </div>
+          #|  <div @show="equals? .activeTab 'lint'">
+          #|    <x render=".lintView"></x>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="InstanceExplorer",
     init=InstanceExplorerState::{
       activeTab: "instance",
@@ -179,45 +233,6 @@ fn instance_explorer_comp() -> @component.Component {
       hasComponent: false,
       hasLint: false,
     },
-    view=(
-      #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
-      #|  <div role="tablist" class="tabs">
-      #|    <a role="tab"
-      #|      @if.class="equals? .activeTab 'instance'"
-      #|      @then="'tab tab-active tab-instance'"
-      #|      @else="'tab tab-instance'"
-      #|      @on.click="$setActiveTab 'instance'">
-      #|      Instance
-      #|    </a>
-      #|    <a role="tab" @show=".hasComponent"
-      #|      @if.class="equals? .activeTab 'component'"
-      #|      @then="'tab tab-active tab-component'"
-      #|      @else="'tab tab-component'"
-      #|      @on.click="$setActiveTab 'component'">
-      #|      Component
-      #|    </a>
-      #|    <a role="tab" @show=".hasLint"
-      #|      @if.class="equals? .activeTab 'lint'"
-      #|      @then="'tab tab-active tab-lint'"
-      #|      @else="'tab tab-lint'"
-      #|      @on.click="$setActiveTab 'lint'">
-      #|      Lint
-      #|    </a>
-      #|  </div>
-      #|  <div @show="equals? .activeTab 'instance'">
-      #|    <x render=".instanceView"></x>
-      #|  </div>
-      #|  <div @show="equals? .activeTab 'component'">
-      #|    <div @show=".hasComponent"><x render=".componentView"></x></div>
-      #|    <div @hide=".hasComponent" class="text-base-content/50 text-xs">
-      #|      Pass the Component descriptor to inspect its definition.
-      #|    </div>
-      #|  </div>
-      #|  <div @show="equals? .activeTab 'lint'">
-      #|    <x render=".lintView"></x>
-      #|  </div>
-      #|</div>
-    ),
   )
 }
 

@@ -13,11 +13,16 @@ priv struct BoardState {
 ///|
 fn board_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div>" +
+          "<ul><li @each=\".cards\" draggable=\"true\" data-dragtype=\"card\"><x text=\"@value\"></x></li></ul>" +
+          "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
+          "</div>",
+      ),
+    },
     name="Board",
-    view="<div>" +
-      "<ul><li @each=\".cards\" draggable=\"true\" data-dragtype=\"card\"><x text=\"@value\"></x></li></ul>" +
-      "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
-      "</div>",
     init=BoardState::{ cards: Map([]), received: "", from: "", kind: "" },
     update=(s : BoardState, msg, _ctx) => {
       match msg {

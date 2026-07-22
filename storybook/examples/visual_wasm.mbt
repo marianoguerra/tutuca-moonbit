@@ -95,9 +95,16 @@ priv struct VwEmptyState {} derive(ToJson, FromJson)
 ///|
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
-  @component.component(name~, view="<span class=\"instr\">\{label}</span>", init=VwEmptyState::{
-
-  })
+  @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<span class=\"instr\">\{label}</span>",
+      ),
+    },
+    name~,
+    init=VwEmptyState::{  },
+  )
 }
 
 ///|
@@ -110,9 +117,14 @@ priv struct VwImmState {
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
 fn vw_instr_imm(name : String, label : String) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
+          "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>",
+      ),
+    },
     name~,
-    view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
-      "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>",
     init=VwImmState::{ value: 0, rawValue: "0" },
     mutate={
       "setFromRawValue": (s : VwImmState, args) => {
@@ -141,13 +153,19 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
 /// type component).
 fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
   @component.component(
-    name~,
-    view="<span class=\"font-italic text-amber-400 type\">\{label}</span>",
-    views={
-      "editor": "<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
-      "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
-      "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>",
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<span class=\"font-italic text-amber-400 type\">\{label}</span>",
+      ),
+      "editor": @anode.View::new(
+        "editor",
+        raw_view="<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
+          "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
+          "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>",
+      ),
     },
+    name~,
     init=VwEmptyState::{  },
     swap={
       "setType": (_s : VwEmptyState, args, _ctx) => {
@@ -324,22 +342,28 @@ priv struct VwTypesState {
 ///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    name="Types",
-    view=(
-      #|<div class="flex gap-3 types"><x render-each=".items"></x></div>
-    ),
-    views={
-      "editor": (
-        #|<div class="flex items-center types-editor">
-        #|  <div class="flex items-center group type-entry" @each=".items">
-        #|    <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 add-at" @on.click="$addItemAt @key">+</button>
-        #|    <x render-it as="editor"></x>
-        #|    <button class="btn btn-xs btn-soft btn-circle btn-error max-sm:opacity-100 opacity-0 group-hover:opacity-100 rm" @on.click="$removeInItemsAt @key">⛔</button>
-        #|  </div>
-        #|  <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 append" @on.click="$appendItem">+</button>
-        #|</div>
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-3 types"><x render-each=".items"></x></div>
+        ),
+      ),
+      "editor": @anode.View::new(
+        "editor",
+        raw_view=(
+          #|<div class="flex items-center types-editor">
+          #|  <div class="flex items-center group type-entry" @each=".items">
+          #|    <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 add-at" @on.click="$addItemAt @key">+</button>
+          #|    <x render-it as="editor"></x>
+          #|    <button class="btn btn-xs btn-soft btn-circle btn-error max-sm:opacity-100 opacity-0 group-hover:opacity-100 rm" @on.click="$removeInItemsAt @key">⛔</button>
+          #|  </div>
+          #|  <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 append" @on.click="$appendItem">+</button>
+          #|</div>
+        ),
       ),
     },
+    name="Types",
     init=VwTypesState::{ items: [] },
     mutate={
       "addItemAt": (s : VwTypesState, args) => {
@@ -361,21 +385,27 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_block_type_comp() -> @component.Component {
   @component.component(
-    name="BlockType",
-    view=(
-      #|<div class="flex gap-1 block-type">
-      #|  <span class="font-mono text-gray-400 br">[</span><x render=".args"></x>
-      #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns"></x><span class="font-mono text-gray-400 br">]</span>
-      #|</div>
-    ),
-    views={
-      "editor": (
-        #|<div class="flex gap-1 items-center block-type-editor">
-        #|  <span class="font-mono text-gray-400 br">[</span><x render=".args" as="editor"></x>
-        #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns" as="editor"></x><span class="font-mono text-gray-400 br">]</span>
-        #|</div>
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-1 block-type">
+          #|  <span class="font-mono text-gray-400 br">[</span><x render=".args"></x>
+          #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns"></x><span class="font-mono text-gray-400 br">]</span>
+          #|</div>
+        ),
+      ),
+      "editor": @anode.View::new(
+        "editor",
+        raw_view=(
+          #|<div class="flex gap-1 items-center block-type-editor">
+          #|  <span class="font-mono text-gray-400 br">[</span><x render=".args" as="editor"></x>
+          #|  <span class="font-mono text-gray-400 br">] → [</span><x render=".returns" as="editor"></x><span class="font-mono text-gray-400 br">]</span>
+          #|</div>
+        ),
       ),
     },
+    name="BlockType",
     init=VwEmptyState::{  },
     specs={
       "args": @component.FieldSpec::comp("Types"),
@@ -442,9 +472,14 @@ fn vw_container_init() -> VwContainerState {
 ///|
 fn vw_block_comp(reg : VwReg) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new("main", raw_view=vw_blocklike_view("block")),
+      "compact": @anode.View::new(
+        "compact",
+        raw_view="<section class=\"compact\">block ...</section>",
+      ),
+    },
     name="Block",
-    view=vw_blocklike_view("block"),
-    views={ "compact": "<section class=\"compact\">block ...</section>" },
     init=vw_container_init(),
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     mutate=vw_container_mutate(reg),
@@ -455,9 +490,14 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_loop_comp(reg : VwReg) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new("main", raw_view=vw_blocklike_view("loop")),
+      "compact": @anode.View::new(
+        "compact",
+        raw_view="<section class=\"compact\">loop ...</section>",
+      ),
+    },
     name="Loop",
-    view=vw_blocklike_view("loop"),
-    views={ "compact": "<section class=\"compact\">loop ...</section>" },
     init=vw_container_init(),
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     mutate=vw_container_mutate(reg),
@@ -468,25 +508,30 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_func_comp(reg : VwReg) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="border-l border-l-gray-400 ml-1 pl-3 flex flex-col gap-3 blocklike func">
+          #|  <div class="flex gap-3 items-center group header">
+          #|    <x:btn-toggle-expand></x:btn-toggle-expand>
+          #|    <span class="text-sm text-gray-400 kw">func</span>
+          #|    <div @hide=".editing"><x render=".blockType"></x></div>
+          #|    <x:btn-toggle-edit></x:btn-toggle-edit>
+          #|  </div>
+          #|  <div @show=".editing"><x render=".blockType" as="editor"></x></div>
+          #|  <div class="flex gap-3 ml-3 items-baseline locals" @show=".expanded">
+          #|    <span class="text-sm text-gray-400 kw">locals</span>
+          #|    <div @hide=".editing"><x render=".locals"></x></div>
+          #|    <div @show=".editing"><x render=".locals" as="editor"></x></div>
+          #|  </div>
+          #|  <div class="flex flex-col gap-3 ro-items" @show="$expandedAndReadOnly"><x render-each=".items"></x></div>
+          #|  <x:items-editing></x:items-editing>
+          #|</section>
+        ),
+      ),
+    },
     name="Func",
-    view=(
-      #|<section class="border-l border-l-gray-400 ml-1 pl-3 flex flex-col gap-3 blocklike func">
-      #|  <div class="flex gap-3 items-center group header">
-      #|    <x:btn-toggle-expand></x:btn-toggle-expand>
-      #|    <span class="text-sm text-gray-400 kw">func</span>
-      #|    <div @hide=".editing"><x render=".blockType"></x></div>
-      #|    <x:btn-toggle-edit></x:btn-toggle-edit>
-      #|  </div>
-      #|  <div @show=".editing"><x render=".blockType" as="editor"></x></div>
-      #|  <div class="flex gap-3 ml-3 items-baseline locals" @show=".expanded">
-      #|    <span class="text-sm text-gray-400 kw">locals</span>
-      #|    <div @hide=".editing"><x render=".locals"></x></div>
-      #|    <div @show=".editing"><x render=".locals" as="editor"></x></div>
-      #|  </div>
-      #|  <div class="flex flex-col gap-3 ro-items" @show="$expandedAndReadOnly"><x render-each=".items"></x></div>
-      #|  <x:items-editing></x:items-editing>
-      #|</section>
-    ),
     init=vw_container_init(),
     specs={
       "blockType": @component.FieldSpec::comp("BlockType"),
@@ -513,34 +558,42 @@ priv struct VwIfState {
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="border-l border-l-gray-400 pl-3 ml-3 flex flex-col gap-3 blocklike if">
+          #|  <div class="flex gap-3 items-center group header">
+          #|    <x:btn-toggle-expand></x:btn-toggle-expand>
+          #|    <span class="text-sm text-gray-400 kw">if</span>
+          #|    <div @hide=".editingIf"><x render=".blockType"></x></div>
+          #|    <x:btn-toggle-edit :value=".editingIf" :handler="$toggleEditingIf"></x:btn-toggle-edit>
+          #|  </div>
+          #|  <div @show=".editingIf"><x render=".blockType" as="editor"></x></div>
+          #|  <div class="border-l border-l-gray-400 pl-3 ml-3" @show=".expanded">
+          #|    <div class="flex gap-3 items-center group header">
+          #|      <span class="text-sm text-slate-400 kw">then</span>
+          #|      <x:btn-toggle-edit :value=".editingThn" :handler="$toggleEditingThn"></x:btn-toggle-edit>
+          #|    </div>
+          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-thn" @hide=".editingThn"><x render-each=".thn"></x></div>
+          #|    <x:items-editing :showval=".editingThn" :items=".thn" :onadd="$addThnAt" :onremove="$removeInThnAt" :onappend="$appendInThn"></x:items-editing>
+          #|    <div class="flex gap-3 items-center group header">
+          #|      <span class="text-sm text-slate-400 kw">else</span>
+          #|      <x:btn-toggle-edit :value=".editingElse" :handler="$toggleEditingElse"></x:btn-toggle-edit>
+          #|    </div>
+          #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-else" @hide=".editingElse"><x render-each=".else"></x></div>
+          #|    <x:items-editing :showval=".editingElse" :items=".else" :onadd="$addElseAt" :onremove="$removeInElseAt" :onappend="$appendInElse"></x:items-editing>
+          #|    <span class="text-sm text-slate-400 kw">end</span>
+          #|  </div>
+          #|</section>
+        ),
+      ),
+      "compact": @anode.View::new(
+        "compact",
+        raw_view="<section class=\"compact\">if ...</section>",
+      ),
+    },
     name="If",
-    view=(
-      #|<section class="border-l border-l-gray-400 pl-3 ml-3 flex flex-col gap-3 blocklike if">
-      #|  <div class="flex gap-3 items-center group header">
-      #|    <x:btn-toggle-expand></x:btn-toggle-expand>
-      #|    <span class="text-sm text-gray-400 kw">if</span>
-      #|    <div @hide=".editingIf"><x render=".blockType"></x></div>
-      #|    <x:btn-toggle-edit :value=".editingIf" :handler="$toggleEditingIf"></x:btn-toggle-edit>
-      #|  </div>
-      #|  <div @show=".editingIf"><x render=".blockType" as="editor"></x></div>
-      #|  <div class="border-l border-l-gray-400 pl-3 ml-3" @show=".expanded">
-      #|    <div class="flex gap-3 items-center group header">
-      #|      <span class="text-sm text-slate-400 kw">then</span>
-      #|      <x:btn-toggle-edit :value=".editingThn" :handler="$toggleEditingThn"></x:btn-toggle-edit>
-      #|    </div>
-      #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-thn" @hide=".editingThn"><x render-each=".thn"></x></div>
-      #|    <x:items-editing :showval=".editingThn" :items=".thn" :onadd="$addThnAt" :onremove="$removeInThnAt" :onappend="$appendInThn"></x:items-editing>
-      #|    <div class="flex gap-3 items-center group header">
-      #|      <span class="text-sm text-slate-400 kw">else</span>
-      #|      <x:btn-toggle-edit :value=".editingElse" :handler="$toggleEditingElse"></x:btn-toggle-edit>
-      #|    </div>
-      #|    <div class="my-3 pl-3 flex flex-col gap-3 ro-else" @hide=".editingElse"><x render-each=".else"></x></div>
-      #|    <x:items-editing :showval=".editingElse" :items=".else" :onadd="$addElseAt" :onremove="$removeInElseAt" :onappend="$appendInElse"></x:items-editing>
-      #|    <span class="text-sm text-slate-400 kw">end</span>
-      #|  </div>
-      #|</section>
-    ),
-    views={ "compact": "<section class=\"compact\">if ...</section>" },
     init=VwIfState::{
       thn: [],
       else_: [],
@@ -583,17 +636,22 @@ priv struct VwSectionState {
 ///|
 fn vw_section_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3 wasm-section">
+          #|  <p class="flex gap-3 items-center header">
+          #|    <x:btn-toggle-expand></x:btn-toggle-expand>
+          #|    <span class="sec-name" @text=".name"></span>
+          #|    <button class="btn btn-xs btn-soft btn-primary add-default" @on.click="$addDefaultItem">+</button>
+          #|  </p>
+          #|  <div class="flex flex-col gap-3 ml-2 sec-items" @show=".expanded"><x render-each=".items"></x></div>
+          #|</section>
+        ),
+      ),
+    },
     name="Section",
-    view=(
-      #|<section class="flex flex-col gap-3 wasm-section">
-      #|  <p class="flex gap-3 items-center header">
-      #|    <x:btn-toggle-expand></x:btn-toggle-expand>
-      #|    <span class="sec-name" @text=".name"></span>
-      #|    <button class="btn btn-xs btn-soft btn-primary add-default" @on.click="$addDefaultItem">+</button>
-      #|  </p>
-      #|  <div class="flex flex-col gap-3 ml-2 sec-items" @show=".expanded"><x render-each=".items"></x></div>
-      #|</section>
-    ),
     init=VwSectionState::{
       id: 0,
       name: "Section",
@@ -634,15 +692,20 @@ fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
 ///|
 fn vw_memory_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-3 items-center memory">
+          #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="$setNFromString value" /></label>
+          #|  <label class="input input-ghost outline-0 items-baseline h-auto">Max Pages
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="$setMFromString value" /></label>
+          #|</div>
+        ),
+      ),
+    },
     name="Memory",
-    view=(
-      #|<div class="flex gap-3 items-center memory">
-      #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
-      #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="$setNFromString value" /></label>
-      #|  <label class="input input-ghost outline-0 items-baseline h-auto">Max Pages
-      #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="$setMFromString value" /></label>
-      #|</div>
-    ),
     init=VwMemoryState::{ n: 1, m: 1 },
     mutate={
       "setNFromString": (s : VwMemoryState, args) => {
@@ -660,13 +723,18 @@ fn vw_memory_comp() -> @component.Component {
 ///|
 fn vw_module_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3 module">
+          #|  <x render=".mem"></x>
+          #|  <x render=".func"></x>
+          #|</section>
+        ),
+      ),
+    },
     name="Module",
-    view=(
-      #|<section class="flex flex-col gap-3 module">
-      #|  <x render=".mem"></x>
-      #|  <x render=".func"></x>
-      #|</section>
-    ),
     init=VwEmptyState::{  },
     specs={
       "mem": @component.FieldSpec::comp("Section", args={
@@ -739,15 +807,20 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     }
   }
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
+          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"$setFilter value\" />" +
+          "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
+          "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
+          // DIVERGENCE: pass @value (the id) directly instead of reading it off the
+          // DOM target, which the value layer does not expose.
+          "<button class=\"btn btn-block pick\" @each=\".instructions\" @loop-with=\"loopWith\" @when=\"whenMatch\" :data-value=\"@value\" @on.click=\"selectInstructionById @value\"><x text=\"@value\"></x></button>" +
+          "</div></section>",
+      ),
+    },
     name="InstructionPicker",
-    view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
-      "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"$setFilter value\" />" +
-      "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
-      "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
-      // DIVERGENCE: pass @value (the id) directly instead of reading it off the
-      // DOM target, which the value layer does not expose.
-      "<button class=\"btn btn-block pick\" @each=\".instructions\" @loop-with=\"loopWith\" @when=\"whenMatch\" :data-value=\"@value\" @on.click=\"selectInstructionById @value\"><x text=\"@value\"></x></button>" +
-      "</div></section>",
     init=VwPickerState::{
       currentSection: "all",
       instructions: vw_all_ids().map(x => (Str(x) : @tutuca.Value)),

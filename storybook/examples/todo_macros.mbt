@@ -65,13 +65,18 @@ priv struct TmItemState {
 ///|
 fn tm_item_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<x:hbox>
+          #|  <x:checkbox :value=".completed" :handler="$setCompleted"></x:checkbox>
+          #|  <x:input :value=".text" :handler="$setText" :disabled=".completed"></x:input>
+          #|</x:hbox>
+        ),
+      ),
+    },
     name="Item",
-    view=(
-      #|<x:hbox>
-      #|  <x:checkbox :value=".completed" :handler="$setCompleted"></x:checkbox>
-      #|  <x:input :value=".text" :handler="$setText" :disabled=".completed"></x:input>
-      #|</x:hbox>
-    ),
     init=TmItemState::{ completed: false, text: "do the thing" },
   )
 }
@@ -88,18 +93,23 @@ priv struct TmItemsState {
 /// ignored argument here).
 fn tm_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<x:vbox>
+          #|  <x:btn-action label="Add Task" :handler="onAddItem"></x:btn-action>
+          #|  <x:vbox class="w-full">
+          #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full entry">
+          #|      <x render-it></x>
+          #|      <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
+          #|    </div>
+          #|  </x:vbox>
+          #|</x:vbox>
+        ),
+      ),
+    },
     name="Items",
-    view=(
-      #|<x:vbox>
-      #|  <x:btn-action label="Add Task" :handler="onAddItem"></x:btn-action>
-      #|  <x:vbox class="w-full">
-      #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full entry">
-      #|      <x render-it></x>
-      #|      <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
-      #|    </div>
-      #|  </x:vbox>
-      #|</x:vbox>
-    ),
     init=TmItemsState::{ items: [] },
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {

@@ -15,13 +15,18 @@ priv struct TodoItemState {
 ///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-3 items-center">
+          #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
+          #|  <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed" />
+          #|</div>
+        ),
+      ),
+    },
     name="Item",
-    view=(
-      #|<div class="flex gap-3 items-center">
-      #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
-      #|  <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed" />
-      #|</div>
-    ),
     init=TodoItemState::{ completed: false, text: "do the thing" },
   )
 }
@@ -37,18 +42,23 @@ priv struct TodoItemsState {
 /// passed the loop's key.
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3">
+          #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
+          #|  <div class="flex flex-col gap-3 w-full">
+          #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
+          #|      <x render-it></x>
+          #|      <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
+          #|    </div>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="Items",
-    view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
-      #|  <div class="flex flex-col gap-3 w-full">
-      #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
-      #|    </div>
-      #|  </div>
-      #|</div>
-    ),
     init=TodoItemsState::{ items: [] },
     update=(s : TodoItemsState, msg, _ctx) => {
       match msg {

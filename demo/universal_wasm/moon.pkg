@@ -8,6 +8,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/json",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,

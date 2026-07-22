@@ -134,8 +134,8 @@ struct PersonState {
 ///|
 fn person_comp() -> @component.Component {
   @component.component(
-    name="Person",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="person flex gap-2 items-center grow">
       #|  <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name" />
       #|  <input class="input input-sm grow email" :value=".email" @on.input="$setEmail value" placeholder="email" />
@@ -144,9 +144,11 @@ fn person_comp() -> @component.Component {
       #|    active
       #|  </label>
       #|</div>
-    ),
-    init=PersonState::{ name: "", email: "", active: false },
-  )
+    )),
+  },
+  name="Person",
+  init=PersonState::{ name: "", email: "", active: false },
+)
 }
 
 ///|
@@ -187,14 +189,16 @@ fn fp_pager_info(s : PeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   @component.component(
-    name="NaivePeople",
-    view=people_view("@when=\"onlyMatches\" @loop-with=\"tablePage\""),
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
-    update=fp_update(),
-    when=fp_only_matches(),
-    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
-    loop_with={
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"tablePage\"")),
+  },
+  name="NaivePeople",
+  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+  compute=fp_base_compute(),
+  update=fp_update(),
+  when=fp_only_matches(),
+  enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
+  loop_with={
       "tablePage": (s : PeopleState, seq, ctx) => {
         let all : Array[Int] = []
         for i, v in seq.list() {
@@ -207,7 +211,7 @@ fn naive_people_comp() -> @component.Component {
         fp_num_keys(page_slice(all, start, s.pageSize))
       },
     },
-  )
+)
 }
 
 ///|
@@ -216,14 +220,16 @@ fn naive_people_comp() -> @component.Component {
 /// (`filter`) to collect just this page's keys, early-exiting once it is full.
 fn shared_people_comp() -> @component.Component {
   @component.component(
-    name="SharedPeople",
-    view=people_view("@when=\"onlyMatches\" @loop-with=\"page\""),
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
-    update=fp_update(),
-    when=fp_only_matches(),
-    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
-    loop_with={
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"page\"")),
+  },
+  name="SharedPeople",
+  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+  compute=fp_base_compute(),
+  update=fp_update(),
+  when=fp_only_matches(),
+  enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
+  loop_with={
       "page": (s : PeopleState, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {
           Num(n) => n.to_int()
@@ -247,7 +253,7 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
-  )
+)
 }
 
 ///|
@@ -255,13 +261,14 @@ fn shared_people_comp() -> @component.Component {
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
   @component.component(
-    name="CoupledPeople",
-    // no @when here: the loop-with's keys are authoritative
-    view=people_view("@loop-with=\"forwardKeys\""),
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
-    update=fp_update(),
-    enrich_scope={
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=people_view("@loop-with=\"forwardKeys\"")),
+  },
+  name="CoupledPeople",
+  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+  compute=fp_base_compute(),
+  update=fp_update(),
+  enrich_scope={
       "pagerInfo": (s : PeopleState) => {
         let all : Array[Int] = []
         for i, p in s.items {
@@ -283,14 +290,14 @@ fn coupled_people_comp() -> @component.Component {
         }
       },
     },
-    loop_with={
+  loop_with={
       "forwardKeys": (_s : PeopleState, _seq, ctx) => match
         (ctx.lookup)("__keys__") {
         List(keys) => @component.LoopWith::new(keys~)
         _ => @component.LoopWith::new(keys=[])
       },
     },
-  )
+)
 }
 
 ///|
@@ -312,21 +319,23 @@ struct StrategiesState {} derive(ToJson, FromJson)
 ///|
 fn strategies_comp() -> @component.Component {
   @component.component(
-    name="Strategies",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-6">
       #|  <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>
       #|  <div class="flex flex-col gap-1"><h3 class="font-bold">2. Shared — one count + one partial collect</h3><x render=".shared"></x></div>
       #|  <div class="flex flex-col gap-1"><h3 class="font-bold">3. Coupled — one scan; loop-with forwards the enrich's keys</h3><x render=".coupled"></x></div>
       #|</div>
-    ),
-    init=StrategiesState::{  },
-    specs={
+    )),
+  },
+  name="Strategies",
+  init=StrategiesState::{  },
+  specs={
       "naive": @component.FieldSpec::comp("NaivePeople"),
       "shared": @component.FieldSpec::comp("SharedPeople"),
       "coupled": @component.FieldSpec::comp("CoupledPeople"),
     },
-  )
+)
 }
 
 ///|

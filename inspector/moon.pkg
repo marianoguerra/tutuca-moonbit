@@ -6,6 +6,7 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/cmp",
   "moonbitlang/core/json",

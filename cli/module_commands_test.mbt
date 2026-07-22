@@ -19,8 +19,13 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     provide["broken"] = "not a field!"
   }
   let card = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div class=\"card\"><h2><x text=\".title\"></x></h2><x render=\".item\"></x></div>",
+      ),
+    },
     name="Card",
-    view="<div class=\"card\"><h2><x text=\".title\"></x></h2><x render=\".item\"></x></div>",
     init=CardState::{ title: "untitled", sheet: Map([]) },
     specs={ "item": @component.FieldSpec::comp("Item") },
     update=(s : CardState, msg, _ctx) => {
@@ -32,8 +37,13 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     provide~,
   )
   let item = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<span><x text=\".label\"></x></span>",
+      ),
+    },
     name="Item",
-    view="<span><x text=\".label\"></x></span>",
     init=ItemState::{ label: "hi" },
   )
   @component.ModuleDef::new(name="demo", components=[card, item], examples=[
@@ -170,8 +180,13 @@ test "lint flags @on handlers that don't resolve, allows declared ones" {
   // and onRecv resolve to nothing. The component deliberately has NO update
   // fn — with one, any bare name may be handled and the check is skipped.
   let comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><button @on.click=\"onGood\">ok</button><button @on.click=\"onTypo\">bad</button><button @on.click=\"onRecv\">recv</button></div>",
+      ),
+    },
     name="Btns",
-    view="<div><button @on.click=\"onGood\">ok</button><button @on.click=\"onTypo\">bad</button><button @on.click=\"onRecv\">recv</button></div>",
     init=BtnsState::{ n: 0 },
     swap={ "onGood": (_s : BtnsState, _args, _ctx) => None },
   )
@@ -192,8 +207,13 @@ priv struct BtnsState {
 ///|
 test "lint checks field and method references in views" {
   let comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x text=\".missing\"></x><span :class=\"$isOn\"></span><p @show=\".count\"><x text=\"$label\"></x></p></div>",
+      ),
+    },
     name="Vals",
-    view="<div><x text=\".missing\"></x><span :class=\"$isOn\"></span><p @show=\".count\"><x text=\"$label\"></x></p></div>",
     init=ItemState::{ label: "x" },
     compute={ "count": (_s : ItemState, _args) => Num(1) },
   )
@@ -214,8 +234,13 @@ test "lint checks field and method references in views" {
 ///|
 test "lint flags unknown dynamic bindings, event modifiers and handler args" {
   let comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x text=\"*missing\"></x><button @on.click+shift=\"go value wat\">x</button></div>",
+      ),
+    },
     name="Dyns",
-    view="<div><x text=\"*missing\"></x><button @on.click+shift=\"go value wat\">x</button></div>",
     init=DynsState::{ sheet: Map([]) },
     swap={ "go": (_s : DynsState, _args, _ctx) => None },
     provide={ "active": ".sheet" },
@@ -239,8 +264,10 @@ test "lint hints unreferenced declarations and warns constant conditions" {
   // unknowable. The alter-bucket hint survives (when/enrich/enrich_scope/
   // loop_with are name-keyed).
   let comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new("main", raw_view="<div @show=\"'yes'\">hi</div>"),
+    },
     name="Hints",
-    view="<div @show=\"'yes'\">hi</div>",
     init=BtnsState::{ n: 0 },
     when={ "unusedAlter": (_s : BtnsState, _k, _v, _iter) => true },
   )
@@ -255,10 +282,15 @@ test "lint hints unreferenced declarations and warns constant conditions" {
 ///|
 test "lint flags render-it outside a loop and scoped-style leaks" {
   let comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render-it></x></div>",
+        style="@keyframes spin { from { opacity: 0 } } body { margin: 0 }",
+      ),
+    },
     name="Loops",
-    view="<div><x render-it></x></div>",
     init=BtnsState::{ n: 0 },
-    style="@keyframes spin { from { opacity: 0 } } body { margin: 0 }",
   )
   let m = @component.ModuleDef::new(name="loops", components=[comp], examples=[])
   let e = run(["lint"], m)
@@ -268,8 +300,13 @@ test "lint flags render-it outside a loop and scoped-style leaks" {
   assert_true(e.out.contains("GLOBAL_SELECTOR_IN_SCOPED_STYLE Loops/main"))
   // inside an @each the same render-it is fine
   let ok_comp = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<ul><li @each=\".items\"><x render-it></x></li></ul>",
+      ),
+    },
     name="Loops",
-    view="<ul><li @each=\".items\"><x render-it></x></li></ul>",
     init=LoopsState::{ items: [] },
   )
   let m2 = @component.ModuleDef::new(name="loops2", components=[ok_comp], examples=[])

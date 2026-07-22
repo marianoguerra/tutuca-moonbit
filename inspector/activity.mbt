@@ -41,6 +41,33 @@ priv struct ActivityLogState {
 /// `after` is Null (and hidden) for the outgoing side of a request.
 fn activity_entry_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry">
+          #|  <div class="flex items-center gap-2 flex-wrap">
+          #|    <span title="How this was dispatched: receive (send), bubble, response, input, or request" class="badge badge-sm badge-neutral entry-kind" @text=".kind"></span>
+          #|    <span title="Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)" class="font-mono font-semibold entry-name" @text=".name"></span>
+          #|    <span title="Actual handler that ran — shown only when it differs from the name" class="text-xs opacity-60 font-mono" @show="truthy? .handlerName" @text=".handlerName"></span>
+          #|    <span title="Path to the target component" class="text-xs opacity-40 font-mono entry-path" @text=".pathLabel"></span>
+          #|    <span title="Handler resolution — exact: matched by name · unknown: $unknown fallback · none: no handler (no-op)" class="badge badge-xs badge-ghost entry-matched" @show="truthy? .matched" @text=".matched"></span>
+          #|    <span title="When this event ran" class="ml-auto text-xs opacity-40 font-mono tabular-nums entry-time" @text=".time"></span>
+          #|  </div>
+          #|  <div class="flex gap-3 items-start font-mono text-xs">
+          #|    <div class="flex-1 min-w-0">
+          #|      <div class="opacity-50" title="Target state before the handler ran">before</div>
+          #|      <x render=".before"></x>
+          #|    </div>
+          #|    <div class="flex-1 min-w-0" @show=".hasAfter">
+          #|      <div class="opacity-50" title="Target state after the handler ran">after</div>
+          #|      <x render=".after"></x>
+          #|    </div>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="ActivityEntry",
     init=ActivityEntryState::{
       kind: "",
@@ -53,28 +80,6 @@ fn activity_entry_comp() -> @component.Component {
       after: Null,
       hasAfter: true,
     },
-    view=(
-      #|<div class="rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry">
-      #|  <div class="flex items-center gap-2 flex-wrap">
-      #|    <span title="How this was dispatched: receive (send), bubble, response, input, or request" class="badge badge-sm badge-neutral entry-kind" @text=".kind"></span>
-      #|    <span title="Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)" class="font-mono font-semibold entry-name" @text=".name"></span>
-      #|    <span title="Actual handler that ran — shown only when it differs from the name" class="text-xs opacity-60 font-mono" @show="truthy? .handlerName" @text=".handlerName"></span>
-      #|    <span title="Path to the target component" class="text-xs opacity-40 font-mono entry-path" @text=".pathLabel"></span>
-      #|    <span title="Handler resolution — exact: matched by name · unknown: $unknown fallback · none: no handler (no-op)" class="badge badge-xs badge-ghost entry-matched" @show="truthy? .matched" @text=".matched"></span>
-      #|    <span title="When this event ran" class="ml-auto text-xs opacity-40 font-mono tabular-nums entry-time" @text=".time"></span>
-      #|  </div>
-      #|  <div class="flex gap-3 items-start font-mono text-xs">
-      #|    <div class="flex-1 min-w-0">
-      #|      <div class="opacity-50" title="Target state before the handler ran">before</div>
-      #|      <x render=".before"></x>
-      #|    </div>
-      #|    <div class="flex-1 min-w-0" @show=".hasAfter">
-      #|      <div class="opacity-50" title="Target state after the handler ran">after</div>
-      #|      <x render=".after"></x>
-      #|    </div>
-      #|  </div>
-      #|</div>
-    ),
   )
 }
 
@@ -85,6 +90,19 @@ fn activity_entry_comp() -> @component.Component {
 /// caps the list. Renders an empty hint until the first entry lands.
 fn activity_log_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log">
+          #|  <div class="text-xs opacity-40 empty-hint" @hide=".hasEvents">
+          #|    No activity yet — interact with the component.
+          #|  </div>
+          #|  <x render-each=".events"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="ActivityLog",
     init=ActivityLogState::{ events: [], hasEvents: false },
     update=(s : ActivityLogState, msg, _ctx) => {
@@ -102,14 +120,6 @@ fn activity_log_comp() -> @component.Component {
         _ => None
       }
     },
-    view=(
-      #|<div class="p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log">
-      #|  <div class="text-xs opacity-40 empty-hint" @hide=".hasEvents">
-      #|    No activity yet — interact with the component.
-      #|  </div>
-      #|  <x render-each=".events"></x>
-      #|</div>
-    ),
   )
 }
 

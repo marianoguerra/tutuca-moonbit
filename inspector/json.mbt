@@ -218,11 +218,16 @@ priv struct EmptyState {} derive(ToJson, FromJson)
 ///|
 fn json_null_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight text-warning italic json-null">null</span>
+        ),
+      ),
+    },
     name="JsonNull",
     init=EmptyState::{  },
-    view=(
-      #|<span class="font-mono text-sm leading-tight text-warning italic json-null">null</span>
-    ),
   )
 }
 
@@ -234,6 +239,20 @@ priv struct BoolValueState {
 ///|
 fn json_boolean_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span :class="$cssClass" @text="$text"></span>
+        ),
+      ),
+      "_margauiClasses": @anode.View::new(
+        "_margauiClasses",
+        raw_view=(
+          #|<p class="text-success text-warning"></p>
+        ),
+      ),
+    },
     name="JsonBoolean",
     init=BoolValueState::{ value: false },
     compute={
@@ -244,17 +263,6 @@ fn json_boolean_comp() -> @component.Component {
         let color = if s.value { "text-success" } else { "text-warning" }
         Str("font-mono text-sm leading-tight json-boolean \{color}")
       },
-    },
-    view=(
-      #|<span :class="$cssClass" @text="$text"></span>
-    ),
-    views={
-      // Decoy: cssClass() builds these at runtime, so they never appear as
-      // literals the margaui scanner can find. Never rendered — registering
-      // the view is enough for the class scan to emit their CSS.
-      "_margauiClasses": (
-        #|<p class="text-success text-warning"></p>
-      ),
     },
   )
 }
@@ -267,6 +275,14 @@ priv struct NumValueState {
 ///|
 fn json_number_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight text-info json-number" @text="$text"></span>
+        ),
+      ),
+    },
     name="JsonNumber",
     init=NumValueState::{ value: 0 },
     compute={
@@ -274,9 +290,6 @@ fn json_number_comp() -> @component.Component {
         Str(@tutuca.Value::Num(s.value).to_display_string())
       },
     },
-    view=(
-      #|<span class="font-mono text-sm leading-tight text-info json-number" @text="$text"></span>
-    ),
   )
 }
 
@@ -307,12 +320,17 @@ priv struct StrValueState {
 ///|
 fn json_string_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string" :title=".value" @text="$text"></span>
+        ),
+      ),
+    },
     name="JsonString",
     init=StrValueState::{ value: "" },
     compute={ "text": (s : StrValueState, _args) => Str(json_quote(s.value)) },
-    view=(
-      #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string" :title=".value" @text="$text"></span>
-    ),
   )
 }
 
@@ -321,11 +339,16 @@ fn json_string_comp() -> @component.Component {
 /// has no function names/kinds to show).
 fn value_fn_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight text-base-content/40 value-fn">function () &#123; … &#125;</span>
+        ),
+      ),
+    },
     name="ValueFn",
     init=EmptyState::{  },
-    view=(
-      #|<span class="font-mono text-sm leading-tight text-base-content/40 value-fn">function () &#123; … &#125;</span>
-    ),
   )
 }
 
@@ -339,11 +362,16 @@ priv struct TextState {
 /// text, truncated. Stands in for the JS JsClassInstance/JsError leaves.
 fn value_obj_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj" :title=".text" @text=".text"></span>
+        ),
+      ),
+    },
     name="ValueObj",
     init=TextState::{ text: "" },
-    view=(
-      #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj" :title=".text" @text=".text"></span>
-    ),
   )
 }
 
@@ -354,6 +382,12 @@ fn value_obj_comp() -> @component.Component {
 ///|
 fn json_array_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_composite_view(type_class="json-array"),
+      ),
+    },
     name="JsonArray",
     init=composite_init(),
     compute=composite_compute(_s => "Array", s => {
@@ -362,13 +396,18 @@ fn json_array_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_composite_view(type_class="json-array"),
   )
 }
 
 ///|
 fn json_object_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_composite_view(type_class="json-object"),
+      ),
+    },
     name="JsonObject",
     init=composite_init(),
     compute=composite_compute(_s => "Object", s => {
@@ -377,7 +416,6 @@ fn json_object_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_composite_view(type_class="json-object"),
   )
 }
 
@@ -391,15 +429,20 @@ priv struct PropertyState {
 /// One key/value row of a composite (also stands in for the JS ImEntry).
 fn json_property_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex items-center gap-2 leading-tight json-property">
+          #|  <span class="text-base-content/60 font-mono text-sm" @text=".key"></span>
+          #|  <span class="text-base-content/30">:</span>
+          #|  <x render=".child"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="JsonProperty",
     init=PropertyState::{ key: "", child: Null },
-    view=(
-      #|<div class="flex items-center gap-2 leading-tight json-property">
-      #|  <span class="text-base-content/60 font-mono text-sm" @text=".key"></span>
-      #|  <span class="text-base-content/30">:</span>
-      #|  <x render=".child"></x>
-      #|</div>
-    ),
   )
 }
 
@@ -456,6 +499,14 @@ priv struct WrapperState {
 /// the classified tree, the delegating toggle, and a pass-through view.
 fn data_inspector_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="contents"><x render=".value"></x></span>
+        ),
+      ),
+    },
     name="DataInspector",
     init=WrapperState::{ value: Null },
     mutate={
@@ -463,9 +514,6 @@ fn data_inspector_comp() -> @component.Component {
         value: toggle_wrapped(s.value),
       },
     },
-    view=(
-      #|<span class="contents"><x render=".value"></x></span>
-    ),
   )
 }
 

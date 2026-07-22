@@ -34,12 +34,14 @@ struct JsonEmptyState {} derive(ToJson, FromJson)
 ///|
 fn json_null_comp() -> @component.Component {
   @component.component(
-    name="JsonNull",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<span class="text-warning text-xs font-mono p-3 json-null">null</span>
-    ),
-    init=JsonEmptyState::{  },
-  )
+    )),
+  },
+  name="JsonNull",
+  init=JsonEmptyState::{  },
+)
 }
 
 ///|
@@ -50,10 +52,8 @@ struct JsonBoolState {
 ///|
 fn json_bool_comp() -> @component.Component {
   @component.component(
-    name="JsonBool",
-    // NOTE: @if.class OVERWRITES the class attribute, so a static class here
-    // would be clobbered — the stable test hook is `data-bool` instead.
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<button data-bool
       #|  @if.class=".value"
       #|  @then="'btn btn-sm btn-soft btn-success font-mono true'"
@@ -62,9 +62,11 @@ fn json_bool_comp() -> @component.Component {
       #|  <span @show=".value">true</span>
       #|  <span @hide=".value">false</span>
       #|</button>
-    ),
-    init=JsonBoolState::{ value: true },
-  )
+    )),
+  },
+  name="JsonBool",
+  init=JsonBoolState::{ value: true },
+)
 }
 
 ///|
@@ -75,12 +77,14 @@ struct JsonStringState {
 ///|
 fn json_string_comp() -> @component.Component {
   @component.component(
-    name="JsonString",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="$setValue value" />
-    ),
-    init=JsonStringState::{ value: "hello" },
-  )
+    )),
+  },
+  name="JsonString",
+  init=JsonStringState::{ value: "hello" },
+)
 }
 
 ///|
@@ -92,12 +96,14 @@ struct JsonNumberState {
 ///|
 fn json_number_comp() -> @component.Component {
   @component.component(
-    name="JsonNumber",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="$setRawValue value" />
-    ),
-    init=JsonNumberState::{ strValue: "0", value: 0 },
-    mutate={
+    )),
+  },
+  name="JsonNumber",
+  init=JsonNumberState::{ strValue: "0", value: 0 },
+  mutate={
       // keep the raw string always, update the numeric value only when finite
       "setRawValue": (s : JsonNumberState, args) => {
         let raw = match args {
@@ -113,7 +119,7 @@ fn json_number_comp() -> @component.Component {
         }
       },
     },
-  )
+)
 }
 
 ///|
@@ -124,8 +130,8 @@ fn json_number_comp() -> @component.Component {
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    name="JsonSelector",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="join gap-3 font-mono json-selector">
       #|  <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="$setToNull">null</button>
       #|  <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="$setToBool isCtrl">bool</button>
@@ -134,9 +140,11 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
       #|  <button class="btn btn-sm btn-soft btn-info to-array" @on.click="$setToArray">[]</button>
       #|  <button class="btn btn-sm btn-soft btn-info to-object" @on.click="$setToObject">&#123;&#125;</button>
       #|</div>
-    ),
-    init=JsonEmptyState::{  },
-    swap={
+    )),
+  },
+  name="JsonSelector",
+  init=JsonEmptyState::{  },
+  swap={
       "setToNull": (_s : JsonEmptyState, _args, _ctx) => Some(
         reg.make_("JsonNull"),
       ),
@@ -157,7 +165,7 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
         reg.make_("JsonObject"),
       ),
     },
-  )
+)
 }
 
 ///|
@@ -214,8 +222,8 @@ struct JsonItemsState {
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    name="JsonArray",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array">
       #|  <button class="btn btn-sm btn-soft btn-primary add" @on.click="addItem">+</button>
       #|  <div class="join join-vertical gap-3">
@@ -228,15 +236,16 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
       #|    </div>
       #|  </div>
       #|</section>
-    ),
-    style=(
+    ), style=(
       #|[data-draggingover="json-list-item"] {
       #|  border-top: 4rem solid transparent;
       #|  transition: 0.15s border-top ease;
       #|}
-    ),
-    init=JsonItemsState::{ items: [] },
-    update=(s : JsonItemsState, msg, _ctx) => match msg {
+    )),
+  },
+  name="JsonArray",
+  init=JsonItemsState::{ items: [] },
+  update=(s : JsonItemsState, msg, _ctx) => match msg {
       // add a fresh JsonSelector so the user can pick the new element's type
       Input("addItem", _) => Some({ items: s.items + [json_make_selector(reg)] })
       Input("onDropOnItem", args) =>
@@ -246,7 +255,7 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
         }
       _ => None
     },
-  )
+)
 }
 
 ///|
@@ -258,23 +267,25 @@ struct JsonKvState {
 ///|
 fn json_object_kv_comp() -> @component.Component {
   @component.component(
-    name="JsonObjectKeyVal",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="join gap-3 items-center justify-center json-kv">
       #|  <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="$setKey value" />
       #|  <span class="text-xs font-mono text-gray-500 colon">:</span>
       #|  <x render=".value"></x>
       #|</div>
-    ),
-    init=JsonKvState::{ key: "k", value: Null },
-  )
+    )),
+  },
+  name="JsonObjectKeyVal",
+  init=JsonKvState::{ key: "k", value: Null },
+)
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    name="JsonObject",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object">
       #|  <button class="btn btn-sm btn-soft font-mono btn-primary add" @on.click="addItem">+</button>
       #|  <div class="join join-vertical gap-3">
@@ -287,15 +298,16 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
       #|    </div>
       #|  </div>
       #|</section>
-    ),
-    style=(
+    ), style=(
       #|[data-draggingover="json-kv-item"] {
       #|  border-top: 4rem solid transparent;
       #|  transition: 0.15s border-top ease;
       #|}
-    ),
-    init=JsonItemsState::{ items: [] },
-    update=(s : JsonItemsState, msg, _ctx) => match msg {
+    )),
+  },
+  name="JsonObject",
+  init=JsonItemsState::{ items: [] },
+  update=(s : JsonItemsState, msg, _ctx) => match msg {
       // a key/value row whose value is a fresh selector
       Input("addItem", _) => {
         let row = match reg.comps.get("JsonObjectKeyVal") {
@@ -311,7 +323,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
         }
       _ => None
     },
-  )
+)
 }
 
 ///|

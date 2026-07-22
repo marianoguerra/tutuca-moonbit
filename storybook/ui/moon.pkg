@@ -9,6 +9,7 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/storybook" @sb,

@@ -17,22 +17,27 @@ priv struct ShellState {
 ///|
 pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
   let shell = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="dyncomp-demo">
+          #|  <button class="load" @on.click="load">load counter bundle</button>
+          #|  <p class="status" @text=".status"></p>
+          #|  <div class="slot-box"><x render=".slot"></div>
+          #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
+          #|  <div class="pair-box"><x render=".pair"></div>
+          #|</div>
+        ),
+        style=(
+          #|.dyncomp-demo { font-family: sans-serif; max-width: 30rem; }
+          #|.dyncomp-demo .status { color: #666; min-height: 1.2em; }
+          #|.dyncomp-demo .slot-box { margin-top: 1rem; }
+          #|.dyncomp-demo .seq { display: inline-flex; gap: 0.3em; list-style: none; padding: 0; color: #669; }
+        ),
+      ),
+    },
     name="DynShell",
-    view=(
-      #|<div class="dyncomp-demo">
-      #|  <button class="load" @on.click="load">load counter bundle</button>
-      #|  <p class="status" @text=".status"></p>
-      #|  <div class="slot-box"><x render=".slot"></div>
-      #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
-      #|  <div class="pair-box"><x render=".pair"></div>
-      #|</div>
-    ),
-    style=(
-      #|.dyncomp-demo { font-family: sans-serif; max-width: 30rem; }
-      #|.dyncomp-demo .status { color: #666; min-height: 1.2em; }
-      #|.dyncomp-demo .slot-box { margin-top: 1rem; }
-      #|.dyncomp-demo .seq { display: inline-flex; gap: 0.3em; list-style: none; padding: 0; color: #669; }
-    ),
     init=ShellState::{ status: "no bundle loaded", slot: Null, pair: Null },
     update=(s : ShellState, msg, ctx) => {
       match msg {

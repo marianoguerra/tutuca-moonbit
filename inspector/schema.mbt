@@ -379,18 +379,23 @@ priv struct SchemaPropertyState {
 /// schema. `contents` so the cells land directly in the parent's grid.
 fn schema_property_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="contents">
+          #|  <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+          #|    <span class="text-base-content/60 schema-key" @text=".key"></span>
+          #|    <span @show=".required" class="text-error font-bold" title="required">*</span>
+          #|    <span class="text-base-content/30">:</span>
+          #|  </span>
+          #|  <x render=".child"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="SchemaProperty",
     init=SchemaPropertyState::{ key: "", child: Null, required: false },
-    view=(
-      #|<div class="contents">
-      #|  <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-      #|    <span class="text-base-content/60 schema-key" @text=".key"></span>
-      #|    <span @show=".required" class="text-error font-bold" title="required">*</span>
-      #|    <span class="text-base-content/30">:</span>
-      #|  </span>
-      #|  <x render=".child"></x>
-      #|</div>
-    ),
   )
 }
 
@@ -406,6 +411,26 @@ priv struct SchemaBranchState {
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="contents">
+          #|  <span class="flex items-center gap-1 leading-tight">
+          #|    <span :class="$labelCssClass" @text=".label"></span>
+          #|    <span class="text-base-content/30">:</span>
+          #|  </span>
+          #|  <x render=".child"></x>
+          #|</div>
+        ),
+      ),
+      "_margauiClasses": @anode.View::new(
+        "_margauiClasses",
+        raw_view=(
+          #|<p class="text-accent text-secondary text-info text-error"></p>
+        ),
+      ),
+    },
     name="SchemaBranch",
     init=SchemaBranchState::{
       label: "",
@@ -416,22 +441,6 @@ fn schema_branch_comp() -> @component.Component {
       "labelCssClass": (s : SchemaBranchState, _args) => {
         Str("font-mono text-sm schema-branch-label \{s.labelClass}")
       },
-    },
-    view=(
-      #|<div class="contents">
-      #|  <span class="flex items-center gap-1 leading-tight">
-      #|    <span :class="$labelCssClass" @text=".label"></span>
-      #|    <span class="text-base-content/30">:</span>
-      #|  </span>
-      #|  <x render=".child"></x>
-      #|</div>
-    ),
-    views={
-      // Decoy: labelClass colours are chosen at build time, so they never
-      // appear as literals for the margaui scanner.
-      "_margauiClasses": (
-        #|<p class="text-accent text-secondary text-info text-error"></p>
-      ),
     },
   )
 }

@@ -31,37 +31,42 @@ fn composability_comp(
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-4">
+          #|  <div role="tablist" class="tabs tabs-border">
+          #|    <button role="tab" id="tab-todo"
+          #|      @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'todo'">To-Do</button>
+          #|    <button role="tab" id="tab-json"
+          #|      @if.class="equals? .activeSection 'json'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'json'">JSON Editor</button>
+          #|    <button role="tab" id="tab-tree"
+          #|      @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'tree'">Tree</button>
+          #|    <button role="tab" id="tab-personal-site"
+          #|      @if.class="equals? .activeSection 'personalSite'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'personalSite'">Personal Site</button>
+          #|    <button role="tab" id="tab-dnd"
+          #|      @if.class="equals? .activeSection 'dnd'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'dnd'">Drag and Drop</button>
+          #|    <button role="tab" id="tab-visual-wasm"
+          #|      @if.class="equals? .activeSection 'visualWasm'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setActiveSection 'visualWasm'">Visual Wasm</button>
+          #|  </div>
+          #|  <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
+          #|  <div class="pane-json" @show="equals? .activeSection 'json'"><x render=".json"></x></div>
+          #|  <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
+          #|  <div class="pane-personal-site" @show="equals? .activeSection 'personalSite'"><x render=".personalSite"></x></div>
+          #|  <div class="pane-dnd" @show="equals? .activeSection 'dnd'"><x render=".dnd"></x></div>
+          #|  <div class="pane-visual-wasm" @show="equals? .activeSection 'visualWasm'"><x render=".visualWasm"></x></div>
+          #|</section>
+        ),
+      ),
+    },
     name="Composability",
-    view=(
-      #|<section class="flex flex-col gap-4">
-      #|  <div role="tablist" class="tabs tabs-border">
-      #|    <button role="tab" id="tab-todo"
-      #|      @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'todo'">To-Do</button>
-      #|    <button role="tab" id="tab-json"
-      #|      @if.class="equals? .activeSection 'json'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'json'">JSON Editor</button>
-      #|    <button role="tab" id="tab-tree"
-      #|      @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'tree'">Tree</button>
-      #|    <button role="tab" id="tab-personal-site"
-      #|      @if.class="equals? .activeSection 'personalSite'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'personalSite'">Personal Site</button>
-      #|    <button role="tab" id="tab-dnd"
-      #|      @if.class="equals? .activeSection 'dnd'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'dnd'">Drag and Drop</button>
-      #|    <button role="tab" id="tab-visual-wasm"
-      #|      @if.class="equals? .activeSection 'visualWasm'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setActiveSection 'visualWasm'">Visual Wasm</button>
-      #|  </div>
-      #|  <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
-      #|  <div class="pane-json" @show="equals? .activeSection 'json'"><x render=".json"></x></div>
-      #|  <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
-      #|  <div class="pane-personal-site" @show="equals? .activeSection 'personalSite'"><x render=".personalSite"></x></div>
-      #|  <div class="pane-dnd" @show="equals? .activeSection 'dnd'"><x render=".dnd"></x></div>
-      #|  <div class="pane-visual-wasm" @show="equals? .activeSection 'visualWasm'"><x render=".visualWasm"></x></div>
-      #|</section>
-    ),
     init=ComposabilityState::{ activeSection: "todo" },
     specs={
       "todo": @component.FieldSpec::comp("Items"),

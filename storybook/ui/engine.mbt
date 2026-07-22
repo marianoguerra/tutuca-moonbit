@@ -610,8 +610,8 @@ fn build_shell(
     num_sections,
   }
   let comp = @component.Component::for_type(
+    compiled_views={ "main": @anode.View::new("main", raw_view=sb.to_string()) },
     name="Storybook",
-    view=sb.to_string(),
   )
   spec.comp = Some(comp)
   (comp, spec, defaults)

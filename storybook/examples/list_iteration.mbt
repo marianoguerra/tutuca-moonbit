@@ -12,14 +12,19 @@ priv struct ListIterationState {
 ///|
 fn list_iteration_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <ul>
+          #|    <li @each=".items"><span class="k" @text="@key"></span>: <x text="@value"></x></li>
+          #|  </ul>
+          #|</section>
+        ),
+      ),
+    },
     name="ListIteration",
-    view=(
-      #|<section>
-      #|  <ul>
-      #|    <li @each=".items"><span class="k" @text="@key"></span>: <x text="@value"></x></li>
-      #|  </ul>
-      #|</section>
-    ),
     init=ListIterationState::{ items: [] },
   )
 }

@@ -29,19 +29,24 @@ priv struct SwatchPickerState {
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-2">
+          #|  <svg viewBox="0 0 380 130" role="img">
+          #|    <rect class="preview" x="20" y="12" width="340" height="52" rx="8" :fill=".color"></rect>
+          #|    <circle @each=".palette" @enrich-with="swatch"
+          #|      :cx="@cx" cy="98" r="18" :fill="@value"
+          #|      stroke-width="3" :stroke="@ring"
+          #|      @on.click="$setColor @value"></circle>
+          #|  </svg>
+          #|  <p class="text-sm label">Selected: <x text=".color"></x></p>
+          #|</div>
+        ),
+      ),
+    },
     name="SwatchPicker",
-    view=(
-      #|<div class="flex flex-col gap-2">
-      #|  <svg viewBox="0 0 380 130" role="img">
-      #|    <rect class="preview" x="20" y="12" width="340" height="52" rx="8" :fill=".color"></rect>
-      #|    <circle @each=".palette" @enrich-with="swatch"
-      #|      :cx="@cx" cy="98" r="18" :fill="@value"
-      #|      stroke-width="3" :stroke="@ring"
-      #|      @on.click="$setColor @value"></circle>
-      #|  </svg>
-      #|  <p class="text-sm label">Selected: <x text=".color"></x></p>
-      #|</div>
-    ),
     init=SwatchPickerState::{ color: "#ef4444", palette },
     enrich={
       "swatch": (
@@ -98,31 +103,36 @@ priv struct QuadraticState {
 /// classifies the equation as the coefficients change.
 fn quadratic_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3">
+          #|  <div class="flex gap-3 text-sm">
+          #|    <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="$setA valueAsInt" /></label>
+          #|    <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="$setB valueAsInt" /></label>
+          #|    <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="$setC valueAsInt" /></label>
+          #|  </div>
+          #|  <math display="block">
+          #|    <mn class="m-a" @text=".a"></mn>
+          #|    <mo>&#x2062;</mo>
+          #|    <msup><mi>x</mi><mn>2</mn></msup>
+          #|    <mo>+</mo>
+          #|    <mn class="m-b" @text=".b"></mn>
+          #|    <mo>&#x2062;</mo>
+          #|    <mi>x</mi>
+          #|    <mo>+</mo>
+          #|    <mn class="m-c" @text=".c"></mn>
+          #|    <mo>=</mo>
+          #|    <mn>0</mn>
+          #|  </math>
+          #|  <p class="text-sm">Discriminant: <span class="disc" @text="$discriminant"></span></p>
+          #|  <p class="text-sm">There are <span class="classify" @text="$classify"></span>.</p>
+          #|</div>
+        ),
+      ),
+    },
     name="Quadratic",
-    view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <div class="flex gap-3 text-sm">
-      #|    <label class="flex items-center gap-1">a <input type="number" class="input input-sm w-16 in-a" :value=".a" @on.input="$setA valueAsInt" /></label>
-      #|    <label class="flex items-center gap-1">b <input type="number" class="input input-sm w-16 in-b" :value=".b" @on.input="$setB valueAsInt" /></label>
-      #|    <label class="flex items-center gap-1">c <input type="number" class="input input-sm w-16 in-c" :value=".c" @on.input="$setC valueAsInt" /></label>
-      #|  </div>
-      #|  <math display="block">
-      #|    <mn class="m-a" @text=".a"></mn>
-      #|    <mo>&#x2062;</mo>
-      #|    <msup><mi>x</mi><mn>2</mn></msup>
-      #|    <mo>+</mo>
-      #|    <mn class="m-b" @text=".b"></mn>
-      #|    <mo>&#x2062;</mo>
-      #|    <mi>x</mi>
-      #|    <mo>+</mo>
-      #|    <mn class="m-c" @text=".c"></mn>
-      #|    <mo>=</mo>
-      #|    <mn>0</mn>
-      #|  </math>
-      #|  <p class="text-sm">Discriminant: <span class="disc" @text="$discriminant"></span></p>
-      #|  <p class="text-sm">There are <span class="classify" @text="$classify"></span>.</p>
-      #|</div>
-    ),
     init=QuadraticState::{ a: 1, b: -3, c: 2 },
     compute={
       // b² − 4ac decides how many real roots the equation has

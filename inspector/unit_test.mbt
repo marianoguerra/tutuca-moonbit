@@ -127,6 +127,20 @@ priv struct RichState {
 ///|
 fn sample_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div @text=".title"></div>
+        ),
+      ),
+      "compact": @anode.View::new(
+        "compact",
+        raw_view=(
+          #|<span @text=".title"></span>
+        ),
+      ),
+    },
     name="RichSample",
     init=RichState::{ title: "", count: 0, tags: [], open: false },
     compute={
@@ -148,14 +162,6 @@ fn sample_comp() -> @component.Component {
       "rows": (_s : RichState, _seq, _ctx) => {
         @component.LoopWith::new(start=0, end=0)
       },
-    },
-    view=(
-      #|<div @text=".title"></div>
-    ),
-    views={
-      "compact": (
-        #|<span @text=".title"></span>
-      ),
     },
   )
 }

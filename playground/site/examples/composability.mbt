@@ -12,21 +12,23 @@ struct CxCounterState {
 
 fn cx_counter_comp() -> @component.Component {
   @component.component(
-    name="Counter",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>
       #|  <b @text=".count"></b>
       #|  <button @on.click="$inc">+</button>
       #|</div>
-    ),
-    init=CxCounterState::{ count: 0 },
-    mutate={ "inc": (s : CxCounterState, _a) => { count: s.count + 1 } },
-    update=(s : CxCounterState, msg, _ctx) => match msg {
+    )),
+  },
+  name="Counter",
+  init=CxCounterState::{ count: 0 },
+  mutate={ "inc": (s : CxCounterState, _a) => { count: s.count + 1 } },
+  update=(s : CxCounterState, msg, _ctx) => match msg {
       Input("dec", _) => Some({ count: s.count - 1 })
       _ => None
     },
-  )
+)
 }
 
 // --- To-Do (from the todo example) -----------------------------------------
@@ -37,15 +39,17 @@ struct CxTodoItemState {
 
 fn cx_todo_item_comp() -> @component.Component {
   @component.component(
-    name="Item",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 items-center">
       #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
       #|  <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed" />
       #|</div>
-    ),
-    init=CxTodoItemState::{ completed: false, text: "do the thing" },
-  )
+    )),
+  },
+  name="Item",
+  init=CxTodoItemState::{ completed: false, text: "do the thing" },
+)
 }
 
 struct CxTodoItemsState {
@@ -54,8 +58,8 @@ struct CxTodoItemsState {
 
 fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-    name="Items",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
       #|  <div class="flex flex-col gap-3 w-full">
@@ -65,13 +69,15 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
       #|    </div>
       #|  </div>
       #|</div>
-    ),
-    init=CxTodoItemsState::{ items: [] },
-    update=(s : CxTodoItemsState, msg, _ctx) => match msg {
+    )),
+  },
+  name="Items",
+  init=CxTodoItemsState::{ items: [] },
+  update=(s : CxTodoItemsState, msg, _ctx) => match msg {
       Input("onAddItem", _) => Some({ items: s.items + [item.make(Map([]))] })
       _ => None
     },
-  )
+)
 }
 
 // --- Tree (from the tree example) ------------------------------------------
@@ -87,8 +93,8 @@ struct CxTreeItemState {
 
 fn cx_tree_item_comp() -> @component.Component {
   @component.component(
-    name="TreeItem",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <p class="head"
       #|    @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
@@ -97,27 +103,28 @@ fn cx_tree_item_comp() -> @component.Component {
       #|    <x render-each=".items"></x>
       #|  </div>
       #|</section>
-    ),
-    style=(
+    ), style=(
       #|user-select: none;
       #|.head { cursor: pointer; }
       #|.head:before { content: "⏺️"; margin-right: 0.25rem; }
       #|.head.type-file:before { content: "📄️"; }
       #|.head.open.type-dir:before { content: "📂️"; }
       #|.head.closed.type-dir:before { content: "📁️"; }
-    ),
-    init=CxTreeItemState::{
+    )),
+  },
+  name="TreeItem",
+  init=CxTreeItemState::{
       type_: "dir",
       label: "A Tree Item",
       isOpen: true,
       items: [],
     },
-    compute={
+  compute={
       "areChildsVisible": (s : CxTreeItemState, _args) => Bool(
         s.isOpen && s.items.length() > 0,
       ),
     },
-    update=(s : CxTreeItemState, msg, ctx) => match msg {
+  update=(s : CxTreeItemState, msg, ctx) => match msg {
       Input("onItemClick", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
@@ -130,7 +137,7 @@ fn cx_tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
-  )
+)
 }
 
 struct CxTreeRootState {
@@ -139,18 +146,20 @@ struct CxTreeRootState {
 
 fn cx_tree_root_comp() -> @component.Component {
   @component.component(
-    name="TreeRoot",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <x render=".root"></x>
       #|  <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
       #|    <li @each=".log"><x text="@value"></x></li>
       #|  </ul>
       #|</div>
-    ),
-    init=CxTreeRootState::{ log: [] },
-    specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s : CxTreeRootState, msg, _ctx) => match msg {
+    )),
+  },
+  name="TreeRoot",
+  init=CxTreeRootState::{ log: [] },
+  specs={ "root": @component.FieldSpec::comp("TreeItem") },
+  update=(s : CxTreeRootState, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
@@ -166,7 +175,7 @@ fn cx_tree_root_comp() -> @component.Component {
       }
       _ => None
     },
-  )
+)
 }
 
 fn cx_tree_item_from_data(
@@ -199,8 +208,8 @@ struct ComposabilityState {
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
   @component.component(
-    name="Composability",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-4">
       #|  <div role="tablist" class="tabs tabs-border">
       #|    <button role="tab" id="tab-counter"
@@ -217,14 +226,16 @@ fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Comp
       #|  <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
       #|  <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
       #|</section>
-    ),
-    init=ComposabilityState::{ activeSection: "counter" },
-    specs={
+    )),
+  },
+  name="Composability",
+  init=ComposabilityState::{ activeSection: "counter" },
+  specs={
       "counter": @component.FieldSpec::comp("Counter"),
       "todo": @component.FieldSpec::comp("Items"),
       "tree": @component.FieldSpec::comp("TreeRoot", args=tree_args),
     },
-  )
+)
 }
 
 fn composability_module() -> @component.ModuleDef {

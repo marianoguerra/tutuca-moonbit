@@ -16,9 +16,11 @@ priv struct BasicsNoState {} derive(ToJson, FromJson)
 /// MoonBit divergence: `view~` is a required argument, so "no view" is spelled
 /// as the empty string rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
-  @component.component(name="MinimumViableComponent", view="", init=BasicsNoState::{
-
-  })
+  @component.component(
+    compiled_views={ "main": @anode.View::new("main", raw_view="") },
+    name="MinimumViableComponent",
+    init=BasicsNoState::{  },
+  )
 }
 
 ///|
@@ -42,10 +44,15 @@ pub fn minimum_viable_module() -> @component.ModuleDef {
 /// markup a macro is the better fit (see macros.mbt).
 fn static_view_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p>Hello, world!</p>
+        ),
+      ),
+    },
     name="StaticViewComponent",
-    view=(
-      #|<p>Hello, world!</p>
-    ),
     init=BasicsNoState::{  },
   )
 }
@@ -81,16 +88,21 @@ priv struct TextDirectiveState {
 /// renders: strings, numbers, booleans, null.
 fn text_directive_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
+          #|  <span>String:</span> <span class="v-str" @text=".str"></span>
+          #|  <span>Number:</span> <span class="v-num" @text=".num"> &lt;- text directive is prepended</span>
+          #|  <span>Boolean:</span> <x text=".bool"></x>
+          #|  <span>notSet:</span> <span class="v-notset" @text=".notSet"></span>
+          #|  <span>Method Call:</span> <span class="v-method" @text="$getStrUpper"></span>
+          #|</div>
+        ),
+      ),
+    },
     name="TextDirective",
-    view=(
-      #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
-      #|  <span>String:</span> <span class="v-str" @text=".str"></span>
-      #|  <span>Number:</span> <span class="v-num" @text=".num"> &lt;- text directive is prepended</span>
-      #|  <span>Boolean:</span> <x text=".bool"></x>
-      #|  <span>notSet:</span> <span class="v-notset" @text=".notSet"></span>
-      #|  <span>Method Call:</span> <span class="v-method" @text="$getStrUpper"></span>
-      #|</div>
-    ),
     init=TextDirectiveState::{ str: "hello", num: 42, bool: true, notSet: Null },
     compute={
       "getStrUpper": (s : TextDirectiveState, _args) => Str(s.str.to_upper()),
@@ -130,12 +142,17 @@ priv struct DangerSetInnerHtmlState {
 /// from a field instead of building children.
 fn danger_set_inner_html_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section>
+          #|  <div class="raw" @dangerouslysetinnerhtml=".content"></div>
+          #|</section>
+        ),
+      ),
+    },
     name="DangerSetInnerHtml",
-    view=(
-      #|<section>
-      #|  <div class="raw" @dangerouslysetinnerhtml=".content"></div>
-      #|</section>
-    ),
     init=DangerSetInnerHtmlState::{
       content: "<strong><em>Raw HTML!</em></strong>",
     },

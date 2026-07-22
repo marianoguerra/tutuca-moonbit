@@ -247,14 +247,10 @@ pub struct Component {
 /// FSet/FOMap kind overrides.
 declare pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
-  view? : String,
+  compiled_views~ : Map[String, @anode.View],
   init~ : S,
-  style? : String,
   common_style? : String,
   global_style? : String,
-  views? : Map[String, String],
-  view_styles? : Map[String, String],
-  compiled_views? : Map[String, @anode.View],
   update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
   mutate? : Map[String, (S, Array[@tutuca.Value]) -> S],
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value],
@@ -278,9 +274,9 @@ declare pub fn[S : ToJson + @json.FromJson] component(
 /// component_id() must return this component's id. make() yields Null.
 declare pub fn Component::for_type(
   name~ : String,
-  view~ : String,
-  style? : String,
-  views? : Map[String, String],
+  compiled_views~ : Map[String, @anode.View],
+  common_style? : String,
+  global_style? : String,
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
 ) -> Component

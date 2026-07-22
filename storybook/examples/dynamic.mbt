@@ -16,13 +16,18 @@ priv struct SelectorEntryState {
 ///|
 fn selector_entry_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-3">
+          #|  <input class="input val" :value=".value" @on.input="$setValue value" />
+          #|  <input class="input lbl" :value=".label" @on.input="$setLabel value" />
+          #|</div>
+        ),
+      ),
+    },
     name="SelectorEntry",
-    view=(
-      #|<div class="flex gap-3">
-      #|  <input class="input val" :value=".value" @on.input="$setValue value" />
-      #|  <input class="input lbl" :value=".label" @on.input="$setLabel value" />
-      #|</div>
-    ),
     init=SelectorEntryState::{ value: "entry-value", label: "Entry Label" },
   )
 }
@@ -39,12 +44,17 @@ priv struct SelectorState {
 /// stack.
 fn selector_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<select class="select" :value=".selectedValue" @on.input="$setSelectedValue value">
+          #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>
+          #|</select>
+        ),
+      ),
+    },
     name="Selector",
-    view=(
-      #|<select class="select" :value=".selectedValue" @on.input="$setSelectedValue value">
-      #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>
-      #|</select>
-    ),
     init=SelectorState::{ items: [], selectedValue: Null },
     lookup={
       "entries": {
@@ -65,21 +75,26 @@ priv struct EntryEditorState {
 /// component is entered during render — there is no hook to opt in.
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3">
+          #|  <div class="flex gap-3 justify-center">
+          #|    <x render=".selector"></x>
+          #|  </div>
+          #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Entry</button>
+          #|  <div class="flex flex-col gap-3 w-full">
+          #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
+          #|      <x render-it></x>
+          #|      <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
+          #|    </div>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="EntryEditorAndSelector",
-    view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <div class="flex gap-3 justify-center">
-      #|    <x render=".selector"></x>
-      #|  </div>
-      #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Entry</button>
-      #|  <div class="flex flex-col gap-3 w-full">
-      #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
-      #|    </div>
-      #|  </div>
-      #|</div>
-    ),
     init=EntryEditorState::{ items: [] },
     specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
@@ -141,13 +156,18 @@ priv struct SheetState {
 /// including as a component-render target: `<x render="*active">`.
 fn sheet_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="card bg-base-200 p-3 gap-2 sheet">
+          #|  <span class="text-xs opacity-60 tag">Sheet (rendered via *active)</span>
+          #|  <input class="input input-bordered title" :value=".title" @on.input="$setTitle value" />
+          #|</div>
+        ),
+      ),
+    },
     name="Sheet",
-    view=(
-      #|<div class="card bg-base-200 p-3 gap-2 sheet">
-      #|  <span class="text-xs opacity-60 tag">Sheet (rendered via *active)</span>
-      #|  <input class="input input-bordered title" :value=".title" @on.input="$setTitle value" />
-      #|</div>
-    ),
     init=SheetState::{ title: "untitled" },
   )
 }
@@ -159,13 +179,18 @@ priv struct ToolbarState {} derive(ToJson, FromJson)
 /// The consumer, far from the producer: it renders a component it does not own.
 fn toolbar_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="border border-dashed border-warning rounded p-3 gap-2 toolbar">
+          #|  <span class="text-xs opacity-60 tag">Toolbar (consumer)</span>
+          #|  <x render="*active"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="Toolbar",
-    view=(
-      #|<div class="border border-dashed border-warning rounded p-3 gap-2 toolbar">
-      #|  <span class="text-xs opacity-60 tag">Toolbar (consumer)</span>
-      #|  <x render="*active"></x>
-      #|</div>
-    ),
     init=ToolbarState::{  },
     lookup={
       "active": { source: "Workspace.active", default: Some(".missing") },
@@ -179,13 +204,18 @@ priv struct PanelState {} derive(ToJson, FromJson)
 ///|
 fn panel_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="border border-dashed border-info rounded p-3 gap-2 panel">
+          #|  <span class="text-xs opacity-60 tag">Panel (intermediate)</span>
+          #|  <x render=".toolbar"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="Panel",
-    view=(
-      #|<div class="border border-dashed border-info rounded p-3 gap-2 panel">
-      #|  <span class="text-xs opacity-60 tag">Panel (intermediate)</span>
-      #|  <x render=".toolbar"></x>
-      #|</div>
-    ),
     init=PanelState::{  },
     specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
   )
@@ -206,15 +236,20 @@ priv struct WorkspaceState {
 /// proof; it updates in lock-step.
 fn workspace_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3 p-3">
+          #|  <div class="alert">
+          #|    <span>Workspace.sheet.title = <b class="echo" @text="$sheetTitle"></b></span>
+          #|  </div>
+          #|  <x render=".panel"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="Workspace",
-    view=(
-      #|<div class="flex flex-col gap-3 p-3">
-      #|  <div class="alert">
-      #|    <span>Workspace.sheet.title = <b class="echo" @text="$sheetTitle"></b></span>
-      #|  </div>
-      #|  <x render=".panel"></x>
-      #|</div>
-    ),
     init=WorkspaceState::{ sheet: Null },
     specs={
       "sheet": @component.FieldSpec::comp("Sheet"),

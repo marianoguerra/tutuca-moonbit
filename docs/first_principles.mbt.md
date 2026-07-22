@@ -426,10 +426,15 @@ priv struct FpGreetingState {
 ///|
 test "instances are copy-on-write values, visible through Obj" {
   let greeting = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p @text=".name"></p>
+        ),
+      ),
+    },
     name="Greeting",
-    view=(
-      #|<p @text=".name"></p>
-    ),
     init=FpGreetingState::{ name: "world" },
   )
   let a = greeting.make(Map([]))
@@ -486,10 +491,15 @@ navigable and rebuildable:
 /// spine worth rebuilding.
 fn mailbox_module() -> @component.ModuleDef {
   let note = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p class="note" @text=".text"></p>
+        ),
+      ),
+    },
     name="Note",
-    view=(
-      #|<p class="note" @text=".text"></p>
-    ),
     init=NoteState::{ text: "" },
     update=(_s : NoteState, msg, _ctx) => {
       match msg {
@@ -499,10 +509,15 @@ fn mailbox_module() -> @component.ModuleDef {
     },
   )
   let mailbox = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section><x render=".note"></x></section>
+        ),
+      ),
+    },
     name="Mailbox",
-    view=(
-      #|<section><x render=".note"></x></section>
-    ),
     init=EmptyMailboxState::{  },
     specs={ "note": @component.FieldSpec::comp("Note") },
     update=(_s : EmptyMailboxState, msg, ctx) => {

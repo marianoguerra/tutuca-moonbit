@@ -10,8 +10,13 @@ priv struct EditorState {
 ///|
 fn text_editor() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><input :value=\".text\" @on.input=\"setText value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount valueAsInt\">n</button></div>",
+      ),
+    },
     name="Editor",
-    view="<div><input :value=\".text\" @on.input=\"setText value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount valueAsInt\">n</button></div>",
     init=EditorState::{ text: "start", count: 0 },
   )
 }
@@ -110,8 +115,13 @@ test "click+ctrl gate and valueAsInt coercion" {
 ///|
 test "@each `value` bind shadows the DOM event's value" {
   let list = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<ul><li @each=\".items\"><button @on.click=\"pick value\">x</button></li></ul>",
+      ),
+    },
     name="Picker",
-    view="<ul><li @each=\".items\"><button @on.click=\"pick value\">x</button></li></ul>",
     init=PickerState::{ items: [], picked: "" },
     update=(s : PickerState, msg, _ctx) => {
       match msg {
@@ -158,8 +168,13 @@ test "event_names collects every listened event across views" {
 ///|
 test "batching: a cascade of swaps renders exactly once per dispatch" {
   let chatty = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><button @on.click=\"go\">x</button><span><x text=\".n\"></x></span></div>",
+      ),
+    },
     name="Chatty",
-    view="<div><button @on.click=\"go\">x</button><span><x text=\".n\"></x></span></div>",
     init=ChattyState::{ n: 0 },
     update=(s : ChattyState, msg, ctx) => {
       match msg {

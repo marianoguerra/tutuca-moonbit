@@ -81,11 +81,16 @@ priv struct NameState {
 /// which are just lists of names.
 fn comp_name_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name" @text=".name"></span>
+        ),
+      ),
+    },
     name="CompName",
     init=NameState::{ name: "" },
-    view=(
-      #|<span class="font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name" @text=".name"></span>
-    ),
   )
 }
 
@@ -101,17 +106,22 @@ priv struct CompFieldState {
 /// rendered with the data inspector so it can recurse/expand.
 fn comp_field_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex items-center gap-2 leading-tight comp-field">
+          #|  <span class="text-base-content/70 font-mono text-sm" @text=".name"></span>
+          #|  <span class="text-base-content/30">:</span>
+          #|  <span class="text-base-content/50 font-mono text-xs" @text=".typeName"></span>
+          #|  <span class="text-base-content/30">=</span>
+          #|  <x render=".child"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="CompField",
     init=CompFieldState::{ name: "", typeName: "", child: Null },
-    view=(
-      #|<div class="flex items-center gap-2 leading-tight comp-field">
-      #|  <span class="text-base-content/70 font-mono text-sm" @text=".name"></span>
-      #|  <span class="text-base-content/30">:</span>
-      #|  <span class="text-base-content/50 font-mono text-xs" @text=".typeName"></span>
-      #|  <span class="text-base-content/30">=</span>
-      #|  <x render=".child"></x>
-      #|</div>
-    ),
   )
 }
 
@@ -129,6 +139,23 @@ priv struct CompViewState {
 /// toggle every one at once.
 fn comp_view_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-0.5 leading-tight comp-view">
+          #|  <button
+          #|    type="button"
+          #|    class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start"
+          #|    @on.click="toggle isCtrl">
+          #|    <span @text="$arrowText"></span>
+          #|    <span class="font-mono text-sm comp-view-name" @text=".name"></span>
+          #|  </button>
+          #|  <pre @show=".isExpanded" class="text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"><code @text=".rawView"></code></pre>
+          #|</div>
+        ),
+      ),
+    },
     name="CompView",
     init=CompViewState::{ name: "", rawView: "", isExpanded: false },
     compute={
@@ -148,18 +175,6 @@ fn comp_view_comp() -> @component.Component {
         _ => None
       }
     },
-    view=(
-      #|<div class="flex flex-col gap-0.5 leading-tight comp-view">
-      #|  <button
-      #|    type="button"
-      #|    class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start"
-      #|    @on.click="toggle isCtrl">
-      #|    <span @text="$arrowText"></span>
-      #|    <span class="font-mono text-sm comp-view-name" @text=".name"></span>
-      #|  </button>
-      #|  <pre @show=".isExpanded" class="text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"><code @text=".rawView"></code></pre>
-      #|</div>
-    ),
   )
 }
 
@@ -203,6 +218,16 @@ impl Composite for CompSectionState with fn with_current_page(self, p) {
 ///|
 fn comp_section_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_composite_view(
+          type_class="font-semibold comp-section",
+          border_class="border-base-content/15",
+          toggle_handler="toggle isCtrl",
+        ),
+      ),
+    },
     name="CompSection",
     init=CompSectionState::{
       items: [],
@@ -231,11 +256,6 @@ fn comp_section_comp() -> @component.Component {
         _ => None
       }
     },
-    view=make_composite_view(
-      type_class="font-semibold comp-section",
-      border_class="border-base-content/15",
-      toggle_handler="toggle isCtrl",
-    ),
   )
 }
 
@@ -286,6 +306,20 @@ fn set_all_views(
 /// Top-level wrapper: one CompSection per non-empty group of the summary.
 fn component_inspector_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="font-mono text-sm leading-tight flex flex-col gap-1 component-inspector">
+          #|  <div class="inline-flex items-center gap-2">
+          #|    <span class="font-semibold comp-title" @text=".compName"></span>
+          #|    <span class="text-base-content/40 text-xs" @text="$idText"></span>
+          #|  </div>
+          #|  <x render-each=".sections"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="ComponentInspector",
     init=ComponentInspectorState::{ compName: "", compId: 0, sections: [] },
     compute={
@@ -300,15 +334,6 @@ fn component_inspector_comp() -> @component.Component {
         _ => None
       }
     },
-    view=(
-      #|<div class="font-mono text-sm leading-tight flex flex-col gap-1 component-inspector">
-      #|  <div class="inline-flex items-center gap-2">
-      #|    <span class="font-semibold comp-title" @text=".compName"></span>
-      #|    <span class="text-base-content/40 text-xs" @text="$idText"></span>
-      #|  </div>
-      #|  <x render-each=".sections"></x>
-      #|</div>
-    ),
   )
 }
 

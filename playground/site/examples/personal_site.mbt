@@ -179,12 +179,14 @@ struct AltUrlState {
 ///|
 fn alt_url_comp() -> @component.Component {
   @component.component(
-    name="AltUrl",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
-    ),
-    init=AltUrlState::{ label: "", url: "#" },
-  )
+    )),
+  },
+  name="AltUrl",
+  init=AltUrlState::{ label: "", url: "#" },
+)
 }
 
 ///|
@@ -204,8 +206,8 @@ struct PsEntryState {
 ///|
 fn ps_entry_comp() -> @component.Component {
   @component.component(
-    name="PSEntry",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="card bg-base-200 shadow-sm p-2 sm:p-3 flex flex-col gap-2 ps-entry">
       #|  <div class="flex gap-1 sm:gap-2 flex-wrap items-center">
       #|    <span class="star" @show=".featured">⭐</span>
@@ -222,8 +224,10 @@ fn ps_entry_comp() -> @component.Component {
       #|    <ul><li @each=".altUrls"><x render-it></x></li></ul>
       #|  </div>
       #|</div>
-    ),
-    enrich={
+    )),
+  },
+  name="PSEntry",
+  enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
       "enrichCategoryBadge": (_s : PsEntryState, binds, _key, value, _iter) => match
@@ -235,7 +239,7 @@ fn ps_entry_comp() -> @component.Component {
         _ => ()
       },
     },
-    init=PsEntryState::{
+  init=PsEntryState::{
       title: "?",
       description: "",
       lang: "en",
@@ -247,7 +251,7 @@ fn ps_entry_comp() -> @component.Component {
       altUrls: [],
       categories: [],
     },
-    compute={
+  compute={
       "langFlag": (s : PsEntryState, _args) => if s.lang == "es" {
         Str("🇪🇸")
       } else {
@@ -263,7 +267,7 @@ fn ps_entry_comp() -> @component.Component {
         _ => Str("")
       },
     },
-  )
+)
 }
 
 ///|
@@ -315,8 +319,8 @@ struct PsRootState {
 ///|
 fn root_comp() -> @component.Component {
   @component.component(
-    name="Root",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section class="ps-root flex flex-col gap-4">
       #|  <div class="card bg-base-200 p-4 controls">
       #|    <p class="text-sm mb-4">💡 Click tags to toggle. Solo / unsolo toggle with <kbd class="text-mono">alt/option + click</kbd>.</p>
@@ -357,16 +361,11 @@ fn root_comp() -> @component.Component {
       #|    <div class="entry-row" @each=".allEntries" @when="filterEntry"><x render-it></x></div>
       #|  </div>
       #|</section>
-    ),
-    // Decoy view mirroring personal-site.js's `_margauiClasses`: every class
-    // assembled at runtime in enrichCategoryBindings / enrichRoleBindings /
-    // enrichCategoryBadge lives here as a literal so the margaui scanner picks
-    // it up. Never rendered; the per-category colors are interpolated from the
-    // color tables above (single source of truth).
-    views={
-      "_margauiClasses": "<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>",
-    },
-    init=PsRootState::{
+    )),
+    "_margauiClasses": @anode.View::new("_margauiClasses", raw_view="<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>"),
+  },
+  name="Root",
+  init=PsRootState::{
       allEntries: [],
       allCategories: [],
       allRoles: [],
@@ -376,23 +375,23 @@ fn root_comp() -> @component.Component {
       sortByEnd: false,
       sortAsc: false,
     },
-    mutate={
+  mutate={
       "clearFilters": (s : PsRootState, _args) => {
         ..s,
         selectedCategories: ps_set_of(s.allCategories),
         selectedRoles: ps_set_of(s.allRoles),
       },
     },
-    compute={
+  compute={
       "hasActiveFilters": (s : PsRootState, _args) => Bool(
         s.selectedCategories.length() != s.allCategories.length() ||
         s.selectedRoles.length() != s.allRoles.length(),
       ),
     },
-    when={ "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(
+  when={ "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(
       s, e,
     ) },
-    enrich={
+  enrich={
       // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
       // the trailing `cat-btn on|off` tokens are the MB test hooks.
       "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => match
@@ -425,7 +424,7 @@ fn root_comp() -> @component.Component {
         _ => ()
       },
     },
-    update=(s : PsRootState, msg, ctx) => match msg {
+  update=(s : PsRootState, msg, ctx) => match msg {
       Input("onCategoryToggle", args) =>
         Some({
           ..s,
@@ -493,7 +492,7 @@ fn root_comp() -> @component.Component {
       }
       _ => None
     },
-  )
+)
 }
 
 ///|

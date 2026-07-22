@@ -67,9 +67,14 @@ test "a component built from the compiled tree renders identically" {
   let views = @viewgen.split_file(ir_html)
   assert_true(@viewgen.ir_supported(views))
   let from_source = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=views.components[0].views[0].source,
+        style=views.components[0].views[0].style,
+      ),
+    },
     name="IrFromSource",
-    view=views.components[0].views[0].source,
-    style=views.components[0].views[0].style,
     init=ir_state(),
   )
   let from_tree = @component.component(
@@ -201,8 +206,13 @@ test "a file-declared macro renders like a MoonBit-registered one" {
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=vs.components[0].views[0].source,
+      ),
+    },
     name="BadgeRuntime",
-    view=vs.components[0].views[0].source,
     init=BadgeState::{ title: "hi" },
   )
   let scope = @component.ComponentStack::new()

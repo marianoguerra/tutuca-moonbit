@@ -17,15 +17,19 @@ priv struct DseEntryState {
 ///|
 fn dse_entry_comp() -> @component.Component {
   @component.component(
-    name="Entry",
-    // main view: read-only display, used inside the lists.
-    view="<span class=\"font-mono entry\" @text=\".name\"></span>",
-    views={
-      // edit view: rendered by the child Editor via <x render="*selected" as="edit">
-      "edit": (
-        #|<input class="input input-bordered w-full edit-name" :value=".name" @on.input="$setName value" placeholder="Entry name" />
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<span class=\"font-mono entry\" @text=\".name\"></span>",
+      ),
+      "edit": @anode.View::new(
+        "edit",
+        raw_view=(
+          #|<input class="input input-bordered w-full edit-name" :value=".name" @on.input="$setName value" placeholder="Entry name" />
+        ),
       ),
     },
+    name="Entry",
     init=DseEntryState::{ name: "" },
   )
 }
@@ -38,20 +42,25 @@ priv struct DseEditorState {
 ///|
 fn dse_editor_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="card bg-base-200 p-3 gap-3 editor">
+          #|  <span class="text-xs opacity-60">Editor (child component)</span>
+          #|  <div class="flex flex-col gap-1">
+          #|    <span class="text-xs opacity-60">All entries — rendered from the *items lookup:</span>
+          #|    <div @each="*items" class="flex gap-3 flex-wrap child-items"><x render-it></x></div>
+          #|  </div>
+          #|  <div class="flex flex-col gap-1">
+          #|    <span class="text-xs opacity-60">Editing the *selected entry:</span>
+          #|    <x render="*selected" as="edit"></x>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="Editor",
-    view=(
-      #|<div class="card bg-base-200 p-3 gap-3 editor">
-      #|  <span class="text-xs opacity-60">Editor (child component)</span>
-      #|  <div class="flex flex-col gap-1">
-      #|    <span class="text-xs opacity-60">All entries — rendered from the *items lookup:</span>
-      #|    <div @each="*items" class="flex gap-3 flex-wrap child-items"><x render-it></x></div>
-      #|  </div>
-      #|  <div class="flex flex-col gap-1">
-      #|    <span class="text-xs opacity-60">Editing the *selected entry:</span>
-      #|    <x render="*selected" as="edit"></x>
-      #|  </div>
-      #|</div>
-    ),
     init=DseEditorState::{ missing: Null },
     // Consumer: forwards to Root's provides — a sequence and a single item.
     lookup={
@@ -70,22 +79,27 @@ priv struct DseRootState {
 ///|
 fn dse_root_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3 p-3">
+          #|  <div class="alert">
+          #|    <span>Selected key = <b class="selected-key" @text=".selectedKey"></b></span>
+          #|  </div>
+          #|  <div class="flex flex-col gap-2">
+          #|    <span class="text-xs opacity-60">Entries — rendered from the *items dynamic (owner):</span>
+          #|    <div @each="*items" class="flex gap-3 items-center owner-row">
+          #|      <x render-it></x>
+          #|      <button class="btn btn-xs btn-soft select" @on.click="selectItem @key">select</button>
+          #|    </div>
+          #|  </div>
+          #|  <x render=".editor"></x>
+          #|</div>
+        ),
+      ),
+    },
     name="Root",
-    view=(
-      #|<div class="flex flex-col gap-3 p-3">
-      #|  <div class="alert">
-      #|    <span>Selected key = <b class="selected-key" @text=".selectedKey"></b></span>
-      #|  </div>
-      #|  <div class="flex flex-col gap-2">
-      #|    <span class="text-xs opacity-60">Entries — rendered from the *items dynamic (owner):</span>
-      #|    <div @each="*items" class="flex gap-3 items-center owner-row">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-xs btn-soft select" @on.click="selectItem @key">select</button>
-      #|    </div>
-      #|  </div>
-      #|  <x render=".editor"></x>
-      #|</div>
-    ),
     init=DseRootState::{ items: Map([]), selectedKey: "" },
     specs={ "editor": @component.FieldSpec::comp("Editor") },
     // Producer: the whole sequence, plus a seq-access to the selected entry.

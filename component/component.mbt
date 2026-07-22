@@ -43,12 +43,8 @@ impl @anode.MacroScope for EmptyScope with fn lookup_macro(_self, _name) {
 /// except field specs and the make closure.
 fn new_component(
   name : String,
-  view : String,
-  style : String,
   common_style : String,
   global_style : String,
-  views : Map[String, String],
-  view_styles : Map[String, String],
   compiled_views : Map[String, @anode.View],
   provide : Map[String, String],
   lookup : Map[String, LookupSpec],
@@ -60,19 +56,11 @@ fn new_component(
   generated_names? : Array[String] = [],
   has_update? : Bool = false,
 ) -> Component {
-  let vs : Map[String, @anode.View] = {
-    "main": @anode.View::new("main", raw_view=view, style~),
-  }
-  for vname, raw in views {
-    vs[vname] = @anode.View::new(
-      vname,
-      raw_view=raw,
-      style=view_styles.get(vname).unwrap_or(""),
-    )
-  }
-  // Ahead-of-time compiled views (`tutuca gen-views`) win over any source
-  // spelling of the same name: they carry their own tree and registration
-  // context, so Component::compile has nothing left to parse for them.
+  // Views arrive already built — either compiled ahead of time by
+  // `tutuca gen-views` (View::from_ir) or parsed from source by
+  // @anode.View::new; both are @anode.View, and Component::compile finishes
+  // whichever needs it. Each carries its own per-view style.
+  let vs : Map[String, @anode.View] = Map([])
   for vname, v in compiled_views {
     vs[vname] = v
   }
@@ -117,14 +105,10 @@ fn new_component(
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
 pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
-  view? : String = "",
+  compiled_views~ : Map[String, @anode.View],
   init~ : S,
-  style? : String = "",
   common_style? : String = "",
   global_style? : String = "",
-  views? : Map[String, String] = Map([]),
-  view_styles? : Map[String, String] = Map([]),
-  compiled_views? : Map[String, @anode.View] = Map([]),
   update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
   mutate? : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([]),
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),
@@ -176,12 +160,8 @@ pub fn[S : ToJson + @json.FromJson] component(
   gen_mutators(all_specs, tspec.generated)
   let comp = new_component(
     name,
-    view,
-    style,
     common_style,
     global_style,
-    views,
-    view_styles,
     compiled_views,
     provide,
     lookup,
@@ -244,21 +224,17 @@ fn[S : ToJson + @json.FromJson] make_typed(
 /// component_id() must return this component's id. make() yields Null.
 pub fn Component::for_type(
   name~ : String,
-  view~ : String,
-  style? : String = "",
-  views? : Map[String, String] = Map([]),
+  compiled_views~ : Map[String, @anode.View],
+  common_style? : String = "",
+  global_style? : String = "",
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
 ) -> Component {
   new_component(
     name,
-    view,
-    style,
-    "",
-    "",
-    views,
-    Map([]),
-    Map([]),
+    common_style,
+    global_style,
+    compiled_views,
     provide,
     lookup,
     Map([]),

@@ -13,20 +13,25 @@ priv struct ExampleCounterState {
 ///|
 fn counter_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="join join-vertical">
+          #|  <button class="btn btn-error" @on.click="dec">-</button>
+          #|  <div class="stats">
+          #|    <div class="stat text-center">
+          #|      <div class="stat-title">Count</div>
+          #|      <div class="stat-value" @text=".count"></div>
+          #|      <div class="stat-desc">Current Count</div>
+          #|    </div>
+          #|  </div>
+          #|  <button class="btn btn-success" @on.click="$inc">+</button>
+          #|</div>
+        ),
+      ),
+    },
     name="Counter",
-    view=(
-      #|<div class="join join-vertical">
-      #|  <button class="btn btn-error" @on.click="dec">-</button>
-      #|  <div class="stats">
-      #|    <div class="stat text-center">
-      #|      <div class="stat-title">Count</div>
-      #|      <div class="stat-value" @text=".count"></div>
-      #|      <div class="stat-desc">Current Count</div>
-      #|    </div>
-      #|  </div>
-      #|  <button class="btn btn-success" @on.click="$inc">+</button>
-      #|</div>
-    ),
     init=ExampleCounterState::{ count: 0 },
     mutate={
       // views call mutate handlers with a `$` prefix: @on.click="$inc"

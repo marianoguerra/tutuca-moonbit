@@ -45,31 +45,36 @@ priv struct DnDState {
 ///|
 fn dnd_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="search" class="input" :value=".query"
+          #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+          #|    placeholder="Filter entries" />
+          #|  <div>
+          #|    <div class="cursor-grab row" @each=".items" @when="filterItem"
+          #|      draggable="true"
+          #|      data-dragtype="my-list-item"
+          #|      data-droptarget="my-list-item"
+          #|      @on.drop="onDropOnItem @key dragInfo">
+          #|      <span class="k" @text="@key"></span>: <x text="@value"></x>
+          #|    </div>
+          #|  </div>
+          #|</section>
+        ),
+        style=(
+          #|[data-dragging="1"] { opacity: 0.5; }
+          #|[data-draggingover="my-list-item"] {
+          #|  border-top: 2rem solid transparent;
+          #|  outline: 1px solid #77777777;
+          #|  transition: 0.15s border-top ease;
+          #|}
+        ),
+      ),
+    },
     name="DnDExample",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Filter entries" />
-      #|  <div>
-      #|    <div class="cursor-grab row" @each=".items" @when="filterItem"
-      #|      draggable="true"
-      #|      data-dragtype="my-list-item"
-      #|      data-droptarget="my-list-item"
-      #|      @on.drop="onDropOnItem @key dragInfo">
-      #|      <span class="k" @text="@key"></span>: <x text="@value"></x>
-      #|    </div>
-      #|  </div>
-      #|</section>
-    ),
-    style=(
-      #|[data-dragging="1"] { opacity: 0.5; }
-      #|[data-draggingover="my-list-item"] {
-      #|  border-top: 2rem solid transparent;
-      #|  outline: 1px solid #77777777;
-      #|  transition: 0.15s border-top ease;
-      #|}
-    ),
     init=DnDState::{ items: [], query: "" },
     when={
       "filterItem": (s : DnDState, _key, value, _iter) => {

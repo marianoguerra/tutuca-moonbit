@@ -18,19 +18,24 @@ priv struct TrafficLightState {
 /// React's inline `&&`.
 fn traffic_light_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-2">
+          #|  <button class="btn btn-primary" @on.click="$nextLight">Next light</button>
+          #|  <p>Light is: <code @text="$light"></code></p>
+          #|  <p class="advice">
+          #|    You must
+          #|    <span @show="equals? $light 'red'">STOP</span>
+          #|    <span @show="equals? $light 'orange'">SLOW DOWN</span>
+          #|    <span @show="equals? $light 'green'">GO</span>
+          #|  </p>
+          #|</section>
+        ),
+      ),
+    },
     name="TrafficLight",
-    view=(
-      #|<section class="flex flex-col gap-2">
-      #|  <button class="btn btn-primary" @on.click="$nextLight">Next light</button>
-      #|  <p>Light is: <code @text="$light"></code></p>
-      #|  <p class="advice">
-      #|    You must
-      #|    <span @show="equals? $light 'red'">STOP</span>
-      #|    <span @show="equals? $light 'orange'">SLOW DOWN</span>
-      #|    <span @show="equals? $light 'green'">GO</span>
-      #|  </p>
-      #|</section>
-    ),
     init=TrafficLightState::{ lightIndex: 0 },
     compute={
       "light": (s : TrafficLightState, _args) => {
@@ -79,31 +84,36 @@ priv struct TabbedUiState {
 /// button. No per-tab flags, no component per tab.
 fn tabbed_ui_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <div role="tablist" class="tabs tabs-border">
+          #|    <button role="tab" id="t-overview"
+          #|      @if.class="equals? .tab 'overview'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setTab 'overview'">Overview</button>
+          #|    <button role="tab" id="t-features"
+          #|      @if.class="equals? .tab 'features'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setTab 'features'">Features</button>
+          #|    <button role="tab" id="t-pricing"
+          #|      @if.class="equals? .tab 'pricing'" @then="'tab tab-active'" @else="'tab'"
+          #|      @on.click="$setTab 'pricing'">Pricing</button>
+          #|  </div>
+          #|  <div class="card p-3 border panel" @show="equals? .tab 'overview'">
+          #|    <h4>Overview</h4><p>A short summary of what this product does.</p>
+          #|  </div>
+          #|  <div class="card p-3 border panel" @show="equals? .tab 'features'">
+          #|    <h4>Features</h4><p>The list of features lives on this tab.</p>
+          #|  </div>
+          #|  <div class="card p-3 border panel" @show="equals? .tab 'pricing'">
+          #|    <h4>Pricing</h4><p>What it costs.</p>
+          #|  </div>
+          #|</section>
+        ),
+      ),
+    },
     name="TabbedUI",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <div role="tablist" class="tabs tabs-border">
-      #|    <button role="tab" id="t-overview"
-      #|      @if.class="equals? .tab 'overview'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setTab 'overview'">Overview</button>
-      #|    <button role="tab" id="t-features"
-      #|      @if.class="equals? .tab 'features'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setTab 'features'">Features</button>
-      #|    <button role="tab" id="t-pricing"
-      #|      @if.class="equals? .tab 'pricing'" @then="'tab tab-active'" @else="'tab'"
-      #|      @on.click="$setTab 'pricing'">Pricing</button>
-      #|  </div>
-      #|  <div class="card p-3 border panel" @show="equals? .tab 'overview'">
-      #|    <h4>Overview</h4><p>A short summary of what this product does.</p>
-      #|  </div>
-      #|  <div class="card p-3 border panel" @show="equals? .tab 'features'">
-      #|    <h4>Features</h4><p>The list of features lives on this tab.</p>
-      #|  </div>
-      #|  <div class="card p-3 border panel" @show="equals? .tab 'pricing'">
-      #|    <h4>Pricing</h4><p>What it costs.</p>
-      #|  </div>
-      #|</section>
-    ),
     init=TabbedUiState::{ tab: "overview" },
   )
 }
@@ -136,19 +146,24 @@ priv struct ListAndFilterState {
 /// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="search" class="input" :value=".query"
+          #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+          #|    placeholder="Filter entries" />
+          #|  <ul>
+          #|    <li @each=".items" @when="filterItem">
+          #|      <span @text="@key"></span>: <x text="@value"></x>
+          #|    </li>
+          #|  </ul>
+          #|</section>
+        ),
+      ),
+    },
     name="ListAndFilter",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Filter entries" />
-      #|  <ul>
-      #|    <li @each=".items" @when="filterItem">
-      #|      <span @text="@key"></span>: <x text="@value"></x>
-      #|    </li>
-      #|  </ul>
-      #|</section>
-    ),
     init=ListAndFilterState::{ items: [], query: "" },
     when={
       "filterItem": (s : ListAndFilterState, _key, value, _iter) => {

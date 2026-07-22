@@ -12,8 +12,13 @@ priv struct SheetState {
 ///|
 fn sheet_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<article><h2><x text=\".title\"></x></h2><button class=\"rename\" @on.click=\"rename 'Q2'\">r</button><button class=\"poke\" @on.click=\"poke\">p</button></article>",
+      ),
+    },
     name="Sheet",
-    view="<article><h2><x text=\".title\"></x></h2><button class=\"rename\" @on.click=\"rename 'Q2'\">r</button><button class=\"poke\" @on.click=\"poke\">p</button></article>",
     init=SheetState::{ title: "Q1" },
     update=(_s : SheetState, msg, ctx) => {
       match msg {
@@ -47,22 +52,37 @@ fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> SeenState?
 fn teleport_scope() -> @component.ComponentStack raise {
   let scope = @component.ComponentStack::new()
   let toolbar = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div class=\"toolbar\"><x render=\"*active\"></x></div>",
+      ),
+    },
     name="Toolbar",
-    view="<div class=\"toolbar\"><x render=\"*active\"></x></div>",
     init=SeenState::{ seen: false },
     lookup={ "active": { source: "Workspace.active", default: None } },
     update=seen_update(),
   )
   let panel = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<section><x render=\".toolbar\"></x></section>",
+      ),
+    },
     name="Panel",
-    view="<section><x render=\".toolbar\"></x></section>",
     init=SeenState::{ seen: false },
     specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
     update=seen_update(),
   )
   let workspace = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<main><x render=\".panel\"></x></main>",
+      ),
+    },
     name="Workspace",
-    view="<main><x render=\".panel\"></x></main>",
     init=SeenState::{ seen: false },
     specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
@@ -169,8 +189,13 @@ test "bubbling from a teleported leaf visits every intermediate component" {
 test "own-provide: a component rendering its own dynamic teleports to itself" {
   let scope = @component.ComponentStack::new()
   let solo = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<main><x render=\"*active\"></x></main>",
+      ),
+    },
     name="Solo",
-    view="<main><x render=\"*active\"></x></main>",
     init=NoState::{  },
     specs={ "sheet": @component.FieldSpec::comp("Sheet") },
     provide={ "active": ".sheet" },
@@ -195,14 +220,24 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
 test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
   let scope = @component.ComponentStack::new()
   let list = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<ul><li @each=\"*rows\"><x render-it></x></li></ul>",
+      ),
+    },
     name="RowList",
-    view="<ul><li @each=\"*rows\"><x render-it></x></li></ul>",
     init=NoState::{  },
     lookup={ "rows": { source: "Grid.rows", default: None } },
   )
   let grid = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<main><x render=\".list\"></x></main>",
+      ),
+    },
     name="Grid",
-    view="<main><x render=\".list\"></x></main>",
     init=RowsState::{ rows: Map([]) },
     specs={ "list": @component.FieldSpec::comp("RowList") },
     provide={ "rows": ".rows" },
@@ -249,14 +284,24 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
 test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
   let scope = @component.ComponentStack::new()
   let viewer = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render=\"*sel\"></x></div>",
+      ),
+    },
     name="Viewer",
-    view="<div><x render=\"*sel\"></x></div>",
     init=NoState::{  },
     lookup={ "sel": { source: "Deck.sel", default: None } },
   )
   let deck = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<main><x render=\".viewer\"></x></main>",
+      ),
+    },
     name="Deck",
-    view="<main><x render=\".viewer\"></x></main>",
     init=DeckState::{ sheets: Map([]), selId: "b" },
     specs={ "viewer": @component.FieldSpec::comp("Viewer") },
     provide={ "sel": ".sheets[.selId]" },
@@ -300,8 +345,13 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
 test "lookup default: a consumer without its producer falls back" {
   let scope = @component.ComponentStack::new()
   let lonely = @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render=\"*active\"></x></div>",
+      ),
+    },
     name="Lonely",
-    view="<div><x render=\"*active\"></x></div>",
     init=NoState::{  },
     specs={ "backup": @component.FieldSpec::comp("Sheet") },
     lookup={

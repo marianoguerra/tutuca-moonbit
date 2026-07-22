@@ -13,6 +13,7 @@ import {
 
 import {
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/vdom/browser" @bdom,
   "mizchi/js/core",
   "mizchi/js_browser/test_utils",

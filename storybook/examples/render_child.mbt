@@ -14,12 +14,17 @@ priv struct GreetingState {
 ///|
 fn greeting_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<p class="p-2 border rounded">
+          #|  Hello, <strong @text=".name"></strong>!
+          #|</p>
+        ),
+      ),
+    },
     name="Greeting",
-    view=(
-      #|<p class="p-2 border rounded">
-      #|  Hello, <strong @text=".name"></strong>!
-      #|</p>
-    ),
     init=GreetingState::{ name: "world" },
   )
 }
@@ -34,14 +39,19 @@ priv struct RenderChildNoState {} derive(ToJson, FromJson)
 /// keeps the component definitions order-independent.
 fn page_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-2">
+          #|  <h2 class="text-lg">Page header</h2>
+          #|  <x render=".greeting"></x>
+          #|  <p class="opacity-60">&mdash; end of page &mdash;</p>
+          #|</section>
+        ),
+      ),
+    },
     name="Page",
-    view=(
-      #|<section class="flex flex-col gap-2">
-      #|  <h2 class="text-lg">Page header</h2>
-      #|  <x render=".greeting"></x>
-      #|  <p class="opacity-60">&mdash; end of page &mdash;</p>
-      #|</section>
-    ),
     init=RenderChildNoState::{  },
     specs={
       "greeting": @component.FieldSpec::comp("Greeting", args={
@@ -74,25 +84,31 @@ priv struct EntryState {
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
   @component.component(
-    name="Entry",
-    view=(
-      #|<div class="card bg-base-100 shadow-sm">
-      #|  <div class="card-body">
-      #|    <h2 class="card-title" @text=".title"></h2>
-      #|    <p @text=".description"></p>
-      #|  </div>
-      #|</div>
-    ),
-    views={
-      "edit": (
-        #|<div class="card bg-base-100 shadow-sm gap-3">
-        #|  <div class="card-body">
-        #|    <input class="input title" :value=".title" @on.input="$setTitle value" />
-        #|    <input class="input desc" :value=".description" @on.input="$setDescription value" />
-        #|  </div>
-        #|</div>
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="card bg-base-100 shadow-sm">
+          #|  <div class="card-body">
+          #|    <h2 class="card-title" @text=".title"></h2>
+          #|    <p @text=".description"></p>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+      "edit": @anode.View::new(
+        "edit",
+        raw_view=(
+          #|<div class="card bg-base-100 shadow-sm gap-3">
+          #|  <div class="card-body">
+          #|    <input class="input title" :value=".title" @on.input="$setTitle value" />
+          #|    <input class="input desc" :value=".description" @on.input="$setDescription value" />
+          #|  </div>
+          #|</div>
+        ),
       ),
     },
+    name="Entry",
     init=EntryState::{ title: "Entry Title", description: "Entry Description" },
     compute={
       "containsText": (s : EntryState, args) => {
@@ -127,13 +143,18 @@ pub fn entry_module() -> @component.ModuleDef {
 /// one value.
 fn multiple_views_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <x render=".value"></x>
+          #|  <x render=".value" as="edit"></x>
+          #|</section>
+        ),
+      ),
+    },
     name="MultipleViews",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <x render=".value"></x>
-      #|  <x render=".value" as="edit"></x>
-      #|</section>
-    ),
     init=RenderChildNoState::{  },
     specs={ "value": @component.FieldSpec::comp("Entry") },
   )

@@ -38,20 +38,25 @@ priv struct PushViewState {
 /// read-only and editable at once.
 fn push_view_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <div class="flex justify-between">
+          #|    <input type="search" class="input" :value=".query"
+          #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+          #|      placeholder="Filter entries" />
+          #|    <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="$toggleView"></button>
+          #|  </div>
+          #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @push-view=".view">
+          #|    <x render-each=".items" @when="filterItem"></x>
+          #|  </div>
+          #|</section>
+        ),
+      ),
+    },
     name="PushView",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <div class="flex justify-between">
-      #|    <input type="search" class="input" :value=".query"
-      #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|      placeholder="Filter entries" />
-      #|    <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="$toggleView"></button>
-      #|  </div>
-      #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @push-view=".view">
-      #|    <x render-each=".items" @when="filterItem"></x>
-      #|  </div>
-      #|</section>
-    ),
     init=PushViewState::{ items: [], query: "", view: "main" },
     mutate={
       "toggleView": (s : PushViewState, _args) => {
@@ -118,18 +123,23 @@ priv struct SeqItemAccessState {
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
+          #|    @on.input="$setCurrentIndex valueAsInt" />
+          #|  <x render=".byIndex[.currentIndex]"></x>
+          #|  <select class="select" :value=".currentKey" @on.input="$setCurrentKey value">
+          #|    <option @each=".byKey" :value="@key" @text="@value.title"></option>
+          #|  </select>
+          #|  <x render=".byKey[.currentKey]"></x>
+          #|</section>
+        ),
+      ),
+    },
     name="SeqItemAccess",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-      #|    @on.input="$setCurrentIndex valueAsInt" />
-      #|  <x render=".byIndex[.currentIndex]"></x>
-      #|  <select class="select" :value=".currentKey" @on.input="$setCurrentKey value">
-      #|    <option @each=".byKey" :value="@key" @text="@value.title"></option>
-      #|  </select>
-      #|  <x render=".byKey[.currentKey]"></x>
-      #|</section>
-    ),
     init=SeqItemAccessState::{
       byKey: Map([]),
       byIndex: [],
@@ -183,22 +193,27 @@ priv struct PaginationState {
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
 fn pagination_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<section class="flex flex-col gap-3">
+          #|  <div class="join">
+          #|    <button class="btn join-item prev" @on.click="prev" :disabled="$isFirstPage">&lsaquo; Prev</button>
+          #|    <button class="btn join-item btn-disabled label" @text="$pageLabel"></button>
+          #|    <button class="btn join-item next" @on.click="next" :disabled="$isLastPage">Next &rsaquo;</button>
+          #|  </div>
+          #|  <ul class="flex flex-col gap-1">
+          #|    <li @each=".items" @loop-with="paginate" class="flex gap-2 items-center">
+          #|      <span class="badge badge-neutral" @text="@key"></span>
+          #|      <x text="@value"></x>
+          #|    </li>
+          #|  </ul>
+          #|</section>
+        ),
+      ),
+    },
     name="Pagination",
-    view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <div class="join">
-      #|    <button class="btn join-item prev" @on.click="prev" :disabled="$isFirstPage">&lsaquo; Prev</button>
-      #|    <button class="btn join-item btn-disabled label" @text="$pageLabel"></button>
-      #|    <button class="btn join-item next" @on.click="next" :disabled="$isLastPage">Next &rsaquo;</button>
-      #|  </div>
-      #|  <ul class="flex flex-col gap-1">
-      #|    <li @each=".items" @loop-with="paginate" class="flex gap-2 items-center">
-      #|      <span class="badge badge-neutral" @text="@key"></span>
-      #|      <x text="@value"></x>
-      #|    </li>
-      #|  </ul>
-      #|</section>
-    ),
     init=PaginationState::{ items: [], page: 0, pageSize: 5 },
     compute={
       "pageCount": (s : PaginationState, _args) => {

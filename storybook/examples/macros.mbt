@@ -24,14 +24,19 @@ priv struct MacrosNoState {} derive(ToJson, FromJson)
 ///|
 fn static_macro_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center justify-start">
+          #|  <span>Feature A</span> <x:badge></x:badge>
+          #|  <span>Feature B</span> <x:badge></x:badge>
+          #|  <span>Feature C</span> <span></span>
+          #|</div>
+        ),
+      ),
+    },
     name="StaticMacro",
-    view=(
-      #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center justify-start">
-      #|  <span>Feature A</span> <x:badge></x:badge>
-      #|  <span>Feature B</span> <x:badge></x:badge>
-      #|  <span>Feature C</span> <span></span>
-      #|</div>
-    ),
     init=MacrosNoState::{  },
   )
 }
@@ -71,16 +76,21 @@ priv struct MacroParamsState {
 ///|
 fn macro_params_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
+          #|  <span>Default:</span> <x:badge></x:badge>
+          #|  <span>Static label:</span> <x:badge label="Sale"></x:badge>
+          #|  <span>Dynamic label:</span> <x:badge :label="'Sale'"></x:badge>
+          #|  <span>Custom kind:</span> <x:badge kind="success" label="OK"></x:badge>
+          #|  <span>Dynamic:</span> <x:badge :label=".status" :kind="'warning'"></x:badge>
+          #|</div>
+        ),
+      ),
+    },
     name="MacroParams",
-    view=(
-      #|<div class="grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
-      #|  <span>Default:</span> <x:badge></x:badge>
-      #|  <span>Static label:</span> <x:badge label="Sale"></x:badge>
-      #|  <span>Dynamic label:</span> <x:badge :label="'Sale'"></x:badge>
-      #|  <span>Custom kind:</span> <x:badge kind="success" label="OK"></x:badge>
-      #|  <span>Dynamic:</span> <x:badge :label=".status" :kind="'warning'"></x:badge>
-      #|</div>
-    ),
     init=MacroParamsState::{ status: "active" },
   )
 }
@@ -129,18 +139,23 @@ priv struct MacroSlotsState {
 /// MacroSlots — macros have no methods of their own.
 fn macro_slots_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex gap-3">
+          #|  <x:card title="Static Content">
+          #|    <p>This content is passed into the card's slot.</p>
+          #|  </x:card>
+          #|  <x:card title="Interactive">
+          #|    <button class="btn btn-soft btn-success bump" @on.click="$inc">+</button>
+          #|    <p>Count: <span class="count" @text=".count"></span></p>
+          #|  </x:card>
+          #|</div>
+        ),
+      ),
+    },
     name="MacroSlots",
-    view=(
-      #|<div class="flex gap-3">
-      #|  <x:card title="Static Content">
-      #|    <p>This content is passed into the card's slot.</p>
-      #|  </x:card>
-      #|  <x:card title="Interactive">
-      #|    <button class="btn btn-soft btn-success bump" @on.click="$inc">+</button>
-      #|    <p>Count: <span class="count" @text=".count"></span></p>
-      #|  </x:card>
-      #|</div>
-    ),
     init=MacroSlotsState::{ count: 0 },
     mutate={ "inc": (s : MacroSlotsState, _args) => { count: s.count + 1 } },
   )
@@ -187,19 +202,24 @@ priv struct MacroNamedSlotsState {
 ///|
 fn macro_named_slots_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<x:panel title="Dashboard">
+          #|  <x slot="actions">
+          #|    <button class="btn btn-sm btn-soft btn-success bump" @on.click="$inc">+</button>
+          #|  </x>
+          #|  <p>Count: <span class="count" @text=".count"></span></p>
+          #|  <p>This is the default slot content.</p>
+          #|  <x slot="footer">
+          #|    <span class="text-sm opacity-60 foot-note">Footer content here</span>
+          #|  </x>
+          #|</x:panel>
+        ),
+      ),
+    },
     name="MacroNamedSlots",
-    view=(
-      #|<x:panel title="Dashboard">
-      #|  <x slot="actions">
-      #|    <button class="btn btn-sm btn-soft btn-success bump" @on.click="$inc">+</button>
-      #|  </x>
-      #|  <p>Count: <span class="count" @text=".count"></span></p>
-      #|  <p>This is the default slot content.</p>
-      #|  <x slot="footer">
-      #|    <span class="text-sm opacity-60 foot-note">Footer content here</span>
-      #|  </x>
-      #|</x:panel>
-    ),
     init=MacroNamedSlotsState::{ count: 0 },
     mutate={
       "inc": (s : MacroNamedSlotsState, _args) => { count: s.count + 1 },

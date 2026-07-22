@@ -182,6 +182,20 @@ priv struct SampleState {
 /// component-inspector.dev.js). Only introspected, never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div @text=".title"></div>
+        ),
+      ),
+      "compact": @anode.View::new(
+        "compact",
+        raw_view=(
+          #|<span @text=".title"></span>
+        ),
+      ),
+    },
     name="RichSample",
     init=SampleState::{ title: "", count: 0, tags: [], open: false },
     compute={
@@ -204,14 +218,6 @@ fn rich_sample_comp() -> @component.Component {
         @component.LoopWith::new(start=0, end=s.count)
       },
     },
-    view=(
-      #|<div @text=".title"></div>
-    ),
-    views={
-      "compact": (
-        #|<span @text=".title"></span>
-      ),
-    },
   )
 }
 
@@ -220,13 +226,18 @@ fn rich_sample_comp() -> @component.Component {
 /// instance-inspector.dev.js).
 fn sample_card_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="card" @text=".title"></div>
+        ),
+      ),
+    },
     name="SampleCard",
     init=SampleState::{ title: "", count: 0, tags: [], open: false },
     compute={ "label": (s : SampleState, _args) => Str(s.title) },
     mutate={ "bump": (s : SampleState, _args) => { ..s, count: s.count + 1 } },
-    view=(
-      #|<div class="card" @text=".title"></div>
-    ),
   )
 }
 

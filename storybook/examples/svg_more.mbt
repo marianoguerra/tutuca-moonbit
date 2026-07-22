@@ -22,23 +22,28 @@ priv struct BarChartState {
 /// re-renders the bars, just reproducible.
 fn bar_chart_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-3">
+          #|  <svg viewBox="0 0 300 120" role="img">
+          #|    <line class="axis" x1="0" y1="110" x2="300" y2="110" stroke="#cbd5e1" stroke-width="1"></line>
+          #|    <rect @each=".values" @loop-with="layout" @enrich-with="bar"
+          #|      :x="@x" :y="@y" :width="@w" :height="@h" rx="3" fill="#6366f1"></rect>
+          #|    <text @each=".values" @loop-with="layout" @enrich-with="bar"
+          #|      :x="@cx" :y="@labelY" @text="@value" text-anchor="middle" font-size="10" fill="#475569"></text>
+          #|  </svg>
+          #|  <div class="join">
+          #|    <button class="btn btn-primary join-item randomize" @on.click="randomize">Randomize</button>
+          #|    <button class="btn join-item add" @on.click="addBar">Add bar</button>
+          #|    <button class="btn join-item remove" @on.click="removeBar">Remove bar</button>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="BarChart",
-    view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <svg viewBox="0 0 300 120" role="img">
-      #|    <line class="axis" x1="0" y1="110" x2="300" y2="110" stroke="#cbd5e1" stroke-width="1"></line>
-      #|    <rect @each=".values" @loop-with="layout" @enrich-with="bar"
-      #|      :x="@x" :y="@y" :width="@w" :height="@h" rx="3" fill="#6366f1"></rect>
-      #|    <text @each=".values" @loop-with="layout" @enrich-with="bar"
-      #|      :x="@cx" :y="@labelY" @text="@value" text-anchor="middle" font-size="10" fill="#475569"></text>
-      #|  </svg>
-      #|  <div class="join">
-      #|    <button class="btn btn-primary join-item randomize" @on.click="randomize">Randomize</button>
-      #|    <button class="btn join-item add" @on.click="addBar">Add bar</button>
-      #|    <button class="btn join-item remove" @on.click="removeBar">Remove bar</button>
-      #|  </div>
-      #|</div>
-    ),
     init=BarChartState::{
       values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)],
     },
@@ -156,27 +161,32 @@ priv struct IconGalleryState {
 ///|
 fn icon_gallery_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="flex flex-col gap-4">
+          #|  <label class="flex items-center gap-2 text-sm">
+          #|    Size
+          #|    <input type="range" min="16" max="80" :value=".size" @on.input="$setSize valueAsInt" />
+          #|    <code class="sizeval" @text=".size"></code>
+          #|  </label>
+          #|  <div class="flex items-end gap-6 text-primary icons">
+          #|    <x:iconheart :size=".size" :color="'#e11d48'"></x:iconheart>
+          #|    <x:iconstar :size=".size" :color="'#f59e0b'"></x:iconstar>
+          #|    <x:iconbolt :size=".size" :color="'#2563eb'"></x:iconbolt>
+          #|  </div>
+          #|  <div class="flex items-center gap-3 fixed">
+          #|    <span class="text-sm">Fixed 20px:</span>
+          #|    <x:iconheart size="20"></x:iconheart>
+          #|    <x:iconstar size="20"></x:iconstar>
+          #|    <x:iconbolt size="20"></x:iconbolt>
+          #|  </div>
+          #|</div>
+        ),
+      ),
+    },
     name="IconGallery",
-    view=(
-      #|<div class="flex flex-col gap-4">
-      #|  <label class="flex items-center gap-2 text-sm">
-      #|    Size
-      #|    <input type="range" min="16" max="80" :value=".size" @on.input="$setSize valueAsInt" />
-      #|    <code class="sizeval" @text=".size"></code>
-      #|  </label>
-      #|  <div class="flex items-end gap-6 text-primary icons">
-      #|    <x:iconheart :size=".size" :color="'#e11d48'"></x:iconheart>
-      #|    <x:iconstar :size=".size" :color="'#f59e0b'"></x:iconstar>
-      #|    <x:iconbolt :size=".size" :color="'#2563eb'"></x:iconbolt>
-      #|  </div>
-      #|  <div class="flex items-center gap-3 fixed">
-      #|    <span class="text-sm">Fixed 20px:</span>
-      #|    <x:iconheart size="20"></x:iconheart>
-      #|    <x:iconstar size="20"></x:iconstar>
-      #|    <x:iconbolt size="20"></x:iconbolt>
-      #|  </div>
-      #|</div>
-    ),
     init=IconGalleryState::{ size: 40 },
   )
 }

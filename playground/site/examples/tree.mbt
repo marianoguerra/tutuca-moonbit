@@ -16,8 +16,8 @@ struct TreeItemState {
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
   @component.component(
-    name="TreeItem",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <p class="head"
       #|    @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
@@ -26,27 +26,28 @@ fn tree_item_comp() -> @component.Component {
       #|    <x render-each=".items"></x>
       #|  </div>
       #|</section>
-    ),
-    style=(
+    ), style=(
       #|user-select: none;
       #|.head { cursor: pointer; }
       #|.head:before { content: "⏺️"; margin-right: 0.25rem; }
       #|.head.type-file:before { content: "📄️"; }
       #|.head.open.type-dir:before { content: "📂️"; }
       #|.head.closed.type-dir:before { content: "📁️"; }
-    ),
-    init=TreeItemState::{
+    )),
+  },
+  name="TreeItem",
+  init=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
       isOpen: true,
       items: [],
     },
-    compute={
+  compute={
       "areChildsVisible": (s : TreeItemState, _args) => Bool(
         s.isOpen && s.items.length() > 0,
       ),
     },
-    update=(s : TreeItemState, msg, ctx) => match msg {
+  update=(s : TreeItemState, msg, ctx) => match msg {
       // emit an event any ancestor may observe (payload: this item's own
       // instance value, read off the dispatch path — its leaf is self),
       // then toggle self
@@ -64,7 +65,7 @@ fn tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
-  )
+)
 }
 
 ///|
@@ -77,18 +78,20 @@ struct TreeRootState {
 ///|
 fn tree_root_comp() -> @component.Component {
   @component.component(
-    name="TreeRoot",
-    view=(
+  compiled_views={
+    "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <x render=".root"></x>
       #|  <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
       #|    <li @each=".log"><x text="@value"></x></li>
       #|  </ul>
       #|</div>
-    ),
-    init=TreeRootState::{ log: [] },
-    specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s : TreeRootState, msg, _ctx) => match msg {
+    )),
+  },
+  name="TreeRoot",
+  init=TreeRootState::{ log: [] },
+  specs={ "root": @component.FieldSpec::comp("TreeItem") },
+  update=(s : TreeRootState, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
@@ -104,7 +107,7 @@ fn tree_root_comp() -> @component.Component {
       }
       _ => None
     },
-  )
+)
 }
 
 ///|

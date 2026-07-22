@@ -6,12 +6,17 @@
 /// Primitive type(s): string / number / integer / boolean / null / multi-type.
 fn schema_scalar_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_schema_view("text-success schema-scalar"),
+      ),
+    },
     name="SchemaScalar",
     init=schema_node_init(),
     compute=schema_node_compute(_s => ""),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_schema_view("text-success schema-scalar"),
   )
 }
 
@@ -34,6 +39,12 @@ fn Inspector::schema_scalar_from(
 /// branches (additionalProperties / patternProperties / propertyNames).
 fn schema_object_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_schema_view("text-primary schema-object"),
+      ),
+    },
     name="SchemaObject",
     init=schema_node_init(),
     compute=schema_node_compute(s => {
@@ -46,7 +57,6 @@ fn schema_object_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_schema_view("text-primary schema-object"),
   )
 }
 
@@ -123,6 +133,12 @@ fn Inspector::schema_object_from(
 /// tuple, plus `contains` and array constraints (as badges).
 fn schema_array_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_schema_view("text-primary schema-array"),
+      ),
+    },
     name="SchemaArray",
     init=schema_node_init(),
     compute=schema_node_compute(s => {
@@ -135,7 +151,6 @@ fn schema_array_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    view=make_schema_view("text-primary schema-array"),
   )
 }
 
@@ -203,6 +218,12 @@ fn Inspector::schema_array_from(
 /// Enumerated allowed values — each rendered with the value inspector.
 fn schema_enum_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_schema_view("text-info schema-enum", body=LIST_BODY),
+      ),
+    },
     name="SchemaEnum",
     init=schema_node_init(),
     compute=schema_node_compute(s => {
@@ -215,8 +236,6 @@ fn schema_enum_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    // list layout: each enum member is a single value one per line.
-    view=make_schema_view("text-info schema-enum", body=LIST_BODY),
   )
 }
 
@@ -244,15 +263,20 @@ fn Inspector::schema_enum_from(
 /// A single constant value — terminal, rendered inline.
 fn schema_const_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const">
+          #|  <span class="text-info font-semibold">const</span>
+          #|  <span class="text-base-content/30">=</span>
+          #|  <x render=".value"></x>
+          #|</span>
+        ),
+      ),
+    },
     name="SchemaConst",
     init=ChildValueState::{ value: Null },
-    view=(
-      #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const">
-      #|  <span class="text-info font-semibold">const</span>
-      #|  <span class="text-base-content/30">=</span>
-      #|  <x render=".value"></x>
-      #|</span>
-    ),
   )
 }
 
@@ -260,6 +284,15 @@ fn schema_const_comp() -> @component.Component {
 /// Combinator: allOf / anyOf / oneOf, subschemas listed without keys.
 fn schema_combinator_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=make_schema_view(
+          "text-accent schema-combinator",
+          body=LIST_BODY,
+        ),
+      ),
+    },
     name="SchemaCombinator",
     init=schema_node_init(),
     compute=schema_node_compute(s => {
@@ -272,8 +305,6 @@ fn schema_combinator_comp() -> @component.Component {
     }),
     mutate=composite_mutate(),
     loop_with=composite_loop_with(),
-    // list layout: members are full schema nodes one per line, no keys.
-    view=make_schema_view("text-accent schema-combinator", body=LIST_BODY),
   )
 }
 
@@ -308,6 +339,44 @@ fn Inspector::schema_combinator_from(
 /// Conditional applicator: if / then / else as three labeled regions.
 fn schema_conditional_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight inline-block schema-conditional">
+          #|  <span class="inline-flex items-center gap-2 flex-wrap">
+          #|    <span class="text-accent font-semibold">conditional</span>
+          #|    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+          #|  </span>
+          #|  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+          #|  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+          #|  <div class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
+          #|    <div @show="truthy? .ifNode" class="contents">
+          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+          #|        <span class="text-info">if</span>
+          #|        <span class="text-base-content/30">:</span>
+          #|      </span>
+          #|      <x render=".ifNode"></x>
+          #|    </div>
+          #|    <div @show="truthy? .thenNode" class="contents">
+          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+          #|        <span class="text-success">then</span>
+          #|        <span class="text-base-content/30">:</span>
+          #|      </span>
+          #|      <x render=".thenNode"></x>
+          #|    </div>
+          #|    <div @show="truthy? .elseNode" class="contents">
+          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+          #|        <span class="text-warning">else</span>
+          #|        <span class="text-base-content/30">:</span>
+          #|      </span>
+          #|      <x render=".elseNode"></x>
+          #|    </div>
+          #|  </div>
+          #|</span>
+        ),
+      ),
+    },
     name="SchemaConditional",
     init=SchemaConditionalState::{
       ifNode: Null,
@@ -317,39 +386,6 @@ fn schema_conditional_comp() -> @component.Component {
       description: "",
       deprecated: false,
     },
-    view=(
-      #|<span class="font-mono text-sm leading-tight inline-block schema-conditional">
-      #|  <span class="inline-flex items-center gap-2 flex-wrap">
-      #|    <span class="text-accent font-semibold">conditional</span>
-      #|    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
-      #|  </span>
-      #|  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
-      #|  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
-      #|  <div class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
-      #|    <div @show="truthy? .ifNode" class="contents">
-      #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-      #|        <span class="text-info">if</span>
-      #|        <span class="text-base-content/30">:</span>
-      #|      </span>
-      #|      <x render=".ifNode"></x>
-      #|    </div>
-      #|    <div @show="truthy? .thenNode" class="contents">
-      #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-      #|        <span class="text-success">then</span>
-      #|        <span class="text-base-content/30">:</span>
-      #|      </span>
-      #|      <x render=".thenNode"></x>
-      #|    </div>
-      #|    <div @show="truthy? .elseNode" class="contents">
-      #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-      #|        <span class="text-warning">else</span>
-      #|        <span class="text-base-content/30">:</span>
-      #|      </span>
-      #|      <x render=".elseNode"></x>
-      #|    </div>
-      #|  </div>
-      #|</span>
-    ),
   )
 }
 
@@ -377,15 +413,20 @@ fn Inspector::schema_conditional_from(
 /// Negation: the value must NOT match the wrapped schema.
 fn schema_not_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not">
+          #|  <span class="text-error font-semibold">not</span>
+          #|  <span class="text-base-content/30">:</span>
+          #|  <x render=".child"></x>
+          #|</span>
+        ),
+      ),
+    },
     name="SchemaNot",
     init=ChildOnlyState::{ child: Null },
-    view=(
-      #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not">
-      #|  <span class="text-error font-semibold">not</span>
-      #|  <span class="text-base-content/30">:</span>
-      #|  <x render=".child"></x>
-      #|</span>
-    ),
   )
 }
 
@@ -393,6 +434,20 @@ fn schema_not_comp() -> @component.Component {
 /// Boolean schemas: `true` accepts any value, `false` accepts none.
 fn schema_boolean_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span :class="$cssClass" @text="$text"></span>
+        ),
+      ),
+      "_margauiClasses": @anode.View::new(
+        "_margauiClasses",
+        raw_view=(
+          #|<p class="text-success text-error"></p>
+        ),
+      ),
+    },
     name="SchemaBoolean",
     init=SchemaBooleanState::{ value: true },
     compute={
@@ -410,15 +465,6 @@ fn schema_boolean_comp() -> @component.Component {
         Str("font-mono text-sm leading-tight italic schema-boolean \{color}")
       },
     },
-    view=(
-      #|<span :class="$cssClass" @text="$text"></span>
-    ),
-    views={
-      // Decoy: cssClass() builds these at runtime.
-      "_margauiClasses": (
-        #|<p class="text-success text-error"></p>
-      ),
-    },
   )
 }
 
@@ -427,11 +473,16 @@ fn schema_boolean_comp() -> @component.Component {
 /// schemas (`{ "$ref": "#" }`) cannot loop.
 fn schema_ref_comp() -> @component.Component {
   @component.component(
+    compiled_views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<span class="font-mono text-sm leading-tight text-secondary schema-ref">→ <span @text=".target"></span></span>
+        ),
+      ),
+    },
     name="SchemaRef",
     init=SchemaRefState::{ target: "" },
-    view=(
-      #|<span class="font-mono text-sm leading-tight text-secondary schema-ref">→ <span @text=".target"></span></span>
-    ),
   )
 }
 
