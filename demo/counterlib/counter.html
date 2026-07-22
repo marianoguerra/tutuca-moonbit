@@ -1,0 +1,11 @@
+<template>
+  <style>font-family: sans-serif</style>
+  <div class="counter">
+    <h1><x text=".label"></x>: <span id="count"><x text=".count"></x></span></h1>
+    <button id="inc" @on.click="add 1">+1</button>
+    <button id="dec" @on.click="add -1">-1</button>
+    <button id="reset" @on.click="resetCount">reset</button>
+    <input id="label" :value=".label" @on.input="setLabel value" @on.keydown+send="setLabel 'sent!'">
+    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
+  </div>
+</template>

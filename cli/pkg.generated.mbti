@@ -34,9 +34,13 @@ pub const CODE_USAGE_UNKNOWN_COMMAND : String = "ERR_USAGE_UNKNOWN_COMMAND"
 
 pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 
+pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
+
 pub const VERSION : String = "0.1.0"
 
 pub fn agent_context_text() -> String
+
+pub fn basename(String) -> String
 
 pub fn check_component(@component.Component) -> Array[LintFinding]
 
@@ -68,6 +72,10 @@ pub fn finding_message(@lint.Finding) -> String
 
 pub let format_names : Array[String]
 
+pub fn gen_views(String, name~ : String, input~ : String, target~ : String) -> Result[GenPlan, ErrShape]
+
+pub fn gen_views_success(String, String) -> String
+
 pub let global_flag_names : Array[String]
 
 pub fn install_skill_success(String) -> String
@@ -89,6 +97,8 @@ pub fn plan_with_module(Array[String], @component.ModuleDef?) -> Outcome
 pub fn render_error(GlobalOpts, ErrShape) -> String
 
 pub fn run_feedback(Array[String], GlobalOpts) -> Outcome
+
+pub fn run_gen_views(Array[String], GlobalOpts) -> Outcome
 
 pub fn run_help(String?, GlobalOpts) -> Emit
 
@@ -144,6 +154,10 @@ pub(all) struct FlagSpec {
   description : String?
 } derive(Eq, @debug.Debug)
 
+pub(all) struct GenPlan {
+  files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
 pub(all) struct GlobalOpts {
   format : String?
   output : String?
@@ -174,6 +188,7 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
+  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PositionalSpec {

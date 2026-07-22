@@ -21,12 +21,12 @@ test "schema top-level shape" {
 }
 
 ///|
-test "schema counts: 11 commands, 13 error codes, 43 lint rules, 6 global flags" {
+test "schema counts: 12 commands, 14 error codes, 43 lint rules, 6 global flags" {
   guard schema() is Object(top)
   guard top.get("commands") is Some(Array(cmds))
-  assert_eq(cmds.length(), 11)
+  assert_eq(cmds.length(), 12)
   guard top.get("errorCodes") is Some(Array(codes))
-  assert_eq(codes.length(), 13)
+  assert_eq(codes.length(), 14)
   guard top.get("lintCodes") is Some(Array(rules))
   assert_eq(rules.length(), 43)
   guard top.get("globalFlags") is Some(Array(flags))

@@ -168,6 +168,72 @@ async fn run_install_skill(
 }
 
 ///|
+/// The shell half of `gen-views`: read the input .html, hand it to the pure
+/// generator, write (or under --dry-run print) what it plans. Unlike
+/// install-skill this DOES overwrite without asking — regenerating a
+/// generated file in place is the whole workflow.
+async fn run_gen_views(
+  opts : @cli.GlobalOpts,
+  input : String,
+  target : String,
+  name : String,
+  dry_run : Bool,
+) -> Unit noraise {
+  let source = @fs.read_file(input).text() catch {
+    e => {
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(
+            @cli.CODE_INTERNAL,
+            "cannot read \{input}: \{e}",
+            hint="pass the path to the .html file holding the component's views",
+          ),
+        ),
+      )
+      return
+    }
+  }
+  let plan = match @cli.gen_views(source, name~, input~, target~) {
+    Ok(plan) => plan
+    Err(shape) => {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
+    }
+  }
+  if dry_run {
+    let sb = StringBuilder::new()
+    for pair in plan.files {
+      sb.write_string(pair.1)
+    }
+    emit_and_exit({ out: sb.to_string(), err: "", exit_code: 0 })
+  }
+  try {
+    for pair in plan.files {
+      let (path, contents) = pair
+      let dir = parent_dir(path)
+      if dir != "" && !@fs.exists(dir) {
+        @fs.mkdir(dir, recursive=true)
+      }
+      @fs.write_file(path, contents, create_mode=CreateOrTruncate)
+    }
+  } catch {
+    e =>
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(@cli.CODE_INTERNAL, "failed to write generated views: \{e}"),
+        ),
+      )
+  }
+  emit_and_exit({
+    out: @cli.gen_views_success(target, input),
+    err: "",
+    exit_code: 0,
+  })
+}
+
+///|
 async fn main {
   // args()[0] is the program name, like process.argv[1] under node.
   let argv = @env.args().iter().drop(1).to_array()
@@ -177,5 +243,7 @@ async fn main {
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)
+    GenViews(opts, input~, target~, name~, dry_run~) =>
+      run_gen_views(opts, input, target, name, dry_run)
   }
 }

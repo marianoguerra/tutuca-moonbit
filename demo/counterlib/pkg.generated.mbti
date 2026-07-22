@@ -3,16 +3,65 @@ package "marianoguerra/tutuca/demo/counterlib"
 
 import {
   "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub let counter_common_style : String
+
 pub fn counter_comp() -> @component.Component
+
+pub let counter_fields : Array[String]
+
+pub let counter_global_style : String
+
+pub let counter_main_view : String
+
+pub fn[S : ToJson] counter_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub let counter_style : String
+
+pub fn counter_view_styles() -> Map[String, String]
+
+pub fn counter_views() -> Map[String, String]
 
 pub fn module_def() -> @component.ModuleDef
 
 // Errors
 
 // Types and methods
+pub(all) enum CounterId {
+  Count
+  Dec
+  History
+  Inc
+  Label
+  Reset
+} derive(Eq, @debug.Debug)
+pub fn CounterId::id(Self) -> String
+pub fn CounterId::selector(Self) -> String
+
+pub(all) enum CounterInput {
+  Add
+  ResetCount
+  SetLabel
+} derive(Eq, @debug.Debug)
+pub fn CounterInput::name(Self) -> String
+pub fn CounterInput::parse(String) -> Self?
+
+pub(all) enum CounterMsg {
+  Add(Double)
+  ResetCount
+  SetLabel(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CounterMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CounterView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn CounterView::name(Self) -> String
 
 // Type aliases
 

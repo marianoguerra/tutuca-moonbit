@@ -1,5 +1,14 @@
 // Counter component + module definition shared by the browser demo and the
 // embedded-CLI demo.
+//
+// The view lives in counter.html, compiled ahead of time into
+// counter_view_gen.mbt by
+//
+//   moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
+//
+// so the handler names below are checked against the view rather than
+// matched as strings: adding an `@on` handler to counter.html and
+// regenerating makes the `update` match non-exhaustive until it is handled.
 
 ///|
 priv struct CounterState {
@@ -12,23 +21,22 @@ priv struct CounterState {
 pub fn counter_comp() -> @component.Component {
   @component.component(
     name="Counter",
-    view="<div class=\"counter\">" +
-      "<h1><x text=\".label\"></x>: <span id=\"count\"><x text=\".count\"></x></span></h1>" +
-      "<button id=\"inc\" @on.click=\"add 1\">+1</button>" +
-      "<button id=\"dec\" @on.click=\"add -1\">-1</button>" +
-      "<button id=\"reset\" @on.click=\"resetCount\">reset</button>" +
-      "<input id=\"label\" :value=\".label\" @on.input=\"setLabel value\" @on.keydown+send=\"setLabel 'sent!'\">" +
-      "<ul id=\"history\"><li @each=\".history\"><x text=\"@value\"></x></li></ul>" +
-      "</div>",
-    style="font-family: sans-serif",
+    view=counter_main_view,
+    views=counter_views(),
+    style=counter_style,
     init=CounterState::{ label: "Counter", count: 0, history: [] },
     update=(s : CounterState, msg, _ctx) => {
-      match msg {
-        Input("add", [Num(d)]) => {
+      match CounterMsg::of_dispatch(msg) {
+        Some(Add(d)) => {
           let next = s.count + d.to_int()
           Some({ ..s, count: next, history: s.history + [next] })
         }
-        _ => None
+        // Served by the mutators generated from the state's fields: returning
+        // None here lets Input dispatch fall through to them
+        // (component/instance.mbt obj_handler).
+        Some(SetLabel(_)) | Some(ResetCount) => None
+        // Not a name the view declares, or a Receive/Bubble/Response.
+        Some(Unknown(_, _)) | None => None
       }
     },
   )
@@ -49,4 +57,18 @@ pub fn module_def() -> @component.ModuleDef {
       view: None,
     },
   ])
+}
+
+///|
+/// The generated field list against the state struct: a field the view reads
+/// but the state does not carry would render as null at runtime.
+test "the view's field reads all exist in CounterState" {
+  assert_eq(
+    counter_missing_fields(CounterState::{
+      label: "Counter",
+      count: 0,
+      history: [],
+    }),
+    [],
+  )
 }

@@ -28,6 +28,7 @@ pub fn plan(argv : Array[String]) -> Outcome {
       return Done({ out: agent_context_text(), err: "", exit_code: 0 })
     "install-skill" => return run_install_skill(command_args, opts)
     "storybook" => return run_storybook(command_args, opts)
+    "gen-views" => return run_gen_views(command_args, opts)
     _ => ()
   }
   if opts.help {

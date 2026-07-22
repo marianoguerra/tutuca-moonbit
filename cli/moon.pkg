@@ -12,6 +12,7 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/storybook" @sb,
+  "marianoguerra/tutuca/viewgen",
 }
 
 import {

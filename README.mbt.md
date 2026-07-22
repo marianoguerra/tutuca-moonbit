@@ -27,12 +27,56 @@ and formal `spec.mbt`. From the bottom up:
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain `derive(ToJson, FromJson)` struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
-| **Tooling** | `lint/`, `inspector/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, and the native `tutuca` CLI. |
+| **Tooling** | `lint/`, `inspector/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Demos & docs** | `examples/`, `demo/`, `playground/`, `storybook/` | 32 ported examples, browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
 
 The `tutuca` CLI exposes `get` / `list` / `examples` / `show` / `lint` /
-`render` / `storybook` / `install-skill`.
+`render` / `storybook` / `gen-views` / `install-skill`.
+
+## Ahead-of-time views (`gen-views`)
+
+A component can keep its views in an `.html` file and compile them ahead of
+time into a companion MoonBit module, so the view's vocabulary stops being
+strings the compiler cannot see:
+
+```sh
+moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
+# -> demo/counterlib/counter_view_gen.mbt (checked in; regenerate, never edit)
+```
+
+The file is either one bare view, or several `<template>` elements whose `id`
+attributes name them — the one with no `id` is `main`. A `<style>` inside a
+template is that view's style; one at file level is the component's common
+style, or its global style with `data-global`.
+
+For a component named `Counter` the generated module declares
+`counter_main_view` / `counter_views()` (the sources, for `component()`),
+`CounterInput` and `CounterMsg` (`@on` handler names, with payload types
+inferred from the argument shapes at the call sites, plus
+`CounterMsg::of_dispatch`), `CounterMethod` with `counter_mutate` /
+`counter_compute` / `counter_swap` (the `$`-callables, as exhaustive matches),
+`CounterView` / `CounterId`, and `counter_fields` /
+`counter_missing_fields`. The package it lands in must import
+`"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
+`"moonbitlang/core/debug"`.
+
+The payoff is in `update` (see `demo/counterlib/` for the worked example):
+
+```mbt nocheck
+update=(s : CounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
+  Some(Add(d)) => ...          // `d` is a Double: `@on.click="add 1"`
+  Some(SetLabel(l)) => ...     // `l` is a String: `@on.input="setLabel value"`
+  Some(ResetCount) => None
+  Some(Unknown(_, _)) | None => None
+}
+```
+
+Adding `@on.click="del 1"` to `counter.html` and regenerating makes that match
+non-exhaustive — a compile error naming `Some(Del(_))`, where the old
+string-matched `_ => None` arm silently did nothing. Views still parse at
+startup; this phase buys type safety and gets the HTML out of MoonBit string
+literals, not startup time.
 
 ## vdom
 

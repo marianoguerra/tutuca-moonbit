@@ -32,6 +32,15 @@ You can browse and install extra skills here:
 - Try to keep deprecated blocks in file called `deprecated.mbt` in each
   directory.
 
+- Files named `*_gen.mbt` are GENERATED and checked in; never hand-edit one.
+  Change its source and rerun the task that produces it (`gen-views` for a
+  `*_view_gen.mbt` from its `.html`; `skill-embed` for
+  `cli/skill_assets_gen.mbt` from `skill/tutuca/`). `viewgen` emits in a shape
+  `moon fmt` leaves alone, so a `*_view_gen.mbt` should never appear in a
+  post-`fmt` diff — if it does, the emitter drifted from the formatter and the
+  emitter is what to fix. (`cli/skill_assets_gen.mbt` is NOT fmt-stable: revert
+  it after a `moon fmt` and regenerate through `skill-embed`.)
+
 ## Tooling
 
 ### Task runner (`cmd/dev`)
@@ -54,6 +63,7 @@ moon run --target native cmd/dev -- <task>
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
 | `ci`       | `check` then `test`                                              |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
+| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); follow with `git diff --exit-code` to catch drift |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 
 `dist` produces `dist/index.html` (a landing page with run instructions),

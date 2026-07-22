@@ -1,0 +1,74 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/viewgen"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn emit_module(String, String, ViewSet, Surface) -> String raise GenError
+
+pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
+
+pub fn split_views(String) -> ViewSet raise GenError
+
+pub fn type_prefix(String) -> String raise GenError
+
+pub fn value_prefix(String) -> String
+
+pub fn variant_name(String) -> String
+
+pub fn variants_for(Array[String]) -> Array[(String, String)] raise GenError
+
+pub fn view_surface(Array[RawView]) -> Surface raise GenError
+
+// Errors
+pub suberror GenError {
+  StrayText(String)
+  DuplicateView(String)
+  NoMainView
+  UnclosedTemplate(String)
+  ViewParseIssue(view~ : String, issue~ : String)
+  EmptyView(String)
+  NameCollision(variant~ : String, first~ : String, second~ : String)
+  BadComponentName(String)
+}
+pub fn GenError::message(Self) -> String
+
+// Types and methods
+pub(all) enum ArgType {
+  VDouble
+  VString
+  VBool
+  VValue
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InputSig {
+  name : String
+  args : Array[ArgType]?
+  sites : Array[String]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RawView {
+  name : String
+  source : String
+  style : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Surface {
+  inputs : Array[InputSig]
+  methods : Array[String]
+  fields : Array[String]
+  ids : Array[String]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ViewSet {
+  views : Array[RawView]
+  common_style : String
+  global_style : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

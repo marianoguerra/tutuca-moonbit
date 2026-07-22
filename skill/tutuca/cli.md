@@ -73,7 +73,46 @@ Plain commands (no module needed):
 | `help [cmd]`             | Show usage; `help <command>` for per-command detail                                                                    |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code, error code, and lint code                             |
+| `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`. See below |
 | `install-skill`          | Copy a bundled Claude Code skill (this one) into `.claude/skills/` — the skill assets are embedded into the binary by the dev `dist` tooling. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force`, `--all`, `--margaui-skill` |
+
+### `gen-views` — ahead-of-time views
+
+Optional. Keeps a component's views in an `.html` file instead of a MoonBit
+string literal, and turns the view's vocabulary into types:
+
+```sh
+tutuca gen-views demo/counterlib/counter.html --name Counter
+# -> demo/counterlib/counter_view_gen.mbt   (checked in; regenerate, never edit)
+```
+
+The file is one bare view, or several `<template>` elements whose `id` names
+them — the one with no `id` is `main`. A `<style>` inside a template is that
+view's style; one at file level is the common style, or the global style with
+`data-global`. A view that would emit a parse issue at runtime fails
+generation instead.
+
+For `--name Counter` the module declares `counter_main_view` /
+`counter_views()` / `counter_style` (feed straight into `component()`),
+`CounterInput` + `CounterMsg` with `CounterMsg::of_dispatch` (payload types
+inferred from the argument shapes at the `@on` call sites: `add 1` ->
+`Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
+-> `@tutuca.Value`), `CounterMethod` + `counter_mutate`/`_compute`/`_swap`
+(the `$`-callables, built from an exhaustive match), `CounterView`,
+`CounterId`, and `counter_fields` / `counter_missing_fields`.
+
+`update` then pattern-matches typed messages, so adding an `@on` handler to
+the `.html` and regenerating breaks the build until it is handled, instead of
+falling into a silent `_ => None`. Handlers served by the auto-generated
+field mutators return `None` and fall through to them, as before. The
+generated package must import `"marianoguerra/tutuca/core" @tutuca`,
+`"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"`.
+
+Caveat on `counter_fields`: it lists only fields read at a view's ROOT scope.
+A `.field` under an `@each`, `@enrich-with`, push-view or `<x render>`
+addresses the loop item or the child component, so it is not listed. Use it in
+a test (`assert_eq(counter_missing_fields(init), [])`), not as a startup
+check; fields declared through `specs~` go in `extra~`.
 
 **Not in this port:**
 

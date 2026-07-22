@@ -106,6 +106,19 @@ pub fn tasks() -> Array[Task] {
       commands: build_commands(),
     },
     {
+      name: "gen-views",
+      about: "regenerate the checked-in *_view_gen.mbt from their .html sources",
+      commands: [
+        // One entry per repo-owned view file. Run this after editing an
+        // .html view, and in CI followed by `git diff --exit-code` to catch a
+        // generated module that has drifted from its source.
+        moon("gen-views · demo/counterlib", [
+          "run", "--target", "native", "cmd/main", "--", "gen-views", "demo/counterlib/counter.html",
+          "--name", "Counter",
+        ]),
+      ],
+    },
+    {
       name: "coverage",
       about: "run coverage analysis",
       commands: [moon("coverage analyze", ["coverage", "analyze"])],

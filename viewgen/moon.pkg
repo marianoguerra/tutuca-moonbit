@@ -1,0 +1,14 @@
+// Ahead-of-time view compilation: an .html file holding one or more views ->
+// a generated MoonBit module of typed view surfaces (handler-name enums,
+// typed dispatch decode, $-callable builders, view/field/id tables).
+//
+// Pure and target-agnostic like cli/: source text in -> generated source text
+// out, never touching the filesystem. The `gen-views` CLI command wraps it
+// and cmd/main does the I/O.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/anode",
+  "moonbit-community/html/src" @html5,
+  "moonbitlang/core/debug",
+  "moonbitlang/core/set",
+}

@@ -106,11 +106,36 @@ pub(all) enum Outcome {
   /// decides the flags; the shell (cmd/main) resolves the bundle directory,
   /// starts the static HTTP server, or copies the bundle for `--out`.
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
+  /// Compile the views in `input` into the MoonBit module `target`. The core
+  /// decides the paths and the component name; the shell reads the input file,
+  /// calls `gen_views`, and writes (or prints, under `dry_run`) the plan.
+  GenViews(
+    GlobalOpts,
+    input~ : String,
+    target~ : String,
+    name~ : String,
+    dry_run~ : Bool
+  )
 } derive(Debug, Eq)
 
 ///|
 /// Top-level dispatcher: the pure port of main() in tools/tutuca.js.
 declare pub fn plan(argv : Array[String]) -> Outcome
+
+///|
+/// Parse `gen-views` arguments: finishes purely on help and usage errors,
+/// otherwise returns a GenViews outcome for the shell to carry out.
+declare pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
+
+///|
+/// Compile view source into the generated MoonBit module (viewgen/), the
+/// pure half of `gen-views`.
+declare pub fn gen_views(
+  source : String,
+  name~ : String,
+  input~ : String,
+  target~ : String,
+) -> Result[GenPlan, ErrShape]
 
 ///|
 /// Port of extractGlobals (tools/tutuca.js). Returns the parsed globals and

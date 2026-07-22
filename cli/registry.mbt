@@ -272,6 +272,42 @@ pub let commands : Array[CommandSpec] = [
     ],
     impl_: Wired,
   },
+  // Ahead-of-time view compilation (gen_views.mbt + the viewgen package).
+  // Needs no module: it reads an .html file and writes a .mbt file, so it
+  // works before the component that will use the generated types exists.
+  {
+    name: "gen-views",
+    describe: "Compile an .html file of views into a MoonBit module of typed view surfaces.",
+    needs_module: false,
+    needs_env: false,
+    default_format: None,
+    flags: [
+      flag(
+        "name",
+        type_="string",
+        description="Component name heading the generated types (default: the file's basename).",
+      ),
+      flag(
+        "out",
+        type_="string",
+        description="Output directory, or an explicit .mbt path (default: beside the input).",
+      ),
+      flag(
+        "dry-run",
+        type_="boolean",
+        description="Print the generated module instead of writing it.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "file",
+        required=true,
+        description="The .html file holding the component's views.",
+      ),
+    ],
+    impl_: Wired,
+  },
   {
     name: "agent-context",
     describe: "Print a machine-readable schema (commands, flags, exit codes) as JSON.",

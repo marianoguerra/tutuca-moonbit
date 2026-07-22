@@ -39,5 +39,9 @@ fn main {
       println("storybook is not supported by this demo binary")
       process_exit(1)
     }
+    GenViews(_, ..) => {
+      println("gen-views is not supported by this demo binary")
+      process_exit(1)
+    }
   }
 }
