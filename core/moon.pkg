@@ -1,8 +1,10 @@
 import {
   "moonbitlang/core/string",
+  "moonbitlang/core/json",
 }
 
 import {
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/quickcheck/gen",
+  "moonbitlang/core/json",
 } for "test"

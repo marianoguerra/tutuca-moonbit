@@ -1,17 +1,17 @@
 // Port of src/components/tutuca/component-inspector.js — inspect a Component
 // *descriptor* (the value returned by `@component.component(...)`), not a
-// `.make()` instance.
+// made instance.
 //
 // A `@component.Component` is not a `@tutuca.Value`, so the inspector takes a
 // SNAPSHOT: `component_summary(comp)` returns a plain Value Map (the port of
-// JS `introspectComponent`) and the components render that. Port deviations:
-// - `statics` disappear (the port has no statics — they are plain functions).
-// - the Methods section lists USER methods only: the port stores generated
-//   field mutators (setX/toggleX/…) in the same table, so they are filtered
-//   out by name to match what the JS inspector showed.
-// - JS `expandAll`/`collapseAll`/`setAllSections`/`setAllViews` instance
-//   methods exist only as the bubble handlers (`toggleAllSections` /
-//   `toggleAllViews`) that the views actually dispatch.
+// JS `introspectComponent`) and the components render that. Typed-state
+// deviations:
+// - fields come from `Component::specs` (derived from the init state +
+//   explicit slot specs).
+// - the handler channels are the typed buckets: `mutate`/`compute` list
+//   their names ("Methods"), the render-time buckets list under "Alter", and
+//   `update` is one opaque pattern match — shown as a presence flag.
+// - generated field mutators never appear (they live in their own table).
 
 ///|
 fn field_kind_name(k : @component.FieldKind) -> String {
@@ -30,52 +30,12 @@ fn field_kind_name(k : @component.FieldKind) -> String {
 }
 
 ///|
-/// The names `gen_mutators` derives for a field, used to filter generated
-/// mutators out of the methods listing (mirrors component/component.mbt).
-fn generated_method_names(
-  fields : Map[String, @component.FieldSpec],
-) -> Map[String, Bool] {
-  let out : Map[String, Bool] = Map([])
-  for name, spec in fields {
-    let u = if name.length() == 0 {
-      name
-    } else {
-      name[0:1].to_owned().to_upper() + name[1:].to_owned()
-    }
-    out["set" + u] = true
-    out["reset" + u] = true
-    out["update" + u] = true
-    out[name + "Len"] = true
-    match spec.kind {
-      FBool => out["toggle" + u] = true
-      FSet => {
-        out["addIn" + u] = true
-        out["deleteIn" + u] = true
-        out["removeIn" + u] = true
-        out["hasIn" + u] = true
-        out["toggleIn" + u] = true
-      }
-      FList | FMap | FOMap => {
-        out["pushIn" + u] = true
-        out["insertIn" + u + "At"] = true
-        out["setIn" + u + "At"] = true
-        out["updateIn" + u + "At"] = true
-        out["deleteIn" + u + "At"] = true
-        out["removeIn" + u + "At"] = true
-      }
-      _ => ()
-    }
-  }
-  out
-}
-
-///|
 /// The pure snapshot the component inspector renders (JS introspectComponent):
-/// name, id, fields (name/type/default), the handler-channel name lists, and
-/// each view's raw template source.
+/// name, id, fields (name/type/default), the typed-bucket name lists, the
+/// update flag, and each view's raw template source.
 pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
   let fields : Array[@tutuca.Value] = []
-  for name, spec in comp.fields {
+  for name, spec in comp.specs {
     fields.push(
       Map({
         "name": Str(name),
@@ -84,19 +44,12 @@ pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
       }),
     )
   }
-  let generated = generated_method_names(comp.fields)
-  let names = (keys : Iter[String]) => {
+  let names = (keys : Array[String]) => {
     let out : Array[@tutuca.Value] = []
     for k in keys {
       out.push(Str(k))
     }
     @tutuca.Value::List(out)
-  }
-  let methods : Array[@tutuca.Value] = []
-  for k in comp.methods.keys() {
-    if !generated.contains(k) {
-      methods.push(Str(k))
-    }
   }
   let views : Array[@tutuca.Value] = []
   for _name, view in comp.views {
@@ -106,12 +59,10 @@ pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
     "name": Str(comp.name),
     "id": Num(comp.id.to_double()),
     "fields": List(fields),
-    "methods": List(methods),
-    "input": names(comp.input.keys()),
-    "receive": names(comp.receive.keys()),
-    "bubble": names(comp.bubble.keys()),
-    "response": names(comp.response.keys()),
-    "alter": names(comp.alter.keys()),
+    "methods": names(comp.mutate_names + comp.compute_names),
+    "update": names(if comp.has_update { ["update"] } else { [] }),
+    "swap": names(comp.swap_names),
+    "alter": names(comp.alter_names),
     "views": List(views),
   })
 }
@@ -121,12 +72,17 @@ pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
 // ---------------------------------------------------------------------------
 
 ///|
+priv struct NameState {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
 /// A single name entry — used for methods and the handler channels, all of
 /// which are just lists of names.
 fn comp_name_comp() -> @component.Component {
   @component.component(
     name="CompName",
-    fields={ "name": @component.FieldSpec::of_default(Str("")) },
+    init=NameState::{ name: "" },
     view=(
       #|<span class="font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name" @text=".name"></span>
     ),
@@ -134,16 +90,19 @@ fn comp_name_comp() -> @component.Component {
 }
 
 ///|
+priv struct CompFieldState {
+  name : String
+  typeName : String
+  child : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 /// A single field row: `name : type = <default value>`. The default value is
 /// rendered with the data inspector so it can recurse/expand.
 fn comp_field_comp() -> @component.Component {
   @component.component(
     name="CompField",
-    fields={
-      "name": @component.FieldSpec::of_default(Str("")),
-      "typeName": @component.FieldSpec::of_default(Str("")),
-      "child": @component.FieldSpec::of_default(Null),
-    },
+    init=CompFieldState::{ name: "", typeName: "", child: Null },
     view=(
       #|<div class="flex items-center gap-2 leading-tight comp-field">
       #|  <span class="text-base-content/70 font-mono text-sm" @text=".name"></span>
@@ -157,40 +116,38 @@ fn comp_field_comp() -> @component.Component {
 }
 
 ///|
-/// Plain click toggles one collapsible; ctrl/cmd-click bubbles `bubble_name`
-/// so the top-level inspector can toggle every one at once.
-fn toggle_or_bubble(
-  bubble_name : String,
-) -> (@component.Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> @component.Instance? {
-  (inst, args, ctx) => {
-    let is_ctrl = args.get(0) is Some(Bool(true))
-    let expanded = bool_field(inst, "isExpanded")
-    if is_ctrl {
-      ctx.bubble(bubble_name, [Bool(!expanded)])
-      Some(inst)
-    } else {
-      Some(inst.set("isExpanded", Bool(!expanded)))
-    }
-  }
-}
+priv struct CompViewState {
+  name : String
+  rawView : String
+  isExpanded : Bool
+} derive(ToJson, FromJson)
 
 ///|
 /// A single view: its name plus the raw template source in a code block. The
-/// source collapses/expands independently.
+/// source collapses/expands independently. Plain click toggles it;
+/// ctrl/cmd-click bubbles `toggleAllViews` so the top-level inspector can
+/// toggle every one at once.
 fn comp_view_comp() -> @component.Component {
   @component.component(
     name="CompView",
-    fields={
-      "name": @component.FieldSpec::of_default(Str("")),
-      "rawView": @component.FieldSpec::of_default(Str("")),
-      "isExpanded": @component.FieldSpec::of_default(Bool(false)),
-    },
-    methods={
-      "arrowText": (inst, _args) => {
-        Str(if bool_field(inst, "isExpanded") { "▼" } else { "▶" })
+    init=CompViewState::{ name: "", rawView: "", isExpanded: false },
+    compute={
+      "arrowText": (s : CompViewState, _args) => {
+        Str(if s.isExpanded { "▼" } else { "▶" })
       },
     },
-    input={ "toggle": toggle_or_bubble("toggleAllViews") },
+    update=(s : CompViewState, msg, ctx) => {
+      match msg {
+        Input("toggle", args) =>
+          if args.get(0) is Some(Bool(true)) {
+            ctx.bubble("toggleAllViews", [Bool(!s.isExpanded)])
+            None
+          } else {
+            Some({ ..s, isExpanded: !s.isExpanded })
+          }
+        _ => None
+      }
+    },
     view=(
       #|<div class="flex flex-col gap-0.5 leading-tight comp-view">
       #|  <button
@@ -210,73 +167,119 @@ fn comp_view_comp() -> @component.Component {
 /// A labelled, collapsible, paginated group of entries. Reuses the same
 /// composite machinery the JSON inspector uses; neutral chrome — hierarchy
 /// via weight, colour reserved for status/severity.
+priv struct CompSectionState {
+  items : Array[@tutuca.Value]
+  isExpanded : Bool
+  itemsPerPage : Int
+  currentPage : Int
+  label : String
+} derive(ToJson, FromJson)
+
+///|
+impl Composite for CompSectionState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for CompSectionState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for CompSectionState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for CompSectionState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for CompSectionState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
 fn comp_section_comp() -> @component.Component {
-  let fields = composite_fields()
-  fields["label"] = @component.FieldSpec::of_default(Str(""))
-  let methods = composite_methods(inst => str_field(inst, "label"), inst => {
-    let n = items_of(inst).length()
-    "(\{n})"
-  })
   @component.component(
     name="CompSection",
-    fields~,
-    methods~,
-    input={ "toggle": toggle_or_bubble("toggleAllSections") },
-    alter=composite_alter(),
+    init=CompSectionState::{
+      items: [],
+      isExpanded: false,
+      itemsPerPage: 10,
+      currentPage: 0,
+      label: "",
+    },
+    compute=composite_compute((s : CompSectionState) => s.label, s => {
+      let n = s.items.length()
+      "(\{n})"
+    }),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
+    update=(s : CompSectionState, msg, ctx) => {
+      match msg {
+        // Plain click toggles this section; ctrl/cmd-click bubbles up so the
+        // inspector can toggle every section at once.
+        Input("toggle", args) =>
+          if args.get(0) is Some(Bool(true)) {
+            ctx.bubble("toggleAllSections", [Bool(!s.isExpanded)])
+            None
+          } else {
+            Some({ ..s, isExpanded: !s.isExpanded })
+          }
+        _ => None
+      }
+    },
     view=make_composite_view(
       type_class="font-semibold comp-section",
       border_class="border-base-content/15",
-      // Plain click toggles this section; ctrl/cmd-click bubbles up so the
-      // inspector can toggle every section at once.
       toggle_handler="toggle isCtrl",
     ),
   )
 }
 
 ///|
+priv struct ComponentInspectorState {
+  compName : String
+  compId : Int
+  sections : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
 fn set_all_sections(
-  inst : @component.Instance,
+  s : ComponentInspectorState,
   state : Bool,
-) -> @component.Instance {
-  let sections = match inst.get("sections") {
-    List(a) => a
-    _ => []
+) -> ComponentInspectorState {
+  {
+    ..s,
+    sections: s.sections.map(sec => obj_set(sec, "isExpanded", Bool(state))),
   }
-  inst.set(
-    "sections",
-    List(sections.map(s => obj_set(s, "isExpanded", Bool(state)))),
-  )
 }
 
 ///|
 fn set_all_views(
-  inst : @component.Instance,
+  s : ComponentInspectorState,
   state : Bool,
-) -> @component.Instance {
-  let sections = match inst.get("sections") {
-    List(a) => a
-    _ => []
-  }
-  inst.set(
-    "sections",
-    List(
-      sections.map(s => {
-        if obj_get(s, "label") is Some(Str("Views")) {
-          match obj_get(s, "items") {
-            Some(List(views)) =>
-              obj_set(
-                s,
-                "items",
-                List(views.map(v => obj_set(v, "isExpanded", Bool(state)))),
-              )
-            _ => s
-          }
-        } else {
-          s
+) -> ComponentInspectorState {
+  {
+    ..s,
+    sections: s.sections.map(sec => {
+      if obj_get(sec, "label") is Some(Str("Views")) {
+        match obj_get(sec, "items") {
+          Some(List(views)) =>
+            obj_set(
+              sec,
+              "items",
+              List(views.map(v => obj_set(v, "isExpanded", Bool(state)))),
+            )
+          _ => sec
         }
-      }),
-    ),
-  )
+      } else {
+        sec
+      }
+    }),
+  }
 }
 
 ///|
@@ -284,24 +287,18 @@ fn set_all_views(
 fn component_inspector_comp() -> @component.Component {
   @component.component(
     name="ComponentInspector",
-    fields={
-      "compName": @component.FieldSpec::of_default(Str("")),
-      "compId": @component.FieldSpec::of_default(Num(0)),
-      "sections": @component.FieldSpec::of_default(List([])),
+    init=ComponentInspectorState::{ compName: "", compId: 0, sections: [] },
+    compute={
+      "idText": (s : ComponentInspectorState, _args) => Str("#\{s.compId}"),
     },
-    methods={
-      "idText": (inst, _args) => {
-        let id = int_field(inst, "compId")
-        Str("#\{id}")
-      },
-    },
-    bubble={
-      "toggleAllSections": (inst, args, _ctx) => {
-        Some(set_all_sections(inst, args.get(0) is Some(Bool(true))))
-      },
-      "toggleAllViews": (inst, args, _ctx) => {
-        Some(set_all_views(inst, args.get(0) is Some(Bool(true))))
-      },
+    update=(s : ComponentInspectorState, msg, _ctx) => {
+      match msg {
+        Bubble("toggleAllSections", args) =>
+          Some(set_all_sections(s, args.get(0) is Some(Bool(true))))
+        Bubble("toggleAllViews", args) =>
+          Some(set_all_views(s, args.get(0) is Some(Bool(true))))
+        _ => None
+      }
     },
     view=(
       #|<div class="font-mono text-sm leading-tight flex flex-col gap-1 component-inspector">
@@ -376,10 +373,8 @@ pub fn Inspector::component_view(
   for
     group in [
       ("Methods", "methods"),
-      ("Input", "input"),
-      ("Receive", "receive"),
-      ("Bubble", "bubble"),
-      ("Response", "response"),
+      ("Update", "update"),
+      ("Swap", "swap"),
       ("Alter", "alter"),
     ] {
     let (label, key) = group

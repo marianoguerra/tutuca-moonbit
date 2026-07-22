@@ -10,6 +10,11 @@
 // lists update in lock-step.
 
 ///|
+priv struct DseEntryState {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
 fn dse_entry_comp() -> @component.Component {
   @component.component(
     name="Entry",
@@ -21,9 +26,14 @@ fn dse_entry_comp() -> @component.Component {
         #|<input class="input input-bordered w-full edit-name" :value=".name" @on.input="$setName value" placeholder="Entry name" />
       ),
     },
-    fields={ "name": @component.FieldSpec::of_default(Str("")) },
+    init=DseEntryState::{ name: "" },
   )
 }
+
+///|
+priv struct DseEditorState {
+  missing : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn dse_editor_comp() -> @component.Component {
@@ -42,7 +52,7 @@ fn dse_editor_comp() -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    fields={ "missing": @component.FieldSpec::of_default(Null) },
+    init=DseEditorState::{ missing: Null },
     // Consumer: forwards to Root's provides — a sequence and a single item.
     lookup={
       "items": { source: "Root.items", default: Some(".missing") },
@@ -50,6 +60,12 @@ fn dse_editor_comp() -> @component.Component {
     },
   )
 }
+
+///|
+priv struct DseRootState {
+  items : Map[String, @tutuca.Value]
+  selectedKey : String
+} derive(ToJson, FromJson)
 
 ///|
 fn dse_root_comp() -> @component.Component {
@@ -70,18 +86,15 @@ fn dse_root_comp() -> @component.Component {
       #|  <x render=".editor"></x>
       #|</div>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(Map(Map([]))),
-      "selectedKey": @component.FieldSpec::of_default(Str("")),
-      "editor": @component.FieldSpec::comp("Editor"),
-    },
+    init=DseRootState::{ items: Map([]), selectedKey: "" },
+    specs={ "editor": @component.FieldSpec::comp("Editor") },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
-    input={
-      "selectItem": (inst, args, _ctx) => {
-        guard args is [Str(key), ..] else { return None }
-        Some(inst.set("selectedKey", Str(key)))
-      },
+    update=(s : DseRootState, msg, _ctx) => {
+      match msg {
+        Input("selectItem", [Str(key), ..]) => Some({ ..s, selectedKey: key })
+        _ => None
+      }
     },
   )
 }
@@ -89,9 +102,9 @@ fn dse_root_comp() -> @component.Component {
 ///|
 fn dse_items(entry : @component.Component) -> @tutuca.Value {
   Map({
-    "a": entry.make({ "name": Str("alpha") }).to_value(),
-    "b": entry.make({ "name": Str("beta") }).to_value(),
-    "c": entry.make({ "name": Str("gamma") }).to_value(),
+    "a": entry.make({ "name": Str("alpha") }),
+    "b": entry.make({ "name": Str("beta") }),
+    "c": entry.make({ "name": Str("gamma") }),
   })
 }
 

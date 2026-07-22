@@ -13,6 +13,9 @@
 // the two maps separate — `views` and `view_styles`, keyed by the same name.
 
 ///|
+priv struct StylesNoState {} derive(ToJson, FromJson)
+
+///|
 fn styles_example_comp() -> @component.Component {
   @component.component(
     name="StylesExample",
@@ -60,6 +63,7 @@ fn styles_example_comp() -> @component.Component {
     global_style=(
       #|.styles-example-global-class { color: green; }
     ),
+    init=StylesNoState::{  },
   )
 }
 
@@ -74,7 +78,8 @@ fn styles_example_root_comp() -> @component.Component {
       #|  <x render=".value" as="two"></x>
       #|</section>
     ),
-    fields={ "value": @component.FieldSpec::comp("StylesExample") },
+    init=StylesNoState::{  },
+    specs={ "value": @component.FieldSpec::comp("StylesExample") },
   )
 }
 

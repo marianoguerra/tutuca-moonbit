@@ -7,6 +7,11 @@
 // namespace — the parent's @-bindings do not cross into it.
 
 ///|
+priv struct GreetingState {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
 fn greeting_comp() -> @component.Component {
   @component.component(
     name="Greeting",
@@ -15,9 +20,12 @@ fn greeting_comp() -> @component.Component {
       #|  Hello, <strong @text=".name"></strong>!
       #|</p>
     ),
-    fields={ "name": @component.FieldSpec::of_default(Str("world")) },
+    init=GreetingState::{ name: "world" },
   )
 }
+
+///|
+priv struct RenderChildNoState {} derive(ToJson, FromJson)
 
 ///|
 /// MoonBit divergence from JS: the child default is `FieldSpec::comp("Greeting",
@@ -34,7 +42,8 @@ fn page_comp() -> @component.Component {
       #|  <p class="opacity-60">&mdash; end of page &mdash;</p>
       #|</section>
     ),
-    fields={
+    init=RenderChildNoState::{  },
+    specs={
       "greeting": @component.FieldSpec::comp("Greeting", args={
         "name": Str("tutorial reader"),
       }),
@@ -52,6 +61,12 @@ pub fn render_child_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+priv struct EntryState {
+  title : String
+  description : String
+} derive(ToJson, FromJson)
 
 ///|
 /// The `Entry` building block (docs/examples/entry.js): a card with a read-only
@@ -78,14 +93,11 @@ fn entry_comp() -> @component.Component {
         #|</div>
       ),
     },
-    fields={
-      "title": @component.FieldSpec::of_default(Str("Entry Title")),
-      "description": @component.FieldSpec::of_default(Str("Entry Description")),
-    },
-    methods={
-      "containsText": (inst, args) => {
-        match (inst.get("title"), inst.get("description"), args) {
-          (Str(t), Str(d), [Str(s)]) => Bool(t.contains(s) || d.contains(s))
+    init=EntryState::{ title: "Entry Title", description: "Entry Description" },
+    compute={
+      "containsText": (s : EntryState, args) => {
+        match args {
+          [Str(v)] => Bool(s.title.contains(v) || s.description.contains(v))
           _ => Bool(false)
         }
       },
@@ -122,7 +134,8 @@ fn multiple_views_comp() -> @component.Component {
       #|  <x render=".value" as="edit"></x>
       #|</section>
     ),
-    fields={ "value": @component.FieldSpec::comp("Entry") },
+    init=RenderChildNoState::{  },
+    specs={ "value": @component.FieldSpec::comp("Entry") },
   )
 }
 

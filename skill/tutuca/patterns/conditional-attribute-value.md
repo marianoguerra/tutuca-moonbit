@@ -14,7 +14,7 @@ depending on a condition.
 </button>
 ```
 
-`@if.<attr>` takes the condition (a `.field`, a `$method`, or a predicate like
+`@if.<attr>` takes the condition (a `.field`, a `$compute`, or a predicate like
 `equals? .tab 'x'`); `@then`/`@else` are the two values. String literals need
 quotes (`'btn ok'`); a `$'…'` template works too. (`$toggleIsActive` is the
 auto-generated toggler of the bool field `isActive`.) **Multiple `@if` on one

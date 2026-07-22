@@ -1,7 +1,7 @@
 # Tutuca — Macros
 
-Macros are pure template expansion — no state, no methods. Calls inside
-a macro resolve against the *host* component. Read this file when
+Macros are pure template expansion — no state, no handlers of their
+own. Calls inside a macro resolve against the *host* component. Read this file when
 authoring `@anode.Macro` values, `<x:name>` calls, or slots.
 
 A macro is a plain struct: `defaults` maps parameter names to their

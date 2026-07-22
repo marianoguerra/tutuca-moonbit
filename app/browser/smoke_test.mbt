@@ -26,21 +26,20 @@ extern "js" fn inner_html_ffi(node : @core.Any) -> String =
   #|(n) => n.innerHTML
 
 ///|
+priv struct SmokeCounterState {
+  n : Int
+  label : String
+} derive(ToJson, FromJson)
+
+///|
 fn counter_comp() -> @component.Component {
   @component.component(
     name="Counter",
     view="<div><button @on.click=\"bump\">+</button><span><x text=\".n\"></x></span><input :value=\".label\" @on.input=\"setLabel value\"></div>",
-    fields={
-      "n": @component.FieldSpec::of_default(Num(0)),
-      "label": @component.FieldSpec::of_default(Str("start")),
-    },
-    input={
-      "bump": (inst, _args, _ctx) => {
-        match inst.get("n") {
-          Num(x) => Some(inst.set("n", Num(x + 1)))
-          _ => None
-        }
-      },
+    init=SmokeCounterState::{ n: 0, label: "start" },
+    update=(s : SmokeCounterState, msg, _ctx) => match msg {
+      Input("bump", _) => Some({ ..s, n: s.n + 1 })
+      _ => None
     },
   )
 }
@@ -63,7 +62,7 @@ test "browser: real events drive the app through installed listeners" {
   guard scope.lookup_component("Counter") is Some(c) else { fail("no Counter") }
   let a = @app.App::new(
     scope,
-    c.make(Map([])).to_value(),
+    c.make(Map([])),
     container,
     @bdom.opts_for(doc),
   )
@@ -95,12 +94,13 @@ test "browser: styles are compiled into a head style element" {
   let styled = @component.component(
     name="Styled",
     view="<div>x</div>",
+    init=SmokeEmptyState::{  },
     style="color: red",
   )
   scope.register_components([styled])
   let a = @app.App::new(
     scope,
-    styled.make(Map([])).to_value(),
+    styled.make(Map([])),
     container,
     @bdom.opts_for(doc),
   )
@@ -131,18 +131,14 @@ test "browser: real drag events run the drag lifecycle" {
   let board = @component.component(
     name="DropBoard",
     view="<div><span draggable=\"true\" data-dragtype=\"chip\">drag me</span><div data-droptarget=\"\" @on.drop=\"landed dragInfo\">zone</div></div>",
-    fields={ "landed_kind": @component.FieldSpec::of_default(Str("")) },
-    input={
-      "landed": (inst, args, _ctx) => {
-        match args {
-          [Obj(info)] =>
-            match info.obj_field("type") {
-              Some(Str(s)) => Some(inst.set("landed_kind", Str(s)))
-              _ => None
-            }
+    init=DropBoardState::{ landed_kind: "" },
+    update=(_s : DropBoardState, msg, _ctx) => match msg {
+      Input("landed", [Obj(info), ..]) =>
+        match info.obj_field("type") {
+          Some(Str(kind)) => Some({ landed_kind: kind })
           _ => None
         }
-      },
+      _ => None
     },
   )
   scope.register_components([board])
@@ -151,7 +147,7 @@ test "browser: real drag events run the drag lifecycle" {
   }
   let a = @app.App::new(
     scope,
-    c.make(Map([])).to_value(),
+    c.make(Map([])),
     container,
     @bdom.opts_for(doc),
   )
@@ -165,3 +161,11 @@ test "browser: real drag events run the drag lifecycle" {
   real_event_ffi(chip, "dragend")
   assert_true(field_v(a, "landed_kind") == Str("chip"))
 }
+
+///|
+priv struct SmokeEmptyState {} derive(ToJson, FromJson)
+
+///|
+priv struct DropBoardState {
+  landed_kind : String
+} derive(ToJson, FromJson)

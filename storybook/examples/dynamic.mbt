@@ -8,6 +8,12 @@
 // doubles as the teleport path — a method or a constant is a lint error.
 
 ///|
+priv struct SelectorEntryState {
+  value : String
+  label : String
+} derive(ToJson, FromJson)
+
+///|
 fn selector_entry_comp() -> @component.Component {
   @component.component(
     name="SelectorEntry",
@@ -17,12 +23,15 @@ fn selector_entry_comp() -> @component.Component {
       #|  <input class="input lbl" :value=".label" @on.input="$setLabel value" />
       #|</div>
     ),
-    fields={
-      "value": @component.FieldSpec::of_default(Str("entry-value")),
-      "label": @component.FieldSpec::of_default(Str("Entry Label")),
-    },
+    init=SelectorEntryState::{ value: "entry-value", label: "Entry Label" },
   )
 }
+
+///|
+priv struct SelectorState {
+  items : Array[@tutuca.Value]
+  selectedValue : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 /// The CONSUMER: it has no items of its own, it reads the producer's list as
@@ -36,10 +45,7 @@ fn selector_comp() -> @component.Component {
       #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>
       #|</select>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "selectedValue": @component.FieldSpec::of_default(Null),
-    },
+    init=SelectorState::{ items: [], selectedValue: Null },
     lookup={
       "entries": {
         source: "EntryEditorAndSelector.entries",
@@ -48,6 +54,11 @@ fn selector_comp() -> @component.Component {
     },
   )
 }
+
+///|
+priv struct EntryEditorState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 /// The PRODUCER: every `provide` is evaluated and pushed onto the stack when the
@@ -69,25 +80,25 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "selector": @component.FieldSpec::comp("Selector"),
-    },
+    init=EntryEditorState::{ items: [] },
+    specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
-    input={
-      "onAddItem": (inst, _args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
+    update=(s : EntryEditorState, msg, _ctx) => {
+      match msg {
+        Input("onAddItem", _) => {
+          let num = s.items.length() + 1
+          Some({
+            items: s.items +
+            [
+              entry.make({
+                "value": Str("entry-\{num}"),
+                "label": Str("Entry #\{num}"),
+              }),
+            ],
+          })
         }
-        let num = items.length() + 1
-        items.push(
-          entry
-          .make({ "value": Str("entry-\{num}"), "label": Str("Entry #\{num}") })
-          .to_value(),
-        )
-        Some(inst.set("items", List(items)))
-      },
+        _ => None
+      }
     },
   )
 }
@@ -110,8 +121,8 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
         title: "With Entries",
         args: {
           "items": List([
-            entry.make({ "value": Str("a"), "label": Str("Alpha") }).to_value(),
-            entry.make({ "value": Str("b"), "label": Str("Beta") }).to_value(),
+            entry.make({ "value": Str("a"), "label": Str("Alpha") }),
+            entry.make({ "value": Str("b"), "label": Str("Beta") }),
           ]),
         },
         view: None,
@@ -119,6 +130,11 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+priv struct SheetState {
+  title : String
+} derive(ToJson, FromJson)
 
 ///|
 /// A dynamic var resolves to a VALUE, so it works anywhere a value is read —
@@ -132,9 +148,12 @@ fn sheet_comp() -> @component.Component {
       #|  <input class="input input-bordered title" :value=".title" @on.input="$setTitle value" />
       #|</div>
     ),
-    fields={ "title": @component.FieldSpec::of_default(Str("untitled")) },
+    init=SheetState::{ title: "untitled" },
   )
 }
+
+///|
+priv struct ToolbarState {} derive(ToJson, FromJson)
 
 ///|
 /// The consumer, far from the producer: it renders a component it does not own.
@@ -147,11 +166,15 @@ fn toolbar_comp() -> @component.Component {
       #|  <x render="*active"></x>
       #|</div>
     ),
+    init=ToolbarState::{  },
     lookup={
       "active": { source: "Workspace.active", default: Some(".missing") },
     },
   )
 }
+
+///|
+priv struct PanelState {} derive(ToJson, FromJson)
 
 ///|
 fn panel_comp() -> @component.Component {
@@ -163,9 +186,17 @@ fn panel_comp() -> @component.Component {
       #|  <x render=".toolbar"></x>
       #|</div>
     ),
-    fields={ "toolbar": @component.FieldSpec::comp("Toolbar") },
+    init=PanelState::{  },
+    specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
   )
 }
+
+///|
+/// `sheet` is declared in the state (the compute below reads it) AND in
+/// `specs` as a comp slot — the spec entry keeps the scope-made default.
+priv struct WorkspaceState {
+  sheet : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 /// The producer. The Sheet rendered inside Toolbar physically lives HERE, at
@@ -184,14 +215,15 @@ fn workspace_comp() -> @component.Component {
       #|  <x render=".panel"></x>
       #|</div>
     ),
-    fields={
+    init=WorkspaceState::{ sheet: Null },
+    specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
       "panel": @component.FieldSpec::comp("Panel"),
     },
     provide={ "active": ".sheet" },
-    methods={
-      "sheetTitle": (inst, _args) => {
-        match inst.get("sheet") {
+    compute={
+      "sheetTitle": (s : WorkspaceState, _args) => {
+        match s.sheet {
           Obj(o) => o.obj_field("title").unwrap_or(Str(""))
           _ => Str("")
         }

@@ -3,8 +3,8 @@
 **Problem:** respond to a DOM event and update state.
 
 ```html
-<button @on.click="$inc">+</button>      <!-- $ calls a method -->
-<button @on.click="dec">-</button>        <!-- bare name = input handler -->
+<button @on.click="$inc">+</button>      <!-- $ calls a mutate/generated -->
+<button @on.click="dec">-</button>        <!-- bare name = update Input arm -->
 
 <!-- pass args by name -->
 <input @on.input="$setStr value" />
@@ -19,36 +19,28 @@
 ```
 
 Written args arrive in the handler's `args : Array[Value]` in template order.
-The first slot is a handler name (`$method` in `methods`, or a bare name in
-`input`/`alter`); later slots are built-in arg names — `value`,
-`valueAsInt`/`valueAsFloat`, `event`, `key`, `isAlt`, `isShift`,
-`isCtrl`/`isCmd`, `dragInfo`, … `value` resolves to the input's value (or the
-checked state for a checkbox, the metadata `Map` for a file input, or the
-`detail` for a `CustomEvent`).
+The first slot is a handler name (`$name` for `mutate`/`compute`/generated,
+or a bare name dispatched as `Input(name, args)` to `update`); later slots
+are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `event`,
+`key`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `dragInfo`, … `value` resolves
+to the input's value (or the checked state for a checkbox, the metadata
+`Map` for a file input, or the `detail` for a `CustomEvent`).
 
 ```moonbit
-methods={ // pure: (inst, args) => Value
-  "inc": (inst, _args) => {
-    match inst.get("count") {
-      Num(n) => inst.set("count", Num(n + 1)).to_value()
-      _ => inst.to_value()
-    }
-  },
+mutate={ // pure: (s, args) => S
+  "inc": (s : CounterState, _args) => { count: s.count + 1 },
 },
-input={ // gets ctx: (inst, args, ctx) => Instance?; None = no change
-  "dec": (inst, _args, _ctx) => {
-    match inst.get("count") {
-      Num(n) => Some(inst.set("count", Num(n - 1)))
-      _ => None
-    }
-  },
+// gets ctx: (s, msg, ctx) => S?; None = no change
+update=(s : CounterState, msg, _ctx) => match msg {
+  Input("dec", _) => Some({ count: s.count - 1 })
+  _ => None
 },
 ```
 
 Bind events declaratively with `@on.` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor. A handler
-that needs `ctx` (to `send`/`bubble`/`request`) must be an `input` handler —
-`methods` are pure by type.
+that needs `ctx` (to `send`/`bubble`/`request`) must be an `update` arm —
+`mutate`/`compute` are pure by type.
 
 Pass the most granular arg the handler needs — `value`/`valueAsInt`/`key`, not
 the raw `event` — so tests drive it with plain literals. Why this keeps tests

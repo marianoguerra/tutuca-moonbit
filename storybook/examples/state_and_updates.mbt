@@ -11,6 +11,14 @@
 // the identity (it does not gate the handler).
 
 ///|
+priv struct AttributeBindingState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 /// `:attr=".field"` binds state into any attribute; `$'…{.field}…'` is a string
 /// template. Typing calls the GENERATED `setStr`; the number input goes through
 /// a hand-written `setRawNumber` that parses and validates first.
@@ -27,24 +35,24 @@ fn attribute_binding_comp() -> @component.Component {
       #|  <p>Boolean: <span class="o-bool" @text=".bool"></span></p>
       #|</section>
     ),
-    fields={
-      "str": @component.FieldSpec::of_default(Str("hello")),
-      "num": @component.FieldSpec::of_default(Num(42)),
-      "bool": @component.FieldSpec::of_default(Bool(true)),
-      "notSet": @component.FieldSpec::of_default(Null),
+    init=AttributeBindingState::{
+      str: "hello",
+      num: 42,
+      bool: true,
+      notSet: Null,
     },
-    methods={
+    mutate={
       // parse-and-validate before writing: a bad number leaves state untouched
       // (JS: `Number.isNaN(n) ? this : this.setNum(n)`)
-      "setRawNumber": (inst, args) => {
+      "setRawNumber": (s : AttributeBindingState, args) => {
         let parsed : Int? = match args {
-          [Str(s)] => Some(@string.parse_int(s)) catch { _ => None }
+          [Str(v)] => Some(@string.parse_int(v)) catch { _ => None }
           [Num(n)] => Some(n.to_int())
           _ => None
         }
         match parsed {
-          Some(n) => inst.set("num", Num(n.to_double())).to_value()
-          None => inst.to_value()
+          Some(n) => { ..s, num: n }
+          None => s
         }
       },
     },
@@ -68,6 +76,11 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct ConditionalAttributesState {
+  isActive : Bool
+} derive(ToJson, FromJson)
+
+///|
 /// `@if.class` tests a value, `@then`/`@else` supply the attribute. With a
 /// single @if the @then/@else infer the attribute name; with several, the extra
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
@@ -85,7 +98,7 @@ fn conditional_attributes_comp() -> @component.Component {
       #|  </button>
       #|</section>
     ),
-    fields={ "isActive": @component.FieldSpec::of_default(Bool(true)) },
+    init=ConditionalAttributesState::{ isActive: true },
   )
 }
 
@@ -112,6 +125,12 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct EventModifiersState {
+  query : String
+  lastSentSearch : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 /// Modifiers filter events: `+send` fires only on Enter, `+cancel` only on
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
@@ -129,17 +148,12 @@ fn event_modifiers_comp() -> @component.Component {
       #|  </p>
       #|</section>
     ),
-    fields={
-      "query": @component.FieldSpec::of_default(Str("")),
-      "lastSentSearch": @component.FieldSpec::of_default(Null),
-    },
-    input={
-      "onInput": (inst, args, _ctx) => {
-        match args {
-          [Str(v)] => Some(inst.set("query", Str(v)))
-          _ => None
-        }
-      },
+    init=EventModifiersState::{ query: "", lastSentSearch: Null },
+    update=(s : EventModifiersState, msg, _ctx) => {
+      match msg {
+        Input("onInput", [Str(v)]) => Some({ ..s, query: v })
+        _ => None
+      }
     },
   )
 }
@@ -162,6 +176,12 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct ShowHideState {
+  isOpen : Bool
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 /// `@show` keeps the host element only when the value is truthy, `@hide` only
 /// when falsy. The node is REMOVED from the output entirely (render returns
 /// None), not hidden with CSS — see the README "Divergences" note. Both also
@@ -182,23 +202,18 @@ fn show_hide_comp() -> @component.Component {
       #|  <p class="peek">Count, only when open: <x text=".count" @show=".isOpen"></x></p>
       #|</section>
     ),
-    fields={
-      "isOpen": @component.FieldSpec::of_default(Bool(false)),
-      "count": @component.FieldSpec::of_default(Num(0)),
+    init=ShowHideState::{ isOpen: false, count: 0 },
+    compute={
+      "label": (s : ShowHideState, _args) => {
+        if s.isOpen {
+          Str("Hide details")
+        } else {
+          Str("Show details")
+        }
+      },
     },
-    methods={
-      "label": (inst, _args) => {
-        match inst.get("isOpen") {
-          Bool(true) => Str("Hide details")
-          _ => Str("Show details")
-        }
-      },
-      "incCount": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
+    mutate={
+      "incCount": (s : ShowHideState, _args) => { ..s, count: s.count + 1 },
     },
   )
 }

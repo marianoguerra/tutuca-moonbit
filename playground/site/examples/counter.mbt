@@ -1,4 +1,9 @@
-// A counter. Fields get generated mutators; custom logic is a method.
+// A counter. State is a typed struct; fields get generated mutators and
+// update handles bare-name events; custom $-logic goes in mutate.
+struct CounterState {
+  count : Int
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let counter = @component.component(
     name="Counter",
@@ -9,19 +14,12 @@ fn build() -> @component.ModuleDef {
       #|  <button @on.click="$inc">+</button>
       #|</div>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "inc": (inst, _a) => match inst.get("count") {
-        Num(n) => inst.set("count", Num(n + 1)).to_value()
-        _ => inst.to_value()
-      },
+    init=CounterState::{ count: 0 },
+    update=(s : CounterState, msg, _ctx) => match msg {
+      Input("dec", _) => Some({ count: s.count - 1 })
+      _ => None
     },
-    input={
-      "dec": (inst, _a, _c) => match inst.get("count") {
-        Num(n) => Some(inst.set("count", Num(n - 1)))
-        _ => None
-      },
-    },
+    mutate={ "inc": (s : CounterState, _a) => { count: s.count + 1 } },
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],

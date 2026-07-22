@@ -15,13 +15,21 @@ fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
   items().map(v => {
     match v {
       Str(s) =>
-        entry
-        .make({ "title": Str(s), "description": Str("Length: \{s.length()}") })
-        .to_value()
+        entry.make({
+          "title": Str(s),
+          "description": Str("Length: \{s.length()}"),
+        })
       _ => Null
     }
   })
 }
+
+///|
+priv struct PushViewState {
+  items : Array[@tutuca.Value]
+  query : String
+  view : String
+} derive(ToJson, FromJson)
 
 ///|
 /// `@push-view=".view"` pushes a view name onto the render stack: every
@@ -44,28 +52,31 @@ fn push_view_comp() -> @component.Component {
       #|  </div>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-      "view": @component.FieldSpec::of_default(Str("main")),
-    },
-    methods={
-      "toggleView": (inst, _args) => {
-        match inst.get("view") {
-          Str("main") => inst.set("view", Str("edit")).to_value()
-          _ => inst.set("view", Str("main")).to_value()
-        }
-      },
-      "getToggleLabel": (inst, _args) => {
-        match inst.get("view") {
-          Str("main") => Str("Set Edit Mode")
-          _ => Str("Set Read Only")
-        }
+    init=PushViewState::{ items: [], query: "", view: "main" },
+    mutate={
+      "toggleView": (s : PushViewState, _args) => {
+        ..s,
+        view: if s.view == "main" {
+          "edit"
+        } else {
+          "main"
+        },
       },
     },
-    alter={
+    compute={
+      "getToggleLabel": (s : PushViewState, _args) => {
+        if s.view == "main" {
+          Str("Set Edit Mode")
+        } else {
+          Str("Set Read Only")
+        }
+      },
+    },
+    when={
       // the item is an Entry INSTANCE, so the filter calls its own method
-      "filterItem": (inst, args) => filter_by_contains_text(inst, args),
+      "filterItem": (s : PushViewState, _k, item, _iter) => {
+        contains_text_filter(s.query, item)
+      },
     },
   )
 }
@@ -94,6 +105,14 @@ pub fn push_view_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct SeqItemAccessState {
+  byKey : Map[String, @tutuca.Value]
+  byIndex : Array[@tutuca.Value]
+  currentKey : @tutuca.Value
+  currentIndex : Int
+} derive(ToJson, FromJson)
+
+///|
 /// `<x render=".byIndex[.currentIndex]">` resolves the inner expression as a key
 /// into the outer collection — by index for a List, by string key for a Map.
 /// `@text="@value.title"` is the one-level bind-member access.
@@ -111,18 +130,15 @@ fn seq_item_access_comp() -> @component.Component {
       #|  <x render=".byKey[.currentKey]"></x>
       #|</section>
     ),
-    fields={
-      "byKey": @component.FieldSpec::of_default(Map(Map([]))),
-      "byIndex": @component.FieldSpec::of_default(List([])),
-      "currentKey": @component.FieldSpec::of_default(Null),
-      "currentIndex": @component.FieldSpec::of_default(Num(0)),
+    init=SeqItemAccessState::{
+      byKey: Map([]),
+      byIndex: [],
+      currentKey: Null,
+      currentIndex: 0,
     },
-    methods={
-      "getMaxIndex": (inst, _args) => {
-        match inst.get("byIndex") {
-          List(a) => Num(@cmp.maximum(0, a.length() - 1).to_double())
-          _ => Num(0)
-        }
+    compute={
+      "getMaxIndex": (s : SeqItemAccessState, _args) => {
+        Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
       },
     },
   )
@@ -155,6 +171,13 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct PaginationState {
+  items : Array[@tutuca.Value]
+  page : Int
+  pageSize : Int
+} derive(ToJson, FromJson)
+
+///|
 /// `@loop-with="paginate"` runs once per render and returns a `start`/`end`
 /// slice range: `@each` never walks the off-page items. Slicing keeps each
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
@@ -176,57 +199,49 @@ fn pagination_comp() -> @component.Component {
       #|  </ul>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "page": @component.FieldSpec::of_default(Num(0)),
-      "pageSize": @component.FieldSpec::of_default(Num(5)),
-    },
-    methods={
-      "pageCount": (inst, _args) => Num(page_count(inst).to_double()),
-      "pageLabel": (inst, _args) => {
-        let p = int_field(inst, "page")
-        Str("Page \{p + 1} of \{page_count(inst)}")
+    init=PaginationState::{ items: [], page: 0, pageSize: 5 },
+    compute={
+      "pageCount": (s : PaginationState, _args) => {
+        Num(page_count(s).to_double())
       },
-      "isFirstPage": (inst, _args) => Bool(int_field(inst, "page") <= 0),
-      "isLastPage": (inst, _args) => {
-        Bool(int_field(inst, "page") >= page_count(inst) - 1)
+      "pageLabel": (s : PaginationState, _args) => {
+        Str("Page \{s.page + 1} of \{page_count(s)}")
+      },
+      "isFirstPage": (s : PaginationState, _args) => Bool(s.page <= 0),
+      "isLastPage": (s : PaginationState, _args) => {
+        Bool(s.page >= page_count(s) - 1)
       },
     },
-    input={
-      "prev": (inst, _args, _ctx) => {
-        let p = @cmp.maximum(0, int_field(inst, "page") - 1)
-        Some(inst.set("page", Num(p.to_double())))
-      },
-      "next": (inst, _args, _ctx) => {
-        let p = @cmp.minimum(page_count(inst) - 1, int_field(inst, "page") + 1)
-        Some(inst.set("page", Num(p.to_double())))
-      },
+    update=(s : PaginationState, msg, _ctx) => {
+      match msg {
+        Input("prev", _) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
+        Input("next", _) =>
+          Some({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })
+        _ => None
+      }
     },
-    alter={
+    loop_with={
       // once per render: turn the current page into a slice range
-      "paginate": (inst, args) => {
-        let total = match args {
-          [List(seq), ..] => seq.length()
+      "paginate": (s : PaginationState, seq, _ctx) => {
+        let total = match seq {
+          List(a) => a.length()
           _ => 0
         }
-        let start = int_field(inst, "page") * int_field(inst, "pageSize")
-        Map({
-          "iterData": Map({ "total": Num(total.to_double()) }),
-          "start": Num(start.to_double()),
-          "end": Num((start + int_field(inst, "pageSize")).to_double()),
-        })
+        let start = s.page * s.pageSize
+        @component.LoopWith::new(
+          iter_data=Map({ "total": Num(total.to_double()) }),
+          start~,
+          end=start + s.pageSize,
+        )
       },
     },
   )
 }
 
 ///|
-fn page_count(inst : @component.Instance) -> Int {
-  let size = match inst.get("items") {
-    List(a) => a.length()
-    _ => 0
-  }
-  let per = @cmp.maximum(1, int_field(inst, "pageSize"))
+fn page_count(s : PaginationState) -> Int {
+  let size = s.items.length()
+  let per = @cmp.maximum(1, s.pageSize)
   @cmp.maximum(1, (size + per - 1) / per) // ceil
 }
 

@@ -39,39 +39,38 @@ fn mount(
 }
 
 ///|
+priv struct ItemState {
+  label : String
+} derive(ToJson, FromJson)
+
+///|
 fn item_comp() -> @component.Component {
   @component.component(
     name="Item",
     view="<li><span><x text=\".label\"></x></span><button @on.click=\"pick 'gold'\">pick</button></li>",
-    fields={ "label": @component.FieldSpec::of_default(Str("plain")) },
-    input={
-      "pick": (inst, args, _ctx) => {
-        match args {
-          [Str(s)] => Some(inst.set("label", Str(s)))
-          _ => None
-        }
-      },
-    },
-    response={
-      "load": (inst, args, _ctx) => {
-        match args {
-          [Str(s), _] => Some(inst.set("label", Str(s)))
-          _ => None
-        }
-      },
+    init=ItemState::{ label: "plain" },
+    update=(_s : ItemState, msg, _ctx) => {
+      match msg {
+        Input("pick", [Str(l)]) => Some({ label: l })
+        Response("load", [Str(l), _]) => Some({ label: l })
+        _ => None
+      }
     },
   )
 }
+
+///|
+priv struct PanelState {
+  title : String
+} derive(ToJson, FromJson)
 
 ///|
 fn panel_comp() -> @component.Component {
   @component.component(
     name="Panel",
     view="<div><h1><x text=\".title\"></x></h1><x render=\".item\"></x></div>",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("panel")),
-      "item": @component.FieldSpec::comp("Item"),
-    },
+    init=PanelState::{ title: "panel" },
+    specs={ "item": @component.FieldSpec::comp("Item") },
   )
 }
 
@@ -95,11 +94,11 @@ test "static e2e: register -> render -> click -> dispatch -> re-render" {
     fail("Panel missing")
   }
   let root = panel.make({ "title": Str("Board") })
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   // rendered through real component views, item made via FComp default
   assert_true(container.to_html().contains("plain"))
   assert_true(container.to_html().contains("Board"))
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   // click: reconstruct (real metas), evaluate the parsed 'gold' arg against
   // the rebuilt stack, dispatch through the Input channel
@@ -107,7 +106,7 @@ test "static e2e: register -> render -> click -> dispatch -> re-render" {
   assert_true(item_label(tx) == Str("gold"))
   // the old root is untouched (COW instances)
   assert_true(
-    root.get("item") is Obj(o) && o.obj_field("label") == Some(Str("plain")),
+    root.field("item") is Obj(o) && o.obj_field("label") == Some(Str("plain")),
   )
   // re-render from the new root shows the change
   guard tx.root.as_value() is Some(new_root) else { fail("root not a value") }
@@ -124,8 +123,8 @@ test "no matching handler leaves everything untouched" {
     fail("Panel missing")
   }
   let root = panel.make(Map([]))
-  let container = mount(scope.comps, root.to_value())
-  let tx = @transactor.Transactor::new(root.to_value())
+  let container = mount(scope.comps, root)
+  let tx = @transactor.Transactor::new(root)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   let before = tx.root
   assert_false(
@@ -146,7 +145,7 @@ test "requests resolve through the component's registration scope" {
     fail("Panel missing")
   }
   let root = panel.make(Map([]))
-  let tx = @transactor.Transactor::new(root.to_value(), requests=@app.ScopeRequests::{
+  let tx = @transactor.Transactor::new(root, requests=@app.ScopeRequests::{
     comps: scope.comps,
   })
   // request at the item's path: handler found via the scope chain, the

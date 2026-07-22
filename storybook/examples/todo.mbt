@@ -7,6 +7,12 @@
 // `@on.click="onAddItem"`. Same result, one less thing in the value language.
 
 ///|
+priv struct TodoItemState {
+  completed : Bool
+  text : String
+} derive(ToJson, FromJson)
+
+///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
     name="Item",
@@ -16,12 +22,14 @@ fn todo_item_comp() -> @component.Component {
       #|  <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed" />
       #|</div>
     ),
-    fields={
-      "completed": @component.FieldSpec::of_default(Bool(false)),
-      "text": @component.FieldSpec::of_default(Str("do the thing")),
-    },
+    init=TodoItemState::{ completed: false, text: "do the thing" },
   )
 }
+
+///|
+priv struct TodoItemsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 /// `<x render-it>` inside an `@each` renders whatever component instance the
@@ -41,16 +49,12 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    input={
-      "onAddItem": (inst, _args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(item.make(Map([])).to_value())
-        Some(inst.set("items", List(items)))
-      },
+    init=TodoItemsState::{ items: [] },
+    update=(s : TodoItemsState, msg, _ctx) => {
+      match msg {
+        Input("onAddItem", _) => Some({ items: s.items + [item.make(Map([]))] })
+        _ => None
+      }
     },
   )
 }
@@ -75,9 +79,9 @@ pub fn todo_module() -> @component.ModuleDef {
         title: "Some Items",
         args: {
           "items": List([
-            item.make(Map([])).to_value(),
-            item.make({ "completed": Bool(true) }).to_value(),
-            item.make({ "completed": Bool(true), "text": Str("") }).to_value(),
+            item.make(Map([])),
+            item.make({ "completed": Bool(true) }),
+            item.make({ "completed": Bool(true), "text": Str("") }),
           ]),
         },
         view: None,

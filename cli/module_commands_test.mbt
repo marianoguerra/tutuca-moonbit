@@ -2,6 +2,17 @@
 // get/list/examples/show/render/lint commands through plan_with_module.
 
 ///|
+priv struct CardState {
+  title : String
+  sheet : Map[String, @tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
+priv struct ItemState {
+  label : String
+} derive(ToJson, FromJson)
+
+///|
 fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
   let provide : Map[String, String] = { "active": ".sheet" }
   if bad_provide {
@@ -10,25 +21,20 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
   let card = @component.component(
     name="Card",
     view="<div class=\"card\"><h2><x text=\".title\"></x></h2><x render=\".item\"></x></div>",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("untitled")),
-      "sheet": @component.FieldSpec::of_default(Map(Map([]))),
-      "item": @component.FieldSpec::comp("Item"),
-    },
-    receive={
-      "rename": (inst, args, _ctx) => {
-        match args {
-          [Str(s)] => Some(inst.set("title", Str(s)))
-          _ => None
-        }
-      },
+    init=CardState::{ title: "untitled", sheet: Map([]) },
+    specs={ "item": @component.FieldSpec::comp("Item") },
+    update=(s : CardState, msg, _ctx) => {
+      match msg {
+        Receive("rename", [Str(t)]) => Some({ ..s, title: t })
+        _ => None
+      }
     },
     provide~,
   )
   let item = @component.component(
     name="Item",
     view="<span><x text=\".label\"></x></span>",
-    fields={ "label": @component.FieldSpec::of_default(Str("hi")) },
+    init=ItemState::{ label: "hi" },
   )
   @component.ModuleDef::new(name="demo", components=[card, item], examples=[
     {
@@ -90,7 +96,7 @@ test "show documents fields, views, provides and handlers" {
   assert_true(e.out.contains("item: comp(Item) = null"))
   assert_true(e.out.contains("views: main"))
   assert_true(e.out.contains("provide: active = .sheet"))
-  assert_true(e.out.contains("handlers: receive:rename"))
+  assert_true(e.out.contains("handlers: update"))
   assert_false(e.out.contains("# Item")) // filtered
 }
 
@@ -160,31 +166,36 @@ test "--json produces structured output for every module command" {
 
 ///|
 test "lint flags @on handlers that don't resolve, allows declared ones" {
-  // onGood is a declared INPUT handler (the bucket @on dispatches through);
-  // onTypo resolves to nothing; onRecv is receive-only, so @on won't fire it.
+  // onGood is a declared swap handler (bare-name Input-dispatched); onTypo
+  // and onRecv resolve to nothing. The component deliberately has NO update
+  // fn — with one, any bare name may be handled and the check is skipped.
   let comp = @component.component(
     name="Btns",
     view="<div><button @on.click=\"onGood\">ok</button><button @on.click=\"onTypo\">bad</button><button @on.click=\"onRecv\">recv</button></div>",
-    input={ "onGood": (inst, _args, _ctx) => Some(inst) },
-    receive={ "onRecv": (inst, _args, _ctx) => Some(inst) },
+    init=BtnsState::{ n: 0 },
+    swap={ "onGood": (_s : BtnsState, _args, _ctx) => None },
   )
   let m = @component.ModuleDef::new(name="btns", components=[comp], examples=[])
   let e = run(["lint"], m)
   assert_eq(e.exit_code, 2)
   assert_true(e.out.contains("INPUT_HANDLER_NOT_IMPLEMENTED Btns/main"))
   assert_true(e.out.contains("onTypo"))
-  // a receive-only name wired to @on never fires through the Input channel
   assert_true(e.out.contains("onRecv"))
-  assert_false(e.out.contains("onGood")) // the declared input handler passes
+  assert_false(e.out.contains("onGood")) // the declared swap handler passes
 }
+
+///|
+priv struct BtnsState {
+  n : Int
+} derive(ToJson, FromJson)
 
 ///|
 test "lint checks field and method references in views" {
   let comp = @component.component(
     name="Vals",
     view="<div><x text=\".missing\"></x><span :class=\"$isOn\"></span><p @show=\".count\"><x text=\"$label\"></x></p></div>",
-    fields={ "label": @component.FieldSpec::of_default(Str("x")) },
-    methods={ "count": (_inst, _args) => Num(1) },
+    init=ItemState::{ label: "x" },
+    compute={ "count": (_s : ItemState, _args) => Num(1) },
   )
   let m = @component.ModuleDef::new(name="vals", components=[comp], examples=[])
   let e = run(["lint"], m)
@@ -205,9 +216,9 @@ test "lint flags unknown dynamic bindings, event modifiers and handler args" {
   let comp = @component.component(
     name="Dyns",
     view="<div><x text=\"*missing\"></x><button @on.click+shift=\"go value wat\">x</button></div>",
-    input={ "go": (inst, _args, _ctx) => Some(inst) },
+    init=DynsState::{ sheet: Map([]) },
+    swap={ "go": (_s : DynsState, _args, _ctx) => None },
     provide={ "active": ".sheet" },
-    fields={ "sheet": @component.FieldSpec::of_default(Map(Map([]))) },
   )
   let m = @component.ModuleDef::new(name="dyns", components=[comp], examples=[])
   let e = run(["lint"], m)
@@ -223,18 +234,21 @@ test "lint flags unknown dynamic bindings, event modifiers and handler args" {
 
 ///|
 test "lint hints unreferenced declarations and warns constant conditions" {
+  // INPUT_HANDLER_NOT_REFERENCED is gone by construction: `update` is one
+  // opaque pattern match, so declared-but-unreferenced input names are
+  // unknowable. The alter-bucket hint survives (when/enrich/enrich_scope/
+  // loop_with are name-keyed).
   let comp = @component.component(
     name="Hints",
     view="<div @show=\"'yes'\">hi</div>",
-    input={ "never": (inst, _args, _ctx) => Some(inst) },
-    alter={ "unusedAlter": (_inst, _args) => Null },
+    init=BtnsState::{ n: 0 },
+    when={ "unusedAlter": (_s : BtnsState, _k, _v, _iter) => true },
   )
   let m = @component.ModuleDef::new(name="hints", components=[comp], examples=[])
   let e = run(["lint"], m)
   // warnings/hints only: exit code stays 0 (JS hasErrors ? 2 : 0)
   assert_eq(e.exit_code, 0)
   assert_true(e.out.contains("CONSTANT_CONDITION (warning) Hints/main"))
-  assert_true(e.out.contains("INPUT_HANDLER_NOT_REFERENCED (hint) Hints"))
   assert_true(e.out.contains("ALT_HANDLER_NOT_REFERENCED (hint) Hints"))
 }
 
@@ -243,6 +257,7 @@ test "lint flags render-it outside a loop and scoped-style leaks" {
   let comp = @component.component(
     name="Loops",
     view="<div><x render-it></x></div>",
+    init=BtnsState::{ n: 0 },
     style="@keyframes spin { from { opacity: 0 } } body { margin: 0 }",
   )
   let m = @component.ModuleDef::new(name="loops", components=[comp], examples=[])
@@ -255,7 +270,7 @@ test "lint flags render-it outside a loop and scoped-style leaks" {
   let ok_comp = @component.component(
     name="Loops",
     view="<ul><li @each=\".items\"><x render-it></x></li></ul>",
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
+    init=LoopsState::{ items: [] },
   )
   let m2 = @component.ModuleDef::new(name="loops2", components=[ok_comp], examples=[])
   let e2 = run(["lint"], m2)
@@ -275,3 +290,13 @@ test "non-module commands and help fall back to the plain dispatcher" {
     _ => fail("unexpected outcome")
   }
 }
+
+///|
+priv struct DynsState {
+  sheet : Map[String, @tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
+priv struct LoopsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)

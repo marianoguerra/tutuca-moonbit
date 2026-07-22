@@ -11,6 +11,12 @@
 // `persistState`/`loadState` request handlers (see demo/storybook_wasm), so a
 // gallery link reopens on the same story — the same design the JS storybook
 // uses (src/storybook/mount.js).
+//
+// WHY NOT A TYPED STATE STRUCT: the shell's field set depends on the section
+// list (`sN`/`lN`/`vN` per story, `cK`/`gvK` per section) — no struct can
+// express a variable field set. The shell is therefore the framework's
+// dynamic escape hatch in action: a `Component::for_type` component whose
+// instances are the hand-written ShellInst Obj below.
 
 ///|
 /// Minimal HTML text escape for titles/section labels injected into the view.
@@ -53,12 +59,52 @@ fn margaui_themes() -> Array[String] {
 }
 
 ///|
+/// The per-gallery metadata the handlers close over, aligned with the global
+/// story index N used for the `sN`/`vN` fields. `comp` is wired right after
+/// the Component is built.
+priv struct ShellSpec {
+  mut comp : @component.Component?
+  filter_text : Array[String]
+  sec_of : Array[Int]
+  id_to_field : Map[String, String]
+  init_fields : Array[String]
+  num_sections : Int
+}
+
+///|
+/// The gallery instance: a plain COW fields map behind the Obj trait — the
+/// hand-written analogue of what typed components generate from their state
+/// struct, for the one component whose fields are data-driven.
+priv struct ShellInst {
+  spec : ShellSpec
+  fields : Map[String, @tutuca.Value]
+}
+
+///|
+fn ShellInst::get(self : ShellInst, name : String) -> @tutuca.Value {
+  self.fields.get(name).unwrap_or(Null)
+}
+
+///|
+fn ShellInst::set(
+  self : ShellInst,
+  name : String,
+  v : @tutuca.Value,
+) -> ShellInst {
+  let fields = self.fields.copy()
+  fields[name] = v
+  { spec: self.spec, fields }
+}
+
+///|
+fn ShellInst::to_value(self : ShellInst) -> @tutuca.Value {
+  Obj(self)
+}
+
+///|
 /// Read a string field, defaulting to "" for any non-string (or missing) value.
-fn str_field(inst : @component.Instance, name : String) -> String {
-  match inst.get(name) {
-    Str(s) => s
-    _ => ""
-  }
+fn str_field(inst : ShellInst, name : String) -> String {
+  inst.get(name).str()
 }
 
 ///|
@@ -74,13 +120,13 @@ fn str_of(v : @tutuca.Value?) -> String {
 ///|
 /// Assemble the URL snapshot the host persists: the current selection, focus,
 /// and filter, with any one of them overridden by the change the calling
-/// handler is about to make (`this` is still the pre-change instance).
+/// handler is about to make (`self` is still the pre-change instance).
 /// `theme` is deliberately absent from the base snapshot: the host merges these
 /// keys into the existing query string, so omitting `theme` leaves an
 /// already-chosen `?theme=` alone (otherwise typing in the filter would drop
 /// it). Only `onSelectTheme` passes it, adding the key.
 fn snapshot(
-  inst : @component.Instance,
+  inst : ShellInst,
   story? : String,
   focus? : String,
   filter? : String,
@@ -142,54 +188,274 @@ pub fn fuzzy_match(query : String, target : String) -> Bool {
 /// (`cK`): a row `vN` shows when it passes the filter and its group is open; a
 /// header `gvK` shows when any of its rows match the filter (ignoring collapse,
 /// so a collapsed group that still matches stays visible to be reopened). An
-/// empty filter shows every open group's rows. `filter_text`/`sec_of` are
-/// aligned with the global story index N used for the `sN`/`vN` fields.
-fn apply_filter(
-  inst : @component.Instance,
-  filter : String,
-  filter_text : Array[String],
-  sec_of : Array[Int],
-  num_sections : Int,
-) -> @component.Instance {
+/// empty filter shows every open group's rows.
+fn apply_filter(inst : ShellInst, filter : String) -> ShellInst {
+  let spec = inst.spec
   let mut out = inst.set("filter", Str(filter))
   let active = filter != ""
-  let sec_any = Array::make(num_sections, false)
-  let collapsed = Array::make(num_sections, false)
-  for k in 0..<num_sections {
-    collapsed[k] = match out.get("c\{k}") {
-      Bool(b) => b
-      _ => false
-    }
+  let sec_any = Array::make(spec.num_sections, false)
+  let collapsed = Array::make(spec.num_sections, false)
+  for k in 0..<spec.num_sections {
+    collapsed[k] = out.get("c\{k}").bool()
   }
-  for i in 0..<filter_text.length() {
-    let m = !active || fuzzy_match(filter, filter_text[i])
+  for i in 0..<spec.filter_text.length() {
+    let m = !active || fuzzy_match(filter, spec.filter_text[i])
     if m {
-      sec_any[sec_of[i]] = true
+      sec_any[spec.sec_of[i]] = true
     }
-    out = out.set("v\{i}", Bool(m && !collapsed[sec_of[i]]))
+    out = out.set("v\{i}", Bool(m && !collapsed[spec.sec_of[i]]))
   }
-  for k in 0..<num_sections {
+  for k in 0..<spec.num_sections {
     out = out.set("gv\{k}", Bool(!active || sec_any[k]))
   }
   out
 }
 
 ///|
-/// Generate the gallery root component from the grouped sections. Field naming
-/// (`sN`/`lN`/`vN`) follows the SAME nested iteration order `mount` uses, so
-/// indices line up. `gvK` is per section index K.
-pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
-  let fields : Map[String, @component.FieldSpec] = {
-    "active": @component.FieldSpec::of_default(Str("")),
-    "filter": @component.FieldSpec::of_default(Str("")),
-    "focus": @component.FieldSpec::of_default(Str("")),
-    "focusValue": @component.FieldSpec::of_default(Null),
-    "sidebarCollapsed": @component.FieldSpec::of_default(Bool(false)),
-    "theme": @component.FieldSpec::of_default(Str("")),
+impl @tutuca.Obj for ShellInst with fn component_id(self) {
+  match self.spec.comp {
+    Some(c) => Some(c.id)
+    None => None
   }
-  // Metadata captured by the handler closures, aligned with the global story
-  // index N: the id, the fuzzy-match haystack, and the owning section index.
-  // `id_to_field` maps a renderable story's id to its `sN` field (for focus).
+}
+
+///|
+impl @tutuca.Obj for ShellInst with fn obj_field(self, name) {
+  self.fields.get(name)
+}
+
+///|
+impl @tutuca.Obj for ShellInst with fn obj_with_field(self, name, v) {
+  if self.fields.contains(name) {
+    Some(self.set(name, v).to_value())
+  } else {
+    None
+  }
+}
+
+///|
+impl @tutuca.Obj for ShellInst with fn obj_eq(self, other) {
+  let my_id = match self.spec.comp {
+    Some(c) => Some(c.id)
+    None => None
+  }
+  if other.component_id() != my_id {
+    return false
+  }
+  for k, v in self.fields {
+    if other.obj_field(k) != Some(v) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+impl @tutuca.Obj for ShellInst with fn obj_debug(self) {
+  "Storybook{active: \{str_field(self, "active")}}"
+}
+
+///|
+/// Every event/message handler of the gallery, dispatched by (bucket, name).
+/// The bodies mirror the JS storybook's mount.js handlers 1:1.
+impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
+  let done = (inst : ShellInst) => Some(inst.to_value() as &@tutuca.PathNode)
+  match (bucket, name) {
+    (Input, "toggleSidebarCollapsed") =>
+      Some(
+        Handler((_args, _ctx) => {
+          done(
+            self.set(
+              "sidebarCollapsed",
+              Bool(!self.get("sidebarCollapsed").is_truthy()),
+            ),
+          )
+        }),
+      )
+    // Sidebar filter: recompute row/header visibility and persist the filter.
+    (Input, "onFilter") =>
+      Some(
+        Handler((args, ctx) => {
+          let value = match args {
+            [Str(v), ..] => v
+            _ => ""
+          }
+          ctx.request(
+            "persistState",
+            [snapshot(self, filter=value), Bool(false)],
+            @tutuca.RequestOpts::new(),
+          )
+          done(apply_filter(self, value))
+        }),
+      )
+    // Collapse/expand a group in place (no URL change, matching the JS
+    // storybook): flip its `cK` flag, then recompute so its rows hide/show
+    // under the current filter.
+    (Input, "onToggleSection") =>
+      Some(
+        Handler((args, _ctx) => {
+          let k = match args {
+            [Num(n), ..] => n.to_int()
+            _ => -1
+          }
+          if k < 0 || k >= self.spec.num_sections {
+            return done(self)
+          }
+          let out = self.set("c\{k}", Bool(!self.get("c\{k}").bool()))
+          done(apply_filter(out, str_field(out, "filter")))
+        }),
+      )
+    (Input, "onClearFilter") =>
+      Some(
+        Handler((_args, ctx) => {
+          ctx.request(
+            "persistState",
+            [snapshot(self, filter=""), Bool(false)],
+            @tutuca.RequestOpts::new(),
+          )
+          done(apply_filter(self, ""))
+        }),
+      )
+    // Select a section pane; push a history entry so Back returns to the
+    // prior story.
+    (Input, "onSelect") =>
+      Some(
+        Handler((args, ctx) => {
+          let id = match args {
+            [Str(v), ..] => v
+            _ => ""
+          }
+          ctx.request(
+            "persistState",
+            [snapshot(self, story=id), Bool(true)],
+            @tutuca.RequestOpts::new(),
+          )
+          done(self.set("active", Str(id)))
+        }),
+      )
+    (Input, "onFocusStory") =>
+      Some(
+        Handler((args, ctx) => {
+          let id = match args {
+            [Str(v), ..] => v
+            _ => ""
+          }
+          match self.spec.id_to_field.get(id) {
+            Some(fld) => {
+              ctx.request(
+                "persistState",
+                [snapshot(self, focus=id), Bool(true)],
+                @tutuca.RequestOpts::new(),
+              )
+              done(self.set("focus", Str(id)).set("focusValue", self.get(fld)))
+            }
+            None => done(self)
+          }
+        }),
+      )
+    (Input, "onFocusClose") =>
+      Some(
+        Handler((_args, ctx) => {
+          ctx.request(
+            "persistState",
+            [snapshot(self, focus=""), Bool(false)],
+            @tutuca.RequestOpts::new(),
+          )
+          done(self.set("focus", Str("")).set("focusValue", Null))
+        }),
+      )
+    // Switching the palette is a document effect (set data-theme, load the
+    // stylesheet), so it goes out as a request the host owns; the field only
+    // syncs the switcher's shown value. theme is added to the persisted
+    // snapshot here (and only here) so it enters the URL.
+    (Input, "onSelectTheme") =>
+      Some(
+        Handler((args, ctx) => {
+          let value = match args {
+            [Str(v), ..] => v
+            _ => ""
+          }
+          ctx.request("applyTheme", [Str(value)], @tutuca.RequestOpts::new())
+          ctx.request(
+            "persistState",
+            [snapshot(self, theme=value), Bool(false)],
+            @tutuca.RequestOpts::new(),
+          )
+          done(self.set("theme", Str(value)))
+        }),
+      )
+    // On init (and Back/Forward, when the host re-sends it) restore selection,
+    // filter, and focus from the URL, then fan `init` out to the panes that
+    // load data on init. loadState 404s harmlessly on hosts without URL
+    // persistence (the error path keeps the defaults).
+    (Receive, "init") =>
+      Some(
+        Handler((_args, ctx) => {
+          ctx.request("loadState", [], @tutuca.RequestOpts::new())
+          for f in self.spec.init_fields {
+            ctx.send_at_path(ctx.path().concat([FieldStep(f)]), "init", [])
+          }
+          done(self)
+        }),
+      )
+    (Response, "loadState") =>
+      Some(
+        Handler((args, _ctx) => {
+          match args {
+            // success: the host returns { story, focus, filter, theme }. The
+            // host already resolved+applied the theme (URL param, else OS
+            // preference) on the document; storing it here only syncs the
+            // switcher's shown value.
+            [Map(state), ..] => {
+              let story = str_of(state.get("story"))
+              let focus = str_of(state.get("focus"))
+              let filter = str_of(state.get("filter"))
+              let theme = str_of(state.get("theme"))
+              let mut out = self.set("theme", Str(theme))
+              // Any story id selects its pane (renderable panes and lint
+              // fixtures alike); an id that matches nothing just leaves every
+              // pane hidden.
+              if story != "" {
+                out = out.set("active", Str(story))
+              }
+              out = apply_filter(out, filter)
+              match self.spec.id_to_field.get(focus) {
+                Some(fld) =>
+                  out = out
+                    .set("focus", Str(focus))
+                    .set("focusValue", self.get(fld))
+                None => ()
+              }
+              done(out)
+            }
+            // error / no state: keep the defaults set by mount
+            _ => done(self)
+          }
+        }),
+      )
+    _ => None
+  }
+}
+
+///|
+/// Generate the gallery view + handler metadata + field defaults from the
+/// grouped sections. Field naming (`sN`/`lN`/`vN`) follows the SAME nested
+/// iteration order `mount` uses, so indices line up. `gvK` is per section
+/// index K.
+fn build_shell(
+  sections : Array[@sb.Section],
+) -> (@component.Component, ShellSpec, Map[String, @tutuca.Value]) {
+  let defaults : Map[String, @tutuca.Value] = {
+    "active": Str(""),
+    "filter": Str(""),
+    "focus": Str(""),
+    "focusValue": Null,
+    "sidebarCollapsed": Bool(false),
+    "theme": Str(""),
+  }
+  // Metadata captured by the handlers, aligned with the global story index N:
+  // the fuzzy-match haystack and the owning section index. `id_to_field` maps
+  // a renderable story's id to its `sN` field (for focus).
   let filter_text : Array[String] = []
   let sec_of : Array[Int] = []
   let id_to_field : Map[String, String] = Map([])
@@ -219,7 +485,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   // collapsed rail: a single button to bring the sidebar back
   sb.write_string(
     "<button class=\"btn btn-ghost btn-sm self-start m-2\" title=\"Show sections\"" +
-    " @show=\".sidebarCollapsed\" @on.click=\"$toggleSidebarCollapsed\">»</button>",
+    " @show=\".sidebarCollapsed\" @on.click=\"toggleSidebarCollapsed\">»</button>",
   )
   // sidebar: a fixed-height column — the header stays put, the entry list below
   // it scrolls.
@@ -230,7 +496,7 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   // "Storybook" title used), and the theme switcher.
   sb.write_string("<div class=\"flex items-center gap-2 mb-3 shrink-0\">")
   sb.write_string(
-    "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\"$toggleSidebarCollapsed\">«</button>",
+    "<button class=\"btn btn-ghost btn-sm\" title=\"Hide sections\" @on.click=\"toggleSidebarCollapsed\">«</button>",
   )
   sb.write_string(
     "<input class=\"input input-sm flex-1 min-w-0\" type=\"search\" placeholder=\"Filter\"" +
@@ -287,9 +553,9 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   idx = 0
   for sec in sections {
     for s in sec.stories {
-      fields["s\{idx}"] = @component.FieldSpec::of_default(Null)
-      fields["l\{idx}"] = @component.FieldSpec::of_default(Str(""))
-      fields["v\{idx}"] = @component.FieldSpec::of_default(Bool(true))
+      defaults["s\{idx}"] = Null
+      defaults["l\{idx}"] = Str("")
+      defaults["v\{idx}"] = Bool(true)
       if s.renderable {
         id_to_field[s.id] = "s\{idx}"
         if s.init {
@@ -331,169 +597,31 @@ pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
   }
   sb.write_string("</main></div></div>")
   for k in 0..<num_sections {
-    fields["gv\{k}"] = @component.FieldSpec::of_default(Bool(true))
+    defaults["gv\{k}"] = Bool(true)
     // per-section collapse flag (groups start expanded)
-    fields["c\{k}"] = @component.FieldSpec::of_default(Bool(false))
+    defaults["c\{k}"] = Bool(false)
   }
-  // Sidebar filter: recompute row/header visibility and persist the filter.
-  let on_filter : @component.InstanceHandler = (inst, args, ctx) => {
-    let value = match args {
-      [Str(v), ..] => v
-      _ => ""
-    }
-    ctx.request(
-      "persistState",
-      [snapshot(inst, filter=value), Bool(false)],
-      @tutuca.RequestOpts::new(),
-    )
-    Some(apply_filter(inst, value, filter_text, sec_of, num_sections))
+  let spec : ShellSpec = {
+    comp: None,
+    filter_text,
+    sec_of,
+    id_to_field,
+    init_fields,
+    num_sections,
   }
-  let input : Map[String, @component.InstanceHandler] = {
-    "onFilter": on_filter,
-    // Collapse/expand a group in place (no URL change, matching the JS
-    // storybook): flip its `cK` flag, then recompute so its rows hide/show under
-    // the current filter.
-    "onToggleSection": (inst, args, _ctx) => {
-      let k = match args {
-        [Num(n), ..] => n.to_int()
-        _ => -1
-      }
-      if k < 0 || k >= num_sections {
-        return Some(inst)
-      }
-      let collapsed = match inst.get("c\{k}") {
-        Bool(b) => b
-        _ => false
-      }
-      let out = inst.set("c\{k}", Bool(!collapsed))
-      Some(
-        apply_filter(
-          out,
-          str_field(out, "filter"),
-          filter_text,
-          sec_of,
-          num_sections,
-        ),
-      )
-    },
-    "onClearFilter": (inst, _args, ctx) => {
-      ctx.request(
-        "persistState",
-        [snapshot(inst, filter=""), Bool(false)],
-        @tutuca.RequestOpts::new(),
-      )
-      Some(apply_filter(inst, "", filter_text, sec_of, num_sections))
-    },
-    // Select a section pane; push a history entry so Back returns to the prior
-    // story.
-    "onSelect": (inst, args, ctx) => {
-      let id = match args {
-        [Str(v), ..] => v
-        _ => ""
-      }
-      ctx.request(
-        "persistState",
-        [snapshot(inst, story=id), Bool(true)],
-        @tutuca.RequestOpts::new(),
-      )
-      Some(inst.set("active", Str(id)))
-    },
-    "onFocusStory": (inst, args, ctx) => {
-      let id = match args {
-        [Str(v), ..] => v
-        _ => ""
-      }
-      match id_to_field.get(id) {
-        Some(fld) => {
-          ctx.request(
-            "persistState",
-            [snapshot(inst, focus=id), Bool(true)],
-            @tutuca.RequestOpts::new(),
-          )
-          Some(inst.set("focus", Str(id)).set("focusValue", inst.get(fld)))
-        }
-        None => Some(inst)
-      }
-    },
-    "onFocusClose": (inst, _args, ctx) => {
-      ctx.request(
-        "persistState",
-        [snapshot(inst, focus=""), Bool(false)],
-        @tutuca.RequestOpts::new(),
-      )
-      Some(inst.set("focus", Str("")).set("focusValue", Null))
-    },
-    // Switching the palette is a document effect (set data-theme, load the
-    // stylesheet), so it goes out as a request the host owns; the field only
-    // syncs the switcher's shown value. theme is added to the persisted snapshot
-    // here (and only here) so it enters the URL.
-    "onSelectTheme": (inst, args, ctx) => {
-      let value = match args {
-        [Str(v), ..] => v
-        _ => ""
-      }
-      ctx.request("applyTheme", [Str(value)], @tutuca.RequestOpts::new())
-      ctx.request(
-        "persistState",
-        [snapshot(inst, theme=value), Bool(false)],
-        @tutuca.RequestOpts::new(),
-      )
-      Some(inst.set("theme", Str(value)))
-    },
-  }
-  // On init (and Back/Forward, when the host re-sends it) restore selection,
-  // filter, and focus from the URL, then fan `init` out to the panes that load
-  // data on init. loadState 404s harmlessly on hosts without URL persistence
-  // (the error path in response.loadState keeps the defaults).
-  let receive : Map[String, @component.InstanceHandler] = {
-    "init": (inst, _args, ctx) => {
-      ctx.request("loadState", [], @tutuca.RequestOpts::new())
-      for f in init_fields {
-        ctx.send_at_path(ctx.path().concat([FieldStep(f)]), "init", [])
-      }
-      Some(inst)
-    },
-  }
-  let response : Map[String, @component.InstanceHandler] = {
-    "loadState": (inst, args, _ctx) => {
-      match args {
-        // success: the host returns { story, focus, filter, theme }. The host
-        // already resolved+applied the theme (URL param, else OS preference) on
-        // the document; storing it here only syncs the switcher's shown value.
-        [Map(state), ..] => {
-          let story = str_of(state.get("story"))
-          let focus = str_of(state.get("focus"))
-          let filter = str_of(state.get("filter"))
-          let theme = str_of(state.get("theme"))
-          let mut out = inst.set("theme", Str(theme))
-          // Any story id selects its pane (renderable panes and lint fixtures
-          // alike); an id that matches nothing just leaves every pane hidden.
-          if story != "" {
-            out = out.set("active", Str(story))
-          }
-          out = apply_filter(out, filter, filter_text, sec_of, num_sections)
-          match id_to_field.get(focus) {
-            Some(fld) =>
-              out = out
-                .set("focus", Str(focus))
-                .set("focusValue", inst.get(fld))
-            None => ()
-          }
-          Some(out)
-        }
-        // error / no state: keep the defaults set by mount
-        _ => Some(inst)
-      }
-    },
-  }
-  @component.component(
+  let comp = @component.Component::for_type(
     name="Storybook",
     view=sb.to_string(),
-    fields~,
-    input~,
-    receive~,
-    response~,
   )
+  spec.comp = Some(comp)
+  (comp, spec, defaults)
+}
+
+///|
+/// The gallery root component generated from the grouped sections (instances
+/// are built by `mount`).
+pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
+  build_shell(sections).0
 }
 
 ///|
@@ -512,12 +640,11 @@ pub fn[N : @vdom.DomWalk] mount(
   url_handlers? : Map[String, @component.RequestFn] = Map([]),
 ) -> @app.App[N] raise {
   let root_scope = @component.ComponentStack::new()
-  let shell = shell_component(sections)
+  let (shell, spec, fields) = build_shell(sections)
   root_scope.register_components([shell])
   if !url_handlers.is_empty() {
     root_scope.register_request_handlers(url_handlers)
   }
-  let args : Map[String, @tutuca.Value] = Map([])
   let mut idx = 0
   for sec in sections {
     for s in sec.stories {
@@ -526,28 +653,28 @@ pub fn[N : @vdom.DomWalk] mount(
       child.register_macros(s.module_.macros)
       child.register_request_handlers(s.module_.requests)
       if idx == 0 {
-        args["active"] = Str(s.id)
+        fields["active"] = Str(s.id)
       }
       match child.lookup_component(s.root) {
         Some(comp) => {
           // lint fixtures are linted but never rendered (their views trip
           // rules on purpose); build an instance only for renderable stories.
-          args["s\{idx}"] = if s.renderable {
-            comp.make(s.args).to_value()
+          fields["s\{idx}"] = if s.renderable {
+            comp.make(s.args)
           } else {
             Null
           }
-          args["l\{idx}"] = Str(lint(comp))
+          fields["l\{idx}"] = Str(lint(comp))
         }
         None => {
-          args["s\{idx}"] = Null
-          args["l\{idx}"] = Str("(root component '\{s.root}' not found)")
+          fields["s\{idx}"] = Null
+          fields["l\{idx}"] = Str("(root component '\{s.root}' not found)")
         }
       }
       idx = idx + 1
     }
   }
-  let root_value = shell.make(args).to_value()
+  let root_value = ShellInst::{ spec, fields }.to_value()
   let app = @app.App::new(root_scope, root_value, root_node, opts)
   app.start()
   // tutuca has no lifecycle: the host dispatches `init`, which the shell uses

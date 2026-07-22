@@ -57,6 +57,12 @@ fn tm_vbox_macro() -> @anode.Macro {
 }
 
 ///|
+priv struct TmItemState {
+  completed : Bool
+  text : String
+} derive(ToJson, FromJson)
+
+///|
 fn tm_item_comp() -> @component.Component {
   @component.component(
     name="Item",
@@ -66,12 +72,14 @@ fn tm_item_comp() -> @component.Component {
       #|  <x:input :value=".text" :handler="$setText" :disabled=".completed"></x:input>
       #|</x:hbox>
     ),
-    fields={
-      "completed": @component.FieldSpec::of_default(Bool(false)),
-      "text": @component.FieldSpec::of_default(Str("do the thing")),
-    },
+    init=TmItemState::{ completed: false, text: "do the thing" },
   )
 }
+
+///|
+priv struct TmItemsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 /// `:handler="onAddItem"` passes the handler NAME through the macro; the handler
@@ -92,20 +100,21 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
       #|  </x:vbox>
       #|</x:vbox>
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    input={
-      "onAddItem": (inst, _args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(
-          item
-          .make({ "completed": Bool(false), "text": Str("do the thing") })
-          .to_value(),
-        )
-        Some(inst.set("items", List(items)))
-      },
+    init=TmItemsState::{ items: [] },
+    update=(s : TmItemsState, msg, _ctx) => {
+      match msg {
+        Input("onAddItem", _) =>
+          Some({
+            items: s.items +
+            [
+              item.make({
+                "completed": Bool(false),
+                "text": Str("do the thing"),
+              }),
+            ],
+          })
+        _ => None
+      }
     },
   )
 }
@@ -138,9 +147,9 @@ pub fn todo_macros_module() -> @component.ModuleDef {
         title: "Some Items",
         args: {
           "items": List([
-            item.make(Map([])).to_value(),
-            item.make({ "completed": Bool(true) }).to_value(),
-            item.make({ "completed": Bool(true), "text": Str("") }).to_value(),
+            item.make(Map([])),
+            item.make({ "completed": Bool(true) }),
+            item.make({ "completed": Bool(true), "text": Str("") }),
           ]),
         },
         view: None,

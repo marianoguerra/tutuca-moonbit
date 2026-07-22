@@ -6,8 +6,10 @@
 //
 // 1. Self-replacement. In JS a JsonSelector's `setTo(Comp)` returns
 //    `Comp.make()` — a fresh instance of a DIFFERENT component type, which the
-//    framework swaps in where the selector was. That works unchanged here: a
-//    handler returns a Value, and an instance of any component is a Value.
+//    framework swaps in where the selector was. The typed `update` bucket
+//    cannot express that (it returns a new S), so these handlers go in the
+//    `swap` bucket: `(S, args, ctx) -> Value?` — Input-dispatched by name,
+//    returning the replacement node (None = keep).
 //
 // 2. The component-as-argument problem (as in todo.js), but sharper: a selector
 //    must build SIX different component types, and Array/Object build each other
@@ -31,10 +33,19 @@ fn JsonReg::make_(
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
-    Some(c) => c.make(args).to_value()
+    Some(c) => c.make(args)
     None => Null
   }
 }
+
+///|
+/// A fresh selector instance (its swap handlers are part of the component).
+fn json_make_selector(reg : JsonReg) -> @tutuca.Value {
+  reg.make_("JsonSelector")
+}
+
+///|
+priv struct JsonEmptyState {} derive(ToJson, FromJson)
 
 ///|
 fn json_null_comp() -> @component.Component {
@@ -43,8 +54,14 @@ fn json_null_comp() -> @component.Component {
     view=(
       #|<span class="text-warning text-xs font-mono p-3 json-null">null</span>
     ),
+    init=JsonEmptyState::{  },
   )
 }
+
+///|
+priv struct JsonBoolState {
+  value : Bool
+} derive(ToJson, FromJson)
 
 ///|
 fn json_bool_comp() -> @component.Component {
@@ -62,9 +79,14 @@ fn json_bool_comp() -> @component.Component {
       #|  <span @hide=".value">false</span>
       #|</button>
     ),
-    fields={ "value": @component.FieldSpec::of_default(Bool(true)) },
+    init=JsonBoolState::{ value: true },
   )
 }
+
+///|
+priv struct JsonStringState {
+  value : String
+} derive(ToJson, FromJson)
 
 ///|
 fn json_string_comp() -> @component.Component {
@@ -73,9 +95,15 @@ fn json_string_comp() -> @component.Component {
     view=(
       #|<input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="$setValue value" />
     ),
-    fields={ "value": @component.FieldSpec::of_default(Str("hello")) },
+    init=JsonStringState::{ value: "hello" },
   )
 }
+
+///|
+priv struct JsonNumberState {
+  strValue : String
+  value : Double
+} derive(ToJson, FromJson)
 
 ///|
 fn json_number_comp() -> @component.Component {
@@ -84,24 +112,20 @@ fn json_number_comp() -> @component.Component {
     view=(
       #|<input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="$setRawValue value" />
     ),
-    fields={
-      "strValue": @component.FieldSpec::of_default(Str("0")),
-      "value": @component.FieldSpec::of_default(Num(0)),
-    },
-    methods={
+    init=JsonNumberState::{ strValue: "0", value: 0 },
+    mutate={
       // keep the raw string always, update the numeric value only when finite
-      "setRawValue": (inst, args) => {
+      "setRawValue": (s : JsonNumberState, args) => {
         let raw = match args {
-          [Str(s)] => s
+          [Str(t)] => t
           _ => ""
         }
         let parsed : Double? = Some(@string.parse_double(raw)) catch {
           _ => None
         }
         match parsed {
-          Some(n) =>
-            inst.set("value", Num(n)).set("strValue", Str(raw)).to_value()
-          None => inst.set("strValue", Str(raw)).to_value()
+          Some(n) => { strValue: raw, value: n }
+          None => { ..s, strValue: raw }
         }
       },
     },
@@ -110,8 +134,10 @@ fn json_number_comp() -> @component.Component {
 
 ///|
 /// The type picker. Each button swaps the selector for a fresh value of the
-/// chosen type (self-replacement). `isCtrl` on the bool button chooses the
-/// initial boolean — the event field reaches the method as an argument.
+/// chosen type — the `swap` bucket answers an Input dispatch with a
+/// REPLACEMENT node (an instance of a different component). `isCtrl` on the
+/// bool button chooses the initial boolean — the event field reaches the
+/// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
   @component.component(
     name="JsonSelector",
@@ -125,16 +151,27 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
       #|  <button class="btn btn-sm btn-soft btn-info to-object" @on.click="$setToObject">&#123;&#125;</button>
       #|</div>
     ),
-    methods={
-      "setToNull": (_inst, _args) => reg.make_("JsonNull"),
-      "setToBool": (_inst, args) => {
-        let is_ctrl = args.get(0) is Some(Bool(true))
-        reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) })
+    init=JsonEmptyState::{  },
+    swap={
+      "setToNull": (_s : JsonEmptyState, _args, _ctx) => {
+        Some(reg.make_("JsonNull"))
       },
-      "setToNumber": (_inst, _args) => reg.make_("JsonNumber"),
-      "setToString": (_inst, _args) => reg.make_("JsonString"),
-      "setToArray": (_inst, _args) => reg.make_("JsonArray"),
-      "setToObject": (_inst, _args) => reg.make_("JsonObject"),
+      "setToBool": (_s : JsonEmptyState, args, _ctx) => {
+        let is_ctrl = args.get(0) is Some(Bool(true))
+        Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
+      },
+      "setToNumber": (_s : JsonEmptyState, _args, _ctx) => {
+        Some(reg.make_("JsonNumber"))
+      },
+      "setToString": (_s : JsonEmptyState, _args, _ctx) => {
+        Some(reg.make_("JsonString"))
+      },
+      "setToArray": (_s : JsonEmptyState, _args, _ctx) => {
+        Some(reg.make_("JsonArray"))
+      },
+      "setToObject": (_s : JsonEmptyState, _args, _ctx) => {
+        Some(reg.make_("JsonObject"))
+      },
     },
   )
 }
@@ -161,14 +198,10 @@ fn move_before(
 ///|
 /// A drop handler shared by Array and Object: reorder `items` by moving the
 /// dragged row before the drop target. `args` are `[@key, dragInfo]`.
-fn json_drop_handler(
-  inst : @component.Instance,
+fn json_dropped_items(
+  items : Array[@tutuca.Value],
   args : Array[@tutuca.Value],
-) -> @component.Instance? {
-  let items = match inst.get("items") {
-    List(a) => a
-    _ => return None
-  }
+) -> Array[@tutuca.Value]? {
   let target = match args {
     [Num(t), ..] => t.to_int()
     _ => return None
@@ -178,15 +211,21 @@ fn json_drop_handler(
       match di.obj_field("lookupBind") {
         Some(Fn(lookup)) =>
           match lookup([Null, Str("key")]) {
-            Num(s) => s.to_int()
+            Num(sv) => sv.to_int()
             _ => -1
           }
         _ => -1
       }
     _ => -1
   }
-  Some(inst.set("items", List(move_before(items, source, target))))
+  Some(move_before(items, source, target))
 }
+
+///|
+/// The state shared by JsonArray and JsonObject: just the item list.
+priv struct JsonItemsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
@@ -212,21 +251,28 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
       #|  transition: 0.15s border-top ease;
       #|}
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    input={
-      // add a fresh JsonSelector so the user can pick the new element's type
-      "addItem": (inst, _args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(reg.make_("JsonSelector"))
-        Some(inst.set("items", List(items)))
-      },
-      "onDropOnItem": (inst, args, _ctx) => json_drop_handler(inst, args),
+    init=JsonItemsState::{ items: [] },
+    update=(s : JsonItemsState, msg, _ctx) => {
+      match msg {
+        // add a fresh JsonSelector so the user can pick the new element's type
+        Input("addItem", _) =>
+          Some({ items: s.items + [json_make_selector(reg)] })
+        Input("onDropOnItem", args) =>
+          match json_dropped_items(s.items, args) {
+            Some(items) => Some({ items, })
+            None => None
+          }
+        _ => None
+      }
     },
   )
 }
+
+///|
+priv struct JsonKvState {
+  key : String
+  value : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
@@ -239,10 +285,7 @@ fn json_object_kv_comp() -> @component.Component {
       #|  <x render=".value"></x>
       #|</div>
     ),
-    fields={
-      "key": @component.FieldSpec::of_default(Str("k")),
-      "value": @component.FieldSpec::of_default(Null),
-    },
+    init=JsonKvState::{ key: "k", value: Null },
   )
 }
 
@@ -270,24 +313,24 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
       #|  transition: 0.15s border-top ease;
       #|}
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    input={
-      // a key/value row whose value is a fresh selector
-      "addItem": (inst, _args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(
-          match reg.comps.get("JsonObjectKeyVal") {
-            Some(kv) =>
-              kv.make({ "value": reg.make_("JsonSelector") }).to_value()
+    init=JsonItemsState::{ items: [] },
+    update=(s : JsonItemsState, msg, _ctx) => {
+      match msg {
+        // a key/value row whose value is a fresh selector
+        Input("addItem", _) => {
+          let row = match reg.comps.get("JsonObjectKeyVal") {
+            Some(kv) => kv.make({ "value": json_make_selector(reg) })
             None => Null
-          },
-        )
-        Some(inst.set("items", List(items)))
-      },
-      "onDropOnItem": (inst, args, _ctx) => json_drop_handler(inst, args),
+          }
+          Some({ items: s.items + [row] })
+        }
+        Input("onDropOnItem", args) =>
+          match json_dropped_items(s.items, args) {
+            Some(items) => Some({ items, })
+            None => None
+          }
+        _ => None
+      }
     },
   )
 }
@@ -299,7 +342,6 @@ pub fn json_module() -> @component.ModuleDef {
   let bool_ = json_bool_comp()
   let string = json_string_comp()
   let number = json_number_comp()
-  let selector = json_selector_comp(reg)
   let array = json_array_comp(reg)
   let kv = json_object_kv_comp()
   let object = json_object_comp(reg)
@@ -307,10 +349,11 @@ pub fn json_module() -> @component.ModuleDef {
   reg.comps["JsonBool"] = bool_
   reg.comps["JsonString"] = string
   reg.comps["JsonNumber"] = number
-  reg.comps["JsonSelector"] = selector
   reg.comps["JsonArray"] = array
   reg.comps["JsonObjectKeyVal"] = kv
   reg.comps["JsonObject"] = object
+  let selector = json_selector_comp(reg)
+  reg.comps["JsonSelector"] = selector
   @component.ModuleDef::new(
     name="json",
     components=[selector, null, bool_, string, number, array, kv, object],
@@ -318,7 +361,7 @@ pub fn json_module() -> @component.ModuleDef {
       {
         component: "JsonArray",
         title: "Empty Array With Selector",
-        args: { "items": List([selector.make(Map([])).to_value()]) },
+        args: { "items": List([json_make_selector(reg)]) },
         view: None,
       },
       { component: "JsonObject", title: "Object", args: Map([]), view: None },

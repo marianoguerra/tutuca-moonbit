@@ -118,16 +118,17 @@ test "component inspector: sections toggle one by one and all at once" {
   inspect(h.text(".comp-title"), content="RichSample")
   assert_true(
     h.texts(".comp-section") ==
-    [
-      "Fields", "Methods", "Input", "Receive", "Bubble", "Response", "Alter", "Views",
-    ],
+    ["Fields", "Methods", "Update", "Alter", "Views"],
   )
   // Fields starts expanded (4 rows), name sections collapsed
   inspect(h.find_all(".comp-field").length(), content="4")
   inspect(h.find_all(".comp-name").length(), content="0")
-  // plain click expands just Methods
+  // plain click expands just Methods (mutate + compute names)
   h.click(".comp-section", nth=1)
-  assert_true(h.texts(".comp-name") == ["label", "double"])
+  assert_true(h.texts(".comp-name").contains("label"))
+  assert_true(h.texts(".comp-name").contains("double"))
+  assert_true(h.texts(".comp-name").contains("inc"))
+  assert_true(h.texts(".comp-name").contains("reset"))
   // ctrl-click a COLLAPSED section bubbles toggleAllSections(true):
   // every section opens
   h.fire(
@@ -136,10 +137,7 @@ test "component inspector: sections toggle one by one and all at once" {
     nth=2,
   )
   let names = h.texts(".comp-name")
-  assert_true(names.contains("inc"))
-  assert_true(names.contains("ping"))
-  assert_true(names.contains("onChild"))
-  assert_true(names.contains("onData"))
+  assert_true(names.contains("update")) // the opaque Dispatch match, as a flag
   assert_true(names.contains("rows"))
   inspect(h.find_all(".comp-view").length(), content="2")
 }

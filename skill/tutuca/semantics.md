@@ -15,7 +15,7 @@ trusting this doc when they disagree.
 ## State & identity (in one paragraph)
 
 The application is a single immutable root value; the view is a pure
-function of it; every handler takes the old self and returns a new self,
+function of it; every handler takes the old state and returns a new state,
 and the transactor swaps the root atomically. Updating a deep child
 produces a new root that shares structure with the old one along the
 unchanged spine, so untouched subtrees keep their old values. Full
@@ -102,16 +102,16 @@ it spawned (requests, follow-on sends) settles too.
 
 ## Dispatch channels, semantically
 
-The authoring API (`ctx.send` / `bubble` / `request`, the handler blocks)
-is in [request-response.md](./request-response.md). Underneath, each maps
-to a transactor push:
+The authoring API (`ctx.send` / `bubble` / `request`, the `update`
+dispatch arms) is in [request-response.md](./request-response.md).
+Underneath, each maps to a transactor push:
 
 | Channel             | Push                | Notes                                            |
 | ------------------- | ------------------- | ------------------------------------------------ |
-| DOM event → `input` | `push_input`        | transacted **synchronously**, not queued         |
-| `ctx.send` → `receive` | `push_send`      | queued; `skip_self` runs no self-handler         |
-| `ctx.bubble` → `bubble` | `push_send(bubbles=true)` | queued; re-pushes itself at `path.pop_step()` until it reaches the root or `stop_propagation` |
-| `ctx.request` → `response` | `push_request` | queued **after** the async work calls `respond` |
+| DOM event → `Input` arm | `push_input`    | transacted **synchronously**, not queued         |
+| `ctx.send` → `Receive` arm | `push_send`  | queued; `skip_self` runs no self-handler         |
+| `ctx.bubble` → `Bubble` arm | `push_send(bubbles=true)` | queued; re-pushes itself at `path.pop_step()` until it reaches the root or `stop_propagation` |
+| `ctx.request` → `Response` arm | `push_request` | queued **after** the async work calls `respond` |
 
 Bubbling is just walking up the dispatch path one `pop_step` at a time.
 `target_path` (the originator's path) stays fixed as `path` shortens, so a
@@ -193,11 +193,11 @@ things per step kind:
 ## See also
 
 - [core.md](./core.md) — *Mental model* and *Paths, not references* (the
-  high-level invariants this file expands on), `view` directives, handler
-  blocks.
+  high-level invariants this file expands on), `view` directives, the
+  `update`/`mutate`/`compute` buckets.
 - [request-response.md](./request-response.md) — the dispatch **API**:
-  `bubble` / `send`-`receive` / `request`-`response`, `ctx.at()`,
-  `$unknown`, request-handler registration, and the `live_path` request
-  option.
+  `Bubble` / `send`-`Receive` / `request`-`Response`, `ctx.at()`,
+  catch-all arms, request-handler registration, and the `live_path`
+  request option.
 - [advanced.md](./advanced.md) — dynamic bindings (`*x`) and the authoring
   view of teleporting.

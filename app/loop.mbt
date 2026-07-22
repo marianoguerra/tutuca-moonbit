@@ -84,7 +84,7 @@ pub fn[N : @vdom.DomWalk] App::from_module(
   guard scope.lookup_component(root) is Some(comp) else {
     fail("mount: no component named '\{root}' in module '\{m.name}'")
   }
-  let app = App::new(scope, comp.make(args).to_value(), root_node, opts)
+  let app = App::new(scope, comp.make(args), root_node, opts)
   app.start()
   app
 }

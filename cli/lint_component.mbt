@@ -378,17 +378,21 @@ fn check_event_handlers_have_impls(
       match h.handler.handler {
         HandlerName(name~, ..) => {
           run.referenced_inputs[name] = true
-          if !comp.input.contains(name) {
-            if comp.methods.contains(name) {
-              // Port divergence from JS: Input dispatch falls back to
-              // methods (component/instance.mbt obj_handler), so a bare
-              // method name DOES fire — hint at the canonical `$name`
-              // spelling instead of erroring on working code.
+          // With an `update` fn the handled names are one opaque pattern
+          // match — any bare name may be Input-dispatched, so only the
+          // no-update case is checkable. Named swap handlers are always valid
+          // bare references.
+          if !comp.has_update && !comp.swap_names.contains(name) {
+            if dollar_callable(comp, name) {
+              // Input dispatch falls back to mutate/generated mutators
+              // (component/instance.mbt obj_handler), so a bare $-callable
+              // name DOES fire — hint at the canonical `$name` spelling
+              // instead of erroring on working code.
               run.report(
                 "INPUT_HANDLER_METHOD_FOR_INPUT_HANDLER",
                 Hint,
                 Some(vname),
-                "'\{name}' is an input handler reference, but '\{name}' is defined as a method" +
+                "'\{name}' is an input handler reference, but '\{name}' is defined as a $-callable" +
                 event_suffix(ctx),
                 suggestion=AddPrefix(from=name, to="$" + name),
               )
@@ -398,19 +402,26 @@ fn check_event_handlers_have_impls(
                 Error,
                 Some(vname),
                 "Input handler '\{name}' is not implemented" + event_suffix(ctx),
-                suggestion?=replace_name(name, map_keys(comp.input)),
+                suggestion?=replace_name(
+                  name,
+                  comp.swap_names + dollar_names(comp),
+                ),
               )
             }
           }
         }
         Method(name) => {
           run.referenced_inputs[name] = true
-          if !comp.methods.contains(name) {
-            let is_input_fix = comp.input.contains(name)
-            let suggestion : @lint.Suggestion? = if is_input_fix {
+          // `$name` in event position dispatches through the Input bucket,
+          // which serves swap handlers too.
+          if !dollar_callable(comp, name) && !comp.swap_names.contains(name) {
+            // With an update fn, `name` may still be Input-dispatched bare;
+            // suggest dropping the `$` in that case, else the closest
+            // $-callable name.
+            let suggestion : @lint.Suggestion? = if comp.has_update {
               Some(DropPrefix(from="$" + name, to=name))
             } else {
-              replace_name(name, map_keys(comp.methods))
+              replace_name(name, dollar_names(comp))
             }
             run.report(
               "INPUT_HANDLER_METHOD_NOT_IMPLEMENTED",
@@ -419,16 +430,6 @@ fn check_event_handlers_have_impls(
               "Method '$\{name}' is not implemented" + event_suffix(ctx),
               suggestion?,
             )
-            if is_input_fix {
-              run.report(
-                "INPUT_HANDLER_FOR_INPUT_HANDLER_METHOD",
-                Hint,
-                Some(vname),
-                "'$\{name}' is a method reference, but '\{name}' is defined as an input handler" +
-                event_suffix(ctx),
-                suggestion=DropPrefix(from="$" + name, to=name),
-              )
-            }
           }
         }
         _ => ()
@@ -960,13 +961,13 @@ fn check_attr_val(
     // In value position a handler name resolves in the `alter` namespace.
     HandlerName(name~, ..) => {
       run.referenced_alters[name] = true
-      if !comp.alter.contains(name) {
+      if !comp.alter_names.contains(name) {
         run.report(
           "ALT_HANDLER_NOT_DEFINED",
           Error,
           Some(vname),
           "Alter handler '\{name}' is not defined" + origin_suffix(ctx),
-          suggestion?=replace_name(name, map_keys(comp.alter)),
+          suggestion?=replace_name(name, comp.alter_names),
         )
       }
     }
@@ -1003,8 +1004,8 @@ fn check_attr_val(
     Field(name) => check_field_ref(run, vname, name, ctx)
     // `$name` must be a method. If it names a field, the fix is `.name`.
     Method(name) =>
-      if !comp.methods.contains(name) {
-        if comp.fields.contains(name) {
+      if !dollar_callable(comp, name) {
+        if comp.specs.contains(name) {
           run.report(
             "METHOD_VAL_IS_FIELD",
             Error,
@@ -1019,7 +1020,7 @@ fn check_attr_val(
             Error,
             Some(vname),
             "Method '$\{name}' is not defined" + origin_suffix(ctx),
-            suggestion?=replace_name(name, map_keys(comp.methods)),
+            suggestion?=replace_name(name, dollar_names(comp)),
           )
         }
       }
@@ -1039,10 +1040,10 @@ fn check_field_ref(
   ctx : ErrCtx,
 ) -> Unit {
   let comp = run.comp
-  if comp.fields.contains(name) {
+  if comp.specs.contains(name) {
     return
   }
-  if comp.methods.contains(name) {
+  if dollar_callable(comp, name) {
     run.report(
       "FIELD_VAL_IS_METHOD",
       Error,
@@ -1057,7 +1058,7 @@ fn check_field_ref(
       Error,
       Some(vname),
       "Field '.\{name}' is not defined" + origin_suffix(ctx),
-      suggestion?=replace_name(name, map_keys(comp.fields)),
+      suggestion?=replace_name(name, map_keys(comp.specs)),
     )
   }
 }
@@ -1121,7 +1122,7 @@ fn check_lookup_targets(run : LintRun) -> Unit {
 ///|
 fn check_unreferenced(run : LintRun) -> Unit {
   let comp = run.comp
-  for name, _h in comp.alter {
+  for name in comp.alter_names {
     if !run.referenced_alters.contains(name) {
       run.report(
         "ALT_HANDLER_NOT_REFERENCED",
@@ -1131,16 +1132,10 @@ fn check_unreferenced(run : LintRun) -> Unit {
       )
     }
   }
-  for name, _h in comp.input {
-    if !run.referenced_inputs.contains(name) {
-      run.report(
-        "INPUT_HANDLER_NOT_REFERENCED",
-        Hint,
-        None,
-        "Input handler '\{name}' is defined but never used — remove it or wire it to an @on.* event",
-      )
-    }
-  }
+  // The JS unreferenced-input check is gone: `update` is one opaque pattern
+  // match, so declared-but-unreferenced input names are unknowable by
+  // construction (INPUT_HANDLER_NOT_REFERENCED stays in the rule catalog as
+  // documentation of that gap).
   // Only lookups: a provide is consumed by CHILD components, so it need not
   // appear in this component's own views.
   for name, _l in comp.lookup {
@@ -1153,4 +1148,18 @@ fn check_unreferenced(run : LintRun) -> Unit {
       )
     }
   }
+}
+
+///|
+/// Every `$name`-callable name on a typed component: mutate + compute +
+/// the generated per-field mutators.
+fn dollar_names(comp : @component.Component) -> Array[String] {
+  comp.mutate_names + comp.compute_names + comp.generated_names
+}
+
+///|
+fn dollar_callable(comp : @component.Component, name : String) -> Bool {
+  comp.mutate_names.contains(name) ||
+  comp.compute_names.contains(name) ||
+  comp.generated_names.contains(name)
 }

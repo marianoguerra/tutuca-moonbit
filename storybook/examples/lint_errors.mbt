@@ -5,27 +5,40 @@
 // COMP_FIELD_BAD_SHAPE, FIELD_NAME_RESERVED_BY_RECORD, SUGGEST_BINDING_MEMBER
 // and the object-shaped LOOKUP_BAD_SHAPE (LookupSpec is typed — only a
 // malformed target string remains, which is LOOKUP_TARGET_MALFORMED).
+//
+// Typed-state divergence: `update` is one opaque pattern match, so the linter
+// can no longer enumerate input-handler names — INPUT_HANDLER_NOT_REFERENCED
+// and INPUT_HANDLER_FOR_INPUT_HANDLER_METHOD are catalog-only and dropped
+// here. LintDemo deliberately has NO `update` fn: that is the only case where
+// bare-name references stay checkable, so `doClick` (a $-callable referenced
+// bare) still yields INPUT_HANDLER_METHOD_FOR_INPUT_HANDLER, and the
+// unimplemented `doKeyDown` bare references now yield
+// INPUT_HANDLER_NOT_IMPLEMENTED.
+
+///|
+priv struct LintDemoState {
+  count : Int
+  items : Array[@tutuca.Value]
+  kind : String
+  isOpen : Bool
+  child : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn lint_demo_comp() -> @component.Component {
   @component.component(
     name="LintDemo",
-    fields={
-      "count": @component.FieldSpec::of_default(Num(0)),
-      "items": @component.FieldSpec::of_default(List([])),
-      "kind": @component.FieldSpec::of_default(Str("")),
-      "isOpen": @component.FieldSpec::of_default(Bool(false)),
-      "child": @component.FieldSpec::of_default(Null),
+    init=LintDemoState::{
+      count: 0,
+      items: [],
+      kind: "",
+      isOpen: false,
+      child: Null,
     },
-    methods={ "doClick": (inst, _args) => inst.to_value() },
-    input={
-      "doKeyDown": (inst, _args, _ctx) => Some(inst),
-      // INPUT_HANDLER_NOT_REFERENCED: defined here but never used in a view
-      "unusedInput": (inst, _args, _ctx) => Some(inst),
-    },
-    alter={
+    mutate={ "doClick": (s : LintDemoState, _args) => s },
+    when={
       // ALT_HANDLER_NOT_REFERENCED: defined here but never used in a view
-      "unusedAlter": (_inst, args) => args.get(1).unwrap_or(Null),
+      "unusedAlter": (_s : LintDemoState, _key, _value, _iter) => true,
     },
     provide={
       // PROVIDE_NOT_ADDRESSABLE: a provide must be a field (.f) or
@@ -168,10 +181,15 @@ fn lint_demo_comp() -> @component.Component {
 }
 
 ///|
+priv struct HtmlLintDemoState {
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 fn html_lint_demo_comp() -> @component.Component {
   @component.component(
     name="HtmlLintDemo",
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
+    init=HtmlLintDemoState::{ count: 0 },
     view=(
       #|<div>
       #|  <p>HTML structural lint errors — check the lint output</p>
@@ -201,10 +219,15 @@ fn html_lint_demo_comp() -> @component.Component {
 }
 
 ///|
+priv struct ScopedStyleDemoState {
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 fn scoped_style_demo_comp() -> @component.Component {
   @component.component(
     name="ScopedStyleDemo",
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
+    init=ScopedStyleDemoState::{ count: 0 },
     // commonStyle/style are wrapped in a component-scoped selector, so
     // top-level CSS lands inside a style-rule block where it is invalid or
     // dead. Both belong in globalStyle (injected verbatim).

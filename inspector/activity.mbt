@@ -16,6 +16,25 @@
 let activity_cap : Int = 50
 
 ///|
+priv struct ActivityEntryState {
+  kind : String
+  name : String
+  handlerName : String
+  matched : String
+  pathLabel : String
+  time : String
+  before : @tutuca.Value
+  after : @tutuca.Value
+  hasAfter : Bool
+} derive(ToJson, FromJson)
+
+///|
+priv struct ActivityLogState {
+  events : Array[@tutuca.Value]
+  hasEvents : Bool
+} derive(ToJson, FromJson)
+
+///|
 /// One row of dispatch activity. Pure display: a host builds these from
 /// observer records via `record_to_entry`, prebuilding the `before`/`after`
 /// value inspectors so no functions or paths are ever stored in state.
@@ -23,16 +42,16 @@ let activity_cap : Int = 50
 fn activity_entry_comp() -> @component.Component {
   @component.component(
     name="ActivityEntry",
-    fields={
-      "kind": @component.FieldSpec::of_default(Str("")),
-      "name": @component.FieldSpec::of_default(Str("")),
-      "handlerName": @component.FieldSpec::of_default(Str("")),
-      "matched": @component.FieldSpec::of_default(Str("")),
-      "pathLabel": @component.FieldSpec::of_default(Str("")),
-      "time": @component.FieldSpec::of_default(Str("")),
-      "before": @component.FieldSpec::of_default(Null),
-      "after": @component.FieldSpec::of_default(Null),
-      "hasAfter": @component.FieldSpec::of_default(Bool(true)),
+    init=ActivityEntryState::{
+      kind: "",
+      name: "",
+      handlerName: "",
+      matched: "",
+      pathLabel: "",
+      time: "",
+      before: Null,
+      after: Null,
+      hasAfter: true,
     },
     view=(
       #|<div class="rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry">
@@ -67,26 +86,21 @@ fn activity_entry_comp() -> @component.Component {
 fn activity_log_comp() -> @component.Component {
   @component.component(
     name="ActivityLog",
-    fields={
-      "events": @component.FieldSpec::of_default(List([])),
-      "hasEvents": @component.FieldSpec::of_default(Bool(false)),
-    },
-    receive={
-      "appendEntry": (inst, args, _ctx) => {
-        guard args is [entry, ..] else { return None }
-        let events = match inst.get("events") {
-          List(a) => a
-          _ => []
-        }
-        let out : Array[@tutuca.Value] = [entry]
-        for i, e in events {
-          if i >= activity_cap - 1 {
-            break
+    init=ActivityLogState::{ events: [], hasEvents: false },
+    update=(s : ActivityLogState, msg, _ctx) => {
+      match msg {
+        Receive("appendEntry", [entry, ..]) => {
+          let out : Array[@tutuca.Value] = [entry]
+          for i, e in s.events {
+            if i >= activity_cap - 1 {
+              break
+            }
+            out.push(e)
           }
-          out.push(e)
+          Some({ events: out, hasEvents: true })
         }
-        Some(inst.set("events", List(out)).set("hasEvents", Bool(true)))
-      },
+        _ => None
+      }
     },
     view=(
       #|<div class="p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log">

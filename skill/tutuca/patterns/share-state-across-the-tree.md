@@ -12,12 +12,16 @@ you don't want to thread it through every component in between.
 > tree as it needs to live.
 
 ```moonbit
+priv struct ItemsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
 // producer — exposes one of its fields under a name
 fn producer_comp() -> @component.Component {
   @component.component(
     name="EntryEditorAndSelector",
     view=..., // omitted
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
+    init=ItemsState::{ items: [] },
     provide={ "entries": ".items" },
   )
 }
@@ -31,7 +35,7 @@ fn consumer_comp() -> @component.Component {
       #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>
       #|</select>
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
+    init=ItemsState::{ items: [] },
     lookup={
       "entries": {
         source: "EntryEditorAndSelector.entries",

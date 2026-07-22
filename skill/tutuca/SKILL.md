@@ -1,6 +1,6 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions, `#|` raw-string HTML views, `@`-directives, `input` / `bubble` / `receive` / `response` / `alter` handlers, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or running the embedded `tutuca` CLI (`lint` / `render` / `show`). Covers the post-edit `tutuca lint` → `moon test` → `tutuca render --title "<example>"` verification recipe.
+description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions with a typed state struct, `#|` raw-string HTML views, `@`-directives, the `update` dispatch match plus `mutate` / `compute` and the typed render buckets, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or running the embedded `tutuca` CLI (`lint` / `render` / `show`). Covers the post-edit `tutuca lint` → `moon test` → `tutuca render --title "<example>"` verification recipe.
 ---
 
 <!-- The MoonBit tutuca skill lives at skill/tutuca/ in this repo and is
@@ -10,8 +10,9 @@ description: Use when authoring or reviewing tutuca components in the MoonBit po
 
 Tutuca is an immutable-state SPA framework. This skill covers the MoonBit
 port (`marianoguerra/tutuca`): components are built with
-`@component.component(...)`, state is the `@tutuca.Value` enum, modules are
-`ModuleDef` values, and tests run under `moon test`. Read
+`@component.component(...)` from a plain state struct
+(`derive(ToJson, FromJson)`) over the `@tutuca.Value` value layer, modules
+are `ModuleDef` values, and tests run under `moon test`. Read
 [core.md](./core.md) first for the framework primer.
 
 ## Verifying changes
@@ -53,7 +54,7 @@ When authoring tutuca code, also load this if available:
 | Component CSS — `style` / `common_style` / `global_style` scoping and pitfalls | [styles.md](./styles.md) |
 | Designing components — responsibilities, state ownership, channel choice, do's & don'ts | [component-design.md](./component-design.md) |
 | Embedded CLI commands, flags, exit codes, linter rules                                         | [cli.md](./cli.md)             |
-| `bubble` / `send`-`receive` / async `request`-`response` channels, `$unknown`, `RequestFn` registration | [request-response.md](./request-response.md) |
+| `Bubble` / `send`-`Receive` / async `request`-`Response` channels, catch-all arms, `RequestFn` registration | [request-response.md](./request-response.md) |
 | Drag & drop, dynamic bindings (`*x`), pseudo-`x`, custom collections via the `Obj` trait | [advanced.md](./advanced.md)   |
 | Setting up MargaUI styling — `collect_classes()`, the CDN compile step, `inject_style` | [margaui.md](./margaui.md)     |
 | Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |

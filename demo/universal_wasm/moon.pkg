@@ -9,6 +9,7 @@ import {
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/json",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
@@ -16,8 +17,9 @@ import {
 
 supported_targets = "wasm-gc"
 
+pkgtype(kind: "executable")
+
 options(
-  "is-main": true,
   link: {
     "wasm-gc": {
       "exports": [

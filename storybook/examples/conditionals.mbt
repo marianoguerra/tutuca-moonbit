@@ -1,10 +1,15 @@
 // Ports of:
 //   docs/examples/traffic-light.js  — @show + the binary `equals?` predicate
 //   docs/examples/tabbed-ui.js      — one string field drives the whole UI
-//   docs/examples/list-and-filter.js — @each + @when (an `alter` predicate)
+//   docs/examples/list-and-filter.js — @each + @when (a `when` predicate)
 
 ///|
 let traffic_lights : Array[String] = ["red", "orange", "green"]
+
+///|
+priv struct TrafficLightState {
+  lightIndex : Int
+} derive(ToJson, FromJson)
 
 ///|
 /// The React traffic-light exercise. The colour is DERIVED from a single
@@ -26,25 +31,15 @@ fn traffic_light_comp() -> @component.Component {
       #|  </p>
       #|</section>
     ),
-    fields={ "lightIndex": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "light": (inst, _args) => {
-        match inst.get("lightIndex") {
-          Num(n) => Str(traffic_lights[n.to_int() % traffic_lights.length()])
-          _ => Null
-        }
+    init=TrafficLightState::{ lightIndex: 0 },
+    compute={
+      "light": (s : TrafficLightState, _args) => {
+        Str(traffic_lights[s.lightIndex % traffic_lights.length()])
       },
-      "nextLight": (inst, _args) => {
-        match inst.get("lightIndex") {
-          Num(n) =>
-            inst
-            .set(
-              "lightIndex",
-              Num(((n.to_int() + 1) % traffic_lights.length()).to_double()),
-            )
-            .to_value()
-          _ => inst.to_value()
-        }
+    },
+    mutate={
+      "nextLight": (s : TrafficLightState, _args) => {
+        lightIndex: (s.lightIndex + 1) % traffic_lights.length(),
       },
     },
   )
@@ -72,6 +67,11 @@ pub fn traffic_light_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+priv struct TabbedUiState {
+  tab : String
+} derive(ToJson, FromJson)
 
 ///|
 /// A whole tabbed UI out of one string field: `equals?` in `@show` picks the
@@ -104,7 +104,7 @@ fn tabbed_ui_comp() -> @component.Component {
       #|  </div>
       #|</section>
     ),
-    fields={ "tab": @component.FieldSpec::of_default(Str("overview")) },
+    init=TabbedUiState::{ tab: "overview" },
   )
 }
 
@@ -122,12 +122,18 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@when="filterItem"` calls `alter.filterItem` per entry; returning false
-/// skips the item. `alter` functions receive the instance as `this`, so the
-/// predicate reads `.query` to filter against the live search string.
+priv struct ListAndFilterState {
+  items : Array[@tutuca.Value]
+  query : String
+} derive(ToJson, FromJson)
+
+///|
+/// `@when="filterItem"` calls the `when.filterItem` predicate per entry;
+/// returning false skips the item. `when` handlers receive the typed state,
+/// so the predicate reads `s.query` to filter against the live search string.
 ///
 /// Call convention (the renderer, render/render.mbt): a @when handler gets
-/// args `[key, value, iterData]`.
+/// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
   @component.component(
     name="ListAndFilter",
@@ -143,16 +149,12 @@ fn list_and_filter_comp() -> @component.Component {
       #|  </ul>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-    },
-    alter={
-      "filterItem": (inst, args) => {
-        match (inst.get("query"), args) {
-          (Str(q), [_key, Str(item), ..]) =>
-            Bool(item.to_lower().contains(q.to_lower()))
-          _ => Bool(true)
+    init=ListAndFilterState::{ items: [], query: "" },
+    when={
+      "filterItem": (s : ListAndFilterState, _key, value, _iter) => {
+        match value {
+          Str(item) => item.to_lower().contains(s.query.to_lower())
+          _ => true
         }
       },
     },

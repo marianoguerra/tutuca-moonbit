@@ -5,10 +5,11 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core",
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
 }
 
 // Values
-pub fn component(name~ : String, view~ : String, style? : String, common_style? : String, global_style? : String, views? : Map[String, String], view_styles? : Map[String, String], fields? : Map[String, FieldSpec], input? : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?], receive? : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?], bubble? : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?], response? : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?], alter? : Map[String, (Instance, Array[@core.Value]) -> @core.Value], methods? : Map[String, (Instance, Array[@core.Value]) -> @core.Value], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
+pub fn[S : ToJson + @json.FromJson] component(name~ : String, view~ : String, init~ : S, style? : String, common_style? : String, global_style? : String, views? : Map[String, String], view_styles? : Map[String, String], update? : (S, Dispatch, &@core.Ctx) -> S?, mutate? : Map[String, (S, Array[@core.Value]) -> S], compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], specs? : Map[String, FieldSpec], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
 
 pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
@@ -21,13 +22,14 @@ pub struct Component {
   views : Map[String, @anode.View]
   common_style : String
   global_style : String
-  fields : Map[String, FieldSpec]
-  input : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?]
-  receive : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?]
-  bubble : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?]
-  response : Map[String, (Instance, Array[@core.Value], &@core.Ctx) -> Instance?]
-  alter : Map[String, (Instance, Array[@core.Value]) -> @core.Value]
-  methods : Map[String, (Instance, Array[@core.Value]) -> @core.Value]
+  specs : Map[String, FieldSpec]
+  mutate_names : Array[String]
+  compute_names : Array[String]
+  swap_names : Array[String]
+  alter_names : Array[String]
+  generated_names : Array[String]
+  has_update : Bool
+  mut make_fn : (Map[String, @core.Value]) -> @core.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]
   provide : Map[String, ProvideInfo]
@@ -38,7 +40,7 @@ pub fn Component::compile(Self) -> Unit raise
 pub fn Component::compile_style(Self) -> String
 pub fn Component::for_type(name~ : String, view~ : String, style? : String, views? : Map[String, String], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Self
 pub fn Component::get_view(Self, String?) -> @anode.View?
-pub fn Component::make(Self, Map[String, @core.Value]) -> Instance
+pub fn Component::make(Self, Map[String, @core.Value]) -> @core.Value
 
 pub struct ComponentStack {
   comps : Components
@@ -66,6 +68,13 @@ pub fn Components::get_comp_for(Self, @core.Value) -> Component?
 pub fn Components::get_component_for_id(Self, Int) -> Component?
 pub fn Components::new() -> Self
 pub fn Components::register(Self, Component) -> Unit
+
+pub(all) enum Dispatch {
+  Input(String, Array[@core.Value])
+  Receive(String, Array[@core.Value])
+  Bubble(String, Array[@core.Value])
+  Response(String, Array[@core.Value])
+}
 
 pub(all) struct DynBinds {
   binds : Map[ProvideKey, @core.Value]
@@ -108,15 +117,6 @@ pub fn FieldSpec::of_default(@core.Value) -> Self
 pub fn FieldSpec::omap(default? : Map[String, @core.Value]) -> Self
 pub fn FieldSpec::set(members? : Array[String]) -> Self
 
-pub struct Instance {
-  comp : Component
-  fields : Map[String, @core.Value]
-}
-pub fn Instance::get(Self, String) -> @core.Value
-pub fn Instance::set(Self, String, @core.Value) -> Self
-pub fn Instance::to_value(Self) -> @core.Value
-pub impl @core.Obj for Instance
-
 pub(all) struct LookupInfo {
   name : String
   comp_name : String
@@ -130,6 +130,19 @@ pub(all) struct LookupSpec {
   source : String
   default : String?
 } derive(@debug.Debug)
+
+pub(all) struct LoopCtx {
+  lookup : (String) -> @core.Value
+  filter : (@core.Value, @core.Value, @core.Value) -> Bool
+}
+
+pub(all) struct LoopWith {
+  iter_data : @core.Value?
+  start : Int?
+  end : Int?
+  keys : Array[@core.Value]?
+}
+pub fn LoopWith::new(iter_data? : @core.Value, start? : Int, end? : Int, keys? : Array[@core.Value]) -> Self
 
 pub(all) struct ModuleDef {
   name : String
@@ -161,9 +174,6 @@ pub(all) struct ProvideKey {
 pub(all) struct RequestFn((Array[@core.Value], (Result[@core.Value, @core.Value]) -> Unit) -> Unit)
 
 // Type aliases
-pub type InstanceHandler = (Instance, Array[@core.Value], &@core.Ctx) -> Instance?
-
-pub type MethodFn = (Instance, Array[@core.Value]) -> @core.Value
 
 // Traits
 

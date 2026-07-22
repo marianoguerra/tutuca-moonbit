@@ -1,4 +1,6 @@
-// Component definitions (JS Component + the component() builder from oo.js).
+// Typed-state component definitions: the component() builder over a state
+// struct S (derive(ToJson, FromJson)), plus the shared Component machinery
+// (views, styles, provide/lookup compilation, make).
 
 ///|
 let comp_id_counter : Ref[Int] = { val: 0 }
@@ -7,6 +9,15 @@ let comp_id_counter : Ref[Int] = { val: 0 }
 fn next_comp_id() -> Int {
   comp_id_counter.val = comp_id_counter.val + 1
   comp_id_counter.val
+}
+
+///|
+fn[V] map_keys(m : Map[String, V]) -> Array[String] {
+  let out : Array[String] = []
+  for k, _ in m {
+    out.push(k)
+  }
+  out
 }
 
 ///|
@@ -28,13 +39,321 @@ impl @anode.MacroScope for EmptyScope with fn lookup_macro(_self, _name) {
 }
 
 ///|
+/// Shared Component construction: views, styles, provide/lookup — everything
+/// except field specs and the make closure.
+fn new_component(
+  name : String,
+  view : String,
+  style : String,
+  common_style : String,
+  global_style : String,
+  views : Map[String, String],
+  view_styles : Map[String, String],
+  provide : Map[String, String],
+  lookup : Map[String, LookupSpec],
+  specs : Map[String, FieldSpec],
+  mutate_names? : Array[String] = [],
+  compute_names? : Array[String] = [],
+  swap_names? : Array[String] = [],
+  alter_names? : Array[String] = [],
+  generated_names? : Array[String] = [],
+  has_update? : Bool = false,
+) -> Component {
+  let vs : Map[String, @anode.View] = {
+    "main": @anode.View::new("main", raw_view=view, style~),
+  }
+  for vname, raw in views {
+    vs[vname] = @anode.View::new(
+      vname,
+      raw_view=raw,
+      style=view_styles.get(vname).unwrap_or(""),
+    )
+  }
+  {
+    id: next_comp_id(),
+    name,
+    views: vs,
+    common_style,
+    global_style,
+    specs,
+    mutate_names,
+    compute_names,
+    swap_names,
+    alter_names,
+    generated_names,
+    has_update,
+    make_fn: _args => @tutuca.Value::Null,
+    raw_provide: provide,
+    raw_lookup: lookup,
+    provide: Map([]),
+    lookup: Map([]),
+    scope: None,
+  }
+}
+
+///|
+/// Define a typed-state component. `init` is a plain struct with
+/// derive(ToJson, FromJson): its fields become the component's fields (names,
+/// defaults and kinds), compiler-checked inside every handler. Buckets:
+/// - update: ALL effectful dispatches in one pattern match over Dispatch
+///   (Input/Receive/Bubble/Response), returning the new state (None = no
+///   change).
+/// - mutate: pure $-callable state changes ($inc in views).
+/// - compute: $-callable value reads ($label in value positions).
+/// - when / enrich / enrich_scope / loop_with: the render-time directive
+///   buckets, each with its own typed signature (@when filter -> Bool;
+///   @enrich-with mutates the binds map; the scope form returns binds;
+///   @loop-with returns a LoopWith slice/order plan).
+/// Auto-mutators are generated per field (setX / updateX / resetX / toggleX /
+/// xLen / pushInX / setInXAt / ...); user mutate/compute win over them.
+/// `specs` adds Value-level slot fields (child components via
+/// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
+pub fn[S : ToJson + @json.FromJson] component(
+  name~ : String,
+  view~ : String,
+  init~ : S,
+  style? : String = "",
+  common_style? : String = "",
+  global_style? : String = "",
+  views? : Map[String, String] = Map([]),
+  view_styles? : Map[String, String] = Map([]),
+  update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
+  mutate? : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([]),
+  compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),
+  swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([],
+  ),
+  when? : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] = Map([],
+  ),
+  enrich? : Map[
+    String,
+    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([]),
+  loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith] = Map([]),
+  specs? : Map[String, FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, LookupSpec] = Map([]),
+) -> Component {
+  let init_fields = encode_state(init)
+  let s_fields : Array[String] = []
+  for k, _ in init_fields {
+    s_fields.push(k)
+  }
+  let all_specs : Map[String, FieldSpec] = Map([])
+  for k, v in init_fields {
+    all_specs[k] = FieldSpec::of_default(v)
+  }
+  for k, sp in specs {
+    match (all_specs.get(k), sp.kind) {
+      // kind override for an S field: the typed default stays authoritative
+      (Some(base), FSet | FOMap) =>
+        all_specs[k] = { kind: sp.kind, default: base.default }
+      _ => all_specs[k] = sp
+    }
+  }
+  let tspec : TypedSpec[S] = {
+    comp: None,
+    init,
+    s_fields,
+    update,
+    mutate,
+    compute,
+    swap,
+    when,
+    enrich,
+    enrich_scope,
+    loop_with,
+    generated: Map([]),
+  }
+  gen_mutators(all_specs, tspec.generated)
+  let comp = new_component(
+    name,
+    view,
+    style,
+    common_style,
+    global_style,
+    views,
+    view_styles,
+    provide,
+    lookup,
+    all_specs,
+    mutate_names=map_keys(mutate),
+    compute_names=map_keys(compute),
+    swap_names=map_keys(swap),
+    alter_names=map_keys(when) +
+      map_keys(enrich) +
+      map_keys(enrich_scope) +
+      map_keys(loop_with),
+    generated_names=map_keys(tspec.generated),
+    has_update=update is Some(_),
+  )
+  tspec.comp = Some(comp)
+  comp.make_fn = args => make_typed(comp, tspec, args)
+  comp
+}
+
+///|
+/// Build an instance Value: coerce args against field specs, fill defaults
+/// (FComp children made through the registration scope), decode the state.
+fn[S : ToJson + @json.FromJson] make_typed(
+  comp : Component,
+  tspec : TypedSpec[S],
+  args : Map[String, @tutuca.Value],
+) -> @tutuca.Value {
+  let fields : Map[String, @tutuca.Value] = Map([])
+  for name, fspec in comp.specs {
+    let v = match args.get(name) {
+      Some(given) => fspec.coerce_or_default(given)
+      None =>
+        match fspec.kind {
+          // component-typed default: made through the registration scope
+          FComp(comp=cname, args=cargs) =>
+            match comp.scope {
+              Some(s) =>
+                match s.lookup_component(cname) {
+                  Some(child) => child.make(cargs)
+                  None => Null
+                }
+              None => Null
+            }
+          _ => fspec.default
+        }
+    }
+    fields[name] = v
+  }
+  let state : S = match decode_state(fields, tspec.s_fields) {
+    Some(s) => s
+    None => tspec.init
+  }
+  Obj(TypedInstance::{ spec: tspec, state, fields })
+}
+
+///|
+/// Define a component whose instances are a user typed struct implementing
+/// @tutuca.Obj directly (the fully-manual path): views/styles/provide/lookup
+/// only — fields and handlers live on the struct itself. The struct's
+/// component_id() must return this component's id. make() yields Null.
+pub fn Component::for_type(
+  name~ : String,
+  view~ : String,
+  style? : String = "",
+  views? : Map[String, String] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, LookupSpec] = Map([]),
+) -> Component {
+  new_component(
+    name,
+    view,
+    style,
+    "",
+    "",
+    views,
+    Map([]),
+    provide,
+    lookup,
+    Map([]),
+  )
+}
+
+///|
+pub fn Component::get_view(self : Component, name : String?) -> @anode.View? {
+  self.views.get(name.unwrap_or("main"))
+}
+
+///|
+/// Build an instance Value for this component (Null for for_type components —
+/// their instances are user structs).
+pub fn Component::make(
+  self : Component,
+  args : Map[String, @tutuca.Value],
+) -> @tutuca.Value {
+  (self.make_fn)(args)
+}
+
+///|
+fn split_source(s : String) -> (String, String)? {
+  for i in 0..<s.length() {
+    if s[i] is '.' {
+      let a = s[0:i]
+      let b = s[i + 1:]
+      if a.length() > 0 && b.length() > 0 {
+        return Some((a.to_owned(), b.to_owned()))
+      }
+      return None
+    }
+  }
+  None
+}
+
+///|
+pub fn Component::compile(self : Component) -> Unit raise {
+  let scope_obj : &@anode.MacroScope = match self.scope {
+    Some(s) => s as &@anode.MacroScope
+    None => EmptyScope::{  }
+  }
+  for _, view in self.views {
+    view.compile(
+      @anode.ParseContext::new(),
+      scope_obj,
+      cid=LNum(self.id.to_double()),
+    )
+  }
+  for pname, src in self.raw_provide {
+    match @tutuca.parse_provide(src, @tutuca.ParseCtx::new()) {
+      Some(val) =>
+        self.provide[pname] = {
+          name: pname,
+          val,
+          key: { comp: self.id, name: pname },
+        }
+      None => () // bad shape dropped silently (linter territory)
+    }
+  }
+  for lname, spec in self.raw_lookup {
+    match split_source(spec.source) {
+      Some((comp_name, provide_name)) => {
+        let default_val : @tutuca.Val? = match spec.default {
+          Some(d) => @tutuca.parse_field(d, @tutuca.ParseCtx::new())
+          None => None
+        }
+        self.lookup[lname] = {
+          name: lname,
+          comp_name,
+          provide_name,
+          default_val,
+          producer_key: Pending,
+        }
+      }
+      None => ()
+    }
+  }
+}
+
+///|
+pub fn Component::compile_style(self : Component) -> String {
+  let sb = StringBuilder()
+  if self.common_style != "" {
+    sb <+ "[data-cid=\"\{self.id}\"]{\{self.common_style}}\n"
+  }
+  if self.global_style != "" {
+    sb <+ "\{self.global_style}\n"
+  }
+  for vname, view in self.views {
+    if view.style != "" {
+      sb <+ "[data-cid=\"\{self.id}\"][data-vid=\"\{vname}\"]{\{view.style}}\n"
+    }
+  }
+  sb.to_string()
+}
+
+///|
 /// Generated per-field mutators (oo.js ClassBuilder), JS camelCase names so
 /// views port verbatim: set/update/reset/toggle/len/pushIn/setInAt/updateInAt/
-/// deleteInAt/removeInAt/insertInAt for list/map/omap, and addIn/deleteIn/
-/// removeIn/hasIn/toggleIn for sets. getInAt is the only deferred accessor.
-fn gen_mutators(
+/// deleteInAt/removeInAt for list/map/omap, and addIn/deleteIn/removeIn/hasIn/
+/// toggleIn for sets. getInAt is the only deferred accessor.
+fn[S : ToJson + @json.FromJson] gen_mutators(
   fields : Map[String, FieldSpec],
-  into : Map[String, MethodFn],
+  into : Map[String, (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value],
 ) -> Unit {
   for name, spec in fields {
     let u = cap_first(name)
@@ -78,7 +397,10 @@ fn gen_mutators(
         }
         // JS deleteIn<X> and removeIn<X> alias the same delete (oo.js
         // extendDeleteInAt, called with the bare uname for sets).
-        let delete_member = (inst : Instance, args : Array[@tutuca.Value]) => {
+        let delete_member = (
+          inst : TypedInstance[S],
+          args : Array[@tutuca.Value],
+        ) => {
           match (inst.get(name), args) {
             (Map(m), [v, ..]) => {
               let out = m.copy()
@@ -162,8 +484,8 @@ fn gen_mutators(
 }
 
 ///|
-fn seq_set(
-  inst : Instance,
+fn[S : ToJson + @json.FromJson] seq_set(
+  inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -188,8 +510,8 @@ fn seq_set(
 }
 
 ///|
-fn seq_update(
-  inst : Instance,
+fn[S : ToJson + @json.FromJson] seq_update(
+  inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -212,8 +534,8 @@ fn seq_update(
 }
 
 ///|
-fn seq_delete(
-  inst : Instance,
+fn[S : ToJson + @json.FromJson] seq_delete(
+  inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -238,178 +560,11 @@ fn seq_delete(
 }
 
 ///|
-pub fn component(
-  name~ : String,
-  view~ : String,
-  style? : String = "",
-  common_style? : String = "",
-  global_style? : String = "",
-  views? : Map[String, String] = Map([]),
-  view_styles? : Map[String, String] = Map([]),
-  fields? : Map[String, FieldSpec] = Map([]),
-  input? : Map[String, InstanceHandler] = Map([]),
-  receive? : Map[String, InstanceHandler] = Map([]),
-  bubble? : Map[String, InstanceHandler] = Map([]),
-  response? : Map[String, InstanceHandler] = Map([]),
-  alter? : Map[String, MethodFn] = Map([]),
-  methods? : Map[String, MethodFn] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, LookupSpec] = Map([]),
-) -> Component {
-  let vs : Map[String, @anode.View] = {
-    "main": @anode.View::new("main", raw_view=view, style~),
-  }
-  for vname, raw in views {
-    vs[vname] = @anode.View::new(
-      vname,
-      raw_view=raw,
-      style=view_styles.get(vname).unwrap_or(""),
-    )
-  }
-  let all_methods : Map[String, MethodFn] = Map([])
-  gen_mutators(fields, all_methods)
-  for k, m in methods {
-    all_methods[k] = m // user methods win over generated mutators
-  }
-  {
-    id: next_comp_id(),
-    name,
-    views: vs,
-    common_style,
-    global_style,
-    fields,
-    input,
-    receive,
-    bubble,
-    response,
-    alter,
-    methods: all_methods,
-    raw_provide: provide,
-    raw_lookup: lookup,
-    provide: Map([]),
-    lookup: Map([]),
-    scope: None,
-  }
-}
-
-///|
-pub fn Component::for_type(
-  name~ : String,
-  view~ : String,
-  style? : String = "",
-  views? : Map[String, String] = Map([]),
-  provide? : Map[String, String] = Map([]),
-  lookup? : Map[String, LookupSpec] = Map([]),
-) -> Component {
-  component(name~, view~, style~, views~, provide~, lookup~)
-}
-
-///|
-pub fn Component::get_view(self : Component, name : String?) -> @anode.View? {
-  self.views.get(name.unwrap_or("main"))
-}
-
-///|
-fn split_source(s : String) -> (String, String)? {
-  for i in 0..<s.length() {
-    if s[i] is '.' {
-      let a = s[0:i]
-      let b = s[i + 1:]
-      if a.length() > 0 && b.length() > 0 {
-        return Some((a.to_owned(), b.to_owned()))
-      }
-      return None
-    }
-  }
-  None
-}
-
-///|
-pub fn Component::compile(self : Component) -> Unit raise {
-  let scope_obj : &@anode.MacroScope = match self.scope {
-    Some(s) => s as &@anode.MacroScope
-    None => EmptyScope::{  }
-  }
-  for _, view in self.views {
-    view.compile(
-      @anode.ParseContext::new(),
-      scope_obj,
-      cid=LNum(self.id.to_double()),
-    )
-  }
-  for pname, src in self.raw_provide {
-    match @tutuca.parse_provide(src, @tutuca.ParseCtx::new()) {
-      Some(val) =>
-        self.provide[pname] = {
-          name: pname,
-          val,
-          key: { comp: self.id, name: pname },
-        }
-      None => () // bad shape dropped silently (linter territory)
-    }
-  }
-  for lname, spec in self.raw_lookup {
-    match split_source(spec.source) {
-      Some((comp_name, provide_name)) => {
-        let default_val : @tutuca.Val? = match spec.default {
-          Some(d) => @tutuca.parse_field(d, @tutuca.ParseCtx::new())
-          None => None
-        }
-        self.lookup[lname] = {
-          name: lname,
-          comp_name,
-          provide_name,
-          default_val,
-          producer_key: Pending,
-        }
-      }
-      None => ()
-    }
-  }
-}
-
-///|
-pub fn Component::make(
-  self : Component,
-  args : Map[String, @tutuca.Value],
-) -> Instance {
-  let fields : Map[String, @tutuca.Value] = Map([])
-  for name, spec in self.fields {
-    let v = match args.get(name) {
-      Some(given) => spec.coerce_or_default(given)
-      None =>
-        match spec.kind {
-          // component-typed default: made through the registration scope
-          FComp(comp~, args~) =>
-            match self.scope {
-              Some(s) =>
-                match s.lookup_component(comp) {
-                  Some(child) => child.make(args).to_value()
-                  None => Null
-                }
-              None => Null
-            }
-          _ => spec.default
-        }
-    }
-    fields[name] = v
-  }
-  { comp: self, fields }
-}
-
-///|
-pub fn Component::compile_style(self : Component) -> String {
-  let sb = StringBuilder()
-  if self.common_style != "" {
-    sb <+ "[data-cid=\"\{self.id}\"]{\{self.common_style}}\n"
-  }
-  if self.global_style != "" {
-    sb <+ "\{self.global_style}\n"
-  }
-  for vname, view in self.views {
-    if view.style != "" {
-      sb <+ "[data-cid=\"\{self.id}\"][data-vid=\"\{vname}\"]{\{view.style}}\n"
-    }
-  }
-  sb.to_string()
+pub fn LoopWith::new(
+  iter_data? : @tutuca.Value,
+  start? : Int,
+  end? : Int,
+  keys? : Array[@tutuca.Value],
+) -> LoopWith {
+  { iter_data, start, end, keys }
 }

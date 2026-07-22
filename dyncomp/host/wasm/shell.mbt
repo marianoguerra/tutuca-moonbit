@@ -8,6 +8,13 @@
 /// migrates into the fresh bundle through its JSON projection.
 
 ///|
+priv struct ShellState {
+  status : String
+  slot : @tutuca.Value
+  pair : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
   let shell = @component.component(
     name="DynShell",
@@ -26,54 +33,51 @@ pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
       #|.dyncomp-demo .slot-box { margin-top: 1rem; }
       #|.dyncomp-demo .seq { display: inline-flex; gap: 0.3em; list-style: none; padding: 0; color: #669; }
     ),
-    fields={
-      "status": @component.FieldSpec::of_default(Str("no bundle loaded")),
-      "slot": @component.FieldSpec::of_default(Null),
-      "pair": @component.FieldSpec::of_default(Null),
-    },
-    input={
-      "load": (inst, _args, ctx) => {
-        let _ = load_from(ctx.path(), bundle_url)
-        Some(inst.set("status", Str("loading \{bundle_url} ...")))
-      },
-    },
-    receive={
-      "dyncompLoaded": (inst, args, _ctx) => {
-        let module_name = match args {
-          [Str(s)] => s
-          _ => return Some(inst.set("status", Str("loaded: bad args")))
+    init=ShellState::{ status: "no bundle loaded", slot: Null, pair: Null },
+    update=(s : ShellState, msg, ctx) => {
+      match msg {
+        Input("load", _) => {
+          let _ = load_from(ctx.path(), bundle_url)
+          Some({ ..s, status: "loading \{bundle_url} ..." })
         }
-        // hot-swap: migrate the mounted counter's state into the fresh
-        // bundle instead of resetting it
-        let (counter, migrated) = match inst.get("slot") {
-          Obj(_) as old => (migrate_instance(module_name, "Counter", old), true)
-          _ =>
-            (
-              make_instance(module_name, "Counter", args={ "count": Num(5) }),
-              false,
-            )
-        }
-        let pair = make_instance(module_name, "Pair")
-        match (counter, pair) {
-          (Some(c), Some(p)) => {
-            let status = if migrated {
-              "reloaded \{module_name}: counter state migrated"
-            } else {
-              "loaded \{module_name}: Counter + Pair mounted"
-            }
-            Some(inst.set("slot", c).set("pair", p).set("status", Str(status)))
+        Receive("dyncompLoaded", args) => {
+          let module_name = match args {
+            [Str(name)] => name
+            _ => return Some({ ..s, status: "loaded: bad args" })
           }
-          _ =>
-            Some(inst.set("status", Str("\{module_name}: missing components")))
+          // hot-swap: migrate the mounted counter's state into the fresh
+          // bundle instead of resetting it
+          let (counter, migrated) = match s.slot {
+            Obj(_) as old =>
+              (migrate_instance(module_name, "Counter", old), true)
+            _ =>
+              (
+                make_instance(module_name, "Counter", args={ "count": Num(5) }),
+                false,
+              )
+          }
+          let pair = make_instance(module_name, "Pair")
+          match (counter, pair) {
+            (Some(c), Some(p)) => {
+              let status = if migrated {
+                "reloaded \{module_name}: counter state migrated"
+              } else {
+                "loaded \{module_name}: Counter + Pair mounted"
+              }
+              Some({ status, slot: c, pair: p })
+            }
+            _ => Some({ ..s, status: "\{module_name}: missing components" })
+          }
         }
-      },
-      "dyncompError": (inst, args, _ctx) => {
-        let msg = match args {
-          [Str(s)] => s
-          _ => "unknown error"
+        Receive("dyncompError", args) => {
+          let m = match args {
+            [Str(txt)] => txt
+            _ => "unknown error"
+          }
+          Some({ ..s, status: "load failed: \{m}" })
         }
-        Some(inst.set("status", Str("load failed: \{msg}")))
-      },
+        _ => None
+      }
     },
   )
   @component.ModuleDef::new(name="dyncompshell", components=[shell])

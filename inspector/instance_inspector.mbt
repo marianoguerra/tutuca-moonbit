@@ -2,35 +2,23 @@
 // rows of a live component instance, plus a tabbed explorer over one
 // instance (values / definition / lint).
 //
-// Port deviations:
-// - JS resolved the descriptor via `scope.getCompFor(value)`; a port
-//   `@component.Instance` carries its own Component, so `inspect_instance`
-//   takes the instance directly. For a plain `Value` (e.g. an observe
-//   record's before/after) use `inspect_value_as_instance` with the comp from
-//   `Components::get_comp_for`.
+// Typed-state deviations:
+// - instances are opaque Values (Obj); field names/order come from the
+//   descriptor's specs and values are read through the Obj trait, so every
+//   entry point takes the value plus its Component (or a Components registry
+//   via `build_inspector_views`).
 // - the Tests tab is gone: test-inspector.js is not ported (`moon test` is
 //   the runner here; there is no in-app test-report data source).
 
 ///|
-/// The pure snapshot of an instance: its component name plus a field → value
-/// Map in declaration order.
-pub fn instance_snapshot(inst : @component.Instance) -> @tutuca.Value {
-  let fields : Map[String, @tutuca.Value] = Map([])
-  for name, _spec in inst.comp.fields {
-    fields[name] = inst.get(name)
-  }
-  Map({ "name": Str(inst.comp.name), "fields": Map(fields) })
-}
-
-///|
-/// The same snapshot for an instance reached as a plain Value (field names
-/// come from the descriptor, values through the Obj trait).
-fn value_snapshot(
+/// The pure snapshot of an instance value: its component name plus a
+/// field → value Map in declaration order.
+pub fn instance_snapshot(
   v : @tutuca.Value,
   comp : @component.Component,
 ) -> @tutuca.Value {
   let fields : Map[String, @tutuca.Value] = Map([])
-  for name, _spec in comp.fields {
+  for name, _spec in comp.specs {
     fields[name] = obj_get(v, name).unwrap_or(Null)
   }
   Map({ "name": Str(comp.name), "fields": Map(fields) })
@@ -39,18 +27,56 @@ fn value_snapshot(
 ///|
 /// The field → value rows of an instance. Field names/order come from the
 /// snapshot; each value renders (and recurses) like the other inspectors.
+priv struct InstanceFieldsState {
+  items : Array[@tutuca.Value]
+  isExpanded : Bool
+  itemsPerPage : Int
+  currentPage : Int
+  typeName : String
+} derive(ToJson, FromJson)
+
+///|
+impl Composite for InstanceFieldsState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for InstanceFieldsState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for InstanceFieldsState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for InstanceFieldsState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
 fn instance_fields_comp() -> @component.Component {
-  let fields = composite_fields()
-  fields["typeName"] = @component.FieldSpec::of_default(Str(""))
-  let methods = composite_methods(inst => str_field(inst, "typeName"), inst => {
-    let n = items_of(inst).length()
-    "{\{n}}"
-  })
   @component.component(
     name="InstanceFields",
-    fields~,
-    methods~,
-    alter=composite_alter(),
+    init=InstanceFieldsState::{
+      items: [],
+      isExpanded: false,
+      itemsPerPage: 10,
+      currentPage: 0,
+      typeName: "",
+    },
+    compute=composite_compute((s : InstanceFieldsState) => s.typeName, s => {
+      let n = s.items.length()
+      "{\{n}}"
+    }),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     view=make_composite_view(
       type_class="font-semibold instance-fields",
       border_class="border-base-content/15",
@@ -65,8 +91,12 @@ fn instance_fields_comp() -> @component.Component {
 fn instance_inspector_comp() -> @component.Component {
   @component.component(
     name="InstanceInspector",
-    fields={ "value": @component.FieldSpec::of_default(Null) },
-    methods={ "toggleIsExpanded": wrapper_toggle },
+    init=WrapperState::{ value: Null },
+    mutate={
+      "toggleIsExpanded": (s : WrapperState, _args) => {
+        value: toggle_wrapped(s.value),
+      },
+    },
     view=(
       #|<span class="contents"><x render=".value"></x></span>
     ),
@@ -97,13 +127,15 @@ fn Inspector::instance_fields_from(
 }
 
 ///|
-/// JS InstanceInspector.Class.fromData(instance, comp) for a live Instance.
+/// JS InstanceInspector.Class.fromData(instance, comp) for a live instance
+/// value + its descriptor.
 pub fn Inspector::inspect_instance(
   self : Inspector,
-  inst : @component.Instance,
+  v : @tutuca.Value,
+  comp : @component.Component,
 ) -> @tutuca.Value {
   self.make_("InstanceInspector", args={
-    "value": self.instance_fields_from(instance_snapshot(inst)),
+    "value": self.instance_fields_from(instance_snapshot(v, comp)),
   })
 }
 
@@ -116,11 +148,21 @@ pub fn Inspector::inspect_value_as_instance(
   comp : @component.Component?,
 ) -> @tutuca.Value {
   let value = match comp {
-    Some(c) => self.instance_fields_from(value_snapshot(v, c))
+    Some(c) => self.instance_fields_from(instance_snapshot(v, c))
     None => self.classify(v)
   }
   self.make_("InstanceInspector", args={ "value": value })
 }
+
+///|
+priv struct InstanceExplorerState {
+  activeTab : String
+  instanceView : @tutuca.Value
+  componentView : @tutuca.Value
+  lintView : @tutuca.Value
+  hasComponent : Bool
+  hasLint : Bool
+} derive(ToJson, FromJson)
 
 ///|
 /// Up to three tabs over one instance: its values (InstanceInspector), its
@@ -129,13 +171,13 @@ pub fn Inspector::inspect_value_as_instance(
 fn instance_explorer_comp() -> @component.Component {
   @component.component(
     name="InstanceExplorer",
-    fields={
-      "activeTab": @component.FieldSpec::of_default(Str("instance")),
-      "instanceView": @component.FieldSpec::of_default(Null),
-      "componentView": @component.FieldSpec::of_default(Null),
-      "lintView": @component.FieldSpec::of_default(Null),
-      "hasComponent": @component.FieldSpec::of_default(Bool(false)),
-      "hasLint": @component.FieldSpec::of_default(Bool(false)),
+    init=InstanceExplorerState::{
+      activeTab: "instance",
+      instanceView: Null,
+      componentView: Null,
+      lintView: Null,
+      hasComponent: false,
+      hasLint: false,
     },
     view=(
       #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
@@ -184,7 +226,8 @@ fn instance_explorer_comp() -> @component.Component {
 /// `lint_findings` are `finding_value` Maps (see lint_inspector.mbt).
 pub fn Inspector::explore_instance(
   self : Inspector,
-  inst : @component.Instance,
+  v : @tutuca.Value,
+  comp : @component.Component,
   lint_findings? : Array[@tutuca.Value],
 ) -> @tutuca.Value {
   let lint_view = match lint_findings {
@@ -192,8 +235,8 @@ pub fn Inspector::explore_instance(
     None => Null
   }
   self.make_("InstanceExplorer", args={
-    "instanceView": self.inspect_instance(inst),
-    "componentView": self.inspect_component(inst.comp),
+    "instanceView": self.inspect_instance(v, comp),
+    "componentView": self.inspect_component(comp),
     "lintView": lint_view,
     "hasComponent": Bool(true),
     "hasLint": Bool(lint_findings is Some(_)),

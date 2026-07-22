@@ -19,6 +19,12 @@ let palette : Array[@tutuca.Value] = [
 ]
 
 ///|
+priv struct SwatchPickerState {
+  color : String
+  palette : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
 /// Clicking a `<circle>` sets `color`; the preview `<rect>` binds `:fill` to it,
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
@@ -36,18 +42,21 @@ fn swatch_picker_comp() -> @component.Component {
       #|  <p class="text-sm label">Selected: <x text=".color"></x></p>
       #|</div>
     ),
-    fields={
-      "color": @component.FieldSpec::of_default(Str("#ef4444")),
-      "palette": @component.FieldSpec::of_default(List(palette)),
-    },
-    alter={
-      // lay each swatch out along a row and ring the selected one; `this` is the
-      // component, so the current `color` field decides which ring shows
-      "swatch": (inst, args) => {
-        match args {
-          [Map(binds), Num(key), value, ..] => {
-            binds["cx"] = Num(32.0 + key * 46.0)
-            binds["ring"] = if value == inst.get("color") {
+    init=SwatchPickerState::{ color: "#ef4444", palette },
+    enrich={
+      "swatch": (
+        // lay each swatch out along a row and ring the selected one; the typed
+        // state's current `color` field decides which ring shows
+        s : SwatchPickerState,
+        binds,
+        key,
+        value,
+        _iter,
+      ) => {
+        match key {
+          Num(k) => {
+            binds["cx"] = Num(32.0 + k * 46.0)
+            binds["ring"] = if value == Str(s.color) {
               Str("#0f172a")
             } else {
               Str("transparent")
@@ -55,7 +64,6 @@ fn swatch_picker_comp() -> @component.Component {
           }
           _ => ()
         }
-        Null
       },
     },
   )
@@ -77,6 +85,13 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+priv struct QuadraticState {
+  a : Int
+  b : Int
+  c : Int
+} derive(ToJson, FromJson)
 
 ///|
 /// `@text` on an `<mn>` makes the displayed number reactive; the discriminant
@@ -108,19 +123,17 @@ fn quadratic_comp() -> @component.Component {
       #|  <p class="text-sm">There are <span class="classify" @text="$classify"></span>.</p>
       #|</div>
     ),
-    fields={
-      "a": @component.FieldSpec::of_default(Num(1)),
-      "b": @component.FieldSpec::of_default(Num(-3)),
-      "c": @component.FieldSpec::of_default(Num(2)),
-    },
-    methods={
+    init=QuadraticState::{ a: 1, b: -3, c: 2 },
+    compute={
       // b² − 4ac decides how many real roots the equation has
-      "discriminant": (inst, _args) => Num(discriminant_of(inst)),
-      "classify": (inst, _args) => {
-        let d = discriminant_of(inst)
-        if d > 0.0 {
+      "discriminant": (s : QuadraticState, _args) => {
+        Num(discriminant_of(s).to_double())
+      },
+      "classify": (s : QuadraticState, _args) => {
+        let d = discriminant_of(s)
+        if d > 0 {
           Str("two distinct real roots")
-        } else if d == 0.0 {
+        } else if d == 0 {
           Str("one repeated real root")
         } else {
           Str("no real roots")
@@ -131,11 +144,8 @@ fn quadratic_comp() -> @component.Component {
 }
 
 ///|
-fn discriminant_of(inst : @component.Instance) -> Double {
-  match (inst.get("a"), inst.get("b"), inst.get("c")) {
-    (Num(a), Num(b), Num(c)) => b * b - 4.0 * a * c
-    _ => 0.0
-  }
+fn discriminant_of(s : QuadraticState) -> Int {
+  s.b * s.b - 4 * s.a * s.c
 }
 
 ///|

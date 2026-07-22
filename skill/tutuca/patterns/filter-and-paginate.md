@@ -19,69 +19,66 @@ list more than necessary.
 ```
 
 ```moonbit
-alter={
-  // the @when predicate: args = [key, value, iterData]
-  "onlyMatches": (inst, args) => {
-    match args {
-      [_key, person, ..] => Bool(matches(person, query_of(inst)))
-      _ => Bool(true)
-    }
-  },
-  // scope enrich (no args): the COUNT scan — clamp the page, publish
+when={
+  // the @when predicate: (s, key, value, iterData) -> Bool
+  "onlyMatches": (s : PeopleState, _key, person, _iter) => matches(
+    person,
+    s.query,
+  ),
+},
+enrich_scope={
+  // scope enrich (state only): the COUNT scan — clamp the page, publish
   // the pager bindings the controls outside the loop read
-  "pagerInfo": (inst, _args) => {
-    let total = match_count(inst)
-    let (page_count, current) = clamp(page_of(inst), total, page_size_of(inst))
-    Map({
+  "pagerInfo": (s : PeopleState) => {
+    let total = match_count(s)
+    let (page_count, current) = clamp(s.page, total, s.pageSize)
+    {
       "currentPage": Num(current.to_double()),
       "isFirst": Bool(current <= 0),
       "isLast": Bool(current >= page_count - 1),
       "pageLabel": Str("Page \{current + 1} of \{page_count} · \{total}"),
-    })
+    }
   },
-  // @loop-with: the COLLECT scan — args = [seq, loopCtx]
-  "page": (inst, args) => {
-    let seq = match args {
-      [List(s), ..] => s
-      _ => []
-    }
-    let ctx = match args {
-      [_, Map(c), ..] => c
-      _ => {}
-    }
-    let current = match ctx_lookup(ctx, "currentPage") { // reuse the enrich
+},
+loop_with={
+  // the COLLECT scan: (s, seq, loopCtx) -> LoopWith
+  "page": (s : PeopleState, seq, ctx) => {
+    let current = match (ctx.lookup)("currentPage") { // reuse the enrich
       Num(n) => n.to_int()
       _ => 0
     }
-    let page_size = page_size_of(inst)
-    let (start, end) = (current * page_size, (current + 1) * page_size)
-    let keys : Array[Int] = []
+    let (start, end) = (current * s.pageSize, (current + 1) * s.pageSize)
+    let keys : Array[@tutuca.Value] = []
     let mut m = 0
-    for i, v in seq {                       // early-exit: stops at page end
-      if m >= end { break }
-      if ctx_filter(ctx, i, v) {            // reuse the declared @when
-        if m >= start { keys.push(i) }
+    for i, v in seq.list() {                // early-exit: stops at page end
+      if m >= end {
+        break
+      }
+      if (ctx.filter)(Num(i.to_double()), v, Null) { // reuse the declared @when
+        if m >= start {
+          keys.push(Num(i.to_double()))
+        }
         m += 1
       }
     }
-    Map({ "keys": List(keys.map(k => @tutuca.Value::Num(k.to_double()))) })
+    @component.LoopWith::new(keys~)
   },
 },
 ```
 
-(`ctx_filter` / `ctx_lookup` are the two-line Fn-unwrapping helpers from
-[iteration.md](../iteration.md); the input handlers `search`/`prev`/`next`
-clamp and set `page`, resetting to 0 on every query change.)
+(The `search`/`prev`/`next` events are `Input` arms of `update`
+that clamp and set `page`, resetting to 0 on every query change.)
 
 Returning **`keys`** (ordered *original* keys) is what makes this work: the
 renderer visits exactly those and does **not** re-apply `@when`, and because
 `@key` stays the original index, deleting row `@key` on page 2 of a filtered
 view hits the right item. The page controls live *outside* the loop, so they
-can't read its `iterData`; instead a scope `@enrich-with` does the one counting
-scan and publishes the clamped page + labels as `@`-bindings. The `@loop-with`
-handler's loop context lets it avoid repeating that work: `lookup` reads the
-clamped page the enrich already computed, and `filter` reuses the declared
-`@when` predicate — so the collect pass scans just far enough to fill the page.
+can't read its `iter_data`; instead a scope `@enrich-with` (`enrich_scope`)
+does the one counting scan and publishes the clamped page + labels as
+`@`-bindings. The `LoopCtx` lets the `loop_with` handler avoid repeating
+that work: `(ctx.lookup)` reads the clamped page the enrich already
+computed, and `(ctx.filter)` reuses the declared `@when` predicate — so the
+collect pass scans just far enough to fill the page.
 
 This is one of three wiring strategies (naive two-scan, shared, coupled
 one-scan) — the trade-offs and the other two are in

@@ -7,17 +7,19 @@
 //   - factories = plain functions returning components (json, tree)
 //   - a `reg` map for mutual recursion and lookup-table dispatch (json)
 //   - self-replacement handlers: setType / selectInstructionById return a fresh
-//     instance of a DIFFERENT component type (json's JsonSelector)
+//     instance of a DIFFERENT component type — the `swap` bucket (see json.mbt)
 //   - `^handler`/`^onadd` macro indirection (todo-macros)
 //   - editor/compact named views, `:style="$'…'"` (styles, multiple-views)
 //
-// TWO PORT DIVERGENCES:
+// PORT DIVERGENCES:
 //   1. The picker's `selectInstructionById(target)` reads `target.dataset.value`
 //      off the raw DOM element — which the value layer does not expose. Ported
 //      to pass the loop's `@value` (the instruction id) directly, so no DOM
 //      object is needed. The click handler is `selectInstructionById @value`.
 //   2. This required implementing `insertInItemsAt` (the generated list-insert
 //      mutator, which was missing) in the runtime — see component/component.mbt.
+//   3. Self-replacing instances (types, pickers) declare their replacement
+//      handlers in the `swap` bucket, closing over the `reg` for lookup.
 
 ///|
 /// name -> Component, for the lookup-table dispatch and mutual recursion.
@@ -31,27 +33,14 @@ fn VwReg::get(self : VwReg, name : String) -> @component.Component? {
 }
 
 ///|
-fn VwReg::make_(
-  self : VwReg,
-  name : String,
-  args? : Map[String, @tutuca.Value] = Map([]),
-) -> @tutuca.Value {
-  match self.comps.get(name) {
-    Some(c) => c.make(args).to_value()
-    None => Null
-  }
-}
-
-///|
-/// Call `setEditing(true)` on a value if that mutator exists (i.e. the component
-/// has an `editing` bool field), else return it unchanged. JS:
-/// `v.setEditing ? v.setEditing(true) : v`.
+/// Set `editing` to true on a value if it has that field, else return it
+/// unchanged. JS: `v.setEditing ? v.setEditing(true) : v`.
 fn vw_with_editing(v : @tutuca.Value) -> @tutuca.Value {
   match v {
     Obj(o) =>
-      match o.obj_field("setEditing") {
-        Some(Fn(f)) => f([Bool(true)])
-        _ => v
+      match o.obj_with_field("editing", Bool(true)) {
+        Some(nv) => nv
+        None => v
       }
     _ => v
   }
@@ -66,44 +55,56 @@ fn vw_int_arg(args : Array[@tutuca.Value], i : Int) -> Int {
 }
 
 ///|
-/// Insert a fresh picker into a list field before index i (the `addItemAt`
-/// body, shared by every container).
-fn vw_insert_picker(
-  reg : VwReg,
-  inst : @component.Instance,
-  field : String,
-  i : Int,
-) -> @tutuca.Value {
-  let items = match inst.get(field) {
-    List(a) => a.copy()
-    _ => []
+/// A fresh picker instance (its swap handler is part of the component).
+fn vw_make_picker(reg : VwReg) -> @tutuca.Value {
+  match reg.get("InstructionPicker") {
+    Some(c) => c.make(Map([]))
+    None => Null
   }
-  let at = @cmp.minimum(@cmp.maximum(0, i), items.length())
-  items.insert(at, reg.make_("InstructionPicker"))
-  inst.set(field, List(items)).to_value()
 }
 
 ///|
-fn vw_append_picker(
-  reg : VwReg,
-  inst : @component.Instance,
-  field : String,
-) -> @tutuca.Value {
-  let items = match inst.get(field) {
-    List(a) => a.copy()
-    _ => []
+/// A fresh value-type instance (TypeI32...F64) — each type component carries
+/// its own `setType` swap handler.
+fn vw_make_type(reg : VwReg, cname : String) -> @tutuca.Value {
+  match reg.get(cname) {
+    Some(c) => c.make(Map([]))
+    None => Null
   }
-  items.push(reg.make_("InstructionPicker"))
-  inst.set(field, List(items)).to_value()
+}
+
+///|
+/// Insert a fresh picker into an item list before index i (the `addItemAt`
+/// body, shared by every container).
+fn vw_insert_picker(
+  reg : VwReg,
+  items : Array[@tutuca.Value],
+  i : Int,
+) -> Array[@tutuca.Value] {
+  let out = items.copy()
+  let at = @cmp.minimum(@cmp.maximum(0, i), out.length())
+  out.insert(at, vw_make_picker(reg))
+  out
 }
 
 // ─── Factories ───────────────────────────────────────────────────────────────
 
 ///|
+priv struct VwEmptyState {} derive(ToJson, FromJson)
+
+///|
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
-  @component.component(name~, view="<span class=\"instr\">\{label}</span>")
+  @component.component(name~, view="<span class=\"instr\">\{label}</span>", init=VwEmptyState::{
+
+  })
 }
+
+///|
+priv struct VwImmState {
+  value : Int
+  rawValue : String
+} derive(ToJson, FromJson)
 
 ///|
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
@@ -112,39 +113,32 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
     name~,
     view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
       "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>",
-    fields={
-      "value": @component.FieldSpec::of_default(Num(0)),
-      "rawValue": @component.FieldSpec::of_default(Str("0")),
-    },
-    methods={
-      "setFromRawValue": (inst, args) => {
-        let s = match args {
-          [Str(s), ..] => s
+    init=VwImmState::{ value: 0, rawValue: "0" },
+    mutate={
+      "setFromRawValue": (s : VwImmState, args) => {
+        let raw = match args {
+          [Str(t), ..] => t
           _ => ""
         }
-        let parsed : Int? = Some(@string.parse_int(s)) catch { _ => None }
+        let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
         match parsed {
-          Some(v) =>
-            inst
-            .set("rawValue", Str(s))
-            .set("value", Num(v.to_double()))
-            .to_value()
-          None => inst.set("rawValue", Str(s)).to_value()
+          Some(v) => { value: v, rawValue: raw }
+          None => { ..s, rawValue: raw }
         }
       },
-      "getInputWidth": (inst, _args) => {
-        let n = match inst.get("rawValue") {
-          Str(s) => s.length()
-          _ => 1
-        }
-        Str("\{n + 2}em")
+    },
+    compute={
+      "getInputWidth": (s : VwImmState, _args) => {
+        Str("\{s.rawValue.length() + 2}em")
       },
     },
   )
 }
 
 ///|
-/// A value type (i32/i64/f32/f64). `setType` self-replaces with the chosen type.
+/// A value type (i32/i64/f32/f64). Its editor's `setType` self-replaces with
+/// the chosen type through the `swap` bucket (a fresh instance of the picked
+/// type component).
 fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
   @component.component(
     name~,
@@ -154,16 +148,14 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
       "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
       "<option value=\"f32\">f32</option><option value=\"f64\">f64</option></select>",
     },
-    input={
-      "setType": (inst, args, _ctx) => {
+    init=VwEmptyState::{  },
+    swap={
+      "setType": (_s : VwEmptyState, args, _ctx) => {
         let id = match args {
-          [Str(s), ..] => s
+          [Str(t), ..] => t
           _ => ""
         }
-        match reg.get(type_comp_name(id)) {
-          Some(c) => Some(c.make(Map([])))
-          None => Some(inst)
-        }
+        Some(vw_make_type(reg, type_comp_name(id)))
       },
     },
   )
@@ -325,6 +317,11 @@ fn vw_all_ids() -> Array[String] {
 // ─── Container components ─────────────────────────────────────────────────────
 
 ///|
+priv struct VwTypesState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
     name="Types",
@@ -343,27 +340,19 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         #|</div>
       ),
     },
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    methods={
-      "addItemAt": (inst, args) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
+    init=VwTypesState::{ items: [] },
+    mutate={
+      "addItemAt": (s : VwTypesState, args) => {
+        let items = s.items.copy()
         let at = @cmp.minimum(
           @cmp.maximum(0, vw_int_arg(args, 0)),
           items.length(),
         )
-        items.insert(at, reg.make_("TypeI32"))
-        inst.set("items", List(items)).to_value()
+        items.insert(at, vw_make_type(reg, "TypeI32"))
+        { items, }
       },
-      "appendItem": (inst, _args) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(reg.make_("TypeI32"))
-        inst.set("items", List(items)).to_value()
+      "appendItem": (s : VwTypesState, _args) => {
+        items: s.items + [vw_make_type(reg, "TypeI32")],
       },
     },
   )
@@ -387,7 +376,8 @@ fn vw_block_type_comp() -> @component.Component {
         #|</div>
       ),
     },
-    fields={
+    init=VwEmptyState::{  },
+    specs={
       "args": @component.FieldSpec::comp("Types"),
       "returns": @component.FieldSpec::comp("Types"),
     },
@@ -412,34 +402,41 @@ fn vw_blocklike_view(keyword : String) -> String {
 }
 
 ///|
-fn vw_container_methods(reg : VwReg) -> Map[String, @component.MethodFn] {
+/// The state Block / Loop / Func share; `blockType` (and Func's `locals`) are
+/// component slots declared via `specs`, not state fields.
+priv struct VwContainerState {
+  items : Array[@tutuca.Value]
+  expanded : Bool
+  editing : Bool
+} derive(ToJson, FromJson)
+
+///|
+fn vw_container_mutate(
+  reg : VwReg,
+) -> Map[String, (VwContainerState, Array[@tutuca.Value]) -> VwContainerState] {
   {
-    "expandedAndEditing": (inst, _args) => {
-      Bool(
-        inst.get("expanded") is Bool(true) && inst.get("editing") is Bool(true),
-      )
+    "addItemAt": (s, args) => {
+      ..s,
+      items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)),
     },
-    "expandedAndReadOnly": (inst, _args) => {
-      Bool(
-        inst.get("expanded") is Bool(true) &&
-        !(inst.get("editing") is Bool(true)),
-      )
-    },
-    "addItemAt": (inst, args) => {
-      vw_insert_picker(reg, inst, "items", vw_int_arg(args, 0))
-    },
-    "appendItem": (inst, _args) => vw_append_picker(reg, inst, "items"),
+    "appendItem": (s, _args) => { ..s, items: s.items + [vw_make_picker(reg)] },
   }
 }
 
 ///|
-fn vw_container_fields() -> Map[String, @component.FieldSpec] {
+fn vw_container_compute() -> Map[
+  String,
+  (VwContainerState, Array[@tutuca.Value]) -> @tutuca.Value,
+] {
   {
-    "items": @component.FieldSpec::of_default(List([])),
-    "blockType": @component.FieldSpec::comp("BlockType"),
-    "expanded": @component.FieldSpec::of_default(Bool(true)),
-    "editing": @component.FieldSpec::of_default(Bool(false)),
+    "expandedAndEditing": (s, _args) => Bool(s.expanded && s.editing),
+    "expandedAndReadOnly": (s, _args) => Bool(s.expanded && !s.editing),
   }
+}
+
+///|
+fn vw_container_init() -> VwContainerState {
+  { items: [], expanded: true, editing: false }
 }
 
 ///|
@@ -448,8 +445,10 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
     name="Block",
     view=vw_blocklike_view("block"),
     views={ "compact": "<section class=\"compact\">block ...</section>" },
-    fields=vw_container_fields(),
-    methods=vw_container_methods(reg),
+    init=vw_container_init(),
+    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    mutate=vw_container_mutate(reg),
+    compute=vw_container_compute(),
   )
 }
 
@@ -459,15 +458,15 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
     name="Loop",
     view=vw_blocklike_view("loop"),
     views={ "compact": "<section class=\"compact\">loop ...</section>" },
-    fields=vw_container_fields(),
-    methods=vw_container_methods(reg),
+    init=vw_container_init(),
+    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    mutate=vw_container_mutate(reg),
+    compute=vw_container_compute(),
   )
 }
 
 ///|
 fn vw_func_comp(reg : VwReg) -> @component.Component {
-  let fields = vw_container_fields()
-  fields["locals"] = @component.FieldSpec::comp("Types")
   @component.component(
     name="Func",
     view=(
@@ -488,10 +487,28 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
       #|  <x:items-editing></x:items-editing>
       #|</section>
     ),
-    fields~,
-    methods=vw_container_methods(reg),
+    init=vw_container_init(),
+    specs={
+      "blockType": @component.FieldSpec::comp("BlockType"),
+      "locals": @component.FieldSpec::comp("Types"),
+    },
+    mutate=vw_container_mutate(reg),
+    compute=vw_container_compute(),
   )
 }
+
+///|
+priv struct VwIfState {
+  thn : Array[@tutuca.Value]
+  else_ : Array[@tutuca.Value]
+  expanded : Bool
+  editingIf : Bool
+  editingThn : Bool
+  editingElse : Bool
+} derive (
+  ToJson(fields(else_(rename="else"))),
+  FromJson(fields(else_(rename="else"))),
+)
 
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
@@ -524,27 +541,44 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       #|</section>
     ),
     views={ "compact": "<section class=\"compact\">if ...</section>" },
-    fields={
-      "thn": @component.FieldSpec::of_default(List([])),
-      "else": @component.FieldSpec::of_default(List([])),
-      "blockType": @component.FieldSpec::comp("BlockType"),
-      "expanded": @component.FieldSpec::of_default(Bool(true)),
-      "editingIf": @component.FieldSpec::of_default(Bool(false)),
-      "editingThn": @component.FieldSpec::of_default(Bool(false)),
-      "editingElse": @component.FieldSpec::of_default(Bool(false)),
+    init=VwIfState::{
+      thn: [],
+      else_: [],
+      expanded: true,
+      editingIf: false,
+      editingThn: false,
+      editingElse: false,
     },
-    methods={
-      "addThnAt": (inst, args) => {
-        vw_insert_picker(reg, inst, "thn", vw_int_arg(args, 0))
+    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    mutate={
+      "addThnAt": (s : VwIfState, args) => {
+        ..s,
+        thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)),
       },
-      "appendInThn": (inst, _args) => vw_append_picker(reg, inst, "thn"),
-      "addElseAt": (inst, args) => {
-        vw_insert_picker(reg, inst, "else", vw_int_arg(args, 0))
+      "appendInThn": (s : VwIfState, _args) => {
+        ..s,
+        thn: s.thn + [vw_make_picker(reg)],
       },
-      "appendInElse": (inst, _args) => vw_append_picker(reg, inst, "else"),
+      "addElseAt": (s : VwIfState, args) => {
+        ..s,
+        else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
+      },
+      "appendInElse": (s : VwIfState, _args) => {
+        ..s,
+        else_: s.else_ + [vw_make_picker(reg)],
+      },
     },
   )
 }
+
+///|
+priv struct VwSectionState {
+  id : Int
+  name : String
+  items : Array[@tutuca.Value]
+  expanded : Bool
+  defaultItem : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn vw_section_comp() -> @component.Component {
@@ -560,24 +594,41 @@ fn vw_section_comp() -> @component.Component {
       #|  <div class="flex flex-col gap-3 ml-2 sec-items" @show=".expanded"><x render-each=".items"></x></div>
       #|</section>
     ),
-    fields={
-      "id": @component.FieldSpec::of_default(Num(0)),
-      "name": @component.FieldSpec::of_default(Str("Section")),
-      "items": @component.FieldSpec::of_default(List([])),
-      "expanded": @component.FieldSpec::of_default(Bool(true)),
-      "defaultItem": @component.FieldSpec::of_default(Null),
+    init=VwSectionState::{
+      id: 0,
+      name: "Section",
+      items: [],
+      expanded: true,
+      defaultItem: Null,
     },
-    methods={
-      "addDefaultItem": (inst, _args) => {
-        let items = match inst.get("items") {
-          List(a) => a.copy()
-          _ => []
-        }
-        items.push(vw_with_editing(inst.get("defaultItem")))
-        inst.set("items", List(items)).to_value()
+    mutate={
+      "addDefaultItem": (s : VwSectionState, _args) => {
+        ..s,
+        items: s.items + [vw_with_editing(s.defaultItem)],
       },
     },
   )
+}
+
+///|
+priv struct VwMemoryState {
+  n : Int
+  m : Int
+} derive(ToJson, FromJson)
+
+///|
+fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
+  match args {
+    [Str(t), ..] => {
+      let parsed : Int? = Some(@string.parse_int(t)) catch { _ => None }
+      match parsed {
+        Some(n) => n
+        None => fallback
+      }
+    }
+    [Num(d), ..] => d.to_int()
+    _ => fallback
+  }
 }
 
 ///|
@@ -592,34 +643,18 @@ fn vw_memory_comp() -> @component.Component {
       #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="$setMFromString value" /></label>
       #|</div>
     ),
-    fields={
-      "n": @component.FieldSpec::of_default(Num(1)),
-      "m": @component.FieldSpec::of_default(Num(1)),
-    },
-    methods={
-      "setNFromString": (inst, args) => vw_set_int(inst, "n", args),
-      "setMFromString": (inst, args) => vw_set_int(inst, "m", args),
+    init=VwMemoryState::{ n: 1, m: 1 },
+    mutate={
+      "setNFromString": (s : VwMemoryState, args) => {
+        ..s,
+        n: vw_int_value(args, s.n),
+      },
+      "setMFromString": (s : VwMemoryState, args) => {
+        ..s,
+        m: vw_int_value(args, s.m),
+      },
     },
   )
-}
-
-///|
-fn vw_set_int(
-  inst : @component.Instance,
-  field : String,
-  args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  match args {
-    [Str(s), ..] => {
-      let parsed : Int? = Some(@string.parse_int(s)) catch { _ => None }
-      match parsed {
-        Some(n) => inst.set(field, Num(n.to_double())).to_value()
-        None => inst.to_value()
-      }
-    }
-    [Num(n), ..] => inst.set(field, Num(n)).to_value()
-    _ => inst.to_value()
-  }
 }
 
 ///|
@@ -632,7 +667,8 @@ fn vw_module_comp() -> @component.Component {
       #|  <x render=".func"></x>
       #|</section>
     ),
-    fields={
+    init=VwEmptyState::{  },
+    specs={
       "mem": @component.FieldSpec::comp("Section", args={
         "id": Num(5),
         "name": Str("Memory"),
@@ -646,6 +682,17 @@ fn vw_module_comp() -> @component.Component {
 }
 
 ///|
+priv struct VwPickerState {
+  currentSection : String
+  instructions : Array[@tutuca.Value]
+  filter : String
+} derive(ToJson, FromJson)
+
+///|
+/// The instruction picker: filter, category radios, and the pick list.
+/// `selectInstructionById` (the self-replacement) is a `swap` handler that
+/// answers with a fresh instance of the picked instruction component;
+/// everything same-type is typed state.
 fn vw_picker_comp(reg : VwReg) -> @component.Component {
   // (section, handler, radio color class, label class) — colors/label classes
   // mirror the per-radio margaui classes in the JS original.
@@ -664,23 +711,31 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "<label class=\"\{r.3} radio-label\"><input type=\"radio\" class=\"radio \{r.2} radio-xs r-\{r.0}\" @on.input=\"\{r.1}\" /> \{r.0}</label>",
     )
   }
-  let methods : Map[String, @component.MethodFn] = Map([])
+  let mutate : Map[
+    String,
+    (VwPickerState, Array[@tutuca.Value]) -> VwPickerState,
+  ] = Map([])
+  let compute : Map[
+    String,
+    (VwPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([])
   let cats = vw_categories()
   for r in radios {
     let section = r.0
-    methods["setCurrent" + cap(section)] = (inst, _args) => {
+    mutate["setCurrent" + cap(section)] = (s, _args) => {
       let list = if section == "all" {
         vw_all_ids()
       } else {
         cats.get(section).unwrap_or([])
       }
-      inst
-      .set("currentSection", Str(section))
-      .set("instructions", List(list.map(s => Str(s))))
-      .to_value()
+      {
+        ..s,
+        currentSection: section,
+        instructions: list.map(x => (Str(x) : @tutuca.Value)),
+      }
     }
-    methods["currentIs" + cap(section)] = (inst, _args) => {
-      Bool(inst.get("currentSection") is Str(s) && s == section)
+    compute["currentIs" + cap(section)] = (s, _args) => {
+      Bool(s.currentSection == section)
     }
   }
   @component.component(
@@ -693,60 +748,49 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       // DOM target, which the value layer does not expose.
       "<button class=\"btn btn-block pick\" @each=\".instructions\" @loop-with=\"loopWith\" @when=\"whenMatch\" :data-value=\"@value\" @on.click=\"selectInstructionById @value\"><x text=\"@value\"></x></button>" +
       "</div></section>",
-    fields={
-      "currentSection": @component.FieldSpec::of_default(Str("all")),
-      "instructions": @component.FieldSpec::of_default(
-        List(vw_all_ids().map(s => Str(s))),
-      ),
-      "filter": @component.FieldSpec::of_default(Str("")),
+    init=VwPickerState::{
+      currentSection: "all",
+      instructions: vw_all_ids().map(x => (Str(x) : @tutuca.Value)),
+      filter: "",
     },
-    methods~,
-    input={
-      "selectInstructionById": (inst, args, _ctx) => {
+    mutate~,
+    compute~,
+    loop_with={
+      "loopWith": (s : VwPickerState, _seq, _ctx) => {
+        @component.LoopWith::new(
+          iter_data=Map({ "filter": Str(s.filter.to_lower()) }),
+        )
+      },
+    },
+    when={
+      "whenMatch": (_s : VwPickerState, _key, value, iter) => {
+        match (value, iter) {
+          (Str(v), Map(idata)) =>
+            match idata.get("filter") {
+              Some(Str(f)) => v.to_lower().contains(f)
+              _ => true
+            }
+          _ => true
+        }
+      },
+    },
+    swap={
+      "selectInstructionById": (_s : VwPickerState, args, _ctx) => {
         let id = match args {
-          [Str(s), ..] => s
+          [Str(t), ..] => t
           _ => ""
         }
         match vw_id_to_name().get(id) {
           Some(cname) =>
             match reg.get(cname) {
-              Some(c) => Some(vw_instance_with_editing(c.make(Map([]))))
-              None => Some(inst)
+              Some(c) => Some(vw_with_editing(c.make(Map([]))))
+              None => None
             }
-          None => Some(inst)
-        }
-      },
-    },
-    alter={
-      "loopWith": (inst, _args) => {
-        let f = match inst.get("filter") {
-          Str(s) => s.to_lower()
-          _ => ""
-        }
-        Map({ "iterData": Map({ "filter": Str(f) }) })
-      },
-      "whenMatch": (_inst, args) => {
-        match args {
-          [_key, Str(val), Map(idata), ..] =>
-            match idata.get("filter") {
-              Some(Str(f)) => Bool(val.to_lower().contains(f))
-              _ => Bool(true)
-            }
-          _ => Bool(true)
+          None => None
         }
       },
     },
   )
-}
-
-///|
-/// Enter edit mode if this component has an `editing` field (JS's
-/// `comp.setEditing ? comp.setEditing(true) : comp`).
-fn vw_instance_with_editing(inst : @component.Instance) -> @component.Instance {
-  match inst.get("editing") {
-    Bool(_) => inst.set("editing", Bool(true))
-    _ => inst
-  }
 }
 
 ///|

@@ -1,5 +1,9 @@
 // Two-way binding: :value reads the field, @on.input writes it via the
 // generated $setName mutator. @text mirrors it live.
+struct GreeterState {
+  name : String
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let greeter = @component.component(
     name="Greeter",
@@ -9,7 +13,7 @@ fn build() -> @component.ModuleDef {
       #|  <p>Hello, <b @text=".name"></b>!</p>
       #|</div>
     ),
-    fields={ "name": @component.FieldSpec::of_default(Str("world")) },
+    init=GreeterState::{ name: "world" },
   )
   @component.ModuleDef::new(
     name="greeter", components=[greeter],

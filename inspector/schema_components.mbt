@@ -7,9 +7,10 @@
 fn schema_scalar_comp() -> @component.Component {
   @component.component(
     name="SchemaScalar",
-    fields=schema_node_fields(),
-    methods=schema_node_methods(_inst => ""),
-    alter=composite_alter(),
+    init=schema_node_init(),
+    compute=schema_node_compute(_s => ""),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     view=make_schema_view("text-success schema-scalar"),
   )
 }
@@ -34,16 +35,17 @@ fn Inspector::schema_scalar_from(
 fn schema_object_comp() -> @component.Component {
   @component.component(
     name="SchemaObject",
-    fields=schema_node_fields(),
-    methods=schema_node_methods(inst => {
-      let n = items_of(inst).length()
+    init=schema_node_init(),
+    compute=schema_node_compute(s => {
+      let n = s.items.length()
       if n > 0 {
         "{\{n}}"
       } else {
         ""
       }
     }),
-    alter=composite_alter(),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     view=make_schema_view("text-primary schema-object"),
   )
 }
@@ -122,16 +124,17 @@ fn Inspector::schema_object_from(
 fn schema_array_comp() -> @component.Component {
   @component.component(
     name="SchemaArray",
-    fields=schema_node_fields(),
-    methods=schema_node_methods(inst => {
-      let n = items_of(inst).length()
+    init=schema_node_init(),
+    compute=schema_node_compute(s => {
+      let n = s.items.length()
       if n > 0 {
         "[\{n}]"
       } else {
         ""
       }
     }),
-    alter=composite_alter(),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     view=make_schema_view("text-primary schema-array"),
   )
 }
@@ -201,16 +204,17 @@ fn Inspector::schema_array_from(
 fn schema_enum_comp() -> @component.Component {
   @component.component(
     name="SchemaEnum",
-    fields=schema_node_fields(),
-    methods=schema_node_methods(inst => {
-      let n = items_of(inst).length()
+    init=schema_node_init(),
+    compute=schema_node_compute(s => {
+      let n = s.items.length()
       if n > 0 {
         "(\{n})"
       } else {
         ""
       }
     }),
-    alter=composite_alter(),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     // list layout: each enum member is a single value one per line.
     view=make_schema_view("text-info schema-enum", body=LIST_BODY),
   )
@@ -241,7 +245,7 @@ fn Inspector::schema_enum_from(
 fn schema_const_comp() -> @component.Component {
   @component.component(
     name="SchemaConst",
-    fields={ "value": @component.FieldSpec::of_default(Null) },
+    init=ChildValueState::{ value: Null },
     view=(
       #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const">
       #|  <span class="text-info font-semibold">const</span>
@@ -257,16 +261,17 @@ fn schema_const_comp() -> @component.Component {
 fn schema_combinator_comp() -> @component.Component {
   @component.component(
     name="SchemaCombinator",
-    fields=schema_node_fields(),
-    methods=schema_node_methods(inst => {
-      let n = items_of(inst).length()
+    init=schema_node_init(),
+    compute=schema_node_compute(s => {
+      let n = s.items.length()
       if n > 0 {
         "(\{n})"
       } else {
         ""
       }
     }),
-    alter=composite_alter(),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     // list layout: members are full schema nodes one per line, no keys.
     view=make_schema_view("text-accent schema-combinator", body=LIST_BODY),
   )
@@ -302,15 +307,16 @@ fn Inspector::schema_combinator_from(
 ///|
 /// Conditional applicator: if / then / else as three labeled regions.
 fn schema_conditional_comp() -> @component.Component {
-  let fields : Map[String, @component.FieldSpec] = {
-    "ifNode": @component.FieldSpec::of_default(Null),
-    "thenNode": @component.FieldSpec::of_default(Null),
-    "elseNode": @component.FieldSpec::of_default(Null),
-  }
-  add_schema_meta_fields(fields)
   @component.component(
     name="SchemaConditional",
-    fields~,
+    init=SchemaConditionalState::{
+      ifNode: Null,
+      thenNode: Null,
+      elseNode: Null,
+      title: "",
+      description: "",
+      deprecated: false,
+    },
     view=(
       #|<span class="font-mono text-sm leading-tight inline-block schema-conditional">
       #|  <span class="inline-flex items-center gap-2 flex-wrap">
@@ -372,7 +378,7 @@ fn Inspector::schema_conditional_from(
 fn schema_not_comp() -> @component.Component {
   @component.component(
     name="SchemaNot",
-    fields={ "child": @component.FieldSpec::of_default(Null) },
+    init=ChildOnlyState::{ child: Null },
     view=(
       #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not">
       #|  <span class="text-error font-semibold">not</span>
@@ -388,23 +394,19 @@ fn schema_not_comp() -> @component.Component {
 fn schema_boolean_comp() -> @component.Component {
   @component.component(
     name="SchemaBoolean",
-    fields={ "value": @component.FieldSpec::of_default(Bool(true)) },
-    methods={
-      "text": (inst, _args) => {
+    init=SchemaBooleanState::{ value: true },
+    compute={
+      "text": (s : SchemaBooleanState, _args) => {
         Str(
-          if bool_field(inst, "value") {
+          if s.value {
             "any value (true)"
           } else {
             "no value allowed (false)"
           },
         )
       },
-      "cssClass": (inst, _args) => {
-        let color = if bool_field(inst, "value") {
-          "text-success"
-        } else {
-          "text-error"
-        }
+      "cssClass": (s : SchemaBooleanState, _args) => {
+        let color = if s.value { "text-success" } else { "text-error" }
         Str("font-mono text-sm leading-tight italic schema-boolean \{color}")
       },
     },
@@ -426,9 +428,39 @@ fn schema_boolean_comp() -> @component.Component {
 fn schema_ref_comp() -> @component.Component {
   @component.component(
     name="SchemaRef",
-    fields={ "target": @component.FieldSpec::of_default(Str("")) },
+    init=SchemaRefState::{ target: "" },
     view=(
       #|<span class="font-mono text-sm leading-tight text-secondary schema-ref">→ <span @text=".target"></span></span>
     ),
   )
 }
+
+///|
+priv struct ChildValueState {
+  value : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+priv struct ChildOnlyState {
+  child : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+priv struct SchemaConditionalState {
+  ifNode : @tutuca.Value
+  thenNode : @tutuca.Value
+  elseNode : @tutuca.Value
+  title : String
+  description : String
+  deprecated : Bool
+} derive(ToJson, FromJson)
+
+///|
+priv struct SchemaBooleanState {
+  value : Bool
+} derive(ToJson, FromJson)
+
+///|
+priv struct SchemaRefState {
+  target : String
+} derive(ToJson, FromJson)

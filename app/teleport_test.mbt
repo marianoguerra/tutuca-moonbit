@@ -5,29 +5,42 @@
 // TRANSACTION path teleports to the producer's data.
 
 ///|
+priv struct SheetState {
+  title : String
+} derive(ToJson, FromJson)
+
+///|
 fn sheet_comp() -> @component.Component {
   @component.component(
     name="Sheet",
     view="<article><h2><x text=\".title\"></x></h2><button class=\"rename\" @on.click=\"rename 'Q2'\">r</button><button class=\"poke\" @on.click=\"poke\">p</button></article>",
-    fields={ "title": @component.FieldSpec::of_default(Str("Q1")) },
-    input={
-      "rename": (inst, args, _ctx) => {
-        match args {
-          [Str(s)] => Some(inst.set("title", Str(s)))
-          _ => None
+    init=SheetState::{ title: "Q1" },
+    update=(_s : SheetState, msg, ctx) => {
+      match msg {
+        Input("rename", [Str(t)]) => Some({ title: t })
+        Input("poke", _) => {
+          ctx.bubble("sheet-poked", [])
+          None
         }
-      },
-      "poke": (_inst, _args, ctx) => {
-        ctx.bubble("sheet-poked", [])
-        None
-      },
+        _ => None
+      }
     },
   )
 }
 
 ///|
-fn seen_bubble() -> Map[String, @component.InstanceHandler] {
-  { "sheet-poked": (inst, _args, _ctx) => Some(inst.set("seen", Bool(true))) }
+priv struct SeenState {
+  seen : Bool
+} derive(ToJson, FromJson)
+
+///|
+fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> SeenState? {
+  (_s, msg, _ctx) => {
+    match msg {
+      Bubble("sheet-poked", _) => Some({ seen: true })
+      _ => None
+    }
+  }
 }
 
 ///|
@@ -36,29 +49,27 @@ fn teleport_scope() -> @component.ComponentStack raise {
   let toolbar = @component.component(
     name="Toolbar",
     view="<div class=\"toolbar\"><x render=\"*active\"></x></div>",
-    fields={ "seen": @component.FieldSpec::of_default(Bool(false)) },
+    init=SeenState::{ seen: false },
     lookup={ "active": { source: "Workspace.active", default: None } },
-    bubble=seen_bubble(),
+    update=seen_update(),
   )
   let panel = @component.component(
     name="Panel",
     view="<section><x render=\".toolbar\"></x></section>",
-    fields={
-      "toolbar": @component.FieldSpec::comp("Toolbar"),
-      "seen": @component.FieldSpec::of_default(Bool(false)),
-    },
-    bubble=seen_bubble(),
+    init=SeenState::{ seen: false },
+    specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
+    update=seen_update(),
   )
   let workspace = @component.component(
     name="Workspace",
     view="<main><x render=\".panel\"></x></main>",
-    fields={
+    init=SeenState::{ seen: false },
+    specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
       "panel": @component.FieldSpec::comp("Panel"),
-      "seen": @component.FieldSpec::of_default(Bool(false)),
     },
     provide={ "active": ".sheet" },
-    bubble=seen_bubble(),
+    update=seen_update(),
   )
   scope.register_components([sheet_comp(), toolbar, panel, workspace])
   scope.compile_all()
@@ -88,7 +99,7 @@ test "dyn render: dispatch path keeps intermediates, txn path teleports" {
     fail("no Workspace")
   }
   let root = ws.make(Map([]))
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   // `*active` really rendered the provided sheet through the lookup chain
   assert_true(container.to_html().contains("Q1"))
   guard find_el(container, "BUTTON") is Some(rename_btn) else {
@@ -122,7 +133,7 @@ test "dyn render: dispatch path keeps intermediates, txn path teleports" {
   // the transaction path collapses to the producer's data
   assert_true(ed.path.to_transaction_path().steps is [FieldStep("sheet")])
   // and dispatching the click mutates Workspace.sheet in place
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   assert_true(
     @app.dispatch_dom_event(tx, rename_btn, "click", container, scope.comps),
   )
@@ -136,11 +147,11 @@ test "bubbling from a teleported leaf visits every intermediate component" {
     fail("no Workspace")
   }
   let root = ws.make(Map([]))
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   guard find_el(container, "BUTTON", nth=1) is Some(poke_btn) else {
     fail("no poke button")
   }
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   assert_true(
     @app.dispatch_dom_event(tx, poke_btn, "click", container, scope.comps),
   )
@@ -160,21 +171,22 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
   let solo = @component.component(
     name="Solo",
     view="<main><x render=\"*active\"></x></main>",
-    fields={ "sheet": @component.FieldSpec::comp("Sheet") },
+    init=NoState::{  },
+    specs={ "sheet": @component.FieldSpec::comp("Sheet") },
     provide={ "active": ".sheet" },
   )
   scope.register_components([sheet_comp(), solo])
   scope.compile_all()
   guard scope.lookup_component("Solo") is Some(solo_c) else { fail("no Solo") }
   let root = solo_c.make(Map([]))
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   guard @render.from_node_and_event_name(btn, "click", container, scope.comps)
     is Some(ed) else {
     fail("no event info")
   }
   assert_true(ed.path.to_transaction_path().steps is [FieldStep("sheet")])
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   assert_true(@app.dispatch_dom_event(tx, btn, "click", container, scope.comps))
   assert_true(v_at(tx, [FieldStep("sheet"), FieldStep("title")]) == Str("Q2"))
 }
@@ -185,15 +197,14 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
   let list = @component.component(
     name="RowList",
     view="<ul><li @each=\"*rows\"><x render-it></x></li></ul>",
+    init=NoState::{  },
     lookup={ "rows": { source: "Grid.rows", default: None } },
   )
   let grid = @component.component(
     name="Grid",
     view="<main><x render=\".list\"></x></main>",
-    fields={
-      "rows": @component.FieldSpec::of_default(Map(Map([]))),
-      "list": @component.FieldSpec::comp("RowList"),
-    },
+    init=RowsState::{ rows: Map([]) },
+    specs={ "list": @component.FieldSpec::comp("RowList") },
     provide={ "rows": ".rows" },
   )
   scope.register_components([sheet_comp(), list, grid])
@@ -204,11 +215,11 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
   }
   let root = grid_c.make({
     "rows": Map({
-      "a": sheet_c.make({ "title": Str("row-a") }).to_value(),
-      "b": sheet_c.make({ "title": Str("row-b") }).to_value(),
+      "a": sheet_c.make({ "title": Str("row-a") }),
+      "b": sheet_c.make({ "title": Str("row-b") }),
     }),
   })
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   assert_true(container.to_html().contains("row-a"))
   // second item's rename button (buttons alternate rename/poke per sheet)
   guard find_el(container, "BUTTON", nth=2) is Some(btn) else {
@@ -222,7 +233,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     ed.path.to_transaction_path().steps
     is [SeqStep(field="rows", key=KStr("b"))],
   )
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   assert_true(@app.dispatch_dom_event(tx, btn, "click", container, scope.comps))
   assert_v(
     v_at(tx, [SeqStep(field="rows", key=KStr("b")), FieldStep("title")]),
@@ -240,16 +251,14 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
   let viewer = @component.component(
     name="Viewer",
     view="<div><x render=\"*sel\"></x></div>",
+    init=NoState::{  },
     lookup={ "sel": { source: "Deck.sel", default: None } },
   )
   let deck = @component.component(
     name="Deck",
     view="<main><x render=\".viewer\"></x></main>",
-    fields={
-      "sheets": @component.FieldSpec::of_default(Map(Map([]))),
-      "selId": @component.FieldSpec::of_default(Str("b")),
-      "viewer": @component.FieldSpec::comp("Viewer"),
-    },
+    init=DeckState::{ sheets: Map([]), selId: "b" },
+    specs={ "viewer": @component.FieldSpec::comp("Viewer") },
     provide={ "sel": ".sheets[.selId]" },
   )
   scope.register_components([sheet_comp(), viewer, deck])
@@ -260,11 +269,11 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
   }
   let root = deck_c.make({
     "sheets": Map({
-      "a": sheet_c.make({ "title": Str("first") }).to_value(),
-      "b": sheet_c.make({ "title": Str("second") }).to_value(),
+      "a": sheet_c.make({ "title": Str("first") }),
+      "b": sheet_c.make({ "title": Str("second") }),
     }),
   })
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   assert_true(container.to_html().contains("second")) // selId=b rendered
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
   guard @render.from_node_and_event_name(btn, "click", container, scope.comps)
@@ -275,7 +284,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     ed.path.to_transaction_path().steps
     is [SeqAccessStep(seq_field="sheets", key_field="selId")],
   )
-  let tx = @transactor.Transactor::new(root.to_value())
+  let tx = @transactor.Transactor::new(root)
   assert_true(@app.dispatch_dom_event(tx, btn, "click", container, scope.comps))
   assert_v(
     v_at(tx, [SeqStep(field="sheets", key=KStr("b")), FieldStep("title")]),
@@ -293,7 +302,8 @@ test "lookup default: a consumer without its producer falls back" {
   let lonely = @component.component(
     name="Lonely",
     view="<div><x render=\"*active\"></x></div>",
-    fields={ "backup": @component.FieldSpec::comp("Sheet") },
+    init=NoState::{  },
+    specs={ "backup": @component.FieldSpec::comp("Sheet") },
     lookup={
       "active": { source: "Workspace.active", default: Some(".backup") },
     },
@@ -305,6 +315,20 @@ test "lookup default: a consumer without its producer falls back" {
   }
   let root = lonely_c.make(Map([]))
   // no Workspace above: the default expression resolves against the consumer
-  let container = mount(scope.comps, root.to_value())
+  let container = mount(scope.comps, root)
   assert_true(container.to_html().contains("Q1"))
 }
+
+///|
+priv struct NoState {} derive(ToJson, FromJson)
+
+///|
+priv struct RowsState {
+  rows : Map[String, @tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
+priv struct DeckState {
+  sheets : Map[String, @tutuca.Value]
+  selId : String
+} derive(ToJson, FromJson)

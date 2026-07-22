@@ -8,31 +8,66 @@
 // ---------------------------------------------------------------------------
 
 ///|
-/// title/description/deprecated metadata fields, added in place (shared by
-/// schema_node_fields and the conditional component, which also both render
-/// the matching deprecated badge + title/description lines in their views).
-fn add_schema_meta_fields(f : Map[String, @component.FieldSpec]) -> Unit {
-  f["title"] = @component.FieldSpec::of_default(Str(""))
-  f["description"] = @component.FieldSpec::of_default(Str(""))
-  f["deprecated"] = @component.FieldSpec::of_default(Bool(false))
-}
-
-///|
 /// JS schemaNodeFields: the composite state plus a type label, constraint
-/// badges and title/description/deprecated metadata.
-fn schema_node_fields() -> Map[String, @component.FieldSpec] {
-  let f = composite_fields()
-  f["typeLabel"] = @component.FieldSpec::of_default(Str(""))
-  f["badges"] = @component.FieldSpec::of_default(List([]))
-  add_schema_meta_fields(f)
-  f
+/// badges and title/description/deprecated metadata. Shared by every
+/// collapsible schema-construct component.
+priv struct SchemaNodeState {
+  items : Array[@tutuca.Value]
+  isExpanded : Bool
+  itemsPerPage : Int
+  currentPage : Int
+  typeLabel : String
+  badges : Array[String]
+  title : String
+  description : String
+  deprecated : Bool
+} derive(ToJson, FromJson)
+
+///|
+impl Composite for SchemaNodeState with fn items(self) {
+  self.items
 }
 
 ///|
-fn schema_node_methods(
-  count_text : (@component.Instance) -> String,
-) -> Map[String, @component.MethodFn] {
-  composite_methods(inst => str_field(inst, "typeLabel"), count_text)
+impl Composite for SchemaNodeState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaNodeState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaNodeState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaNodeState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+fn schema_node_init() -> SchemaNodeState {
+  {
+    items: [],
+    isExpanded: false,
+    itemsPerPage: 10,
+    currentPage: 0,
+    typeLabel: "",
+    badges: [],
+    title: "",
+    description: "",
+    deprecated: false,
+  }
+}
+
+///|
+fn schema_node_compute(
+  count_text : (SchemaNodeState) -> String,
+) -> Map[String, (SchemaNodeState, Array[@tutuca.Value]) -> @tutuca.Value] {
+  composite_compute(s => s.typeLabel, count_text)
 }
 
 ///|
@@ -333,16 +368,19 @@ fn Inspector::collect_extras(
 // ---------------------------------------------------------------------------
 
 ///|
+priv struct SchemaPropertyState {
+  key : String
+  child : @tutuca.Value
+  required : Bool
+} derive(ToJson, FromJson)
+
+///|
 /// One object property row: key, optional required marker, then the child
 /// schema. `contents` so the cells land directly in the parent's grid.
 fn schema_property_comp() -> @component.Component {
   @component.component(
     name="SchemaProperty",
-    fields={
-      "key": @component.FieldSpec::of_default(Str("")),
-      "child": @component.FieldSpec::of_default(Null),
-      "required": @component.FieldSpec::of_default(Bool(false)),
-    },
+    init=SchemaPropertyState::{ key: "", child: Null, required: false },
     view=(
       #|<div class="contents">
       #|  <span class="font-mono text-sm flex items-center gap-1 leading-tight">
@@ -357,20 +395,26 @@ fn schema_property_comp() -> @component.Component {
 }
 
 ///|
+priv struct SchemaBranchState {
+  label : String
+  child : @tutuca.Value
+  labelClass : String
+} derive(ToJson, FromJson)
+
+///|
 /// A labeled wrapper around a nested schema (object extras, applicators,
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
   @component.component(
     name="SchemaBranch",
-    fields={
-      "label": @component.FieldSpec::of_default(Str("")),
-      "child": @component.FieldSpec::of_default(Null),
-      "labelClass": @component.FieldSpec::of_default(Str("text-accent")),
+    init=SchemaBranchState::{
+      label: "",
+      child: Null,
+      labelClass: "text-accent",
     },
-    methods={
-      "labelCssClass": (inst, _args) => {
-        let label_class = str_field(inst, "labelClass")
-        Str("font-mono text-sm schema-branch-label \{label_class}")
+    compute={
+      "labelCssClass": (s : SchemaBranchState, _args) => {
+        Str("font-mono text-sm schema-branch-label \{s.labelClass}")
       },
     },
     view=(

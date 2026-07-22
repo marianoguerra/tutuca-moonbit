@@ -4,9 +4,12 @@ Read this file when authoring `style` / `common_style` / `global_style`
 blocks or debugging CSS that silently doesn't apply.
 
 ```moonbit
+priv struct NoState {} derive(ToJson, FromJson)
+
 @component.component(
   name="Styled",
   view="<p class=\"mine\">x</p>",
+  init=NoState::{  },
   style=".mine { color: red; }",          // scoped to main view
   common_style=".shared { color: yellow; }", // scoped to all views of this component
   global_style=".app-thing { color: green; }", // global, no scoping

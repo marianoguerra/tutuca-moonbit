@@ -7,6 +7,13 @@
 // The element pretends to be an `<x>` op while satisfying the parser.
 
 ///|
+priv struct TableRowState {
+  name : String
+  qty : Int
+  price : Double
+} derive(ToJson, FromJson)
+
+///|
 fn table_row_comp() -> @component.Component {
   @component.component(
     name="TableRow",
@@ -17,13 +24,14 @@ fn table_row_comp() -> @component.Component {
       #|  <td class="price" @text=".price"></td>
       #|</tr>
     ),
-    fields={
-      "name": @component.FieldSpec::of_default(Str("")),
-      "qty": @component.FieldSpec::of_default(Num(0)),
-      "price": @component.FieldSpec::of_default(Num(0)),
-    },
+    init=TableRowState::{ name: "", qty: 0, price: 0.0 },
   )
 }
+
+///|
+priv struct ItemTableState {
+  rows : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 /// `<tr @x render-each=".rows">` — without the `@x` the parser would drop an
@@ -39,9 +47,15 @@ fn item_table_comp() -> @component.Component {
       #|  </tbody>
       #|</table>
     ),
-    fields={ "rows": @component.FieldSpec::of_default(List([])) },
+    init=ItemTableState::{ rows: [] },
   )
 }
+
+///|
+priv struct SelectOptionState {
+  value : String
+  label : String
+} derive(ToJson, FromJson)
 
 ///|
 fn select_option_comp() -> @component.Component {
@@ -50,12 +64,15 @@ fn select_option_comp() -> @component.Component {
     view=(
       #|<option :value=".value" @text=".label"></option>
     ),
-    fields={
-      "value": @component.FieldSpec::of_default(Str("")),
-      "label": @component.FieldSpec::of_default(Str("")),
-    },
+    init=SelectOptionState::{ value: "", label: "" },
   )
 }
+
+///|
+priv struct ItemSelectState {
+  options : Array[@tutuca.Value]
+  current : String
+} derive(ToJson, FromJson)
 
 ///|
 /// Same trick inside `<select>`: `<option @x render-each=".options">`.
@@ -67,12 +84,12 @@ fn item_select_comp() -> @component.Component {
       #|  <option @x render-each=".options"></option>
       #|</select>
     ),
-    fields={
-      "options": @component.FieldSpec::of_default(List([])),
-      "current": @component.FieldSpec::of_default(Str("")),
-    },
+    init=ItemSelectState::{ options: [], current: "" },
   )
 }
+
+///|
+priv struct PseudoXNoState {} derive(ToJson, FromJson)
 
 ///|
 fn pseudo_x_demo_comp() -> @component.Component {
@@ -84,7 +101,8 @@ fn pseudo_x_demo_comp() -> @component.Component {
       #|  <x render=".select"></x>
       #|</div>
     ),
-    fields={
+    init=PseudoXNoState::{  },
+    specs={
       "table": @component.FieldSpec::comp("ItemTable"),
       "select": @component.FieldSpec::comp("ItemSelect"),
     },
@@ -98,20 +116,14 @@ pub fn pseudo_x_module() -> @component.ModuleDef {
   let table = item_table_comp()
   let select = item_select_comp()
   let rows = [
-    row
-    .make({ "name": Str("Apple"), "qty": Num(3), "price": Num(1.5) })
-    .to_value(),
-    row
-    .make({ "name": Str("Bread"), "qty": Num(1), "price": Num(2.25) })
-    .to_value(),
-    row
-    .make({ "name": Str("Cheese"), "qty": Num(2), "price": Num(4.0) })
-    .to_value(),
+    row.make({ "name": Str("Apple"), "qty": Num(3), "price": Num(1.5) }),
+    row.make({ "name": Str("Bread"), "qty": Num(1), "price": Num(2.25) }),
+    row.make({ "name": Str("Cheese"), "qty": Num(2), "price": Num(4.0) }),
   ]
   let options = [
-    opt.make({ "value": Str("a"), "label": Str("Alpha") }).to_value(),
-    opt.make({ "value": Str("b"), "label": Str("Beta") }).to_value(),
-    opt.make({ "value": Str("c"), "label": Str("Gamma") }).to_value(),
+    opt.make({ "value": Str("a"), "label": Str("Alpha") }),
+    opt.make({ "value": Str("b"), "label": Str("Beta") }),
+    opt.make({ "value": Str("c"), "label": Str("Gamma") }),
   ]
   @component.ModuleDef::new(
     name="pseudo-x",
@@ -121,10 +133,11 @@ pub fn pseudo_x_module() -> @component.ModuleDef {
         component: "PseudoXDemo",
         title: "Default",
         args: {
-          "table": table.make({ "rows": List(rows) }).to_value(),
-          "select": select
-          .make({ "current": Str("b"), "options": List(options) })
-          .to_value(),
+          "table": table.make({ "rows": List(rows) }),
+          "select": select.make({
+            "current": Str("b"),
+            "options": List(options),
+          }),
         },
         view: None,
       },

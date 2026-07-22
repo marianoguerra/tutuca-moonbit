@@ -18,6 +18,15 @@
 // test — which is exactly what the tests here do.
 
 ///|
+priv struct RequestExampleState {
+  items : Array[@tutuca.Value]
+  query : String
+  view : String
+  isLoading : Bool
+  error : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   @component.component(
     name="RequestExample",
@@ -37,66 +46,63 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
       #|  <div class="error" @show="truthy? .error"><x text=".error"></x></div>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-      "view": @component.FieldSpec::of_default(Str("main")),
-      "isLoading": @component.FieldSpec::of_default(Bool(false)),
-      "error": @component.FieldSpec::of_default(Null),
+    init=RequestExampleState::{
+      items: [],
+      query: "",
+      view: "main",
+      isLoading: false,
+      error: Null,
     },
-    methods={
-      "toggleView": (inst, _args) => {
-        match inst.get("view") {
-          Str("main") => inst.set("view", Str("edit")).to_value()
-          _ => inst.set("view", Str("main")).to_value()
+    mutate={
+      "toggleView": (s : RequestExampleState, _args) => {
+        ..s,
+        view: if s.view == "main" {
+          "edit"
+        } else {
+          "main"
+        },
+      },
+    },
+    update=(s : RequestExampleState, msg, ctx) => {
+      match msg {
+        // the host dispatches this after start() — see App::send_at_root
+        Receive("init", _) => {
+          ctx.request("loadData", [], @tutuca.RequestOpts::new())
+          Some({ ..s, isLoading: true })
         }
-      },
-    },
-    receive={
-      // the host dispatches this after start() — see App::send_at_root
-      "init": (inst, _args, ctx) => {
-        ctx.request("loadData", [], @tutuca.RequestOpts::new())
-        Some(inst.set("isLoading", Bool(true)))
-      },
-    },
-    input={
-      // the same request, routed to DIFFERENT response handlers by name
-      "loadAnotherWay": (inst, _args, ctx) => {
-        ctx.request(
-          "loadData",
-          [],
-          @tutuca.RequestOpts::new(
-            on_ok_name="loadDataOk",
-            on_error_name="loadDataErr",
-          ),
-        )
-        Some(inst.set("isLoading", Bool(true)))
-      },
-    },
-    response={
-      // the default response handler gets BOTH the result and the error
-      "loadData": (inst, args, _ctx) => {
-        match args {
-          [res, _err] => Some(entries_from_response(inst, entry, res))
-          _ => None
+        // the same request, routed to DIFFERENT response handlers by name
+        Input("loadAnotherWay", _) => {
+          ctx.request(
+            "loadData",
+            [],
+            @tutuca.RequestOpts::new(
+              on_ok_name="loadDataOk",
+              on_error_name="loadDataErr",
+            ),
+          )
+          Some({ ..s, isLoading: true })
         }
-      },
-      "loadDataOk": (inst, args, _ctx) => {
-        match args {
-          [res, ..] => Some(entries_from_response(inst, entry, res))
-          _ => None
+        // the default response handler gets BOTH the result and the error
+        Response("loadData", [res, _err]) =>
+          Some(entries_from_response(s, entry, res))
+        Response("loadDataOk", [res, ..]) =>
+          Some(entries_from_response(s, entry, res))
+        Response("loadDataErr", args) => {
+          let err = match args {
+            [Str(e), ..] => e
+            [_, ..] => "request failed"
+            _ => "request failed"
+          }
+          Some({ ..s, isLoading: false, error: Str(err) })
         }
-      },
-      "loadDataErr": (inst, args, _ctx) => {
-        let msg = match args {
-          [Str(e), ..] => e
-          [_, ..] => "request failed"
-          _ => "request failed"
-        }
-        Some(inst.set("isLoading", Bool(false)).set("error", Str(msg)))
+        _ => None
+      }
+    },
+    when={
+      "filterItem": (s : RequestExampleState, _k, item, _iter) => {
+        contains_text_filter(s.query, item)
       },
     },
-    alter={ "filterItem": (inst, args) => filter_by_contains_text(inst, args) },
   )
 }
 
@@ -104,27 +110,25 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
 /// Turn the response payload (a list of {title, description} maps) into Entry
 /// components, and clear the loading flag.
 fn entries_from_response(
-  inst : @component.Instance,
+  s : RequestExampleState,
   entry : @component.Component,
   res : @tutuca.Value,
-) -> @component.Instance {
+) -> RequestExampleState {
   let items : Array[@tutuca.Value] = match res {
     List(rows) =>
       rows.map(row => {
         match row {
           Map(m) =>
-            entry
-            .make({
+            entry.make({
               "title": m.get("title").unwrap_or(Str("")),
               "description": m.get("description").unwrap_or(Str("")),
             })
-            .to_value()
           _ => Null
         }
       })
     _ => []
   }
-  inst.set("isLoading", Bool(false)).set("items", List(items))
+  { ..s, isLoading: false, items }
 }
 
 ///|

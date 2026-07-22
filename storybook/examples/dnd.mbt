@@ -37,6 +37,12 @@ fn move_index_to_index(
 }
 
 ///|
+priv struct DnDState {
+  items : Array[@tutuca.Value]
+  query : String
+} derive(ToJson, FromJson)
+
+///|
 fn dnd_comp() -> @component.Component {
   @component.component(
     name="DnDExample",
@@ -64,46 +70,33 @@ fn dnd_comp() -> @component.Component {
       #|  transition: 0.15s border-top ease;
       #|}
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-    },
-    alter={
-      "filterItem": (inst, args) => {
-        match (inst.get("query"), args) {
-          (Str(q), [_key, Str(item), ..]) => Bool(item.contains(q))
-          _ => Bool(true)
+    init=DnDState::{ items: [], query: "" },
+    when={
+      "filterItem": (s : DnDState, _key, value, _iter) => {
+        match value {
+          Str(item) => item.contains(s.query)
+          _ => true
         }
       },
     },
-    input={
-      // args: [@key (the TARGET row's key), dragInfo]
-      "onDropOnItem": (inst, args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a
-          _ => return None
+    update=(s : DnDState, msg, _ctx) => {
+      match msg {
+        // args: [@key (the TARGET row's key), dragInfo]
+        Input("onDropOnItem", [Num(t), Obj(di), ..]) => {
+          let target = t.to_int()
+          // the SOURCE row's key, read off the drag's captured stack
+          let source = match di.obj_field("lookupBind") {
+            Some(Fn(lookup)) =>
+              match lookup([Null, Str("key")]) {
+                Num(n) => n.to_int()
+                _ => -1
+              }
+            _ => -1
+          }
+          Some({ ..s, items: move_index_to_index(s.items, source, target) })
         }
-        let target = match args {
-          [Num(t), ..] => t.to_int()
-          _ => return None
-        }
-        // the SOURCE row's key, read off the drag's captured stack
-        let source = match args {
-          [_, Obj(di), ..] =>
-            match di.obj_field("lookupBind") {
-              Some(Fn(lookup)) =>
-                match lookup([Null, Str("key")]) {
-                  Num(s) => s.to_int()
-                  _ => -1
-                }
-              _ => -1
-            }
-          _ => -1
-        }
-        Some(
-          inst.set("items", List(move_index_to_index(items, source, target))),
-        )
-      },
+        _ => None
+      }
     },
   )
 }

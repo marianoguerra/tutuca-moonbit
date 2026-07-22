@@ -7,6 +7,12 @@
 // reads `.unicode` off it like the JS handler read `detail.unicode`.
 
 ///|
+priv struct EmojiPickerState {
+  current : @tutuca.Value
+  isPickerVisible : Bool
+} derive(ToJson, FromJson)
+
+///|
 fn emoji_picker_comp() -> @component.Component {
   @component.component(
     name="EmojiPicker",
@@ -24,18 +30,13 @@ fn emoji_picker_comp() -> @component.Component {
       #|  <emoji-picker @show=".isPickerVisible"></emoji-picker>
       #|</section>
     ),
-    fields={
-      "current": @component.FieldSpec::of_default(Null),
-      "isPickerVisible": @component.FieldSpec::of_default(Bool(false)),
-    },
-    input={
-      "onEmojiClick": (inst, args, _ctx) => {
-        match args.get(0) {
-          Some(Map(detail)) =>
-            Some(inst.set("current", detail.get("unicode").unwrap_or(Null)))
-          _ => None
-        }
-      },
+    init=EmojiPickerState::{ current: Null, isPickerVisible: false },
+    update=(s : EmojiPickerState, msg, _ctx) => {
+      match msg {
+        Input("onEmojiClick", [Map(detail), ..]) =>
+          Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
+        _ => None
+      }
     },
   )
 }

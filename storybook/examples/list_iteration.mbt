@@ -5,6 +5,11 @@
 // bindings, read with the `@` prefix.
 
 ///|
+priv struct ListIterationState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
 fn list_iteration_comp() -> @component.Component {
   @component.component(
     name="ListIteration",
@@ -15,7 +20,7 @@ fn list_iteration_comp() -> @component.Component {
       #|  </ul>
       #|</section>
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
+    init=ListIterationState::{ items: [] },
   )
 }
 

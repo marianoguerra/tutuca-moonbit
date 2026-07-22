@@ -2,19 +2,28 @@
 //   docs/examples/send-receive.js — ctx.send / ctx.at.field(..).send + receive
 //   docs/examples/tree.js         — recursion, ctx.bubble, and JS `statics`
 //
-// PORT RULE — where a handler that needs `ctx` goes.
+// PORT RULE — where a handler goes in the typed API.
 // JS appends `ctx` as the last argument to EVERY dispatched handler
 // (transactor.js:416), so a `methods.submit(ctx)` can send messages. MoonBit
-// splits the two on purpose:
+// splits the buckets by what they can do:
 //
-//   MethodFn        (Instance, Array[Value])            -> Value      // pure
-//   InstanceHandler (Instance, Array[Value], &Ctx)      -> Instance?  // effectful
+//   update  (S, Dispatch, &Ctx) -> S?     // effectful: Input/Receive/Bubble/
+//                                         // Response arms, may send/bubble
+//   mutate  (S, Array[Value]) -> S        // pure state change, $-callable
+//   compute (S, Array[Value]) -> Value    // pure value read, $-callable
 //
-// because a method is ALSO evaluated in value positions (`@text="$label"`,
+// because a $-callable is ALSO evaluated in value positions (`@text="$label"`,
 // `@show="$canSubmit"`) where no event and no ctx exist. So: a handler that
-// needs ctx goes in `input` / `receive` / `bubble` / `response`, and the view
-// calls it by BARE name. The tutorial already says the methods/input split is
-// organizational, so this costs nothing.
+// needs ctx goes in an `update` arm (Input for view events, Receive/Bubble/
+// Response for messages), and the view calls it by BARE name. The tutorial
+// already says the methods/input split is organizational, so this costs
+// nothing.
+
+///|
+priv struct StatusState {
+  message : String
+  count : Int
+} derive(ToJson, FromJson)
 
 ///|
 /// A sibling that owns its own state and knows nothing about who messages it —
@@ -28,26 +37,26 @@ fn status_comp() -> @component.Component {
       #|  <small>(flashed <x text=".count"></x> times)</small>
       #|</div>
     ),
-    fields={
-      "message": @component.FieldSpec::of_default(Str("")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-    },
-    receive={
-      "flash": (inst, args, _ctx) => {
-        match (args, inst.get("count")) {
-          ([Str(msg), ..], Num(n)) =>
-            Some(inst.set("message", Str(msg)).set("count", Num(n + 1)))
-          _ => None
-        }
-      },
-      "clear": (inst, _args, _ctx) => Some(inst.set("message", Str(""))),
+    init=StatusState::{ message: "", count: 0 },
+    update=(s : StatusState, msg, _ctx) => {
+      match msg {
+        Receive("flash", [Str(m), ..]) =>
+          Some({ message: m, count: s.count + 1 })
+        Receive("clear", _) => Some({ ..s, message: "" })
+        _ => None
+      }
     },
   )
 }
 
 ///|
+priv struct SendReceiveState {
+  draft : String
+} derive(ToJson, FromJson)
+
+///|
 /// `ctx.send_at_path(path, name, args)` addresses a specific component by path;
-/// `ctx.send(name, args)` dispatches a `receive` handler on SELF (so several call
+/// `ctx.send(name, args)` dispatches a `Receive` arm on SELF (so several call
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
   @component.component(
@@ -64,35 +73,32 @@ fn send_receive_comp() -> @component.Component {
       #|  </div>
       #|</section>
     ),
-    fields={
-      "status": @component.FieldSpec::comp("Status"),
-      "draft": @component.FieldSpec::of_default(Str("")),
-    },
-    input={
-      "submit": (inst, _args, ctx) => {
-        let text = match inst.get("draft") {
-          Str(s) => s.trim().to_owned()
-          _ => ""
+    init=SendReceiveState::{ draft: "" },
+    specs={ "status": @component.FieldSpec::comp("Status") },
+    update=(s : SendReceiveState, msg, ctx) => {
+      match msg {
+        Input("submit", _) => {
+          let text = s.draft.trim().to_owned()
+          if text != "" {
+            // message the sibling child by path — JS spells this
+            // `ctx.at.field("status").send("flash", [text])`
+            ctx.send_at_path(
+              ctx.path().concat([FieldStep("status")]),
+              "flash",
+              [Str(text)],
+            )
+            // …and message SELF, reusing the `clearDraft` receive handler
+            ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
+          }
+          None
         }
-        if text == "" {
-          return None
+        Input("clearStatus", _) => {
+          ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
+          None
         }
-        // message the sibling child by path — JS spells this
-        // `ctx.at.field("status").send("flash", [text])`
-        ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
-          Str(text),
-        ])
-        // …and message SELF, reusing the `clearDraft` receive handler
-        ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
-        None
-      },
-      "clearStatus": (_inst, _args, ctx) => {
-        ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
-        None
-      },
-    },
-    receive={
-      "clearDraft": (inst, _args, _ctx) => Some(inst.set("draft", Str(""))),
+        Receive("clearDraft", _) => Some({ draft: "" })
+        _ => None
+      }
     },
   )
 }
@@ -107,6 +113,17 @@ pub fn send_receive_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+priv struct TreeItemState {
+  type_ : String
+  label : String
+  isOpen : Bool
+  items : Array[@tutuca.Value]
+} derive (
+  ToJson(fields(type_(rename="type"))),
+  FromJson(fields(type_(rename="type"))),
+)
 
 ///|
 /// A TreeItem renders its own children with `<x render-each=".items">` — the
@@ -138,37 +155,44 @@ fn tree_item_comp() -> @component.Component {
       #|.head.open.type-dir:before { content: "📂️"; }
       #|.head.closed.type-dir:before { content: "📁️"; }
     ),
-    fields={
-      "type": @component.FieldSpec::of_default(Str("dir")),
-      "label": @component.FieldSpec::of_default(Str("A Tree Item")),
-      "isOpen": @component.FieldSpec::of_default(Bool(true)),
-      "items": @component.FieldSpec::of_default(List([])),
+    init=TreeItemState::{
+      type_: "dir",
+      label: "A Tree Item",
+      isOpen: true,
+      items: [],
     },
-    methods={
-      "areChildsVisible": (inst, _args) => {
-        match (inst.get("isOpen"), inst.get("items")) {
-          (Bool(open), List(kids)) => Bool(open && kids.length() > 0)
-          _ => Bool(false)
-        }
+    compute={
+      "areChildsVisible": (s : TreeItemState, _args) => {
+        Bool(s.isOpen && s.items.length() > 0)
       },
     },
-    input={
-      // emit an event any ancestor may observe, then toggle self
-      "onItemClick": (inst, _args, ctx) => {
-        ctx.bubble("treeItemSelected", [inst.to_value()])
-        match inst.get("isOpen") {
-          Bool(b) => Some(inst.set("isOpen", Bool(!b)))
-          _ => None
+    update=(s : TreeItemState, msg, ctx) => {
+      match msg {
+        // emit an event any ancestor may observe, then toggle self. The event
+        // carries this item's own instance value, read off the dispatch path
+        // (its leaf is self).
+        Input("onItemClick", _) => {
+          let mut self_v : @tutuca.Value = Null
+          ctx.walk_path((_id, inst) => {
+            self_v = inst // stop at the leaf: self
+            false
+          })
+          ctx.bubble("treeItemSelected", [self_v])
+          Some({ ..s, isOpen: !s.isOpen })
         }
-      },
-    },
-    bubble={
-      // a TreeItem between the source and the root sees the event and passes it
-      // on unchanged (returning None = no change)
-      "treeItemSelected": (_inst, _args, _ctx) => None,
+        // a TreeItem between the source and the root sees the event and passes
+        // it on unchanged (returning None = no change)
+        Bubble("treeItemSelected", _) => None
+        _ => None
+      }
     },
   )
 }
+
+///|
+priv struct TreeRootState {
+  log : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 /// The root catches the bubbled event and records it — aggregate state kept
@@ -184,27 +208,25 @@ fn tree_root_comp() -> @component.Component {
       #|  </ul>
       #|</div>
     ),
-    fields={
-      "root": @component.FieldSpec::comp("TreeItem"),
-      "log": @component.FieldSpec::of_default(List([])),
-    },
-    bubble={
-      "treeItemSelected": (inst, args, _ctx) => {
-        let label = match args {
-          [Obj(o), ..] =>
-            match o.obj_field("label") {
-              Some(Str(s)) => s
-              _ => "?"
-            }
-          _ => "?"
+    init=TreeRootState::{ log: [] },
+    specs={ "root": @component.FieldSpec::comp("TreeItem") },
+    update=(s : TreeRootState, msg, _ctx) => {
+      match msg {
+        Bubble("treeItemSelected", args) => {
+          let label = match args {
+            [Obj(o), ..] =>
+              match o.obj_field("label") {
+                Some(Str(v)) => v
+                _ => "?"
+              }
+            _ => "?"
+          }
+          let log = s.log.copy()
+          log.insert(0, Str("selected: \{label}"))
+          Some({ log, })
         }
-        let log = match inst.get("log") {
-          List(a) => a.copy()
-          _ => []
-        }
-        log.insert(0, Str("selected: \{label}"))
-        Some(inst.set("log", List(log)))
-      },
+        _ => None
+      }
     },
   )
 }
@@ -218,14 +240,12 @@ fn tree_item_from_data(
   label : String,
   items : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  comp
-  .make({
+  comp.make({
     "type": Str(type_),
     "label": Str(label),
     "isOpen": Bool(true),
     "items": List(items),
   })
-  .to_value()
 }
 
 ///|

@@ -41,7 +41,7 @@ The layers, bottom to top:
 | virtual DOM | `vdom` (+ `memdom`, `browser`, `wasm`) | `Vdom`, `AttrValue`, `DomNode` |
 | templates | `anode` | `ANode`, `Attrs`, `ParseContext`, `Macro` |
 | rendering | `render` | `RenderStack`, `RenderCtx`, `Meta` |
-| components | `component` | `Component`, `FieldSpec`, `Instance`, `ModuleDef` |
+| components | `component` | `Component`, `FieldSpec`, `Dispatch`, `ModuleDef` |
 | state settlement | `transactor` | `Transactor`, `Transaction` |
 | the loop | `app` | `App[N]` |
 
@@ -408,15 +408,21 @@ The renderer leaves one more thing behind: **`Meta` comment markers**
 inert, but they are the routing table for events — next section shows the
 state side first.
 
-## 6. Components: `Instance`, and the `Obj` escape hatch
+## 6. Components: typed state behind the `Obj` escape hatch
 
-A `Component` is a bag of compiled views plus handler buckets; `component()`
-also derives typed fields (`FieldSpec` infers a kind from its default) and
-*generates* the mutators (`setX`, `toggleX`, `pushInX`, …) as ordinary
-methods. `Component::make(args)` produces an `Instance` — an immutable
-`(component, fields)` pair where `set` returns a new instance:
+A `Component` is a bag of compiled views plus typed handler buckets;
+`component()` derives the field table from the init struct's Json shape
+(`FieldSpec` infers a kind per field) and *generates* the mutators (`setX`,
+`toggleX`, `pushInX`, …). `Component::make(args)` produces an instance — an
+immutable Value whose state struct is the source of truth; every write
+produces a new instance:
 
 ```mbt check
+///|
+priv struct FpGreetingState {
+  name : String
+} derive(ToJson, FromJson)
+
 ///|
 test "instances are copy-on-write values, visible through Obj" {
   let greeting = @component.component(
@@ -424,31 +430,27 @@ test "instances are copy-on-write values, visible through Obj" {
     view=(
       #|<p @text=".name"></p>
     ),
-    fields={ "name": @component.FieldSpec::of_default(Str("world")) },
+    init=FpGreetingState::{ name: "world" },
   )
   let a = greeting.make(Map([]))
-  let b = a.set("name", Str("reader"))
+  // writes go through the Obj trait (or generated mutators from views):
+  // they return a NEW instance value
+  guard a is Obj(ao)
+  guard ao.obj_with_field("name", Str("reader")) is Some(b)
   debug_inspect(
-    a.get("name"),
+    a.field("name"),
     content=(
       #|RStr("world")
     ),
   ) // the original is untouched
   debug_inspect(
-    b.get("name"),
+    b.field("name"),
     content=(
       #|RStr("reader")
     ),
   )
-  // to_value() wraps the instance as Value::Obj(&Obj): a component instance
-  // IS a node in the value tree
-  guard b.to_value() is Obj(o)
-  debug_inspect(
-    o.obj_field("name"),
-    content=(
-      #|Some(RStr("reader"))
-    ),
-  )
+  // an instance IS a node in the value tree: Value::Obj(&Obj)
+  guard b is Obj(o)
   inspect(o.component_id() is Some(_), content="true")
 }
 ```
@@ -457,10 +459,11 @@ Here is the architectural knot: the state tree lives in `core` (`Value`),
 but component instances are defined in `component`, which depends on `core`.
 How can a `Value` *contain* an instance? Through the **`Obj` trait** —
 `core` defines the protocol (`obj_field`, `obj_with_field`, `obj_handler`,
-`obj_eq`, …) and `Value::Obj(&Obj)` stores any implementor. `Instance`
-implements it, and so does `dyncomp`'s host object for WebAssembly guest
-components — the value tree cannot tell the difference. `core` never learns
-what a component is.
+`obj_eq`, …) and `Value::Obj(&Obj)` stores any implementor. The typed-state
+instance implements it (encoding the struct to a fields map for the render
+and path seams, decoding it back for the handlers), and so does `dyncomp`'s
+host object for WebAssembly guest components — the value tree cannot tell
+the difference. `core` never learns what a component is.
 
 A `ModuleDef` bundles components + macros + request handlers;
 `build_scope()` registers them into a `ComponentStack` (a lexical scope used
@@ -487,14 +490,12 @@ fn mailbox_module() -> @component.ModuleDef {
     view=(
       #|<p class="note" @text=".text"></p>
     ),
-    fields={ "text": @component.FieldSpec::of_default(Str("")) },
-    receive={
-      "write": (inst, args, _ctx) => {
-        match args {
-          [Str(s), ..] => Some(inst.set("text", Str(s)))
-          _ => None
-        }
-      },
+    init=NoteState::{ text: "" },
+    update=(_s : NoteState, msg, _ctx) => {
+      match msg {
+        Receive("write", [Str(t), ..]) => Some({ text: t })
+        _ => None
+      }
     },
   )
   let mailbox = @component.component(
@@ -502,23 +503,39 @@ fn mailbox_module() -> @component.ModuleDef {
     view=(
       #|<section><x render=".note"></x></section>
     ),
-    fields={ "note": @component.FieldSpec::comp("Note") },
-    receive={
-      // forward to the child by path — used from the host in section 9
-      "write": (_inst, args, ctx) => {
-        ctx.send_at_path(ctx.path().concat([FieldStep("note")]), "write", args)
-        None
-      },
+    init=EmptyMailboxState::{  },
+    specs={ "note": @component.FieldSpec::comp("Note") },
+    update=(_s : EmptyMailboxState, msg, ctx) => {
+      match msg {
+        // forward to the child by path — used from the host in section 9
+        Receive("write", args) => {
+          ctx.send_at_path(
+            ctx.path().concat([FieldStep("note")]),
+            "write",
+            args,
+          )
+          None
+        }
+        _ => None
+      }
     },
   )
   @component.ModuleDef::new(name="mailbox", components=[mailbox, note])
 }
 
 ///|
+priv struct NoteState {
+  text : String
+} derive(ToJson, FromJson)
+
+///|
+priv struct EmptyMailboxState {} derive(ToJson, FromJson)
+
+///|
 test "Path::update: run a handler at a path, rebuild only the spine" {
   let m = mailbox_module()
   let _scope = m.build_scope() // registers components so FieldSpec::comp resolves
-  let root : @tutuca.Value = m.components[0].make(Map([])).to_value()
+  let root : @tutuca.Value = m.components[0].make(Map([]))
   // dispatch `write` on the Receive bucket of the node at .note
   let path = @tutuca.Path::new(steps=[FieldStep("note")])
   let new_root = path.update(root, Receive, "write", [Str("dear reader")])
@@ -532,7 +549,8 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
     ),
   )
   // …and the original tree is untouched (copy-on-write, not mutation)
-  guard root.field("note") is Some(old_note)
+  let root_node : &@tutuca.PathNode = root
+  guard root_node.field("note") is Some(old_note)
   guard old_note.as_value() is Some(Obj(old))
   debug_inspect(
     old.obj_field("text"),
@@ -544,8 +562,8 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
 ```
 
 `Path::update` walks down collecting the chain of nodes, asks the target for
-its handler (`PathNode::handler(bucket, name)` → the instance's `receive`
-entry), runs it, then rebuilds **only the spine** — parent nodes on the way
+its handler (`PathNode::handler(bucket, name)` → the instance's `update`
+match on `Receive`), runs it, then rebuilds **only the spine** — parent nodes on the way
 back up via `with_field`. Siblings keep their physical identity, which is
 what makes the render cache's "same value → same vdom" check an O(1)
 identity comparison.
@@ -577,7 +595,7 @@ queues `Transaction`s, and `settle()` runs them until quiet — each one a
 test "transactor: messages queue, settle produces one new root" {
   let m = mailbox_module()
   let _scope = m.build_scope()
-  let root : @tutuca.Value = m.components[0].make(Map([])).to_value()
+  let root : @tutuca.Value = m.components[0].make(Map([]))
   let txr = @transactor.Transactor::new(root)
   let mut changes = 0
   txr.on_change((_before, _after) => changes = changes + 1)
@@ -674,7 +692,7 @@ and each has more than one real implementor:
 |---|---|---|
 | `Stack` | name resolution for `eval` | `RenderStack`, `NullStack`, your test doubles |
 | `PathNode` | navigate/rebuild state | `Value` (delegating to `Obj`) |
-| `Obj` | "acts like a component instance" | `Instance`, dyncomp's wasm-guest host object |
+| `Obj` | "acts like a component instance" | the typed-state instance, dyncomp's wasm-guest host object |
 | `Ctx` | a handler's effects | the transactor's ctx, `NullCtx` |
 | `DomNode`/`DomWalk` | a DOM | `memdom`, `browser`, `wasm` |
 

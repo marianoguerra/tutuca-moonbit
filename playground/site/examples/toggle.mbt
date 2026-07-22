@@ -1,5 +1,9 @@
 // A field named 'open' gets a generated $toggleOpen mutator for free — no
-// hand-written method. @show/@hide read the field; no MoonBit logic needed.
+// hand-written handler. @show/@hide read the field; compute derives the label.
+struct PanelState {
+  open : Bool
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let panel = @component.component(
     name="Panel",
@@ -11,12 +15,11 @@ fn build() -> @component.ModuleDef {
       #|  </p>
       #|</section>
     ),
-    fields={ "open": @component.FieldSpec::of_default(Bool(false)) },
-    methods={
-      "label": (inst, _a) => match inst.get("open") {
-        Bool(true) => Str("Hide details")
-        _ => Str("Show details")
-      },
+    init=PanelState::{ open: false },
+    compute={
+      "label": (s : PanelState, _a) => Str(
+        if s.open { "Hide details" } else { "Show details" },
+      ),
     },
   )
   @component.ModuleDef::new(

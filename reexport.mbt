@@ -8,4 +8,4 @@
 // External users importing `marianoguerra/tutuca` get the same friendly facade.
 
 ///|
-pub using @core {type Value, type RequestOpts}
+pub using @core {type Value, type RequestOpts, trait Ctx, trait Obj}

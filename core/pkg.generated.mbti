@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/core"
 
 import {
   "moonbitlang/core/debug",
+  "moonbitlang/core/json",
   "moonbitlang/core/ref",
 }
 
@@ -42,6 +43,8 @@ pub fn tokenize_value(String) -> Array[String]
 pub fn warn(String) -> Unit
 
 pub let warn_hook : @ref.Ref[(String) -> Unit]
+
+pub fn[T] with_value_stash(() -> T) -> T
 
 // Errors
 
@@ -218,13 +221,22 @@ pub(all) enum Value {
   Fn((Array[Value]) -> Value)
   Obj(&Obj)
 }
+pub fn Value::bool(Self, default? : Bool) -> Bool
+pub fn Value::entries(Self) -> Map[String, Self]
+pub fn Value::field(Self, String) -> Self
 pub fn Value::from_json(Json) -> Self
+pub fn Value::int(Self, default? : Int) -> Int
 pub fn Value::is_truthy(Self) -> Bool
+pub fn Value::list(Self) -> Array[Self]
+pub fn Value::num(Self, default? : Double) -> Double
+pub fn Value::str(Self, default? : String) -> String
 pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
 pub impl PathNode for Value
 pub impl Eq for Value
+pub impl ToJson for Value
 pub impl @debug.Debug for Value
+pub impl @json.FromJson for Value
 
 // Type aliases
 

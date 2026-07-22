@@ -19,34 +19,33 @@ everything else, `core.md` is the right place.
 ```
 
 ```moonbit
-input={
+priv struct DndState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+// in the component spec:
+update=(s : DndState, msg, _ctx) => match msg {
   // args = [@key (the TARGET row's key), dragInfo]
-  "onDrop": (inst, args, _ctx) => {
-    let target = match args {
-      [Num(t), ..] => t.to_int()
-      _ => return None
-    }
+  Input("onDrop", [Num(target), Obj(di), ..]) =>
     // dragInfo is an Obj exposing type / value / lookupBind(name) — read
     // the SOURCE row's loop key off the drag's captured stack (Fn
     // convention: element 0 is the this-slot)
-    let source = match args {
-      [_, Obj(di), ..] =>
-        match di.obj_field("lookupBind") {
-          Some(Fn(lookup)) =>
-            match lookup([Null, Str("key")]) {
-              Num(s) => s.to_int()
-              _ => return None
-            }
-          _ => return None
+    match di.obj_field("lookupBind") {
+      Some(Fn(lookup)) =>
+        match lookup([Null, Str("key")]) {
+          Num(source) =>
+            Some({
+              items: move_index_to_index(
+                s.items,
+                source.to_int(),
+                target.to_int(),
+              ),
+            })
+          _ => None
         }
-      _ => return None
+      _ => None
     }
-    let items = match inst.get("items") {
-      List(a) => a
-      _ => return None
-    }
-    Some(inst.set("items", List(move_index_to_index(items, source, target))))
-  },
+  _ => None
 },
 ```
 
@@ -90,22 +89,27 @@ them through every component in between. **`provide`** on the producer;
 > actually needs to live.
 
 ```moonbit
+priv struct ThemeState {
+  color : String
+} derive(ToJson, FromJson)
+
 fn theme_comp() -> @component.Component {
   @component.component(
     name="Theme",
     view="<div><x render=\".child\"></x></div>",
-    fields={
-      "color": @component.FieldSpec::of_default(Str("blue")),
-      "child": @component.FieldSpec::comp("Child"),
-    },
+    init=ThemeState::{ color: "blue" },
+    specs={ "child": @component.FieldSpec::comp("Child") },
     provide={ "color": ".color" },
   )
 }
+
+priv struct NoState {} derive(ToJson, FromJson)
 
 fn child_comp() -> @component.Component {
   @component.component(
     name="Child",
     view="<p :style=\"$'color: {*color}'\">themed</p>",
+    init=NoState::{  },
     lookup={ "color": { source: "Theme.color", default: Some("'gray'") } },
   )
 }
@@ -139,20 +143,22 @@ component-render target and an iteration source:
 
 A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
 seq-access, nothing else. (It is both read as `*name` *and* used as a
-render-target / teleport path, so a method or constant — which has no
+render-target / teleport path, so a `$`-handler or constant — which has no
 path — is a lint error.) A `lookup` `default`, by contrast, is only a
 value fallback and accepts the full value grammar, including constants
 like `'gray'`. A `provide` can be a sequence/map item access:
 
 ```moonbit
+priv struct RootState {
+  items : Map[String, @tutuca.Value]
+  selectedKey : String
+} derive(ToJson, FromJson)
+
 fn root_comp() -> @component.Component {
   @component.component(
     name="Root",
     view=..., // omitted
-    fields={
-      "items": @component.FieldSpec::of_default(Map({})),
-      "selectedKey": @component.FieldSpec::of_default(Str("")),
-    },
+    init=RootState::{ items: {}, selectedKey: "" },
     provide={
       "items": ".items",                  // the whole sequence
       "selected": ".items[.selectedKey]", // seq-access to one entry

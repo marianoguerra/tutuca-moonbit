@@ -19,49 +19,25 @@
 
 ///|
 /// A Map-backed set: membership is key-presence.
-fn ps_set_of(members : Array[String]) -> Map[String, @tutuca.Value] {
-  let m : Map[String, @tutuca.Value] = Map([])
+fn ps_set_of(members : Array[String]) -> Map[String, Bool] {
+  let m : Map[String, Bool] = Map([])
   for s in members {
-    m[s] = Bool(true)
+    m[s] = true
   }
   m
 }
 
 ///|
-fn ps_set_field(
-  inst : @component.Instance,
-  field : String,
-) -> Map[String, @tutuca.Value] {
-  match inst.get(field) {
-    Map(m) => m
-    _ => Map([])
-  }
-}
-
-///|
-fn ps_list_strings(inst : @component.Instance, field : String) -> Array[String] {
-  as_list(inst.get(field)).filter_map(v => {
-    match v {
-      Str(s) => Some(s)
-      _ => None
-    }
-  })
-}
-
-///|
 /// Toggle a member in a Map-backed set.
-fn ps_set_toggle(
-  set : Map[String, @tutuca.Value],
-  entry : String,
-) -> Map[String, @tutuca.Value] {
-  let out : Map[String, @tutuca.Value] = Map([])
+fn ps_set_toggle(set : Map[String, Bool], entry : String) -> Map[String, Bool] {
+  let out : Map[String, Bool] = Map([])
   for k, v in set {
     out[k] = v
   }
   if out.contains(entry) {
     out.remove(entry)
   } else {
-    out[entry] = Bool(true)
+    out[entry] = true
   }
   out
 }
@@ -111,22 +87,11 @@ fn ps_sort(
 }
 
 ///|
-fn ps_resort(inst : @component.Instance) -> @component.Instance {
-  let entries = match inst.get("allEntries") {
-    List(a) => a
-    _ => []
+fn ps_resort(s : PsRootState) -> PsRootState {
+  {
+    ..s,
+    allEntries: ps_sort(s.allEntries, s.sortByEnd, s.sortAsc, s.featuredFirst),
   }
-  inst.set(
-    "allEntries",
-    List(
-      ps_sort(
-        entries,
-        inst.get("sortByEnd") is Bool(true),
-        inst.get("sortAsc") is Bool(true),
-        inst.get("featuredFirst") is Bool(true),
-      ),
-    ),
-  )
 }
 
 ///|
@@ -201,18 +166,35 @@ fn ps_category_decoy_classes() -> String {
 }
 
 ///|
+priv struct AltUrlState {
+  label : String
+  url : String
+} derive(ToJson, FromJson)
+
+///|
 fn alt_url_comp() -> @component.Component {
   @component.component(
     name="AltUrl",
     view=(
       #|<a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
     ),
-    fields={
-      "label": @component.FieldSpec::of_default(Str("")),
-      "url": @component.FieldSpec::of_default(Str("#")),
-    },
+    init=AltUrlState::{ label: "", url: "#" },
   )
 }
+
+///|
+priv struct PsEntryState {
+  title : String
+  description : String
+  lang : String
+  startYear : @tutuca.Value
+  endYear : @tutuca.Value
+  role : @tutuca.Value
+  featured : Bool
+  url : String
+  altUrls : Array[@tutuca.Value]
+  categories : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
 fn ps_entry_comp() -> @component.Component {
@@ -236,47 +218,46 @@ fn ps_entry_comp() -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    alter={
+    enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_inst, args) => {
-        match args {
-          [Map(binds), _key, Str(cat), ..] =>
+      "enrichCategoryBadge": (_s : PsEntryState, binds, _key, value, _iter) => {
+        match value {
+          Str(cat) =>
             binds["badgeClass"] = Str(
               "badge badge-sm \{ps_category_color(cat, true)} cat",
             )
           _ => ()
         }
-        Null
       },
     },
-    fields={
-      "title": @component.FieldSpec::of_default(Str("?")),
-      "description": @component.FieldSpec::of_default(Str("")),
-      "lang": @component.FieldSpec::of_default(Str("en")),
-      "startYear": @component.FieldSpec::of_default(Null),
-      "endYear": @component.FieldSpec::of_default(Null),
-      "role": @component.FieldSpec::of_default(Null),
-      "featured": @component.FieldSpec::of_default(Bool(false)),
-      "url": @component.FieldSpec::of_default(Str("#")),
-      "altUrls": @component.FieldSpec::of_default(List([])),
-      "categories": @component.FieldSpec::of_default(List([])),
+    init=PsEntryState::{
+      title: "?",
+      description: "",
+      lang: "en",
+      startYear: Null,
+      endYear: Null,
+      role: Null,
+      featured: false,
+      url: "#",
+      altUrls: [],
+      categories: [],
     },
-    methods={
-      "langFlag": (inst, _args) => {
-        if inst.get("lang") is Str("es") {
+    compute={
+      "langFlag": (s : PsEntryState, _args) => {
+        if s.lang == "es" {
           Str("🇪🇸")
         } else {
           Str("🇬🇧")
         }
       },
-      "isSpanish": (inst, _args) => Bool(inst.get("lang") is Str("es")),
-      "yearDisplay": (inst, _args) => {
-        match inst.get("startYear") {
-          Num(s) =>
-            match inst.get("endYear") {
-              Num(e) => Str("\{s.to_int()}-\{e.to_int()}")
-              _ => Str("\{s.to_int()}")
+      "isSpanish": (s : PsEntryState, _args) => Bool(s.lang == "es"),
+      "yearDisplay": (s : PsEntryState, _args) => {
+        match s.startYear {
+          Num(start) =>
+            match s.endYear {
+              Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
+              _ => Str("\{start.to_int()}")
             }
           _ => Str("")
         }
@@ -301,8 +282,7 @@ fn entry_from_data(
 ) -> @tutuca.Value {
   let cats = categories.copy()
   cats.sort_by((a, b) => a.lexical_compare(b))
-  entry
-  .make({
+  entry.make({
     "title": Str(title),
     "description": Str(description),
     "startYear": Num(start_year.to_double()),
@@ -315,13 +295,22 @@ fn entry_from_data(
     "featured": Bool(featured),
     "categories": List(cats.map(c => Str(c))),
     "altUrls": List(
-      alt_urls.map(a => {
-        alt_url.make({ "label": Str(a.0), "url": Str(a.1) }).to_value()
-      }),
+      alt_urls.map(a => alt_url.make({ "label": Str(a.0), "url": Str(a.1) })),
     ),
   })
-  .to_value()
 }
+
+///|
+priv struct PsRootState {
+  allEntries : Array[@tutuca.Value]
+  allCategories : Array[String]
+  allRoles : Array[String]
+  selectedCategories : Map[String, Bool]
+  selectedRoles : Map[String, Bool]
+  featuredFirst : Bool
+  sortByEnd : Bool
+  sortAsc : Bool
+} derive(ToJson, FromJson)
 
 ///|
 fn root_comp() -> @component.Component {
@@ -377,96 +366,41 @@ fn root_comp() -> @component.Component {
     views={
       "_margauiClasses": "<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>",
     },
-    fields={
-      "allEntries": @component.FieldSpec::of_default(List([])),
-      "allCategories": @component.FieldSpec::of_default(List([])),
-      "allRoles": @component.FieldSpec::of_default(List([])),
-      "selectedCategories": @component.FieldSpec::of_default(Map(Map([]))),
-      "selectedRoles": @component.FieldSpec::of_default(Map(Map([]))),
-      "featuredFirst": @component.FieldSpec::of_default(Bool(true)),
-      "sortByEnd": @component.FieldSpec::of_default(Bool(false)),
-      "sortAsc": @component.FieldSpec::of_default(Bool(false)),
+    init=PsRootState::{
+      allEntries: [],
+      allCategories: [],
+      allRoles: [],
+      selectedCategories: Map([]),
+      selectedRoles: Map([]),
+      featuredFirst: true,
+      sortByEnd: false,
+      sortAsc: false,
     },
-    methods={
-      "clearFilters": (inst, _args) => {
-        inst
-        .set(
-          "selectedCategories",
-          Map(ps_set_of(ps_list_strings(inst, "allCategories"))),
-        )
-        .set("selectedRoles", Map(ps_set_of(ps_list_strings(inst, "allRoles"))))
-        .to_value()
+    mutate={
+      "clearFilters": (s : PsRootState, _args) => {
+        ..s,
+        selectedCategories: ps_set_of(s.allCategories),
+        selectedRoles: ps_set_of(s.allRoles),
       },
-      "hasActiveFilters": (inst, _args) => {
-        let cats_all = ps_list_strings(inst, "allCategories").length()
-        let roles_all = ps_list_strings(inst, "allRoles").length()
+    },
+    compute={
+      "hasActiveFilters": (s : PsRootState, _args) => {
         Bool(
-          ps_set_field(inst, "selectedCategories").length() != cats_all ||
-          ps_set_field(inst, "selectedRoles").length() != roles_all,
+          s.selectedCategories.length() != s.allCategories.length() ||
+          s.selectedRoles.length() != s.allRoles.length(),
         )
       },
     },
-    input={
-      "onCategoryToggle": (inst, args, _ctx) => {
-        Some(ps_facet_toggle(inst, args, "allCategories", "selectedCategories"))
-      },
-      "onRoleToggle": (inst, args, _ctx) => {
-        Some(ps_facet_toggle(inst, args, "allRoles", "selectedRoles"))
-      },
-      "onToggleSortByEnd": (inst, _args, _ctx) => {
-        Some(ps_resort(flip(inst, "sortByEnd")))
-      },
-      "onToggleSortAsc": (inst, _args, _ctx) => {
-        Some(ps_resort(flip(inst, "sortAsc")))
-      },
-      "onToggleFeaturedFirst": (inst, _args, _ctx) => {
-        Some(ps_resort(flip(inst, "featuredFirst")))
-      },
+    when={
+      "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(s, e),
     },
-    alter={
-      "filterEntry": (inst, args) => {
-        let entry = match args {
-          [_key, e, ..] => e
-          _ => return Bool(true)
-        }
-        let roles = ps_set_field(inst, "selectedRoles")
-        if roles.length() > 0 {
-          let r = obj_str(entry, "role")
-          if !roles.contains(r) {
-            return Bool(false)
-          }
-        }
-        let cats = ps_set_field(inst, "selectedCategories")
-        let entry_cats = match entry {
-          Obj(o) =>
-            match o.obj_field("categories") {
-              Some(List(a)) => a
-              _ => []
-            }
-          _ => []
-        }
-        if cats.length() > 0 && entry_cats.length() > 0 {
-          let mut hit = false
-          for c in entry_cats {
-            if c is Str(cs) && cats.contains(cs) {
-              hit = true
-              break
-            }
-          }
-          if !hit {
-            return Bool(false)
-          }
-        }
-        Bool(true)
-      },
+    enrich={
       // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
       // the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (inst, args) => {
-        match args {
-          [Map(binds), _key, Str(cat), ..] => {
-            let selected = ps_set_field(inst, "selectedCategories").contains(
-              cat,
-            )
+      "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => {
+        match value {
+          Str(cat) => {
+            let selected = s.selectedCategories.contains(cat)
             binds["isSelected"] = Bool(selected)
             let state = if selected { "on" } else { "off" }
             binds["btnClass"] = Str(
@@ -475,15 +409,14 @@ fn root_comp() -> @component.Component {
           }
           _ => ()
         }
-        Null
       },
       // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
       // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (inst, args) => {
-        match args {
-          [Map(binds), _key, Str(role), ..] => {
-            let selected = ps_set_field(inst, "selectedRoles").contains(role)
+      "enrichRoleBindings": (s : PsRootState, binds, _key, value, _iter) => {
+        match value {
+          Str(role) => {
+            let selected = s.selectedRoles.contains(role)
             binds["btnClass"] = Str(
               if selected {
                 "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
@@ -494,86 +427,127 @@ fn root_comp() -> @component.Component {
           }
           _ => ()
         }
-        Null
       },
     },
-    response={
-      "loadData": (inst, args, _ctx) => {
-        let entries = match args {
-          [List(a), ..] => a
-          _ => []
-        }
-        // collect + sort the distinct categories and roles
-        let cat_set : Map[String, Unit] = Map([])
-        let role_set : Map[String, Unit] = Map([])
-        for e in entries {
-          match e {
-            Obj(o) => {
-              match o.obj_field("categories") {
-                Some(List(cs)) =>
-                  for c in cs {
-                    if c is Str(cstr) {
-                      cat_set[cstr] = ()
-                    }
-                  }
-                _ => ()
-              }
-              match o.obj_field("role") {
-                Some(Str(r)) => role_set[r] = ()
-                _ => ()
-              }
-            }
-            _ => ()
-          }
-        }
-        let cats = cat_set.keys().collect()
-        cats.sort_by((a, b) => a.lexical_compare(b))
-        let roles = role_set.keys().collect()
-        roles.sort_by((a, b) => a.lexical_compare(b))
-        Some(
-          inst
-          .set(
-            "allEntries",
-            List(
-              ps_sort(
-                entries,
-                inst.get("sortByEnd") is Bool(true),
-                inst.get("sortAsc") is Bool(true),
-                inst.get("featuredFirst") is Bool(true),
-              ),
+    update=(s : PsRootState, msg, ctx) => {
+      match msg {
+        Input("onCategoryToggle", args) =>
+          Some({
+            ..s,
+            selectedCategories: ps_facet_toggle(
+              s.allCategories,
+              s.selectedCategories,
+              args,
             ),
-          )
-          .set("allCategories", List(cats.map(c => Str(c))))
-          .set("selectedCategories", Map(ps_set_of(cats)))
-          .set("allRoles", List(roles.map(r => Str(r))))
-          .set("selectedRoles", Map(ps_set_of(roles))),
-        )
-      },
-    },
-    receive={
-      "init": (inst, _args, ctx) => {
-        ctx.request("loadData", [], @tutuca.RequestOpts::new())
-        Some(inst)
-      },
+          })
+        Input("onRoleToggle", args) =>
+          Some({
+            ..s,
+            selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
+          })
+        Input("onToggleSortByEnd", _) =>
+          Some(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
+        Input("onToggleSortAsc", _) =>
+          Some(ps_resort({ ..s, sortAsc: !s.sortAsc }))
+        Input("onToggleFeaturedFirst", _) =>
+          Some(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
+        Response("loadData", args) => {
+          let entries = match args {
+            [List(a), ..] => a
+            _ => []
+          }
+          // collect + sort the distinct categories and roles
+          let cat_set : Map[String, Unit] = Map([])
+          let role_set : Map[String, Unit] = Map([])
+          for e in entries {
+            match e {
+              Obj(o) => {
+                match o.obj_field("categories") {
+                  Some(List(cs)) =>
+                    for c in cs {
+                      if c is Str(cstr) {
+                        cat_set[cstr] = ()
+                      }
+                    }
+                  _ => ()
+                }
+                match o.obj_field("role") {
+                  Some(Str(r)) => role_set[r] = ()
+                  _ => ()
+                }
+              }
+              _ => ()
+            }
+          }
+          let cats = cat_set.keys().collect()
+          cats.sort_by((a, b) => a.lexical_compare(b))
+          let roles = role_set.keys().collect()
+          roles.sort_by((a, b) => a.lexical_compare(b))
+          Some({
+            ..s,
+            allEntries: ps_sort(
+              entries,
+              s.sortByEnd,
+              s.sortAsc,
+              s.featuredFirst,
+            ),
+            allCategories: cats,
+            selectedCategories: ps_set_of(cats),
+            allRoles: roles,
+            selectedRoles: ps_set_of(roles),
+          })
+        }
+        Receive("init", _) => {
+          ctx.request("loadData", [], @tutuca.RequestOpts::new())
+          Some(s)
+        }
+        _ => None
+      }
     },
   )
 }
 
 ///|
-fn flip(inst : @component.Instance, field : String) -> @component.Instance {
-  inst.set(field, Bool(!(inst.get(field) is Bool(true))))
+/// The `filterEntry` @when: keep an entry when its role and at least one of
+/// its categories are selected.
+fn ps_filter_entry(s : PsRootState, entry : @tutuca.Value) -> Bool {
+  if s.selectedRoles.length() > 0 {
+    let r = obj_str(entry, "role")
+    if !s.selectedRoles.contains(r) {
+      return false
+    }
+  }
+  let entry_cats = match entry {
+    Obj(o) =>
+      match o.obj_field("categories") {
+        Some(List(a)) => a
+        _ => []
+      }
+    _ => []
+  }
+  if s.selectedCategories.length() > 0 && entry_cats.length() > 0 {
+    let mut hit = false
+    for c in entry_cats {
+      if c is Str(cs) && s.selectedCategories.contains(cs) {
+        hit = true
+        break
+      }
+    }
+    if !hit {
+      return false
+    }
+  }
+  true
 }
 
 ///|
 /// Shared category/role toggle: plain click toggles the member; alt-click solos
 /// it (or, if already selected, inverse-solos — everything except it).
 fn ps_facet_toggle(
-  inst : @component.Instance,
+  all : Array[String],
+  set : Map[String, Bool],
   args : Array[@tutuca.Value],
-  all_field : String,
-  sel_field : String,
-) -> @component.Instance {
-  let all = ps_list_strings(inst, all_field)
+) -> Map[String, Bool] {
   let key = match args {
     [Num(k), ..] => k.to_int()
     _ => -1
@@ -582,10 +556,9 @@ fn ps_facet_toggle(
     [_, Bool(a), ..] => a
     _ => false
   }
-  guard key >= 0 && key < all.length() else { return inst }
+  guard key >= 0 && key < all.length() else { return set }
   let entry = all[key]
-  let set = ps_set_field(inst, sel_field)
-  let next = if is_alt {
+  if is_alt {
     if set.contains(entry) {
       // inverse solo: all except this
       let rest = all.filter(m => m != entry)
@@ -597,7 +570,6 @@ fn ps_facet_toggle(
   } else {
     ps_set_toggle(set, entry)
   }
-  inst.set(sel_field, Map(next))
 }
 
 ///|

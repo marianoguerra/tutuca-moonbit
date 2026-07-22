@@ -19,6 +19,9 @@ fn badge_macro() -> @anode.Macro {
 }
 
 ///|
+priv struct MacrosNoState {} derive(ToJson, FromJson)
+
+///|
 fn static_macro_comp() -> @component.Component {
   @component.component(
     name="StaticMacro",
@@ -29,6 +32,7 @@ fn static_macro_comp() -> @component.Component {
       #|  <span>Feature C</span> <span></span>
       #|</div>
     ),
+    init=MacrosNoState::{  },
   )
 }
 
@@ -60,6 +64,11 @@ fn param_badge_macro() -> @anode.Macro {
 }
 
 ///|
+priv struct MacroParamsState {
+  status : String
+} derive(ToJson, FromJson)
+
+///|
 fn macro_params_comp() -> @component.Component {
   @component.component(
     name="MacroParams",
@@ -72,7 +81,7 @@ fn macro_params_comp() -> @component.Component {
       #|  <span>Dynamic:</span> <x:badge :label=".status" :kind="'warning'"></x:badge>
       #|</div>
     ),
-    fields={ "status": @component.FieldSpec::of_default(Str("active")) },
+    init=MacroParamsState::{ status: "active" },
   )
 }
 
@@ -111,6 +120,11 @@ fn card_macro() -> @anode.Macro {
 }
 
 ///|
+priv struct MacroSlotsState {
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 /// The `@on.click="$inc"` inside the second card's slot content calls `inc` on
 /// MacroSlots — macros have no methods of their own.
 fn macro_slots_comp() -> @component.Component {
@@ -127,15 +141,8 @@ fn macro_slots_comp() -> @component.Component {
       #|  </x:card>
       #|</div>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "inc": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
-    },
+    init=MacroSlotsState::{ count: 0 },
+    mutate={ "inc": (s : MacroSlotsState, _args) => { count: s.count + 1 } },
   )
 }
 
@@ -173,6 +180,11 @@ fn panel_macro() -> @anode.Macro {
 }
 
 ///|
+priv struct MacroNamedSlotsState {
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 fn macro_named_slots_comp() -> @component.Component {
   @component.component(
     name="MacroNamedSlots",
@@ -188,14 +200,9 @@ fn macro_named_slots_comp() -> @component.Component {
       #|  </x>
       #|</x:panel>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "inc": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
+    init=MacroNamedSlotsState::{ count: 0 },
+    mutate={
+      "inc": (s : MacroNamedSlotsState, _args) => { count: s.count + 1 },
     },
   )
 }

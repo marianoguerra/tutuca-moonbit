@@ -3,4 +3,5 @@
 // embedded CLI (demo/counter_cli).
 import {
   "marianoguerra/tutuca/component",
+  "moonbitlang/core/json",
 }

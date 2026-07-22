@@ -1,17 +1,20 @@
-// Spec for the component layer (src/components.js + the Record/field side of
-// src/oo.js): Component definitions with views/buckets/provide/lookup, the
-// Value-backed Instance (one hybrid half — typed structs implementing
-// @tutuca.Obj are the other), the Components registry, and the lexical
+// Spec for the typed-state component layer (the successor of the JS
+// src/components.js + src/oo.js port): Component definitions built from a
+// plain state struct S with derive(ToJson, FromJson), one Dispatch enum for
+// all effectful buckets, the Components registry, and the lexical
 // ComponentStack registration scope. READONLY by convention: types +
 // `declare` stubs; implementations in separate files.
 //
-// Deferred: styles injection (only string compilation ships; the browser
-// glue injects), Set/OMap field kinds (no Value cases), LookupInfo
-// producer-key memoization, render caching hooks.
+// Instances are TypedInstance[S] (instance.mbt, package-private): the state
+// struct is the source of truth, an encoded fields map serves the render/
+// path/Value seams, and encode/decode run inside @tutuca.with_value_stash so
+// Obj/Fn values held by S survive the Json round-trip losslessly.
 
 ///|
-/// Field kinds, inferred from defaults (JS classFromData). FComp fields hold
-/// a child component instance created through the registration scope.
+/// Field kinds, inferred from the encoded init state (plus explicit `specs`
+/// entries). FComp fields hold a child component instance created through
+/// the registration scope; FSet/FOMap override mutator generation for
+/// Map-backed set / ordered-map fields.
 pub(all) enum FieldKind {
   FBool
   FText
@@ -21,12 +24,6 @@ pub(all) enum FieldKind {
   FMap
   FAny
   FComp(comp~ : String, args~ : Map[String, @tutuca.Value])
-  // JS FieldSet / FieldOMap (oo.js). Both are backed by @tutuca.Value::Map —
-  // the port models an Immutable Set as a Map keyed by member (membership =
-  // key-presence, value Bool(true); see examples/personal_site.mbt ps_set_of)
-  // and an OrderedMap as a Map (MoonBit's Map iterates in insertion order).
-  // Like FComp, they are declared via explicit constructors (FieldSpec::set /
-  // ::omap), not inferred by of_default — a bare Value has no set/omap shape.
   FSet
   FOMap
 } derive(Debug)
@@ -42,7 +39,8 @@ pub(all) struct FieldSpec {
 declare pub fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
 
 ///|
-/// A component-typed field: default instance made via the scope at make time.
+/// A component-typed slot field: default instance made via the scope at make
+/// time.
 declare pub fn FieldSpec::comp(
   name : String,
   args? : Map[String, @tutuca.Value],
@@ -160,13 +158,43 @@ pub(all) struct DynProducer {
 } derive(Debug, Eq)
 
 ///|
-/// Bucket handler for Value-backed components: explicit self + explicit ctx
-/// (JS appends ctx as the last argument); None = no change.
-pub type InstanceHandler = (Instance, Array[@tutuca.Value], &@tutuca.Ctx) -> Instance?
+/// All effectful dispatches in one enum — the typed-state `update` bucket
+/// pattern-matches it like a TEA Msg. The payload is (handler name, args).
+pub(all) enum Dispatch {
+  Input(String, Array[@tutuca.Value])
+  Receive(String, Array[@tutuca.Value])
+  Bubble(String, Array[@tutuca.Value])
+  Response(String, Array[@tutuca.Value])
+}
 
 ///|
-/// Methods & alter handlers: pure, self first (JS `this`).
-pub type MethodFn = (Instance, Array[@tutuca.Value]) -> @tutuca.Value
+/// The typed loopCtx handed to a @loop-with handler: `lookup` reads `@name`
+/// binds from the render stack; `filter` applies the loop's own @when to a
+/// (key, value, iter_data) triple (true when no @when is present).
+pub(all) struct LoopCtx {
+  lookup : (String) -> @tutuca.Value
+  filter : (@tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool
+}
+
+///|
+/// The typed @loop-with result (JS { iterData?, start?, end?, keys? }):
+/// iter_data flows to every @when/@enrich-with call, start/end slice the
+/// iteration (Array.slice semantics), an explicit keys list takes over
+/// ordering entirely (skipping @when).
+pub(all) struct LoopWith {
+  iter_data : @tutuca.Value?
+  start : Int?
+  end : Int?
+  keys : Array[@tutuca.Value]?
+}
+
+///|
+declare pub fn LoopWith::new(
+  iter_data? : @tutuca.Value,
+  start? : Int,
+  end? : Int,
+  keys? : Array[@tutuca.Value],
+) -> LoopWith
 
 ///|
 /// Scope-registered request handler: root-typed twin of
@@ -177,7 +205,8 @@ pub(all) struct RequestFn(
 )
 
 ///|
-/// A compiled component: views + dispatch buckets + provide/lookup + styles.
+/// A compiled component: views + field specs + provide/lookup + styles, with
+/// the typed-state half (S, handlers) erased behind the make closure.
 /// `id` comes from a process-global counter (JS _compId) — tests must not
 /// assert absolute ids.
 pub struct Component {
@@ -186,13 +215,17 @@ pub struct Component {
   views : Map[String, @anode.View]
   common_style : String
   global_style : String
-  fields : Map[String, FieldSpec] // empty for typed-struct components
-  input : Map[String, InstanceHandler]
-  receive : Map[String, InstanceHandler]
-  bubble : Map[String, InstanceHandler]
-  response : Map[String, InstanceHandler]
-  alter : Map[String, MethodFn]
-  methods : Map[String, MethodFn] // user methods + generated mutators
+  specs : Map[String, FieldSpec] // empty for for_type components
+  // introspection metadata (the typed handlers themselves are erased behind
+  // make_fn): bucket name lists + whether an update fn exists. update's
+  // handled names are unknowable — it is one opaque pattern match.
+  mutate_names : Array[String]
+  compute_names : Array[String]
+  swap_names : Array[String]
+  alter_names : Array[String]
+  generated_names : Array[String] // the per-field mutators gen_mutators built
+  has_update : Bool
+  mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]
   provide : Map[String, ProvideInfo] // filled by compile()
@@ -201,34 +234,47 @@ pub struct Component {
 }
 
 ///|
-/// Define a Value-backed component (JS component({...}) from oo.js).
-/// Auto-mutators are generated per field into `methods` (setX / updateX /
-/// resetX / toggleX / xLen / pushInX / setInXAt / updateInXAt / deleteInXAt);
-/// user-supplied methods win over generated ones.
-declare pub fn component(
+/// Define a typed-state component: `init` is a plain struct with
+/// derive(ToJson, FromJson) — its fields become the component's fields,
+/// compiler-checked in every handler. `update` folds input/receive/bubble/
+/// response into one Dispatch match; `mutate`/`compute` are the $-callable
+/// buckets (state change / value read). Render-time directives get their own
+/// typed buckets: `when` (@when filters), `enrich` (@enrich-with inside a
+/// loop — mutate the binds map), `enrich_scope` (@enrich-with without @each —
+/// return the binds), `loop_with` (@loop-with — slice/order the iteration).
+/// Generated per-field mutators (setX/updateX/...) stay; user entries win.
+/// `specs` declares Value-level slots (FieldSpec::comp children) and
+/// FSet/FOMap kind overrides.
+declare pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
   view~ : String,
+  init~ : S,
   style? : String,
   common_style? : String,
   global_style? : String,
   views? : Map[String, String],
   view_styles? : Map[String, String],
-  fields? : Map[String, FieldSpec],
-  input? : Map[String, InstanceHandler],
-  receive? : Map[String, InstanceHandler],
-  bubble? : Map[String, InstanceHandler],
-  response? : Map[String, InstanceHandler],
-  alter? : Map[String, MethodFn],
-  methods? : Map[String, MethodFn],
+  update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
+  mutate? : Map[String, (S, Array[@tutuca.Value]) -> S],
+  compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value],
+  swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?],
+  when? : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool],
+  enrich? : Map[
+    String,
+    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
+  ],
+  enrich_scope? : Map[String, (S) -> Map[String, @tutuca.Value]],
+  loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith],
+  specs? : Map[String, FieldSpec],
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
 ) -> Component
 
 ///|
 /// Define a component whose instances are a user typed struct implementing
-/// @tutuca.Obj (the other hybrid half): views/styles/provide/lookup only —
-/// fields, buckets and methods live on the struct itself. The struct's
-/// component_id() must return this component's id.
+/// @tutuca.Obj directly (the fully-manual path): views/styles/provide/lookup
+/// only — fields and handlers live on the struct itself. The struct's
+/// component_id() must return this component's id. make() yields Null.
 declare pub fn Component::for_type(
   name~ : String,
   view~ : String,
@@ -244,12 +290,12 @@ declare pub fn Component::for_type(
 declare pub fn Component::compile(self : Component) -> Unit raise
 
 ///|
-/// Build an instance: coerce args against field specs, fill defaults, make
-/// FComp defaults through the scope.
+/// Build an instance Value: coerce args against field specs, fill defaults
+/// (FComp children made through the scope), decode the typed state.
 declare pub fn Component::make(
   self : Component,
   args : Map[String, @tutuca.Value],
-) -> Instance
+) -> @tutuca.Value
 
 ///|
 declare pub fn Component::get_view(
@@ -261,30 +307,6 @@ declare pub fn Component::get_view(
 /// [data-cid] commonStyle, globalStyle, and per-view [data-cid][data-vid]
 /// blocks (JS compileStyle). String only; injection is app territory.
 declare pub fn Component::compile_style(self : Component) -> String
-
-///|
-/// A Value-backed component instance: COW fields map + its Component.
-pub struct Instance {
-  comp : Component
-  fields : Map[String, @tutuca.Value]
-}
-
-///|
-declare pub impl @tutuca.Obj for Instance
-
-///|
-/// Coerced field write; unknown names keep the instance unchanged.
-declare pub fn Instance::set(
-  self : Instance,
-  name : String,
-  v : @tutuca.Value,
-) -> Instance
-
-///|
-declare pub fn Instance::get(self : Instance, name : String) -> @tutuca.Value
-
-///|
-declare pub fn Instance::to_value(self : Instance) -> @tutuca.Value
 
 ///|
 /// The component registry (JS Components): id → Component plus the

@@ -2,14 +2,17 @@
 // dispatch DomEvents (values, keys, modifiers), automatic re-render + morph.
 
 ///|
+priv struct EditorState {
+  text : String
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
 fn text_editor() -> @component.Component {
   @component.component(
     name="Editor",
     view="<div><input :value=\".text\" @on.input=\"setText value\" @on.keydown+send=\"setText 'sent'\"><p><x text=\".text\"></x></p><button @on.click+ctrl=\"setCount valueAsInt\">n</button></div>",
-    fields={
-      "text": @component.FieldSpec::of_default(Str("start")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-    },
+    init=EditorState::{ text: "start", count: 0 },
   )
 }
 
@@ -29,7 +32,7 @@ fn mk_app(
   // make() needs compiled specs? fields exist pre-compile; FComp needs scope
   let a = @app.App::new(
     app_scope,
-    c.make(args).to_value(),
+    c.make(args),
     container,
     @vdom.RenderOpts::new(doc),
   )
@@ -109,17 +112,12 @@ test "@each `value` bind shadows the DOM event's value" {
   let list = @component.component(
     name="Picker",
     view="<ul><li @each=\".items\"><button @on.click=\"pick value\">x</button></li></ul>",
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "picked": @component.FieldSpec::of_default(Str("")),
-    },
-    input={
-      "pick": (inst, args, _ctx) => {
-        match args {
-          [Str(s)] => Some(inst.set("picked", Str(s)))
-          _ => None
-        }
-      },
+    init=PickerState::{ items: [], picked: "" },
+    update=(s : PickerState, msg, _ctx) => {
+      match msg {
+        Input("pick", [Str(p)]) => Some({ ..s, picked: p })
+        _ => None
+      }
     },
   )
   let (a, container) = mk_app(list, {
@@ -147,7 +145,7 @@ test "event_names collects every listened event across views" {
   guard scope.lookup_component("Editor") is Some(c) else { fail("no Editor") }
   let a = @app.App::new(
     scope,
-    c.make(Map([])).to_value(),
+    c.make(Map([])),
     container,
     @vdom.RenderOpts::new(doc),
   )
@@ -162,26 +160,19 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
   let chatty = @component.component(
     name="Chatty",
     view="<div><button @on.click=\"go\">x</button><span><x text=\".n\"></x></span></div>",
-    fields={ "n": @component.FieldSpec::of_default(Num(0)) },
-    input={
-      "go": (inst, _args, ctx) => {
-        // three follow-up sends: four root swaps in one drained cascade
-        ctx.send("bump", [])
-        ctx.send("bump", [])
-        ctx.send("bump", [])
-        match inst.get("n") {
-          Num(x) => Some(inst.set("n", Num(x + 1)))
-          _ => None
+    init=ChattyState::{ n: 0 },
+    update=(s : ChattyState, msg, ctx) => {
+      match msg {
+        Input("go", _) => {
+          // three follow-up sends: four root swaps in one drained cascade
+          ctx.send("bump", [])
+          ctx.send("bump", [])
+          ctx.send("bump", [])
+          Some({ n: s.n + 1 })
         }
-      },
-    },
-    receive={
-      "bump": (inst, _args, _ctx) => {
-        match inst.get("n") {
-          Num(x) => Some(inst.set("n", Num(x + 1)))
-          _ => None
-        }
-      },
+        Receive("bump", _) => Some({ n: s.n + 1 })
+        _ => None
+      }
     },
   )
   let (a, container) = mk_app(chatty, Map([]))
@@ -193,3 +184,14 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
   assert_true(field_v(a, "n") == Num(4))
   assert_true(container.to_html().contains("<span>4</span>"))
 }
+
+///|
+priv struct PickerState {
+  items : Array[String]
+  picked : String
+} derive(ToJson, FromJson)
+
+///|
+priv struct ChattyState {
+  n : Int
+} derive(ToJson, FromJson)

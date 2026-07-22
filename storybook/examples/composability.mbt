@@ -21,6 +21,11 @@ fn example_args(
 }
 
 ///|
+priv struct ComposabilityState {
+  activeSection : String
+} derive(ToJson, FromJson)
+
+///|
 fn composability_comp(
   json_args : Map[String, @tutuca.Value],
   dnd_args : Map[String, @tutuca.Value],
@@ -57,8 +62,8 @@ fn composability_comp(
       #|  <div class="pane-visual-wasm" @show="equals? .activeSection 'visualWasm'"><x render=".visualWasm"></x></div>
       #|</section>
     ),
-    fields={
-      "activeSection": @component.FieldSpec::of_default(Str("todo")),
+    init=ComposabilityState::{ activeSection: "todo" },
+    specs={
       "todo": @component.FieldSpec::comp("Items"),
       "json": @component.FieldSpec::comp("JsonArray", args=json_args),
       "tree": @component.FieldSpec::comp("TreeRoot"),
@@ -66,17 +71,20 @@ fn composability_comp(
       "visualWasm": @component.FieldSpec::comp("Module"),
       "dnd": @component.FieldSpec::comp("DnDExample", args=dnd_args),
     },
-    receive={
-      // forward the host's init to the personal-site sub-app, which loads
-      // its data through a request handler
-      "init": (inst, _args, ctx) => {
-        ctx.send_at_path(
-          ctx.path().concat([FieldStep("personalSite")]),
-          "init",
-          [],
-        )
-        Some(inst)
-      },
+    update=(s : ComposabilityState, msg, ctx) => {
+      match msg {
+        // forward the host's init to the personal-site sub-app, which loads
+        // its data through a request handler
+        Receive("init", _) => {
+          ctx.send_at_path(
+            ctx.path().concat([FieldStep("personalSite")]),
+            "init",
+            [],
+          )
+          Some(s)
+        }
+        _ => None
+      }
     },
   )
 }

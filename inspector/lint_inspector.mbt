@@ -56,26 +56,24 @@ fn finding_component_name(where_ : String) -> String {
 fn lint_finding_comp() -> @component.Component {
   @component.component(
     name="LintFinding",
-    fields={
-      "code": @component.FieldSpec::of_default(Str("")),
-      "level": @component.FieldSpec::of_default(Str("")),
-      "message": @component.FieldSpec::of_default(Str("")),
-      "suggestion": @component.FieldSpec::of_default(Str("")),
-      "detail": @component.FieldSpec::of_default(Null),
+    init=LintFindingState::{
+      code: "",
+      level: "",
+      message: "",
+      suggestion: "",
+      detail: Null,
     },
-    methods={
-      "levelBadgeClass": (inst, _args) => {
-        let color = match str_field(inst, "level") {
+    compute={
+      "levelBadgeClass": (s : LintFindingState, _args) => {
+        let color = match s.level {
           "error" => "badge-error"
           "warn" => "badge-warning"
           _ => "badge-neutral"
         }
         Str("badge badge-sm badge-soft finding-level \{color}")
       },
-      "hasSuggestion": (inst, _args) => {
-        Bool(str_field(inst, "suggestion") != "")
-      },
-      "hasDetail": (inst, _args) => Bool(!(inst.get("detail") is Null)),
+      "hasSuggestion": (s : LintFindingState, _args) => Bool(s.suggestion != ""),
+      "hasDetail": (s : LintFindingState, _args) => Bool(!(s.detail is Null)),
     },
     // Decoy so the runtime-built soft badge colours survive the class scan.
     views={
@@ -103,36 +101,37 @@ fn lint_finding_comp() -> @component.Component {
 /// Per-component group of findings, collapsible/paginated; expanded by
 /// default when it has error-level findings.
 fn lint_component_comp() -> @component.Component {
-  let fields = composite_fields()
-  fields["componentName"] = @component.FieldSpec::of_default(Str(""))
-  fields["errors"] = @component.FieldSpec::of_default(Num(0))
-  fields["warns"] = @component.FieldSpec::of_default(Num(0))
-  fields["hints"] = @component.FieldSpec::of_default(Num(0))
-  let methods = composite_methods(inst => str_field(inst, "componentName"), inst => {
-    let parts : Array[String] = []
-    let errors = int_field(inst, "errors")
-    let warns = int_field(inst, "warns")
-    let hints = int_field(inst, "hints")
-    if errors > 0 {
-      parts.push(count_label(errors, "error"))
-    }
-    if warns > 0 {
-      parts.push(count_label(warns, "warning"))
-    }
-    if hints > 0 {
-      parts.push(count_label(hints, "hint"))
-    }
-    if parts.length() > 0 {
-      parts.join(", ")
-    } else {
-      "ok"
-    }
-  })
   @component.component(
     name="LintComponent",
-    fields~,
-    methods~,
-    alter=composite_alter(),
+    init=LintComponentState::{
+      items: [],
+      isExpanded: false,
+      itemsPerPage: 10,
+      currentPage: 0,
+      componentName: "",
+      errors: 0,
+      warns: 0,
+      hints: 0,
+    },
+    compute=composite_compute((s : LintComponentState) => s.componentName, s => {
+      let parts : Array[String] = []
+      if s.errors > 0 {
+        parts.push(count_label(s.errors, "error"))
+      }
+      if s.warns > 0 {
+        parts.push(count_label(s.warns, "warning"))
+      }
+      if s.hints > 0 {
+        parts.push(count_label(s.hints, "hint"))
+      }
+      if parts.length() > 0 {
+        parts.join(", ")
+      } else {
+        "ok"
+      }
+    }),
+    mutate=composite_mutate(),
+    loop_with=composite_loop_with(),
     view=make_composite_view(
       type_class="font-semibold lint-component",
       border_class="border-base-content/15",
@@ -155,28 +154,28 @@ fn count_label(n : Int, word : String) -> String {
 fn lint_report_comp() -> @component.Component {
   @component.component(
     name="LintReport",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("")),
-      "path": @component.FieldSpec::of_default(Str("")),
-      "errors": @component.FieldSpec::of_default(Num(0)),
-      "warnings": @component.FieldSpec::of_default(Num(0)),
-      "hints": @component.FieldSpec::of_default(Num(0)),
-      "clean": @component.FieldSpec::of_default(Bool(true)),
-      "components": @component.FieldSpec::of_default(List([])),
+    init=LintReportState::{
+      title: "",
+      path: "",
+      errors: 0,
+      warnings: 0,
+      hints: 0,
+      clean: true,
+      components: [],
     },
-    methods={
-      "errText": (inst, _args) => {
-        Str(count_label(int_field(inst, "errors"), "error"))
+    compute={
+      "errText": (s : LintReportState, _args) => {
+        Str(count_label(s.errors, "error"))
       },
-      "warnText": (inst, _args) => {
-        Str(count_label(int_field(inst, "warnings"), "warning"))
+      "warnText": (s : LintReportState, _args) => {
+        Str(count_label(s.warnings, "warning"))
       },
-      "hintText": (inst, _args) => {
-        Str(count_label(int_field(inst, "hints"), "hint"))
+      "hintText": (s : LintReportState, _args) => {
+        Str(count_label(s.hints, "hint"))
       },
-      "hasErrors": (inst, _args) => Bool(int_field(inst, "errors") > 0),
-      "hasWarnings": (inst, _args) => Bool(int_field(inst, "warnings") > 0),
-      "hasHints": (inst, _args) => Bool(int_field(inst, "hints") > 0),
+      "hasErrors": (s : LintReportState, _args) => Bool(s.errors > 0),
+      "hasWarnings": (s : LintReportState, _args) => Bool(s.warnings > 0),
+      "hasHints": (s : LintReportState, _args) => Bool(s.hints > 0),
     },
     // Decoy so the runtime-absent soft tally colours are emitted.
     views={
@@ -294,3 +293,60 @@ pub fn Inspector::lint_report(
     "components": List(built),
   })
 }
+
+///|
+priv struct LintFindingState {
+  code : String
+  level : String
+  message : String
+  suggestion : String
+  detail : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+priv struct LintComponentState {
+  items : Array[@tutuca.Value]
+  isExpanded : Bool
+  itemsPerPage : Int
+  currentPage : Int
+  componentName : String
+  errors : Int
+  warns : Int
+  hints : Int
+} derive(ToJson, FromJson)
+
+///|
+impl Composite for LintComponentState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for LintComponentState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for LintComponentState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for LintComponentState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for LintComponentState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+priv struct LintReportState {
+  title : String
+  path : String
+  errors : Int
+  warnings : Int
+  hints : Int
+  clean : Bool
+  components : Array[@tutuca.Value]
+} derive(ToJson, FromJson)

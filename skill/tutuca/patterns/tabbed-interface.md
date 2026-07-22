@@ -26,10 +26,12 @@ shows, and the active tab button is highlighted.
 ```
 
 ```moonbit
-fields={
-  "currentView": @component.FieldSpec::of_default(Str("overview")),
-  // $setCurrentView is auto-generated
-},
+priv struct TabsState {
+  currentView : String // $setCurrentView is auto-generated
+} derive(ToJson, FromJson)
+
+// in the component spec:
+init=TabsState::{ currentView: "overview" },
 ```
 
 One string field is the whole state machine. `equals? .currentView 'overview'`

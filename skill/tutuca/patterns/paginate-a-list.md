@@ -10,41 +10,32 @@ off-page items.
 ```
 
 ```moonbit
-fields={
-  "items": @component.FieldSpec::of_default(List([])),
-  "page": @component.FieldSpec::of_default(Num(0)),
-  "pageSize": @component.FieldSpec::of_default(Num(5)),
-},
-alter={
-  // runs once per render, before iteration; args = [seq, loopCtx]
-  "paginate": (inst, args) => {
-    let total = match args {
-      [List(s), ..] => s.length()
-      _ => 0
-    }
-    let page = match inst.get("page") {
-      Num(n) => n.to_int()
-      _ => 0
-    }
-    let size = match inst.get("pageSize") {
-      Num(n) => n.to_int()
-      _ => 5
-    }
-    let start = page * size
-    Map({
-      "iterData": Map({ "total": Num(total.to_double()) }),
-      "start": Num(start.to_double()),
-      "end": Num((start + size).to_double()),
-    })
+priv struct PagedState {
+  items : Array[@tutuca.Value]
+  page : Int
+  pageSize : Int
+} derive(ToJson, FromJson)
+
+// in the component spec: init=PagedState::{ items: [], page: 0, pageSize: 5 },
+loop_with={
+  // runs once per render, before iteration: (s, seq, loopCtx) -> LoopWith
+  "paginate": (s : PagedState, seq, _ctx) => {
+    let start = s.page * s.pageSize
+    @component.LoopWith::new(
+      iter_data=Map({ "total": Num(seq.list().length().to_double()) }),
+      start~,
+      end=start + s.pageSize,
+    )
   },
 },
 ```
 
-`@loop-with` returns a `Map` with `iterData` / `start` / `end`, all optional.
-`start`/`end` slice with JS `Array.prototype.slice` semantics (`end`
-exclusive, negatives count from the end). Slicing is positional but
-**preserves each item's original key** — `@key` is the index in the full
-list, so events and two-way binding keep their identity across pages.
-`iterData` is the shared per-loop value handed to `@when` / `@enrich-with`.
-To paginate a *filtered* list, return `keys` instead of `start`/`end` — see
-[filter-and-paginate.md](filter-and-paginate.md).
+`@loop-with` returns a `@component.LoopWith`
+(`LoopWith::new(iter_data?=…, start?=…, end?=…, keys?=…)`), all fields
+optional. `start`/`end` slice with JS `Array.prototype.slice` semantics
+(`end` exclusive, negatives count from the end). Slicing is positional
+but **preserves each item's original key** — `@key` is the index in the
+full list, so events and two-way binding keep their identity across
+pages. `iter_data` is the shared per-loop value handed to `@when` /
+`@enrich-with`. To paginate a *filtered* list, return `keys` instead of
+`start`/`end` — see [filter-and-paginate.md](filter-and-paginate.md).

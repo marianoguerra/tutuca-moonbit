@@ -8,6 +8,11 @@
 // works on them.
 
 ///|
+priv struct BarChartState {
+  values : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
 /// A bar chart driven by a list field. `@loop-with` computes shared layout once,
 /// `@enrich-with` derives each bar's geometry, and the buttons mutate the data.
 ///
@@ -34,81 +39,71 @@ fn bar_chart_comp() -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    fields={
-      "values": @component.FieldSpec::of_default(
-        List([Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)]),
-      ),
+    init=BarChartState::{
+      values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)],
     },
-    alter={
+    loop_with={
       // once per render, before the loop: split the 300-wide viewBox among the
       // bars there currently are
-      "layout": (_inst, args) => {
-        let size = match args {
-          [List(seq), ..] => seq.length()
+      "layout": (_s : BarChartState, seq, _ctx) => {
+        let size = match seq {
+          List(a) => a.length()
           _ => 1
         }
         let step = 300.0 / @cmp.maximum(1, size).to_double()
-        Map({ "iterData": Map({ "step": Num(step), "barW": Num(step * 0.62) }) })
+        @component.LoopWith::new(
+          iter_data=Map({ "step": Num(step), "barW": Num(step * 0.62) }),
+        )
       },
+    },
+    enrich={
       // per bar: index + value -> pixel geometry
-      "bar": (_inst, args) => {
-        match args {
-          [Map(binds), Num(key), Num(value), Map(idata)] => {
+      "bar": (_s : BarChartState, binds, key, value, iter) => {
+        match (key, value, iter) {
+          (Num(k), Num(v), Map(idata)) => {
             let step = num_of(idata.get("step"), 0.0)
             let bar_w = num_of(idata.get("barW"), 0.0)
-            binds["x"] = Num(key * step + (step - bar_w) / 2.0)
+            binds["x"] = Num(k * step + (step - bar_w) / 2.0)
             binds["w"] = Num(bar_w)
-            binds["h"] = Num(value)
-            binds["y"] = Num(110.0 - value)
-            binds["cx"] = Num(key * step + step / 2.0)
-            binds["labelY"] = Num(110.0 - value - 5.0)
+            binds["h"] = Num(v)
+            binds["y"] = Num(110.0 - v)
+            binds["cx"] = Num(k * step + step / 2.0)
+            binds["labelY"] = Num(110.0 - v - 5.0)
           }
           _ => ()
         }
-        Null
       },
     },
-    input={
-      "randomize": (inst, _args, _ctx) => {
-        let next : Array[@tutuca.Value] = match inst.get("values") {
-          List(a) =>
-            a.map(v => {
-              match v {
-                // deterministic stand-in for Math.random, in the 10..99 range
-                Num(n) => Num(((n.to_int() * 7 + 13) % 90 + 10).to_double())
-                _ => v
-              }
-            })
-          _ => []
+    update=(s : BarChartState, msg, _ctx) => {
+      match msg {
+        Input("randomize", _) => {
+          let next : Array[@tutuca.Value] = s.values.map(v => {
+            match v {
+              // deterministic stand-in for Math.random, in the 10..99 range
+              Num(n) => Num(((n.to_int() * 7 + 13) % 90 + 10).to_double())
+              _ => v
+            }
+          })
+          Some({ values: next })
         }
-        Some(inst.set("values", List(next)))
-      },
-      "addBar": (inst, _args, _ctx) => {
-        let a = match inst.get("values") {
-          List(a) => a
-          _ => []
-        }
-        if a.length() >= 9 {
-          None
-        } else {
-          let out = a.copy()
-          out.push(Num(((a.length() * 17 + 23) % 90 + 10).to_double()))
-          Some(inst.set("values", List(out)))
-        }
-      },
-      "removeBar": (inst, _args, _ctx) => {
-        let a = match inst.get("values") {
-          List(a) => a
-          _ => []
-        }
-        if a.length() <= 1 {
-          None
-        } else {
-          let out = a.copy()
-          let _ = out.pop()
-          Some(inst.set("values", List(out)))
-        }
-      },
+        Input("addBar", _) =>
+          if s.values.length() >= 9 {
+            None
+          } else {
+            let out = s.values.copy()
+            out.push(Num(((s.values.length() * 17 + 23) % 90 + 10).to_double()))
+            Some({ values: out })
+          }
+        Input("removeBar", _) =>
+          if s.values.length() <= 1 {
+            None
+          } else {
+            let out = s.values.copy()
+            let _ = out.pop()
+            Some({ values: out })
+          }
+        _ => None
+      }
     },
   )
 }
@@ -154,6 +149,11 @@ fn icon_macro(path : String) -> @anode.Macro {
 }
 
 ///|
+priv struct IconGalleryState {
+  size : Int
+} derive(ToJson, FromJson)
+
+///|
 fn icon_gallery_comp() -> @component.Component {
   @component.component(
     name="IconGallery",
@@ -177,7 +177,7 @@ fn icon_gallery_comp() -> @component.Component {
       #|  </div>
       #|</div>
     ),
-    fields={ "size": @component.FieldSpec::of_default(Num(40)) },
+    init=IconGalleryState::{ size: 40 },
   )
 }
 

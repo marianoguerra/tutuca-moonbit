@@ -31,16 +31,16 @@ Walk these top-down whenever you add or reshape a component:
 This ladder is about *acting across* a component boundary — reaching up,
 messaging a target, doing async work, or mutating state someone else owns. It is
 **not** about merely *reading* a child's state: an ancestor already holds its
-children as immutable field values and can read them directly in any handler or
-method (`inst.get("items")` → `obj_field` / `obj_item`) — no channel needed.
-See [core.md](./core.md) "The value tree".
+children as immutable field values and can read them directly in any handler
+(a `@tutuca.Value` field plus `v.field(...)` / `obj_field` / `obj_item`) — no
+channel needed. See [core.md](./core.md) "The value tree".
 
 Reach for the *narrowest* channel that does the job, and only move further down
 the ladder when the one above can't express it:
 
-- **The component owns the state needed to respond** → call a plain **`method`**
-  (or a generated mutator) on itself — stays self-contained. See
-  [core.md](./core.md) Methods.
+- **The component owns the state needed to respond** → call a **`mutate`**
+  entry (or a generated mutator) on itself — stays self-contained. See
+  [core.md](./core.md) *Computed values & predicates*.
 - **An ancestor owns aggregate state** (a log, a selection, a total) → **`ctx.bubble`**
   up toward the root; the first ancestor with a matching handler runs. See
   [request-response.md](./request-response.md) "When to bubble".
@@ -58,7 +58,7 @@ the ladder when the one above can't express it:
   know about it → **`provide` / `lookup` (`*name`)** across the tree — the last
   resort. See [advanced.md](./advanced.md).
 
-A compact worked version of the first four (`method`, `bubble`, `send`/`receive`,
+A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`,
 `request`/`response`) lives in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
@@ -84,13 +84,13 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
   needs from its owner. → [patterns/share-state-across-the-tree.md](./patterns/share-state-across-the-tree.md)
 
 - **Do read a child's state directly when an ancestor needs it for an aggregate
-  decision.** A parent holds its children as immutable field values, so a handler
-  or method can read them straight off — children don't have to
+  decision.** A parent holds its children as immutable field values, so any
+  handler can read them straight off — children don't have to
   `bubble` their state up just to be *read*. **Don't reach for a channel to read
   downward**; `bubble` / `send` are for reaching *up*, messaging a target, or
   mutating — not for inspecting state you already own. (And don't reach in to
   mutate a child around the model — that still goes through the owner returning a
-  new self or `ctx.send`.) → [core.md](./core.md) "The value tree" and
+  new state or `ctx.send`.) → [core.md](./core.md) "The value tree" and
   [request-response.md](./request-response.md) "When to bubble"
 
 - **Do reach for `provide` / `lookup` (`*name`) last** — only when a deep
@@ -99,7 +99,7 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
   → [advanced.md](./advanced.md)
 
 - **Do pick the channel by direction (the ladder above). Don't `bubble` an event
-  no ancestor consumes, and don't `send` to self when a plain method call would
+  no ancestor consumes, and don't `send` to self when a plain function call would
   do.** `bubble` emits an *event* any ancestor can observe; `send` delivers a
   *message* to one target. → [request-response.md](./request-response.md) "When to
   bubble" / "When to send"
@@ -116,23 +116,24 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
 - **Do handle every DOM event with tutuca's built-in `@on.` handlers — including
   custom events fired by web components.** `@on.click`, `@on.input`,
   `@on.<custom-event>` (the event `detail` surfaces as `value`) keep the event
-  inside the model, so it flows through a handler and returns a new instance.
+  inside the model, so it flows through a handler and returns a new state.
   **Don't reach in from the outside with `addEventListener`** — a listener
   attached out of band mutates state the owning component can't see and bypasses
   the transactor. → [core.md](./core.md) "Event Handling" and "Web Components &
   Custom Events"
 
-- **Do put a handler in the right bucket for its needs: `methods` for pure
-  state→state (callable from value positions too), `input` when it needs `ctx`.**
-  The split is enforced by the types (`MethodFn` has no ctx parameter), so a
-  "method" that wants to `ctx.request` belongs in `input` / `receive`. →
-  [core.md](./core.md) "Common pitfalls"
+- **Do put a handler in the right bucket for its needs: `mutate` for pure
+  state→state, `compute` for pure reads (both callable from value positions),
+  an `update` arm when it needs `ctx`.** The split is enforced by the types
+  (`mutate`/`compute` signatures have no ctx parameter), so a `$`-handler
+  that wants to `ctx.request` belongs in an `Input` / `Receive` arm of
+  `update`. → [core.md](./core.md) "Common pitfalls"
 
 - **Do use inline predicates and auto-generated mutators. Don't hand-write
   `isSelected` / `select` boilerplate.** A single field plus
   `equals? .activeSection 'todo'` / `empty?` and the generated `$setActiveSection`
-  / `toggleX` often *is* the whole state machine. → [core.md](./core.md) "Methods
-  as Predicates & Computed Values" and "Field Types & Auto-generated API"
+  / `toggleX` often *is* the whole state machine. → [core.md](./core.md)
+  "Computed values & predicates" and "Field Types & Auto-generated API"
 
 - **Do remember a rendered child gets a clean namespace.** Parent `@` bindings
   (`@each`, `@enrich-with`) don't cross a `<x render>` boundary — pass a value
@@ -140,7 +141,7 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
   compiler only scans constant class literals — a class built by interpolation or
-  in a method emits no CSS and renders unstyled. → the workaround in
+  in a `compute` entry emits no CSS and renders unstyled. → the workaround in
   [margaui.md](./margaui.md) "Pitfall: assembled class names are invisible to the
   scanner", and the worked decoy view in `examples/personal_site.mbt`
   (`_margauiClasses`).
@@ -150,9 +151,9 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
 
 ## Smells & refactors
 
-- **`isTodoSelected` + `selectTodo` methods → predicate + generated setter.**
-  Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"` with
-  `@on.click="$setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
+- **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
+  generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
+  with `@on.click="$setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
   derive the current value from one field. (See `examples/composability.mbt`.)
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.
@@ -161,9 +162,9 @@ A compact worked version of the first four (`method`, `bubble`, `send`/`receive`
   if nothing in between should know it, use `provide` / `lookup`.
 - **Host code poking the root state or attaching a listener → an
   `app.send_at_root` handler on the root**, with the mutation expressed as
-  `Some(inst.set(...))`.
-- **A `methods` entry that fabricates dispatch (or ignores that it can't) → move
-  it to `input`/`receive`** and let the type give it a real `ctx`.
+  `Some({ ..s, ... })` in a `Receive` arm.
+- **A `mutate`/`compute` entry that fabricates dispatch (or ignores that it
+  can't) → move it to an `update` arm** and let the type give it a real `ctx`.
 
 ## See also
 

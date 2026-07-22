@@ -3,6 +3,14 @@
 // the drop handler reads dragInfo (type/value/lookupBind); dragend cleans up.
 
 ///|
+priv struct BoardState {
+  cards : Map[String, String]
+  received : String
+  from : String
+  kind : String
+} derive(ToJson, FromJson)
+
+///|
 fn board_comp() -> @component.Component {
   @component.component(
     name="Board",
@@ -10,48 +18,41 @@ fn board_comp() -> @component.Component {
       "<ul><li @each=\".cards\" draggable=\"true\" data-dragtype=\"card\"><x text=\"@value\"></x></li></ul>" +
       "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
       "</div>",
-    fields={
-      "cards": @component.FieldSpec::of_default(Map(Map([]))),
-      "received": @component.FieldSpec::of_default(Str("")),
-      "from": @component.FieldSpec::of_default(Str("")),
-      "kind": @component.FieldSpec::of_default(Str("")),
-    },
-    input={
-      "dropped": (inst, args, _ctx) => {
-        match args {
-          [Obj(info)] => {
-            // a plain @each li contributes only a frame-only step, so the
-            // teleported dragInfo.value is the COMPONENT instance (JS
-            // semantics); the dragged item comes from the source render's
-            // binds through the kept frame steps
-            let bind = (name : String) => {
-              match info.obj_field("lookupBind") {
-                Some(Fn(f)) =>
-                  match f([Null, Str(name)]) {
-                    Str(s) => s
-                    _ => "?"
-                  }
-                _ => "?"
-              }
-            }
-            let kind = match info.obj_field("type") {
-              Some(Str(s)) => s
+    init=BoardState::{ cards: Map([]), received: "", from: "", kind: "" },
+    update=(s : BoardState, msg, _ctx) => {
+      match msg {
+        Input("dropped", [Obj(info)]) => {
+          // a plain @each li contributes only a frame-only step, so the
+          // teleported dragInfo.value is the COMPONENT instance (JS
+          // semantics); the dragged item comes from the source render's
+          // binds through the kept frame steps
+          let bind = (name : String) => {
+            match info.obj_field("lookupBind") {
+              Some(Fn(f)) =>
+                match f([Null, Str(name)]) {
+                  Str(v) => v
+                  _ => "?"
+                }
               _ => "?"
             }
-            let dragged_is_board = match info.obj_field("value") {
-              Some(Obj(_)) => "yes"
-              _ => "no"
-            }
-            Some(
-              inst
-              .set("received", Str(bind("value") + "/" + dragged_is_board))
-              .set("kind", Str(kind))
-              .set("from", Str(bind("key"))),
-            )
           }
-          _ => None
+          let kind = match info.obj_field("type") {
+            Some(Str(k)) => k
+            _ => "?"
+          }
+          let dragged_is_board = match info.obj_field("value") {
+            Some(Obj(_)) => "yes"
+            _ => "no"
+          }
+          Some({
+            ..s,
+            received: bind("value") + "/" + dragged_is_board,
+            kind,
+            from: bind("key"),
+          })
         }
-      },
+        _ => None
+      }
     },
   )
 }

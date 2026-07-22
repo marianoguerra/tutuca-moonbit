@@ -82,7 +82,7 @@ test "classify: composites build keyed rows and count them" {
 test "classify: an instance Value without seq entries is an opaque leaf" {
   let insp = @inspector.Inspector::new()
   let card = sample_comp().make({ "title": Str("Hello") })
-  let leaf = insp.classify(card.to_value())
+  let leaf = insp.classify(card)
   assert_true(oget(leaf, "text") is Str(s) && s.contains("Sample"))
 }
 
@@ -117,27 +117,38 @@ test "deep_expand opens every level" {
 }
 
 ///|
+priv struct RichState {
+  title : String
+  count : Int
+  tags : Array[@tutuca.Value]
+  open : Bool
+} derive(ToJson, FromJson)
+
+///|
 fn sample_comp() -> @component.Component {
   @component.component(
     name="RichSample",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-      "tags": @component.FieldSpec::of_default(List([])),
-      "open": @component.FieldSpec::of_default(Bool(false)),
+    init=RichState::{ title: "", count: 0, tags: [], open: false },
+    compute={
+      "label": (s : RichState, _args) => Str(s.title),
+      "double": (s : RichState, _args) => Num((s.count * 2).to_double()),
     },
-    methods={
-      "label": (inst, _args) => inst.get("title"),
-      "double": (inst, _args) => inst.get("count"),
+    mutate={
+      "inc": (s : RichState, _args) => { ..s, count: s.count + 1 },
+      "reset": (s : RichState, _args) => { ..s, count: 0 },
     },
-    input={
-      "inc": (inst, _args, _ctx) => Some(inst),
-      "reset": (inst, _args, _ctx) => Some(inst),
+    update=(s : RichState, msg, _ctx) => {
+      match msg {
+        Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
+          Some(s)
+        _ => None
+      }
     },
-    receive={ "ping": (inst, _args, _ctx) => Some(inst) },
-    bubble={ "onChild": (inst, _args, _ctx) => Some(inst) },
-    response={ "onData": (inst, _args, _ctx) => Some(inst) },
-    alter={ "rows": (_inst, _args) => Map({ "start": Num(0), "end": Num(0) }) },
+    loop_with={
+      "rows": (_s : RichState, _seq, _ctx) => {
+        @component.LoopWith::new(start=0, end=0)
+      },
+    },
     view=(
       #|<div @text=".title"></div>
     ),
@@ -150,7 +161,7 @@ fn sample_comp() -> @component.Component {
 }
 
 ///|
-test "component_summary reads fields, channels, and view sources" {
+test "component_summary reads fields, buckets, and view sources" {
   guard @inspector.component_summary(sample_comp()) is Map(d) else {
     fail("summary is not a Map")
   }
@@ -161,19 +172,18 @@ test "component_summary reads fields, channels, and view sources" {
   assert_true(f0.get("name") is Some(Str("title")))
   assert_true(f0.get("type") is Some(Str("text")))
   assert_true(f0.get("default") is Some(Str("")))
-  // user methods only — the generated mutators (setTitle, toggleOpen, …)
-  // are filtered out
+  // methods = mutate + compute names; the generated mutators (setTitle,
+  // toggleOpen, …) never appear (they live in their own table)
   guard d.get("methods") is Some(List(methods)) else { fail("no methods") }
   assert_true(methods.contains(Str("label")))
   assert_true(methods.contains(Str("double")))
+  assert_true(methods.contains(Str("inc")))
+  assert_true(methods.contains(Str("reset")))
   assert_false(methods.contains(Str("setTitle")))
   assert_false(methods.contains(Str("toggleOpen")))
   assert_false(methods.contains(Str("pushInTags")))
-  guard d.get("input") is Some(List(input)) else { fail("no input") }
-  assert_true(input == [Str("inc"), Str("reset")])
-  assert_true(d.get("receive") is Some(List([Str("ping")])))
-  assert_true(d.get("bubble") is Some(List([Str("onChild")])))
-  assert_true(d.get("response") is Some(List([Str("onData")])))
+  // update is one opaque pattern match — surfaced as a presence flag
+  assert_true(d.get("update") is Some(List([Str("update")])))
   assert_true(d.get("alter") is Some(List([Str("rows")])))
   guard d.get("views") is Some(List(views)) else { fail("no views") }
   inspect(views.length(), content="2")
@@ -191,16 +201,7 @@ test "inspect_component builds one section per non-empty group" {
   let labels = olist(ci, "sections").map(s => oget(s, "label"))
   assert_true(
     labels ==
-    [
-      Str("Fields"),
-      Str("Methods"),
-      Str("Input"),
-      Str("Receive"),
-      Str("Bubble"),
-      Str("Response"),
-      Str("Alter"),
-      Str("Views"),
-    ],
+    [Str("Fields"), Str("Methods"), Str("Update"), Str("Alter"), Str("Views")],
   )
   // Fields starts expanded, the rest collapsed
   let sections = olist(ci, "sections")
@@ -288,13 +289,14 @@ test "clean lint report flags clean and has no component groups" {
 ///|
 test "instance_snapshot + inspect_instance expose the field rows" {
   let insp = @inspector.Inspector::new()
-  let card = sample_comp().make({
+  let comp = sample_comp()
+  let card = comp.make({
     "title": Str("Hello"),
     "count": Num(3),
     "tags": List([Str("a"), Str("b")]),
     "open": Bool(true),
   })
-  guard @inspector.instance_snapshot(card) is Map(d) else {
+  guard @inspector.instance_snapshot(card, comp) is Map(d) else {
     fail("snapshot is not a Map")
   }
   assert_true(d.get("name") is Some(Str("RichSample")))
@@ -302,7 +304,7 @@ test "instance_snapshot + inspect_instance expose the field rows" {
   inspect(fields.length(), content="4")
   assert_true(fields.get("count") is Some(Num(3)))
   // the wrapper holds InstanceFields, expanded, typed by the component name
-  let ii = insp.inspect_instance(card)
+  let ii = insp.inspect_instance(card, comp)
   let rows = oget(ii, "value")
   inspect(otext(rows, "typeText"), content="RichSample")
   inspect(otext(rows, "countText"), content="{4}")
@@ -421,7 +423,7 @@ test "build_inspector_views resolves the descriptor through a registry" {
   comps.register(comp)
   let card = comp.make({ "title": Str("Hi") })
   let views = insp.build_inspector_views(
-    card.to_value(),
+    card,
     comps~,
     lint_findings=sample_findings(),
   )

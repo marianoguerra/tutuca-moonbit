@@ -16,5 +16,9 @@ pub using @core {type RequestOpts}
 
 pub using @core {type Value}
 
+pub using @core {trait Ctx}
+
+pub using @core {trait Obj}
+
 // Traits
 

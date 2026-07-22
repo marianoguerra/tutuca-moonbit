@@ -106,8 +106,8 @@ organize by `moon test` block names and files.
 
 ## What to test
 
-Run tests when the change is observable behavior — handlers, methods,
-coercion, interaction flows. Skip them for pure template/styling tweaks;
+Run tests when the change is observable behavior — handlers, coercion,
+interaction flows. Skip them for pure template/styling tweaks;
 `tutuca render` covers those.
 
 - **Interaction flows** (the default) — mount with the harness, drive
@@ -116,20 +116,23 @@ coercion, interaction flows. Skip them for pure template/styling tweaks;
 - **Pure logic** — extract it into a plain `fn` next to the component
   (the `format_size` pattern in `examples/file_picker.mbt`) and
   unit-test it directly.
-- **Handlers in isolation** — the handler tables live on the
-  `Component` value, so you can call them directly:
+- **Handlers in isolation** — the typed handlers are erased behind the
+  compiled `Component` (only the name lists — `mutate_names`,
+  `compute_names`, `alter_names`, `generated_names`, `has_update` —
+  remain for introspection), so there is no handler table to call into.
+  For unit-level checks, keep the handler a named `fn` (or a bucket-map
+  builder like `fp_update()` in `examples/filter_paginate.mbt`) and call
+  it directly with a state struct — the arguments are plain typed
+  values, no mounting needed:
 
   ```moonbit
-  test "inc: unit level" {
-    let c = counter_comp()
-    let inst = c.make({})
-    // methods: (inst, args) => Value
-    let next = (c.methods.get("inc").unwrap())(inst, [])
-    assert_true(next is Obj(_))
-    // input handlers: (inst, args, ctx) => Instance? — NullCtx for
-    // handlers that don't dispatch
-    let next2 = (c.input.get("dec").unwrap())(inst, [], @tutuca.NullCtx::{  })
-    assert_true(next2 is Some(_))
+  test "update: dec at unit level" {
+    let u = counter_update() // fn () -> (S, Dispatch, &Ctx) -> S?
+    // NullCtx for arms that don't dispatch
+    match u(CounterState::{ count: 3 }, Input("dec", []), @tutuca.NullCtx::{  }) {
+      Some(s2) => assert_eq(s2.count, 2)
+      None => fail("expected a state change")
+    }
   }
   ```
 
@@ -144,7 +147,7 @@ mount the module and use `h.send_at_root`; the harness settles the whole
 cascade (including the callback-style requests) before returning:
 
 ```moonbit
-test "receive.init fires the request, and the response lands" {
+test "the init Receive arm fires the request, and the response lands" {
   // request_module takes requests? so tests inject fixtures
   let h = @harness.mount(request_module(), "RequestExample")
   h.send_at_root("init")
@@ -178,10 +181,10 @@ test "the error path routes to on_error_name" {
   (`request_module(requests? = fixture_request_handlers())`).
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
-  call the handler directly on the child instance.
-- A root-level `bubble` has no ancestor to receive it — test `bubble`
-  handlers by clicking the child element that emits the bubble, or call
-  them directly.
+  call the child's extracted update fn directly on a state value.
+- A root-level `bubble` has no ancestor to receive it — test `Bubble`
+  arms by clicking the child element that emits the bubble, or call
+  the update fn directly with a `Bubble(name, args)` dispatch.
 - To observe every committed transaction (message/state traces), the
   transactor exposes `Transactor::observe((ObserveRecord) -> Unit)` —
   `h.app.transactor.observe(...)` — each record carries
@@ -224,22 +227,18 @@ Tutuca templates resolve handler args by name (see
 event**. With named args, the handler pattern-matches a plain literal;
 with `event`, it must dig through an event-shaped `Map`.
 
-The prefix in the template picks the handler block: a leading `$`
-means a `methods` entry, no prefix means an `input` handler. The same
-named-arg rule applies to both.
+The prefix in the template picks the handler kind: a leading `$`
+means a `mutate`/`compute` entry (or generated mutator), no prefix
+dispatches an `Input` arm of `update`. The same named-arg rule applies
+to both.
 
-**Bad — input handler taking the event:**
+**Bad — Input arm taking the event:**
 
 ```html
 <input @on.input="setCount event" />
 ```
 ```moonbit
-"setCount": (inst, args, _ctx) => {
-  match args {
-    [Map(ev), ..] => ... // dig target.value out of an event Map
-    _ => None
-  }
-},
+Input("setCount", [Map(ev), ..]) => ... // dig target.value out of an event Map
 ```
 
 **Good — named arg:**
@@ -248,17 +247,13 @@ named-arg rule applies to both.
 <input @on.input="setCount valueAsInt" />
 ```
 ```moonbit
-"setCount": (inst, args, _ctx) => {
-  match args {
-    [Num(n), ..] => Some(inst.set("count", Num(n)))
-    _ => None
-  }
-},
+Input("setCount", [Num(n), ..]) => Some({ ..s, count: n.to_int() })
 ```
 
 At test time, the "good" form is driven with one call —
 `h.type_into("input", "42")` — and unit-tested with a literal —
-`(c.input.get("setCount").unwrap())(inst, [Num(42)], @tutuca.NullCtx::{  })`.
+`u(state, Input("setCount", [Num(42)]), @tutuca.NullCtx::{  })` against
+the extracted update fn.
 
 The built-in named args are listed in [core.md](./core.md) *Event
 Handling*. Reach for `event` only when no narrower arg fits — and note
@@ -267,17 +262,18 @@ custom events deliver plain `Map` metadata as `value`.
 
 ## Worked example
 
-Interaction tests covering a method (`$inc`), an input handler (`dec`),
-and a generated mutator, mirroring `examples/counter_test.mbt`:
+Interaction tests covering a `mutate` entry (`$inc`), an `update`
+`Input` arm (`dec`), and a generated mutator, mirroring
+`examples/counter_test.mbt`:
 
 ```moonbit
 test "counter: inc and dec round-trip" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="$inc"   (method)
+  h.click(".btn-success") // @on.click="$inc"   (mutate)
   h.click(".btn-success")
   inspect(h.text(".stat-value"), content="2")
-  h.click(".btn-error")   // @on.click="dec"    (input handler)
+  h.click(".btn-error")   // @on.click="dec"    (update Input arm)
   inspect(h.text(".stat-value"), content="1")
 }
 
@@ -301,7 +297,7 @@ test "counter: immutability — one render per interaction" {
 
 - [core.md](./core.md) — *Verifying changes*, *Event Handling*,
   *Component Skeleton*.
-- [request-response.md](./request-response.md) — handler signatures for
-  `bubble` / `receive` / `response`, override forms, `$unknown`.
+- [request-response.md](./request-response.md) — the `Bubble` /
+  `Receive` / `Response` arms, override forms, catch-all arms.
 - [cli.md](./cli.md) — the embedded CLI (`lint` / `render`) that pairs
   with `moon test` in the verification recipe.

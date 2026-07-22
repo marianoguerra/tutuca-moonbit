@@ -54,29 +54,31 @@ fn format_epoch_ms(ms : Double) -> String {
 }
 
 ///|
-fn fp_num(v : @tutuca.Value) -> Double {
-  match v {
-    Num(n) => n
-    _ => 0
-  }
-}
+priv struct FilePickerState {
+  name : String
+  size : Double
+  type_ : String
+  lastModified : Double
+  hasFile : Bool
+} derive (
+  ToJson(fields(type_(rename="type"))),
+  FromJson(fields(type_(rename="type"))),
+)
 
 ///|
 /// Copy the picked file's metadata Map into the flattened fields; anything
 /// that is not a metadata Map clears the selection (JS withFile(undefined)).
-fn with_file(
-  inst : @component.Instance,
-  file : @tutuca.Value,
-) -> @component.Instance {
+fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
   match file {
     Map(meta) =>
-      inst
-      .set("name", meta.get("name").unwrap_or(Str("")))
-      .set("size", meta.get("size").unwrap_or(Num(0)))
-      .set("type", meta.get("type").unwrap_or(Str("")))
-      .set("lastModified", meta.get("lastModified").unwrap_or(Num(0)))
-      .set("hasFile", Bool(true))
-    _ => inst.set("hasFile", Bool(false))
+      {
+        name: meta.get("name").unwrap_or(Str("")).str(),
+        size: meta.get("size").unwrap_or(Num(0)).num(),
+        type_: meta.get("type").unwrap_or(Str("")).str(),
+        lastModified: meta.get("lastModified").unwrap_or(Num(0)).num(),
+        hasFile: true,
+      }
+    _ => { ..s, hasFile: false }
   }
 }
 
@@ -105,29 +107,30 @@ fn file_picker_comp() -> @component.Component {
     ),
     // The File metadata is flattened into plain fields so the view can bind
     // each piece reactively. `hasFile` gates summary vs. empty-state.
-    fields={
-      "name": @component.FieldSpec::of_default(Str("")),
-      "size": @component.FieldSpec::of_default(Num(0)),
-      "type": @component.FieldSpec::of_default(Str("")),
-      "lastModified": @component.FieldSpec::of_default(Num(0)),
-      "hasFile": @component.FieldSpec::of_default(Bool(false)),
+    init=FilePickerState::{
+      name: "",
+      size: 0,
+      type_: "",
+      lastModified: 0,
+      hasFile: false,
     },
-    input={
-      "onPickFile": (inst, args, _ctx) => {
-        Some(with_file(inst, args.get(0).unwrap_or(Null)))
-      },
+    update=(s : FilePickerState, msg, _ctx) => {
+      match msg {
+        Input("onPickFile", args) =>
+          Some(with_file(s, args.get(0).unwrap_or(Null)))
+        _ => None
+      }
     },
-    methods={
-      "sizeLabel": (inst, _args) => Str(format_size(fp_num(inst.get("size")))),
-      "typeLabel": (inst, _args) => {
-        match inst.get("type") {
-          Str("") => Str("unknown")
-          Str(s) => Str(s)
-          _ => Str("unknown")
+    compute={
+      "sizeLabel": (s : FilePickerState, _args) => Str(format_size(s.size)),
+      "typeLabel": (s : FilePickerState, _args) => {
+        match s.type_ {
+          "" => Str("unknown")
+          t => Str(t)
         }
       },
-      "lastModifiedLabel": (inst, _args) => {
-        Str(format_epoch_ms(fp_num(inst.get("lastModified"))))
+      "lastModifiedLabel": (s : FilePickerState, _args) => {
+        Str(format_epoch_ms(s.lastModified))
       },
     },
   )

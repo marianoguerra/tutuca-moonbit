@@ -196,7 +196,7 @@ fn run_examples(m : @component.ModuleDef, args : ModArgs, fmt : String) -> Emit 
 ///|
 fn show_component_json(comp : @component.Component) -> Json {
   let fields : Map[String, Json] = Map([])
-  for fname, spec in comp.fields {
+  for fname, spec in comp.specs {
     fields[fname] = Json::object({
       "kind": kind_name(spec.kind).to_json(),
       "default": spec.default.to_display_string().to_json(),
@@ -215,17 +215,17 @@ fn show_component_json(comp : @component.Component) -> Json {
     lookup[lname] = "\{lk.comp_name}.\{lk.provide_name}".to_json()
   }
   let handlers : Array[String] = []
-  for hname, _h in comp.receive {
-    handlers.push("receive:\{hname}")
+  if comp.has_update {
+    handlers.push("update")
   }
-  for hname, _h in comp.input {
-    handlers.push("input:\{hname}")
+  for hname in comp.mutate_names {
+    handlers.push("mutate:\{hname}")
   }
-  for hname, _h in comp.bubble {
-    handlers.push("bubble:\{hname}")
+  for hname in comp.compute_names {
+    handlers.push("compute:\{hname}")
   }
-  for hname, _h in comp.response {
-    handlers.push("response:\{hname}")
+  for hname in comp.alter_names {
+    handlers.push("alter:\{hname}")
   }
   Json::object({
     "name": comp.name.to_json(),
@@ -263,9 +263,9 @@ fn run_show(
       continue
     }
     sb <+ "# \{comp.name}\n"
-    if !comp.fields.is_empty() {
+    if !comp.specs.is_empty() {
       sb <+ "fields:\n"
-      for fname, spec in comp.fields {
+      for fname, spec in comp.specs {
         sb <+
           "  \{fname}: \{kind_name(spec.kind)} = \{spec.default.to_display_string()}\n"
       }
@@ -282,17 +282,17 @@ fn run_show(
       sb <+ "lookup: \{lname} = \{lk.comp_name}.\{lk.provide_name}\n"
     }
     let buckets : Array[String] = []
-    for hname, _h in comp.receive {
-      buckets.push("receive:\{hname}")
+    if comp.has_update {
+      buckets.push("update")
     }
-    for hname, _h in comp.input {
-      buckets.push("input:\{hname}")
+    for hname in comp.mutate_names {
+      buckets.push("mutate:\{hname}")
     }
-    for hname, _h in comp.bubble {
-      buckets.push("bubble:\{hname}")
+    for hname in comp.compute_names {
+      buckets.push("compute:\{hname}")
     }
-    for hname, _h in comp.response {
-      buckets.push("response:\{hname}")
+    for hname in comp.alter_names {
+      buckets.push("alter:\{hname}")
     }
     if !buckets.is_empty() {
       sb <+ "handlers: \{buckets.join(", ")}\n"
@@ -326,7 +326,7 @@ fn run_render(
       )
     }
     let inst = comp.make(ex.args)
-    let mut stack = @render.RenderStack::new(inst.to_value(), comps=scope.comps)
+    let mut stack = @render.RenderStack::new(inst, comps=scope.comps)
     let view_override = match args.view {
       Some(v) => Some(v)
       None => ex.view
@@ -336,7 +336,7 @@ fn run_render(
       None => ()
     }
     let ctx = @render.RenderCtx::new(view_resolver=scope.comps)
-    let html = match @render.render_root(inst.to_value(), stack, ctx) {
+    let html = match @render.render_root(inst, stack, ctx) {
       Some(v) =>
         match @render.clean_vdom(v) {
           Some(clean) => {

@@ -1,9 +1,14 @@
 // Port of docs/examples/counter.js.
 //
-// Teaches: `methods` ($-prefixed in views) vs `input` (bare name) — the only
-// difference is how a template references them; both take the instance and
-// return a new one. `setCount` is a GENERATED mutator (every field gets
-// setX/updateX/resetX), so neither handler writes a setter by hand.
+// Teaches: `mutate` ($-prefixed in views) vs `update` Input arms (bare name)
+// — the only difference is how a template references them. `setCount` is a
+// GENERATED mutator (every field gets setX/updateX/resetX), so neither
+// handler writes a setter by hand.
+
+///|
+priv struct ExampleCounterState {
+  count : Int
+} derive(ToJson, FromJson)
 
 ///|
 fn counter_comp() -> @component.Component {
@@ -22,24 +27,17 @@ fn counter_comp() -> @component.Component {
       #|  <button class="btn btn-success" @on.click="$inc">+</button>
       #|</div>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      // views call methods with a `$` prefix: @on.click="$inc"
-      "inc": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
+    init=ExampleCounterState::{ count: 0 },
+    mutate={
+      // views call mutate handlers with a `$` prefix: @on.click="$inc"
+      "inc": (s : ExampleCounterState, _args) => { count: s.count + 1 },
     },
-    input={
-      // views call input handlers by bare name: @on.click="dec"
-      "dec": (inst, _args, _ctx) => {
-        match inst.get("count") {
-          Num(n) => Some(inst.set("count", Num(n - 1)))
-          _ => None
-        }
-      },
+    update=(s : ExampleCounterState, msg, _ctx) => {
+      match msg {
+        // views call input handlers by bare name: @on.click="dec"
+        Input("dec", _) => Some({ count: s.count - 1 })
+        _ => None
+      }
     },
   )
 }

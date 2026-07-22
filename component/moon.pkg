@@ -1,4 +1,5 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
+  "moonbitlang/core/json",
 }

@@ -7,13 +7,18 @@
 //   docs/examples/danger-set-inner-html.js    — the raw-HTML escape hatch
 
 ///|
+priv struct BasicsNoState {} derive(ToJson, FromJson)
+
+///|
 /// The smallest component there is: no fields, no view, no logic. It renders
 /// nothing visible — the point is that it is legal.
 ///
 /// MoonBit divergence: `view~` is a required argument, so "no view" is spelled
 /// as the empty string rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
-  @component.component(name="MinimumViableComponent", view="")
+  @component.component(name="MinimumViableComponent", view="", init=BasicsNoState::{
+
+  })
 }
 
 ///|
@@ -41,6 +46,7 @@ fn static_view_comp() -> @component.Component {
     view=(
       #|<p>Hello, world!</p>
     ),
+    init=BasicsNoState::{  },
   )
 }
 
@@ -61,6 +67,14 @@ pub fn static_view_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct TextDirectiveState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 /// `@text` on an element PREPENDS text into it (keeping its other children);
 /// `<x text=...>` is a standalone text node that adds no element. The value can
 /// be a field (`.str`) or a method call (`$getStrUpper`), and every value type
@@ -77,19 +91,9 @@ fn text_directive_comp() -> @component.Component {
       #|  <span>Method Call:</span> <span class="v-method" @text="$getStrUpper"></span>
       #|</div>
     ),
-    fields={
-      "str": @component.FieldSpec::of_default(Str("hello")),
-      "num": @component.FieldSpec::of_default(Num(42)),
-      "bool": @component.FieldSpec::of_default(Bool(true)),
-      "notSet": @component.FieldSpec::of_default(Null),
-    },
-    methods={
-      "getStrUpper": (inst, _args) => {
-        match inst.get("str") {
-          Str(s) => Str(s.to_upper())
-          _ => Null
-        }
-      },
+    init=TextDirectiveState::{ str: "hello", num: 42, bool: true, notSet: Null },
+    compute={
+      "getStrUpper": (s : TextDirectiveState, _args) => Str(s.str.to_upper()),
     },
   )
 }
@@ -117,6 +121,11 @@ pub fn text_directive_module() -> @component.ModuleDef {
 }
 
 ///|
+priv struct DangerSetInnerHtmlState {
+  content : String
+} derive(ToJson, FromJson)
+
+///|
 /// The escape hatch: `@dangerouslysetinnerhtml` sets the element's innerHTML
 /// from a field instead of building children.
 fn danger_set_inner_html_comp() -> @component.Component {
@@ -127,10 +136,8 @@ fn danger_set_inner_html_comp() -> @component.Component {
       #|  <div class="raw" @dangerouslysetinnerhtml=".content"></div>
       #|</section>
     ),
-    fields={
-      "content": @component.FieldSpec::of_default(
-        Str("<strong><em>Raw HTML!</em></strong>"),
-      ),
+    init=DangerSetInnerHtmlState::{
+      content: "<strong><em>Raw HTML!</em></strong>",
     },
   )
 }

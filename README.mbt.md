@@ -26,7 +26,7 @@ and formal `spec.mbt`. From the bottom up:
 | **Templates** | `anode/` | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |
-| **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Component definitions, the app runtime, and the transactor that routes events at the root and settles state. |
+| **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain `derive(ToJson, FromJson)` struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
 | **Tooling** | `lint/`, `inspector/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Demos & docs** | `examples/`, `demo/`, `playground/`, `storybook/` | 32 ported examples, browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |

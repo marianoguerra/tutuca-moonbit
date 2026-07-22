@@ -4,12 +4,15 @@
 the child land back on the owner — without forwarding events up by hand.
 
 ```moonbit
+priv struct NoState {} derive(ToJson, FromJson)
+
 // producer exposes a field (or a seq-access) as a dynamic
 fn workspace_comp() -> @component.Component {
   @component.component(
     name="Workspace",
     view=..., // renders .panel somewhere below
-    fields={
+    init=NoState::{  },
+    specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
       "panel": @component.FieldSpec::comp("Panel"),
     },
@@ -22,6 +25,7 @@ fn toolbar_comp() -> @component.Component {
   @component.component(
     name="Toolbar",
     view="<x render=\"*active\" as=\"edit\"></x>",
+    init=NoState::{  },
     lookup={
       "active": { source: "Workspace.active", default: Some(".missing") },
     },

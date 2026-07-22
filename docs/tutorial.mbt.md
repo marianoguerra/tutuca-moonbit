@@ -3,7 +3,8 @@
 This is the MoonBit companion to the JS
 [tutuca tutorial](https://marianoguerra.github.io/tutuca/tutorial.html): the
 same framework, driven from MoonBit. Views — the HTML-ish template strings —
-port **verbatim** from JS; what changes is the code around them.
+port **verbatim** from JS; what changes is the code around them: state is a
+plain MoonBit struct, and every handler is compiler-checked against it.
 
 Every code block below tagged `mbt check` is compiled and executed by
 `moon test docs`, so this document cannot drift from the API.
@@ -16,7 +17,7 @@ Three rules explain everything else:
    `Value`s; component instances are nodes in it.
 2. **The view is a pure function of the value.** No subscriptions, no stores,
    no watchers — render the value, get a DOM.
-3. **Every handler returns a new self.** An event handler takes the instance
+3. **Every handler returns a new state.** An update takes the state struct
    and returns a replacement; the framework swaps it into the tree
    (copy-on-write, so untouched siblings keep their identity) and re-renders
    once per interaction.
@@ -33,8 +34,8 @@ resolving a name:
 | Syntax | Meaning |
 |---|---|
 | `.name` | a component **field** (single level — no dotted paths) |
-| `$name` | a **method** call (or a generated mutator) |
-| `name` | an **input handler** (bare lowercase name) |
+| `$name` | a **`mutate`/`compute`** call (or a generated mutator) |
+| `name` | an **update** dispatch (bare lowercase name, `Input` bucket) |
 | `@name` | a local **binding** from iteration or scope enrichment |
 | `^name` | a **macro parameter** |
 | `*name` | a **dynamic binding** (provide/lookup) |
@@ -44,11 +45,17 @@ resolving a name:
 
 ## Your first component
 
-A component is built with `@component.component(...)`: a name, a view (the
-template string), typed fields, and handler buckets. The MoonBit port of the
-canonical counter:
+A component is a plain **state struct** plus a call to
+`@component.component(...)`: a name, a view (the template string), the
+initial state, and typed handler buckets. The MoonBit port of the canonical
+counter:
 
 ```mbt check
+///|
+priv struct CounterState {
+  count : Int
+} derive(ToJson, FromJson)
+
 ///|
 fn counter() -> @component.Component {
   @component.component(
@@ -60,25 +67,16 @@ fn counter() -> @component.Component {
       #|  <button class="inc" @on.click="$inc">+</button>
       #|</div>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      // views call methods with a `$` prefix: @on.click="$inc"
-      "inc": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
+    init=CounterState::{ count: 0 },
+    // views call update by bare name: @on.click="dec"
+    update=(s : CounterState, msg, _ctx) => {
+      match msg {
+        Input("dec", _) => Some({ count: s.count - 1 })
+        _ => None
+      }
     },
-    input={
-      // views call input handlers by bare name: @on.click="dec"
-      "dec": (inst, _args, _ctx) => {
-        match inst.get("count") {
-          Num(n) => Some(inst.set("count", Num(n - 1)))
-          _ => None
-        }
-      },
-    },
+    // views call mutate with a `$` prefix: @on.click="$inc"
+    mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
   )
 }
 
@@ -92,16 +90,20 @@ fn counter_module() -> @component.ModuleDef {
 
 Things to notice:
 
-- **Fields are typed by their default.** `FieldSpec::of_default(Num(0))`
-  infers a number field; `Str`, `Bool`, `List`, `Map`, `Null` work the same
-  way (`Null` = any).
-- **`methods` are pure**: `(Instance, Array[Value]) -> Value`. They are also
-  evaluated in *value* positions (`@text="$label"`), where no event exists.
-- **`input` handlers are effectful**: `(Instance, Array[Value], &Ctx) ->
-  Instance?`. They get a `ctx` to send messages with; returning `None` means
-  "no change". A handler that needs `ctx` goes in `input`, not `methods`.
-- Nobody wrote a setter: `inst.set` returns a **new** instance; the original
-  is untouched.
+- **The state struct is the fields.** `derive(ToJson, FromJson)` is the whole
+  wiring: field names, defaults (from `init`) and kinds all come from the
+  struct, and every handler body is compiler-checked — `s.cuont` is a compile
+  error, not a silently-Null render.
+- **`update` is one pattern match** over every effectful dispatch:
+  `Input(name, args)` for view events, plus `Receive`/`Bubble`/`Response`
+  (below). It gets a `ctx` to send messages with; returning `None` means
+  "no change".
+- **`mutate` entries are pure state changes** callable as `$name`; `compute`
+  entries (not needed here) return display values for positions like
+  `@text="$label"`.
+- Nobody wrote a setter: handlers build a **new** struct
+  (`{ count: s.count + 1 }`, or `{ ..s, x: v }` to keep the rest); the
+  original is untouched.
 
 ## Test it as you write it
 
@@ -137,8 +139,8 @@ storybook uses to show one component in several states.
 
 ## Fields and generated mutators
 
-Every field generates mutators, so you rarely write setters by hand. Views
-call them like any method (`$setCount`, `$toggleIsOpen`):
+Every state field generates mutators, so you rarely write setters at all.
+Views call them like any `$`-handler (`$setCount`, `$toggleIsOpen`):
 
 | Field kind | Generated (on top of `setX` / `updateX` / `resetX` / `xLen`) |
 |---|---|
@@ -148,11 +150,20 @@ call them like any method (`$setCount`, `$toggleIsOpen`):
 
 The names keep their JS camelCase spelling on purpose — that is what lets
 view strings port verbatim (see `component/component.mbt` for the full list).
+Field kinds are inferred from the struct (Bool/String/Int/Double/Array/Map);
+Set/OMap kinds and child-component slots are declared via the `specs`
+parameter (`FieldSpec::set` / `::omap` / `::comp`).
 
 `:attr="value"` binds state into any attribute, and `$'…{.field}…'` is a
 string template:
 
 ```mbt check
+///|
+priv struct ProfileState {
+  name : String
+  waving : Bool
+} derive(ToJson, FromJson)
+
 ///|
 fn profile_module() -> @component.ModuleDef {
   let profile = @component.component(
@@ -165,10 +176,7 @@ fn profile_module() -> @component.ModuleDef {
       #|  <p class="out" @text="$'Hello, {.name}!'"></p>
       #|</section>
     ),
-    fields={
-      "name": @component.FieldSpec::of_default(Str("world")),
-      "waving": @component.FieldSpec::of_default(Bool(false)),
-    },
+    init=ProfileState::{ name: "world", waving: false },
   )
   @component.ModuleDef::new(name="profile", components=[profile])
 }
@@ -195,6 +203,12 @@ matching modifier key. They combine with `+`:
 
 ```mbt check
 ///|
+priv struct SearchState {
+  draft : String
+  sent : String
+} derive(ToJson, FromJson)
+
+///|
 fn search_module() -> @component.ModuleDef {
   let search = @component.component(
     name="Search",
@@ -207,10 +221,7 @@ fn search_module() -> @component.ModuleDef {
       #|  <p class="sent" @text=".sent"></p>
       #|</section>
     ),
-    fields={
-      "draft": @component.FieldSpec::of_default(Str("")),
-      "sent": @component.FieldSpec::of_default(Str("")),
-    },
+    init=SearchState::{ draft: "", sent: "" },
   )
   @component.ModuleDef::new(name="search", components=[search])
 }
@@ -235,6 +246,12 @@ choose between two attribute values:
 
 ```mbt check
 ///|
+priv struct ToggleState {
+  on : Bool
+  message : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
 fn toggle_module() -> @component.ModuleDef {
   let toggle = @component.component(
     name="Toggle",
@@ -247,10 +264,7 @@ fn toggle_module() -> @component.ModuleDef {
       #|  <p class="msg" @show="truthy? .message" @text=".message"></p>
       #|</section>
     ),
-    fields={
-      "on": @component.FieldSpec::of_default(Bool(false)),
-      "message": @component.FieldSpec::of_default(Null),
-    },
+    init=ToggleState::{ on: false, message: Null },
   )
   @component.ModuleDef::new(name="toggle", components=[toggle])
 }
@@ -268,17 +282,28 @@ test "@show/@hide remove the node; @if picks the attribute" {
 }
 ```
 
+A field that can hold "anything" (here: `message` starts as Null) is declared
+as `@tutuca.Value` — the dynamic escape hatch inside an otherwise typed
+struct. That includes fields holding component instances or functions: they
+survive state updates untouched.
+
 There are no dotted paths in values — `.user.name` is not a thing. Render a
-child component, add a method, or use `@enrich-with` (below) instead.
+child component, add a `compute`, or use `@enrich-with` (below) instead.
 
 ## Lists
 
 `@each=".items"` repeats its element once per entry, binding `@key` (index or
-map key) and `@value`. `@when="handlerName"` filters with an `alter` handler,
-`@enrich-with` adds bindings per item, `@loop-with` computes shared per-loop
-data once:
+map key) and `@value`. Each loop directive has its own **typed bucket**:
+`@when="name"` filters through the `when` bucket, `@enrich-with` adds
+bindings per item through `enrich`, `@loop-with` computes shared per-loop
+data once through `loop_with`:
 
 ```mbt check
+///|
+priv struct FruitsState {
+  items : Array[String]
+} derive(ToJson, FromJson)
+
 ///|
 fn fruits_module() -> @component.ModuleDef {
   let fruits = @component.component(
@@ -290,14 +315,11 @@ fn fruits_module() -> @component.ModuleDef {
       #|  </li>
       #|</ul>
     ),
-    fields={ "items": @component.FieldSpec::of_default(List([])) },
-    alter={
-      // @when args: [key, value, iterData] — truthy keeps the item
-      "notTooLong": (_inst, args) => {
-        match args {
-          [_key, Str(s), ..] => Bool(s.length() <= 6)
-          _ => Bool(true)
-        }
+    init=FruitsState::{ items: [] },
+    when={
+      // (state, key, value, iter_data) -> Bool: true keeps the item
+      "notTooLong": (_s : FruitsState, _key, value, _iter) => {
+        value.str().length() <= 6
       },
     },
   )
@@ -320,22 +342,37 @@ test "@each iterates, @when filters" {
 ```
 
 (`<x text="@value">` is the standalone form of `@text` — a text node with no
-wrapping element.)
+wrapping element. Loop keys and values arrive as `@tutuca.Value`; the
+coercers `.str()`, `.int()`, `.bool()`, `.list()`, `.field("x")` read them.)
 
-The `alter` bucket holds pure helpers callable from these loop positions; the
-renderer calls them with fixed argument shapes (see
-`storybook/examples/collections.mbt` for `@enrich-with` and `@loop-with` in
-action, including the scope form of `@enrich-with` — on an element *without*
-`@each`, it returns a map whose keys become `@`-bindings for the subtree).
+The four render-time buckets, by directive:
+
+| Directive | Bucket | Signature |
+|---|---|---|
+| `@when` | `when` | `(S, key, value, iter_data) -> Bool` |
+| `@enrich-with` (with `@each`) | `enrich` | `(S, binds, key, value, iter_data) -> Unit` — mutate `binds` |
+| `@enrich-with` (no `@each`) | `enrich_scope` | `(S) -> Map[String, Value]` — the returned keys become `@`-bindings |
+| `@loop-with` | `loop_with` | `(S, seq, LoopCtx) -> LoopWith` — `LoopWith::new(start=…, end=…, keys=…, iter_data=…)` |
+
+See `storybook/examples/collections.mbt` for all four in action.
 
 ## Composing components
 
-A field can hold another component: `FieldSpec::comp("Name")` resolves the
-component by name at `make()` time through the registration scope. `<x
-render=".field">` renders it; `as="viewName"` picks one of its named `views`.
-The child gets a clean namespace — the parent's bindings do not leak in.
+A field can hold another component: a `specs` entry with
+`FieldSpec::comp("Name")` resolves the component by name at `make()` time
+through the registration scope. `<x render=".field">` renders it;
+`as="viewName"` picks one of its named `views`. The child gets a clean
+namespace — the parent's bindings do not leak in.
 
 ```mbt check
+///|
+priv struct GreetingState {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
+priv struct NoState {} derive(ToJson, FromJson)
+
 ///|
 fn page_module() -> @component.ModuleDef {
   let greeting = @component.component(
@@ -348,7 +385,7 @@ fn page_module() -> @component.ModuleDef {
         #|<p class="hello">HELLO, <strong @text=".name"></strong>!!!</p>
       ),
     },
-    fields={ "name": @component.FieldSpec::of_default(Str("world")) },
+    init=GreetingState::{ name: "world" },
   )
   let page = @component.component(
     name="Page",
@@ -358,7 +395,8 @@ fn page_module() -> @component.ModuleDef {
       #|  <x render=".greeting" as="shout"></x>
       #|</section>
     ),
-    fields={
+    init=NoState::{  },
+    specs={
       "greeting": @component.FieldSpec::comp("Greeting", args={
         "name": Str("reader"),
       }),
@@ -379,6 +417,11 @@ test "one child value, two views of it" {
 }
 ```
 
+Child slots declared via `specs` live outside the state struct — the parent
+renders and messages them, it does not read them. A parent that must *hold*
+child instances in its own logic (a tree of nodes, a list of made children)
+declares a `@tutuca.Value` (or `Array[@tutuca.Value]`) field instead.
+
 Related render ops: `<x render-it>` renders the current `@value` inside a
 loop, `<x render-each=".items">` is `@each` + `render-it` in one (this is how
 recursive components like trees work — see
@@ -387,18 +430,29 @@ descendant `<x render>` prefer that view name.
 
 ## Communication: send, bubble, request
 
-Components message each other **by path**, never by reference:
+Components message each other **by path**, never by reference — and every
+incoming message lands in the same `update` match:
 
-- `ctx.send(name, args)` — dispatch a `receive` handler on *self*.
+- `ctx.send(name, args)` — dispatch `Receive(name, args)` on *self*.
 - `ctx.send_at_path(path, name, args)` — dispatch on the component at a path;
   address a child with `ctx.path().concat([FieldStep("field")])` (JS:
   `ctx.at.field("x").send(...)`).
-- `ctx.bubble(name, args)` — walk up the ancestors' `bubble` buckets;
+- `ctx.bubble(name, args)` — walk up the ancestors as `Bubble(name, args)`;
   `ctx.stop_propagation()` stops it.
 - `ctx.request(name, args, opts)` — fire an async request; the result comes
-  back through the `response` bucket.
+  back as `Response(name, [result, error])`.
 
 ```mbt check
+///|
+priv struct StatusState {
+  message : String
+} derive(ToJson, FromJson)
+
+///|
+priv struct ChatState {
+  draft : String
+} derive(ToJson, FromJson)
+
 ///|
 fn chat_module() -> @component.ModuleDef {
   let status = @component.component(
@@ -406,14 +460,12 @@ fn chat_module() -> @component.ModuleDef {
     view=(
       #|<p class="status" @show="truthy? .message" @text=".message"></p>
     ),
-    fields={ "message": @component.FieldSpec::of_default(Str("")) },
-    receive={
-      "flash": (inst, args, _ctx) => {
-        match args {
-          [Str(msg), ..] => Some(inst.set("message", Str(msg)))
-          _ => None
-        }
-      },
+    init=StatusState::{ message: "" },
+    update=(_s : StatusState, msg, _ctx) => {
+      match msg {
+        Receive("flash", [Str(m), ..]) => Some({ message: m })
+        _ => None
+      }
     },
   )
   let chat = @component.component(
@@ -425,19 +477,20 @@ fn chat_module() -> @component.ModuleDef {
       #|  <button class="send" @on.click="submit">send</button>
       #|</section>
     ),
-    fields={
-      "status": @component.FieldSpec::comp("Status"),
-      "draft": @component.FieldSpec::of_default(Str("")),
-    },
-    input={
-      "submit": (inst, _args, ctx) => {
-        guard inst.get("draft") is Str(text) && text != "" else { None }
-        // message the child at .status — the path is the only coupling
-        ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
-          Str(text),
-        ])
-        Some(inst.set("draft", Str("")))
-      },
+    init=ChatState::{ draft: "" },
+    specs={ "status": @component.FieldSpec::comp("Status") },
+    update=(s : ChatState, msg, ctx) => {
+      match msg {
+        Input("submit", _) => {
+          guard s.draft != "" else { None }
+          // message the child at .status — the path is the only coupling
+          ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
+            Str(s.draft),
+          ])
+          Some({ draft: "" })
+        }
+        _ => None
+      }
     },
   )
   @component.ModuleDef::new(name="chat", components=[chat, status])
@@ -458,14 +511,20 @@ test "send_at_path messages a sibling-owned child" {
 A request handler lives *outside* the component, registered on the module —
 so the same component runs against a real fetch in production and a fixture
 in tests. `RequestFn` is callback-style: `(args, respond) -> Unit`, calling
-`respond(Ok(v))` or `respond(Err(e))` whenever it is done. The `response`
-bucket named like the request receives `[result, error]` (or route with
+`respond(Ok(v))` or `respond(Err(e))` whenever it is done. The result comes
+back as `Response(name, [result, error])` (or route with
 `RequestOpts::new(on_ok_name=..., on_error_name=...)`).
 
 Tutuca has no lifecycle hooks: nothing calls "init" for you. The host
 dispatches it after start — that is what `send_at_root` is for.
 
 ```mbt check
+///|
+priv struct QuotesState {
+  items : Array[String]
+  isLoading : Bool
+} derive(ToJson, FromJson)
+
 ///|
 fn quotes_module() -> @component.ModuleDef {
   let quotes = @component.component(
@@ -476,24 +535,17 @@ fn quotes_module() -> @component.ModuleDef {
       #|  <ul><li @each=".items"><x text="@value"></x></li></ul>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "isLoading": @component.FieldSpec::of_default(Bool(false)),
-    },
-    receive={
-      "init": (inst, _args, ctx) => {
-        ctx.request("loadQuotes", [], @tutuca.RequestOpts::new())
-        Some(inst.set("isLoading", Bool(true)))
-      },
-    },
-    response={
-      "loadQuotes": (inst, args, _ctx) => {
-        match args {
-          [List(rows), _err] =>
-            Some(inst.set("items", List(rows)).set("isLoading", Bool(false)))
-          _ => None
+    init=QuotesState::{ items: [], isLoading: false },
+    update=(s : QuotesState, msg, ctx) => {
+      match msg {
+        Receive("init", _) => {
+          ctx.request("loadQuotes", [], @tutuca.RequestOpts::new())
+          Some({ ..s, isLoading: true })
         }
-      },
+        Response("loadQuotes", [List(rows), _err]) =>
+          Some({ items: rows.map(r => r.str()), isLoading: false })
+        _ => None
+      }
     },
   )
   @component.ModuleDef::new(name="quotes", components=[quotes], requests={
@@ -528,6 +580,11 @@ run against the component the macro expands into.
 
 ```mbt check
 ///|
+priv struct FeaturesState {
+  status : String
+} derive(ToJson, FromJson)
+
+///|
 fn badge_module() -> @component.ModuleDef {
   let badge : @anode.Macro = {
     defaults: { "label": "'New'" },
@@ -542,7 +599,7 @@ fn badge_module() -> @component.ModuleDef {
       #|  <span>Feature C</span> <x:badge :label=".status"></x:badge>
       #|</div>
     ),
-    fields={ "status": @component.FieldSpec::of_default(Str("Soon")) },
+    init=FeaturesState::{ status: "Soon" },
   )
   @component.ModuleDef::new(name="badges", components=[features], macros={
     "badge": badge,

@@ -32,6 +32,7 @@ import {
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/string",
   "moonbitlang/core/cmp",
+  "moonbitlang/core/json",
 }
 
 // examples import a subset each; unused-package noise is expected

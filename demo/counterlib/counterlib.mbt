@@ -2,6 +2,13 @@
 // embedded-CLI demo.
 
 ///|
+priv struct CounterState {
+  label : String
+  count : Int
+  history : Array[Int]
+} derive(ToJson, FromJson)
+
+///|
 pub fn counter_comp() -> @component.Component {
   @component.component(
     name="Counter",
@@ -14,29 +21,15 @@ pub fn counter_comp() -> @component.Component {
       "<ul id=\"history\"><li @each=\".history\"><x text=\"@value\"></x></li></ul>" +
       "</div>",
     style="font-family: sans-serif",
-    fields={
-      "label": @component.FieldSpec::of_default(Str("Counter")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-      "history": @component.FieldSpec::of_default(List([])),
-    },
-    input={
-      "add": (inst, args, _ctx) => {
-        match (inst.get("count"), args) {
-          (Num(c), [Num(d)]) => {
-            let next = c + d
-            let hist = match inst.get("history") {
-              List(a) => {
-                let out = a.copy()
-                out.push(Num(next))
-                out
-              }
-              _ => [Num(next)]
-            }
-            Some(inst.set("count", Num(next)).set("history", List(hist)))
-          }
-          _ => None
+    init=CounterState::{ label: "Counter", count: 0, history: [] },
+    update=(s : CounterState, msg, _ctx) => {
+      match msg {
+        Input("add", [Num(d)]) => {
+          let next = s.count + d.to_int()
+          Some({ ..s, count: next, history: s.history + [next] })
         }
-      },
+        _ => None
+      }
     },
   )
 }

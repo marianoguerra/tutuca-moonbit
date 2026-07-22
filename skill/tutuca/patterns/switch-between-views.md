@@ -4,13 +4,17 @@
 "main" vs an "edit" form).
 
 ```moonbit
+priv struct NoteState {
+  title : String
+} derive(ToJson, FromJson)
+
 @component.component(
   name="Note",
   view="<p @text=\".title\"></p>", // "main"
   views={
     "edit": "<input :value=\".title\" @on.input=\"$setTitle value\" />",
   },
-  fields={ "title": @component.FieldSpec::of_default(Str("")) },
+  init=NoteState::{ title: "" },
 )
 ```
 
@@ -26,7 +30,7 @@
 
 `as` applies to the direct component only and falls back to `main` if the view
 is absent. It takes the same value forms as `@push-view` — a literal name
-(`as="edit"`) or a dynamic value (`as=".mode"`, `*dyn`, `@bind`, `$method`,
+(`as="edit"`) or a dynamic value (`as=".mode"`, `*dyn`, `@bind`, `$handler`,
 `$'…'`), evaluated against the host component at render time (for `render-each`,
 once for all items). `@push-view` instead pushes a view name onto the render
 stack so every descendant picks the first matching view (else `main`) — use it

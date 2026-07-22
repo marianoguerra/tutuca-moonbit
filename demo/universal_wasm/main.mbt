@@ -29,6 +29,16 @@ fn main {
 // --- ComponentEntry: one selectable row ---------------------------------
 
 ///|
+priv struct EntryState {
+  module_ : String
+  name : String
+  label : String
+} derive (
+  ToJson(fields(module_(rename="module"))),
+  FromJson(fields(module_(rename="module"))),
+)
+
+///|
 fn component_entry_comp() -> @component.Component {
   @component.component(
     name="ComponentEntry",
@@ -38,23 +48,22 @@ fn component_entry_comp() -> @component.Component {
       #|  <span class="text-sm" @text=".label"></span>
       #|</li>
     ),
-    fields={
-      "module": @component.FieldSpec::of_default(Str("")),
-      "name": @component.FieldSpec::of_default(Str("")),
-      "label": @component.FieldSpec::of_default(Str("")),
-    },
-    input={
-      "onSelect": (inst, _args, ctx) => {
-        ctx.bubble("componentSelected", [inst.get("module"), inst.get("name")])
-        Some(inst)
-      },
+    init=EntryState::{ module_: "", name: "", label: "" },
+    update=(s : EntryState, msg, ctx) => {
+      match msg {
+        Input("onSelect", _) => {
+          ctx.bubble("componentSelected", [Str(s.module_), Str(s.name)])
+          Some(s)
+        }
+        _ => None
+      }
     },
     // used by the picker's @when filter (called with the search text after the
     // dropped this-slot arg, like the parent app's matchesFilter)
-    methods={
-      "containsText": (inst, args) => {
-        match (inst.get("label"), args) {
-          (Str(label), [Str(q)]) => Bool(label.contains(q))
+    compute={
+      "containsText": (s : EntryState, args) => {
+        match args {
+          [Str(q), ..] => Bool(s.label.contains(q))
           _ => Bool(false)
         }
       },
@@ -63,6 +72,13 @@ fn component_entry_comp() -> @component.Component {
 }
 
 // --- ComponentPicker: selector that replaces itself with the pick --------
+
+///|
+priv struct PickerState {
+  filterText : String
+  items : Array[@tutuca.Value]
+  selected : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn component_picker_comp(entry : @component.Component) -> @component.Component {
@@ -82,77 +98,55 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
       #|  <div @show="truthy? .selected"><x render=".selected"></x></div>
       #|</div>
     ),
-    fields={
-      "filterText": @component.FieldSpec::of_default(Str("")),
-      "items": @component.FieldSpec::of_default(List([])),
-      "selected": @component.FieldSpec::of_default(Null),
-    },
-    receive={
-      // fetch the list of registered components on init (forwarded here when
-      // the picker is added to a list)
-      "init": (inst, _args, ctx) => {
-        ctx.request("listComponents", [], @tutuca.RequestOpts::new())
-        Some(inst)
-      },
-    },
-    response={
-      // args = [result, error]; turn the result rows into ComponentEntry
-      // instances (mirrors entries_from_response in the parent's request demo)
-      "listComponents": (inst, args, _ctx) => {
-        match args {
-          [res, _err] => Some(entries_from_list(inst, entry, res))
-          _ => None
+    init=PickerState::{ filterText: "", items: [], selected: Null },
+    update=(s : PickerState, msg, ctx) => {
+      match msg {
+        // fetch the list of registered components on init (forwarded here when
+        // the picker is added to a list)
+        Receive("init", _) => {
+          ctx.request("listComponents", [], @tutuca.RequestOpts::new())
+          Some(s)
         }
-      },
-      // the chosen component's instance came back — swap it in for the picker
-      "makeComponent": (inst, args, _ctx) => {
-        match args {
-          [res, _err] =>
-            match res {
-              Null => None
-              v => Some(inst.set("selected", v))
-            }
-          _ => None
-        }
-      },
-    },
-    bubble={
-      // a row was clicked: request its instance (builtin or guest); the
-      // response swaps it in for the picker chrome
-      "componentSelected": (inst, args, ctx) => {
-        ctx.stop_propagation()
-        match args {
-          [Str(m), Str(n)] => {
-            ctx.request(
-              "makeComponent",
-              [Str(m), Str(n)],
-              @tutuca.RequestOpts::new(),
-            )
-            Some(inst)
+        // args = [result, error]; turn the result rows into ComponentEntry
+        // instances (mirrors entries_from_response in the parent's request demo)
+        Response("listComponents", [res, _err]) =>
+          Some({ ..s, items: entries_from_list(entry, res) })
+        // the chosen component's instance came back — swap it in for the picker
+        Response("makeComponent", [res, _err]) =>
+          match res {
+            Null => None
+            v => Some({ ..s, selected: v })
           }
-          _ => None
-        }
-      },
-    },
-    alter={
-      // @when predicate for render-each: [key, value, iter_data]; keep rows
-      // whose entry's containsText method matches the filter text
-      "matchesFilter": (inst, args) => {
-        match (inst.get("filterText"), args) {
-          (Str(q), [_key, item, ..]) =>
-            if q == "" {
-              Bool(true)
-            } else {
-              match item {
-                Obj(o) =>
-                  match o.obj_field("containsText") {
-                    Some(Fn(f)) => f([Null, Str(q)])
-                    _ => Bool(true)
-                  }
-                _ => Bool(true)
-              }
+        // a row was clicked: request its instance (builtin or guest); the
+        // response swaps it in for the picker chrome
+        Bubble("componentSelected", args) => {
+          ctx.stop_propagation()
+          match args {
+            [Str(m), Str(n)] => {
+              ctx.request(
+                "makeComponent",
+                [Str(m), Str(n)],
+                @tutuca.RequestOpts::new(),
+              )
+              Some(s)
             }
-          _ => Bool(true)
+            _ => None
+          }
+        }
+        _ => None
+      }
+    },
+    // @when predicate for render-each; keep rows whose entry's containsText
+    // method matches the filter text
+    when={
+      "matchesFilter": (s : PickerState, _key, item, _iter) => {
+        if s.filterText == "" {
+          true
+        } else {
+          match item.field("containsText") {
+            Fn(f) => f([Null, Str(s.filterText)]).is_truthy()
+            _ => true
+          }
         }
       },
     },
@@ -161,33 +155,40 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
 
 ///|
 /// Turn the "listComponents" result (rows of {module, name, label}) into
-/// ComponentEntry instances seeded into the picker's `items`.
+/// ComponentEntry instances for the picker's `items`.
 fn entries_from_list(
-  inst : @component.Instance,
   entry : @component.Component,
   res : @tutuca.Value,
-) -> @component.Instance {
-  let items : Array[@tutuca.Value] = match res {
+) -> Array[@tutuca.Value] {
+  match res {
     List(rows) =>
       rows.map(row => {
         match row {
           Map(m) =>
-            entry
-            .make({
+            entry.make({
               "module": m.get("module").unwrap_or(Str("")),
               "name": m.get("name").unwrap_or(Str("")),
               "label": m.get("label").unwrap_or(Str("")),
             })
-            .to_value()
           _ => Null
         }
       })
     _ => []
   }
-  inst.set("items", List(items))
 }
 
 // --- ComponentList: the builtin flexbox canvas ---------------------------
+
+///|
+priv struct ListState {
+  entries : Array[@tutuca.Value]
+  showSettings : Bool
+  dir : String
+  justify : String
+  align : String
+  gap : Int
+  wrap : Bool
+} derive(ToJson, FromJson)
 
 ///|
 fn component_list_comp() -> @component.Component {
@@ -230,87 +231,54 @@ fn component_list_comp() -> @component.Component {
       #|  </div>
       #|</section>
     ),
-    fields={
-      "entries": @component.FieldSpec::of_default(List([])),
-      "showSettings": @component.FieldSpec::of_default(Bool(false)),
-      "dir": @component.FieldSpec::of_default(Str("row")),
-      "justify": @component.FieldSpec::of_default(Str("flex-start")),
-      "align": @component.FieldSpec::of_default(Str("stretch")),
-      "gap": @component.FieldSpec::of_default(Num(12)),
-      "wrap": @component.FieldSpec::of_default(Bool(true)),
+    init=ListState::{
+      entries: [],
+      showSettings: false,
+      dir: "row",
+      justify: "flex-start",
+      align: "stretch",
+      gap: 12,
+      wrap: true,
     },
-    input={
-      // append a fresh picker: request one, seed + init it in the response
-      "onAdd": (inst, _args, ctx) => {
-        ctx.request("componentPicker", [], @tutuca.RequestOpts::new())
-        Some(inst)
-      },
-    },
-    response={
-      "componentPicker": (inst, args, ctx) => {
-        match args {
-          [picker, _err] => {
-            let entries = match inst.get("entries") {
-              List(a) => a.copy()
-              _ => []
-            }
-            entries.push(picker)
-            let idx = entries.length() - 1
-            // let the new picker fetch its component list (on init)
-            ctx.send_at_path(
-              ctx.path().concat([SeqStep(field="entries", key=KInt(idx))]),
-              "init",
-              [],
-            )
-            Some(inst.set("entries", List(entries)))
-          }
-          _ => None
+    update=(s : ListState, msg, ctx) => {
+      match msg {
+        // append a fresh picker: request one, seed + init it in the response
+        Input("onAdd", _) => {
+          ctx.request("componentPicker", [], @tutuca.RequestOpts::new())
+          Some(s)
         }
-      },
-    },
-    receive={
-      // a bundle loaded: re-init each picker so its list includes it
-      "refresh": (inst, _args, ctx) => {
-        let entries = match inst.get("entries") {
-          List(a) => a
-          _ => []
-        }
-        for i in 0..<entries.length() {
+        Response("componentPicker", [picker, _err]) => {
+          let entries = s.entries + [picker]
+          let idx = entries.length() - 1
+          // let the new picker fetch its component list (on init)
           ctx.send_at_path(
-            ctx.path().concat([SeqStep(field="entries", key=KInt(i))]),
+            ctx.path().concat([SeqStep(field="entries", key=KInt(idx))]),
             "init",
             [],
           )
+          Some({ ..s, entries, })
         }
-        Some(inst)
-      },
+        // a bundle loaded: re-init each picker so its list includes it
+        Receive("refresh", _) => {
+          for i in 0..<s.entries.length() {
+            ctx.send_at_path(
+              ctx.path().concat([SeqStep(field="entries", key=KInt(i))]),
+              "init",
+              [],
+            )
+          }
+          Some(s)
+        }
+        _ => None
+      }
     },
-    methods={
+    compute={
       // per-instance flexbox style from the settings fields (see visual_wasm
-      // getInputWidth precedent for a method returning a CSS string)
-      "flexStyle": (inst, _args) => {
-        let dir = match inst.get("dir") {
-          Str(s) => s
-          _ => "row"
-        }
-        let justify = match inst.get("justify") {
-          Str(s) => s
-          _ => "flex-start"
-        }
-        let align = match inst.get("align") {
-          Str(s) => s
-          _ => "stretch"
-        }
-        let gap = match inst.get("gap") {
-          Num(n) => n.to_int()
-          _ => 12
-        }
-        let wrap = match inst.get("wrap") {
-          Bool(false) => "nowrap"
-          _ => "wrap"
-        }
+      // getInputWidth precedent for a compute returning a CSS string)
+      "flexStyle": (s : ListState, _args) => {
+        let wrap = if s.wrap { "wrap" } else { "nowrap" }
         Str(
-          "display:flex;flex-direction:\{dir};gap:\{gap}px;justify-content:\{justify};align-items:\{align};flex-wrap:\{wrap}",
+          "display:flex;flex-direction:\{s.dir};gap:\{s.gap}px;justify-content:\{s.justify};align-items:\{s.align};flex-wrap:\{wrap}",
         )
       },
     },
@@ -318,6 +286,11 @@ fn component_list_comp() -> @component.Component {
 }
 
 // --- root shell ----------------------------------------------------------
+
+///|
+priv struct ShellState {
+  status : String
+} derive(ToJson, FromJson)
 
 ///|
 fn universal_shell_comp() -> @component.Component {
@@ -332,35 +305,31 @@ fn universal_shell_comp() -> @component.Component {
       #|  <x render=".list"></x>
       #|</div>
     ),
-    fields={
-      "status": @component.FieldSpec::of_default(
-        Str(
-          "drop a .tutuca.tar.gz bundle, then “+ Add component” to place it",
-        ),
-      ),
-      "list": @component.FieldSpec::comp("ComponentList"),
+    init=ShellState::{
+      status: "drop a .tutuca.tar.gz bundle, then “+ Add component” to place it",
     },
-    receive={
-      "dyncompLoaded": (inst, args, ctx) => {
-        let module_name = match args {
-          [Str(s)] => s
-          _ => "?"
+    specs={ "list": @component.FieldSpec::comp("ComponentList") },
+    update=(_s : ShellState, msg, ctx) => {
+      match msg {
+        Receive("dyncompLoaded", args) => {
+          let module_name = match args {
+            [Str(name)] => name
+            _ => "?"
+          }
+          ctx.send_at_path(ctx.path().concat([FieldStep("list")]), "refresh", [])
+          Some({
+            status: "loaded \{module_name} — add a component to place it",
+          })
         }
-        ctx.send_at_path(ctx.path().concat([FieldStep("list")]), "refresh", [])
-        Some(
-          inst.set(
-            "status",
-            Str("loaded \{module_name} — add a component to place it"),
-          ),
-        )
-      },
-      "dyncompError": (inst, args, _ctx) => {
-        let msg = match args {
-          [Str(s)] => s
-          _ => "unknown error"
+        Receive("dyncompError", args) => {
+          let msg2 = match args {
+            [Str(m)] => m
+            _ => "unknown error"
+          }
+          Some({ status: "load failed: \{msg2}" })
         }
-        Some(inst.set("status", Str("load failed: \{msg}")))
-      },
+        _ => None
+      }
     },
   )
 }
@@ -394,7 +363,7 @@ fn universal_module() -> @component.ModuleDef {
       respond(Ok(List(rows)))
     }),
     "componentPicker": RequestFn((_args, respond) => {
-      respond(Ok(picker.make(Map([])).to_value()))
+      respond(Ok(picker.make(Map([]))))
     }),
     // create a component instance by (module, name): builtins natively, guest
     // components through the dyncomp bridge
@@ -403,7 +372,7 @@ fn universal_module() -> @component.ModuleDef {
         [Str(m), Str(n)] =>
           if m == "builtin" {
             match n {
-              "ComponentList" => respond(Ok(list.make(Map([])).to_value()))
+              "ComponentList" => respond(Ok(list.make(Map([]))))
               _ => respond(Err(Str("unknown builtin \{n}")))
             }
           } else {

@@ -33,7 +33,7 @@ fn Inspector::make_(
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> @tutuca.Value {
   match self.comps.get(name) {
-    Some(c) => c.make(args).to_value()
+    Some(c) => c.make(args)
     None => Null
   }
 }
@@ -170,36 +170,38 @@ fn instance_args(
 }
 
 ///|
+priv struct SampleState {
+  title : String
+  count : Int
+  tags : Array[@tutuca.Value]
+  open : Bool
+} derive(ToJson, FromJson)
+
+///|
 /// A sample descriptor exercising every summary channel (RichSample in
 /// component-inspector.dev.js). Only introspected, never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
   @component.component(
     name="RichSample",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-      "tags": @component.FieldSpec::of_default(List([])),
-      "open": @component.FieldSpec::of_default(Bool(false)),
+    init=SampleState::{ title: "", count: 0, tags: [], open: false },
+    compute={
+      "label": (s : SampleState, _args) => Str(s.title),
+      "double": (s : SampleState, _args) => Num((s.count * 2).to_double()),
     },
-    methods={
-      "label": (inst, _args) => inst.get("title"),
-      "double": (inst, _args) => Num((int_field(inst, "count") * 2).to_double()),
+    mutate={
+      "inc": (s : SampleState, _args) => { ..s, count: s.count + 1 },
+      "reset": (s : SampleState, _args) => { ..s, count: 0 },
     },
-    input={
-      "inc": (inst, _args, _ctx) => {
-        Some(inst.set("count", Num((int_field(inst, "count") + 1).to_double())))
-      },
-      "reset": (inst, _args, _ctx) => Some(inst.set("count", Num(0))),
+    update=(s : SampleState, msg, _ctx) => {
+      match msg {
+        Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
+          Some(s)
+        _ => None
+      }
     },
-    receive={ "ping": (inst, _args, _ctx) => Some(inst) },
-    bubble={ "onChild": (inst, _args, _ctx) => Some(inst) },
-    response={ "onData": (inst, _args, _ctx) => Some(inst) },
-    alter={
-      "rows": (inst, _args) => {
-        Map({
-          "start": Num(0),
-          "end": Num(int_field(inst, "count").to_double()),
-        })
+    loop_with={
+      "rows": (s : SampleState, _seq, _ctx) => {
+        @component.LoopWith::new(start=0, end=s.count)
       },
     },
     view=(
@@ -219,18 +221,9 @@ fn rich_sample_comp() -> @component.Component {
 fn sample_card_comp() -> @component.Component {
   @component.component(
     name="SampleCard",
-    fields={
-      "title": @component.FieldSpec::of_default(Str("")),
-      "count": @component.FieldSpec::of_default(Num(0)),
-      "tags": @component.FieldSpec::of_default(List([])),
-      "open": @component.FieldSpec::of_default(Bool(false)),
-    },
-    methods={ "label": (inst, _args) => inst.get("title") },
-    input={
-      "bump": (inst, _args, _ctx) => {
-        Some(inst.set("count", Num((int_field(inst, "count") + 1).to_double())))
-      },
-    },
+    init=SampleState::{ title: "", count: 0, tags: [], open: false },
+    compute={ "label": (s : SampleState, _args) => Str(s.title) },
+    mutate={ "bump": (s : SampleState, _args) => { ..s, count: s.count + 1 } },
     view=(
       #|<div class="card" @text=".title"></div>
     ),
@@ -457,14 +450,18 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
     {
       component: "InstanceInspector",
       title: "Instance Inspector (expanded)",
-      args: instance_args(insp.inspect_instance(card), ["value"]),
+      args: instance_args(insp.inspect_instance(card, sample_card), ["value"]),
       view: None,
     },
     {
       component: "InstanceExplorer",
       title: "Instance Explorer",
       args: instance_args(
-        insp.explore_instance(card, lint_findings=sample_lint_findings()),
+        insp.explore_instance(
+          card,
+          sample_card,
+          lint_findings=sample_lint_findings(),
+        ),
         [
           "activeTab", "instanceView", "componentView", "lintView", "hasComponent",
           "hasLint",

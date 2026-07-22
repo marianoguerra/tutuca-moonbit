@@ -1,14 +1,14 @@
 # Tutuca — Core (MoonBit port)
 
-Tutuca is an immutable-state web framework: components have typed `fields`,
-auto-generated mutators (`setX`, `pushInX`, …), HTML-template `view`s with
-`@`-prefixed directives, and `bubble` / `receive` / `response` handlers for
-orchestration. This is the **MoonBit port** (`marianoguerra/tutuca`): the
-template language is identical to the JS original, but everything around the
-views — component definition, state values, handlers, testing, CLI — is
-MoonBit. Read this file when authoring or reviewing
-`@component.component(...)` definitions, view templates, macros, or when
-using the embedded `tutuca` CLI.
+Tutuca is an immutable-state web framework: a component is a plain typed
+**state struct** plus handler buckets — auto-generated mutators (`setX`,
+`pushInX`, …), HTML-template `view`s with `@`-prefixed directives, and one
+`update` dispatch match for orchestration. This is the **MoonBit port**
+(`marianoguerra/tutuca`): the template language is identical to the JS
+original, but everything around the views — component definition, state,
+handlers, testing, CLI — is MoonBit. Read this file when authoring or
+reviewing `@component.component(...)` definitions, view templates, macros,
+or when using the embedded `tutuca` CLI.
 
 > Load the topic files only when the task touches them (the routing
 > table in [SKILL.md](./SKILL.md) has the full descriptions):
@@ -34,7 +34,7 @@ edit done:
    `@cli.plan_with_module` with the project's `ModuleDef` — see
    [cli.md](./cli.md)). Exits `2` on any error-level finding.
 
-2. **Test component behavior** — when the edit changes handlers, methods,
+2. **Test component behavior** — when the edit changes handlers,
    field coercion, or interaction flows (anything observable beyond a
    single static render), run the test suite:
 
@@ -75,34 +75,36 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 
 ## Common pitfalls
 
-- **`.field` reads a field, `$method` calls a no-arg method.** The two are
-  distinct prefixes: `.count` reads field `count`, `$inc` calls method
-  `inc`. Using the wrong one is a lint error that tells you to swap the
-  prefix.
-- **Handlers that need `ctx` go in `input`, not `methods`.** A `MethodFn`
-  is pure — `(inst, args) => Value` — because methods are also evaluated
-  in value positions (`@text="$label"`), where no event exists. An
-  `InstanceHandler` — `(inst, args, ctx) => Instance?` — gets the `&Ctx`
-  and can `ctx.send` / `ctx.request`. The template syntax is unchanged
-  (`$name` for methods, bare `name` for input handlers).
-- **Handler buckets return `Instance?`; `None` means "no change".**
-  Returning `None` leaves the root untouched (a cheap no-op); return
-  `Some(new_inst)` to commit. Methods return the new instance as a
-  `Value` — `inst.set(...).to_value()`.
+- **`.name` reads a field, `$name` calls a `$`-handler.** The two are
+  distinct prefixes: `.count` reads field `count`, `$inc` calls the
+  `mutate`/`compute` entry (or generated mutator) `inc`. Using the wrong
+  one is a lint error that tells you to swap the prefix.
+- **Handlers that need `ctx` go in `update`, not `mutate`/`compute`.**
+  A `mutate` entry is pure — `(s, args) => S` — and a `compute` entry is
+  pure — `(s, args) => Value` — because `$`-callables are also evaluated
+  in value positions (`@text="$label"`), where no event exists. The
+  `update` fn — `(s, msg, ctx) => S?` — gets the `&Ctx` and can
+  `ctx.send` / `ctx.request`. The template syntax is unchanged (`$name`
+  for `$`-handlers, bare `name` for update-dispatched events).
+- **`update` returns `S?`; `None` means "no change".** Returning `None`
+  leaves the root untouched (a cheap no-op); return `Some(new_state)` to
+  commit. The match must be total — always end with `_ => None`.
 - **Paths are not allowed in values.** `.foo` resolves a single field on
-  the instance — `@text=".foo.bar"`, `:value=".user.name"`,
+  the state — `@text=".foo.bar"`, `:value=".user.name"`,
   `@show=".item.isOpen"` all fail. To reach into nested data: render the
   child as a component (`<x render=".foo">` then `@text=".bar"` inside),
-  add a method (a `MethodFn` that reads `inst.get("user")` and returns
-  the nested value — use `$fullName`), or use `@enrich-with` for
-  scope-level derivation. The one exception: a **binding** may read
+  add a `compute` entry (read the nested value off a `@tutuca.Value`
+  field with `v.field("name")` — use `$fullName`), or use `@enrich-with`
+  for scope-level derivation. The one exception: a **binding** may read
   exactly one **binding member** — `@text="@value.title"` inside `@each`
   works (any `@`-binding, one level only; `@value.a.b` is a lint error,
   and render targets still reject it).
-- **Field writes are coerced by shape, silently.** `Instance::set`
-  coerces through the field's `FieldSpec`: a value whose shape doesn't
-  match the field kind **falls back to the default** (no error). Numbers
-  are `Num(Double)`; there is no separate int `Value`.
+- **`make()` / example args are coerced by shape, silently.** Each arg is
+  coerced through the field's inferred spec: a value whose shape doesn't
+  match the field kind **falls back to the default** (no error). The
+  value layer's one number type is `Num(Double)`; an `Int` state field
+  that could receive a fractional `Num` at runtime breaks decode —
+  declare it `Double` and `.to_int()` at use.
 - **Multiple `@if.<attr>` on one element.** Every `@then`/`@else` after
   the first must name the attr (`@then.title`, `@else.title`) — HTML
   disallows duplicate attrs, so the second `@then=` is dropped silently.
@@ -110,12 +112,13 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   (`'flex gap-3'`) or use a `$'…'` string template (`$'flex gap-3 {.color}'`).
 - **`<x>` is stripped inside `<select>` / `<table>` / `<tr>`.** Use the
   `@x` pseudo-x trick (see [advanced.md](./advanced.md)).
-- **`receive.init` is a convention, not a lifecycle hook.** Nothing calls it
-  automatically — the host dispatches it via `app.send_at_root("init")`
+- **`Receive("init", _)` is a convention, not a lifecycle hook.** Nothing
+  dispatches it automatically — the host calls `app.send_at_root("init")`
   or another handler sends it.
 - **Example `args` hold instance Values, not plain data.** A
   component-typed slot in an `ExampleDef`'s `args` (or in a `List` field)
-  must be built with `comp.make({...}).to_value()`, not a bare `Map`.
+  must be built with `comp.make({...})` — which returns the instance as a
+  `@tutuca.Value` directly — not a bare `Map`.
 - **Views must contain a root element.** A leading newline before the
   first element is trimmed, but a whitespace-only view renders blank
   silently. Write views as `#|` raw strings starting at the opening tag.
@@ -124,25 +127,23 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 
 ## Bootstrap
 
-A component definition is a plain function returning a
-`@component.Component`; a module is a `ModuleDef` value:
+A component is a state struct with `derive(ToJson, FromJson)` plus a
+plain function returning a `@component.Component`; a module is a
+`ModuleDef` value:
 
 ```moonbit
+priv struct CounterState {
+  count : Int
+} derive(ToJson, FromJson)
+
 fn counter_comp() -> @component.Component {
   @component.component(
     name="Counter",
     view=(
       #|<button @on.click="$inc" @text=".count"></button>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "inc": (inst, _args) => {
-        match inst.get("count") {
-          Num(n) => inst.set("count", Num(n + 1)).to_value()
-          _ => inst.to_value()
-        }
-      },
-    },
+    init=CounterState::{ count: 0 },
+    mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
   )
 }
 
@@ -187,42 +188,44 @@ The same `ModuleDef` value drives three hosts:
 
 Tutuca rests on three invariants: the application state is a single
 immutable root value; the view is a pure function of it; every handler
-takes the old self and returns a new self. The transactor swaps the
+takes the old state and returns a new state. The transactor swaps the
 root atomically. Structure sharing, cheap change detection, and the
 entire dispatch model fall out of these three properties.
 
 **The value tree.** State is the `@tutuca.Value` enum; component
-instances are `Obj` values (a `Value::Obj(&Obj)` wrapping an immutable
-`Instance` — a component reference plus a copy-on-write fields map).
-Children live in fields — a `List` of `Item` instances, a `Map` of
-`User`s, a scalar `count`. "Updating a deep child" means producing a new
-root that shares structure with the old one along the unchanged spine.
-Every instance reports which component it belongs to through
-`Obj::component_id()`, so the runtime never needs runtime type checks —
-it asks the value what it is.
+instances are `Obj` values wrapping a typed instance — the component's
+state struct is the source of truth, encoded to a fields map for the
+render/path seams. Children live in fields — a `List` of `Item`
+instances, a `Map` of `User`s, a scalar `count`. "Updating a deep child"
+means producing a new root that shares structure with the old one along
+the unchanged spine. Every instance reports which component it belongs
+to through `Obj::component_id()`, so the runtime never needs runtime
+type checks — it asks the value what it is.
 
 Because children are just immutable values held in fields, **handlers
-and methods have full read access to nested child state** — via
-`inst.get("child")` and `Obj::obj_field` /
-`obj_item`. Reading *down* the tree is direct and needs no channel: an
-ancestor that owns a list already holds every child's state and can read
-it for an aggregate decision. The single-level `.field` restriction (no
-`.foo.bar`) is a **view-template** rule, not a MoonBit one — it's why a
-derivation like "the user's name" is written as a method (see *Methods
-as Predicates & Computed Values*). Reading is free; **mutating** a child
-still flows through the model — the owner returns a new self
-(`setInItemsAt`, …) or messages the child with `ctx.send`. Don't reach
-in to mutate around the handler discipline, and prefer letting a child
-own and render its own state — reach down to read only when the ancestor
-genuinely needs it. See [component-design.md](./component-design.md) and
-"When to bubble" in [request-response.md](./request-response.md).
+have full read access to nested child state** — a parent that holds
+child instances in a `@tutuca.Value` (or `Array[@tutuca.Value]`) field
+reads them with the value coercers (`v.field("name")`, `v.list()`) or
+`Obj::obj_field`. Reading *down* the tree is direct and needs no
+channel: an ancestor that owns a list already holds every child's state
+and can read it for an aggregate decision. The single-level `.field`
+restriction (no `.foo.bar`) is a **view-template** rule, not a MoonBit
+one — it's why a derivation like "the user's name" is written as a
+`compute` entry (see *Computed values & predicates*). Reading is free;
+**mutating** a child still flows through the model — the owner returns
+a new state (`setInItemsAt`, …) or messages the child with `ctx.send`.
+Don't reach in to mutate around the handler discipline, and prefer
+letting a child own and render its own state — reach down to read only
+when the ancestor genuinely needs it. See
+[component-design.md](./component-design.md) and "When to bubble" in
+[request-response.md](./request-response.md).
 
 **Stack: frames vs scopes.** As the renderer walks the AST it pushes
 bind frames. A *frame* is a barrier: name lookups (`@x`) stop at it,
 so a child component view sees a clean namespace. A *scope* is
 transparent: iteration `key` / `value` and `@enrich-with` binds layer
 onto the surrounding frame and remain visible to handlers attached to
-the same iteration. `it` (the target of `.field` reads and `$method`
+the same iteration. `it` (the target of `.field` reads and `$handler`
 calls) is set on both.
 
 | pushed by                           | kind  | shape                                |
@@ -230,7 +233,7 @@ calls) is set on both.
 | `<x render=".f">` / `<x render-it>` | frame | `it` = child, fresh binds            |
 | `<x render-each>` per iter          | frame | `it` = item, binds `{ key }`         |
 | `<div @each>` per iter              | scope | `it` = item, binds `{ key, value }`  |
-| `<div @enrich-with=…>` (no `@each`) | scope | `it` unchanged, binds = alter result |
+| `<div @enrich-with=…>` (no `@each`) | scope | `it` unchanged, binds = handler result |
 
 For full mechanics see [iteration.md](./iteration.md).
 This is why a handler attached to `<div @each>` runs against the
@@ -255,11 +258,12 @@ list reordered. See [request-response.md](./request-response.md) for the
 dispatch APIs and [semantics.md](./semantics.md) for the path/transaction
 model and key pinning.
 
-**Why `alter` is its own table.** Alter handlers are pure, evaluated
-on every render, and produce binds (no state change) — like `methods`,
-they are `MethodFn`s. `input` / `receive` / `bubble` / `response` are
-transactional `InstanceHandler`s and produce new values. Same lookup
-mechanism, different contracts — keep them separate.
+**Why the render buckets are separate.** The `when` / `enrich` /
+`enrich_scope` / `loop_with` buckets are pure, evaluated on every
+render, and produce filter decisions and binds (no state change) — like
+`compute` entries. `update` is transactional and produces a new state.
+Same name-resolution mechanism from the template, different contracts —
+keep them separate.
 
 ## Notation Reference
 
@@ -267,11 +271,11 @@ Views are name-based: there is no arithmetic expression syntax in
 values, and no Vue- or Mustache-style `{{ … }}` placeholders. Every
 value slot — conditions (`@show`, `@if`), iteration (`@each`,
 `render-each`, `@when`), enrichment (`@enrich-with`, `@loop-with`), template
-expansion (`{…}`, `:attr`, `@text`) — names a field, method, macro, or
-handler defined on the component (or registered with the scope). Logic
-lives in `methods` / `alter` / `input` / `bubble` / `receive` /
-`response` and is referenced by name; the template itself only routes
-data and events.
+expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
+defined on the component (or registered with the scope). Logic lives in
+`update` / `mutate` / `compute` and the render buckets (`when` /
+`enrich` / `enrich_scope` / `loop_with`) and is referenced by name; the
+template itself only routes data and events.
 
 The one exception is **boolean predicates** in conditional slots
 (`@show`, `@hide`, `@if.<attr>`): a closed set of operators applied to
@@ -279,8 +283,9 @@ a value, written predicate-first like a handler call —
 `empty?`, `truthy?`, `falsy?`, `null?`, `equals?`. E.g.
 `@hide="empty? .items"`, `@show="truthy? .query"`. A conditional slot
 otherwise accepts the same value forms as `@text` — a plain field
-(`@show=".isOpen"`), a no-arg method (`@show="$canSubmit"`), or a loop/scope
-`@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read as a boolean.
+(`@show=".isOpen"`), a no-arg `compute` (`@show="$canSubmit"`), or a
+loop/scope `@binding` (`@show="@isSelected"`, `@hide="@hasDesc"`) — read
+as a boolean.
 
 `equals?` takes two args and is the idiomatic way to show/hide by name,
 e.g. `@show="equals? .view 'detail'"`. Predicate args (and handler
@@ -289,8 +294,8 @@ literal with spaces (escape an interior quote as `\'`).
 
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
-| `.x`     | field on the instance (single-level — no `.foo.bar` paths) | `.count`, `.title` |
-| `$x`     | no-arg method call (a `methods` reference) | `$inc`, `$canSubmit` |
+| `.x`     | field on the state (single-level — no `.foo.bar` paths) | `.count`, `.title` |
+| `$x`     | a `mutate`/`compute` call (or generated mutator) | `$inc`, `$canSubmit` |
 | `@x`     | local binding (loop / scope)              | `@key`, `@value`      |
 | `^x`     | macro parameter                           | `^label`              |
 | `*x`     | dynamic binding — see [advanced.md](./advanced.md) | `*theme`          |
@@ -302,14 +307,16 @@ literal with spaces (escape an interior quote as `\'`).
 | `pred? .x` | boolean predicate in a conditional slot | `empty? .items`, `equals? .view 'detail'` |
 
 `.x` and `$x` are not interchangeable: `.x` only reads a field, `$x`
-only calls a method. The linter flags a mismatch and tells you which
-prefix to use.
+only calls a `$`-handler. The linter flags a mismatch and tells you
+which prefix to use.
 
 A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
 resolves by slot:
 
-- **First slot** — handler name looked up in `input` / `alter` (use
-  `$name` for `methods`).
+- **First slot** — an event name dispatched as `Input(name, args)` to
+  the `update` fn; when no `update` arm claims it, dispatch falls back
+  to a `mutate` entry or generated mutator of the same name. Use
+  `$name` to call `mutate`/`compute` directly.
 - **Subsequent slots** — built-in handler argument name (full list in
   *Event Handling*); anything else triggers a lint warning.
 
@@ -319,8 +326,8 @@ resolves by slot:
 ```
 
 Handler args written in the template arrive in the MoonBit handler's
-`args : Array[Value]` in order. The `&Ctx` is **not** an args entry — an
-`InstanceHandler` receives it as its explicit third parameter, so don't
+`args : Array[Value]` in order. The `&Ctx` is **not** an args entry —
+the `update` fn receives it as its explicit third parameter, so don't
 list `ctx` in the template.
 
 > Port note: the JS docs pass a component **type** as a handler arg
@@ -360,11 +367,18 @@ escape the double quotes (`"<p :class=\"'flex gap-3'\">x</p>"`). Prefer
 
 ## Component Skeleton
 
-`@component.component(...)` takes labeled arguments — the **component
-spec**. The full shape (see `component/pkg.generated.mbti` for the exact
-signature):
+`@component.component(...)` takes a state struct plus labeled arguments —
+the **component spec**. The full shape (see `component/pkg.generated.mbti`
+for the exact signature):
 
 ```moonbit
+priv struct MyCompState {
+  count : Int
+  items : Array[String]
+  isLoading : Bool
+  selected : @tutuca.Value // "anything" fields are @tutuca.Value
+} derive(ToJson, FromJson)
+
 @component.component(
   name="MyComp",
   // default view (registered as "main"); #| raw string starting at the tag
@@ -379,137 +393,117 @@ signature):
   style="p { color: blue; }",                  // scoped to main view
   common_style="p { font-family: sans-serif; }", // scoped to all views of this component
   global_style="body { margin: 0; }",          // injected globally, no scoping
-  fields={ // see "Field Types"
-    "count": @component.FieldSpec::of_default(Num(0)),
-    "items": @component.FieldSpec::of_default(List([])),
-    "nullable": @component.FieldSpec::of_default(Null),
-    "child": @component.FieldSpec::comp("Item"), // component-typed field
-  },
-  methods={ // pure: (inst, args) => Value
-    "inc": (inst, _args) => {
-      match inst.get("count") {
-        Num(n) => inst.set("count", Num(n + 1)).to_value()
-        _ => inst.to_value()
-      }
-    },
-  },
-  input={ // effectful: (inst, args, ctx) => Instance?  (None = no change)
-    "onClick": (inst, _args, _ctx) => {
-      match inst.get("count") {
-        Num(n) => Some(inst.set("count", Num(n + 1)))
-        _ => None
-      }
-    },
-  },
-  alter={ // pure render-time helpers: (inst, args) => Value
-    "filterItem": (inst, args) => {
-      match args {
-        [_key, Str(item), ..] => Bool(item.length() > 0)
-        _ => Bool(true)
-      }
-    },
-  },
-  receive={ // (inst, args, ctx) => Instance?
-    "init": (inst, _args, ctx) => {
+  // the struct's fields ARE the component's fields; init gives the defaults
+  init=MyCompState::{ count: 0, items: [], isLoading: false, selected: Null },
+  // ONE effectful dispatch match: (s, msg, ctx) => S?  (None = no change)
+  update=(s : MyCompState, msg, ctx) => match msg {
+    Input("onClick", _) => Some({ ..s, count: s.count + 1 })
+    Receive("init", _) => {
       ctx.request("loadData", [], @tutuca.RequestOpts::new())
-      Some(inst.set("isLoading", Bool(true)))
-    },
+      Some({ ..s, isLoading: true })
+    }
+    Bubble("itemPicked", [item, ..]) => Some({ ..s, selected: item })
+    Response("loadData", [List(rows), _err]) =>
+      Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
+    _ => None // ALWAYS needed
   },
-  bubble={ // (inst, args, ctx) => Instance?
-    "itemPicked": (inst, args, _ctx) => {
-      match args {
-        [item, ..] => Some(inst.set("selected", item))
-        _ => None
-      }
-    },
+  mutate={ // pure state change, $-callable: (s, args) => S
+    "inc": (s : MyCompState, _args) => { ..s, count: s.count + 1 },
   },
-  response={ // (inst, args, ctx) => Instance?  — args are [res, err]
-    "loadData": (inst, args, _ctx) => {
-      match args {
-        [res, _err] => Some(inst.set("items", res))
-        _ => None
-      }
-    },
+  compute={ // pure value read, $-callable: (s, args) => Value
+    "label": (s : MyCompState, _args) => Str("n=\{s.count}"),
+  },
+  when={ // @when filters: (s, key, value, iterData) => Bool
+    "filterItem": (s : MyCompState, _key, value, _iter) => value.str() != "",
+  },
+  // enrich= / enrich_scope= / loop_with= — see iteration.md
+  specs={ // Value-level slots & kind overrides — NOT in the struct
+    "child": @component.FieldSpec::comp("Item"), // component-typed field
   },
   // provide={ ... }, lookup={ ... }   // see advanced.md
 )
 ```
 
-`comp.make({...})` builds an `Instance` from a `Map[String, Value]` of
-args; missing fields get their defaults, and every arg is coerced through
-its `FieldSpec` (a wrong-shaped value falls back to the default —
-silently). `inst.to_value()` wraps it back into a `Value` for storage in
-lists, maps, or example args. Component-typed fields declared with
-`FieldSpec::comp("Item", args={...})` build their default instance
-through the registration scope at `make()` time, so forward references
-work by name.
+`comp.make({...})` builds an instance from a `Map[String, Value]` of
+args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
+lists, maps, or example args. Missing fields get their defaults from
+`init`, and every arg is coerced through its inferred spec (a
+wrong-shaped value falls back to the default — silently).
+Component-typed fields declared with
+`specs={ "child": FieldSpec::comp("Item", args={...}) }` build their
+default instance through the registration scope at `make()` time, so
+forward references work by name.
 
 > **No statics.** The JS `statics:` block has no MoonBit counterpart —
 > nothing in the framework calls statics in either language. Write a
 > plain MoonBit `fn` next to the component (e.g. a
-> `fn tree_from_data(...) -> Instance` factory) and call it directly.
-> Likewise, "one component object per scope" is natural here: a
-> component definition is a `fn my_comp() -> Component`, and each call
-> produces a fresh `Component` value (new id, separately compiled CSS)
-> to register into a scope.
+> `fn tree_from_data(...) -> @tutuca.Value` factory that calls
+> `comp.make(...)`) and call it directly. Likewise, "one component
+> object per scope" is natural here: a component definition is a
+> `fn my_comp() -> Component`, and each call produces a fresh
+> `Component` value (new id, separately compiled CSS) to register into
+> a scope.
 
 ## Field Types & Auto-generated API
 
-`fields={ "name": FieldSpec }` — the kind is inferred from the default
-by `FieldSpec::of_default(value)` (`Null` / `Fn` / `Obj` infer `any`);
-sets, ordered maps, and component fields use explicit constructors.
+**The state struct is the fields**: names, defaults (from `init`) and
+kinds all come from the struct, and every handler body is
+compiler-checked against it — `s.cuont` is a compile error, not a
+silently-Null render. Set/omap kinds and component slots use explicit
+`specs=` entries.
 
-| FieldSpec                              | Field kind | Extra auto-generated methods (for field `x`)                                            |
-| -------------------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| `of_default(Str("hi"))`                | text       | —                                                                                        |
-| `of_default(Num(42))`                  | float      | — (`FieldSpec::{ kind: FInt, default: Num(10) }` for an explicit int)                    |
-| `of_default(Bool(true))`               | bool       | `toggleX`                                                                                |
-| `of_default(Null)`                     | any        | —                                                                                        |
-| `of_default(List([]))`                 | list       | `pushInX`, `insertInXAt`, `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`         |
-| `of_default(Map({}))`                  | map        | `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`                                   |
-| `FieldSpec::omap(default?={...})`      | omap       | same as map (MoonBit `Map` already preserves insertion order)                            |
-| `FieldSpec::set(members?=[...])`       | set        | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
-| `FieldSpec::comp("Item", args?={...})` | comp       | — (default instance made through the scope at `make` time)                              |
+| Declared as                              | Field kind | Extra auto-generated mutators (for field `x`)                                            |
+| ---------------------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
+| `x : String`                             | text       | —                                                                                        |
+| `x : Int` / `x : Double`                 | int / float | —                                                                                       |
+| `x : Bool`                               | bool       | `toggleX`                                                                                |
+| `x : @tutuca.Value`                      | any        | — (`Null`, instances, `Fn`s, heterogeneous data)                                         |
+| `x : Array[...]`                         | list       | `pushInX`, `insertInXAt`, `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`         |
+| `x : Map[String, ...]`                   | map        | `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`                                   |
+| `specs={ "x": FieldSpec::omap(default?={...}) }` | omap | same as map (MoonBit `Map` already preserves insertion order) |
+| `specs={ "x": FieldSpec::set(members?=[...]) }` | set  | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
+| `specs={ "x": FieldSpec::comp("Item", args?={...}) }` | comp | — slot field, **not** in the struct (default instance made through the scope at `make` time) |
+
+A `set`/`omap` specs entry works two ways: standing alone it declares a
+Value-level slot field (default from the spec), or it **overrides the
+kind** of a matching `Map[...]` struct field (e.g. `sel : Map[String,
+Bool]` + `specs={ "sel": FieldSpec::set() }` keeps the typed default and
+gains the set mutators). `comp` entries are always slots.
 
 **Every** field additionally gets `setX`, `updateX` (takes a `Fn` value —
 code-side use), `resetX`, and `xLen` (`Null` for non-sized values). The
 generated names keep their **JS camelCase spelling** — that is what makes
 views port verbatim: `@on.click="$removeInItemsAt @key"`,
 `@on.input="$setQuery value"`, `@on.click="$toggleView"` all call
-generated mutators. User-supplied `methods` entries win over generated
+generated mutators. User-supplied `mutate` entries win over generated
 ones of the same name.
 
-Emptiness / truthiness / null checks are not generated as methods — use
+A field that can hold "anything" is declared `@tutuca.Value` — the
+dynamic escape hatch inside an otherwise typed struct. That includes
+fields holding component instances or `Fn` values: they survive state
+updates losslessly.
+
+Emptiness / truthiness / null checks are not generated — use
 the boolean predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?`
 in a conditional slot instead (e.g. `@hide="empty? .x"`,
 `@show="equals? .view 'detail'"`).
 
-## Methods as Predicates & Computed Values
+## Computed values & predicates (`compute`)
 
-A no-arg method called via `$name` is invoked and its return value is
-used. Works anywhere a value is read — `@text`, `:attr`, `@show` /
-`@hide`, `@if.<attr>`, and `{…}` interpolation. (`.name` is a field
-read and never invokes; `$name` is the method call.)
+A no-arg `compute` entry called via `$name` is invoked and its return
+value is used. Works anywhere a value is read — `@text`, `:attr`,
+`@show` / `@hide`, `@if.<attr>`, and `{…}` interpolation. (`.name` is a
+field read and never invokes; `$name` is the call.)
 
 ```moonbit
-methods={
-  "canSubmit": (inst, _args) => {
-    match (inst.get("title"), inst.get("isLoading")) {
-      (Str(t), Bool(loading)) => Bool(t.length() > 0 && !loading)
-      _ => Bool(false)
-    }
+compute={
+  "canSubmit": (s : FormState, _args) => Bool(s.title.length() > 0 && !s.isLoading),
+  "buttonClass": (s : FormState, _args) => if s.isActive {
+    Str("btn btn-primary")
+  } else {
+    Str("btn")
   },
-  "buttonClass": (inst, _args) => {
-    match inst.get("isActive") {
-      Bool(true) => Str("btn btn-primary")
-      _ => Str("btn")
-    }
-  },
-  "fullName": (inst, _args) => {
-    let first = inst.get("first").to_display_string()
-    let last = inst.get("last").to_display_string()
-    Str("\{first} \{last}")
-  },
+  "fullName": (s : FormState, _args) => Str("\{s.first} \{s.last}"),
 }
 ```
 
@@ -520,25 +514,22 @@ methods={
 
 The boolean predicates (`empty?`, `truthy?`, `falsy?`, `null?`,
 `equals?`) cover single-field checks in conditional slots; reach for a
-method when the condition spans multiple fields or needs derivation. The
-method takes no template args.
+`compute` when the condition spans multiple fields or needs derivation.
+The handler bodies are typed — no pattern-matching `Value` shapes for
+plain struct fields.
 
-Tutuca expressions resolve a **single** name on the instance — there is
+Tutuca expressions resolve a **single** name on the state — there is
 no path syntax. `@text=".user.name"` does not navigate; it fails. When
 the value lives behind a field, your options are:
 
 - **Render the child as a component** — `<x render=".user">` then
   `@text=".name"` inside the child's view. Best when the nested thing is
   already (or could be) a component.
-- **Add a method** — a `MethodFn` reading through `Obj::obj_field`:
+- **Add a `compute`** — reading through the value coercers when the
+  field is a `@tutuca.Value`:
 
   ```moonbit
-  "userName": (inst, _args) => {
-    match inst.get("user") {
-      Obj(o) => o.obj_field("name").unwrap_or(Str(""))
-      _ => Str("")
-    }
-  },
+  "userName": (s : PageState, _args) => s.user.field("name"),
   ```
 
   then `@text="$userName"`. Best for one-off derivations or formatting.
@@ -547,24 +538,24 @@ the value lives behind a field, your options are:
   in [iteration.md](./iteration.md).
 
 Exceptions: `@each` / `render-each` accept `.field` or `*dynamic` only
-(not a `$method` — a method result has no addressable path for event
+(not a `$handler` — a computed result has no addressable path for event
 dispatch, so `$m` is rejected there at parse time), and `<x render>`
 expects a component instance — for a derived list, store it in a field
-or use `@when` with `alter`.
+or use `@when` with a `when` entry.
 
 ## Text Rendering
 
 ```html
 <span @text=".str"></span>          <!-- prepend text into span -->
 <x text=".bool"></x>                <!-- text-only, no DOM element -->
-<x text="$getStrUpper"></x>         <!-- $ calls a method -->
+<x text="$getStrUpper"></x>         <!-- $ calls a compute -->
 <x text="@value"></x>               <!-- loop binding -->
 ```
 
 Use `@text` when you already have a host element to put the text in; use
 `<x text=…>` for bare text with no wrapping element (e.g. text interleaved with
 other inline content, or a loop binding). Both take the same value forms
-(`.field`, `$method`, `@binding`). A `Null` text value renders nothing
+(`.field`, `$handler`, `@binding`). A `Null` text value renders nothing
 (not the string `"null"`).
 
 ## Attribute Binding
@@ -623,7 +614,7 @@ several of these. The usual suspects:
 - **camelCase attribute on a custom element** → setter no-op (see the lowercasing
   note above). Use kebab-case attributes. Not lintable — the HTML parser
   lowercases the name before either tutuca or the linter sees it.
-- **Forgotten margaui decoy view** → classes assembled in methods or
+- **Forgotten margaui decoy view** → classes assembled in `compute` entries or
   interpolations render unstyled. See [margaui.md](./margaui.md). Not lintable.
 - **A whitespace-only view** → blank render. A *leading* newline before the
   root element is fine (the parser trims it); a template with no element at all
@@ -632,7 +623,7 @@ several of these. The usual suspects:
 ## Event Handling
 
 ```html
-<!-- method (`$`) vs input handler (no prefix) -->
+<!-- $-handler (`$`) vs update dispatch (no prefix) -->
 <button @on.click="$inc">+</button>
 <button @on.click="dec">-</button>
 
@@ -643,11 +634,12 @@ several of these. The usual suspects:
 <button @on.click="loadAnotherWay">load</button>
 ```
 
-Written args arrive in the handler's `args` array in template order. For
-an `input` / `receive` / `bubble` / `response` handler the `&Ctx` is the
-explicit third parameter; a `$method` gets no ctx (methods are pure).
-So `$pick @key isAlt` calls the method with `args = [key, isAlt]`, and
-`loadAnotherWay` calls the input handler with `args = []` plus `ctx`.
+Written args arrive in the handler's `args` array in template order —
+pattern-match them directly (`Input("search", [Str(q), ..]) => ...`).
+For an `update` arm the `&Ctx` is the explicit third parameter of the
+update fn; a `$`-handler gets no ctx (`mutate`/`compute` are pure). So
+`$pick @key isAlt` calls the `$`-handler with `args = [key, isAlt]`, and
+`loadAnotherWay` dispatches `Input("loadAnotherWay", [])` plus ctx.
 
 Built-in handler argument names: `value`, `valueAsInt`, `valueAsFloat`,
 `target`, `event`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `key`, `keyCode`,
@@ -668,7 +660,7 @@ string parse.
 
 Ask for the most granular arg the handler actually uses — `value` /
 `valueAsInt` / `key`, not the raw `event` — when the specific value is
-all you need. A handler that pattern-matches `[Str(q), ..]` off a plain
+all you need. An arm that pattern-matches `[Str(q), ..]` off a plain
 `value` is trivial to call from a test; one that takes `event` needs an
 event-shaped `Map`. (The value layer deliberately exposes no DOM
 objects — file inputs and custom events already arrive as plain `Map`
@@ -695,15 +687,12 @@ glue maps it to a `Value::Map`:
 
 ```moonbit
 // the host page loads <emoji-picker> (emoji-picker-element) from a CDN;
-// the component just hosts the tag and handles its event
-input={
-  "onEmojiClick": (inst, args, _ctx) => {
-    match args.get(0) {
-      Some(Map(detail)) =>
-        Some(inst.set("current", detail.get("unicode").unwrap_or(Null)))
-      _ => None
-    }
-  },
+// the component just hosts the tag and handles its event.
+// `current : @tutuca.Value` in the state struct
+update=(s : PickerState, msg, _ctx) => match msg {
+  Input("onEmojiClick", [Map(detail), ..]) =>
+    Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
+  _ => None
 },
 ```
 
@@ -718,7 +707,7 @@ input={
 Handle these events declaratively with `@on.<event-name>` in the view —
 don't grab the node from host/glue code and `addEventListener` on it. A
 listener attached from outside the component runs outside the handler
-model: no `inst.set(...)` return, no transactor batching, and the mutation
+model: no new-state return, no transactor batching, and the mutation
 is invisible to the component that owns the state. For any event with a
 real element in the tree, `@on.` is the only entry point you need.
 Genuinely external inbound sources (WebSocket, `postMessage`, timers)
@@ -778,9 +767,10 @@ condition says hide — they do not merely toggle CSS visibility.
 ```
 
 Auto-bound names inside a loop are `@key` and `@value`. Iteration
-(`@each` / `render-each`), filtering (`@when`), item and scope
-enrichment (`@enrich-with`), pagination and the `@loop-with` return
-shape, and the `@each` lifecycle: see [iteration.md](./iteration.md).
+(`@each` / `render-each`), filtering (`@when` → the `when` bucket),
+item and scope enrichment (`@enrich-with` → `enrich` / `enrich_scope`),
+pagination and the `@loop-with` → `loop_with` return shape, and the
+`@each` lifecycle: see [iteration.md](./iteration.md).
 
 ## Rendering Components
 
@@ -799,7 +789,7 @@ The top-level `view=` is registered under `"main"` (the default); extras
 go under `views={ "name": "..." }`. `as` selects which view of the
 rendered component to use, falling back to `main` if absent. It accepts the
 same dynamic values as `@push-view` (a literal name like `edit`, or `.field`,
-`*dyn`, `@bind`, `$method`, `$'…{x}…'`), evaluated against the **host**
+`*dyn`, `@bind`, `$handler`, `$'…{x}…'`), evaluated against the **host**
 component at render time. `as` only applies to the **direct** component — for
 whole-subtree control, use `@push-view` (next section). For `render-each` the
 selector is evaluated once against the host, so every item gets the same view.
@@ -807,13 +797,17 @@ selector is evaluated once against the host, so every item gets the same view.
 ## Multiple Views & View Stack
 
 ```moonbit
+priv struct NoteState {
+  title : String
+} derive(ToJson, FromJson)
+
 @component.component(
   name="Note",
   view="<p @text=\".title\"></p>", // "main"
   views={
     "edit": "<input :value=\".title\" @on.input=\"$setTitle value\" />",
   },
-  fields={ "title": @component.FieldSpec::of_default(Str("")) },
+  init=NoteState::{ title: "" },
 )
 ```
 
@@ -840,29 +834,30 @@ declarations, and the at-rules that must live in `global_style`: see
 
 ## Triggers and Handlers
 
-Tutuca has four orchestration channels. Each pairs a trigger with a
-same-shape handler block:
+Tutuca has four orchestration channels. Each maps a trigger to one arm
+of the **same `update` match**:
 
-| Triggered by                                | Handler block       | Use for                                             |
-| ------------------------------------------- | ------------------- | --------------------------------------------------- |
-| DOM event (`click`, `input`, …)             | `input={ ... }`     | the component handling its own events               |
-| `ctx.bubble(name, args)` — event up the tree | `bubble={ ... }`   | aggregate state an ancestor owns (logs, selections) |
-| `ctx.send(name, args)` — message to a target path | `receive={ ... }` | addressing one known component (or self)         |
-| `ctx.request(name, args, opts)` — async request | `response={ ... }` | fetch / timer / storage, result routed back      |
+| Triggered by                                | `update` arm            | Use for                                             |
+| ------------------------------------------- | ----------------------- | --------------------------------------------------- |
+| DOM event (`click`, `input`, …)             | `Input(name, args)`     | the component handling its own events               |
+| `ctx.bubble(name, args)` — event up the tree | `Bubble(name, args)`   | aggregate state an ancestor owns (logs, selections) |
+| `ctx.send(name, args)` — message to a target path | `Receive(name, args)` | addressing one known component (or self)        |
+| `ctx.request(name, args, opts)` — async request | `Response(name, args)` | fetch / timer / storage, result routed back      |
 
-Every handler in these blocks is an `InstanceHandler` —
-`(inst, args, ctx) => Instance?` — and the framework swaps the returned
-instance into the dispatch path (`None` = no change). The three
-channels beyond `input` — plus `ctx.at()`, the `$unknown` fallback,
-per-call handler-name overrides, error handling, and `RequestFn`
-registration — are in [request-response.md](./request-response.md);
-worked snippets in
+The `update` fn — `(s, msg : Dispatch, ctx : &@tutuca.Ctx) => S?` — is
+one pattern match over all four; the framework swaps the returned state
+into the dispatch path (`None` = no change). `Input` dispatch that no
+`update` arm claims falls back to a `mutate` entry or generated mutator
+of the same name. The three channels beyond `Input` — plus `ctx.at()`,
+catch-all arms, per-call handler-name overrides, error handling, and
+`RequestFn` registration — are in
+[request-response.md](./request-response.md); worked snippets in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
-`alter` is a fifth handler block, but it isn't event-triggered — the
-renderer invokes alter handlers to produce binds, not state changes
-(see *Mental model*, and *Scope Enrichment* in
-[iteration.md](./iteration.md)).
+The render buckets (`when` / `enrich` / `enrich_scope` / `loop_with`)
+aren't event-triggered — the renderer invokes them to filter iterations
+and produce binds, not state changes (see *Mental model*, and *Scope
+Enrichment* in [iteration.md](./iteration.md)).
 
 ## Macros
 
@@ -881,8 +876,8 @@ Bypasses all escaping; children of the element are ignored when active.
 
 ## State values: the `Value` enum
 
-All component state is the `@tutuca.Value` enum — there is no immutable.js
-layer in this port:
+Underneath the typed structs, all state is the `@tutuca.Value` enum —
+there is no immutable.js layer in this port:
 
 ```moonbit
 pub(all) enum Value {
@@ -897,16 +892,23 @@ pub(all) enum Value {
 }
 ```
 
+- The state struct is encoded to / decoded from this layer (that is what
+  `derive(ToJson, FromJson)` wires up); `Obj`/`Fn` values held in
+  `@tutuca.Value` struct fields survive the round-trip losslessly.
 - `Value` derives `Eq` (deep structural equality) and `Debug`, so
   `assert_eq` and `debug_inspect` work on values directly.
 - `v.is_truthy()` gives JS-style truthiness; `v.to_display_string()`
-  the display form.
-- **Immutability is by discipline**: `List` / `Map` payloads are ordinary
-  mutable containers — handlers must **copy before changing**
-  (`a.copy()` then `push`, `m.copy()` then insert) and `inst.set(...)`
-  a new value, never mutate in place.
+  the display form. The coercers `v.int()`, `v.num()`, `v.str()`,
+  `v.bool()`, `v.list()`, `v.entries()`, and `v.field("name")` (works on
+  `Map` **and** `Obj`) read `Value`s in handler args and
+  `@tutuca.Value` fields.
+- **Immutability is by discipline**: `Array` / `Map` payloads are
+  ordinary mutable containers — handlers must **copy before changing**
+  (`s.items.copy()` then `push`) and return a **new** struct
+  (`Some({ ..s, items: next })`), never mutate in place.
 - Sets are modeled as a `Map` keyed by member (value `Bool(true)`) via
-  `FieldSpec::set`; ordered maps are plain `Map`s via `FieldSpec::omap`.
+  `specs=` + `FieldSpec::set`; ordered maps are plain `Map`s via
+  `FieldSpec::omap`.
 - Custom collections implement the `@tutuca.Obj` trait (notably
   `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
   *Custom collections* and `examples/custom_collection.mbt`.
@@ -930,7 +932,7 @@ pub fn my_module() -> @component.ModuleDef {
       {
         component: "Root",
         title: "Loaded",
-        args: { "items": List([item.make({}).to_value()]) },
+        args: { "items": List([item.make({})]) }, // make() returns a Value
         view: None, // or Some("edit") to render a named view
       },
     ],
@@ -973,9 +975,9 @@ coverage.
 - [component-design.md](./component-design.md) — design judgment for shaping a
   feature into components: responsibilities, where state lives, which channel to
   reach for, and a curated do's & don'ts list.
-- [request-response.md](./request-response.md) — `bubble` / `send`-`receive` /
-  `request`-`response` channels, `ctx.at()`, `$unknown`, and `RequestFn`
-  registration.
+- [request-response.md](./request-response.md) — the `Bubble` /
+  `Receive` / `Response` channels, `ctx.at()`, catch-all arms, and
+  `RequestFn` registration.
 - [advanced.md](./advanced.md) — dynamic bindings (`*x`), pseudo-`@x` for
   `<select>` / `<table>` / `<tr>`, drag & drop, custom collections.
 - [margaui.md](./margaui.md) — setting up MargaUI styling:

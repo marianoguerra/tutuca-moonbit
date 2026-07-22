@@ -5,7 +5,12 @@
 // source runs on both backends. Ctrl/⌘+Enter to run.
 
 const EXAMPLES = {
-  Counter: `// A counter. Fields get generated mutators ($inc); custom logic is a method.
+  Counter: `// A counter. State is a typed struct; fields get generated mutators ($inc
+// could also be written as \$updateCount) and update handles bare-name events.
+struct CounterState {
+  count : Int
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let counter = @component.component(
     name="Counter",
@@ -13,22 +18,15 @@ fn build() -> @component.ModuleDef {
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>
       #|  <b @text=".count"></b>
-      #|  <button @on.click="$inc">+</button>
+      #|  <button @on.click="\$inc">+</button>
       #|</div>
     ),
-    fields={ "count": @component.FieldSpec::of_default(Num(0)) },
-    methods={
-      "inc": (inst, _a) => match inst.get("count") {
-        Num(n) => inst.set("count", Num(n + 1)).to_value()
-        _ => inst.to_value()
-      },
+    init=CounterState::{ count: 0 },
+    update=(s : CounterState, msg, _ctx) => match msg {
+      Input("dec", _) => Some({ count: s.count - 1 })
+      _ => None
     },
-    input={
-      "dec": (inst, _a, _c) => match inst.get("count") {
-        Num(n) => Some(inst.set("count", Num(n - 1)))
-        _ => None
-      },
-    },
+    mutate={ "inc": (s : CounterState, _a) => { count: s.count + 1 } },
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
@@ -38,7 +36,11 @@ fn build() -> @component.ModuleDef {
 `,
 
   "Toggle (no logic)": `// A field named 'open' gets a generated \$toggleOpen mutator for free — no
-// hand-written method. @show/@hide read the field; no MoonBit logic needed.
+// hand-written handler. @show/@hide read the field; compute derives the label.
+struct PanelState {
+  open : Bool
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let panel = @component.component(
     name="Panel",
@@ -50,12 +52,11 @@ fn build() -> @component.ModuleDef {
       #|  </p>
       #|</section>
     ),
-    fields={ "open": @component.FieldSpec::of_default(Bool(false)) },
-    methods={
-      "label": (inst, _a) => match inst.get("open") {
-        Bool(true) => Str("Hide details")
-        _ => Str("Show details")
-      },
+    init=PanelState::{ open: false },
+    compute={
+      "label": (s : PanelState, _a) => Str(
+        if s.open { "Hide details" } else { "Show details" },
+      ),
     },
   )
   @component.ModuleDef::new(
@@ -66,7 +67,11 @@ fn build() -> @component.ModuleDef {
 `,
 
   "Text input": `// Two-way binding: :value reads the field, @on.input writes it via the
-// generated \$setName mutator. @text mirrors it live.
+// generated \$setName mutator. @text mirrors it live. No handlers needed.
+struct GreeterState {
+  name : String
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let greeter = @component.component(
     name="Greeter",
@@ -76,7 +81,7 @@ fn build() -> @component.ModuleDef {
       #|  <p>Hello, <b @text=".name"></b>!</p>
       #|</div>
     ),
-    fields={ "name": @component.FieldSpec::of_default(Str("world")) },
+    init=GreeterState::{ name: "world" },
   )
   @component.ModuleDef::new(
     name="greeter", components=[greeter],

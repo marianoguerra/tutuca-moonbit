@@ -14,6 +14,7 @@ import {
   "marianoguerra/tutuca/inspector",
   "moonbitlang/core/cmp",
   "moonbitlang/core/string",
+  "moonbitlang/core/json",
 }
 
 // The headless harness (@harness) mounts a module as a live app on the

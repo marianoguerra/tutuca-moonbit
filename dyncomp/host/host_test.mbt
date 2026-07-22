@@ -218,17 +218,23 @@ fn shell_module() -> @component.ModuleDef {
       #|  <x render=".slot">
       #|</div>
     ),
-    fields={
-      "slot": @component.FieldSpec::of_default(Null),
-      "note": @component.FieldSpec::of_default(Str("")),
-    },
-    receive={ "setSlot": (inst, args, _ctx) => Some(inst.set("slot", args[0])) },
-    bubble={
-      "counterChanged": (inst, args, _ctx) => Some(inst.set("note", args[0])),
+    init=TestShellState::{ slot: Null, note: "" },
+    update=(s : TestShellState, msg, _ctx) => {
+      match msg {
+        Receive("setSlot", [v, ..]) => Some({ ..s, slot: v })
+        Bubble("counterChanged", [v, ..]) => Some({ ..s, note: v.str() })
+        _ => None
+      }
     },
   )
   @component.ModuleDef::new(name="shelltest", components=[shell])
 }
+
+///|
+priv struct TestShellState {
+  slot : @tutuca.Value
+  note : String
+} derive(ToJson, FromJson)
 
 ///|
 fn mount_with_bundle(fake : FakeGuest) -> (@harness.Harness, Bundle) raise {

@@ -41,77 +41,68 @@ each item as a component in its own frame and drops child content, so
 nothing is left to read the `@X` binds an enricher would set. Reach for a
 host-element `@each` loop when you need enrichment.
 
-The three iteration helpers are `alter` entries — pure `MethodFn`s
-(`(inst, args) => Value`) whose `args` shape depends on the directive:
+Each iteration directive has its own **typed bucket** on the component,
+so the handler signatures say exactly what the renderer hands them —
+state first, always:
 
 ```moonbit
-alter={
-  // @when: args = [key, value, iterData]; return Bool (truthy keeps)
-  "filterItem": (inst, args) => {
-    match (inst.get("query"), args) {
-      (Str(q), [_key, Str(item), ..]) => Bool(item.contains(q))
-      _ => Bool(true)
-    }
+// @when: (s, key, value, iterData) -> Bool — true keeps the item
+when={
+  "filterItem": (s : ListState, _key, value, _iter) => value
+  .str()
+  .to_lower()
+  .contains(s.query.to_lower()),
+},
+// @enrich-with (with @each): (s, binds, key, value, iterData) -> Unit
+// binds is a MUTABLE Map seeded { key, value } — write into it,
+// the return value is Unit
+enrich={
+  "enrichItem": (_s : ListState, binds, _key, value, _iter) => binds["count"] = Num(
+    value.str().length().to_double(),
+  ),
+},
+// @loop-with: (s, seq, loopCtx) -> LoopWith, with optional
+// iter_data / start / end / keys
+loop_with={
+  "getIterData": (s : ListState, seq, _ctx) => {
+    let start = s.page * s.pageSize
+    @component.LoopWith::new(
+      iter_data=Map({ "total": Num(seq.list().length().to_double()) }),
+      start~,
+      end=start + s.pageSize,
+    )
   },
-  // @enrich-with (with @each): args = [binds, key, value, iterData];
-  // binds is a MUTABLE Map seeded { key, value } — write into it,
-  // the return value is ignored
-  "enrichItem": (_inst, args) => {
-    match args {
-      [Map(binds), _key, Str(item), ..] => {
-        binds["count"] = Num(item.length().to_double())
-        Null
-      }
-      _ => Null
-    }
-  },
-  // @loop-with: args = [seq, loopCtx]; return Map with optional
-  // iterData / start / end / keys
-  "getIterData": (inst, args) => {
-    let seq_len = match args {
-      [List(s), ..] => s.length()
-      _ => 0
-    }
-    let page = match inst.get("page") {
-      Num(n) => n.to_int()
-      _ => 0
-    }
-    let page_size = match inst.get("pageSize") {
-      Num(n) => n.to_int()
-      _ => 5
-    }
-    let start = page * page_size
-    Map({
-      "iterData": Map({ "total": Num(seq_len.to_double()) }),
-      "start": Num(start.to_double()),
-      "end": Num((start + page_size).to_double()),
-    })
-  },
-}
+},
 ```
 
-### `@loop-with` return shape — `iterData` + slicing
+Loop keys and values arrive as `@tutuca.Value` — read them with the
+coercers (`.str()`, `.int()`, `.list()`, `.field("x")`) or pattern-match
+(`match value { Str(item) => ..., _ => ... }`).
 
-A `@loop-with` handler returns a `Map` with up to four optional keys:
+### `@loop-with` return shape — `LoopWith`
 
-- **`iterData`** — the shared per-loop value handed to `@when` /
+A `@loop-with` handler returns a `@component.LoopWith`
+(`LoopWith::new(iter_data?=…, start?=…, end?=…, keys?=…)`) — all four
+fields optional:
+
+- **`iter_data`** — the shared per-loop value handed to `@when` /
   `@enrich-with`. Defaults to `Map({ "seq": seq })` when omitted. Inside
   the loop a binding may read one **binding member** directly
   (`@value.title`) — if an enrich handler only copies members of the
   loop value, the linter hints to drop it and read the members instead.
-- **`start`, `end`** (as `Num`) — a positional slice of the iteration,
+- **`start`, `end`** (as `Int`) — a positional slice of the iteration,
   with JS `Array.prototype.slice` semantics: `end` is exclusive,
-  negatives count from the end (`end: -3` drops the last 3), absent
+  negatives count from the end (`end=-3` drops the last 3), absent
   means the natural bound. Use this to **paginate** — skip a prefix
   and/or suffix without iterating or rendering it.
-- **`keys`** (as `List`) — an explicit, ordered list of **original keys**
-  to visit, for **filter-then-paginate**. The handler
+- **`keys`** (an `Array[@tutuca.Value]`) — an explicit, ordered list of
+  **original keys** to visit, for **filter-then-paginate**. The handler
   filters/sorts/slices the full sequence itself and returns the current
   page's slice of original keys; the renderer visits exactly those, in
   order. Takes precedence over `start`/`end` when both are present.
 
 Slicing is positional but **preserves each item's original key**: a list
-sliced to `start: 2` still binds `@key` to `2, 3, …`, so events, drag,
+sliced to `start=2` still binds `@key` to `2, 3, …`, so events, drag,
 and two-way binding keep their identity. With `start`/`end`, `@when` then
 filters *within* the window, so a page may yield fewer than `end - start`
 items — to filter *before* paging (so the page count reflects the filtered
@@ -121,40 +112,21 @@ hits the right item. A `keys` return is **authoritative** — the renderer
 visits exactly those keys and does **not** re-apply `@when` (the handler has
 already decided what renders).
 
-### `@loop-with` handler context — `args = [seq, loopCtx]`
+### `@loop-with` handler context — the `LoopCtx`
 
-The handler's second arg is the loop context — a `Map` holding two `Fn`
-values (so it can grow). Both follow the port's Fn calling convention:
-**element 0 of the call args is the this-slot** (pass `Null`):
+The handler's third parameter is the typed loop context,
+`@component.LoopCtx`, a struct of two function fields (call
+struct-function fields with parens):
 
-- **`lookup`** — reads a scope `@`-binding, e.g. one published by an
-  ancestor scope `@enrich-with`. Lets the handler **reuse a value the
-  enrich already computed** instead of recomputing it. Call as
-  `f([Null, Str("currentPage")])`.
-- **`filter`** — wraps the declared `@when` predicate (always callable; a
-  no-op that returns `Bool(true)` when there is no `@when`). Lets the
-  handler apply the *declared* filter while building its `keys` slice,
-  rather than re-implementing the match test. Call as
-  `f([Null, key, value, iterData])`.
-
-Small helpers keep the pattern-matching noise down (from
-`examples/filter_paginate.mbt`):
-
-```moonbit
-fn ctx_filter(ctx : Map[String, @tutuca.Value], i : Int, v : @tutuca.Value) -> Bool {
-  match ctx.get("filter") {
-    Some(Fn(f)) => f([Null, Num(i.to_double()), v, Null]) is Bool(true)
-    _ => true
-  }
-}
-
-fn ctx_lookup(ctx : Map[String, @tutuca.Value], name : String) -> @tutuca.Value {
-  match ctx.get("lookup") {
-    Some(Fn(f)) => f([Null, Str(name)])
-    _ => Null
-  }
-}
-```
+- **`(ctx.lookup)(name) : Value`** — reads a scope `@`-binding, e.g. one
+  published by an ancestor scope `@enrich-with`. Lets the handler
+  **reuse a value the enrich already computed** instead of recomputing
+  it: `(ctx.lookup)("currentPage")`.
+- **`(ctx.filter)(key, value, iter_data) : Bool`** — wraps the declared
+  `@when` predicate (always callable; returns `true` when there is no
+  `@when`). Lets the handler apply the *declared* filter while building
+  its `keys` slice, rather than re-implementing the match test:
+  `(ctx.filter)(Num(i.to_double()), v, Null)`.
 
 ### Lifecycle of `@each`
 
@@ -164,21 +136,22 @@ For each render of an element with `@each=".items"`:
    `Obj` implementing `obj_seq_entries` are recognized (see *Custom
    collections* below).
 2. **`@loop-with`** (once per render) — the handler is called with
-   `[seq, loopCtx]`; its `iterData` becomes the shared per-loop value and
-   its `start`/`end` slice the iteration. Skipped if no `@loop-with`;
-   then `iterData` is `Map({ "seq": seq })` and the whole sequence is
-   iterated. If it returns `keys`, those exact keys are visited in order
-   (filter-then-paginate) and `start`/`end` are ignored.
+   `(state, seq, loop_ctx)`; its `iter_data` becomes the shared per-loop
+   value and its `start`/`end` slice the iteration. Skipped if no
+   `@loop-with`; then `iter_data` is `Map({ "seq": seq })` and the whole
+   sequence is iterated. If it returns `keys`, those exact keys are
+   visited in order (filter-then-paginate) and `start`/`end` are ignored.
 3. For each `(key, value)` pair in the sliced sequence (or each `key` in
    `keys`):
-   1. **`@when`** — called with `[key, value, iterData]`; if it returns
-      a falsy value, the item is skipped. **Not applied** when the
+   1. **`@when`** — called with `(state, key, value, iter_data)`; if it
+      returns `false`, the item is skipped. **Not applied** when the
       handler returned `keys` (those are authoritative).
-   2. **`@enrich-with`** — called with `[binds, key, value, iterData]`.
-      `binds` is a **mutable `Map`** seeded with `{ key, value }`;
-      writing into it (`binds["count"] = …`) creates `@`-prefixed
-      bindings available in the templated children. The return value is
-      ignored (and `key`/`value` are restored afterwards).
+   2. **`@enrich-with`** — called with
+      `(state, binds, key, value, iter_data)`. `binds` is a **mutable
+      `Map[String, Value]`** seeded with `{ key, value }`; writing into
+      it (`binds["count"] = …`) creates `@`-prefixed bindings available
+      in the templated children. The return type is `Unit` (and
+      `key`/`value` are restored afterwards).
    3. **Render** the element with the new bindings on the stack.
 
 Auto-bound names inside the loop are always `@key` and `@value` (or
@@ -186,25 +159,26 @@ whatever you wrote into `binds`).
 
 ### Handler resolution
 
-`@when` / `@enrich-with` / `@loop-with` resolve like event handler names:
-bare `filterItem` → `alter` entry (idiomatic); `$filterItem` →
-`methods` entry (works, not idiomatic — `alter` keeps iteration helpers
-grouped).
+`@when` / `@enrich-with` / `@loop-with` name bare identifiers resolved
+in the matching typed bucket: `@when="filterItem"` → the `when` entry,
+`@enrich-with` → `enrich` (or `enrich_scope` without `@each`),
+`@loop-with` → `loop_with`. When no typed-bucket entry matches, the name
+falls back to a `compute`/`mutate`/generated entry (works, not
+idiomatic — the typed buckets keep iteration helpers grouped and give
+them the right signature).
 
 ## Scope Enrichment
 
-Without an `@each` on the same element, `@enrich-with` becomes a scope
-enricher: it is called with **no args**, and its **return value** (a
-`Map`) is the bindings object whose keys become `@`-prefixed bindings
-for descendants.
+Without an `@each` on the same element, `@enrich-with` resolves in the
+**`enrich_scope`** bucket instead: the handler takes only the state, and
+its **returned** `Map[String, Value]`'s keys become `@`-prefixed
+bindings for descendants.
 
 ```moonbit
-alter={
-  "enrichScope": (inst, _args) => {
-    match inst.get("text") {
-      Str(t) => Map({ "len": Num(t.length().to_double()) })
-      _ => Map({})
-    }
+enrich_scope={
+  "enrichScope": (s : TextState) => {
+    "len": Num(s.text.length().to_double()),
+    "upper": Str(s.text.to_upper()),
   },
 }
 ```
@@ -242,11 +216,12 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 }
 ```
 
-Store it in a field as `Obj(KeyedList::{ ... })`. Operations must return
-**new** instances so state transactions see a change. One trait-object
-caveat: a handler sees the field as `&Obj` and there is no downcast back
-to the concrete struct — rebuild the collection from `obj_seq_entries()`
-when mutating (the port's trait-object rule). Complete worked example:
+Store it in a `@tutuca.Value` state field as `Obj(KeyedList::{ ... })`.
+Operations must return **new** instances so state transactions see a
+change. One trait-object caveat: a handler sees the field as `&Obj` and
+there is no downcast back to the concrete struct — rebuild the
+collection from `obj_seq_entries()` when mutating (the port's
+trait-object rule). Complete worked example:
 `examples/custom_collection.mbt` (a keyed playlist whose `@key`s resolve
 in remove handlers).
 
@@ -260,17 +235,18 @@ version of all three is `examples/filter_paginate.mbt`:
 
 **1. Naive — two independent scans.** The loop scans + slices the whole
 list itself; a separate `@enrich-with` scans again for the pager labels.
-Simplest, nothing shared: the `@loop-with` handler walks `seq` with
-`ctx_filter`, builds the full matching index list, clamps the page, and
-returns that page's slice as `keys`.
+Simplest, nothing shared: the `loop_with` handler walks `seq.list()`
+with `(ctx.filter)(...)`, builds the full matching index list, clamps
+the page, and returns that page's slice as `keys`.
 
 **2. Shared — one count + one partial collect** (the recipe's default).
-A scope `@enrich-with` on an ancestor does **one** counting scan and
-publishes the clamped page + pager labels (which the page controls,
-sitting outside the loop, read as `@`-bindings); the `@loop-with` handler
-reads the clamped page via `ctx_lookup(ctx, "currentPage")`, reuses the
-predicate via `ctx_filter`, and collects only the current page's keys —
-early-exiting once the page is full.
+A scope `@enrich-with` (`enrich_scope`) on an ancestor does **one**
+counting scan and publishes the clamped page + pager labels (which the
+page controls, sitting outside the loop, read as `@`-bindings); the
+`loop_with` handler reads the clamped page via
+`(ctx.lookup)("currentPage")`, reuses the predicate via `(ctx.filter)`,
+and collects only the current page's keys — early-exiting once the page
+is full.
 
 **3. Coupled — one scan.** The enrich does *everything*, including the
 page keys, and stashes them in a binding only the loop reads. Fastest,
@@ -278,26 +254,29 @@ but the two handlers are welded together — name them so it shows:
 
 ```moonbit
 // the only scan: count + labels + keys, stashed under "__keys__"
-alter["pagerInfo"] = (inst, _args) => Map({
-  "__keys__": List(page_keys(inst)), // consumed ONLY by the loop-with below
-  "isFirst": ..., "isLast": ..., "pageLabel": ...,
-})
+enrich_scope={
+  "pagerInfo": (s : PeopleState) => {
+    "__keys__": List(page_keys(s)), // consumed ONLY by the loop-with below
+    "isFirst": Bool(...), "isLast": Bool(...), "pageLabel": Str(...),
+  },
+},
 // useless without the enrich: just forwards its keys
-alter["forwardKeys"] = (_inst, args) => {
-  let ctx = match args {
-    [_, Map(c), ..] => c
-    _ => {}
-  }
-  Map({ "keys": ctx_lookup(ctx, "__keys__") })
-}
+loop_with={
+  "forwardKeys": (_s : PeopleState, _seq, ctx) => match
+    (ctx.lookup)("__keys__") {
+    List(keys) => @component.LoopWith::new(keys~)
+    _ => @component.LoopWith::new(keys=[])
+  },
+},
 ```
 
 Test any strategy end-to-end with the harness — mount the example, type
 into the search box, click the pager, and assert the visible rows
 (`h.texts(".row")`); see `examples/filter_paginate_test.mbt` and
 [testing.md](./testing.md). (The JS `collectIterBindings` helper has no
-MoonBit counterpart — the alter handlers are plain functions, so call
-them directly for unit-level checks, or go through the mounted view.)
+MoonBit counterpart — the bucket handlers are plain typed functions, so
+call them directly for unit-level checks, or go through the mounted
+view.)
 
 ## See also
 

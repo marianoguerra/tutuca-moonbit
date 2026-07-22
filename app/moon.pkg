@@ -9,4 +9,5 @@ import {
 
 import {
   "marianoguerra/tutuca/vdom/memdom",
+  "moonbitlang/core/json",
 } for "test"

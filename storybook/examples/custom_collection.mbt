@@ -36,13 +36,25 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 }
 
 ///|
+priv struct SongState {
+  title : String
+} derive(ToJson, FromJson)
+
+///|
 fn song_comp() -> @component.Component {
   @component.component(
     name="Song",
     view="<span class=\"song\" @text=\".title\"></span>",
-    fields={ "title": @component.FieldSpec::of_default(Str("")) },
+    init=SongState::{ title: "" },
   )
 }
+
+///|
+/// The `songs` field holds the custom KeyedList as an opaque Obj — declared
+/// `@tutuca.Value` in the state, it round-trips updates losslessly.
+priv struct PlaylistState {
+  songs : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
 fn playlist_comp() -> @component.Component {
@@ -56,18 +68,14 @@ fn playlist_comp() -> @component.Component {
       #|  </li>
       #|</ul>
     ),
-    fields={
-      "songs": @component.FieldSpec::of_default(
-        Obj(KeyedList::{ order: [], items: Map([]) }),
-      ),
-    },
-    methods={
-      // The instance only sees `&Obj`, so the removal REBUILDS the keyed
+    init=PlaylistState::{ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
+    mutate={
+      // The state only sees `&Obj`, so the removal REBUILDS the keyed
       // list from obj_seq_entries minus the key (there is no downcast back
       // to KeyedList — the port's trait-object rule).
-      "removeSong": (inst, args) => {
-        guard args is [Str(key), ..] else { return inst.to_value() }
-        match inst.get("songs") {
+      "removeSong": (s : PlaylistState, args) => {
+        guard args is [Str(key), ..] else { return s }
+        match s.songs {
           Obj(o) =>
             match o.obj_seq_entries() {
               Some(entries) => {
@@ -75,15 +83,15 @@ fn playlist_comp() -> @component.Component {
                 for entry in entries {
                   let (pk, v) = entry
                   match pk {
-                    KStr(s) => if s != key { next = next.set(s, v) }
+                    KStr(k) => if k != key { next = next.set(k, v) }
                     _ => ()
                   }
                 }
-                inst.set("songs", Obj(next)).to_value()
+                { songs: Obj(next) }
               }
-              None => inst.to_value()
+              None => s
             }
-          _ => inst.to_value()
+          _ => s
         }
       },
     },
@@ -93,9 +101,9 @@ fn playlist_comp() -> @component.Component {
 ///|
 fn demo_songs(song : @component.Component) -> KeyedList {
   KeyedList::{ order: [], items: Map([]) }
-  .set("intro", song.make({ "title": Str("Intro") }).to_value())
-  .set("middle", song.make({ "title": Str("Middle Eight") }).to_value())
-  .set("outro", song.make({ "title": Str("Outro") }).to_value())
+  .set("intro", song.make({ "title": Str("Intro") }))
+  .set("middle", song.make({ "title": Str("Middle Eight") }))
+  .set("outro", song.make({ "title": Str("Outro") }))
 }
 
 ///|

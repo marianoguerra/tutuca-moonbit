@@ -2,6 +2,11 @@
 // its render; the drop handler on the TARGET row reads the source's loop key via
 // `dragInfo.lookupBind("key")`. data-dragtype/data-droptarget pair a source with
 // the targets that accept it. Styled with margaui classes.
+struct DnDState {
+  items : Array[@tutuca.Value]
+  query : String
+} derive(ToJson, FromJson)
+
 fn build() -> @component.ModuleDef {
   let dnd = @component.component(
     name="DnDExample",
@@ -29,41 +34,28 @@ fn build() -> @component.ModuleDef {
       #|  transition: 0.15s border-top ease;
       #|}
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-    },
-    alter={
-      "filterItem": (inst, args) => match (inst.get("query"), args) {
-        (Str(q), [_key, Str(item), ..]) => Bool(item.contains(q))
-        _ => Bool(true)
+    init=DnDState::{ items: [], query: "" },
+    when={
+      "filterItem": (s : DnDState, _key, item, _iter) => match item {
+        Str(text) => text.contains(s.query)
+        _ => true
       },
     },
-    input={
+    update=(s : DnDState, msg, _ctx) => match msg {
       // args: [@key (the TARGET row's key), dragInfo]
-      "onDropOnItem": (inst, args, _ctx) => {
-        let items = match inst.get("items") {
-          List(a) => a
-          _ => return None
-        }
-        let target = match args {
-          [Num(t), ..] => t.to_int()
-          _ => return None
-        }
-        let source = match args {
-          [_, Obj(di), ..] =>
-            match di.obj_field("lookupBind") {
-              Some(Fn(lookup)) =>
-                match lookup([Null, Str("key")]) {
-                  Num(s) => s.to_int()
-                  _ => -1
-                }
+      Input("onDropOnItem", [Num(t), Obj(di), ..]) => {
+        let target = t.to_int()
+        let source = match di.obj_field("lookupBind") {
+          Some(Fn(lookup)) =>
+            match lookup([Null, Str("key")]) {
+              Num(n) => n.to_int()
               _ => -1
             }
           _ => -1
         }
-        Some(inst.set("items", List(move_index_to_index(items, source, target))))
-      },
+        Some({ ..s, items: move_index_to_index(s.items, source, target) })
+      }
+      _ => None
     },
   )
   @component.ModuleDef::new(

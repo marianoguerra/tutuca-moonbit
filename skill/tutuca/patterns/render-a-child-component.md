@@ -4,9 +4,10 @@
 it (reaching into nested data is not allowed — `@text=".child.name"` fails).
 
 ```moonbit
-fields={
-  // built through the registration scope at make() time — a forward
-  // reference by name, no import cycle
+specs={
+  // a slot field, NOT in the state struct — built through the
+  // registration scope at make() time: a forward reference by name,
+  // no import cycle
   "greeting": @component.FieldSpec::comp("Greeting", args={ "name": Str("world") }),
 },
 ```

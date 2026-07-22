@@ -2,28 +2,35 @@
 // Split from schema.mbt; same package.
 
 ///|
+priv struct SchemaViewerState {
+  value : @tutuca.Value
+  raw : @tutuca.Value
+  rawSchema : @tutuca.Value
+  showRaw : Bool
+} derive(ToJson, FromJson)
+
+///|
 /// Holds the classified high-level tree in `value` and a DataInspector of the
 /// original schema in `raw`; `showRaw` toggles between them. `rawSchema`
 /// keeps the plain schema for inspection.
 fn schema_viewer_comp() -> @component.Component {
   @component.component(
     name="SchemaViewer",
-    fields={
-      "value": @component.FieldSpec::of_default(Null),
-      "raw": @component.FieldSpec::of_default(Null),
-      "rawSchema": @component.FieldSpec::of_default(Null),
-      "showRaw": @component.FieldSpec::of_default(Bool(false)),
+    init=SchemaViewerState::{
+      value: Null,
+      raw: Null,
+      rawSchema: Null,
+      showRaw: false,
     },
-    methods={
-      "toggleIsExpanded": wrapper_toggle,
-      "toggleLabel": (inst, _args) => {
-        Str(
-          if bool_field(inst, "showRaw") {
-            "high-level view"
-          } else {
-            "raw schema"
-          },
-        )
+    mutate={
+      "toggleIsExpanded": (s : SchemaViewerState, _args) => {
+        ..s,
+        value: toggle_wrapped(s.value),
+      },
+    },
+    compute={
+      "toggleLabel": (s : SchemaViewerState, _args) => {
+        Str(if s.showRaw { "high-level view" } else { "raw schema" })
       },
     },
     view=(

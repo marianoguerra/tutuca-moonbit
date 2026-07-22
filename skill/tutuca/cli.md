@@ -62,7 +62,7 @@ Module commands (run against the embedded `ModuleDef`):
 | `get`                    | Summarize the module's components and counts                                                                          |
 | `list [name] [--limit n]` | List components with their views and fields (name + kind). `--limit n` caps; `0` = all (`truncated: true` in JSON when capped) |
 | `examples [--limit n]`   | List the module's `ExampleDef`s. `--limit n` caps total items; `0` = all                                               |
-| `show [name]`            | Show API docs for components (methods, input handlers, fields with generated accessors) — all or one                  |
+| `show [name]`            | Show API docs for components (`update` presence, `mutate`/`compute`/render-bucket names, fields with generated accessors) — all or one |
 | `lint [name]`            | Run the lint checks (view HTML + component provide/lookup shape); exits **2** on any error-level finding               |
 | `render [name] [--title t] [--view v]` | Render examples to HTML headlessly (memdom). Filter by component name or `--title`; `--view` overrides the example's view. Exit **3** is reserved for render crashes |
 
@@ -199,9 +199,10 @@ category) is available straight from the CLI:
 - `tutuca agent-context` — machine-readable: the `lintCodes` array, each
   entry `{ code, level, group, summary }`.
 
-Categories include field/method references, input-handler ↔ method
-confusion, iteration helpers (`alter`), dynamic bindings (`*name`),
-template/event issues, value-expression errors, and unregistered names.
+Categories include field/`$`-handler references, bare-name ↔ `$`-name
+confusion, iteration helpers (the `when`/`enrich`/`loop_with` buckets),
+dynamic bindings (`*name`), template/event issues, value-expression
+errors, and unregistered names.
 Representative codes: `FIELD_VAL_NOT_DEFINED`, `METHOD_VAL_IS_FIELD`,
 `ALT_HANDLER_NOT_DEFINED`, `DYN_VAL_NOT_DEFINED`, `UNKNOWN_DIRECTIVE`,
 `UNSUPPORTED_EXPR_SYNTAX`.

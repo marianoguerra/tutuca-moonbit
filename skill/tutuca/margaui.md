@@ -140,9 +140,10 @@ and it renders unstyled. Two cases:
 
 - **Interpolated templates** — `:class="$'bg-{.color}'"` contributes only the
   constant prefix `bg-`, never `bg-red` / `bg-blue`. Same for any `{…}` segment.
-- **Classes built in a method** — anything a `MethodFn` returns (e.g. a
-  `headerClass` that builds `"progress-" + color`) is never scanned at
-  all; the collector only reads view templates, not MoonBit bodies.
+- **Classes built in a handler** — anything a `compute` entry returns
+  (e.g. a `headerClass` that builds `"progress-" + color`) is never
+  scanned at all; the collector only reads view templates, not MoonBit
+  bodies.
 
 (Literal `@then` / `@else` strings on `@if.class` — e.g.
 `@if.class=".active" @then="'btn-success'" @else="'btn-ghost'"` — **are**
@@ -164,7 +165,7 @@ views={
 (`ps_category_decoy_classes()`) into the view **string at construction
 time**, so the color tables stay the single source of truth while the
 template still carries literals. The cost is that the palette and the
-methods can drift apart with no check catching it; keep them adjacent and
+compute entries can drift apart with no check catching it; keep them adjacent and
 update both together. (This is the same rule
 [component-design.md](./component-design.md) gives for runtime-assembled
 margaui classes.)

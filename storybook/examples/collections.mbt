@@ -4,18 +4,23 @@
 //   docs/examples/list-filter-enrich.js      — @each + @when + @enrich-with
 //   docs/examples/list-filter-enrich-with.js — + @loop-with (shared per-loop data)
 //
-// The `alter` call conventions the renderer uses (render/render.mbt,
-// render/loop.mbt), with the instance as `this` in every case:
+// Each render-time directive now has its own TYPED bucket, so the handler
+// signatures say what the renderer hands them (state first, always):
 //
-//   @when        args [key, value, iterData]                -> truthy keeps the item
-//   @enrich-with args [binds, key, value, iterData]         -> MUTATE binds; return ignored
-//   @loop-with   args [seq, loopCtx]                        -> { iterData?, start?, end?, keys? }
-//   @enrich-with args [] (scope form, no @each)             -> RETURN a map of binds
+//   when         (s, key, value, iterData) -> Bool           true keeps the item
+//   enrich       (s, binds, key, value, iterData) -> Unit    MUTATE binds; return ignored
+//   loop_with    (s, seq, loopCtx) -> LoopWith               iter_data? / start? / end? / keys?
+//   enrich_scope (s) -> Map[String, Value]                   RETURN the binds (no @each)
 
 ///|
-/// `@enrich-with` on an element with no `@each` is the *scope* form: the alter
-/// returns a map whose keys become `@`-bindings for the subtree. Derived values
-/// without putting them in component state.
+priv struct RenderWithScopeState {
+  text : String
+} derive(ToJson, FromJson)
+
+///|
+/// `@enrich-with` on an element with no `@each` is the *scope* form: the
+/// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
+/// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
   @component.component(
     name="RenderWithScope",
@@ -29,17 +34,11 @@ fn render_with_scope_comp() -> @component.Component {
       #|  </div>
       #|</section>
     ),
-    fields={ "text": @component.FieldSpec::of_default(Str("Hello")) },
-    alter={
-      "enrichScope": (inst, _args) => {
-        match inst.get("text") {
-          Str(s) =>
-            Map({
-              "len": Num(s.length().to_double()),
-              "upper": Str(s.to_upper()),
-            })
-          _ => Map(Map([]))
-        }
+    init=RenderWithScopeState::{ text: "Hello" },
+    enrich_scope={
+      "enrichScope": (s : RenderWithScopeState) => {
+        "len": Num(s.text.length().to_double()),
+        "upper": Str(s.text.to_upper()),
       },
     },
   )
@@ -68,8 +67,14 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@enrich-with` inside a loop MUTATES the binds map it is handed — the return
-/// value is ignored. Setting `binds["count"]` makes `@count` readable in the row.
+priv struct ListFilterEnrichState {
+  items : Array[@tutuca.Value]
+  query : String
+} derive(ToJson, FromJson)
+
+///|
+/// `enrich` inside a loop MUTATES the binds map it is handed — the return
+/// value is Unit. Setting `binds["count"]` makes `@count` readable in the row.
 fn list_filter_enrich_comp() -> @component.Component {
   @component.component(
     name="ListFilterEnrich",
@@ -85,25 +90,21 @@ fn list_filter_enrich_comp() -> @component.Component {
       #|  </ul>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-    },
-    alter={
-      "filterItem": (inst, args) => {
-        match (inst.get("query"), args) {
-          (Str(q), [_key, Str(item), ..]) =>
-            Bool(item.to_lower().contains(q.to_lower()))
-          _ => Bool(true)
+    init=ListFilterEnrichState::{ items: [], query: "" },
+    when={
+      "filterItem": (s : ListFilterEnrichState, _key, value, _iter) => {
+        match value {
+          Str(item) => item.to_lower().contains(s.query.to_lower())
+          _ => true
         }
       },
-      "enrichItem": (_inst, args) => {
-        match args {
-          [Map(binds), _key, Str(item), ..] =>
-            binds["count"] = Num(item.length().to_double())
+    },
+    enrich={
+      "enrichItem": (_s : ListFilterEnrichState, binds, _key, value, _iter) => {
+        match value {
+          Str(item) => binds["count"] = Num(item.length().to_double())
           _ => ()
-        } // the return value is ignored; the mutation is the point
-        Null
+        }
       },
     },
   )
@@ -126,8 +127,8 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 }
 
 ///|
-/// `@loop-with="getIterData"` runs ONCE before the loop and its `iterData` is
-/// handed to every @when / @enrich-with call. `queryLower` is lowercased once
+/// `@loop-with="getIterData"` runs ONCE before the loop and its `iter_data` is
+/// handed to every when / enrich call. `queryLower` is lowercased once
 /// instead of per item, and `totalChars` is summed over the WHOLE sequence,
 /// before any filtering.
 fn list_filter_enrich_with_comp() -> @component.Component {
@@ -145,53 +146,45 @@ fn list_filter_enrich_with_comp() -> @component.Component {
       #|  </ul>
       #|</section>
     ),
-    fields={
-      "items": @component.FieldSpec::of_default(List([])),
-      "query": @component.FieldSpec::of_default(Str("")),
-    },
-    alter={
-      "getIterData": (inst, args) => {
+    init=ListFilterEnrichState::{ items: [], query: "" },
+    loop_with={
+      "getIterData": (s : ListFilterEnrichState, seq, _ctx) => {
         let mut total = 0
-        match args {
-          [List(seq), ..] =>
-            for item in seq {
-              match item {
-                Str(s) => total += s.length()
-                _ => ()
-              }
-            }
-          _ => ()
+        for item in seq.list() {
+          match item {
+            Str(v) => total += v.length()
+            _ => ()
+          }
         }
-        let query_lower = match inst.get("query") {
-          Str(q) => q.to_lower()
-          _ => ""
-        }
-        Map({
-          "iterData": Map({
+        @component.LoopWith::new(
+          iter_data=Map({
             "totalChars": Num(total.to_double()),
-            "queryLower": Str(query_lower),
+            "queryLower": Str(s.query.to_lower()),
           }),
-        })
+        )
       },
-      "filterItem": (_inst, args) => {
-        match args {
-          [_key, Str(item), Map(iter_data), ..] =>
+    },
+    when={
+      "filterItem": (_s : ListFilterEnrichState, _key, value, iter) => {
+        match (value, iter) {
+          (Str(item), Map(iter_data)) =>
             match iter_data.get("queryLower") {
-              Some(Str(q)) => Bool(item.to_lower().contains(q))
-              _ => Bool(true)
+              Some(Str(q)) => item.to_lower().contains(q)
+              _ => true
             }
-          _ => Bool(true)
+          _ => true
         }
       },
-      "enrichItem": (_inst, args) => {
-        match args {
-          [Map(binds), _key, Str(item), Map(iter_data), ..] => {
+    },
+    enrich={
+      "enrichItem": (_s : ListFilterEnrichState, binds, _key, value, iter) => {
+        match (value, iter) {
+          (Str(item), Map(iter_data)) => {
             binds["count"] = Num(item.length().to_double())
             binds["total"] = iter_data.get("totalChars").unwrap_or(Null)
           }
           _ => ()
         }
-        Null
       },
     },
   )
