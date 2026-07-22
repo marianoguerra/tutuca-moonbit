@@ -34,9 +34,9 @@ and formal `spec.mbt`. From the bottom up:
 The `tutuca` CLI exposes `get` / `list` / `examples` / `show` / `lint` /
 `render` / `storybook` / `gen-views` / `install-skill`.
 
-## Views (`compiled_views` + `gen-views`)
+## Views (`views~` + `gen-views`)
 
-`component(...)` takes its views as `compiled_views~ : Map[String,
+`component(...)` takes its views as `views~ : Map[String,
 @anode.View]` — a view is a built `@anode.View`, never a raw string. There are
 two ways to build them: **ahead of time** with `tutuca gen-views` (the
 recommended path, below), or at runtime with `@anode.View::new("main",
@@ -58,7 +58,7 @@ template is that view's style; one at file level is the component's common
 style, or its global style with `data-global`.
 
 For a component named `Counter` the generated module declares
-`counter_compiled_views()` (the built views, for `compiled_views~`),
+`counter_views()` (the built views, for `views~`),
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
 `CounterMsg::of_dispatch`), `CounterMethod` with `counter_mutate` /
@@ -117,12 +117,12 @@ macros belong in the view file rather than being registered from MoonBit:
 
 `gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
 event table each view parses into, as MoonBit literals. Pass it as
-`compiled_views~` and the template parser never runs at startup:
+`views~` and the template parser never runs at startup:
 
 ```moonbit nocheck
 @component.component(
   name="Counter",
-  compiled_views=counter_compiled_views(),
+  views=counter_views(),
   init=CounterState::{ label: "Counter", count: 0, history: [] },
   update=...,
 )
@@ -173,7 +173,7 @@ runs the same generator in the browser. Its left pane has three tabs:
 | **Generated** | read-only: what `gen-views` makes of the View tab, updating as you type |
 
 The generated modules are compiled as extra files of *your* package, so the
-Component tab names `counter_compiled_views()` / `CounterMsg` / `CounterId`
+Component tab names `counter_views()` / `CounterMsg` / `CounterId`
 with no import — and adding an `@on` handler in the View tab fails the build
 with `Partial match … Some(Del(_))` until the Component tab handles it. Load
 the "Counter (view tab)" example to see it.

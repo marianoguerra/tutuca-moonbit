@@ -41,7 +41,7 @@ priv struct EntryState {
 ///|
 fn component_entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -88,7 +88,7 @@ priv struct PickerState {
 ///|
 fn component_picker_comp(entry : @component.Component) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -203,7 +203,7 @@ priv struct ListState {
 ///|
 fn component_list_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -310,7 +310,7 @@ priv struct ShellState {
 ///|
 fn universal_shell_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

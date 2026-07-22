@@ -12,7 +12,7 @@
 //
 // It emits two modules: counter_view_gen.mbt (the types) and
 // counter_view_ir_gen.mbt (the already-compiled @anode tree, taken by
-// `compiled_views~`, which is why no view source is passed below).
+// `views~`, which is why no view source is passed below).
 
 ///|
 priv struct CounterState {
@@ -25,10 +25,10 @@ priv struct CounterState {
 pub fn counter_comp() -> @component.Component {
   @component.component(
     name="Counter",
-    // The compiled tree (counter_view_ir_gen.mbt): no template parsing at
-    // startup. Swap for `view=counter_main_view, views=counter_views(),
-    // style=counter_style` to go back to parsing from source.
-    compiled_views=counter_compiled_views(),
+    // The views, already compiled (counter_view_ir_gen.mbt) — no template
+    // parsing at startup. For a runtime-parsed view instead, build the map
+    // with @anode.View::new.
+    views=counter_views(),
     init=CounterState::{ label: "Counter", count: 0, history: [] },
     update=(s : CounterState, msg, _ctx) => {
       match CounterMsg::of_dispatch(msg) {

@@ -13,7 +13,7 @@ priv struct BoardState {
 ///|
 fn board_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div>" +

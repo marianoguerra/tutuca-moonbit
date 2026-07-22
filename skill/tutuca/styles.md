@@ -7,7 +7,7 @@ blocks or debugging CSS that silently doesn't apply.
 priv struct NoState {} derive(ToJson, FromJson)
 
 @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<p class=\"mine\">x</p>", style=".mine { color: red; }"),
     "two": @anode.View::new("two", raw_view="<p class=\"mine\">two</p>", style=".mine { color: orange; }"),
   },

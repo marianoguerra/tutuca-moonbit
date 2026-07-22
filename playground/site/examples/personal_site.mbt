@@ -179,7 +179,7 @@ struct AltUrlState {
 ///|
 fn alt_url_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
     )),
@@ -206,7 +206,7 @@ struct PsEntryState {
 ///|
 fn ps_entry_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="card bg-base-200 shadow-sm p-2 sm:p-3 flex flex-col gap-2 ps-entry">
       #|  <div class="flex gap-1 sm:gap-2 flex-wrap items-center">
@@ -319,7 +319,7 @@ struct PsRootState {
 ///|
 fn root_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="ps-root flex flex-col gap-4">
       #|  <div class="card bg-base-200 p-4 controls">

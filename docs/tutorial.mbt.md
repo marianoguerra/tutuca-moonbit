@@ -59,7 +59,7 @@ priv struct CounterState {
 ///|
 fn counter() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -172,7 +172,7 @@ priv struct ProfileState {
 ///|
 fn profile_module() -> @component.ModuleDef {
   let profile = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -221,7 +221,7 @@ priv struct SearchState {
 ///|
 fn search_module() -> @component.ModuleDef {
   let search = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -269,7 +269,7 @@ priv struct ToggleState {
 ///|
 fn toggle_module() -> @component.ModuleDef {
   let toggle = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -327,7 +327,7 @@ priv struct FruitsState {
 ///|
 fn fruits_module() -> @component.ModuleDef {
   let fruits = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -401,7 +401,7 @@ priv struct NoState {} derive(ToJson, FromJson)
 ///|
 fn page_module() -> @component.ModuleDef {
   let greeting = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -419,7 +419,7 @@ fn page_module() -> @component.ModuleDef {
     init=GreetingState::{ name: "world" },
   )
   let page = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -492,7 +492,7 @@ priv struct ChatState {
 ///|
 fn chat_module() -> @component.ModuleDef {
   let status = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -510,7 +510,7 @@ fn chat_module() -> @component.ModuleDef {
     },
   )
   let chat = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -574,7 +574,7 @@ priv struct QuotesState {
 ///|
 fn quotes_module() -> @component.ModuleDef {
   let quotes = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -642,7 +642,7 @@ fn badge_module() -> @component.ModuleDef {
     raw_view: "<span class=\"badge\" @text=\"^label\"></span>",
   }
   let features = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

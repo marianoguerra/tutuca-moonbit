@@ -24,7 +24,7 @@ priv struct AttributeBindingState {
 /// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -91,7 +91,7 @@ priv struct ConditionalAttributesState {
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
 fn conditional_attributes_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -145,7 +145,7 @@ priv struct EventModifiersState {
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -204,7 +204,7 @@ priv struct ShowHideState {
 /// extra DOM.
 fn show_hide_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

@@ -16,7 +16,7 @@ struct TreeItemState {
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <p class="head"
@@ -78,7 +78,7 @@ struct TreeRootState {
 ///|
 fn tree_root_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <x render=".root"></x>

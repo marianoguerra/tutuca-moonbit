@@ -426,7 +426,7 @@ priv struct FpGreetingState {
 ///|
 test "instances are copy-on-write values, visible through Obj" {
   let greeting = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -491,7 +491,7 @@ navigable and rebuildable:
 /// spine worth rebuilding.
 fn mailbox_module() -> @component.ModuleDef {
   let note = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -509,7 +509,7 @@ fn mailbox_module() -> @component.ModuleDef {
     },
   )
   let mailbox = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

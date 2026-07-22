@@ -4,6 +4,23 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [0.5.0]
+
+### Changed — `compiled_views~` renamed to `views~` (breaking)
+
+Now that it is the only view argument, the `compiled_` qualifier was
+redundant: `component(...)` and `Component::for_type(...)` take `views~ :
+Map[String, @anode.View]`. `tutuca gen-views` emits the builder as
+`counter_views()` (was `counter_compiled_views()`), so a component reads
+`views=counter_views()`.
+
+The generated types module no longer emits the dead source-string constants
+(`counter_main_view`, `counter_views()` returning `Map[String, String]`,
+`counter_style`, `counter_view_styles()`) — they existed only for the removed
+`view~` / `views~` / `style~` arguments. `counter_common_style` /
+`counter_global_style` stay (they back `common_style~` / `global_style~`), and
+each view's own style rides inside its `@anode.View`.
+
 ## [0.4.0]
 
 ### Changed — views are `@anode.View` values, not strings (breaking)

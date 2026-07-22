@@ -95,7 +95,7 @@ priv struct ThemeState {
 
 fn theme_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<div><x render=\".child\"></x></div>"),
   },
   name="Theme",
@@ -109,7 +109,7 @@ priv struct NoState {} derive(ToJson, FromJson)
 
 fn child_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<p :style=\"$'color: {*color}'\">themed</p>"),
   },
   name="Child",
@@ -160,7 +160,7 @@ priv struct RootState {
 
 fn root_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=...),
   },
   name="Root",

@@ -27,7 +27,7 @@ priv struct LintDemoState {
 ///|
 fn lint_demo_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -193,7 +193,7 @@ priv struct HtmlLintDemoState {
 ///|
 fn html_lint_demo_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -236,7 +236,7 @@ priv struct ScopedStyleDemoState {
 ///|
 fn scoped_style_demo_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view="<p @text=\".count\">0</p>"),
     },
     name="ScopedStyleDemo",

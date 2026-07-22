@@ -6,7 +6,7 @@
 /// Primitive type(s): string / number / integer / boolean / null / multi-type.
 fn schema_scalar_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_schema_view("text-success schema-scalar"),
@@ -39,7 +39,7 @@ fn Inspector::schema_scalar_from(
 /// branches (additionalProperties / patternProperties / propertyNames).
 fn schema_object_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_schema_view("text-primary schema-object"),
@@ -133,7 +133,7 @@ fn Inspector::schema_object_from(
 /// tuple, plus `contains` and array constraints (as badges).
 fn schema_array_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_schema_view("text-primary schema-array"),
@@ -218,7 +218,7 @@ fn Inspector::schema_array_from(
 /// Enumerated allowed values — each rendered with the value inspector.
 fn schema_enum_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_schema_view("text-info schema-enum", body=LIST_BODY),
@@ -263,7 +263,7 @@ fn Inspector::schema_enum_from(
 /// A single constant value — terminal, rendered inline.
 fn schema_const_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -284,7 +284,7 @@ fn schema_const_comp() -> @component.Component {
 /// Combinator: allOf / anyOf / oneOf, subschemas listed without keys.
 fn schema_combinator_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_schema_view(
@@ -339,7 +339,7 @@ fn Inspector::schema_combinator_from(
 /// Conditional applicator: if / then / else as three labeled regions.
 fn schema_conditional_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -413,7 +413,7 @@ fn Inspector::schema_conditional_from(
 /// Negation: the value must NOT match the wrapped schema.
 fn schema_not_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -434,7 +434,7 @@ fn schema_not_comp() -> @component.Component {
 /// Boolean schemas: `true` accepts any value, `false` accepts none.
 fn schema_boolean_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -473,7 +473,7 @@ fn schema_boolean_comp() -> @component.Component {
 /// schemas (`{ "$ref": "#" }`) cannot loop.
 fn schema_ref_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

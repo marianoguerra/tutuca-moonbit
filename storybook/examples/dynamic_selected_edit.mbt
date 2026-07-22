@@ -17,7 +17,7 @@ priv struct DseEntryState {
 ///|
 fn dse_entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span class=\"font-mono entry\" @text=\".name\"></span>",
@@ -42,7 +42,7 @@ priv struct DseEditorState {
 ///|
 fn dse_editor_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -79,7 +79,7 @@ priv struct DseRootState {
 ///|
 fn dse_root_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

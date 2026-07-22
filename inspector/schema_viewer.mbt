@@ -15,7 +15,7 @@ priv struct SchemaViewerState {
 /// keeps the plain schema for inspection.
 fn schema_viewer_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

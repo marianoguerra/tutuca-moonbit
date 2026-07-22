@@ -29,7 +29,7 @@ priv struct RequestExampleState {
 ///|
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

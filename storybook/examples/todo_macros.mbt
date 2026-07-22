@@ -65,7 +65,7 @@ priv struct TmItemState {
 ///|
 fn tm_item_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -93,7 +93,7 @@ priv struct TmItemsState {
 /// ignored argument here).
 fn tm_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

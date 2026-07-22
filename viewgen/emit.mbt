@@ -201,48 +201,13 @@ fn emit_component(
     view_variants,
     derives,
   )
-  for view in views.views {
-    let vn = if view.name == "main" {
-      "\{v}_main_view"
-    } else {
-      "\{v}_\{value_prefix(view.name)}_view"
-    }
-    let doc = if view.name == "main" {
-      "The `main` view — pass as `view~` to @component.component."
-    } else {
-      "The `\{view.name}` view."
-    }
-    emit_string_let(out, doc, vn, view.source)
-  }
-  let others = views.views.filter(view => view.name != "main")
-  out.write_string(
-    "///|\n" +
-    "/// The non-main views — pass as `views~` to @component.component.\n" +
-    "pub fn \{v}_views() -> Map[String, String] {\n",
-  )
-  if others.is_empty() {
-    out.write_string("  Map([])\n}\n\n")
-  } else {
-    out.write_string("  {\n")
-    for view in others {
-      out.write_string(
-        "    \{quote(view.name)}: \{v}_\{value_prefix(view.name)}_view,\n",
-      )
-    }
-    out.write_string("  }\n}\n\n")
-  }
+  // The built views themselves live in the IR module as `<v>_views()`; the
+  // per-view sources and styles are carried inside those @anode.View values,
+  // so nothing here re-emits them.
 
-  // -- styles --------------------------------------------------------------
-  let main_style = match views.views.filter(view => view.name == "main") {
-    [m, ..] => m.style
-    _ => ""
-  }
-  emit_string_let(
-    out,
-    "The `main` view's style — pass as `style~`.",
-    "\{v}_style",
-    main_style,
-  )
+  // -- component-level styles ----------------------------------------------
+  // Per-view style rides inside each View; only the two component-wide styles
+  // are separate arguments to component().
   emit_string_let(
     out,
     "The file-level style — pass as `common_style~`.",
@@ -255,21 +220,6 @@ fn emit_component(
     "\{v}_global_style",
     views.global_style,
   )
-  out.write_string(
-    "///|\n" +
-    "/// Per-view styles — pass as `view_styles~`.\n" +
-    "pub fn \{v}_view_styles() -> Map[String, String] {\n",
-  )
-  let styled = others.filter(view => view.style != "")
-  if styled.is_empty() {
-    out.write_string("  Map([])\n}\n\n")
-  } else {
-    out.write_string("  {\n")
-    for view in styled {
-      out.write_string("    \{quote(view.name)}: \{quote(view.style)},\n")
-    }
-    out.write_string("  }\n}\n\n")
-  }
 
   // -- inputs --------------------------------------------------------------
   if !surface.inputs.is_empty() {

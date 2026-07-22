@@ -37,14 +37,14 @@ test "one generated module carries every component in the file" {
   // the file names them.
   for
     want in [
-      "pub fn json_root_compiled_views", "pub fn json_node_compiled_views", "pub fn json_leaf_compiled_views",
+      "pub fn json_root_views", "pub fn json_node_views", "pub fn json_leaf_views",
     ] {
     assert_true(!src.contains(want)) // those live in the IR module
   }
   for
     want in [
       "pub(all) enum JsonRootView", "pub(all) enum JsonNodeView", "pub(all) enum JsonLeafMsg",
-      "pub let json_node_main_view", "pub let json_node_compact_view", "pub let json_leaf_main_view",
+      "pub let json_root_common_style", "pub let json_leaf_global_style",
     ] {
     assert_true(src.contains(want))
   }
@@ -60,7 +60,7 @@ test "the IR module carries every component too, macros expanded" {
   let ir = @viewgen.emit_ir_module("Ignored", "json.html", f)
   for
     want in [
-      "pub fn json_root_compiled_views", "pub fn json_node_compiled_views", "pub fn json_leaf_compiled_views",
+      "pub fn json_root_views", "pub fn json_node_views", "pub fn json_leaf_views",
     ] {
     assert_true(ir.contains(want))
   }

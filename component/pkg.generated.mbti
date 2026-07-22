@@ -9,7 +9,7 @@ import {
 }
 
 // Values
-pub fn[S : ToJson + @json.FromJson] component(name~ : String, compiled_views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> S?, mutate? : Map[String, (S, Array[@core.Value]) -> S], compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], specs? : Map[String, FieldSpec], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
+pub fn[S : ToJson + @json.FromJson] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> S?, mutate? : Map[String, (S, Array[@core.Value]) -> S], compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], specs? : Map[String, FieldSpec], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
 
 pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
@@ -38,7 +38,7 @@ pub struct Component {
 }
 pub fn Component::compile(Self) -> Unit raise
 pub fn Component::compile_style(Self) -> String
-pub fn Component::for_type(name~ : String, compiled_views~ : Map[String, @anode.View], common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Self
+pub fn Component::for_type(name~ : String, views~ : Map[String, @anode.View], common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Self
 pub fn Component::get_view(Self, String?) -> @anode.View?
 pub fn Component::make(Self, Map[String, @core.Value]) -> @core.Value
 

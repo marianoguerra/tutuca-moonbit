@@ -16,7 +16,7 @@ priv struct TableRowState {
 ///|
 fn table_row_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -43,7 +43,7 @@ priv struct ItemTableState {
 /// `<x>` here, since `<x>` is not valid inside `<tbody>`.
 fn item_table_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -70,7 +70,7 @@ priv struct SelectOptionState {
 ///|
 fn select_option_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -93,7 +93,7 @@ priv struct ItemSelectState {
 /// Same trick inside `<select>`: `<option @x render-each=".options">`.
 fn item_select_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -114,7 +114,7 @@ priv struct PseudoXNoState {} derive(ToJson, FromJson)
 ///|
 fn pseudo_x_demo_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

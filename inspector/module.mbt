@@ -182,7 +182,7 @@ priv struct SampleState {
 /// component-inspector.dev.js). Only introspected, never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -226,7 +226,7 @@ fn rich_sample_comp() -> @component.Component {
 /// instance-inspector.dev.js).
 fn sample_card_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

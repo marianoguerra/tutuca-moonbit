@@ -63,7 +63,7 @@ impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
 ///|
 fn instance_fields_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_composite_view(
@@ -95,7 +95,7 @@ fn instance_fields_comp() -> @component.Component {
 /// to the plain data inspector.
 fn instance_inspector_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -180,7 +180,7 @@ priv struct InstanceExplorerState {
 /// (LintReport). A tab only appears when it has content.
 fn instance_explorer_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

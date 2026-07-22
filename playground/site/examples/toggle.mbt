@@ -6,7 +6,7 @@ struct PanelState {
 
 fn build() -> @component.ModuleDef {
   let panel = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section style="font-family:system-ui">
       #|  <button @on.click="$toggleOpen" @text="$label"></button>

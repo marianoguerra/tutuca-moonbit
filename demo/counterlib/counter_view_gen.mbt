@@ -21,40 +21,12 @@ pub fn CounterView::name(self : CounterView) -> String {
 }
 
 ///|
-/// The `main` view — pass as `view~` to @component.component.
-pub let counter_main_view : String =
-  #|<div class="counter">
-  #|  <h1><x text=".label"></x>: <span id="count"><x text=".count"></x></span></h1>
-  #|  <button id="inc" @on.click="add 1">+1</button>
-  #|  <button id="dec" @on.click="add -1">-1</button>
-  #|  <button id="reset" @on.click="resetCount">reset</button>
-  #|  <input id="label" :value=".label" @on.input="setLabel value" @on.keydown+send="setLabel 'sent!'">
-  #|  <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
-  #|</div>
-
-///|
-/// The non-main views — pass as `views~` to @component.component.
-pub fn counter_views() -> Map[String, String] {
-  Map([])
-}
-
-///|
-/// The `main` view's style — pass as `style~`.
-pub let counter_style : String = "font-family: sans-serif"
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let counter_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let counter_global_style : String = ""
-
-///|
-/// Per-view styles — pass as `view_styles~`.
-pub fn counter_view_styles() -> Map[String, String] {
-  Map([])
-}
 
 ///|
 /// Every bare `@on` handler name the views reference.
@@ -169,3 +141,4 @@ pub fn CounterId::id(self : CounterId) -> String {
 pub fn CounterId::selector(self : CounterId) -> String {
   "#" + self.id()
 }
+

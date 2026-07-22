@@ -86,9 +86,7 @@ test "the compiled tree is a second file, unless --no-ir" {
     "views/counter_view_gen.mbt", "views/counter_view_ir_gen.mbt",
   ])
   let ir = plan.files[1].1
-  assert_true(
-    ir.contains("pub fn counter_compiled_views() -> Map[String, @anode.View]"),
-  )
+  assert_true(ir.contains("pub fn counter_views() -> Map[String, @anode.View]"))
   assert_true(ir.contains("@anode.ParseContext::from_ir(root, events)"))
   // The handler survives into the event table, args and all.
   assert_true(

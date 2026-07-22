@@ -16,7 +16,7 @@ priv struct SelectorEntryState {
 ///|
 fn selector_entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -44,7 +44,7 @@ priv struct SelectorState {
 /// stack.
 fn selector_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -75,7 +75,7 @@ priv struct EntryEditorState {
 /// component is entered during render — there is no hook to opt in.
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -156,7 +156,7 @@ priv struct SheetState {
 /// including as a component-render target: `<x render="*active">`.
 fn sheet_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -179,7 +179,7 @@ priv struct ToolbarState {} derive(ToJson, FromJson)
 /// The consumer, far from the producer: it renders a component it does not own.
 fn toolbar_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -204,7 +204,7 @@ priv struct PanelState {} derive(ToJson, FromJson)
 ///|
 fn panel_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -236,7 +236,7 @@ priv struct WorkspaceState {
 /// proof; it updates in lock-step.
 fn workspace_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

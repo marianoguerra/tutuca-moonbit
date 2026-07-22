@@ -210,7 +210,7 @@ fn counter_manifest() -> DynManifest {
 /// guest's bubbled control message, and nothing else.
 fn shell_module() -> @component.ModuleDef {
   let shell = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

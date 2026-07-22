@@ -19,7 +19,7 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     provide["broken"] = "not a field!"
   }
   let card = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"card\"><h2><x text=\".title\"></x></h2><x render=\".item\"></x></div>",
@@ -37,7 +37,7 @@ fn demo_module(bad_provide? : Bool = false) -> @component.ModuleDef {
     provide~,
   )
   let item = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span><x text=\".label\"></x></span>",
@@ -180,7 +180,7 @@ test "lint flags @on handlers that don't resolve, allows declared ones" {
   // and onRecv resolve to nothing. The component deliberately has NO update
   // fn — with one, any bare name may be handled and the check is skipped.
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><button @on.click=\"onGood\">ok</button><button @on.click=\"onTypo\">bad</button><button @on.click=\"onRecv\">recv</button></div>",
@@ -207,7 +207,7 @@ priv struct BtnsState {
 ///|
 test "lint checks field and method references in views" {
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x text=\".missing\"></x><span :class=\"$isOn\"></span><p @show=\".count\"><x text=\"$label\"></x></p></div>",
@@ -234,7 +234,7 @@ test "lint checks field and method references in views" {
 ///|
 test "lint flags unknown dynamic bindings, event modifiers and handler args" {
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x text=\"*missing\"></x><button @on.click+shift=\"go value wat\">x</button></div>",
@@ -264,7 +264,7 @@ test "lint hints unreferenced declarations and warns constant conditions" {
   // unknowable. The alter-bucket hint survives (when/enrich/enrich_scope/
   // loop_with are name-keyed).
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view="<div @show=\"'yes'\">hi</div>"),
     },
     name="Hints",
@@ -282,7 +282,7 @@ test "lint hints unreferenced declarations and warns constant conditions" {
 ///|
 test "lint flags render-it outside a loop and scoped-style leaks" {
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x render-it></x></div>",
@@ -300,7 +300,7 @@ test "lint flags render-it outside a loop and scoped-style leaks" {
   assert_true(e.out.contains("GLOBAL_SELECTOR_IN_SCOPED_STYLE Loops/main"))
   // inside an @each the same render-it is fine
   let ok_comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<ul><li @each=\".items\"><x render-it></x></li></ul>",

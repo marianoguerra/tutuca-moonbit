@@ -6,7 +6,7 @@ struct CounterState {
 
 fn build() -> @component.ModuleDef {
   let counter = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>

@@ -22,7 +22,7 @@ priv struct BarChartState {
 /// re-renders the bars, just reproducible.
 fn bar_chart_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -161,7 +161,7 @@ priv struct IconGalleryState {
 ///|
 fn icon_gallery_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

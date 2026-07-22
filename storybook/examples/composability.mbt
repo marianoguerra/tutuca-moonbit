@@ -31,7 +31,7 @@ fn composability_comp(
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

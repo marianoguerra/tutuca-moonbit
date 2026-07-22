@@ -77,7 +77,7 @@ struct VwEmptyState {} derive(ToJson, FromJson)
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<span class=\"instr\">\{label}</span>"),
   },
   name~,
@@ -95,7 +95,7 @@ struct VwImmState {
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
 fn vw_instr_imm(name : String, label : String) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
       "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>"),
   },
@@ -128,7 +128,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
 /// type component).
 fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<span class=\"font-italic text-amber-400 type\">\{label}</span>"),
     "editor": @anode.View::new("editor", raw_view="<select class=\"select select-ghost px-0 font-italic text-amber-400 type-select\" @on.input=\"setType value\">" +
       "<option value=\"i32\">i32</option><option value=\"i64\">i64</option>" +
@@ -311,7 +311,7 @@ struct VwTypesState {
 ///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 types"><x render-each=".items"></x></div>
     )),
@@ -348,7 +348,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_block_type_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-1 block-type">
       #|  <span class="font-mono text-gray-400 br">[</span><x render=".args"></x>
@@ -428,7 +428,7 @@ fn vw_container_init() -> VwContainerState {
 ///|
 fn vw_block_comp(reg : VwReg) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=vw_blocklike_view("block")),
     "compact": @anode.View::new("compact", raw_view="<section class=\"compact\">block ...</section>"),
   },
@@ -443,7 +443,7 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_loop_comp(reg : VwReg) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=vw_blocklike_view("loop")),
     "compact": @anode.View::new("compact", raw_view="<section class=\"compact\">loop ...</section>"),
   },
@@ -458,7 +458,7 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_func_comp(reg : VwReg) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="border-l border-l-gray-400 ml-1 pl-3 flex flex-col gap-3 blocklike func">
       #|  <div class="flex gap-3 items-center group header">
@@ -505,7 +505,7 @@ struct VwIfState {
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="border-l border-l-gray-400 pl-3 ml-3 flex flex-col gap-3 blocklike if">
       #|  <div class="flex gap-3 items-center group header">
@@ -573,7 +573,7 @@ struct VwSectionState {
 ///|
 fn vw_section_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3 wasm-section">
       #|  <p class="flex gap-3 items-center header">
@@ -625,7 +625,7 @@ fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
 ///|
 fn vw_memory_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 items-center memory">
       #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
@@ -651,7 +651,7 @@ fn vw_memory_comp() -> @component.Component {
 ///|
 fn vw_module_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3 module">
       #|  <x render=".mem"></x>
@@ -732,7 +732,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     )
   }
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
       "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"$setFilter value\" />" +
       "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +

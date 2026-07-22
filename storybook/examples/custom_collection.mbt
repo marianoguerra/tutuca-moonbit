@@ -43,7 +43,7 @@ priv struct SongState {
 ///|
 fn song_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span class=\"song\" @text=\".title\"></span>",
@@ -64,7 +64,7 @@ priv struct PlaylistState {
 ///|
 fn playlist_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

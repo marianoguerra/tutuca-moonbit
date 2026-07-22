@@ -45,7 +45,7 @@ fn new_component(
   name : String,
   common_style : String,
   global_style : String,
-  compiled_views : Map[String, @anode.View],
+  views : Map[String, @anode.View],
   provide : Map[String, String],
   lookup : Map[String, LookupSpec],
   specs : Map[String, FieldSpec],
@@ -61,7 +61,7 @@ fn new_component(
   // @anode.View::new; both are @anode.View, and Component::compile finishes
   // whichever needs it. Each carries its own per-view style.
   let vs : Map[String, @anode.View] = Map([])
-  for vname, v in compiled_views {
+  for vname, v in views {
     vs[vname] = v
   }
   {
@@ -105,7 +105,7 @@ fn new_component(
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
 pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
-  compiled_views~ : Map[String, @anode.View],
+  views~ : Map[String, @anode.View],
   init~ : S,
   common_style? : String = "",
   global_style? : String = "",
@@ -162,7 +162,7 @@ pub fn[S : ToJson + @json.FromJson] component(
     name,
     common_style,
     global_style,
-    compiled_views,
+    views,
     provide,
     lookup,
     all_specs,
@@ -224,7 +224,7 @@ fn[S : ToJson + @json.FromJson] make_typed(
 /// component_id() must return this component's id. make() yields Null.
 pub fn Component::for_type(
   name~ : String,
-  compiled_views~ : Map[String, @anode.View],
+  views~ : Map[String, @anode.View],
   common_style? : String = "",
   global_style? : String = "",
   provide? : Map[String, String] = Map([]),
@@ -234,7 +234,7 @@ pub fn Component::for_type(
     name,
     common_style,
     global_style,
-    compiled_views,
+    views,
     provide,
     lookup,
     Map([]),

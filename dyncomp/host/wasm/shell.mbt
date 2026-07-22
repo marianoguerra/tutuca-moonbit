@@ -17,7 +17,7 @@ priv struct ShellState {
 ///|
 pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
   let shell = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

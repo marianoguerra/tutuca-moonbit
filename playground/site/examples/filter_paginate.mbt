@@ -134,7 +134,7 @@ struct PersonState {
 ///|
 fn person_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="person flex gap-2 items-center grow">
       #|  <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name" />
@@ -189,7 +189,7 @@ fn fp_pager_info(s : PeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"tablePage\"")),
   },
   name="NaivePeople",
@@ -220,7 +220,7 @@ fn naive_people_comp() -> @component.Component {
 /// (`filter`) to collect just this page's keys, early-exiting once it is full.
 fn shared_people_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"page\"")),
   },
   name="SharedPeople",
@@ -261,7 +261,7 @@ fn shared_people_comp() -> @component.Component {
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=people_view("@loop-with=\"forwardKeys\"")),
   },
   name="CoupledPeople",
@@ -319,7 +319,7 @@ struct StrategiesState {} derive(ToJson, FromJson)
 ///|
 fn strategies_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-6">
       #|  <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>

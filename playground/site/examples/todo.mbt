@@ -9,7 +9,7 @@ struct TodoItemState {
 ///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 items-center">
       #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
@@ -33,7 +33,7 @@ struct TodoItemsState {
 ///|
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>

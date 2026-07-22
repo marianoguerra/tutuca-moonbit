@@ -96,7 +96,7 @@ priv struct VwEmptyState {} derive(ToJson, FromJson)
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span class=\"instr\">\{label}</span>",
@@ -117,7 +117,7 @@ priv struct VwImmState {
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
 fn vw_instr_imm(name : String, label : String) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
@@ -153,7 +153,7 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
 /// type component).
 fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span class=\"font-italic text-amber-400 type\">\{label}</span>",
@@ -342,7 +342,7 @@ priv struct VwTypesState {
 ///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -385,7 +385,7 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_block_type_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -472,7 +472,7 @@ fn vw_container_init() -> VwContainerState {
 ///|
 fn vw_block_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view=vw_blocklike_view("block")),
       "compact": @anode.View::new(
         "compact",
@@ -490,7 +490,7 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_loop_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view=vw_blocklike_view("loop")),
       "compact": @anode.View::new(
         "compact",
@@ -508,7 +508,7 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
 ///|
 fn vw_func_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -558,7 +558,7 @@ priv struct VwIfState {
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -636,7 +636,7 @@ priv struct VwSectionState {
 ///|
 fn vw_section_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -692,7 +692,7 @@ fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
 ///|
 fn vw_memory_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -723,7 +723,7 @@ fn vw_memory_comp() -> @component.Component {
 ///|
 fn vw_module_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -807,7 +807,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
     }
   }
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +

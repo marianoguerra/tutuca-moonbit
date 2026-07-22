@@ -16,7 +16,7 @@ priv struct TodoState {
 ///|
 fn todo_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x text=\".title\"></x></div>",
@@ -106,7 +106,7 @@ priv struct NoFields {} derive(ToJson, FromJson)
 ///|
 test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   let comp = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Facets",
     init=NoFields::{  },
     // default set of two members; a List arg coerces (and dedups) into the
@@ -159,7 +159,7 @@ priv struct SetInState {
 ///|
 test "FSet kind override for a typed S field keeps the typed default" {
   let comp = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="TypedFacets",
     init=SetInState::{ sel: { "a": true } },
     specs={ "sel": @component.FieldSpec::set() },
@@ -178,7 +178,7 @@ test "FSet kind override for a typed S field keeps the typed default" {
 ///|
 test "omap slot field: keyed mutators over an ordered Map" {
   let comp = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Ordered",
     init=NoFields::{  },
     specs={ "m": @component.FieldSpec::omap(default={ "x": Num(1) }) },
@@ -200,7 +200,7 @@ test "omap slot field: keyed mutators over an ordered Map" {
 test "Components::collect_classes gathers sorted classes from compiled views" {
   let scope = @component.ComponentStack::new()
   let a = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"foo bar\"><span class=\"bar\">x</span></div>",
@@ -210,7 +210,7 @@ test "Components::collect_classes gathers sorted classes from compiled views" {
     init=NoFields::{  },
   )
   let b = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view="<p class=\"baz qux\">y</p>"),
     },
     name="B",
@@ -256,7 +256,7 @@ priv struct CountOnly {
 ///|
 test "mutate and compute buckets surface as pre-bound Fns" {
   let comp = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Counter",
     init=CountOnly::{ count: 1 },
     mutate={ "inc": (s : CountOnly, _args) => { count: s.count + 1 } },
@@ -285,12 +285,12 @@ test "mutate and compute buckets surface as pre-bound Fns" {
 test "registration scopes: chains, aliases, sibling independence" {
   let root_scope = @component.ComponentStack::new()
   let a = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<i>a</i>") },
+    views={ "main": @anode.View::new("main", raw_view="<i>a</i>") },
     name="A",
     init=NoFields::{  },
   )
   let b = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<i>b</i>") },
+    views={ "main": @anode.View::new("main", raw_view="<i>b</i>") },
     name="B",
     init=NoFields::{  },
   )
@@ -316,7 +316,7 @@ priv struct TitleOnly {
 test "compile parses provide/lookup and stamps view ids" {
   let scope = @component.ComponentStack::new()
   let ws = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<main><x text=\".title\"></x></main>",
@@ -369,7 +369,7 @@ test "compile parses provide/lookup and stamps view ids" {
 ///|
 test "compile_style emits data-cid scoped blocks" {
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div>x</div>",
@@ -398,12 +398,12 @@ priv struct LabelOnly {
 test "FComp slot fields default through the registration scope" {
   let scope = @component.ComponentStack::new()
   let child = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
+    views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
     name="Child",
     init=LabelOnly::{ label: "hi" },
   )
   let parent = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x render=\".kid\"></x></div>",
@@ -428,12 +428,12 @@ priv struct StashedState {
 test "Value fields in S carry Obj instances losslessly through updates" {
   let scope = @component.ComponentStack::new()
   let child = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<i>l</i>") },
+    views={ "main": @anode.View::new("main", raw_view="<i>l</i>") },
     name="Leaf",
     init=LabelOnly::{ label: "leaf" },
   )
   let parent = @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Holder",
     init=StashedState::{ items: [] },
     update=(s : StashedState, msg, _ctx) => {
@@ -507,7 +507,7 @@ impl @tutuca.Obj for Badge with fn obj_handler(self, bucket, name) {
 test "hybrid: a typed-struct component registers and dispatches alongside" {
   let scope = @component.ComponentStack::new()
   let badge_comp = @component.Component::for_type(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<span><x text=\".label\"></x></span>",
@@ -546,7 +546,7 @@ priv struct FilterState {
 ///|
 test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let comp = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<ul><li @each=\".items\" @when=\"keep\" @enrich-with=\"annotate\" @loop-with=\"page\"></li></ul>",
@@ -612,14 +612,14 @@ priv struct SwapBState {
 test "swap handlers replace the node with another component's instance" {
   let scope = @component.ComponentStack::new()
   let b = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new("main", raw_view="<i @text=\".note\"></i>"),
     },
     name="BComp",
     init=SwapBState::{ note: "i am b" },
   )
   let a = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<button @on.click=\"becomeB\">go</button>",

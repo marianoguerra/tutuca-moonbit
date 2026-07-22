@@ -14,7 +14,7 @@ priv struct GreetingState {
 ///|
 fn greeting_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -39,7 +39,7 @@ priv struct RenderChildNoState {} derive(ToJson, FromJson)
 /// keeps the component definitions order-independent.
 fn page_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -84,7 +84,7 @@ priv struct EntryState {
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -143,7 +143,7 @@ pub fn entry_module() -> @component.ModuleDef {
 /// one value.
 fn multiple_views_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

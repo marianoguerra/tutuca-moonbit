@@ -12,7 +12,7 @@ priv struct SheetState {
 ///|
 fn sheet_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<article><h2><x text=\".title\"></x></h2><button class=\"rename\" @on.click=\"rename 'Q2'\">r</button><button class=\"poke\" @on.click=\"poke\">p</button></article>",
@@ -52,7 +52,7 @@ fn seen_update() -> (SeenState, @component.Dispatch, &@tutuca.Ctx) -> SeenState?
 fn teleport_scope() -> @component.ComponentStack raise {
   let scope = @component.ComponentStack::new()
   let toolbar = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"toolbar\"><x render=\"*active\"></x></div>",
@@ -64,7 +64,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     update=seen_update(),
   )
   let panel = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<section><x render=\".toolbar\"></x></section>",
@@ -76,7 +76,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     update=seen_update(),
   )
   let workspace = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<main><x render=\".panel\"></x></main>",
@@ -189,7 +189,7 @@ test "bubbling from a teleported leaf visits every intermediate component" {
 test "own-provide: a component rendering its own dynamic teleports to itself" {
   let scope = @component.ComponentStack::new()
   let solo = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<main><x render=\"*active\"></x></main>",
@@ -220,7 +220,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
 test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
   let scope = @component.ComponentStack::new()
   let list = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<ul><li @each=\"*rows\"><x render-it></x></li></ul>",
@@ -231,7 +231,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     lookup={ "rows": { source: "Grid.rows", default: None } },
   )
   let grid = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<main><x render=\".list\"></x></main>",
@@ -284,7 +284,7 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
 test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
   let scope = @component.ComponentStack::new()
   let viewer = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x render=\"*sel\"></x></div>",
@@ -295,7 +295,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     lookup={ "sel": { source: "Deck.sel", default: None } },
   )
   let deck = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<main><x render=\".viewer\"></x></main>",
@@ -345,7 +345,7 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
 test "lookup default: a consumer without its producer falls back" {
   let scope = @component.ComponentStack::new()
   let lonely = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><x render=\"*active\"></x></div>",

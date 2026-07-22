@@ -67,7 +67,7 @@ test "a component built from the compiled tree renders identically" {
   let views = @viewgen.split_file(ir_html)
   assert_true(@viewgen.ir_supported(views))
   let from_source = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=views.components[0].views[0].source,
@@ -79,10 +79,7 @@ test "a component built from the compiled tree renders identically" {
   )
   let from_tree = @component.component(
     name="IrFromTree",
-    compiled_views=@viewgen.compiled_views(
-      views.components[0],
-      macros=views.macros,
-    ),
+    views=@viewgen.compiled_views(views.components[0], macros=views.macros),
     init=ir_state(),
   )
   let want = render_comp(from_source)
@@ -100,10 +97,7 @@ test "handlers dispatch through a compiled tree" {
   let views = @viewgen.split_file(ir_html)
   let comp = @component.component(
     name="IrDispatch",
-    compiled_views=@viewgen.compiled_views(
-      views.components[0],
-      macros=views.macros,
-    ),
+    views=@viewgen.compiled_views(views.components[0], macros=views.macros),
     init=ir_state(),
     update=(s : IrState, msg, _ctx) => {
       match msg {
@@ -201,12 +195,12 @@ test "a file-declared macro renders like a MoonBit-registered one" {
   let vs = @viewgen.split_file(macro_view_html)
   let from_tree = @component.component(
     name="BadgeTree",
-    compiled_views=@viewgen.compiled_views(vs.components[0], macros=vs.macros),
+    views=@viewgen.compiled_views(vs.components[0], macros=vs.macros),
     init=BadgeState::{ title: "hi" },
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=vs.components[0].views[0].source,

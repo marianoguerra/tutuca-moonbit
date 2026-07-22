@@ -13,21 +13,13 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub fn counter_compiled_views() -> Map[String, @anode.View]
-
 pub let counter_fields : Array[String]
 
 pub let counter_global_style : String
 
-pub let counter_main_view : String
-
 pub fn[S : ToJson] counter_missing_fields(S, extra? : Array[String]) -> Array[String]
 
-pub let counter_style : String
-
-pub fn counter_view_styles() -> Map[String, String]
-
-pub fn counter_views() -> Map[String, String]
+pub fn counter_views() -> Map[String, @anode.View]
 
 pub fn module_def() -> @component.ModuleDef
 

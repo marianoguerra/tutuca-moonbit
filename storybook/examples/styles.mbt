@@ -18,7 +18,7 @@ priv struct StylesNoState {} derive(ToJson, FromJson)
 ///|
 fn styles_example_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -76,7 +76,7 @@ fn styles_example_comp() -> @component.Component {
 ///|
 fn styles_example_root_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

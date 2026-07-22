@@ -18,7 +18,7 @@ priv struct TrafficLightState {
 /// React's inline `&&`.
 fn traffic_light_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -84,7 +84,7 @@ priv struct TabbedUiState {
 /// button. No per-tab flags, no component per tab.
 fn tabbed_ui_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -146,7 +146,7 @@ priv struct ListAndFilterState {
 /// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

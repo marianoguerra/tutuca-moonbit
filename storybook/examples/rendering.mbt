@@ -38,7 +38,7 @@ priv struct PushViewState {
 /// read-only and editable at once.
 fn push_view_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -123,7 +123,7 @@ priv struct SeqItemAccessState {
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -193,7 +193,7 @@ priv struct PaginationState {
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
 fn pagination_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

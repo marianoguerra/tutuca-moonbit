@@ -24,7 +24,7 @@ priv struct MacrosNoState {} derive(ToJson, FromJson)
 ///|
 fn static_macro_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -76,7 +76,7 @@ priv struct MacroParamsState {
 ///|
 fn macro_params_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -139,7 +139,7 @@ priv struct MacroSlotsState {
 /// MacroSlots — macros have no methods of their own.
 fn macro_slots_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -202,7 +202,7 @@ priv struct MacroNamedSlotsState {
 ///|
 fn macro_named_slots_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

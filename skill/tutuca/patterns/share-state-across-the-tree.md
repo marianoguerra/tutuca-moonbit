@@ -19,7 +19,7 @@ priv struct ItemsState {
 // producer — exposes one of its fields under a name
 fn producer_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=...),
   },
   name="EntryEditorAndSelector",
@@ -32,7 +32,7 @@ fn producer_comp() -> @component.Component {
 // consumer — forwards to the producer's binding by "Component.name"
 fn consumer_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<select class="select">
       #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>

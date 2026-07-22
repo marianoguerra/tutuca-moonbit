@@ -17,7 +17,7 @@ priv struct BasicsNoState {} derive(ToJson, FromJson)
 /// as the empty string rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
   @component.component(
-    compiled_views={ "main": @anode.View::new("main", raw_view="") },
+    views={ "main": @anode.View::new("main", raw_view="") },
     name="MinimumViableComponent",
     init=BasicsNoState::{  },
   )
@@ -44,7 +44,7 @@ pub fn minimum_viable_module() -> @component.ModuleDef {
 /// markup a macro is the better fit (see macros.mbt).
 fn static_view_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -88,7 +88,7 @@ priv struct TextDirectiveState {
 /// renders: strings, numbers, booleans, null.
 fn text_directive_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -142,7 +142,7 @@ priv struct DangerSetInnerHtmlState {
 /// from a field instead of building children.
 fn danger_set_inner_html_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

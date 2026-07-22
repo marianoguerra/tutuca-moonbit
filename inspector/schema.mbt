@@ -379,7 +379,7 @@ priv struct SchemaPropertyState {
 /// schema. `contents` so the cells land directly in the parent's grid.
 fn schema_property_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -411,7 +411,7 @@ priv struct SchemaBranchState {
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

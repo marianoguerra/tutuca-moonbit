@@ -15,7 +15,7 @@ priv struct TodoItemState {
 ///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -42,7 +42,7 @@ priv struct TodoItemsState {
 /// passed the loop's key.
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

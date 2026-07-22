@@ -81,7 +81,7 @@ priv struct NameState {
 /// which are just lists of names.
 fn comp_name_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -106,7 +106,7 @@ priv struct CompFieldState {
 /// rendered with the data inspector so it can recurse/expand.
 fn comp_field_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -139,7 +139,7 @@ priv struct CompViewState {
 /// toggle every one at once.
 fn comp_view_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -218,7 +218,7 @@ impl Composite for CompSectionState with fn with_current_page(self, p) {
 ///|
 fn comp_section_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_composite_view(
@@ -306,7 +306,7 @@ fn set_all_views(
 /// Top-level wrapper: one CompSection per non-empty group of the summary.
 fn component_inspector_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

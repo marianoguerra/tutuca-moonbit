@@ -13,7 +13,7 @@ struct CounterState {
 
 fn build() -> @component.ModuleDef {
   let counter = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>
@@ -45,7 +45,7 @@ struct PanelState {
 
 fn build() -> @component.ModuleDef {
   let panel = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section style="font-family:system-ui">
       #|  <button @on.click="\$toggleOpen" @text="\$label"></button>
@@ -78,7 +78,7 @@ struct GreeterState {
 
 fn build() -> @component.ModuleDef {
   let greeter = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
       #|  <input :value=".name" @on.input="\$setName value" placeholder="your name" />
@@ -126,7 +126,7 @@ fn build() -> @component.ModuleDef {
   let counter = @component.component(
     name="Counter",
     // the compiled tree from the View tab: no template parsing at startup
-    compiled_views=counter_compiled_views(),
+    views=counter_views(),
     init=CounterState::{ count: 0, label: "clicks" },
     // CounterMsg is generated from the @on handlers in the View tab, with
     // payload types read off the call sites — \`add 1\` makes Add(Double).

@@ -6,7 +6,7 @@ struct GreeterState {
 
 fn build() -> @component.ModuleDef {
   let greeter = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
       #|  <input :value=".name" @on.input="$setName value" placeholder="your name" />

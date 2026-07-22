@@ -41,7 +41,7 @@ priv struct ActivityLogState {
 /// `after` is Null (and hidden) for the outgoing side of a request.
 fn activity_entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -90,7 +90,7 @@ fn activity_entry_comp() -> @component.Component {
 /// caps the list. Renders an empty hint until the first entry lands.
 fn activity_log_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

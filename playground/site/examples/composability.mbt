@@ -12,7 +12,7 @@ struct CxCounterState {
 
 fn cx_counter_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>
@@ -39,7 +39,7 @@ struct CxTodoItemState {
 
 fn cx_todo_item_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex gap-3 items-center">
       #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
@@ -58,7 +58,7 @@ struct CxTodoItemsState {
 
 fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
@@ -93,7 +93,7 @@ struct CxTreeItemState {
 
 fn cx_tree_item_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <p class="head"
@@ -146,7 +146,7 @@ struct CxTreeRootState {
 
 fn cx_tree_root_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<div class="flex flex-col gap-3">
       #|  <x render=".root"></x>
@@ -208,7 +208,7 @@ struct ComposabilityState {
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-4">
       #|  <div role="tablist" class="tabs tabs-border">

@@ -46,7 +46,7 @@ priv struct ItemState {
 ///|
 fn item_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<li><span><x text=\".label\"></x></span><button @on.click=\"pick 'gold'\">pick</button></li>",
@@ -72,7 +72,7 @@ priv struct PanelState {
 ///|
 fn panel_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view="<div><h1><x text=\".title\"></x></h1><x render=\".item\"></x></div>",

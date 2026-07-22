@@ -174,7 +174,7 @@ priv struct AltUrlState {
 ///|
 fn alt_url_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -204,7 +204,7 @@ priv struct PsEntryState {
 ///|
 fn ps_entry_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -325,7 +325,7 @@ priv struct PsRootState {
 ///|
 fn root_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

@@ -45,10 +45,7 @@ pub fn register_bundle(
       let style = if v.name == "main" { def.style } else { "" }
       cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
     }
-    let comp = @component.Component::for_type(
-      name=def.name,
-      compiled_views=cviews,
-    )
+    let comp = @component.Component::for_type(name=def.name, views=cviews)
     synthesized.push(comp)
     comps[def.name] = (comp.id, def)
   }

@@ -50,7 +50,7 @@ priv struct JsonEmptyState {} derive(ToJson, FromJson)
 ///|
 fn json_null_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -71,7 +71,7 @@ priv struct JsonBoolState {
 ///|
 fn json_bool_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -99,7 +99,7 @@ priv struct JsonStringState {
 ///|
 fn json_string_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -121,7 +121,7 @@ priv struct JsonNumberState {
 ///|
 fn json_number_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -158,7 +158,7 @@ fn json_number_comp() -> @component.Component {
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -253,7 +253,7 @@ priv struct JsonItemsState {
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -305,7 +305,7 @@ priv struct JsonKvState {
 ///|
 fn json_object_kv_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -325,7 +325,7 @@ fn json_object_kv_comp() -> @component.Component {
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

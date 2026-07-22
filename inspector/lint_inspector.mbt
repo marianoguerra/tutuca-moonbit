@@ -55,7 +55,7 @@ fn finding_component_name(where_ : String) -> String {
 /// suggestion, and the full finding Map via the data inspector (collapsed).
 fn lint_finding_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -107,7 +107,7 @@ fn lint_finding_comp() -> @component.Component {
 /// default when it has error-level findings.
 fn lint_component_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_composite_view(
@@ -163,7 +163,7 @@ fn count_label(n : Int, word : String) -> String {
 /// per-component groups (clean components are omitted).
 fn lint_report_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

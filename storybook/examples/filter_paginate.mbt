@@ -130,7 +130,7 @@ priv struct PersonState {
 ///|
 fn person_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -188,7 +188,7 @@ fn fp_pager_info(s : PeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"tablePage\""),
@@ -222,7 +222,7 @@ fn naive_people_comp() -> @component.Component {
 /// (`filter`) to collect just this page's keys, early-exiting once it is full.
 fn shared_people_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"page\""),
@@ -266,7 +266,7 @@ fn shared_people_comp() -> @component.Component {
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=people_view("@loop-with=\"forwardKeys\""),
@@ -328,7 +328,7 @@ priv struct StrategiesState {} derive(ToJson, FromJson)
 ///|
 fn strategies_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

@@ -29,7 +29,7 @@ priv struct SwatchPickerState {
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -103,7 +103,7 @@ priv struct QuadraticState {
 /// classifies the equation as the coefficients change.
 fn quadratic_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

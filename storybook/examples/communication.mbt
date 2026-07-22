@@ -30,7 +30,7 @@ priv struct StatusState {
 /// the path is the only coupling.
 fn status_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -65,7 +65,7 @@ priv struct SendReceiveState {
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -146,7 +146,7 @@ priv struct TreeItemState {
 /// they are plain class methods in JS too.
 fn tree_item_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -214,7 +214,7 @@ priv struct TreeRootState {
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

@@ -247,7 +247,7 @@ pub struct Component {
 /// FSet/FOMap kind overrides.
 declare pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
-  compiled_views~ : Map[String, @anode.View],
+  views~ : Map[String, @anode.View],
   init~ : S,
   common_style? : String,
   global_style? : String,
@@ -274,7 +274,7 @@ declare pub fn[S : ToJson + @json.FromJson] component(
 /// component_id() must return this component's id. make() yields Null.
 declare pub fn Component::for_type(
   name~ : String,
-  compiled_views~ : Map[String, @anode.View],
+  views~ : Map[String, @anode.View],
   common_style? : String,
   global_style? : String,
   provide? : Map[String, String],

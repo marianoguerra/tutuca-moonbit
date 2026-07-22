@@ -138,7 +138,7 @@ priv struct CounterState {
 
 fn counter_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<button @on.click="$inc" @text=".count"></button>
     )),
@@ -382,7 +382,7 @@ priv struct MyCompState {
 } derive(ToJson, FromJson)
 
 @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
     #|<p @text=".count"></p>
   ), style="p { color: blue; }"),
@@ -787,7 +787,7 @@ pagination and the `@loop-with` → `loop_with` return shape, and the
 <x render=".item" @show=".isOpen"></x>          <!-- conditional wrap, see "Conditional Display" -->
 ```
 
-A component's views come in through `compiled_views=` (a
+A component's views come in through `views=` (a
 `Map[String, @anode.View]`), keyed by name — `"main"` is the one rendered by
 default. Author them in an `.html` file and generate the map with
 `tutuca gen-views` (see [cli.md](./cli.md)); for a runtime-built or test view,
@@ -808,7 +808,7 @@ priv struct NoteState {
 } derive(ToJson, FromJson)
 
 @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<p @text=\".title\"></p>"),
     "edit": @anode.View::new("edit", raw_view="<input :value=\".title\" @on.input=\"$setTitle value\" />"),
   },

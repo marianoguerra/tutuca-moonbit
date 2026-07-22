@@ -100,7 +100,7 @@ let gen_views_help : String =
   #|  --out   directory (default: the input's) or an explicit .mbt file path.
   #|  --dry-run prints the generated modules to stdout instead of writing.
   #|  --no-ir skips the companion <stem>_view_ir_gen.mbt (the compiled tree,
-  #|          which `compiled_views~` takes so the parser never runs at
+  #|          which `views~` takes so the parser never runs at
   #|          startup). It is skipped automatically for a view using a macro,
   #|          which only MoonBit can expand.
   #|

@@ -9,7 +9,7 @@ priv struct NoState {} derive(ToJson, FromJson)
 // producer exposes a field (or a seq-access) as a dynamic
 fn workspace_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=...),
   },
   name="Workspace",
@@ -27,7 +27,7 @@ fn workspace_comp() -> @component.Component {
 // a distant consumer renders it as a target
 fn toolbar_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view="<x render=\"*active\" as=\"edit\"></x>"),
   },
   name="Toolbar",

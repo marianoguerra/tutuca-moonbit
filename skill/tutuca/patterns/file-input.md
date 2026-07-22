@@ -15,7 +15,7 @@ priv struct FilePickerState {
 
 fn file_picker_comp() -> @component.Component {
   @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section>
       #|  <input type="file" @on.change="onPickFile value" />

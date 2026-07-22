@@ -218,7 +218,7 @@ priv struct EmptyState {} derive(ToJson, FromJson)
 ///|
 fn json_null_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -239,7 +239,7 @@ priv struct BoolValueState {
 ///|
 fn json_boolean_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -275,7 +275,7 @@ priv struct NumValueState {
 ///|
 fn json_number_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -320,7 +320,7 @@ priv struct StrValueState {
 ///|
 fn json_string_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -339,7 +339,7 @@ fn json_string_comp() -> @component.Component {
 /// has no function names/kinds to show).
 fn value_fn_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -362,7 +362,7 @@ priv struct TextState {
 /// text, truncated. Stands in for the JS JsClassInstance/JsError leaves.
 fn value_obj_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -382,7 +382,7 @@ fn value_obj_comp() -> @component.Component {
 ///|
 fn json_array_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_composite_view(type_class="json-array"),
@@ -402,7 +402,7 @@ fn json_array_comp() -> @component.Component {
 ///|
 fn json_object_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=make_composite_view(type_class="json-object"),
@@ -429,7 +429,7 @@ priv struct PropertyState {
 /// One key/value row of a composite (also stands in for the JS ImEntry).
 fn json_property_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(
@@ -499,7 +499,7 @@ priv struct WrapperState {
 /// the classified tree, the delegating toggle, and a pass-through view.
 fn data_inspector_comp() -> @component.Component {
   @component.component(
-    compiled_views={
+    views={
       "main": @anode.View::new(
         "main",
         raw_view=(

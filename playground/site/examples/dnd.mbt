@@ -9,7 +9,7 @@ struct DnDState {
 
 fn build() -> @component.ModuleDef {
   let dnd = @component.component(
-  compiled_views={
+  views={
     "main": @anode.View::new("main", raw_view=(
       #|<section class="flex flex-col gap-3">
       #|  <input type="search" class="input" :value=".query"
