@@ -114,7 +114,8 @@ pub(all) enum Outcome {
     input~ : String,
     target~ : String,
     name~ : String,
-    dry_run~ : Bool
+    dry_run~ : Bool,
+    ir~ : Bool
   )
 } derive(Debug, Eq)
 
@@ -135,6 +136,7 @@ declare pub fn gen_views(
   name~ : String,
   input~ : String,
   target~ : String,
+  ir~ : Bool,
 ) -> Result[GenPlan, ErrShape]
 
 ///|

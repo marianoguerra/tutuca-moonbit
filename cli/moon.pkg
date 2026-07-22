@@ -18,4 +18,6 @@ import {
 import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
+  "marianoguerra/tutuca/storybook/examples",
+  "marianoguerra/tutuca/anode",
 } for "test"

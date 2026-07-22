@@ -1,9 +1,12 @@
 // Emitting the generated MoonBit module.
 //
-// Output style is chosen so `moon fmt` leaves the file alone: one `///|`
-// block per declaration, multi-line view sources as `#|` raw-string blocks
-// (a view is full of double quotes — escaping them into a normal literal
-// would make the generated file unreadable and diff-noisy).
+// The output is valid but UNFORMATTED MoonBit: `moon fmt` owns the layout,
+// and the `gen-views` dev task runs it right after generating. Emitting
+// fmt-identical text would mean reimplementing its width-based line breaking.
+// What this file does control is structure — one `///|` block per
+// declaration, and multi-line view sources as `#|` raw-string blocks (a view
+// is full of double quotes; escaping them into a normal literal would make
+// the generated file unreadable and diff-noisy).
 //
 // Sections are skipped entirely when empty, because MoonBit has no empty
 // enum: a file with no `$method` calls emits no Method type at all.

@@ -114,6 +114,29 @@ declare pub fn emit_module(
 ) -> String raise GenError
 
 ///|
+/// True when every view can be emitted as a compiled tree. A view whose tree
+/// still holds a macro call cannot: macros are registered from MoonBit at
+/// runtime, so the generator cannot expand them.
+declare pub fn ir_supported(views : Array[RawView]) -> Bool
+
+///|
+/// Emit the companion IR module: the @anode.ANode tree and event table each
+/// view parses into, plus the `compiled_views~` map. Only valid when
+/// `ir_supported` holds.
+declare pub fn emit_ir_module(
+  name : String,
+  source_file : String,
+  views : ViewSet,
+) -> String raise GenError
+
+///|
+/// Build the compiled views directly, skipping codegen — the same value the
+/// emitted IR module reconstructs.
+declare pub fn compiled_views(
+  views : ViewSet,
+) -> Map[String, @anode.View] raise GenError
+
+///|
 /// The whole pipeline: input file text -> generated MoonBit source.
 declare pub fn generate(
   source : String,

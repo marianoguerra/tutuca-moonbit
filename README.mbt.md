@@ -74,9 +74,42 @@ update=(s : CounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
 
 Adding `@on.click="del 1"` to `counter.html` and regenerating makes that match
 non-exhaustive — a compile error naming `Some(Del(_))`, where the old
-string-matched `_ => None` arm silently did nothing. Views still parse at
-startup; this phase buys type safety and gets the HTML out of MoonBit string
-literals, not startup time.
+string-matched `_ => None` arm silently did nothing.
+
+### The compiled tree
+
+`gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
+event table each view parses into, as MoonBit literals. Pass it as
+`compiled_views~` and the template parser never runs at startup:
+
+```moonbit nocheck
+@component.component(
+  name="Counter",
+  compiled_views=counter_compiled_views(),   // instead of view~ / views~
+  init=CounterState::{ label: "Counter", count: 0, history: [] },
+  update=...,
+)
+```
+
+There is no serialization format and no decoder: the AST is `pub(all)`, so the
+tree is expressed as plain constructor syntax. `@anode.ParseContext::from_ir`
+recovers the node table from the tree itself (every registered node carries
+its `node_id`), and `View::from_ir` stamps `data-vid` and runs the
+constant-subtree optimization at load — `RenderOnce` ids are process-global
+renderer memo keys, so they must be minted at load time, not baked in.
+
+A view that calls a macro cannot be compiled ahead of time (macros are
+registered from MoonBit at runtime), so the whole file falls back to the
+source path; `--no-ir` opts out by hand. Across the ported example library,
+306 of 324 views compile to a tree.
+
+Regenerate through the task, not the CLI — `moon fmt` owns the layout of the
+generated pair:
+
+```sh
+moon run --target native cmd/dev -- gen-views    # generate + fmt
+git diff --exit-code                             # drift check
+```
 
 ## vdom
 

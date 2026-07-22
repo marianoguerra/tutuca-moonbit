@@ -49,6 +49,7 @@ fn new_component(
   global_style : String,
   views : Map[String, String],
   view_styles : Map[String, String],
+  compiled_views : Map[String, @anode.View],
   provide : Map[String, String],
   lookup : Map[String, LookupSpec],
   specs : Map[String, FieldSpec],
@@ -68,6 +69,12 @@ fn new_component(
       raw_view=raw,
       style=view_styles.get(vname).unwrap_or(""),
     )
+  }
+  // Ahead-of-time compiled views (`tutuca gen-views`) win over any source
+  // spelling of the same name: they carry their own tree and registration
+  // context, so Component::compile has nothing left to parse for them.
+  for vname, v in compiled_views {
+    vs[vname] = v
   }
   {
     id: next_comp_id(),
@@ -110,13 +117,14 @@ fn new_component(
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
 pub fn[S : ToJson + @json.FromJson] component(
   name~ : String,
-  view~ : String,
+  view? : String = "",
   init~ : S,
   style? : String = "",
   common_style? : String = "",
   global_style? : String = "",
   views? : Map[String, String] = Map([]),
   view_styles? : Map[String, String] = Map([]),
+  compiled_views? : Map[String, @anode.View] = Map([]),
   update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
   mutate? : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([]),
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),
@@ -174,6 +182,7 @@ pub fn[S : ToJson + @json.FromJson] component(
     global_style,
     views,
     view_styles,
+    compiled_views,
     provide,
     lookup,
     all_specs,
@@ -248,6 +257,7 @@ pub fn Component::for_type(
     "",
     "",
     views,
+    Map([]),
     Map([]),
     provide,
     lookup,

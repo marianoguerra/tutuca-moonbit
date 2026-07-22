@@ -35,11 +35,12 @@ You can browse and install extra skills here:
 - Files named `*_gen.mbt` are GENERATED and checked in; never hand-edit one.
   Change its source and rerun the task that produces it (`gen-views` for a
   `*_view_gen.mbt` from its `.html`; `skill-embed` for
-  `cli/skill_assets_gen.mbt` from `skill/tutuca/`). `viewgen` emits in a shape
-  `moon fmt` leaves alone, so a `*_view_gen.mbt` should never appear in a
-  post-`fmt` diff — if it does, the emitter drifted from the formatter and the
-  emitter is what to fix. (`cli/skill_assets_gen.mbt` is NOT fmt-stable: revert
-  it after a `moon fmt` and regenerate through `skill-embed`.)
+  `cli/skill_assets_gen.mbt` from `skill/tutuca/`). `moon fmt` owns the layout
+  of the `*_view_gen.mbt` pair, so the `gen-views` task formats after
+  generating — run the task, not the CLI directly, and the checked-in files
+  stay reproducible. (`cli/skill_assets_gen.mbt` is the exception: it is NOT
+  fmt-stable, so revert it after a `moon fmt` and regenerate through
+  `skill-embed`.)
 
 ## Tooling
 

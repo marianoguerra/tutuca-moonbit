@@ -295,7 +295,12 @@ pub let commands : Array[CommandSpec] = [
       flag(
         "dry-run",
         type_="boolean",
-        description="Print the generated module instead of writing it.",
+        description="Print the generated modules instead of writing them.",
+      ),
+      flag(
+        "no-ir",
+        type_="boolean",
+        description="Skip the companion compiled-tree module (<stem>_view_ir_gen.mbt).",
       ),
       help_flag,
     ],

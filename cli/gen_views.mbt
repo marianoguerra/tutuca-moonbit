@@ -37,7 +37,11 @@ let gen_views_help : String =
   #|
   #|  --name  the component name (default: the file's basename, capitalized).
   #|  --out   directory (default: the input's) or an explicit .mbt file path.
-  #|  --dry-run prints the generated module to stdout instead of writing.
+  #|  --dry-run prints the generated modules to stdout instead of writing.
+  #|  --no-ir skips the companion <stem>_view_ir_gen.mbt (the compiled tree,
+  #|          which `compiled_views~` takes so the parser never runs at
+  #|          startup). It is skipped automatically for a view using a macro,
+  #|          which only MoonBit can expand.
   #|
   #|  The generated file is checked in and regenerated, never hand-edited; its
   #|  package must import "marianoguerra/tutuca/core" @tutuca,
@@ -91,6 +95,7 @@ pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut name : String? = None
   let mut out : String? = None
   let mut dry_run = false
+  let mut ir = true
   let mut i = 0
   while i < args.length() {
     let a = args[i]
@@ -108,6 +113,7 @@ pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
       "-h" | "--help" =>
         return Done({ out: gen_views_help, err: "", exit_code: 0 })
       "--dry-run" => dry_run = true
+      "--no-ir" => ir = false
       _ =>
         if a.has_prefix("--name") {
           match value_of("--name") {
@@ -174,7 +180,7 @@ pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
       }
     None => join_path(dir, "\{stem}_view_gen.mbt")
   }
-  GenViews(opts, input=path, target~, name=comp_name, dry_run~)
+  GenViews(opts, input=path, target~, name=comp_name, dry_run~, ir~)
 }
 
 ///|
@@ -197,8 +203,23 @@ pub fn gen_views(
   name~ : String,
   input~ : String,
   target~ : String,
+  ir~ : Bool,
 ) -> Result[GenPlan, ErrShape] {
-  let generated = @viewgen.generate(source, name~, source_file=basename(input)) catch {
+  let files : Array[(String, String)] = []
+  let file = basename(input)
+  try {
+    let views = @viewgen.split_views(source)
+    let surface = @viewgen.view_surface(views.views)
+    files.push((target, @viewgen.emit_module(name, file, views, surface)))
+    // The compiled tree goes in its own module: it is by far the biggest
+    // part of the output and nothing in the types file depends on it, so a
+    // component that opts out just never references it.
+    if ir && @viewgen.ir_supported(views.views) {
+      files.push(
+        (ir_target(target), @viewgen.emit_ir_module(name, file, views)),
+      )
+    }
+  } catch {
     e =>
       return Err(
         err(
@@ -208,7 +229,19 @@ pub fn gen_views(
         ),
       )
   }
-  Ok({ files: [(target, generated)] })
+  Ok({ files, })
+}
+
+///|
+/// "…/counter_view_gen.mbt" -> "…/counter_view_ir_gen.mbt"
+fn ir_target(target : String) -> String {
+  if target.has_suffix("_gen.mbt") {
+    target[:target.length() - 8].to_owned() + "_ir_gen.mbt"
+  } else if target.has_suffix(".mbt") {
+    target[:target.length() - 4].to_owned() + "_ir.mbt"
+  } else {
+    target + "_ir.mbt"
+  }
 }
 
 ///|

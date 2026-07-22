@@ -72,12 +72,52 @@ test "usage errors" {
 }
 
 ///|
+test "the compiled tree is a second file, unless --no-ir" {
+  assert_true(plan_gen(["a.html", "--no-ir"]) is GenViews(_, ir=false, ..))
+  let r = @cli.gen_views(
+    "<button id=\"go\" @on.click=\"go 1\">x</button>",
+    name="Counter",
+    input="views/counter.html",
+    target="views/counter_view_gen.mbt",
+    ir=true,
+  )
+  guard r is Ok(plan)
+  assert_eq(plan.files.map(f => f.0), [
+    "views/counter_view_gen.mbt", "views/counter_view_ir_gen.mbt",
+  ])
+  let ir = plan.files[1].1
+  assert_true(
+    ir.contains("pub fn counter_compiled_views() -> Map[String, @anode.View]"),
+  )
+  assert_true(ir.contains("@anode.ParseContext::from_ir(root, events)"))
+  // The handler survives into the event table, args and all.
+  assert_true(
+    ir.contains("HandlerName(name=\"go\", ns=Input)") &&
+    ir.contains("Const(lit=LNum(1.0), from_macro=false)"),
+  )
+}
+
+///|
+test "a view using a macro falls back to the source path" {
+  let r = @cli.gen_views(
+    "<x:card :title=\".a\"></x:card>",
+    name="Counter",
+    input="views/counter.html",
+    target="views/counter_view_gen.mbt",
+    ir=true,
+  )
+  guard r is Ok(plan)
+  assert_eq(plan.files.length(), 1)
+}
+
+///|
 test "generation failures come back as a coded CLI error" {
   let r = @cli.gen_views(
     "<div @nope=\".x\"></div>",
     name="Counter",
     input="views/counter.html",
     target="views/counter_view_gen.mbt",
+    ir=false,
   )
   guard r is Err(shape)
   inspect(shape.code, content="ERR_VIEW_GEN_FAILED")
@@ -96,6 +136,7 @@ test "a successful plan carries one file" {
     name="Counter",
     input="views/counter.html",
     target="views/counter_view_gen.mbt",
+    ir=false,
   )
   guard r is Ok(plan)
   assert_eq(plan.files.length(), 1)

@@ -2,13 +2,20 @@
 package "marianoguerra/tutuca/viewgen"
 
 import {
+  "marianoguerra/tutuca/anode",
   "moonbitlang/core/debug",
 }
 
 // Values
+pub fn compiled_views(ViewSet) -> Map[String, @anode.View] raise GenError
+
+pub fn emit_ir_module(String, String, ViewSet) -> String raise GenError
+
 pub fn emit_module(String, String, ViewSet, Surface) -> String raise GenError
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
+
+pub fn ir_supported(Array[RawView]) -> Bool
 
 pub fn split_views(String) -> ViewSet raise GenError
 

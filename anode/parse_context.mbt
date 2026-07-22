@@ -3,7 +3,10 @@
 // replaced by html_adapter.mbt.
 
 ///|
-pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext {
+pub fn ParseContext::new(
+  handler? : &ParseHandler,
+  cache_const_nodes? : Bool = true,
+) -> ParseContext {
   let h : &ParseHandler = match handler {
     Some(h) => h
     None => WarnHandler::{  }
@@ -16,7 +19,7 @@ pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext {
     frame: None,
     val_ctx: None,
     current_tag: None,
-    cache_const_nodes: true,
+    cache_const_nodes,
     handler: h,
   }
 }

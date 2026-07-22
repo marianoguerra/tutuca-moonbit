@@ -421,7 +421,13 @@ pub struct ParseContext {
 }
 
 ///|
-declare pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext
+/// `cache_const_nodes=false` skips the constant-subtree optimization, which
+/// the ahead-of-time generator needs: RenderOnce ids are process-global
+/// renderer memo keys, so they must be minted at load time, not baked in.
+declare pub fn ParseContext::new(
+  handler? : &ParseHandler,
+  cache_const_nodes? : Bool,
+) -> ParseContext
 
 ///|
 /// New context for expanding macro `name`: shared registries and handler,
@@ -494,7 +500,30 @@ pub(all) struct View {
   style : String
   mut anode : ANode?
   mut ctx : ParseContext?
+  /// Built by `View::from_ir` from an ahead-of-time compiled tree: there is
+  /// no source to parse, so `compile` only stamps the component id.
+  ir : Bool
 }
+
+///|
+/// Rebuild the compile context of an ahead-of-time compiled view: `nodes` is
+/// recovered from `root`, `events` is the generator's table in registration
+/// order. Call before the tree is optimized.
+declare pub fn ParseContext::from_ir(
+  root : ANode,
+  events : Array[NodeEvents],
+) -> ParseContext
+
+///|
+/// A view whose tree was compiled ahead of time (`tutuca gen-views`). Stamps
+/// data-vid and runs the constant-subtree optimization; `compile` then only
+/// stamps the adopting component's data-cid.
+declare pub fn View::from_ir(
+  name : String,
+  root : ANode,
+  ctx : ParseContext,
+  style? : String,
+) -> View
 
 ///|
 declare pub fn View::new(

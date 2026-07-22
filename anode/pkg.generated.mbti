@@ -168,8 +168,9 @@ pub struct ParseContext {
 }
 pub fn ParseContext::compile(Self, &MacroScope) -> Unit raise MacroError
 pub fn ParseContext::enter_macro(Self, String, Map[String, String], Map[String, ANode]) -> Self
+pub fn ParseContext::from_ir(ANode, Array[NodeEvents]) -> Self
 pub fn ParseContext::is_inside_macro(Self, String) -> Bool
-pub fn ParseContext::new(handler? : &ParseHandler) -> Self
+pub fn ParseContext::new(handler? : &ParseHandler, cache_const_nodes? : Bool) -> Self
 pub fn ParseContext::new_macro_node(Self, String, Map[String, String], Array[ANode]) -> ANode
 pub fn ParseContext::register_events(Self) -> NodeEvents
 
@@ -217,8 +218,10 @@ pub(all) struct View {
   style : String
   mut anode : ANode?
   mut ctx : ParseContext?
+  ir : Bool
 }
 pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @core.Lit) -> Unit raise MacroError
+pub fn View::from_ir(String, ANode, ParseContext, style? : String) -> Self
 pub fn View::new(String, raw_view? : String, style? : String) -> Self
 
 pub(all) struct WarnHandler {

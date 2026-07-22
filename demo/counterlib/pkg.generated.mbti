@@ -2,6 +2,7 @@
 package "marianoguerra/tutuca/demo/counterlib"
 
 import {
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "moonbitlang/core/debug",
@@ -11,6 +12,8 @@ import {
 pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
+
+pub fn counter_compiled_views() -> Map[String, @anode.View]
 
 pub let counter_fields : Array[String]
 

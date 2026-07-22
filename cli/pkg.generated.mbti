@@ -40,8 +40,6 @@ pub const VERSION : String = "0.1.0"
 
 pub fn agent_context_text() -> String
 
-pub fn basename(String) -> String
-
 pub fn check_component(@component.Component) -> Array[LintFinding]
 
 pub fn command_names() -> Array[String]
@@ -72,7 +70,7 @@ pub fn finding_message(@lint.Finding) -> String
 
 pub let format_names : Array[String]
 
-pub fn gen_views(String, name~ : String, input~ : String, target~ : String) -> Result[GenPlan, ErrShape]
+pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
 pub fn gen_views_success(String, String) -> String
 
@@ -188,7 +186,7 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
-  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool)
+  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PositionalSpec {
