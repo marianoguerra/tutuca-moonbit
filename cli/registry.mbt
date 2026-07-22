@@ -313,6 +313,40 @@ pub let commands : Array[CommandSpec] = [
     ],
     impl_: Wired,
   },
+  // The authoring loop for views: `gen-views` on every save (watch.mbt).
+  {
+    name: "watch",
+    describe: "Watch view files and regenerate their MoonBit modules on change.",
+    needs_module: false,
+    needs_env: false,
+    default_format: None,
+    flags: [
+      flag(
+        "name",
+        type_="string",
+        description="Component name, when watching a single unnamed file.",
+      ),
+      flag(
+        "out",
+        type_="string",
+        description="Output directory (default: beside each input).",
+      ),
+      flag(
+        "no-ir",
+        type_="boolean",
+        description="Skip the companion compiled-tree module.",
+      ),
+      help_flag,
+    ],
+    positionals: [
+      positional(
+        "path",
+        required=false,
+        description="View files or directories to watch (default: the current directory).",
+      ),
+    ],
+    impl_: Wired,
+  },
   {
     name: "agent-context",
     describe: "Print a machine-readable schema (commands, flags, exit codes) as JSON.",

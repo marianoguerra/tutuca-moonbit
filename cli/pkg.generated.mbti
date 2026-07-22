@@ -80,6 +80,8 @@ pub fn install_skill_success(String) -> String
 
 pub fn install_skill_target_exists(GlobalOpts, String) -> Emit
 
+pub fn is_view_path(String) -> Bool
+
 pub fn iso8601_utc(UInt64) -> String
 
 pub fn lint_code_name(@lint.LintCode) -> String
@@ -104,11 +106,25 @@ pub fn run_install_skill(Array[String], GlobalOpts) -> Outcome
 
 pub fn run_storybook(Array[String], GlobalOpts) -> Outcome
 
+pub fn run_watch(Array[String], GlobalOpts) -> Outcome
+
 pub let skill_files : Array[(String, String)]
 
 pub fn stub(String, Array[String]) -> Emit
 
 pub fn suggestion_to_message(@lint.Suggestion?) -> String?
+
+pub fn watch_banner(Array[String], Array[String]) -> String
+
+pub fn watch_error_line(String) -> String
+
+pub fn watch_generated_line(String) -> String
+
+pub fn watch_name(String, String?) -> String
+
+pub fn watch_sibling(String) -> String
+
+pub fn watch_target(String, String?) -> String
 
 // Errors
 
@@ -187,6 +203,7 @@ pub(all) enum Outcome {
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool)
+  Watch(GlobalOpts, plan~ : WatchPlan)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PositionalSpec {
@@ -201,6 +218,13 @@ pub(all) struct SkillInstallPlan {
   user_scope : Bool
   force : Bool
   files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct WatchPlan {
+  paths : Array[String]
+  name : String?
+  out : String?
+  ir : Bool
 } derive(Eq, @debug.Debug)
 
 // Type aliases

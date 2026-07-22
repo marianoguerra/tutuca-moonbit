@@ -43,5 +43,9 @@ fn main {
       println("gen-views is not supported by this demo binary")
       process_exit(1)
     }
+    Watch(_, ..) => {
+      println("watch is not supported by this demo binary")
+      process_exit(1)
+    }
   }
 }

@@ -76,6 +76,36 @@ Adding `@on.click="del 1"` to `counter.html` and regenerating makes that match
 non-exhaustive — a compile error naming `Some(Del(_))`, where the old
 string-matched `_ => None` arm silently did nothing.
 
+### Several components, and macros
+
+A view file belongs to a MoonBit module, not to a single component — template
+ids say what each one is:
+
+| id | |
+|---|---|
+| *(none)* | the single unnamed component's `main` view |
+| `row` | …its `row` view |
+| `Counter:main` | the `Counter` component's `main` view |
+| `Counter` | shorthand for `Counter:main` |
+| `macro:icon` | a macro shared by every component in the file |
+
+A component name is Uppercase-initial, which is what tells `Counter` (a
+component) from `row` (a view). A file either names its components or does
+not; mixing the two is an error.
+
+A macro's `data-*` attributes are the defaults for the `^var` references in
+its body, and the generator expands every call ahead of time — which is why
+macros belong in the view file rather than being registered from MoonBit:
+
+```html
+<template id="macro:icon" data-size="'24'" data-color="'currentColor'">
+  <svg :width="^size" :height="^size" :stroke="^color"><path :d="^path"></path></svg>
+</template>
+<template id="Gallery">
+  <x:icon :size=".size" :path=".heart"></x:icon>
+</template>
+```
+
 ### The compiled tree
 
 `gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
@@ -110,6 +140,19 @@ generated pair:
 moon run --target native cmd/dev -- gen-views    # generate + fmt
 git diff --exit-code                             # drift check
 ```
+
+While authoring, `tutuca watch` removes the regenerate step entirely:
+
+```sh
+tutuca watch demo/counterlib      # or a file, or bare for the whole project
+```
+
+It generates every managed view once, then again on each save, so the types
+are always current and the MoonBit compiler is what tells you a view and a
+component have drifted apart. A directory contributes the `.html` files that
+already have a generated sibling — that is what distinguishes a view file
+from a page like `index.html`. A view that fails to generate prints and the
+watch keeps going; the next save is expected to fix it.
 
 ### In the playground
 

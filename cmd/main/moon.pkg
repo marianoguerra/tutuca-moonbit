@@ -9,6 +9,7 @@ import {
   "moonbitlang/async/socket",
   "moonbitlang/async/stdio",
   "moonbitlang/core/env",
+  "mizchi/fswatch",
 }
 
 supported_targets = "native"

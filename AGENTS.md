@@ -65,6 +65,11 @@ moon run --target native cmd/dev -- <task>
 | `ci`       | `check` then `test`                                              |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
+
+While editing views, `tutuca watch [path…]` regenerates them on every save
+(mizchi/fswatch; native only, since the watcher is the shell's job). It
+manages the `.html` files that already have a generated sibling, so pointing
+it at a project root does not try to compile `index.html`.
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 
 The `playground` task ends with `playground/build/check-viewgen-tab.mjs`: the

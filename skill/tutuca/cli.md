@@ -73,7 +73,8 @@ Plain commands (no module needed):
 | `help [cmd]`             | Show usage; `help <command>` for per-command detail                                                                    |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code, error code, and lint code                             |
-| `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`. See below |
+| `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
+| `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir` |
 | `install-skill`          | Copy a bundled Claude Code skill (this one) into `.claude/skills/` — the skill assets are embedded into the binary by the dev `dist` tooling. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force`, `--all`, `--margaui-skill` |
 
 ### `gen-views` — ahead-of-time views
@@ -86,11 +87,30 @@ tutuca gen-views demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt   (checked in; regenerate, never edit)
 ```
 
-The file is one bare view, or several `<template>` elements whose `id` names
-them — the one with no `id` is `main`. A `<style>` inside a template is that
-view's style; one at file level is the common style, or the global style with
-`data-global`. A view that would emit a parse issue at runtime fails
-generation instead.
+One view file per MoonBit module, not per component — template ids say what
+each one is:
+
+| id | |
+|---|---|
+| *(none)* | the single unnamed component's `main` view |
+| `row` | …its `row` view |
+| `Counter:main` | the `Counter` component's `main` view |
+| `Counter` | shorthand for `Counter:main` |
+| `macro:icon` | a macro shared by every component in the file |
+
+A component name is Uppercase-initial, which is what tells `Counter` (a
+component) from `row` (a view); a file either names its components or does
+not. A macro's `data-*` attributes are the defaults for its body's `^var`
+references, and calls are expanded at generation time — so macros belong in
+the view file rather than being registered from MoonBit, which no generator
+could expand.
+
+A `<style>` inside a template is that view's style; one at file level is the
+first component's common style, or the global style with `data-global`. A
+view that would emit a parse issue at runtime fails generation instead.
+
+While authoring, `tutuca watch` keeps the modules current on every save
+instead of making you remember to regenerate.
 
 For `--name Counter` the module declares `counter_main_view` /
 `counter_views()` / `counter_style` (feed straight into `component()`),

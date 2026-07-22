@@ -117,6 +117,9 @@ pub(all) enum Outcome {
     dry_run~ : Bool,
     ir~ : Bool
   )
+  /// Regenerate view modules as their .html files change. The core decides
+  /// what to watch; the shell owns the watcher and the filesystem.
+  Watch(GlobalOpts, plan~ : WatchPlan)
 } derive(Debug, Eq)
 
 ///|
@@ -138,6 +141,28 @@ declare pub fn gen_views(
   target~ : String,
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape]
+
+///|
+/// Parse `watch` arguments: finishes purely on help and usage errors,
+/// otherwise returns a Watch outcome for the shell to carry out.
+declare pub fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome
+
+///|
+/// True for a path the watcher should react to; everything else in a watched
+/// tree is noise, and reacting to the generated modules would loop.
+declare pub fn is_view_path(path : String) -> Bool
+
+///|
+/// Where a watched view file's generated module lands, and under what
+/// component name — shared with `gen-views` so the two cannot disagree.
+declare pub fn watch_target(path : String, out : String?) -> String
+
+///|
+declare pub fn watch_name(path : String, name : String?) -> String
+
+///|
+/// The generated sibling whose presence marks an .html as gen-views-managed.
+declare pub fn watch_sibling(path : String) -> String
 
 ///|
 /// Port of extractGlobals (tools/tutuca.js). Returns the parsed globals and
