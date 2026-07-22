@@ -19,8 +19,7 @@ extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =
 /// comes back as `ok: false` so the page can show it like a compile error.
 fn generate_json(html : String, name : String) -> String {
   let obj : Map[String, Json] = try {
-    let views = @viewgen.split_views(html)
-    let surface = @viewgen.view_surface(views.views, macros=views.macros)
+    let views = @viewgen.split_file(html)
     let m : Map[String, Json] = {
       "ok": true.to_json(),
       // No moon.pkg in the playground package to import
@@ -29,11 +28,10 @@ fn generate_json(html : String, name : String) -> String {
         name,
         "view.html",
         views,
-        surface,
         debug_derive=false,
       ).to_json(),
     }
-    if @viewgen.ir_supported(views.views, macros=views.macros) {
+    if @viewgen.ir_supported(views) {
       m["ir"] = @viewgen.emit_ir_module(name, "view.html", views).to_json()
     }
     m

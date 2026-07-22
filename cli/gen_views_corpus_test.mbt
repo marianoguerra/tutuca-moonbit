@@ -39,13 +39,18 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   let failures : Array[String] = []
   for entry in corpus_views() {
     let (cname, vname, source) = entry
-    let set : @viewgen.ViewSet = {
-      views: [{ name: "main", source, style: "" }],
+    let set : @viewgen.ViewFile = {
+      components: [
+        {
+          name: "",
+          views: [{ name: "main", source, style: "" }],
+          common_style: "",
+          global_style: "",
+        },
+      ],
       macros: [],
-      common_style: "",
-      global_style: "",
     }
-    if !@viewgen.ir_supported(set.views) {
+    if !@viewgen.ir_supported(set) {
       // Only macro-using views may opt out; anything else would be a hole.
       unsupported = unsupported + 1
       continue
@@ -64,7 +69,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
     // The tree really is usable: build the view and render it. A component
     // with no matching state renders slots as empty, which is fine — what
     // matters is that nothing raises and the loader wires up the ids.
-    let map = @viewgen.compiled_views(set) catch {
+    let map = @viewgen.compiled_views(set.components[0]) catch {
       e => {
         failures.push("\{cname}/\{vname}: \{@viewgen.GenError::message(e)}")
         continue

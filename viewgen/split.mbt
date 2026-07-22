@@ -165,7 +165,7 @@ fn read_style(tok : @html5.Tokenizer) -> (String, Int) {
 }
 
 ///|
-pub fn split_views(source : String) -> ViewSet raise GenError {
+pub fn split_file(source : String) -> ViewFile raise GenError {
   let chars = source.to_array()
   let tok = @html5.Tokenizer::new(source)
   let styles : Array[StyleRegion] = []
@@ -237,20 +237,25 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
   }
   let common_style = collect_style(styles, SCommon)
   let global_style = collect_style(styles, SGlobal)
+  // No templates at all: the file IS one unnamed component's main view.
   if templates.is_empty() {
-    // No templates: the whole file is the main view.
     let src = slice_without_styles(chars, 0, chars.length(), styles)
     return {
-      views: [
+      components: [
         {
-          name: "main",
-          source: dedent(src.trim(chars="\n").to_owned()),
-          style: "",
+          name: "",
+          views: [
+            {
+              name: "main",
+              source: dedent(src.trim(chars="\n").to_owned()),
+              style: "",
+            },
+          ],
+          common_style,
+          global_style,
         },
       ],
       macros: [],
-      common_style,
-      global_style,
     }
   }
   if stray is Some(c) {
@@ -258,20 +263,23 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
       "unexpected '\{c}' outside a <template>; with templates present, every view must live inside one",
     )
   }
-  let by_name : Map[String, RawView] = Map([])
-  let others : Array[RawView] = []
   let macros : Array[MacroDef] = []
   let macro_names : Map[String, Bool] = Map([])
-  let mut main : RawView? = None
+  // Component name -> its views, in first-seen order.
+  let order : Array[String] = []
+  let by_comp : Map[String, Array[RawView]] = Map([])
+  let mut saw_named = false
+  let mut saw_unnamed = false
   for t in templates {
     let body = dedent(
       slice_without_styles(chars, t.start, t.end_, styles)
       .trim(chars="\n")
       .to_owned(),
     )
-    // `id="macro:name"` declares a macro rather than a view: its data-*
-    // attributes are the defaults for the `^var` references in the body.
-    if t.id is Some(id) && id.has_prefix(MACRO_PREFIX) {
+    let style = styles_within(t.start, t.end_, styles)
+    let id = t.id.unwrap_or("")
+    // `macro:name` — a macro shared by every component in the file.
+    if id.has_prefix(MACRO_PREFIX) {
       let name = id[MACRO_PREFIX.length():].to_owned()
       if name == "" {
         raise BadMacroName(id)
@@ -289,24 +297,103 @@ pub fn split_views(source : String) -> ViewSet raise GenError {
       macros.push({ name, defaults, source: body })
       continue
     }
-    let name = t.id.unwrap_or("main")
-    if by_name.contains(name) {
-      raise DuplicateView(name)
+    // `Comp:view` / `Comp` name a component; a bare id or none belongs to the
+    // file's single unnamed component.
+    let (comp, vname) = match split_qualified(id) {
+      Some(pair) => {
+        saw_named = true
+        pair
+      }
+      None => {
+        saw_unnamed = true
+        ("", if id == "" { "main" } else { id })
+      }
     }
-    let view : RawView = {
-      name,
-      source: body,
-      style: styles_within(t.start, t.end_, styles),
+    if saw_named && saw_unnamed {
+      raise MixedViewIds
     }
-    by_name[name] = view
-    if name == "main" {
-      main = Some(view)
-    } else {
-      others.push(view)
+    if !by_comp.contains(comp) {
+      order.push(comp)
+      by_comp[comp] = []
+    }
+    guard by_comp.get(comp) is Some(views)
+    for v in views {
+      if v.name == vname {
+        raise DuplicateView(if comp == "" { vname } else { comp + ":" + vname })
+      }
+    }
+    views.push({ name: vname, source: body, style })
+  }
+  let components : Array[ViewSet] = []
+  for i, comp in order {
+    guard by_comp.get(comp) is Some(views)
+    // `main` first: it is the view component() adopts by default, and the
+    // emitter names it specially.
+    let mut main : RawView? = None
+    let rest : Array[RawView] = []
+    for v in views {
+      if v.name == "main" {
+        main = Some(v)
+      } else {
+        rest.push(v)
+      }
+    }
+    guard main is Some(m) else {
+      raise NoMainViewFor(if comp == "" { "this file" } else { comp })
+    }
+    // File-level styles belong to the first component: emitting them per
+    // component would duplicate the same CSS under every data-cid.
+    components.push({
+      name: comp,
+      views: [m, ..rest],
+      common_style: if i == 0 {
+        common_style
+      } else {
+        ""
+      },
+      global_style: if i == 0 {
+        global_style
+      } else {
+        ""
+      },
+    })
+  }
+  { components, macros }
+}
+
+///|
+/// `Counter:row` -> ("Counter", "row"); `Counter` -> ("Counter", "main").
+/// None when the id names no component — a bare view name, or empty.
+///
+/// A component name is Uppercase-initial, which is what distinguishes
+/// `Counter` (a component) from `row` (a view of the unnamed one).
+fn split_qualified(id : String) -> (String, String)? {
+  if id == "" {
+    return None
+  }
+  let chars = id.to_array()
+  if !(chars[0] >= 'A' && chars[0] <= 'Z') {
+    return None
+  }
+  for i, c in chars {
+    if c == ':' {
+      let comp = id[:i].to_owned()
+      let view = id[i + 1:].to_owned()
+      return Some((comp, if view == "" { "main" } else { view }))
     }
   }
-  guard main is Some(m) else { raise NoMainView }
-  { views: [m, ..others], macros, common_style, global_style }
+  Some((id, "main"))
+}
+
+///|
+/// The component name for a ViewSet: its own, or the caller's fallback for a
+/// file that declares a single unnamed component.
+pub fn ViewSet::component_name(self : ViewSet, fallback : String) -> String {
+  if self.name == "" {
+    fallback
+  } else {
+    self.name
+  }
 }
 
 ///|

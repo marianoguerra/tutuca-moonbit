@@ -14,8 +14,8 @@ let macro_html : String =
 
 ///|
 test "a macro declared in the view file is split out, not treated as a view" {
-  let vs = @viewgen.split_views(macro_html)
-  assert_eq(vs.views.map(v => v.name), ["main"])
+  let vs = @viewgen.split_file(macro_html)
+  assert_eq(only(vs).views.map(v => v.name), ["main"])
   assert_eq(vs.macros.map(m => m.name), ["icon"])
   assert_eq(vs.macros[0].defaults, { "size": "'24'", "color": "'currentColor'" })
   assert_true(vs.macros[0].source.contains("^size"))
@@ -23,11 +23,11 @@ test "a macro declared in the view file is split out, not treated as a view" {
 
 ///|
 test "the macro expands at generation time" {
-  let vs = @viewgen.split_views(macro_html)
+  let vs = @viewgen.split_file(macro_html)
   // Without the declarations the call cannot resolve, and that is an error
   // rather than a silently broken view.
   let without = try {
-    @viewgen.view_surface(vs.views) |> ignore
+    @viewgen.view_surface(only(vs).views) |> ignore
     "no error"
   } catch {
     e => @viewgen.GenError::message(e)
@@ -39,14 +39,14 @@ test "the macro expands at generation time" {
     ),
   )
   // With them, the expansion's own field reads show up in the surface.
-  let s = @viewgen.view_surface(vs.views, macros=vs.macros)
+  let s = @viewgen.view_surface(only(vs).views, macros=vs.macros)
   assert_eq(s.fields, ["heart", "size", "star"])
 }
 
 ///|
 test "a macro view compiles to a tree, with no macro node left in it" {
-  let vs = @viewgen.split_views(macro_html)
-  assert_true(@viewgen.ir_supported(vs.views, macros=vs.macros))
+  let vs = @viewgen.split_file(macro_html)
+  assert_true(@viewgen.ir_supported(vs))
   let ir = @viewgen.emit_ir_module("Icons", "icons.html", vs)
   // The expansion is inlined: <svg> from the macro body appears in the tree,
   // and no MacroCall constructor survives (it is not expressible).
@@ -60,8 +60,8 @@ test "a macro view compiles to a tree, with no macro node left in it" {
 
 ///|
 test "the compiled macro view renders" {
-  let vs = @viewgen.split_views(macro_html)
-  let views = @viewgen.compiled_views(vs)
+  let vs = @viewgen.split_file(macro_html)
+  let views = @viewgen.compiled_views(only(vs), macros=vs.macros)
   guard views.get("main") is Some(v) && v.anode is Some(_)
   guard v.ctx is Some(_)
   // The macro body's own event registrations land in the view's context, so

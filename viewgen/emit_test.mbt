@@ -178,6 +178,7 @@ test "the generated counter module" {
       #|  "#" + self.id()
       #|}
       #|
+      #|
     ),
   )
 }

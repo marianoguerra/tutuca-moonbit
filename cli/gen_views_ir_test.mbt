@@ -64,17 +64,20 @@ let ir_html : String =
 
 ///|
 test "a component built from the compiled tree renders identically" {
-  let views = @viewgen.split_views(ir_html)
-  assert_true(@viewgen.ir_supported(views.views))
+  let views = @viewgen.split_file(ir_html)
+  assert_true(@viewgen.ir_supported(views))
   let from_source = @component.component(
     name="IrFromSource",
-    view=views.views[0].source,
-    style=views.views[0].style,
+    view=views.components[0].views[0].source,
+    style=views.components[0].views[0].style,
     init=ir_state(),
   )
   let from_tree = @component.component(
     name="IrFromTree",
-    compiled_views=@viewgen.compiled_views(views),
+    compiled_views=@viewgen.compiled_views(
+      views.components[0],
+      macros=views.macros,
+    ),
     init=ir_state(),
   )
   let want = render_comp(from_source)
@@ -89,10 +92,13 @@ test "a component built from the compiled tree renders identically" {
 
 ///|
 test "handlers dispatch through a compiled tree" {
-  let views = @viewgen.split_views(ir_html)
+  let views = @viewgen.split_file(ir_html)
   let comp = @component.component(
     name="IrDispatch",
-    compiled_views=@viewgen.compiled_views(views),
+    compiled_views=@viewgen.compiled_views(
+      views.components[0],
+      macros=views.macros,
+    ),
     init=ir_state(),
     update=(s : IrState, msg, _ctx) => {
       match msg {
@@ -187,16 +193,16 @@ priv struct BadgeState {
 
 ///|
 test "a file-declared macro renders like a MoonBit-registered one" {
-  let vs = @viewgen.split_views(macro_view_html)
+  let vs = @viewgen.split_file(macro_view_html)
   let from_tree = @component.component(
     name="BadgeTree",
-    compiled_views=@viewgen.compiled_views(vs),
+    compiled_views=@viewgen.compiled_views(vs.components[0], macros=vs.macros),
     init=BadgeState::{ title: "hi" },
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
     name="BadgeRuntime",
-    view=vs.views[0].source,
+    view=vs.components[0].views[0].source,
     init=BadgeState::{ title: "hi" },
   )
   let scope = @component.ComponentStack::new()

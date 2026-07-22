@@ -15,7 +15,8 @@ let counter_html : String =
 
 ///|
 fn surface_of(html : String) -> @viewgen.Surface raise @viewgen.GenError {
-  @viewgen.view_surface(@viewgen.split_views(html).views)
+  let f = @viewgen.split_file(html)
+  @viewgen.view_surface(f.components[0].views, macros=f.macros)
 }
 
 ///|

@@ -33,13 +33,26 @@ pub(all) struct MacroDef {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// Every view in one input file, `main` first, plus the macros it declares
-/// and the file-level styles.
+/// One component's views, `main` first.
+///
+/// `name` is empty for a file that declares a single unnamed component (no
+/// `Comp:` prefix on any template) — the CLI's `--name` supplies it then.
 pub(all) struct ViewSet {
+  name : String
   views : Array[RawView]
-  macros : Array[MacroDef]
   common_style : String
   global_style : String
+} derive(Eq, @debug.Debug)
+
+///|
+/// A whole view file: the components it declares plus the macros they share.
+///
+/// One file per MoonBit module rather than per component, because components
+/// cluster — the example library has files defining eight and thirteen of
+/// them, and a file each would bury the module in fragments.
+pub(all) struct ViewFile {
+  components : Array[ViewSet]
+  macros : Array[MacroDef]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -89,6 +102,11 @@ pub suberror GenError {
   DuplicateMacro(String)
   /// `id="macro:"` with nothing after the colon.
   BadMacroName(String)
+  /// The file mixes `Comp:view` ids with bare ones, so a bare id could mean
+  /// either a view of the unnamed component or a component of its own.
+  MixedViewIds
+  /// A component in the file declares no `main` view.
+  NoMainViewFor(String)
   /// Every `<template>` carries an id, so no view is the main one.
   NoMainView
   /// A `<template>` is never closed.
@@ -109,14 +127,24 @@ pub suberror GenError {
 declare pub fn GenError::message(self : GenError) -> String
 
 ///|
-/// Split an input file into its views. With no `<template>` elements the
-/// whole file is the `main` view; otherwise every top-level `<template>` is a
-/// view named by its `id`, and the one without an id is `main`.
+/// Split an input file into the components it declares.
+///
+/// Template `id` conventions:
+///
+///   (none)          the single unnamed component's `main` view
+///   `row`           …its `row` view
+///   `Counter:main`  the `Counter` component's `main` view
+///   `Counter`       shorthand for `Counter:main`
+///   `macro:icon`    a macro shared by every component in the file
+///
+/// A file either names its components or does not; mixing the two forms is
+/// an error, because `row` would then be ambiguous between a view of the
+/// unnamed component and a component called `row`.
 ///
 /// `<style>` elements are lifted out of the emitted source: inside a template
-/// it becomes that view's style; at file level it is the component's common
-/// style, or its global style with `data-global`.
-declare pub fn split_views(source : String) -> ViewSet raise GenError
+/// it becomes that view's style; at file level it is the first component's
+/// common style, or its global style with `data-global`.
+declare pub fn split_file(source : String) -> ViewFile raise GenError
 
 ///|
 /// Compile the views and extract the typed surface. Every view is parsed into
@@ -132,8 +160,7 @@ declare pub fn view_surface(
 declare pub fn emit_module(
   name : String,
   source_file : String,
-  views : ViewSet,
-  surface : Surface,
+  file : ViewFile,
   debug_derive? : Bool,
 ) -> String raise GenError
 
@@ -141,10 +168,7 @@ declare pub fn emit_module(
 /// True when every view can be emitted as a compiled tree. A view whose tree
 /// still holds a macro call cannot: macros are registered from MoonBit at
 /// runtime, so the generator cannot expand them.
-declare pub fn ir_supported(
-  views : Array[RawView],
-  macros? : Array[MacroDef],
-) -> Bool
+declare pub fn ir_supported(file : ViewFile) -> Bool
 
 ///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
@@ -153,7 +177,7 @@ declare pub fn ir_supported(
 declare pub fn emit_ir_module(
   name : String,
   source_file : String,
-  views : ViewSet,
+  file : ViewFile,
 ) -> String raise GenError
 
 ///|
@@ -161,6 +185,7 @@ declare pub fn emit_ir_module(
 /// emitted IR module reconstructs.
 declare pub fn compiled_views(
   views : ViewSet,
+  macros? : Array[MacroDef],
 ) -> Map[String, @anode.View] raise GenError
 
 ///|
@@ -170,3 +195,11 @@ declare pub fn generate(
   name~ : String,
   source_file~ : String,
 ) -> String raise GenError
+
+///|
+/// The component name for a ViewSet: its own, or the fallback the CLI passes
+/// for a file that declares a single unnamed component.
+declare pub fn ViewSet::component_name(
+  self : ViewSet,
+  fallback : String,
+) -> String

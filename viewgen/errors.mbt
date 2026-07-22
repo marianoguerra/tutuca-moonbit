@@ -10,6 +10,10 @@ pub fn GenError::message(self : GenError) -> String {
     DuplicateView(name) => "two views are both named \"\{name}\""
     DuplicateMacro(name) => "two macros are both named \"\{name}\""
     BadMacroName(id) => "\"\{id}\" needs a name after `macro:`"
+    MixedViewIds =>
+      "this file mixes `Component:view` ids with bare ones — name every component, or none of them"
+    NoMainViewFor(what) =>
+      "\{what} declares no main view: add a `main` view (id=\"Comp\" or id=\"Comp:main\")"
     NoMainView =>
       "no main view: give one <template> no id attribute, or id=\"main\""
     UnclosedTemplate(what) => "unclosed <template\{what}>"

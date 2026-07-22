@@ -21,10 +21,18 @@ let gen_views_help : String =
   #|  Compiles the views in <file.html> into a MoonBit module of typed view
   #|  surfaces, written next to the component that uses them.
   #|
-  #|  The file holds either one bare view, or several <template> elements whose
-  #|  id attributes name them; the template with no id is the `main` view. A
-  #|  <style> inside a template is that view's style; one at file level is the
-  #|  component's common style, or its global style with data-global.
+  #|  Template ids say what each one is:
+  #|    (none)         the single unnamed component's `main` view
+  #|    row            ...its `row` view
+  #|    Counter:main   the `Counter` component's `main` view
+  #|    Counter        shorthand for `Counter:main`
+  #|    macro:icon     a macro shared by every component in the file; its
+  #|                   data-* attributes are the defaults for the body's ^vars
+  #|
+  #|  One file per MoonBit module, not per component: a file names as many
+  #|  components as the module defines. A <style> inside a template is that
+  #|  view's style; one at file level is the first component's common style,
+  #|  or its global style with data-global.
   #|
   #|  The generated module declares, for a component named Counter:
   #|    counter_main_view / counter_views()  the view sources, for component()
@@ -35,7 +43,9 @@ let gen_views_help : String =
   #|    CounterView / CounterId              view names and element ids
   #|    counter_fields / …_missing_fields    the state fields the views read
   #|
-  #|  --name  the component name (default: the file's basename, capitalized).
+  #|  --name  the component name, for a file whose templates do not name one
+  #|          (default: the file's basename, capitalized). A file that names
+  #|          its components with `id="Comp:view"` ignores it.
   #|  --out   directory (default: the input's) or an explicit .mbt file path.
   #|  --dry-run prints the generated modules to stdout instead of writing.
   #|  --no-ir skips the companion <stem>_view_ir_gen.mbt (the compiled tree,
@@ -208,13 +218,12 @@ pub fn gen_views(
   let files : Array[(String, String)] = []
   let file = basename(input)
   try {
-    let views = @viewgen.split_views(source)
-    let surface = @viewgen.view_surface(views.views, macros=views.macros)
-    files.push((target, @viewgen.emit_module(name, file, views, surface)))
+    let views = @viewgen.split_file(source)
+    files.push((target, @viewgen.emit_module(name, file, views)))
     // The compiled tree goes in its own module: it is by far the biggest
     // part of the output and nothing in the types file depends on it, so a
     // component that opts out just never references it.
-    if ir && @viewgen.ir_supported(views.views, macros=views.macros) {
+    if ir && @viewgen.ir_supported(views) {
       files.push(
         (ir_target(target), @viewgen.emit_ir_module(name, file, views)),
       )
