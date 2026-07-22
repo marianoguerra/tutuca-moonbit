@@ -133,7 +133,8 @@ declare pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// Compile view source into the generated MoonBit module (viewgen/), the
-/// pure half of `gen-views`.
+/// pure half of `gen-views`. Also runs the view-only lint rules, whose
+/// findings come back in `GenPlan.diagnostics`.
 declare pub fn gen_views(
   source : String,
   name~ : String,

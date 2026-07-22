@@ -207,7 +207,11 @@ async fn run_gen_views(
     for pair in plan.files {
       sb.write_string(pair.1)
     }
-    emit_and_exit({ out: sb.to_string(), err: "", exit_code: 0 })
+    emit_and_exit({
+      out: sb.to_string(),
+      err: plan.diagnostics.map(d => d + "\n").join(""),
+      exit_code: 0,
+    })
   }
   try {
     for pair in plan.files {
@@ -229,7 +233,7 @@ async fn run_gen_views(
   }
   emit_and_exit({
     out: plan.files.map(f => @cli.gen_views_success(f.0, input)).join(""),
-    err: "",
+    err: plan.diagnostics.map(d => d + "\n").join(""),
     exit_code: 0,
   })
 }
@@ -338,7 +342,10 @@ async fn regenerate(path : String, plan : @cli.WatchPlan) -> Unit noraise {
       ir=plan.ir,
     ) {
     Err(shape) => write_out(@cli.watch_error_line(shape.message))
-    Ok(gen) =>
+    Ok(gen) => {
+      for d in gen.diagnostics {
+        write_out(@cli.watch_error_line(d))
+      }
       for pair in gen.files {
         let (p, contents) = pair
         try {
@@ -352,6 +359,7 @@ async fn regenerate(path : String, plan : @cli.WatchPlan) -> Unit noraise {
           e => write_out(@cli.watch_error_line("\{p}: cannot write: \{e}"))
         }
       }
+    }
   }
 }
 

@@ -12,7 +12,58 @@
 /// against `--out`.
 pub(all) struct GenPlan {
   files : Array[(String, String)]
+  /// View problems worth reporting that do not stop generation: structural
+  /// HTML mistakes and the deprecation nudges. Anything that makes the
+  /// emitted types wrong already fails generation instead (@viewgen), so a
+  /// diagnostic here never means "the output is untrustworthy".
+  diagnostics : Array[String]
 } derive(Debug, Eq)
+
+///|
+/// The view-only half of the linter, run at generation time.
+///
+/// These rules need nothing but the view text, so making them wait for a
+/// separate `tutuca lint` run is arbitrary — the generator is already
+/// parsing every view. The rules that need the component (which names are
+/// fields, which are methods, what is registered in the scope) stay in
+/// `check_component`, and the ones the generated types make impossible are
+/// gone for good.
+fn view_diagnostics(
+  file : @viewgen.ViewFile,
+  fallback : String,
+) -> Array[String] {
+  let out : Array[String] = []
+  for comp in file.components {
+    let cname = comp.component_name(fallback)
+    for view in comp.views {
+      let where_ = "\{cname}/\{view.name}"
+      // Structural HTML (mismatched tags, bad nesting): the WHATWG-tokenizer
+      // linter, which needs only the source text.
+      for f in @lint.lint_html(view.source) {
+        out.push(diagnostic_line(where_, f))
+      }
+      // Parse-issue rules, deprecation nudges and host bare directives. A
+      // fresh shadow parse, never the live tree.
+      let collector = @lint.LintCollector::new()
+      let px = @anode.ParseContext::new(handler=collector)
+      let _ = @anode.ANode::parse(view.source, px)
+      for f in @lint.check_collected(collector) {
+        out.push(diagnostic_line(where_, f))
+      }
+    }
+  }
+  out
+}
+
+///|
+fn diagnostic_line(where_ : String, f : @lint.Finding) -> String {
+  let level = match f.level {
+    Error => "error"
+    Warn => "warning"
+    Hint => "hint"
+  }
+  "\{lint_code_name(f.code)} (\{level}) \{where_}: \{finding_message(f)}"
+}
 
 ///|
 let gen_views_help : String =
@@ -216,9 +267,13 @@ pub fn gen_views(
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape] {
   let files : Array[(String, String)] = []
+  let diagnostics : Array[String] = []
   let file = basename(input)
   try {
     let views = @viewgen.split_file(source)
+    for d in view_diagnostics(views, name) {
+      diagnostics.push(d)
+    }
     files.push((target, @viewgen.emit_module(name, file, views)))
     // The compiled tree goes in its own module: it is by far the biggest
     // part of the output and nothing in the types file depends on it, so a
@@ -238,7 +293,7 @@ pub fn gen_views(
         ),
       )
   }
-  Ok({ files, })
+  Ok({ files, diagnostics })
 }
 
 ///|

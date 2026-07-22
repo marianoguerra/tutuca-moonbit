@@ -170,6 +170,7 @@ pub(all) struct FlagSpec {
 
 pub(all) struct GenPlan {
   files : Array[(String, String)]
+  diagnostics : Array[String]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct GlobalOpts {

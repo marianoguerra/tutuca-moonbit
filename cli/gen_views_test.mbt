@@ -188,3 +188,48 @@ test "gen-views is in the command registry, so help and agent-context see it" {
   let _ = no_opts
   assert_true(@cli.plan(["help", "gen-views"]) is Done(_))
 }
+
+///|
+test "view-only lint rules report at generation time" {
+  // These needed a separate `tutuca lint` run before: nothing about them
+  // depends on the component, only on the view text the generator is
+  // already parsing.
+  let r = @cli.gen_views(
+    (
+      #|<template>
+      #|  <div>
+      #|    <span>unclosed
+      #|    <x render-each=".rows" when="$ok"></x>
+      #|  </div>
+      #|</template>
+    ),
+    name="LintMe",
+    input="views/lintme.html",
+    target="views/lintme_view_gen.mbt",
+    ir=false,
+  )
+  guard r is Ok(plan)
+  inspect(
+    plan.diagnostics.join("\n"),
+    content=(
+      #|HTML_UNCLOSED_BEFORE_END (warning) LintMe/main: <span> still open when </div> was seen — implicitly closed at line 4, col 3
+      #|DEPRECATED_BARE_X_DIRECTIVE (warning) LintMe/main: 'when' on <x render-each> is deprecated — write '@when' instead
+    ),
+  )
+  // Diagnostics do not stop generation: the emitted types are still sound,
+  // which is why anything that WOULD make them wrong fails instead.
+  assert_eq(plan.files.length(), 1)
+}
+
+///|
+test "a clean view produces no diagnostics" {
+  let r = @cli.gen_views(
+    "<div><button @on.click=\"go\">x</button></div>",
+    name="Clean",
+    input="views/clean.html",
+    target="views/clean_view_gen.mbt",
+    ir=false,
+  )
+  guard r is Ok(plan)
+  assert_eq(plan.diagnostics, [])
+}
