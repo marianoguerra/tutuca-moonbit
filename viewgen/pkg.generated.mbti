@@ -11,7 +11,7 @@ pub fn compiled_views(ViewSet) -> Map[String, @anode.View] raise GenError
 
 pub fn emit_ir_module(String, String, ViewSet) -> String raise GenError
 
-pub fn emit_module(String, String, ViewSet, Surface) -> String raise GenError
+pub fn emit_module(String, String, ViewSet, Surface, debug_derive? : Bool) -> String raise GenError
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 

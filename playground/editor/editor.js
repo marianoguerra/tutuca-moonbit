@@ -10,7 +10,7 @@
 // name (its default token table is empty), so we return tag names like "keyword"
 // and colour them via the HighlightStyle below.
 
-import { Compartment } from "@codemirror/state";
+import { Compartment, EditorState } from "@codemirror/state";
 import { EditorView, keymap, lineNumbers, highlightActiveLine, highlightActiveLineGutter, drawSelection } from "@codemirror/view";
 import { defaultKeymap, history, historyKeymap, indentWithTab } from "@codemirror/commands";
 import { StreamLanguage, HighlightStyle, syntaxHighlighting, LanguageSupport, indentUnit, bracketMatching, indentOnInput } from "@codemirror/language";
@@ -98,8 +98,66 @@ const moonbitMode = StreamLanguage.define({
   languageData: { commentTokens: { line: "//" } },
 });
 
-// exported for headless token tests; the editor uses moonbit() below
-export { moonbitMode };
+// --- tutuca view mode ------------------------------------------------------
+// The View tab holds tutuca's HTML-ish template syntax, so plain HTML
+// highlighting would miss what actually matters: which attributes are
+// directives (@on.click, @each, @if.class), which are dynamic bindings
+// (:value), and where a value expression sits. Same StreamLanguage approach as
+// the MoonBit mode — token() returns @lezer/highlight tag names directly.
+const viewMode = StreamLanguage.define({
+  name: "tutuca-view",
+  startState: () => ({ inTag: false, tokenize: null }),
+  token(stream, state) {
+    if (state.tokenize) return state.tokenize(stream, state);
+    if (stream.eatSpace()) return null;
+    if (stream.match(/^<!--/)) {
+      state.tokenize = (st, s2) => {
+        if (st.match(/^[\s\S]*?-->/)) s2.tokenize = null;
+        else st.skipToEnd();
+        return "comment";
+      };
+      return state.tokenize(stream, state);
+    }
+    if (!state.inTag) {
+      if (stream.match(/^<\/?[A-Za-z][\w:.-]*/)) { state.inTag = true; return "tagName"; }
+      if (stream.match(/^&[#\w]+;/)) return "string";
+      stream.next();
+      stream.eatWhile((c) => c !== "<" && c !== "&");
+      return null;
+    }
+    // inside a tag
+    if (stream.match(/^\/?>/)) { state.inTag = false; return "tagName"; }
+    // directive (@on.click, @each, @if.class, @text) or dynamic bind (:value)
+    if (stream.match(/^[@:][\w.+-]+/)) return "keyword";
+    if (stream.match(/^[A-Za-z][\w:.-]*/)) return "propertyName";
+    if (stream.match(/^=/)) return "operator";
+    if (stream.match(/^"/)) {
+      state.tokenize = (st, s2) => {
+        // a value expression: highlight its sigils inside the quotes
+        if (st.match(/^"/)) { s2.tokenize = null; return "string"; }
+        if (st.match(/^[.$*][\w-]+/)) return "variableName";
+        if (st.match(/^@[\w.-]+/)) return "variableName";
+        if (st.match(/^'(?:[^'\\]|\\.)*'/)) return "literal";
+        if (st.match(/^-?\d+(?:\.\d+)?/)) return "number";
+        st.next();
+        st.eatWhile((c) => c !== '"' && c !== "." && c !== "$" && c !== "@" && c !== "*" && c !== "'");
+        return "string";
+      };
+      return "string";
+    }
+    stream.next();
+    return null;
+  },
+  languageData: { commentTokens: { block: { open: "<!--", close: "-->" } } },
+});
+
+///|
+function viewHtml() {
+  return new LanguageSupport(viewMode);
+}
+
+// exported for headless token tests; the editor uses moonbit() / viewHtml()
+export { moonbitMode, viewMode };
 function moonbit() {
   return new LanguageSupport(moonbitMode);
 }
@@ -192,10 +250,13 @@ function parseDiagnostics(raw, doc) {
 
 // --- factory ----------------------------------------------------------------
 
-// createEditor({ parent, doc?, onRun?, onChange?, root? }) → editor handle.
-// `root` lets callers hosting the editor inside a shadow root (the embeddable
-// element) tell CodeMirror where to find its DOM. onRun fires on Mod-Enter.
-export function createEditor({ parent, doc = "", onRun, onChange, root } = {}) {
+// createEditor({ parent, doc?, onRun?, onChange?, root?, readOnly?, lang? })
+// → editor handle. `root` lets callers hosting the editor inside a shadow root
+// (the embeddable element) tell CodeMirror where to find its DOM. onRun fires
+// on Mod-Enter. `readOnly` is for panes the user reads but does not author —
+// the playground's generated-module tab. `lang: "html"` swaps the MoonBit mode
+// for the view-source tab; anything else keeps MoonBit.
+export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly = false, lang } = {}) {
   const theme = new Compartment();
   const extensions = [
     lineNumbers(),
@@ -206,7 +267,7 @@ export function createEditor({ parent, doc = "", onRun, onChange, root } = {}) {
     indentUnit.of("  "),
     indentOnInput(),
     bracketMatching(),
-    moonbit(),
+    lang === "html" ? viewHtml() : moonbit(),
     theme.of(themeExtensions(prefersDark())),
     keymap.of([
       ...(onRun ? [{ key: "Mod-Enter", preventDefault: true, run: () => { onRun(); return true; } }] : []),
@@ -215,6 +276,9 @@ export function createEditor({ parent, doc = "", onRun, onChange, root } = {}) {
       ...historyKeymap,
     ]),
   ];
+  if (readOnly) {
+    extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
+  }
   if (onChange) {
     extensions.push(EditorView.updateListener.of((u) => {
       if (u.docChanged) onChange(u.state.doc.toString());

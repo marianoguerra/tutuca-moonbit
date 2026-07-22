@@ -165,6 +165,15 @@ pub fn tasks() -> Array[Task] {
           prog: "node",
           args: ["playground/build/assemble.mjs"],
         },
+        // The View tab generates a MoonBit module in the browser and feeds it
+        // to the in-browser compiler. Nothing else can catch a generated
+        // module that fails to compile THERE (no moon.pkg, @tutuca is the
+        // root facade), so drive that path headlessly on every assemble.
+        {
+          label: "check · playground view tab",
+          prog: "node",
+          args: ["playground/build/check-viewgen-tab.mjs"],
+        },
       ],
     },
     {

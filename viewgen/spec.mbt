@@ -111,6 +111,7 @@ declare pub fn emit_module(
   source_file : String,
   views : ViewSet,
   surface : Surface,
+  debug_derive? : Bool,
 ) -> String raise GenError
 
 ///|

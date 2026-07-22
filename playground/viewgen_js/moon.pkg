@@ -1,0 +1,16 @@
+// The view generator, published to the playground page as a JS function.
+//
+// The playground compiles the user's MoonBit in the browser, so the generated
+// view module has to be produced in the browser too — before compilation, as
+// source text. This package is the seam: `main` installs
+// `globalThis.__tutucaViewgen(html, name)` and the page calls it whenever the
+// View tab changes, then hands the result to the compiler worker as a second
+// file of the user's package.
+import {
+  "marianoguerra/tutuca/viewgen",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

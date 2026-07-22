@@ -108,11 +108,11 @@ fn val_expr(val : @tutuca.Val) -> String {
       "])"
     Name(n) => "Name(\{quote(n)})"
     HandlerName(name~, ns~) => {
-      let namespace = match ns {
+      let ns_name = match ns {
         Input => "Input"
         Alter => "Alter"
       }
-      "HandlerName(name=\{quote(name)}, ns=\{namespace})"
+      "HandlerName(name=\{quote(name)}, ns=\{ns_name})"
     }
     TypeName(n) => "TypeName(\{quote(n)})"
     Bind(n) => "Bind(\{quote(n)})"

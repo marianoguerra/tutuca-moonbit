@@ -45,8 +45,10 @@ export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
       return initPromises.get(target);
     },
     // Compile + link one MoonBit source; returns { ok, diagnostics, result, ms }.
-    compile(code) {
-      return call("compile", { code }, []);
+    // `views` / `viewsIr` are the modules generated from the View tab; they
+    // join the user's package as extra files (see the worker's compile()).
+    compile(code, views, viewsIr) {
+      return call("compile", { code, views, viewsIr }, []);
     },
   };
 }

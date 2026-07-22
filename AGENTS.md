@@ -64,8 +64,15 @@ moon run --target native cmd/dev -- <task>
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
 | `ci`       | `check` then `test`                                              |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
-| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); follow with `git diff --exit-code` to catch drift |
+| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+
+The `playground` task ends with `playground/build/check-viewgen-tab.mjs`: the
+View tab generates a MoonBit module in the browser and feeds it to the
+in-browser compiler, and nothing else exercises that path — the generated
+module compiles in a package with no `moon.pkg`, where `@tutuca` is the
+module-root facade rather than `core/`. It drives generate → compile → link
+headlessly against the assembled payload.
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
 `dist/counter/` + `dist/examples/` (the **js** demos with their bundles,

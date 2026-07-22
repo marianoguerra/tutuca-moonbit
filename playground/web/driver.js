@@ -1,9 +1,21 @@
-// Playground driver (main thread): wires the editor to the compiler worker and
+// Playground driver (main thread): wires the editors to the compiler worker and
 // mounts the linked module in an isolated iframe preview, with a state/activity
-// inspector. The editor is a shared CodeMirror instance (createEditor, bundled
+// inspector. The editors are shared CodeMirror instances (createEditor, bundled
 // into ./editor.bundle.js); the worker RPC + iframe mounting live in
 // ./runtime.js (both shared with the embeddable <mb-playground> element used by
 // the landing site).
+//
+// Three tabs over the left pane:
+//
+//   Component  the .mbt the user writes
+//   View       the .html its views live in
+//   Generated  read-only: what `tutuca gen-views` makes of the View tab
+//
+// Editing the View tab regenerates the module (viewgen.js, the view generator
+// compiled to JS, published as globalThis.__tutucaViewgen) and the result is
+// handed to the worker as EXTRA FILES OF THE USER'S PACKAGE. Same package
+// means the component tab can name CounterMsg / counter_main_view with no
+// import — that is what "auto-imported" amounts to here.
 
 import { errorDiagnostics, makeCompiler, mount, mountWasm } from "./runtime.js";
 import { createEditor } from "./editor.bundle.js";
@@ -12,12 +24,98 @@ const $ = (s) => document.querySelector(s);
 const compiler = makeCompiler("./compiler.worker.js");
 
 const editor = createEditor({ parent: $("#editor"), doc: window.STARTER || "", onRun: run });
+const viewEditor = createEditor({
+  parent: $("#view-editor"),
+  doc: window.STARTER_VIEW || "",
+  lang: "html",
+  onRun: run,
+  onChange: () => scheduleGenerate(),
+});
+const genEditor = createEditor({ parent: $("#gen-editor"), readOnly: true });
+const genNote = $("#gen-note");
 const status = $("#status");
 const diags = $("#diagnostics");
 const stateOut = $("#state");
 const activity = $("#activity");
 const preview = $("#preview");
 const targetSel = $("#target");
+
+// --- tabs ------------------------------------------------------------------
+const TABS = [
+  ["#tab-component", "#editor"],
+  ["#tab-view", "#view-editor"],
+  ["#tab-generated", "#gen-editor"],
+];
+function selectTab(btnSel) {
+  for (const [b, panel] of TABS) {
+    const on = b === btnSel;
+    $(b).setAttribute("aria-selected", String(on));
+    $(panel).hidden = !on;
+  }
+  // CodeMirror measures lazily; a pane revealed after layout needs a nudge.
+  if (btnSel === "#tab-view") viewEditor.view.requestMeasure();
+  if (btnSel === "#tab-generated") genEditor.view.requestMeasure();
+  if (btnSel === "#tab-component") editor.view.requestMeasure();
+}
+for (const [b] of TABS) $(b).addEventListener("click", () => selectTab(b));
+
+// --- view -> generated module ----------------------------------------------
+// The component name heads the generated types (CounterMsg, counter_main_view,
+// …). It is read from the view file's first `<!-- name: X -->` comment so the
+// two tabs stay in sync without a third input to fill in.
+const NAME_RE = /<!--\s*name:\s*([A-Za-z][\w]*)\s*-->/;
+let generated = { module: "", ir: "" };
+
+function componentName() {
+  const m = NAME_RE.exec(viewEditor.getValue());
+  return m ? m[1] : "View";
+}
+
+// Regenerate from the View tab. Returns true when the module is usable; a
+// generation failure is reported like a compile error and leaves the previous
+// module in place so a half-typed tag does not blank the Generated tab.
+function generate() {
+  const html = viewEditor.getValue().trim();
+  if (!html) {
+    generated = { module: "", ir: "" };
+    genEditor.setValue("");
+    genNote.textContent = "";
+    return true;
+  }
+  const gen = globalThis.__tutucaViewgen;
+  if (typeof gen !== "function") {
+    genNote.textContent = "generator not loaded";
+    return false;
+  }
+  let r;
+  try {
+    r = JSON.parse(gen(html, componentName()));
+  } catch (e) {
+    genNote.textContent = "generator crashed";
+    diags.textContent = String(e.message || e);
+    return false;
+  }
+  if (!r.ok) {
+    genNote.textContent = "view error";
+    diags.textContent = `view.html: ${r.error}`;
+    return false;
+  }
+  generated = { module: r.module, ir: r.ir || "" };
+  genEditor.setValue(r.ir ? r.module + "\n" + r.ir : r.module);
+  genNote.textContent = r.ir
+    ? `${componentName()} — types + compiled tree`
+    : `${componentName()} — types only (a macro blocks the compiled tree)`;
+  return true;
+}
+
+// Debounced so typing a tag does not regenerate on every keystroke.
+let genTimer = null;
+function scheduleGenerate() {
+  clearTimeout(genTimer);
+  genTimer = setTimeout(() => {
+    if (generate()) diags.textContent = "";
+  }, 250);
+}
 
 // Which targets the assembled payload actually carries (the wasm-gc option is
 // only real when the site was built with WASMGC=1). Filled in at boot from the
@@ -63,12 +161,26 @@ async function run() {
   diags.textContent = "";
   try {
     await compiler.init(target); // switch the worker's payload if the target changed
-    const r = await compiler.compile(editor.getValue());
+    // Always regenerate before compiling: the View tab is the source of truth
+    // for the generated module, and a debounce may still be pending.
+    if (!generate()) {
+      setStatus("view error", "error");
+      return;
+    }
+    const r = await compiler.compile(
+      editor.getValue(),
+      generated.module,
+      generated.ir,
+    );
     const errs = errorDiagnostics(r.diagnostics);
     diags.textContent = (r.diagnostics || []).join("\n\n");
     editor.setDiagnostics(r.diagnostics); // inline underlines mirror the panel
     if (!r.ok || errs.length) {
-      setStatus(`compile errors (${errs.length})`, "error");
+      // A build can fail with nothing errorDiagnostics() recognizes — a
+      // non-exhaustive match arrives as "Error Warning (partial_match)",
+      // which is exactly what a regenerated view produces when the component
+      // has not caught up. Don't report that as "0 errors".
+      setStatus(errs.length ? `compile errors (${errs.length})` : "compile failed", "error");
       return;
     }
     if (target === "wasm-gc") {
@@ -107,7 +219,16 @@ function fillExamples() {
   }
 }
 examplesSel.addEventListener("change", () => {
-  editor.setValue(exampleSet()[examplesSel.value]);
+  const chosen = exampleSet()[examplesSel.value];
+  // An example is either a plain source string, or { code, view } when it
+  // carries a View tab of its own.
+  if (typeof chosen === "string") {
+    editor.setValue(chosen);
+    viewEditor.setValue("");
+  } else {
+    editor.setValue(chosen.code);
+    viewEditor.setValue(chosen.view || "");
+  }
   run();
 });
 
@@ -130,6 +251,7 @@ targetSel.addEventListener("change", run);
     }
     if (!availableTargets.includes(targetSel.value)) targetSel.value = "js";
     fillExamples();
+    generate();
     const info = await compiler.init(currentTarget());
     const wasmNote = availableTargets.includes("wasm-gc") ? "" : " (wasm-gc: rebuild with WASMGC=1)";
     setStatus(`ready (compiler + ${info.std + info.lib} interfaces, ${info.cores} cores). Ctrl/⌘+Enter to run.${wasmNote}`, "ok");

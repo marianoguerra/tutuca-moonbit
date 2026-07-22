@@ -34,8 +34,20 @@
         min-height: 0;
       }
       .pane { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid #ddd; }
-      #editor { flex: 1; min-height: 0; overflow: hidden; }
-      #editor .cm-editor { height: 100%; }
+      /* Tabs over the left pane: the component the user writes, the view HTML
+         it is generated from, and the read-only generated module. */
+      .tabs { display: flex; gap: 0; border-bottom: 1px solid #ddd; flex: 0 0 auto; }
+      .tabs button {
+        appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
+        padding: 0.4rem 0.8rem; font: inherit; font-size: 0.8rem; cursor: pointer; opacity: 0.65;
+      }
+      .tabs button[aria-selected="true"] { opacity: 1; border-bottom-color: currentColor; font-weight: 600; }
+      .tabs .spacer { flex: 1; }
+      .tabs .note { align-self: center; font-size: 0.7rem; opacity: 0.55; padding-right: 0.75rem; }
+      .editors { flex: 1; min-height: 0; position: relative; }
+      .editors > div { position: absolute; inset: 0; overflow: hidden; }
+      .editors > div[hidden] { display: none; }
+      .editors .cm-editor { height: 100%; }
       #diagnostics {
         max-height: 30%;
         overflow: auto;
@@ -57,6 +69,7 @@
          light borders and accents so the chrome stays coherent with the editor. */
       @media (prefers-color-scheme: dark) {
         header { border-bottom-color: #30363d; }
+        .tabs { border-bottom-color: #30363d; }
         .pane { border-right-color: #30363d; }
         #diagnostics { border-top-color: #30363d; color: #ff7b72; }
         #preview { background: #0d1117; }
@@ -80,7 +93,18 @@
     </header>
     <main>
       <div class="pane">
-        <div id="editor"></div>
+        <div class="tabs" role="tablist">
+          <button id="tab-component" role="tab" aria-selected="true" aria-controls="editor">Component</button>
+          <button id="tab-view" role="tab" aria-selected="false" aria-controls="view-editor">View</button>
+          <button id="tab-generated" role="tab" aria-selected="false" aria-controls="gen-editor">Generated</button>
+          <span class="spacer"></span>
+          <span class="note" id="gen-note"></span>
+        </div>
+        <div class="editors">
+          <div id="editor" role="tabpanel"></div>
+          <div id="view-editor" role="tabpanel" hidden></div>
+          <div id="gen-editor" role="tabpanel" hidden></div>
+        </div>
         <div id="diagnostics"></div>
       </div>
       <div class="pane right" style="border-right: 0">
@@ -91,8 +115,12 @@
         </div>
       </div>
     </main>
-    <!-- starter module — authored in MoonBit, compiled in your browser -->
+    <!-- starter modules — authored in MoonBit, compiled in your browser -->
     <script src="./starter.js"></script>
+    <!-- the view generator (viewgen/, compiled to js): publishes
+         globalThis.__tutucaViewgen for the View tab. A classic script, so it
+         has run by the time the deferred module driver boots. -->
+    <script src="./viewgen.js"></script>
     <script type="module" src="./driver.js"></script>
   </body>
 </html>

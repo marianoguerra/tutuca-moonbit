@@ -70,11 +70,20 @@ async function init(manifestUrl, target) {
   return { std: std.length, lib: lib.length, cores: cores.length };
 }
 
-function compile(userCode) {
+// `viewsCode` is the module `tutuca gen-views` produced from the View tab
+// (empty when that tab is unused). It joins the user's package as another
+// file rather than another package, which is why the component tab can name
+// CounterMsg / counter_main_view with no import at all — same package, same
+// scope. Kept in its own file so the user's diagnostics keep their line
+// numbers, exactly like _boot.mbt.
+function compile(userCode, viewsCode, viewsIrCode) {
   const t0 = Date.now();
   const boot = BOOT[fs.target] || BOOT.js;
+  const files = [["main.mbt", userCode], ["_boot.mbt", boot]];
+  if (viewsCode) files.push(["_views.mbt", viewsCode]);
+  if (viewsIrCode) files.push(["_views_ir.mbt", viewsIrCode]);
   const bp = moonc.buildPackage({
-    mbtFiles: [["main.mbt", userCode], ["_boot.mbt", boot]],
+    mbtFiles: files,
     miFiles: fs.direct,
     indirectImportMiFiles: fs.lib,
     stdMiFiles: fs.std,
@@ -114,7 +123,7 @@ self.onmessage = async (e) => {
   try {
     if (kind === "init") self.postMessage({ id, ok: true, value: await init(args.manifest, args.target) });
     else if (kind === "compile") {
-      const r = compile(args.code);
+      const r = compile(args.code, args.views, args.viewsIr);
       // transfer the linked bytes to avoid a copy
       self.postMessage({ id, ok: true, value: r }, r.result ? [r.result.buffer] : []);
     }

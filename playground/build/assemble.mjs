@@ -109,6 +109,14 @@ mkdirSync(OUT, { recursive: true });
 cpSync(WORKER, join(OUT, "moonc-web.cjs"));
 for (const f of readdirSync(WEB)) cpSync(join(WEB, f), join(OUT, f));
 
+// The view generator, compiled to js: the View tab needs it in the BROWSER
+// (it turns view HTML into MoonBit source, which then feeds the in-browser
+// compiler). moonc's js output is a plain IIFE, so it ships as an ordinary
+// classic script that publishes globalThis.__tutucaViewgen on load.
+console.log("building viewgen (js) ...");
+execSync("moon build --target js playground/viewgen_js", { cwd: REPO, stdio: "inherit" });
+cpSync(join(buildDir("js"), "playground/viewgen_js/viewgen_js.js"), join(OUT, "viewgen.js"));
+
 // Bundle the shared CodeMirror editor to a single ESM file both the standalone
 // shell (driver.js) and the embeddable element (site/embed.js) import.
 await esbuild({
@@ -135,6 +143,11 @@ for (const [t, demo, hostPkg] of TARGETS) {
   console.log("building moon artifacts for target", t, "...");
   execSync(`moon build --target ${t}`, { cwd: REPO, stdio: "inherit" });
   execSync(`moon build --target ${t} ${hostPkg}`, { cwd: REPO, stdio: "inherit" });
+  // The module-ROOT package (the @tutuca facade, see DIRECT above) is not in
+  // any build closure — nothing imports it and it has no main — so a bare
+  // `moon build` never emits its .mi and @tutuca silently fails to resolve in
+  // the browser. Build it by path.
+  execSync(`moon build --target ${t} .`, { cwd: REPO, stdio: "inherit" });
   console.log("assembling target", t, "...");
   manifest.targets[t] = assembleTarget(t, demo);
 }

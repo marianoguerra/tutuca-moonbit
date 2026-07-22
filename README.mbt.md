@@ -111,6 +111,28 @@ moon run --target native cmd/dev -- gen-views    # generate + fmt
 git diff --exit-code                             # drift check
 ```
 
+### In the playground
+
+The [playground](https://marianoguerra.github.io/tutuca-moonbit/playground/)
+runs the same generator in the browser. Its left pane has three tabs:
+
+| Tab | |
+|---|---|
+| **Component** | the MoonBit you write |
+| **View** | the `.html` its views live in (name the component with `<!-- name: Counter -->`) |
+| **Generated** | read-only: what `gen-views` makes of the View tab, updating as you type |
+
+The generated modules are compiled as extra files of *your* package, so the
+Component tab names `counter_compiled_views()` / `CounterMsg` / `CounterId`
+with no import — and adding an `@on` handler in the View tab fails the build
+with `Partial match … Some(Del(_))` until the Component tab handles it. Load
+the "Counter (view tab)" example to see it.
+
+The generator reaches the browser as `viewgen/` compiled to js
+(`playground/viewgen_js`), which publishes `globalThis.__tutucaViewgen`;
+`playground/build/check-viewgen-tab.mjs` drives that whole path headlessly
+(generate → compile → link) as part of the `playground` task.
+
 ## vdom
 
 The virtual DOM (`src/vdom.js` in the original): `Vdom` trees built with
