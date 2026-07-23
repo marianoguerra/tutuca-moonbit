@@ -4,6 +4,31 @@ All notable changes to this project are documented here. The format is based on
 [Keep a Changelog](https://keepachangelog.com/en/1.1.0/), and this project
 adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
+## [Unreleased]
+
+### Changed
+
+- `@viewgen.compiled_views` is now `@viewgen.build_views`. The old name
+  predates 0.5.0, when the component argument was `compiled_views~`; with
+  views always being `@anode.View` values there is no compiled-vs-uncompiled
+  distinction left to name.
+- The `gen-views` task runs `moon fmt` after generating. The CLI emits
+  unformatted source, so `gen-views` followed by `git diff --exit-code` — the
+  drift check the docs describe — always reported churn before this.
+
+### Fixed
+
+- The example library's last runtime-built static views (counter,
+  personal_site, filter_paginate) are compiled ahead of time. What still
+  builds views at runtime does so because it cannot be generated: dyncomp
+  guest bundles, macro-using and programmatically-assembled views,
+  deliberately-broken lint fixtures, the playground's editable examples, and
+  test fixtures.
+- Documentation that still described the pre-0.4 view arguments
+  (`view~` / `style~` / `view_styles`), the pre-typed-state component API,
+  removed generated constants, renamed demo packages, and moved example
+  paths.
+
 ## [0.5.0]
 
 ### Changed — `compiled_views~` renamed to `views~` (breaking)
