@@ -13,8 +13,8 @@ priv struct BasicsNoState {} derive(ToJson, FromJson)
 /// The smallest component there is: no fields, no view, no logic. It renders
 /// nothing visible — the point is that it is legal.
 ///
-/// MoonBit divergence: `view~` is a required argument, so "no view" is spelled
-/// as the empty string rather than JS's absent key.
+/// MoonBit divergence: `views~` is a required argument, so "no view" is an
+/// empty `<template>` in basics.html rather than JS's absent key.
 fn minimum_viable_comp() -> @component.Component {
   @component.component(
     views=minimum_viable_component_views(),

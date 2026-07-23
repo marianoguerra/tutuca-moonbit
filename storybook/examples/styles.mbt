@@ -9,8 +9,8 @@
 // (`padding: …`) land directly inside it, so they style the component's ROOT
 // element. Rules written with a selector target descendants instead.
 //
-// JS spells a per-view style as `views: { two: { view, style } }`; MoonBit keeps
-// the two maps separate — `views` and `view_styles`, keyed by the same name.
+// JS spells a per-view style as `views: { two: { view, style } }`; MoonBit puts
+// it on the view itself — each @anode.View in `views` carries its own style.
 
 ///|
 priv struct StylesNoState {} derive(ToJson, FromJson)

@@ -430,11 +430,11 @@ fn emit_ir_component(
 }
 
 ///|
-/// Build the compiled views directly, without going through generated source.
-/// This is exactly the value `emit_ir_module`'s output reconstructs, so the
-/// two paths can be compared in a test — and a host that already holds the
-/// view text (the playground) can skip codegen entirely.
-pub fn compiled_views(
+/// Build the views directly, without going through generated source. This is
+/// exactly the value `emit_ir_module`'s output reconstructs, which is what the
+/// gen-views tests assert: render through both paths, expect the same DOM. A
+/// host that already holds the view text could use it to skip codegen too.
+pub fn build_views(
   views : ViewSet,
   macros? : Array[MacroDef] = [],
 ) -> Map[String, @anode.View] raise GenError {

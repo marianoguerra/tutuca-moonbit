@@ -8,7 +8,8 @@
 //
 // `ir` is absent when the views use a macro (macros are registered from
 // MoonBit at runtime, so they cannot be expanded ahead of time) — the page
-// then falls back to passing the view source through `view~`.
+// then falls back to building the views at runtime with
+// `@anode.View::new(name, raw_view~)`.
 
 ///|
 extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =

@@ -2,7 +2,7 @@
 //
 // Two shapes are derived from the component name: a TYPE prefix (`Counter`,
 // used as `CounterInput` / `CounterMsg` / …) and a VALUE prefix (`counter`,
-// used as `counter_main_view` / `counter_fields` / …). View, handler and id
+// used as `counter_views` / `counter_fields` / …). View, handler and id
 // names become enum variants.
 
 ///|

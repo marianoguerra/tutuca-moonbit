@@ -79,7 +79,7 @@ test "a component built from the compiled tree renders identically" {
   )
   let from_tree = @component.component(
     name="IrFromTree",
-    views=@viewgen.compiled_views(views.components[0], macros=views.macros),
+    views=@viewgen.build_views(views.components[0], macros=views.macros),
     init=ir_state(),
   )
   let want = render_comp(from_source)
@@ -97,7 +97,7 @@ test "handlers dispatch through a compiled tree" {
   let views = @viewgen.split_file(ir_html)
   let comp = @component.component(
     name="IrDispatch",
-    views=@viewgen.compiled_views(views.components[0], macros=views.macros),
+    views=@viewgen.build_views(views.components[0], macros=views.macros),
     init=ir_state(),
     update=(s : IrState, msg, _ctx) => {
       match msg {
@@ -195,7 +195,7 @@ test "a file-declared macro renders like a MoonBit-registered one" {
   let vs = @viewgen.split_file(macro_view_html)
   let from_tree = @component.component(
     name="BadgeTree",
-    views=@viewgen.compiled_views(vs.components[0], macros=vs.macros),
+    views=@viewgen.build_views(vs.components[0], macros=vs.macros),
     init=BadgeState::{ title: "hi" },
   )
   // The runtime equivalent: the same macro body, registered as a value.

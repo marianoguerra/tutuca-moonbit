@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub fn compiled_views(ViewSet, macros? : Array[MacroDef]) -> Map[String, @anode.View] raise GenError
+pub fn build_views(ViewSet, macros? : Array[MacroDef]) -> Map[String, @anode.View] raise GenError
 
 pub fn emit_ir_module(String, String, ViewFile) -> String raise GenError
 

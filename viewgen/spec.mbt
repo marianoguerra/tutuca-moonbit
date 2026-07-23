@@ -170,8 +170,8 @@ declare pub fn ir_supported(file : ViewFile) -> Bool
 
 ///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
-/// view parses into, plus the `compiled_views~` map. Only valid when
-/// `ir_supported` holds.
+/// view parses into, plus the `<v>_views()` builder (passed as `views~`). Only
+/// valid when `ir_supported` holds.
 declare pub fn emit_ir_module(
   name : String,
   source_file : String,
@@ -181,7 +181,7 @@ declare pub fn emit_ir_module(
 ///|
 /// Build the compiled views directly, skipping codegen — the same value the
 /// emitted IR module reconstructs.
-declare pub fn compiled_views(
+declare pub fn build_views(
   views : ViewSet,
   macros? : Array[MacroDef],
 ) -> Map[String, @anode.View] raise GenError
