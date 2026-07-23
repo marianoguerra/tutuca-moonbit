@@ -1,4 +1,7 @@
 // Todo list — a list of editable child Item components you can add and remove.
+// Both components' views live in the View tab (todo.html): one file per module,
+// `<template id="Item">` / `<template id="Items">` naming each. They arrive
+// here as `item_views()` and `items_views()`.
 
 ///|
 struct TodoItemState {
@@ -9,17 +12,10 @@ struct TodoItemState {
 ///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="flex gap-3 items-center">
-      #|  <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value" />
-      #|  <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed" />
-      #|</div>
-    )),
-  },
-  name="Item",
-  init=TodoItemState::{ completed: false, text: "do the thing" },
-)
+    views=item_views(),
+    name="Item",
+    init=TodoItemState::{ completed: false, text: "do the thing" },
+  )
 }
 
 ///|
@@ -33,26 +29,14 @@ struct TodoItemsState {
 ///|
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
-      #|  <div class="flex flex-col gap-3 w-full">
-      #|    <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
-      #|    </div>
-      #|  </div>
-      #|</div>
-    )),
-  },
-  name="Items",
-  init=TodoItemsState::{ items: [] },
-  update=(s : TodoItemsState, msg, _ctx) => match msg {
-      Input("onAddItem", _) => Some({ items: s.items + [item.make(Map([]))] })
-      _ => None
+    views=items_views(),
+    name="Items",
+    init=TodoItemsState::{ items: [] },
+    update=(s : TodoItemsState, msg, _ctx) => match ItemsMsg::of_dispatch(msg) {
+      Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
+      Some(Unknown(_, _)) | None => None
     },
-)
+  )
 }
 
 ///|

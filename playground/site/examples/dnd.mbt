@@ -2,6 +2,10 @@
 // its render; the drop handler on the TARGET row reads the source's loop key via
 // `dragInfo.lookupBind("key")`. data-dragtype/data-droptarget pair a source with
 // the targets that accept it. Styled with margaui classes.
+//
+// The view lives in the View tab (dnd.html): `dnd_example_views()` is its
+// compiled tree, and `DnDExampleMsg` types the one `@on` handler it declares,
+// argument shapes included.
 struct DnDState {
   items : Array[@tutuca.Value]
   query : String
@@ -9,42 +13,18 @@ struct DnDState {
 
 fn build() -> @component.ModuleDef {
   let dnd = @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section class="flex flex-col gap-3">
-      #|  <input type="search" class="input" :value=".query"
-      #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-      #|    placeholder="Filter entries" />
-      #|  <div>
-      #|    <div class="cursor-grab row" @each=".items" @when="filterItem"
-      #|      draggable="true"
-      #|      data-dragtype="my-list-item"
-      #|      data-droptarget="my-list-item"
-      #|      @on.drop="onDropOnItem @key dragInfo">
-      #|      <span class="k" @text="@key"></span>: <x text="@value"></x>
-      #|    </div>
-      #|  </div>
-      #|</section>
-    ), style=(
-      #|[data-dragging="1"] { opacity: 0.5; }
-      #|[data-draggingover="my-list-item"] {
-      #|  border-top: 2rem solid transparent;
-      #|  outline: 1px solid #77777777;
-      #|  transition: 0.15s border-top ease;
-      #|}
-    )),
-  },
-  name="DnDExample",
-  init=DnDState::{ items: [], query: "" },
-  when={
+    views=dn_d_example_views(),
+    name="DnDExample",
+    init=DnDState::{ items: [], query: "" },
+    when={
       "filterItem": (s : DnDState, _key, item, _iter) => match item {
         Str(text) => text.contains(s.query)
         _ => true
       },
     },
-  update=(s : DnDState, msg, _ctx) => match msg {
+    update=(s : DnDState, msg, _ctx) => match DnDExampleMsg::of_dispatch(msg) {
       // args: [@key (the TARGET row's key), dragInfo]
-      Input("onDropOnItem", [Num(t), Obj(di), ..]) => {
+      Some(OnDropOnItem(Num(t), Obj(di))) => {
         let target = t.to_int()
         let source = match di.obj_field("lookupBind") {
           Some(Fn(lookup)) =>
@@ -56,11 +36,12 @@ fn build() -> @component.ModuleDef {
         }
         Some({ ..s, items: move_index_to_index(s.items, source, target) })
       }
-      _ => None
+      Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
     },
-)
+  )
   @component.ModuleDef::new(
-    name="dnd-example", components=[dnd],
+    name="dnd-example",
+    components=[dnd],
     examples=[
       { component: "DnDExample", title: "Default", args: { "items": List(dnd_items()) }, view: None },
     ],

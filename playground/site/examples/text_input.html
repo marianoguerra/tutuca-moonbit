@@ -1,0 +1,6 @@
+<template id="Greeter">
+  <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
+    <input :value=".name" @on.input="$setName value" placeholder="your name">
+    <p>Hello, <b @text=".name"></b>!</p>
+  </div>
+</template>

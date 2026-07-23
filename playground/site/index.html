@@ -45,10 +45,16 @@
         <li>HTML-first</li>
         <li>Reactive value language</li>
       </ul>
-      <pre class="hero-teaser"><code>let counter = @component.component(
+      <pre class="hero-teaser"><code>&lt;!-- counter.html --&gt;
+&lt;template id="Counter"&gt;
+  &lt;button @on.click="$inc" @text=".count"&gt;&lt;/button&gt;
+&lt;/template&gt;
+
+// counter.mbt — `tutuca gen-views` compiled the view above
+let counter = @component.component(
   name="Counter",
-  view="&lt;button @on.click='$inc' @text='.count'&gt;&lt;/button&gt;",
-  fields={ "count": @component.FieldSpec::of_default(Num(0)) },
+  views=counter_views(),
+  init=CounterState::{ count: 0 },
 )</code></pre>
     </header>
     <main>
@@ -61,14 +67,30 @@
           mounts the result live. The first run loads the compiler, so give it a
           moment; every example after that compiles in a couple of seconds.
         </p>
+        <p>
+          Each editor has three tabs. <strong>Component</strong> is the MoonBit
+          the example is written in; <strong>View</strong> is the
+          <code>.html</code> its views live in; <strong>Generated</strong> is
+          what <code>tutuca gen-views</code> makes of that view — the compiled
+          tree plus a typed message enum, compiled as part of the same package.
+          Edit the View tab and watch Generated follow: add an
+          <code>@on</code> handler there and the next run fails until the
+          component's <code>match</code> handles it.
+        </p>
         <h3>Hello, Counter</h3>
-        <mb-playground src="./site/examples/counter.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/counter.mbt"
+          view="./site/examples/counter.html"
+        ></mb-playground>
         <h3>Toggle — no logic needed</h3>
         <p>
           A boolean field gets a generated <code>$toggleOpen</code> mutator for
           free; <code>@show</code> reads it. No hand-written update code.
         </p>
-        <mb-playground src="./site/examples/toggle.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/toggle.mbt"
+          view="./site/examples/toggle.html"
+        ></mb-playground>
       </section>
 
       <section id="examples">
@@ -88,23 +110,35 @@
           render-it&gt;</code> renders the loop's current instance; the generated
           <code>$removeInItemsAt</code> mutator deletes by key.
         </p>
-        <mb-playground src="./site/examples/todo.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/todo.mbt"
+          view="./site/examples/todo.html"
+        ></mb-playground>
 
         <h4>Two-way Text Binding</h4>
         <p>
           <code>:value</code> reads a field; <code>@on.input="$setName value"</code>
           writes it via the generated mutator; <code>@text</code> mirrors it live.
         </p>
-        <mb-playground src="./site/examples/text_input.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/text_input.mbt"
+          view="./site/examples/text_input.html"
+        ></mb-playground>
 
         <h3>Interaction Patterns</h3>
         <h4>Tree Navigation</h4>
         <p>Click folders to toggle them open or closed, and click files to select them.</p>
-        <mb-playground src="./site/examples/tree.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/tree.mbt"
+          view="./site/examples/tree.html"
+        ></mb-playground>
 
         <h4>Drag and Drop</h4>
         <p>Drag entries to reorder them, and use the input to filter the list.</p>
-        <mb-playground src="./site/examples/dnd.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/dnd.mbt"
+          view="./site/examples/dnd.html"
+        ></mb-playground>
 
         <h4>Filter and Paginate</h4>
         <p>
@@ -113,7 +147,10 @@
           <code>@loop-with</code> returns the matching rows' original
           <code>keys</code>, so identity survives filtering and paging.
         </p>
-        <mb-playground src="./site/examples/filter_paginate.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/filter_paginate.mbt"
+          view="./site/examples/filter_paginate.html"
+        ></mb-playground>
 
         <h4>Web Component &amp; Custom Event</h4>
         <p>
@@ -127,7 +164,10 @@
         <h3>Full Applications</h3>
         <h4>JSON Editor</h4>
         <p>A recursive editor: every JSON node is a component that renders its children.</p>
-        <mb-playground src="./site/examples/json.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/json.mbt"
+          view="./site/examples/json.html"
+        ></mb-playground>
 
         <h4>Personal Site</h4>
         <p>
@@ -135,11 +175,18 @@
           solo/unsolo (alt-click) interaction. Data loads through a request handler
           after mount.
         </p>
-        <mb-playground src="./site/examples/personal_site.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/personal_site.mbt"
+          view="./site/examples/personal_site.html"
+        ></mb-playground>
 
         <h4>Visual WebAssembly</h4>
-        <p>A larger app driving a visual WebAssembly demo.</p>
-        <mb-playground src="./site/examples/visual_wasm.mbt"></mb-playground>
+        <p>
+          A larger app: a WebAssembly module editor whose ~19 views are BUILT AT
+          RUNTIME from an instruction table, so it is the one example that cannot
+          compile its views ahead of time. See it running in the
+          <a href="./storybook/?story=visual-wasm">storybook gallery</a>.
+        </p>
 
         <h3>Composability</h3>
         <h4>All Together Now</h4>
@@ -148,7 +195,10 @@
           being composed. This root imports several of them and renders each in its
           own tab — the glue code is minimal.
         </p>
-        <mb-playground src="./site/examples/composability.mbt"></mb-playground>
+        <mb-playground
+          src="./site/examples/composability.mbt"
+          view="./site/examples/composability.html"
+        ></mb-playground>
 
         <h4>Storybook</h4>
         <p>

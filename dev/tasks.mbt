@@ -119,6 +119,12 @@ pub fn tasks() -> Array[Task] {
       name: "check-examples",
       about: "compile-check the playground's editable examples (no moon package includes them)",
       commands: [
+        // Each example's views live in a sibling .html that the page compiles
+        // in the browser, so the check generates them the same way: with the
+        // view generator built to js (the payload the playground ships).
+        moon("build · js view generator", [
+          "build", "--target", "js", "playground/viewgen_js",
+        ]),
         {
           label: "check · playground examples",
           prog: "node",

@@ -1,0 +1,75 @@
+<!-- Every component in the module keeps its views in this one file; the
+     `<template id="Name">` says which component each belongs to. -->
+<template id="Counter">
+  <div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
+    <button @on.click="dec">-</button>
+    <b @text=".count"></b>
+    <button @on.click="$inc">+</button>
+  </div>
+</template>
+
+<template id="Item">
+  <div class="flex gap-3 items-center">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value">
+    <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed">
+  </div>
+</template>
+
+<template id="Items">
+  <div class="flex flex-col gap-3">
+    <button class="btn btn-soft btn-success add" @on.click="onAddItem">Add Task</button>
+    <div class="flex flex-col gap-3 w-full">
+      <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
+        <x render-it></x>
+        <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="TreeItem">
+  <section>
+    <p class="head"
+      @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
+      @text=".label" @on.click="onItemClick"></p>
+    <div class="pl-3 pt-1 flex flex-col gap-2 kids" @show="$areChildsVisible">
+      <x render-each=".items"></x>
+    </div>
+  </section>
+  <style>
+    user-select: none;
+    .head { cursor: pointer; }
+    .head:before { content: "⏺️"; margin-right: 0.25rem; }
+    .head.type-file:before { content: "📄️"; }
+    .head.open.type-dir:before { content: "📂️"; }
+    .head.closed.type-dir:before { content: "📁️"; }
+  </style>
+</template>
+
+<template id="TreeRoot">
+  <div class="flex flex-col gap-3">
+    <x render=".root"></x>
+    <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
+      <li @each=".log"><x text="@value"></x></li>
+    </ul>
+  </div>
+</template>
+
+<template id="Composability">
+  <section class="flex flex-col gap-4">
+    <div role="tablist" class="tabs tabs-border">
+      <button role="tab" id="tab-counter"
+        @if.class="equals? .activeSection 'counter'" @then="'tab tab-active'" @else="'tab'"
+        @on.click="$setActiveSection 'counter'">Counter</button>
+      <button role="tab" id="tab-todo"
+        @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
+        @on.click="$setActiveSection 'todo'">To-Do</button>
+      <button role="tab" id="tab-tree"
+        @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
+        @on.click="$setActiveSection 'tree'">Tree</button>
+    </div>
+    <div class="pane-counter" @show="equals? .activeSection 'counter'"><x render=".counter"></x></div>
+    <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>
+    <div class="pane-tree" @show="equals? .activeSection 'tree'"><x render=".tree"></x></div>
+  </section>
+</template>

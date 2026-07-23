@@ -2,6 +2,11 @@
 // number/array/object + selector + kv), a self-replacing type picker (the
 // `swap` bucket), drag-to-reorder. Components look each other up through a
 // shared `reg` map filled after all are built.
+//
+// All eight views live in the View tab (json.html), one `<template id="…">`
+// each, and arrive here compiled: json_null_views(), json_array_views(), …
+// `JsonArrayMsg` / `JsonObjectMsg` type the two components with `@on` handlers
+// of their own — the rest drive everything through generated `$` mutators.
 
 ///|
 /// name -> Component, shared by the handlers that construct other component
@@ -34,14 +39,10 @@ struct JsonEmptyState {} derive(ToJson, FromJson)
 ///|
 fn json_null_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<span class="text-warning text-xs font-mono p-3 json-null">null</span>
-    )),
-  },
-  name="JsonNull",
-  init=JsonEmptyState::{  },
-)
+    views=json_null_views(),
+    name="JsonNull",
+    init=JsonEmptyState::{  },
+  )
 }
 
 ///|
@@ -52,21 +53,10 @@ struct JsonBoolState {
 ///|
 fn json_bool_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<button data-bool
-      #|  @if.class=".value"
-      #|  @then="'btn btn-sm btn-soft btn-success font-mono true'"
-      #|  @else="'btn btn-sm btn-soft btn-error font-mono false'"
-      #|  @on.click="$toggleValue">
-      #|  <span @show=".value">true</span>
-      #|  <span @hide=".value">false</span>
-      #|</button>
-    )),
-  },
-  name="JsonBool",
-  init=JsonBoolState::{ value: true },
-)
+    views=json_bool_views(),
+    name="JsonBool",
+    init=JsonBoolState::{ value: true },
+  )
 }
 
 ///|
@@ -77,14 +67,10 @@ struct JsonStringState {
 ///|
 fn json_string_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<input class="input input-sm input-ghost text-green-500 font-mono json-string" :value=".value" @on.input="$setValue value" />
-    )),
-  },
-  name="JsonString",
-  init=JsonStringState::{ value: "hello" },
-)
+    views=json_string_views(),
+    name="JsonString",
+    init=JsonStringState::{ value: "hello" },
+  )
 }
 
 ///|
@@ -96,14 +82,10 @@ struct JsonNumberState {
 ///|
 fn json_number_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<input type="number" class="input input-sm input-ghost text-primary font-mono json-number" :title=".value" :value=".strValue" @on.input="$setRawValue value" />
-    )),
-  },
-  name="JsonNumber",
-  init=JsonNumberState::{ strValue: "0", value: 0 },
-  mutate={
+    views=json_number_views(),
+    name="JsonNumber",
+    init=JsonNumberState::{ strValue: "0", value: 0 },
+    mutate={
       // keep the raw string always, update the numeric value only when finite
       "setRawValue": (s : JsonNumberState, args) => {
         let raw = match args {
@@ -119,7 +101,7 @@ fn json_number_comp() -> @component.Component {
         }
       },
     },
-)
+  )
 }
 
 ///|
@@ -130,21 +112,10 @@ fn json_number_comp() -> @component.Component {
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="join gap-3 font-mono json-selector">
-      #|  <button class="btn btn-sm btn-soft btn-warning to-null" @on.click="$setToNull">null</button>
-      #|  <button class="btn btn-sm btn-soft btn-success to-bool" @on.click="$setToBool isCtrl">bool</button>
-      #|  <button class="btn btn-sm btn-soft btn-primary to-number" @on.click="$setToNumber">0</button>
-      #|  <button class="btn btn-sm btn-soft btn-accent to-string" @on.click="$setToString">""</button>
-      #|  <button class="btn btn-sm btn-soft btn-info to-array" @on.click="$setToArray">[]</button>
-      #|  <button class="btn btn-sm btn-soft btn-info to-object" @on.click="$setToObject">&#123;&#125;</button>
-      #|</div>
-    )),
-  },
-  name="JsonSelector",
-  init=JsonEmptyState::{  },
-  swap={
+    views=json_selector_views(),
+    name="JsonSelector",
+    init=JsonEmptyState::{  },
+    swap={
       "setToNull": (_s : JsonEmptyState, _args, _ctx) => Some(
         reg.make_("JsonNull"),
       ),
@@ -165,7 +136,7 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
         reg.make_("JsonObject"),
       ),
     },
-)
+  )
 }
 
 ///|
@@ -222,40 +193,20 @@ struct JsonItemsState {
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section class="join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-array">
-      #|  <button class="btn btn-sm btn-soft btn-primary add" @on.click="addItem">+</button>
-      #|  <div class="join join-vertical gap-3">
-      #|    <div class="join gap-3 justify-between items-center group entry" @each=".items"
-      #|      draggable="true"
-      #|      data-dragtype="json-list-item" data-droptarget="json-list-item"
-      #|      @on.drop="onDropOnItem @key dragInfo">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="$removeInItemsAt @key">x</button>
-      #|    </div>
-      #|  </div>
-      #|</section>
-    ), style=(
-      #|[data-draggingover="json-list-item"] {
-      #|  border-top: 4rem solid transparent;
-      #|  transition: 0.15s border-top ease;
-      #|}
-    )),
-  },
-  name="JsonArray",
-  init=JsonItemsState::{ items: [] },
-  update=(s : JsonItemsState, msg, _ctx) => match msg {
+    views=json_array_views(),
+    name="JsonArray",
+    init=JsonItemsState::{ items: [] },
+    update=(s : JsonItemsState, msg, _ctx) => match JsonArrayMsg::of_dispatch(msg) {
       // add a fresh JsonSelector so the user can pick the new element's type
-      Input("addItem", _) => Some({ items: s.items + [json_make_selector(reg)] })
-      Input("onDropOnItem", args) =>
-        match json_dropped_items(s.items, args) {
+      Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
+      Some(OnDropOnItem(key, drag_info)) =>
+        match json_dropped_items(s.items, [key, drag_info]) {
           Some(items) => Some({ items, })
           None => None
         }
-      _ => None
+      Some(Unknown(_, _)) | None => None
     },
-)
+  )
 }
 
 ///|
@@ -267,63 +218,35 @@ struct JsonKvState {
 ///|
 fn json_object_kv_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="join gap-3 items-center justify-center json-kv">
-      #|  <input class="input input-sm input-ghost text-green-500 font-mono json-key" :value=".key" @on.input="$setKey value" />
-      #|  <span class="text-xs font-mono text-gray-500 colon">:</span>
-      #|  <x render=".value"></x>
-      #|</div>
-    )),
-  },
-  name="JsonObjectKeyVal",
-  init=JsonKvState::{ key: "k", value: Null },
-)
+    views=json_object_key_val_views(),
+    name="JsonObjectKeyVal",
+    init=JsonKvState::{ key: "k", value: Null },
+  )
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section class="join join-vertical gap-3 pl-3 border-l-1 border-l-neutral-500 json-object">
-      #|  <button class="btn btn-sm btn-soft font-mono btn-primary add" @on.click="addItem">+</button>
-      #|  <div class="join join-vertical gap-3">
-      #|    <div class="join gap-3 justify-between items-center group entry" @each=".items"
-      #|      draggable="true"
-      #|      data-dragtype="json-kv-item" data-droptarget="json-kv-item"
-      #|      @on.drop="onDropOnItem @key dragInfo">
-      #|      <x render-it></x>
-      #|      <button class="btn btn-sm btn-soft btn-circle btn-error font-mono opacity-20 group-hover:opacity-100 rm" @on.click="$removeInItemsAt @key">x</button>
-      #|    </div>
-      #|  </div>
-      #|</section>
-    ), style=(
-      #|[data-draggingover="json-kv-item"] {
-      #|  border-top: 4rem solid transparent;
-      #|  transition: 0.15s border-top ease;
-      #|}
-    )),
-  },
-  name="JsonObject",
-  init=JsonItemsState::{ items: [] },
-  update=(s : JsonItemsState, msg, _ctx) => match msg {
+    views=json_object_views(),
+    name="JsonObject",
+    init=JsonItemsState::{ items: [] },
+    update=(s : JsonItemsState, msg, _ctx) => match JsonObjectMsg::of_dispatch(msg) {
       // a key/value row whose value is a fresh selector
-      Input("addItem", _) => {
+      Some(AddItem) => {
         let row = match reg.comps.get("JsonObjectKeyVal") {
           Some(kv) => kv.make({ "value": json_make_selector(reg) })
           None => Null
         }
         Some({ items: s.items + [row] })
       }
-      Input("onDropOnItem", args) =>
-        match json_dropped_items(s.items, args) {
+      Some(OnDropOnItem(key, drag_info)) =>
+        match json_dropped_items(s.items, [key, drag_info]) {
           Some(items) => Some({ items, })
           None => None
         }
-      _ => None
+      Some(Unknown(_, _)) | None => None
     },
-)
+  )
 }
 
 ///|

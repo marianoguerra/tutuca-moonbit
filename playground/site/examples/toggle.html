@@ -1,0 +1,8 @@
+<template id="Panel">
+  <section style="font-family:system-ui">
+    <button @on.click="$toggleOpen" @text="$label"></button>
+    <p @show=".open" style="padding:.5rem;border:1px solid #ccc;margin-top:.5rem">
+      Now you see me. Toggle again to hide.
+    </p>
+  </section>
+</template>

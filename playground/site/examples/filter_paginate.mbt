@@ -15,6 +15,10 @@
 // This exercises the whole @loop-with contract: `keys` (authoritative, skips
 // @when), the loopCtx `lookup` (read an @-binding published by a scope enrich)
 // and `filter` (reuse the declared @when), and scope @enrich-with feeding it.
+//
+// All five components keep their views in the View tab (filter_paginate.html).
+// The three strategies are written out in full there rather than shared through
+// a helper: the diff between their `<li>` directives IS the example.
 
 ///|
 /// The one match predicate, shared everywhere. `person` is a Person instance.
@@ -74,6 +78,9 @@ fn fp_base_compute() -> Map[
 }
 
 ///|
+/// A raw `match msg`: the three strategies each get their OWN generated
+/// message enum (NaivePeopleMsg, SharedPeopleMsg, …), so one shared handler
+/// can only speak the untyped dispatch they have in common.
 fn fp_update() -> (
   PeopleState,
   @component.Dispatch,
@@ -110,14 +117,6 @@ fn fp_only_matches() -> Map[
 }
 
 ///|
-/// The row markup, identical in every strategy (the whole point — only the
-/// directives on the <li> and the scope @enrich-with differ).
-const ROW =
-  #|<span class="badge badge-neutral" @text="@key"></span>
-  #|      <x render-it></x>
-  #|      <button class="btn btn-sm btn-error btn-outline rm" @on.click="$removeInItemsAt @key">x</button>
-
-///|
 fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
   @component.LoopWith::new(
     keys=keys.map(k => (Num(k.to_double()) : @tutuca.Value)),
@@ -134,38 +133,10 @@ struct PersonState {
 ///|
 fn person_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="person flex gap-2 items-center grow">
-      #|  <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name" />
-      #|  <input class="input input-sm grow email" :value=".email" @on.input="$setEmail value" placeholder="email" />
-      #|  <label class="label cursor-pointer gap-1 chk-label">
-      #|    <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="$setActive value" />
-      #|    active
-      #|  </label>
-      #|</div>
-    )),
-  },
-  name="Person",
-  init=PersonState::{ name: "", email: "", active: false },
-)
-}
-
-///|
-/// The pager markup + <ul>, parametrized by the <li> directives so the three
-/// strategies share everything but their scanning handler.
-fn people_view(li_attrs : String) -> String {
-  "<section class=\"flex flex-col gap-3\" @enrich-with=\"pagerInfo\">" +
-  "<input type=\"search\" class=\"input q\" :value=\".query\" @on.input=\"search value\" placeholder=\"Filter by name or email\" />" +
-  "<ul class=\"flex flex-col gap-2\">" +
-  "<li @each=\".items\" \{li_attrs} class=\"flex gap-2 items-center row\">\{ROW}</li>" +
-  "</ul>" +
-  "<div class=\"join\">" +
-  "<button class=\"btn join-item prev\" @on.click=\"prev\" :disabled=\"@isFirst\">Prev</button>" +
-  "<button class=\"btn join-item btn-disabled pglabel\" @text=\"@pageLabel\"></button>" +
-  "<button class=\"btn join-item next\" @on.click=\"next\" :disabled=\"@isLast\">Next</button>" +
-  "</div>" +
-  "</section>"
+    views=person_views(),
+    name="Person",
+    init=PersonState::{ name: "", email: "", active: false },
+  )
 }
 
 ///|
@@ -189,16 +160,14 @@ fn fp_pager_info(s : PeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"tablePage\"")),
-  },
-  name="NaivePeople",
-  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-  compute=fp_base_compute(),
-  update=fp_update(),
-  when=fp_only_matches(),
-  enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
-  loop_with={
+    views=naive_people_views(),
+    name="NaivePeople",
+    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    compute=fp_base_compute(),
+    update=fp_update(),
+    when=fp_only_matches(),
+    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
+    loop_with={
       "tablePage": (s : PeopleState, seq, ctx) => {
         let all : Array[Int] = []
         for i, v in seq.list() {
@@ -211,7 +180,7 @@ fn naive_people_comp() -> @component.Component {
         fp_num_keys(page_slice(all, start, s.pageSize))
       },
     },
-)
+  )
 }
 
 ///|
@@ -220,16 +189,14 @@ fn naive_people_comp() -> @component.Component {
 /// (`filter`) to collect just this page's keys, early-exiting once it is full.
 fn shared_people_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=people_view("@when=\"onlyMatches\" @loop-with=\"page\"")),
-  },
-  name="SharedPeople",
-  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-  compute=fp_base_compute(),
-  update=fp_update(),
-  when=fp_only_matches(),
-  enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
-  loop_with={
+    views=shared_people_views(),
+    name="SharedPeople",
+    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    compute=fp_base_compute(),
+    update=fp_update(),
+    when=fp_only_matches(),
+    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
+    loop_with={
       "page": (s : PeopleState, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {
           Num(n) => n.to_int()
@@ -253,7 +220,7 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
-)
+  )
 }
 
 ///|
@@ -261,14 +228,12 @@ fn shared_people_comp() -> @component.Component {
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=people_view("@loop-with=\"forwardKeys\"")),
-  },
-  name="CoupledPeople",
-  init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-  compute=fp_base_compute(),
-  update=fp_update(),
-  enrich_scope={
+    views=coupled_people_views(),
+    name="CoupledPeople",
+    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    compute=fp_base_compute(),
+    update=fp_update(),
+    enrich_scope={
       "pagerInfo": (s : PeopleState) => {
         let all : Array[Int] = []
         for i, p in s.items {
@@ -290,14 +255,14 @@ fn coupled_people_comp() -> @component.Component {
         }
       },
     },
-  loop_with={
+    loop_with={
       "forwardKeys": (_s : PeopleState, _seq, ctx) => match
         (ctx.lookup)("__keys__") {
         List(keys) => @component.LoopWith::new(keys~)
         _ => @component.LoopWith::new(keys=[])
       },
     },
-)
+  )
 }
 
 ///|
@@ -319,23 +284,15 @@ struct StrategiesState {} derive(ToJson, FromJson)
 ///|
 fn strategies_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="flex flex-col gap-6">
-      #|  <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>
-      #|  <div class="flex flex-col gap-1"><h3 class="font-bold">2. Shared — one count + one partial collect</h3><x render=".shared"></x></div>
-      #|  <div class="flex flex-col gap-1"><h3 class="font-bold">3. Coupled — one scan; loop-with forwards the enrich's keys</h3><x render=".coupled"></x></div>
-      #|</div>
-    )),
-  },
-  name="Strategies",
-  init=StrategiesState::{  },
-  specs={
+    views=strategies_views(),
+    name="Strategies",
+    init=StrategiesState::{  },
+    specs={
       "naive": @component.FieldSpec::comp("NaivePeople"),
       "shared": @component.FieldSpec::comp("SharedPeople"),
       "coupled": @component.FieldSpec::comp("CoupledPeople"),
     },
-)
+  )
 }
 
 ///|

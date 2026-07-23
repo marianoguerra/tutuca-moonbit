@@ -77,7 +77,12 @@ View tab generates a MoonBit module in the browser and feeds it to the
 in-browser compiler, and nothing else exercises that path — the generated
 module compiles in a package with no `moon.pkg`, where `@tutuca` is the
 module-root facade rather than `core/`. It drives generate → compile → link
-headlessly against the assembled payload.
+headlessly against the assembled payload, for the standalone playground's
+starter AND every landing-site example pair
+(`playground/site/examples/<name>.{mbt,html}`, which the embedded
+`<mb-playground>` elements compile in a visitor's browser). The cheaper
+`check-examples` task covers the same examples through `moon check` instead,
+generating their views with the same generator built to js.
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`

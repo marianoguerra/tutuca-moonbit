@@ -1,4 +1,6 @@
-// Tree navigation — click folders to toggle open/closed, files to select (logged below).
+// Tree navigation — click folders to toggle open/closed, files to select
+// (logged below). Both components' views live in the View tab (tree.html) and
+// arrive here compiled, as `tree_item_views()` and `tree_root_views()`.
 
 ///|
 struct TreeItemState {
@@ -16,38 +18,22 @@ struct TreeItemState {
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section>
-      #|  <p class="head"
-      #|    @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
-      #|    @text=".label" @on.click="onItemClick"></p>
-      #|  <div class="pl-3 pt-1 flex flex-col gap-2 kids" @show="$areChildsVisible">
-      #|    <x render-each=".items"></x>
-      #|  </div>
-      #|</section>
-    ), style=(
-      #|user-select: none;
-      #|.head { cursor: pointer; }
-      #|.head:before { content: "⏺️"; margin-right: 0.25rem; }
-      #|.head.type-file:before { content: "📄️"; }
-      #|.head.open.type-dir:before { content: "📂️"; }
-      #|.head.closed.type-dir:before { content: "📁️"; }
-    )),
-  },
-  name="TreeItem",
-  init=TreeItemState::{
+    views=tree_item_views(),
+    name="TreeItem",
+    init=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
       isOpen: true,
       items: [],
     },
-  compute={
+    compute={
       "areChildsVisible": (s : TreeItemState, _args) => Bool(
         s.isOpen && s.items.length() > 0,
       ),
     },
-  update=(s : TreeItemState, msg, ctx) => match msg {
+    // A raw `match msg`: this component handles a Bubble, which the views
+    // cannot declare, so `TreeItemMsg::of_dispatch` cannot type it.
+    update=(s : TreeItemState, msg, ctx) => match msg {
       // emit an event any ancestor may observe (payload: this item's own
       // instance value, read off the dispatch path — its leaf is self),
       // then toggle self
@@ -65,7 +51,7 @@ fn tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
-)
+  )
 }
 
 ///|
@@ -78,20 +64,11 @@ struct TreeRootState {
 ///|
 fn tree_root_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="flex flex-col gap-3">
-      #|  <x render=".root"></x>
-      #|  <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
-      #|    <li @each=".log"><x text="@value"></x></li>
-      #|  </ul>
-      #|</div>
-    )),
-  },
-  name="TreeRoot",
-  init=TreeRootState::{ log: [] },
-  specs={ "root": @component.FieldSpec::comp("TreeItem") },
-  update=(s : TreeRootState, msg, _ctx) => match msg {
+    views=tree_root_views(),
+    name="TreeRoot",
+    init=TreeRootState::{ log: [] },
+    specs={ "root": @component.FieldSpec::comp("TreeItem") },
+    update=(s : TreeRootState, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
@@ -107,7 +84,7 @@ fn tree_root_comp() -> @component.Component {
       }
       _ => None
     },
-)
+  )
 }
 
 ///|

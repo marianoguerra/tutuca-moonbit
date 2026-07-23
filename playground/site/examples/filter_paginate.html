@@ -1,0 +1,75 @@
+<template id="Strategies">
+  <div class="flex flex-col gap-6">
+    <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>
+    <div class="flex flex-col gap-1"><h3 class="font-bold">2. Shared — one count + one partial collect</h3><x render=".shared"></x></div>
+    <div class="flex flex-col gap-1"><h3 class="font-bold">3. Coupled — one scan; loop-with forwards the enrich's keys</h3><x render=".coupled"></x></div>
+  </div>
+</template>
+
+<template id="Person">
+  <div class="person flex gap-2 items-center grow">
+    <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name">
+    <input class="input input-sm grow email" :value=".email" @on.input="$setEmail value" placeholder="email">
+    <label class="label cursor-pointer gap-1 chk-label">
+      <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="$setActive value">
+      active
+    </label>
+  </div>
+</template>
+
+<!-- The three strategies share every line but the <li> directives: which
+     @when runs and which @loop-with builds the page. Written out three times
+     on purpose — the diff between them IS the lesson. -->
+<template id="NaivePeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="$removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
+</template>
+
+<template id="SharedPeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="$removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
+</template>
+
+<template id="CoupledPeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="$removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
+</template>

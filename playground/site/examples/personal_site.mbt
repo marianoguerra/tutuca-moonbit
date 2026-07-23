@@ -1,12 +1,13 @@
 // Personal site: a filterable list of entries with category/role facets,
 // sorting, and a solo/unsolo (alt-click) interaction; fixture data loads via a
 // request handler dispatched on `init` after mount.
+//
+// The three components' views live in the View tab (personal_site.html) and
+// arrive compiled — alt_url_views(), p_s_entry_views(), root_views(). Root's
+// `update` keeps a raw `match msg`: it also answers Receive/Response, which a
+// view cannot declare, so the generated RootMsg cannot type them.
 
 // --- shared field helpers (inlined from examples/fields.mbt) ---
-
-fn obj_get(v : @tutuca.Value, field : String) -> @tutuca.Value {
-  v.field(field)
-}
 
 fn obj_str(v : @tutuca.Value, field : String) -> String {
   v.field(field).str()
@@ -179,14 +180,10 @@ struct AltUrlState {
 ///|
 fn alt_url_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
-    )),
-  },
-  name="AltUrl",
-  init=AltUrlState::{ label: "", url: "#" },
-)
+    views=alt_url_views(),
+    name="AltUrl",
+    init=AltUrlState::{ label: "", url: "#" },
+  )
 }
 
 ///|
@@ -206,28 +203,9 @@ struct PsEntryState {
 ///|
 fn ps_entry_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<div class="card bg-base-200 shadow-sm p-2 sm:p-3 flex flex-col gap-2 ps-entry">
-      #|  <div class="flex gap-1 sm:gap-2 flex-wrap items-center">
-      #|    <span class="star" @show=".featured">⭐</span>
-      #|    <span class="flag" @show="$isSpanish" @text="$langFlag"></span>
-      #|    <span class="badge badge-ghost badge-sm border-0 font-bold years" @show="truthy? .startYear" @text="$yearDisplay"></span>
-      #|    <span class="badge badge-neutral badge-sm border-0 font-bold role" @show=".role" @text=".role"></span>
-      #|  </div>
-      #|  <a :href=".url" target="_blank" class="link link-hover"><h2 class="font-bold title" @text=".title"></h2></a>
-      #|  <p class="text-sm opacity-70 desc" @text=".description"></p>
-      #|  <div class="flex gap-1 sm:gap-2 flex-wrap cats">
-      #|    <span @each=".categories" @enrich-with="enrichCategoryBadge" :class="@badgeClass" @text="@value"></span>
-      #|  </div>
-      #|  <div class="alts" @hide="empty? .altUrls">
-      #|    <ul><li @each=".altUrls"><x render-it></x></li></ul>
-      #|  </div>
-      #|</div>
-    )),
-  },
-  name="PSEntry",
-  enrich={
+    views=p_s_entry_views(),
+    name="PSEntry",
+    enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
       "enrichCategoryBadge": (_s : PsEntryState, binds, _key, value, _iter) => match
@@ -239,7 +217,7 @@ fn ps_entry_comp() -> @component.Component {
         _ => ()
       },
     },
-  init=PsEntryState::{
+    init=PsEntryState::{
       title: "?",
       description: "",
       lang: "en",
@@ -251,7 +229,7 @@ fn ps_entry_comp() -> @component.Component {
       altUrls: [],
       categories: [],
     },
-  compute={
+    compute={
       "langFlag": (s : PsEntryState, _args) => if s.lang == "es" {
         Str("🇪🇸")
       } else {
@@ -267,7 +245,7 @@ fn ps_entry_comp() -> @component.Component {
         _ => Str("")
       },
     },
-)
+  )
 }
 
 ///|
@@ -317,182 +295,153 @@ struct PsRootState {
 } derive(ToJson, FromJson)
 
 ///|
+/// The Root views: the compiled ones from the View tab, plus one RUNTIME view.
+/// `_margauiClasses` is a decoy whose only job is to name every category color
+/// literally, so margaui's static class scan emits their CSS — and that list is
+/// computed here in MoonBit, so it cannot be written ahead of time. Everything
+/// else is compiled; this is the escape hatch used where it is really needed.
+fn root_views_with_decoy() -> Map[String, @anode.View] {
+  let views = root_views()
+  views["_margauiClasses"] = @anode.View::new(
+    "_margauiClasses",
+    raw_view="<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>",
+  )
+  views
+}
+
+///|
 fn root_comp() -> @component.Component {
   @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section class="ps-root flex flex-col gap-4">
-      #|  <div class="card bg-base-200 p-4 controls">
-      #|    <p class="text-sm mb-4">💡 Click tags to toggle. Solo / unsolo toggle with <kbd class="text-mono">alt/option + click</kbd>.</p>
-      #|    <div class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start">
-      #|      <span class="font-semibold text-sm pt-1">Categories</span>
-      #|      <div class="cat-facets flex flex-wrap gap-2">
-      #|        <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-      #|          :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
-      #|      </div>
-      #|      <span class="font-semibold text-sm pt-1">Roles</span>
-      #|      <div class="role-facets flex flex-wrap gap-2">
-      #|        <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-      #|          :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
-      #|      </div>
-      #|      <span class="font-semibold text-sm pt-1">Sort By</span>
-      #|      <div class="flex flex-wrap items-center gap-2">
-      #|        <label class="swap btn btn-xs btn-outline btn-primary">
-      #|          <input type="checkbox" class="sort-end" :checked=".sortByEnd" @on.change="onToggleSortByEnd" />
-      #|          <span class="swap-on">End Year</span>
-      #|          <span class="swap-off">Start Year</span>
-      #|        </label>
-      #|        <label class="swap btn btn-xs btn-outline btn-primary">
-      #|          <input type="checkbox" class="sort-asc" :checked=".sortAsc" @on.change="onToggleSortAsc" />
-      #|          <span class="swap-on">↑ Oldest first</span>
-      #|          <span class="swap-off">↓ Newest first</span>
-      #|        </label>
-      #|        <label class="flex items-center gap-2 cursor-pointer">
-      #|          <input type="checkbox" class="toggle toggle-sm feat-first" :checked=".featuredFirst" @on.change="onToggleFeaturedFirst" />
-      #|          <span class="text-sm">Featured first</span>
-      #|        </label>
-      #|      </div>
-      #|    </div>
-      #|    <div class="flex flex-wrap items-center gap-4 mt-4">
-      #|      <button class="btn btn-outline btn-sm clear-filters" @on.click="$clearFilters" @show="$hasActiveFilters">Clear Filters</button>
-      #|    </div>
-      #|  </div>
-      #|  <div class="entries flex flex-col gap-3">
-      #|    <div class="entry-row" @each=".allEntries" @when="filterEntry"><x render-it></x></div>
-      #|  </div>
-      #|</section>
-    )),
-    "_margauiClasses": @anode.View::new("_margauiClasses", raw_view="<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>"),
-  },
-  name="Root",
-  init=PsRootState::{
-      allEntries: [],
-      allCategories: [],
-      allRoles: [],
-      selectedCategories: Map([]),
-      selectedRoles: Map([]),
-      featuredFirst: true,
-      sortByEnd: false,
-      sortAsc: false,
-    },
-  mutate={
-      "clearFilters": (s : PsRootState, _args) => {
-        ..s,
-        selectedCategories: ps_set_of(s.allCategories),
-        selectedRoles: ps_set_of(s.allRoles),
+    views=root_views_with_decoy(),
+    name="Root",
+    init=PsRootState::{
+        allEntries: [],
+        allCategories: [],
+        allRoles: [],
+        selectedCategories: Map([]),
+        selectedRoles: Map([]),
+        featuredFirst: true,
+        sortByEnd: false,
+        sortAsc: false,
       },
-    },
-  compute={
-      "hasActiveFilters": (s : PsRootState, _args) => Bool(
-        s.selectedCategories.length() != s.allCategories.length() ||
-        s.selectedRoles.length() != s.allRoles.length(),
-      ),
-    },
-  when={ "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(
-      s, e,
-    ) },
-  enrich={
-      // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
-      // the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => match
-        value {
-        Str(cat) => {
-          let selected = s.selectedCategories.contains(cat)
-          binds["isSelected"] = Bool(selected)
-          let state = if selected { "on" } else { "off" }
-          binds["btnClass"] = Str(
-            "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
-          )
-        }
-        _ => ()
-      },
-      // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
-      // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
-      // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s : PsRootState, binds, _key, value, _iter) => match
-        value {
-        Str(role) => {
-          let selected = s.selectedRoles.contains(role)
-          binds["btnClass"] = Str(
-            if selected {
-              "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
-            } else {
-              "btn btn-xs btn-ghost font-bold opacity-40 role-btn off"
-            },
-          )
-        }
-        _ => ()
-      },
-    },
-  update=(s : PsRootState, msg, ctx) => match msg {
-      Input("onCategoryToggle", args) =>
-        Some({
+    mutate={
+        "clearFilters": (s : PsRootState, _args) => {
           ..s,
-          selectedCategories: ps_facet_toggle(
-            s.allCategories,
-            s.selectedCategories,
-            args,
-          ),
-        })
-      Input("onRoleToggle", args) =>
-        Some({
-          ..s,
-          selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
-        })
-      Input("onToggleSortByEnd", _) =>
-        Some(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
-      Input("onToggleSortAsc", _) =>
-        Some(ps_resort({ ..s, sortAsc: !s.sortAsc }))
-      Input("onToggleFeaturedFirst", _) =>
-        Some(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
-      Response("loadData", args) => {
-        let entries = match args {
-          [List(a), ..] => a
-          _ => []
-        }
-        // collect + sort the distinct categories and roles
-        let cat_set : Map[String, Unit] = Map([])
-        let role_set : Map[String, Unit] = Map([])
-        for e in entries {
-          match e {
-            Obj(o) => {
-              match o.obj_field("categories") {
-                Some(List(cs)) =>
-                  for c in cs {
-                    if c is Str(cstr) {
-                      cat_set[cstr] = ()
-                    }
-                  }
-                _ => ()
-              }
-              match o.obj_field("role") {
-                Some(Str(r)) => role_set[r] = ()
-                _ => ()
-              }
-            }
-            _ => ()
+          selectedCategories: ps_set_of(s.allCategories),
+          selectedRoles: ps_set_of(s.allRoles),
+        },
+      },
+    compute={
+        "hasActiveFilters": (s : PsRootState, _args) => Bool(
+          s.selectedCategories.length() != s.allCategories.length() ||
+          s.selectedRoles.length() != s.allRoles.length(),
+        ),
+      },
+    when={ "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(
+        s, e,
+      ) },
+    enrich={
+        // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
+        // the trailing `cat-btn on|off` tokens are the MB test hooks.
+        "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => match
+          value {
+          Str(cat) => {
+            let selected = s.selectedCategories.contains(cat)
+            binds["isSelected"] = Bool(selected)
+            let state = if selected { "on" } else { "off" }
+            binds["btnClass"] = Str(
+              "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
+            )
           }
+          _ => ()
+        },
+        // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
+        // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
+        // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
+        "enrichRoleBindings": (s : PsRootState, binds, _key, value, _iter) => match
+          value {
+          Str(role) => {
+            let selected = s.selectedRoles.contains(role)
+            binds["btnClass"] = Str(
+              if selected {
+                "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
+              } else {
+                "btn btn-xs btn-ghost font-bold opacity-40 role-btn off"
+              },
+            )
+          }
+          _ => ()
+        },
+      },
+    update=(s : PsRootState, msg, ctx) => match msg {
+        Input("onCategoryToggle", args) =>
+          Some({
+            ..s,
+            selectedCategories: ps_facet_toggle(
+              s.allCategories,
+              s.selectedCategories,
+              args,
+            ),
+          })
+        Input("onRoleToggle", args) =>
+          Some({
+            ..s,
+            selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
+          })
+        Input("onToggleSortByEnd", _) =>
+          Some(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
+        Input("onToggleSortAsc", _) =>
+          Some(ps_resort({ ..s, sortAsc: !s.sortAsc }))
+        Input("onToggleFeaturedFirst", _) =>
+          Some(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
+        Response("loadData", args) => {
+          let entries = match args {
+            [List(a), ..] => a
+            _ => []
+          }
+          // collect + sort the distinct categories and roles
+          let cat_set : Map[String, Unit] = Map([])
+          let role_set : Map[String, Unit] = Map([])
+          for e in entries {
+            match e {
+              Obj(o) => {
+                match o.obj_field("categories") {
+                  Some(List(cs)) =>
+                    for c in cs {
+                      if c is Str(cstr) {
+                        cat_set[cstr] = ()
+                      }
+                    }
+                  _ => ()
+                }
+                match o.obj_field("role") {
+                  Some(Str(r)) => role_set[r] = ()
+                  _ => ()
+                }
+              }
+              _ => ()
+            }
+          }
+          let cats = cat_set.keys().collect()
+          cats.sort_by((a, b) => a.lexical_compare(b))
+          let roles = role_set.keys().collect()
+          roles.sort_by((a, b) => a.lexical_compare(b))
+          Some({
+            ..s,
+            allEntries: ps_sort(entries, s.sortByEnd, s.sortAsc, s.featuredFirst),
+            allCategories: cats,
+            selectedCategories: ps_set_of(cats),
+            allRoles: roles,
+            selectedRoles: ps_set_of(roles),
+          })
         }
-        let cats = cat_set.keys().collect()
-        cats.sort_by((a, b) => a.lexical_compare(b))
-        let roles = role_set.keys().collect()
-        roles.sort_by((a, b) => a.lexical_compare(b))
-        Some({
-          ..s,
-          allEntries: ps_sort(entries, s.sortByEnd, s.sortAsc, s.featuredFirst),
-          allCategories: cats,
-          selectedCategories: ps_set_of(cats),
-          allRoles: roles,
-          selectedRoles: ps_set_of(roles),
-        })
-      }
-      Receive("init", _) => {
-        ctx.request("loadData", [], @tutuca.RequestOpts::new())
-        Some(s)
-      }
-      _ => None
-    },
-)
+        Receive("init", _) => {
+          ctx.request("loadData", [], @tutuca.RequestOpts::new())
+          Some(s)
+        }
+        _ => None
+      },
+  )
 }
 
 ///|

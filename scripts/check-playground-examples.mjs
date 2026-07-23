@@ -1,16 +1,24 @@
 // Compile-check the playground's editable examples (playground/site/examples/
-// *.mbt). They are standalone teaching editions — intentionally NOT the
-// storybook/examples ports — and no moon package includes them, so without
-// this check they rot silently when the library API moves (it happened:
-// see "drop deprecated Map::new in examples").
+// *.mbt + their sibling *.html). They are standalone teaching editions —
+// intentionally NOT the storybook/examples ports — and no moon package
+// includes them, so without this check they rot silently when the library API
+// moves (it happened: see "drop deprecated Map::new in examples").
+//
+// An example's views live in its .html, exactly as `tutuca gen-views` expects.
+// The browser generates that module on the fly (the View tab), so this check
+// runs the SAME generator — viewgen/ compiled to JS — and drops its output
+// into the package as extra files, the way compiler.worker.js does. An
+// example with no .html sibling is checked on its own (a runtime-view
+// escape-hatch example is still legal).
 //
 // Each example is checked one at a time (they all define `fn build()`, so
 // they can't share a package) inside a throwaway package whose imports
 // mirror the in-browser compiler's environment (see assemble.mjs DIRECT):
 // the module-root facade as @tutuca plus the library packages, and the
 // moonbitlang/core std packages examples reach for. Run:
+//   moon build --target js playground/viewgen_js   # the generator
 //   node scripts/check-playground-examples.mjs
-import { readdirSync, mkdirSync, rmSync, writeFileSync, copyFileSync } from "node:fs";
+import { readdirSync, mkdirSync, rmSync, writeFileSync, copyFileSync, readFileSync, existsSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
@@ -18,6 +26,7 @@ import { fileURLToPath } from "node:url";
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..");
 const EXAMPLES = join(REPO, "playground/site/examples");
 const SCAFFOLD = join(REPO, "playground/_examples_check");
+const VIEWGEN = join(REPO, "_build/js/debug/build/playground/viewgen_js/viewgen_js.js");
 
 // mirrors the aliases the in-browser moonc exposes (assemble.mjs DIRECT),
 // minus `host` (examples never drive the mount host directly)
@@ -39,6 +48,21 @@ import {
 warnings = "-44"
 `;
 
+// The view generator, as the playground page loads it: a classic script
+// publishing globalThis.__tutucaViewgen(html, name) -> JSON.
+if (!existsSync(VIEWGEN)) {
+  console.error(
+    `view generator missing: ${VIEWGEN}\n  build it with: moon build --target js playground/viewgen_js`,
+  );
+  process.exit(1);
+}
+new Function(readFileSync(VIEWGEN, "utf8"))();
+
+// The page reads the fallback component name from a `<!-- name: X -->`
+// comment; a view file that names its templates (`<template id="Counter">`)
+// ignores it.
+const NAME_RE = /<!--\s*name:\s*([A-Za-z][\w]*)\s*-->/;
+
 const examples = readdirSync(EXAMPLES).filter((f) => f.endsWith(".mbt")).sort();
 if (!examples.length) {
   console.error("no examples found in", EXAMPLES);
@@ -51,12 +75,34 @@ try {
   writeFileSync(join(SCAFFOLD, "moon.pkg"), MOON_PKG);
   for (const name of examples) {
     copyFileSync(join(EXAMPLES, name), join(SCAFFOLD, "example.mbt"));
+
+    // The sibling .html, generated as the browser generates it (no
+    // moonbitlang/core/debug in the playground package, so no debug derive).
+    const viewFile = join(EXAMPLES, name.replace(/\.mbt$/, ".html"));
+    let views = "";
+    let ir = "";
+    if (existsSync(viewFile)) {
+      const html = readFileSync(viewFile, "utf8");
+      const r = JSON.parse(
+        globalThis.__tutucaViewgen(html, (NAME_RE.exec(html) || [, "View"])[1]),
+      );
+      if (!r.ok) {
+        console.log(`FAILED  ${name}`);
+        failures.push([name, `view generation failed: ${r.error}\n`]);
+        continue;
+      }
+      views = r.module;
+      ir = r.ir || "";
+    }
+    writeFileSync(join(SCAFFOLD, "_views.mbt"), views);
+    writeFileSync(join(SCAFFOLD, "_views_ir.mbt"), ir);
+
     try {
       execSync("moon check playground/_examples_check --target js", {
         cwd: REPO,
         stdio: ["ignore", "pipe", "pipe"],
       });
-      console.log(`ok      ${name}`);
+      console.log(`ok      ${name}${views ? "" : "  (no view file)"}`);
     } catch (e) {
       console.log(`FAILED  ${name}`);
       failures.push([name, `${e.stdout ?? ""}${e.stderr ?? ""}`]);

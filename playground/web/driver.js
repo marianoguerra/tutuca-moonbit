@@ -11,14 +11,15 @@
 //   View       the .html its views live in
 //   Generated  read-only: what `tutuca gen-views` makes of the View tab
 //
-// Editing the View tab regenerates the module (viewgen.js, the view generator
-// compiled to JS, published as globalThis.__tutucaViewgen) and the result is
-// handed to the worker as EXTRA FILES OF THE USER'S PACKAGE. Same package
-// means the component tab can name CounterMsg / counter_main_view with no
-// import — that is what "auto-imported" amounts to here.
+// Editing the View tab regenerates the module (./viewgen-client.js, over the
+// view generator compiled to JS) and the result is handed to the worker as
+// EXTRA FILES OF THE USER'S PACKAGE. Same package means the component tab can
+// name CounterMsg / counter_views with no import — that is what
+// "auto-imported" amounts to here.
 
 import { errorDiagnostics, makeCompiler, mount, mountWasm } from "./runtime.js";
 import { createEditor } from "./editor.bundle.js";
+import { componentName, componentNames, generateViews } from "./viewgen-client.js";
 
 const $ = (s) => document.querySelector(s);
 const compiler = makeCompiler("./compiler.worker.js");
@@ -60,16 +61,7 @@ function selectTab(btnSel) {
 for (const [b] of TABS) $(b).addEventListener("click", () => selectTab(b));
 
 // --- view -> generated module ----------------------------------------------
-// The component name heads the generated types (CounterMsg, counter_main_view,
-// …). It is read from the view file's first `<!-- name: X -->` comment so the
-// two tabs stay in sync without a third input to fill in.
-const NAME_RE = /<!--\s*name:\s*([A-Za-z][\w]*)\s*-->/;
 let generated = { module: "", ir: "" };
-
-function componentName() {
-  const m = NAME_RE.exec(viewEditor.getValue());
-  return m ? m[1] : "View";
-}
 
 // Regenerate from the View tab. Returns true when the module is usable; a
 // generation failure is reported like a compile error and leaves the previous
@@ -82,29 +74,19 @@ function generate() {
     genNote.textContent = "";
     return true;
   }
-  const gen = globalThis.__tutucaViewgen;
-  if (typeof gen !== "function") {
-    genNote.textContent = "generator not loaded";
-    return false;
-  }
-  let r;
-  try {
-    r = JSON.parse(gen(html, componentName()));
-  } catch (e) {
-    genNote.textContent = "generator crashed";
-    diags.textContent = String(e.message || e);
-    return false;
-  }
+  const name = componentName(html);
+  const r = generateViews(html, name);
   if (!r.ok) {
     genNote.textContent = "view error";
     diags.textContent = `view.html: ${r.error}`;
     return false;
   }
-  generated = { module: r.module, ir: r.ir || "" };
+  generated = { module: r.module, ir: r.ir };
   genEditor.setValue(r.ir ? r.module + "\n" + r.ir : r.module);
+  const declared = componentNames(html).join(", ");
   genNote.textContent = r.ir
-    ? `${componentName()} — types + compiled tree`
-    : `${componentName()} — types only (a macro blocks the compiled tree)`;
+    ? `${declared} — types + compiled tree`
+    : `${declared} — types only (a macro blocks the compiled tree)`;
   return true;
 }
 
