@@ -29,10 +29,10 @@ and formal `spec.mbt`. From the bottom up:
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain `derive(ToJson, FromJson)` struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
 | **Tooling** | `lint/`, `inspector/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
-| **Demos & docs** | `examples/`, `demo/`, `playground/`, `storybook/` | 32 ported examples, browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
+| **Demos & docs** | `demo/`, `playground/`, `storybook/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
 
 The `tutuca` CLI exposes `get` / `list` / `examples` / `show` / `lint` /
-`render` / `storybook` / `gen-views` / `install-skill`.
+`render` / `storybook` / `gen-views` / `watch` / `install-skill`.
 
 ## Views (`views~` + `gen-views`)
 
@@ -40,8 +40,13 @@ The `tutuca` CLI exposes `get` / `list` / `examples` / `show` / `lint` /
 @anode.View]` — a view is a built `@anode.View`, never a raw string. There are
 two ways to build them: **ahead of time** with `tutuca gen-views` (the
 recommended path, below), or at runtime with `@anode.View::new("main",
-raw_view="…")` for a genuinely dynamic or throwaway view. The old string
-arguments (`view~` / `views~` / `style~`) were removed in 0.4.0.
+raw_view="…")` for a genuinely dynamic or throwaway view.
+
+Ahead of time is the default everywhere in this repo. The runtime path is
+reserved for cases that cannot be generated: views that arrive as source at
+run time (the dyncomp guest bundles), views a macro or the component itself
+assembles programmatically, deliberately-broken lint fixtures, the playground's
+editable teaching examples, and test fixtures.
 
 A component keeps its views in an `.html` file and compiles them ahead of time
 into a companion MoonBit module, so the view's vocabulary stops being strings
@@ -49,7 +54,10 @@ the compiler cannot see:
 
 ```sh
 moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
-# -> demo/counterlib/counter_view_gen.mbt (checked in; regenerate, never edit)
+# -> demo/counterlib/counter_view_gen.mbt      (the view vocabulary as types)
+# -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled `counter_views()`)
+# both checked in; regenerate, never edit
+
 ```
 
 The file is either one bare view, or several `<template>` elements whose `id`
@@ -281,8 +289,9 @@ moon run --target native cmd/dev -- dist     # assemble a self-contained dist/
 
 Run `cmd/dev` with no task to print the full list. The raw `moon` commands the
 tasks run underneath still work directly. See [AGENTS.md](AGENTS.md) for the
-tooling and testing details, and [examples/README.md](examples/README.md) for
-how a JS example becomes a MoonBit one.
+tooling and testing details, and
+[storybook/examples/README.md](storybook/examples/README.md) for how a JS
+example becomes a MoonBit one.
 
 `dist` produces `dist/index.html` (a landing page), the js and wasm-gc demos,
 the storybook gallery, and the native `tutuca` binary — serve it with any

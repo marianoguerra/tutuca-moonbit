@@ -13,11 +13,10 @@ priv struct NoState {} derive(ToJson, FromJson)
   },
   name="Styled",
   init=NoState::{  },
-  // scoped to main view
-  common_style=".shared { color: yellow; }",
   // scoped to all views of this component
+  common_style=".shared { color: yellow; }",
+  // injected unscoped
   global_style=".app-thing { color: green; }",
-  // per-view scoped CSS,
 )
 ```
 
@@ -27,7 +26,7 @@ CSS). `Component::compile_style()` produces the compiled text;
 territory (`@glue.install_styles(app, doc)` in the browser hosts, the
 harness's `h.styles()` in tests).
 
-`style`, `common_style`, and `view_styles` entries are wrapped in a
+A view's own `style` and the component's `common_style` are wrapped in a
 component-scoped selector (`[data-cid="N"]{ … }`, plus `[data-vid]` for a
 per-view style), so their CSS lands *inside* a style-rule block.
 

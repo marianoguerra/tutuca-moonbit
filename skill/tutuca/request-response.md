@@ -246,7 +246,7 @@ Because the request handler is registered **outside** the component, the
 same component can be driven by a real fetch in production and by a
 fixture in a test — parameterize the module function with
 `requests? : Map[String, RequestFn] = real_handlers()` and pass a fixture
-map when testing (the pattern in `examples/request.mbt`).
+map when testing (the pattern in `storybook/examples/request.mbt`).
 
 ### The `err` argument and the error path
 
@@ -309,7 +309,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
 The combined `[res, err]` shape is only for the default /
 `on_res_name` case. Mixing them up — a split arm matching
 `[res, err]` — silently misreads the args, a common bug. (Worked
-version of both routes: `examples/request.mbt`.)
+version of both routes: `storybook/examples/request.mbt`.)
 
 ### `live_path` — pinning vs following a moving key
 

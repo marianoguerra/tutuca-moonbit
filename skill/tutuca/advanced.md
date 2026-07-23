@@ -73,7 +73,7 @@ becomes a drag after a small move threshold).
 > Port divergence — drop geometry: the JS original also measures the
 > pointer against the target's bounding box to decide above vs below.
 > The value layer exposes no DOM objects, so this port derives the drop
-> side from the drag **direction** instead (see `examples/dnd.mbt`).
+> side from the drag **direction** instead (see `storybook/examples/dnd.mbt`).
 
 ## Dynamic Bindings
 
@@ -187,8 +187,8 @@ the mutation skips the intermediate components and lands on the
 producer's data. Editing the entry in the consumer and the same entry
 in the producer's own view update in lock-step.
 
-Worked examples: `examples/dynamic.mbt` (both the value-read side and
-the teleporting render target) and `examples/dynamic_selected_edit.mbt`
+Worked examples: `storybook/examples/dynamic.mbt` (both the value-read side and
+the teleporting render target) and `storybook/examples/dynamic_selected_edit.mbt`
 (seq-access provide, "edit the selected entry"). Runtime mechanics:
 [semantics.md](./semantics.md) *Dynamic-var teleporting*.
 
@@ -236,7 +236,7 @@ Notes:
 - Same trick works inside any of the stripping parents listed above
   (`<table>`/`<tr>`/`<colgroup>`/`<select>`/…).
 
-(Worked example: `examples/pseudo_x.mbt`.)
+(Worked example: `storybook/examples/pseudo_x.mbt`.)
 
 ## Custom collections
 
@@ -245,7 +245,7 @@ custom collection is any struct implementing the `@tutuca.Obj` trait,
 chiefly `obj_seq_entries` (what `@each` iterates, keyed) and `obj_item`
 (seq-access reads). Full treatment with the worked `KeyedList` example
 in [iteration.md](./iteration.md) *Custom collections — the `Obj`
-trait*, ported from `examples/custom_collection.mbt`.
+trait*, ported from `storybook/examples/custom_collection.mbt`.
 
 ## Not in this port
 

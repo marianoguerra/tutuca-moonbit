@@ -45,5 +45,5 @@ intermediate components and lands on `Workspace.sheet`, so the owner and any
 other view of the same value update in lock-step. A `provide` can even point at
 a seq-access (`.items[.selectedKey]`) to expose "the selected item". This is
 the **edit** counterpart of the share-state-across-the-tree recipe. Runnable
-versions: `examples/dynamic.mbt` (dynamic-path) and
-`examples/dynamic_selected_edit.mbt`.
+versions: `storybook/examples/dynamic.mbt` (dynamic-path) and
+`storybook/examples/dynamic_selected_edit.mbt`.

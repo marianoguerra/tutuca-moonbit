@@ -160,7 +160,7 @@ views={
 },
 ```
 
-`examples/personal_site.mbt` has the worked version: its
+`storybook/examples/personal_site.mbt` has the worked version: its
 `_margauiClasses` view interpolates a **MoonBit** helper
 (`ps_category_decoy_classes()`) into the view **string at construction
 time**, so the color tables stay the single source of truth while the

@@ -41,4 +41,4 @@ string-literal arg (`@on.click="$setCurrentView 'pricing'"`). This toggles
 **sibling panels** by predicate; to swap a *component's own* rendered view
 instead, see the switch-between-views recipe. The field name is yours to pick
 (`tab`, `currentView`, …). A large runnable version (tabs over whole
-sub-apps): `examples/composability.mbt`.
+sub-apps): `storybook/examples/composability.mbt`.

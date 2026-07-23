@@ -97,8 +97,10 @@ No changes to `render/`, `vdom/`, or `transactor/` are needed.
 
 ### Host (`dyncomp/host`, wasm-gc)
 
-- **Proxy components**: per manifest `component-def`, call
-  `Component::for_type(name~, view=main_html, views={…}, style~)` and
+- **Proxy components**: per manifest `component-def`, build each view at
+  runtime with `@anode.View::new(name, raw_view~, style~)` — a guest's views
+  arrive as source in the manifest, so they cannot be compiled ahead of time —
+  then call `Component::for_type(name~, views~)` and
   register into a fresh **child scope** of the app scope (per-bundle name
   isolation; shared id registry). anode parse errors of guest views surface
   as load-time diagnostics.

@@ -56,4 +56,4 @@ fn consumer_comp() -> @component.Component {
 expression when none is in scope (`None` → `null`). `*name` works wherever a
 `.field` does for iteration/rendering. This is the **read** side; to edit the
 producer's value through the dynamic, see the edit-through-a-dynamic-target
-recipe. Runnable version: `examples/dynamic.mbt` (dynamic-bindings).
+recipe. Runnable version: `storybook/examples/dynamic.mbt` (dynamic-bindings).

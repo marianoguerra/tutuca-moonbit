@@ -65,12 +65,12 @@ moon run --target native cmd/dev -- <task>
 | `ci`       | `check` then `test`                                              |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
+| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
 manages the `.html` files that already have a generated sibling, so pointing
 it at a project root does not try to compile `index.html`.
-| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 
 The `playground` task ends with `playground/build/check-viewgen-tab.mjs`: the
 View tab generates a MoonBit module in the browser and feeds it to the
@@ -80,11 +80,12 @@ module-root facade rather than `core/`. It drives generate → compile → link
 headlessly against the assembled payload.
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
-`dist/counter/` + `dist/examples/` (the **js** demos with their bundles,
-`<script src>` repointed to sit beside the page), `dist/counter-wasm/` +
-`dist/examples-wasm/` (the same two demos compiled to **wasm-gc** — each a
-`.wasm` plus a shared loader and host page), `dist/storybook/` (the storybook
-gallery compiled to wasm-gc — the bundle `tutuca storybook` serves), and
+`dist/counter/` (the **js** counter demo with its bundle, `<script src>`
+repointed to sit beside the page), `dist/counter-wasm/` + `dist/universal/`
+(the **wasm-gc** demos — each a `.wasm` plus a shared loader and host page),
+`dist/storybook/` (the storybook
+gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
+`dist/playground/` + `dist/site/`, and
 `dist/cli/tutuca` (the native CLI binary). The wasm pages need a browser with
 the JS String Builtins proposal, e.g. Chrome. Serve dist with any static file
 server: `cd dist && python3 -m http.server` — or `dist/cli/tutuca storybook`
@@ -96,9 +97,10 @@ twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
 through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
 each DOM event instead of receiving a closure. `demo/counter_wasm`,
-`demo/examples_wasm`, and `demo/storybook_wasm` are the wasm-gc hosts (twins of
-`demo/counter` / `demo/examples`; the last mounts the `storybook/ui` gallery
-over the whole example registry). margaui styling works the same in both backends: the host
+`demo/universal_wasm`, and `demo/storybook_wasm` are the wasm-gc hosts
+(`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
+mounts the `storybook/ui` gallery over the whole example registry, and
+`universal_wasm` hosts the dyncomp guest bundles). margaui styling works the same in both backends: the host
 publishes the collected class set on `globalThis.__tutuca_classes` and the page
 compiles it via margaui's CDN build (the wasm page drives that compile from its
 loader after `mount()`, since its module's top-level await races the page's
@@ -127,7 +129,7 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 - Targets: the module's `preferred_target` is `wasm-gc`, so a bare
   `moon check` / `moon test` covers only the target-agnostic packages. Full
   coverage needs all three: `moon test` (wasm-gc), `moon test --target js`
-  (vdom/browser, app/browser, demo/counter, demo/examples — happy-dom based)
+  (vdom/browser, app/browser, demo/counter — happy-dom based)
   and `moon test --target native` (cli shells: cmd/main, demo/counter_cli).
   Run `moon check --target js` and `--target native` too before handing off —
   each target surfaces warnings the others don't.
@@ -154,7 +156,7 @@ jest surface. Author component tests as plain `moon test "..." { ... }` blocks:
   fire real events through the transactor, and `text` / `texts` / `attr` / `prop`
   / `value_of` / `html` / `render_count` / `drive_value` read the re-rendered DOM
   and settled root value back. See `testing/harness/harness_test.mbt` for the
-  shape; the `examples/*_test.mbt` suite is the worked reference.
+  shape; the `storybook/examples/*_test.mbt` suite is the worked reference.
 - Assert with the built-ins — no matcher DSL needed. JS → MoonBit mapping:
 
   | chai/jest | MoonBit built-in |

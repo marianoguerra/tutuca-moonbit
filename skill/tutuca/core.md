@@ -39,7 +39,7 @@ edit done:
    single static render), run the test suite:
 
         moon test                       # the package's test blocks
-        moon test -p examples           # one package
+        moon test storybook/examples    # one package
         moon test --update              # refresh inspect/debug_inspect snapshots
 
    There is **no `tutuca test` command** — `moon test` is the runner, and
@@ -704,7 +704,7 @@ update=(s : PickerState, msg, _ctx) => match msg {
 </section>
 ```
 
-(Worked example: `examples/web_component.mbt`.)
+(Worked example: `storybook/examples/web_component.mbt`.)
 
 Handle these events declaratively with `@on.<event-name>` in the view —
 don't grab the node from host/glue code and `addEventListener` on it. A
@@ -830,9 +830,9 @@ priv struct NoteState {
 
 ## Styles
 
-`style` is scoped to the main view, `common_style` to all views of the
-component, `global_style` is injected unscoped, and `view_styles` maps a
-view name to its per-view scoped CSS (see the *Component Skeleton*
+Each view carries its own `style`, scoped to that view; `common_style` is
+scoped to all views of the component, and `global_style` is injected
+unscoped (see the *Component Skeleton*
 above). Scoping mechanics, styling the root element with bare
 declarations, and the at-rules that must live in `global_style`: see
 [styles.md](./styles.md). Tailwind / MargaUI utility classes:
@@ -917,7 +917,7 @@ pub(all) enum Value {
   `FieldSpec::omap`.
 - Custom collections implement the `@tutuca.Obj` trait (notably
   `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
-  *Custom collections* and `examples/custom_collection.mbt`.
+  *Custom collections* and `storybook/examples/custom_collection.mbt`.
 
 ## The ModuleDef convention
 
@@ -954,7 +954,7 @@ same artifact.
 **Per-example request mocking**: parameterize the module function with
 an optional `requests?` argument, defaulting to the real handlers, and
 build the module with a fixture map in tests/demos (the pattern in
-`examples/request.mbt`):
+`storybook/examples/request.mbt`):
 
 ```moonbit
 pub fn request_module(

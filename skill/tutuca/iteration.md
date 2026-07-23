@@ -222,7 +222,7 @@ change. One trait-object caveat: a handler sees the field as `&Obj` and
 there is no downcast back to the concrete struct — rebuild the
 collection from `obj_seq_entries()` when mutating (the port's
 trait-object rule). Complete worked example:
-`examples/custom_collection.mbt` (a keyed playlist whose `@key`s resolve
+`storybook/examples/custom_collection.mbt` (a keyed playlist whose `@key`s resolve
 in remove handlers).
 
 ## Filter-then-paginate strategies
@@ -231,7 +231,7 @@ The recipe form is in
 [patterns/filter-and-paginate.md](./patterns/filter-and-paginate.md).
 There are three ways to wire it, trading simplicity for scans-per-render
 (all return `keys`, so all keep identity). The complete worked MoonBit
-version of all three is `examples/filter_paginate.mbt`:
+version of all three is `storybook/examples/filter_paginate.mbt`:
 
 **1. Naive — two independent scans.** The loop scans + slices the whole
 list itself; a separate `@enrich-with` scans again for the pager labels.
@@ -272,7 +272,7 @@ loop_with={
 
 Test any strategy end-to-end with the harness — mount the example, type
 into the search box, click the pager, and assert the visible rows
-(`h.texts(".row")`); see `examples/filter_paginate_test.mbt` and
+(`h.texts(".row")`); see `storybook/examples/filter_paginate_test.mbt` and
 [testing.md](./testing.md). (The JS `collectIterBindings` helper has no
 MoonBit counterpart — the bucket handlers are plain typed functions, so
 call them directly for unit-level checks, or go through the mounted

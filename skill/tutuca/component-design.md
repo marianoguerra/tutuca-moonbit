@@ -143,7 +143,7 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
   compiler only scans constant class literals — a class built by interpolation or
   in a `compute` entry emits no CSS and renders unstyled. → the workaround in
   [margaui.md](./margaui.md) "Pitfall: assembled class names are invisible to the
-  scanner", and the worked decoy view in `examples/personal_site.mbt`
+  scanner", and the worked decoy view in `storybook/examples/personal_site.mbt`
   (`_margauiClasses`).
 
 - **Do close the loop after every change** with `tutuca lint` → `moon test` →
@@ -154,7 +154,7 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
   generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
   with `@on.click="$setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
-  derive the current value from one field. (See `examples/composability.mbt`.)
+  derive the current value from one field. (See `storybook/examples/composability.mbt`.)
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.
 - **A value passed down through three components that don't use it → move the

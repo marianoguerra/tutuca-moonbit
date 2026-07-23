@@ -4,27 +4,25 @@ _Investigated 2026-07-16._
 
 ## TL;DR
 
-- The playground **currently targets `js`** (confirmed below).
-- A **target toggle** (`js` / `wasm-gc`) is now wired into the standalone
-  playground shell, and the build/assemble pipeline can emit a `wasm-gc` payload
-  (`WASMGC=1 node playground/build/assemble.mjs`).
+- `js` is the only backend that **runs**; the playground defaults its toggle to it.
+- A **target toggle** (`js` / `wasm-gc`) is wired into the standalone
+  playground shell, and `assemble.mjs` emits **both** payloads by default
+  (`JS_ONLY=1 node playground/build/assemble.mjs` assembles js alone).
 - **wasm-gc does not yet run.** Compilation and linking of user code succeed, but
   the linked module fails to instantiate with a `WebAssembly.CompileError`. The
   cause is in the **vendored in-browser compiler** (`@moonbit/moonc-worker`), not
-  in tutuca's code or cores. See _Root cause_.
+  in tutuca's code or cores. See _Root cause_. The toggle ships anyway so the
+  error surfaces in the diagnostics pane instead of hiding the backend.
 
-## Confirmation: the playground targets js
+## Why js is the working backend
 
-- `playground/web/driver.js` booted with `compiler.init("js")` (hardcoded).
 - `playground/site/embed.js` (landing-page `<mb-playground>`) calls
-  `compiler.init("js")` and `mount(previewEl, js, {})`.
-- `playground/build/assemble.mjs` only assembled the `js` target unless the
-  `WASMGC` env var was set (`TARGETS = process.env.WASMGC ? [js, wasm-gc] : [js]`).
+  `compiler.init("js")` and `mount(previewEl, js, {})` — the embeds are js-only.
 - The worker's `linkCore` used `exportedFunctions: []` — fine for js (the user's
   `main` self-mounts) but wrong for wasm-gc (JS must call exported wrappers).
 
-So js was the only wired, assembled, and runnable backend. wasm-gc had partial
-scaffolding only (`playground/host_wasm/`, `demo/counter_wasm`, the `WASMGC` gate).
+wasm-gc scaffolding (`playground/host_wasm/`, `demo/counter_wasm`) is complete
+and assembled; only the link-time string ABI below blocks it.
 
 ## What the wasm-gc backend needs (and why it differs from js)
 
@@ -44,8 +42,8 @@ The reference for a working wasm-gc mount is the shipped demo
 
 ## The chain of failures found (and what was fixed)
 
-1. **assemble.mjs copied the js host core for every target.** Line ~80 hardcoded
-   `playground/host/host.core`, so `WASMGC=1` assembly crashed with `ENOENT …
+1. **assemble.mjs copied the js host core for every target.** It hardcoded
+   `playground/host/host.core`, so wasm-gc assembly crashed with `ENOENT …
    _build/wasm-gc/…/playground/host/host.core`.
    **Fixed:** host core + host `.mi` are now target-aware
    (`playground/host_wasm/host_wasm.*` for wasm-gc).
@@ -128,8 +126,10 @@ The fix is **upstream in the vendored compiler**, not in tutuca:
    - `MOONC_WORKER_VERSION` in `playground/build/fetch-compiler.mjs`
    - `TOOLCHAIN` in `playground/build/assemble.mjs`
    - the pin note in `playground/vendor/README.md`
-   (Current pin: `@moonbit/moonc-worker@0.1.202607161`, moonc `2cc641edf`,
-   nightly 2026-07-16.) Verify with the probe below before shipping.
+   (Current pin: `@moonbit/moonc-worker@0.1.202607161`, nightly 2026-07-16;
+   `TOOLCHAIN` reads `v0.10.3+16975d007`. Confirm those two name the same moonc
+   before bumping — they are written in different formats.) Verify with the
+   probe below before shipping.
 
 3. **Fallback — link wasm-gc with the native (non-js-string) ABI on both sides.**
    If moonc-worker can be made to link with MoonBit-native strings consistently
@@ -145,10 +145,8 @@ diagnostics pane rather than silently failing.
 ## How to reproduce / verify a fix
 
 ```sh
-# build the wasm-gc artifacts + host, then assemble both targets
-moon build --target js && moon build --target js playground/host
-moon build --target wasm-gc && moon build --target wasm-gc playground/host_wasm
-WASMGC=1 node playground/build/assemble.mjs
+# assemble.mjs builds the moon artifacts each target needs and emits both
+node playground/build/assemble.mjs
 
 # drive the worker pipeline headless and inspect the linked module
 #   (buildPackage -> linkCore -> WebAssembly.Module)

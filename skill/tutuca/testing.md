@@ -114,14 +114,14 @@ interaction flows. Skip them for pure template/styling tweaks;
   events, assert the DOM. This exercises the template wiring, the
   dispatch path, and the handler in one go.
 - **Pure logic** — extract it into a plain `fn` next to the component
-  (the `format_size` pattern in `examples/file_picker.mbt`) and
+  (the `format_size` pattern in `storybook/examples/file_picker.mbt`) and
   unit-test it directly.
 - **Handlers in isolation** — the typed handlers are erased behind the
   compiled `Component` (only the name lists — `mutate_names`,
   `compute_names`, `alter_names`, `generated_names`, `has_update` —
   remain for introspection), so there is no handler table to call into.
   For unit-level checks, keep the handler a named `fn` (or a bucket-map
-  builder like `fp_update()` in `examples/filter_paginate.mbt`) and call
+  builder like `fp_update()` in `storybook/examples/filter_paginate.mbt`) and call
   it directly with a state struct — the arguments are plain typed
   values, no mounting needed:
 
@@ -173,11 +173,11 @@ test "the error path routes to on_error_name" {
 }
 ```
 
-(These are condensed from `examples/request_test.mbt`.)
+(These are condensed from `storybook/examples/request_test.mbt`.)
 
 - Request fixtures are ordinary `RequestFn` values that call
   `respond(Ok(...))` / `respond(Err(...))` synchronously — the
-  parameterized-module pattern in `examples/request.mbt`
+  parameterized-module pattern in `storybook/examples/request.mbt`
   (`request_module(requests? = fixture_request_handlers())`).
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
@@ -217,7 +217,7 @@ h.fire(
 )
 ```
 
-(See `examples/new_examples_test.mbt` for both, live.)
+(See `storybook/examples/new_examples_test.mbt` for both, live.)
 
 ## Designing handlers so tests stay simple
 
@@ -264,7 +264,7 @@ custom events deliver plain `Map` metadata as `value`.
 
 Interaction tests covering a `mutate` entry (`$inc`), an `update`
 `Input` arm (`dec`), and a generated mutator, mirroring
-`examples/counter_test.mbt`:
+`storybook/examples/counter_test.mbt`:
 
 ```moonbit
 test "counter: inc and dec round-trip" {

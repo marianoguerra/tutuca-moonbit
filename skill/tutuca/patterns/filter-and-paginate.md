@@ -83,7 +83,7 @@ collect pass scans just far enough to fill the page.
 This is one of three wiring strategies (naive two-scan, shared, coupled
 one-scan) — the trade-offs and the other two are in
 [iteration.md](../iteration.md) *Filter-then-paginate strategies*; the
-complete runnable versions of all three are `examples/filter_paginate.mbt`
-(tests in `examples/filter_paginate_test.mbt`). See
+complete runnable versions of all three are `storybook/examples/filter_paginate.mbt`
+(tests in `storybook/examples/filter_paginate_test.mbt`). See
 [filter-a-list.md](filter-a-list.md) and
 [paginate-a-list.md](paginate-a-list.md) for each half on its own.

@@ -23,4 +23,4 @@ The child draws its own view from its own fields, so inside `Greeting`'s view
 nested structure: make the nested thing a component and render it, rather than
 trying to path into it. For a list of children use `render-each` (see the
 iterate-a-list recipe); to flip which view renders, see the switch-between-views
-recipe. Runnable version: `examples/render_child.mbt`.
+recipe. Runnable version: `storybook/examples/render_child.mbt`.

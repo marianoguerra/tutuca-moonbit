@@ -57,5 +57,5 @@ what you need into fields so the view can bind each piece (`type` is a
 MoonBit keyword, so the struct field is `type_` with a `rename` in the
 derive); gate the summary on a `hasFile` flag with `@show`/`@hide`.
 Runnable version with size/date formatting helpers:
-`examples/file_picker.mbt`; harness tests fire the pick with
+`storybook/examples/file_picker.mbt`; harness tests fire the pick with
 `h.fire("input", @render.DomEvent::new(name="change", value=Map({...})))`.
