@@ -170,8 +170,9 @@ declare pub fn ir_supported(file : ViewFile) -> Bool
 
 ///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
-/// view parses into, plus the `<v>_views()` builder (passed as `views~`). Only
-/// valid when `ir_supported` holds.
+/// view parses into, written with anode's builders (`@anode.h` / `text` /
+/// `attr` / `on` …), plus the `<v>_views()` builder (passed as `views~`).
+/// Only valid when `ir_supported` holds.
 declare pub fn emit_ir_module(
   name : String,
   source_file : String,

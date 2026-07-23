@@ -65,7 +65,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
         continue
       }
     }
-    if !src.contains("@anode.ParseContext::from_ir(root, events)") {
+    if !src.contains("@anode.View::from_ir(") {
       failures.push("\{cname}/\{vname}: emitted module has no loader call")
       continue
     }

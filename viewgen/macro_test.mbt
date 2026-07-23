@@ -50,12 +50,12 @@ test "a macro view compiles to a tree, with no macro node left in it" {
   let ir = @viewgen.emit_ir_module("Icons", "icons.html", vs)
   // The expansion is inlined: <svg> from the macro body appears in the tree,
   // and no MacroCall constructor survives (it is not expressible).
-  assert_true(ir.contains("tag: \"svg\""))
-  assert_true(ir.contains("tag: \"path\""))
+  assert_true(ir.contains("@anode.h(\"svg\""))
+  assert_true(ir.contains("@anode.h(\"path\""))
   assert_true(!ir.contains("MacroCall"))
   // The default won where the call did not pass one, and the call won where
   // it did: `size="20"` overrides `'24'`.
-  assert_true(ir.contains("LStr(\"20\")") || ir.contains("Const(lit=LNum(20"))
+  assert_true(ir.contains("\"20\"") || ir.contains("const_num(20"))
 }
 
 ///|

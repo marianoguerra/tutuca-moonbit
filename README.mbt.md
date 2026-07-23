@@ -124,7 +124,7 @@ macros belong in the view file rather than being registered from MoonBit:
 ### The compiled tree
 
 `gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
-event table each view parses into, as MoonBit literals. Pass it as
+event table each view parses into, as MoonBit code. Pass it as
 `views~` and the template parser never runs at startup:
 
 ```moonbit nocheck
@@ -136,12 +136,30 @@ event table each view parses into, as MoonBit literals. Pass it as
 )
 ```
 
-There is no serialization format and no decoder: the AST is `pub(all)`, so the
-tree is expressed as plain constructor syntax. `@anode.ParseContext::from_ir`
-recovers the node table from the tree itself (every registered node carries
-its `node_id`), and `View::from_ir` stamps `data-vid` and runs the
-constant-subtree optimization at load — `RenderOnce` ids are process-global
-renderer memo keys, so they must be minted at load time, not baked in.
+There is no serialization format and no decoder: the AST is `pub(all)`, and the
+tree is written with anode's builders — plain constructors with the rarely-set
+fields defaulted, which a hand-written view or test can use just as well:
+
+```moonbit nocheck
+@anode.View::from_ir(
+  "main",
+  @anode.h("div", [@anode.attr("class", "stat")], [
+    @anode.h("button", [@anode.attr("class", "btn"), @anode.eid(0)], [
+      @anode.text("+"),
+    ]),
+    @anode.dyn_text(Field("count")),
+  ]),
+  [[@anode.on("click", Method("inc"))]],
+)
+```
+
+`@anode.h` decides ConstAttrs vs DynAttrs with the rule the parser applies
+(`attrs_of_items`), so the two paths cannot disagree. What the file does NOT
+carry is anything the load can recover: `View::from_ir` rebuilds the node table
+from the tree itself (every registered node carries its `node_id`), gives each
+handler list the id that is its position, stamps `data-vid` and runs the
+constant-subtree optimization — `RenderOnce` ids are process-global renderer
+memo keys, so they must be minted at load time, not baked in.
 
 A view that calls a macro cannot be compiled ahead of time (macros are
 registered from MoonBit at runtime), so the whole file falls back to the

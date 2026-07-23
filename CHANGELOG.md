@@ -6,8 +6,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- `@anode` builders for the AST: `h`, `text`, `dyn_text`, `frag`, `attr` /
+  `attr_num` / `dyn_attr` / `if_attr` / `eid`, `show` / `hide` / `each` /
+  `render` / `scope`, `on`, and the `const_*` value shorthands. They are the
+  parser's own output with the rarely-set fields defaulted — hyperscript-shaped
+  constructors, not a new representation — so a hand-written view or test can
+  build a tree the renderer cannot tell from a parsed one. `@anode.h` chooses
+  ConstAttrs vs DynAttrs through `attrs_of_items`, the rule the attribute
+  parser now also calls, so the two paths cannot disagree.
+
 ### Changed
 
+- `gen-views` emits the compiled tree with those builders instead of raw
+  struct literals: the 26 checked-in `*_view_ir_gen.mbt` files went from 6530
+  to 3121 lines, and a `<button class="x">-</button>` from seven lines to one.
+  Three things it used to write are now recovered at load: the `NodeEvents`
+  ids (an id is the entry's position, so the table is a plain
+  `[[on(…)], …]`), the `data-vid` stamp (`View::from_ir` applies it anyway),
+  and the ConstAttrs/DynAttrs choice.
+- `@anode.View::from_ir` takes the handler table
+  (`Array[Array[NodeEvent]]`) instead of a `ParseContext`, and builds the
+  context itself — the caller no longer names `root` twice or constructs a
+  parse context to hand straight back.
 - The generated `XMsg::of_dispatch` is now `XMsg::from_dispatch`, matching the
   `from_*` prefix the rest of the codebase and MoonBit core use for named
   source conversions (`View::from_ir`, `Value::from_json`). The suffix stays:

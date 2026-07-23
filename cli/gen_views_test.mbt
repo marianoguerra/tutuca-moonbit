@@ -88,11 +88,11 @@ test "the compiled tree is a second file, unless --no-ir" {
   ])
   let ir = plan.files[1].1
   assert_true(ir.contains("pub fn counter_views() -> Map[String, @anode.View]"))
-  assert_true(ir.contains("@anode.ParseContext::from_ir(root, events)"))
+  assert_true(ir.contains("@anode.View::from_ir("))
   // The handler survives into the event table, args and all.
   assert_true(
     ir.contains("HandlerName(name=\"go\", ns=Input)") &&
-    ir.contains("Const(lit=LNum(1.0), from_macro=false)"),
+    ir.contains("@anode.const_num(1.0)"),
   )
 }
 
@@ -136,7 +136,7 @@ test "a declared macro is expanded into the compiled tree" {
   let ir = plan.files[1].1
   // Expanded in place: the macro's <section> is in the tree and no macro
   // node survives.
-  assert_true(ir.contains("tag: \"section\""))
+  assert_true(ir.contains("@anode.h(\"section\""))
   assert_true(!ir.contains("MacroCall"))
 }
 

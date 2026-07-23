@@ -96,6 +96,15 @@ pub fn ParseContext::from_ir(
 }
 
 ///|
+/// The event table as the generator writes it: one handler list per element
+/// that registered any, IN registration order. `register_events` hands out
+/// `id = events.length()`, so a NodeEvents id IS its position — emitting the
+/// ids would only be a chance to disagree with the array.
+pub fn events_of(handlers : Array[Array[NodeEvent]]) -> Array[NodeEvents] {
+  handlers.mapi((id, handlers) => NodeEvents::{ id, handlers })
+}
+
+///|
 /// A view whose tree was compiled ahead of time. Everything `View::compile`
 /// would do EXCEPT stamping the component id happens here — the data-vid
 /// stamp and the constant-subtree optimization — because those depend only on
@@ -105,9 +114,10 @@ pub fn ParseContext::from_ir(
 pub fn View::from_ir(
   name : String,
   root : ANode,
-  ctx : ParseContext,
+  handlers : Array[Array[NodeEvent]],
   style? : String = "",
 ) -> View {
+  let ctx = ParseContext::from_ir(root, events_of(handlers))
   root.set_data_attr("data-vid", LStr(name))
   let anode = if ctx.cache_const_nodes { optimize_node(root) } else { root }
   { name, raw_view: "", style, anode: Some(anode), ctx: Some(ctx), ir: true }

@@ -89,6 +89,13 @@ pub(all) enum Attrs {
 } derive(Debug)
 
 ///|
+/// The representation an item list calls for: a list nothing made dynamic
+/// (a non-constant `Plain`, a `RawHtml`, an `If`) collapses to the evaluated
+/// ConstAttrs map, anything else keeps the items. The parser and `h` share
+/// this so a compiled tree cannot disagree with a parsed one.
+declare pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs
+
+///|
 declare pub fn Attrs::is_constant(self : Attrs) -> Bool
 
 ///|
@@ -351,6 +358,135 @@ declare pub fn optimize_node(node : ANode) -> ANode
 /// A single child stays bare; several become a Fragment (JS maybeFragment).
 declare pub fn maybe_fragment(childs : Array[ANode]) -> ANode
 
+// ---------------------------------------------------------------------------
+// Builders (build.mbt): hyperscript-shaped constructors over the types above,
+// with the rarely-set fields as optional arguments. Each one returns the value
+// the parser builds for the same markup — they are what `tutuca gen-views`
+// emits, and what a hand-written view or test should use.
+
+///|
+/// `Const(lit=LStr(s), from_macro=false)`, the constant a plain attribute
+/// value or a literal handler argument parses to.
+declare pub fn const_str(s : String) -> @tutuca.Val
+
+///|
+declare pub fn const_num(n : Double) -> @tutuca.Val
+
+///|
+declare pub fn const_bool(b : Bool) -> @tutuca.Val
+
+///|
+declare pub fn const_null() -> @tutuca.Val
+
+///|
+/// A plain HTML attribute: `ConstA` with a constant string.
+declare pub fn attr(name : String, value : String) -> AttrItem
+
+///|
+declare pub fn attr_num(name : String, value : Double) -> AttrItem
+
+///|
+/// A valueless boolean attribute (`disabled`, `checked`, …).
+declare pub fn attr_bool(name : String, value : Bool) -> AttrItem
+
+///|
+/// `ConstA` with a value built by hand — the escape hatch for a constant that
+/// came from a macro variable (`from_macro=true`).
+declare pub fn attr_val(name : String, val : @tutuca.Val) -> AttrItem
+
+///|
+/// The `data-eid` stamp that ties an element to its NodeEvents entry.
+declare pub fn eid(id : Int) -> AttrItem
+
+///|
+/// A dynamic `:attr`, evaluated per render (`Plain`).
+declare pub fn dyn_attr(name : String, val : @tutuca.Val) -> AttrItem
+
+///|
+/// `@if.<name>` with its optional `@then` / `@else` values.
+declare pub fn if_attr(
+  name : String,
+  cond : @tutuca.Val,
+  then_val? : @tutuca.Val,
+  else_val? : @tutuca.Val,
+) -> AttrItem
+
+///|
+/// `@dangerouslysetinnerhtml` (None val = the failed-parse sentinel).
+declare pub fn raw_html(val? : @tutuca.Val) -> AttrItem
+
+///|
+/// An element. The attribute list decides the representation exactly as the
+/// parser does — `attrs_of_items` is the one implementation of that rule — so
+/// a caller never names ConstAttrs or DynAttrs.
+declare pub fn h(
+  tag : String,
+  attrs : Array[AttrItem],
+  childs : Array[ANode],
+  ns? : Ns,
+) -> ANode
+
+///|
+declare pub fn text(val : String) -> ANode
+
+///|
+declare pub fn comment(val : String) -> ANode
+
+///|
+declare pub fn frag(childs : Array[ANode]) -> ANode
+
+///|
+/// `<x text=…>` / `@text` output. `id` is unset for the `@text` directive's
+/// child, which registers no node of its own.
+declare pub fn dyn_text(val : @tutuca.Val, id? : Int) -> ANode
+
+///|
+/// `<x render=…>`, with the optional `as=` view selector.
+declare pub fn render(id : Int, val : @tutuca.Val, view? : @tutuca.Val) -> ANode
+
+///|
+/// `<x render-it>`, with the optional `as=` view selector.
+declare pub fn render_it(id : Int, view? : @tutuca.Val) -> ANode
+
+///|
+/// `@show`; `id` is set only in the `<x show=…>` form, which registers.
+declare pub fn show(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+
+///|
+declare pub fn hide(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+
+///|
+declare pub fn push_view(val : @tutuca.Val, node : ANode, id? : Int) -> ANode
+
+///|
+/// A loop-less `@enrich-with` frame. Always registers, hence the plain id.
+declare pub fn scope(id : Int, val : @tutuca.Val, node : ANode) -> ANode
+
+///|
+declare pub fn slot(name : String, node : ANode) -> ANode
+
+///|
+/// `@each` / `<x render-each>`; the three extras come from `@when`,
+/// `@loop-with` and `@enrich-with` on the same element.
+declare pub fn each(
+  id : Int,
+  val : @tutuca.Val,
+  node : ANode,
+  when_val? : @tutuca.Val,
+  loop_with_val? : @tutuca.Val,
+  enrich_with_val? : @tutuca.Val,
+  from_render_each? : Bool,
+) -> ANode
+
+///|
+/// One `@on.<name>+mod+…` handler.
+declare pub fn on(
+  name : String,
+  handler : @tutuca.Val,
+  args? : Array[@tutuca.Val],
+  modifiers? : Array[String],
+) -> NodeEvent
+
 ///|
 /// Normalize insignificant whitespace between element children:
 /// leading/trailing whitespace is dropped; an interior whitespace run with a
@@ -515,13 +651,20 @@ declare pub fn ParseContext::from_ir(
 ) -> ParseContext
 
 ///|
+/// One NodeEvents per handler list, id = position (the id `register_events`
+/// would have handed out, and the one elements carry in data-eid).
+declare pub fn events_of(
+  handlers : Array[Array[NodeEvent]],
+) -> Array[NodeEvents]
+
+///|
 /// A view whose tree was compiled ahead of time (`tutuca gen-views`). Stamps
 /// data-vid and runs the constant-subtree optimization; `compile` then only
 /// stamps the adopting component's data-cid.
 declare pub fn View::from_ir(
   name : String,
   root : ANode,
-  ctx : ParseContext,
+  handlers : Array[Array[NodeEvent]],
   style? : String,
 ) -> View
 

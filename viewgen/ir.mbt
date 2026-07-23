@@ -1,16 +1,23 @@
 // Emitting the compiled tree itself: the @anode.ANode / @anode.NodeEvents
-// literals a view parses into, so a program built with them never runs the
+// values a view parses into, so a program built with them never runs the
 // template parser at startup.
 //
-// Everything reachable here is `pub(all)`, so the tree is expressible as plain
-// MoonBit constructor syntax — no serialization format, no decoder to keep in
-// sync with the AST. The two things NOT emitted:
+// The tree is written with anode's builders (@anode.h / text / attr / on …),
+// which are plain constructors over the `pub(all)` AST with the rarely-set
+// fields defaulted — no serialization format, no decoder to keep in sync.
+// Every call is qualified: the file lands in the user's package, where a
+// `using @anode {…}` header would be package-scoped and collide both with the
+// user's own names and with the other generated files beside it.
 //
-//   - `ParseContext.nodes`, recovered from the tree by @anode.ParseContext::from_ir
+// The three things NOT emitted:
+//
+//   - `ParseContext.nodes`, recovered from the tree by @anode.View::from_ir
 //     (every registered node already carries its node_id).
-//   - the data-cid stamp and the constant-subtree optimization, which
-//     View::from_ir / View::compile do at load time: cid depends on which
-//     component adopts the view, and optimization must follow the stamp.
+//   - the NodeEvents ids: an id IS the entry's position in the table.
+//   - the data-vid stamp, the data-cid stamp and the constant-subtree
+//     optimization, which View::from_ir / View::compile do at load time: cid
+//     depends on which component adopts the view, and optimization must
+//     follow the stamp.
 //
 // Macros declared in the view file (`<template id="macro:name">`) ARE
 // expanded here, at generation time — that is the point of declaring them in
@@ -19,6 +26,10 @@
 // and the renderer only ever renders `d.node`, the call node is replaced by
 // its expansion before emitting. The expansion's own registered nodes live in
 // the same ParseContext, so node ids stay consistent.
+
+///|
+/// The qualifier every emitted builder call carries.
+let q : String = "@anode."
 
 ///|
 /// True when every view in this set can be emitted as a tree. A single
@@ -84,6 +95,39 @@ fn strip_childs(childs : Array[@anode.ANode]) -> Unit raise GenError {
   }
 }
 
+///|
+/// Drop the data-vid `View::compile` stamped while generating: `View::from_ir`
+/// stamps it again at load, so emitting it is a second copy that can only
+/// drift. Follows set_data_attr's own recursion (Dom carries it, Fragment
+/// gives it to every child, a wrapper passes it inward), and leaves it alone
+/// unless it is the last attribute — anywhere else it came from the source,
+/// where its position is the author's.
+fn strip_data_vid(node : @anode.ANode) -> Unit {
+  match node {
+    Dom(d) =>
+      match d.attrs {
+        ConstAttrs(m) => {
+          let keys = m.keys().collect()
+          if keys.last() is Some("data-vid") {
+            m.remove("data-vid")
+          }
+        }
+        DynAttrs(items) =>
+          if items.last() is Some(ConstA(name="data-vid", ..)) {
+            items.remove(items.length() - 1) |> ignore
+          }
+      }
+    Fragment(d) =>
+      for c in d.childs {
+        strip_data_vid(c)
+      }
+    Show(d) | Hide(d) | PushView(d) | Scope(d) => strip_data_vid(d.node)
+    Slot(d) => strip_data_vid(d.node)
+    Each(d) => strip_data_vid(d.node)
+    _ => ()
+  }
+}
+
 // ---------------------------------------------------------------------------
 // Value-layer literals
 
@@ -100,12 +144,35 @@ fn double_lit(d : Double) -> String {
 }
 
 ///|
+/// Some(i) for a Double that is exactly a small integer, so an id reads as one.
+fn whole(d : Double) -> Int? {
+  let i = d.to_int()
+  if i.to_double() == d {
+    Some(i)
+  } else {
+    None
+  }
+}
+
+///|
 fn lit_expr(lit : @tutuca.Lit) -> String {
   match lit {
     LNull => "LNull"
     LBool(b) => "LBool(\{b})"
     LNum(n) => "LNum(\{double_lit(n)})"
     LStr(s) => "LStr(\{quote(s)})"
+  }
+}
+
+///|
+/// The constant builders: a plain `Const(lit=…, from_macro=false)`, which is
+/// what every constant a view writes parses to.
+fn const_expr(lit : @tutuca.Lit) -> String {
+  match lit {
+    LNull => "\{q}const_null()"
+    LBool(b) => "\{q}const_bool(\{b})"
+    LNum(n) => "\{q}const_num(\{double_lit(n)})"
+    LStr(s) => "\{q}const_str(\{quote(s)})"
   }
 }
 
@@ -124,7 +191,11 @@ fn pred_expr(p : @tutuca.Pred) -> String {
 fn val_expr(val : @tutuca.Val) -> String {
   match val {
     Const(lit~, from_macro~) =>
-      "Const(lit=\{lit_expr(lit)}, from_macro=\{from_macro})"
+      if from_macro {
+        "Const(lit=\{lit_expr(lit)}, from_macro=true)"
+      } else {
+        const_expr(lit)
+      }
     StrTpl(parts) => {
       let items = parts.map(p => {
         match p {
@@ -158,65 +229,90 @@ fn val_expr(val : @tutuca.Val) -> String {
 }
 
 ///|
-fn val_opt_expr(val : @tutuca.Val?) -> String {
+/// `, label=…` for an optional argument that is set, "" for one that is not.
+fn val_arg(label : String, val : @tutuca.Val?) -> String {
   match val {
-    Some(v) => "Some(\{val_expr(v)})"
-    None => "None"
+    Some(v) => ", \{label}=\{val_expr(v)}"
+    None => ""
+  }
+}
+
+///|
+fn int_arg(label : String, v : Int?) -> String {
+  match v {
+    Some(i) => ", \{label}=\{i}"
+    None => ""
   }
 }
 
 // ---------------------------------------------------------------------------
 // Attributes
+//
+// Emitted as the item list `h` takes; it re-derives ConstAttrs vs DynAttrs
+// with the very rule the parser applies (@anode.attrs_of_items), so the two
+// paths cannot disagree.
 
 ///|
-fn attrs_expr(attrs : @anode.Attrs) -> String {
-  match attrs {
-    ConstAttrs(m) => {
-      let entries : Array[String] = []
-      for k, lit in m {
-        entries.push("\{quote(k)}: \{lit_expr(lit)}")
+fn const_attr_expr(name : String, lit : @tutuca.Lit) -> String {
+  match lit {
+    LStr(s) => "\{q}attr(\{quote(name)}, \{quote(s)})"
+    LNum(n) =>
+      match (name, whole(n)) {
+        ("data-eid", Some(i)) => "\{q}eid(\{i})"
+        _ => "\{q}attr_num(\{quote(name)}, \{double_lit(n)})"
       }
-      if entries.is_empty() {
-        "ConstAttrs(Map([]))"
-      } else {
-        "ConstAttrs({ " + entries.join(", ") + " })"
-      }
-    }
-    DynAttrs(items) =>
-      "DynAttrs([" + items.map(attr_item_expr).join(", ") + "])"
+    LBool(b) => "\{q}attr_bool(\{quote(name)}, \{b})"
+    LNull => "\{q}attr_val(\{quote(name)}, \{q}const_null())"
   }
 }
 
 ///|
 fn attr_item_expr(item : @anode.AttrItem) -> String {
   match item {
-    Plain(name~, val~) => "Plain(name=\{quote(name)}, val=\{val_expr(val)})"
-    ConstA(name~, val~) => "ConstA(name=\{quote(name)}, val=\{val_expr(val)})"
-    RawHtml(val~) => "RawHtml(val=\{val_opt_expr(val)})"
+    ConstA(name~, val~) =>
+      match val {
+        // A macro-var-sourced constant is still a ConstA, but from_macro
+        // survives only through the general builder.
+        Const(lit~, from_macro=false) => const_attr_expr(name, lit)
+        _ => "\{q}attr_val(\{quote(name)}, \{val_expr(val)})"
+      }
+    Plain(name~, val~) => "\{q}dyn_attr(\{quote(name)}, \{val_expr(val)})"
+    RawHtml(val~) =>
+      match val {
+        Some(v) => "\{q}raw_html(val=\{val_expr(v)})"
+        None => "\{q}raw_html()"
+      }
     If(a) =>
-      "If({ name: \{quote(a.name)}, cond_val: \{val_expr(a.cond_val)}, then_val: \{val_opt_expr(a.then_val)}, else_val: \{val_opt_expr(a.else_val)} })"
+      "\{q}if_attr(\{quote(a.name)}, \{val_expr(a.cond_val)}" +
+      val_arg("then_val", a.then_val) +
+      val_arg("else_val", a.else_val) +
+      ")"
   }
+}
+
+///|
+fn attrs_expr(attrs : @anode.Attrs) -> String {
+  let entries : Array[String] = []
+  match attrs {
+    ConstAttrs(m) =>
+      for k, lit in m {
+        entries.push(const_attr_expr(k, lit))
+      }
+    DynAttrs(items) =>
+      for item in items {
+        entries.push(attr_item_expr(item))
+      }
+  }
+  "[" + entries.join(", ") + "]"
 }
 
 // ---------------------------------------------------------------------------
 // The tree
 
 ///|
-fn int_opt_expr(v : Int?) -> String {
-  match v {
-    Some(i) => "Some(\{i})"
-    None => "None"
-  }
-}
-
-///|
-fn iter_info_expr(info : @anode.IterInfo) -> String {
-  "{ val: \{val_expr(info.val)}, when_val: \{val_opt_expr(info.when_val)}, loop_with_val: \{val_opt_expr(info.loop_with_val)}, enrich_with_val: \{val_opt_expr(info.enrich_with_val)} }"
-}
-
-///|
-/// One ANode as a constructor expression. Emitted at `indent`, breaking a
-/// line per child so the generated file stays readable and diffs per node.
+/// One ANode as a builder call. Only child lists break across lines — that is
+/// what keeps a `tutuca gen-views` run readable before `moon fmt`, which owns
+/// the final layout, has run.
 fn node_expr(node : @anode.ANode, indent : String) -> String raise GenError {
   let deeper = indent + "  "
   fn childs_expr(childs : Array[@anode.ANode]) -> String raise GenError {
@@ -225,57 +321,51 @@ fn node_expr(node : @anode.ANode, indent : String) -> String raise GenError {
     }
     let parts : Array[String] = []
     for c in childs {
-      parts.push(deeper + "  " + node_expr(c, deeper + "  "))
+      parts.push(deeper + node_expr(c, deeper))
     }
-    "[\n" + parts.join(",\n") + ",\n" + deeper + "]"
+    "[\n" + parts.join(",\n") + ",\n" + indent + "]"
   }
 
   match node {
-    Text(d) => "Text({ val: \{quote(d.val)} })"
-    Comment(d) => "Comment({ val: \{quote(d.val)} })"
+    Text(d) => "\{q}text(\{quote(d.val)})"
+    Comment(d) => "\{q}comment(\{quote(d.val)})"
     Dom(d) => {
       let ns = match d.ns {
-        Some(Svg) => "Some(Svg)"
-        Some(MathML) => "Some(MathML)"
-        None => "None"
+        Some(Svg) => ", ns=Svg"
+        Some(MathML) => ", ns=MathML"
+        None => ""
       }
-      "Dom({\n" +
-      deeper +
-      "tag: \{quote(d.tag)},\n" +
-      deeper +
-      "attrs: \{attrs_expr(d.attrs)},\n" +
-      deeper +
-      "childs: \{childs_expr(d.childs)},\n" +
-      deeper +
-      "ns: \{ns},\n" +
-      indent +
-      "})"
+      "\{q}h(\{quote(d.tag)}, \{attrs_expr(d.attrs)}, \{childs_expr(d.childs)}\{ns})"
     }
-    Fragment(d) => "Fragment({ childs: \{childs_expr(d.childs)} })"
+    Fragment(d) => "\{q}frag(\{childs_expr(d.childs)})"
     RenderText(d) =>
-      "RenderText({ node_id: \{int_opt_expr(d.node_id)}, val: \{val_expr(d.val)} })"
+      "\{q}dyn_text(\{val_expr(d.val)}\{int_arg("id", d.node_id)})"
     Render(d) =>
-      "Render({ node_id: \{d.node_id}, val: \{val_expr(d.val)}, view_val: \{val_opt_expr(d.view_val)} })"
-    RenderIt(d) =>
-      "RenderIt({ node_id: \{d.node_id}, view_val: \{val_opt_expr(d.view_val)} })"
-    Show(d) => wrap_expr("Show", d, indent)
-    Hide(d) => wrap_expr("Hide", d, indent)
-    PushView(d) => wrap_expr("PushView", d, indent)
-    Scope(d) => wrap_expr("Scope", d, indent)
-    Slot(d) =>
-      "Slot({ name: \{quote(d.name)}, node: \{node_expr(d.node, deeper)} })"
-    Each(d) =>
-      "Each({\n" +
-      deeper +
-      "node_id: \{d.node_id},\n" +
-      deeper +
-      "iter_info: \{iter_info_expr(d.iter_info)},\n" +
-      deeper +
-      "node: \{node_expr(d.node, deeper)},\n" +
-      deeper +
-      "from_render_each: \{d.from_render_each},\n" +
-      indent +
-      "})"
+      "\{q}render(\{d.node_id}, \{val_expr(d.val)}\{val_arg("view", d.view_val)})"
+    RenderIt(d) => "\{q}render_it(\{d.node_id}\{val_arg("view", d.view_val)})"
+    Show(d) => wrap_expr("show", d, indent)
+    Hide(d) => wrap_expr("hide", d, indent)
+    PushView(d) => wrap_expr("push_view", d, indent)
+    // Scope always registers, so the builder takes its id as a plain
+    // argument; an unregistered one (which the parser never builds) has to
+    // fall back to the raw constructor.
+    Scope(d) =>
+      match d.node_id {
+        Some(id) =>
+          "\{q}scope(\{id}, \{val_expr(d.val)}, \{node_expr(d.node, indent)})"
+        None =>
+          "Scope({ node_id: None, val: \{val_expr(d.val)}, node: \{node_expr(d.node, indent)} })"
+      }
+    Slot(d) => "\{q}slot(\{quote(d.name)}, \{node_expr(d.node, indent)})"
+    Each(d) => {
+      let info = d.iter_info
+      "\{q}each(\{d.node_id}, \{val_expr(info.val)}, \{node_expr(d.node, indent)}" +
+      val_arg("when_val", info.when_val) +
+      val_arg("loop_with_val", info.loop_with_val) +
+      val_arg("enrich_with_val", info.enrich_with_val) +
+      (if d.from_render_each { ", from_render_each=true" } else { "" }) +
+      ")"
+    }
     // Only reachable if the caller skipped ir_supported / emitted after
     // optimization; both are generator bugs rather than user errors.
     MacroCall(d) =>
@@ -293,20 +383,11 @@ fn node_expr(node : @anode.ANode, indent : String) -> String raise GenError {
 
 ///|
 fn wrap_expr(
-  ctor : String,
+  builder : String,
   d : @anode.WrapData,
   indent : String,
 ) -> String raise GenError {
-  let deeper = indent + "  "
-  "\{ctor}({\n" +
-  deeper +
-  "node_id: \{int_opt_expr(d.node_id)},\n" +
-  deeper +
-  "val: \{val_expr(d.val)},\n" +
-  deeper +
-  "node: \{node_expr(d.node, deeper)},\n" +
-  indent +
-  "})"
+  "\{q}\{builder}(\{val_expr(d.val)}, \{node_expr(d.node, indent)}\{int_arg("id", d.node_id)})"
 }
 
 // ---------------------------------------------------------------------------
@@ -314,29 +395,29 @@ fn wrap_expr(
 
 ///|
 fn handler_expr(h : @anode.NodeEvent) -> String {
-  let args = h.handler.args.map(val_expr).join(", ")
-  let mods = h.modifiers.map(quote).join(", ")
-  "{ name: \{quote(h.name)}, handler: { handler: \{val_expr(h.handler.handler)}, args: [\{args}] }, modifiers: [\{mods}] }"
+  let args = if h.handler.args.is_empty() {
+    ""
+  } else {
+    ", args=[" + h.handler.args.map(val_expr).join(", ") + "]"
+  }
+  let mods = if h.modifiers.is_empty() {
+    ""
+  } else {
+    ", modifiers=[" + h.modifiers.map(quote).join(", ") + "]"
+  }
+  "\{q}on(\{quote(h.name)}, \{val_expr(h.handler.handler)}\{args}\{mods})"
 }
 
 ///|
+/// The handler table: one list per element that registered events, in
+/// registration order. The ids are the positions, so they are not written.
 fn events_expr(events : Array[@anode.NodeEvents], indent : String) -> String {
   if events.is_empty() {
     return "[]"
   }
-  let parts : Array[String] = []
-  for ev in events {
-    let hs = ev.handlers.map(handler_expr)
-    if hs.is_empty() {
-      parts.push("\{indent}  { id: \{ev.id}, handlers: [] }")
-    } else {
-      parts.push(
-        "\{indent}  {\n\{indent}    id: \{ev.id},\n\{indent}    handlers: [\n" +
-        hs.map(h => "\{indent}      \{h},").join("\n") +
-        "\n\{indent}    ],\n\{indent}  }",
-      )
-    }
-  }
+  let parts = events.map(ev => {
+    "\{indent}  [" + ev.handlers.map(handler_expr).join(", ") + "]"
+  })
   "[\n" + parts.join(",\n") + ",\n\{indent}]"
 }
 
@@ -371,8 +452,12 @@ fn emit_ir_header(
     "// GENERATED by `tutuca gen-views` from \{source_file} — DO NOT EDIT.\n" +
     "//\n" +
     "// The views of \{t}, already compiled: the @anode.ANode tree each one\n" +
-    "// parses into, plus its event table. Passing \{v}_views() as\n" +
-    "// `views~` means the template parser never runs at startup.\n" +
+    "// parses into, plus its event table, written with anode's builders.\n" +
+    "// Passing \{v}_views() as `views~` means the template parser\n" +
+    "// never runs at startup.\n" +
+    "//\n" +
+    "// The package this file lives in must import:\n" +
+    "//   \"marianoguerra/tutuca/anode\"\n" +
     "//\n" +
     "// Every builder returns a FRESH tree: View::from_ir stamps and optimizes\n" +
     "// it in place, and each component that adopts a view stamps its own\n" +
@@ -395,23 +480,24 @@ fn emit_ir_component(
   for view in views.views {
     let (root, events) = compiled_tree(view, scope)
     let fname = "\{v}_\{value_prefix(view.name)}_view_ir"
+    let style = if view.style == "" {
+      ""
+    } else {
+      "    style=\{quote(view.style)},\n"
+    }
     out.write_string(
       "///|\n/// The compiled `\{view.name}` view.\nfn \{fname}() -> @anode.View {\n",
     )
     out.write_string(
-      "  let root : @anode.ANode = " + node_expr(root, "  ") + "\n",
-    )
-    out.write_string(
-      "  let events : Array[@anode.NodeEvents] = " +
-      events_expr(events, "  ") +
-      "\n",
-    )
-    out.write_string(
       "  @anode.View::from_ir(\n" +
       "    \{quote(view.name)},\n" +
-      "    root,\n" +
-      "    @anode.ParseContext::from_ir(root, events),\n" +
-      "    style=\{quote(view.style)},\n" +
+      "    " +
+      node_expr(root, "    ") +
+      ",\n" +
+      "    " +
+      events_expr(events, "    ") +
+      ",\n" +
+      style +
       "  )\n}\n\n",
     )
   }
@@ -445,7 +531,7 @@ pub fn build_views(
     out[view.name] = @anode.View::from_ir(
       view.name,
       root,
-      @anode.ParseContext::from_ir(root, events),
+      events.map(ev => ev.handlers),
       style=view.style,
     )
   }
@@ -455,7 +541,8 @@ pub fn build_views(
 ///|
 /// Parse one view and hand back the tree plus its event table, exactly as the
 /// runtime would have built them — but BEFORE data-cid and optimization,
-/// which are load-time concerns.
+/// which are load-time concerns, and without the data-vid stamp, which
+/// View::from_ir applies again.
 fn compiled_tree(
   view : RawView,
   scope : FileMacros,
@@ -474,5 +561,7 @@ fn compiled_tree(
   }
   check_macros_resolved(view.name, px, scope)
   guard v.anode is Some(root) else { raise EmptyView(view.name) }
-  (strip_macro_calls(root), px.events)
+  let tree = strip_macro_calls(root)
+  strip_data_vid(tree)
+  (tree, px.events)
 }

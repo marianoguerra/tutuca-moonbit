@@ -9,15 +9,71 @@ import {
 }
 
 // Values
+pub fn attr(String, String) -> AttrItem
+
+pub fn attr_bool(String, Bool) -> AttrItem
+
+pub fn attr_num(String, Double) -> AttrItem
+
+pub fn attr_val(String, @core.Val) -> AttrItem
+
+pub fn attrs_of_items(Array[AttrItem]) -> Attrs
+
+pub fn comment(String) -> ANode
+
 pub fn condense_childs_whites(Array[ANode]) -> Array[ANode]
 
+pub fn const_bool(Bool) -> @core.Val
+
+pub fn const_null() -> @core.Val
+
+pub fn const_num(Double) -> @core.Val
+
+pub fn const_str(String) -> @core.Val
+
+pub fn dyn_attr(String, @core.Val) -> AttrItem
+
+pub fn dyn_text(@core.Val, id? : Int) -> ANode
+
+pub fn each(Int, @core.Val, ANode, when_val? : @core.Val, loop_with_val? : @core.Val, enrich_with_val? : @core.Val, from_render_each? : Bool) -> ANode
+
+pub fn eid(Int) -> AttrItem
+
+pub fn events_of(Array[Array[NodeEvent]]) -> Array[NodeEvents]
+
+pub fn frag(Array[ANode]) -> ANode
+
+pub fn h(String, Array[AttrItem], Array[ANode], ns? : Ns) -> ANode
+
+pub fn hide(@core.Val, ANode, id? : Int) -> ANode
+
+pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
+
 pub fn maybe_fragment(Array[ANode]) -> ANode
+
+pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String]) -> NodeEvent
 
 pub fn optimize_node(ANode) -> ANode
 
 pub fn parse_attributes(Array[(String, String)], ParseContext, parse_all? : Bool) -> AttrParseResult
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
+
+pub fn push_view(@core.Val, ANode, id? : Int) -> ANode
+
+pub fn raw_html(val? : @core.Val) -> AttrItem
+
+pub fn render(Int, @core.Val, view? : @core.Val) -> ANode
+
+pub fn render_it(Int, view? : @core.Val) -> ANode
+
+pub fn scope(Int, @core.Val, ANode) -> ANode
+
+pub fn show(@core.Val, ANode, id? : Int) -> ANode
+
+pub fn slot(String, ANode) -> ANode
+
+pub fn text(String) -> ANode
 
 // Errors
 pub suberror MacroError {
@@ -221,7 +277,7 @@ pub(all) struct View {
   ir : Bool
 }
 pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @core.Lit) -> Unit raise MacroError
-pub fn View::from_ir(String, ANode, ParseContext, style? : String) -> Self
+pub fn View::from_ir(String, ANode, Array[Array[NodeEvent]], style? : String) -> Self
 pub fn View::new(String, raw_view? : String, style? : String) -> Self
 
 pub(all) struct WarnHandler {

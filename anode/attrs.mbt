@@ -14,7 +14,6 @@ let boolean_attrs : Set[String] = Set::from_array([
 priv struct AttrParser {
   px : ParseContext
   items : Array[AttrItem]
-  mut has_dynamic : Bool
   wrappers : Array[WrapperAttr]
   mut text_child : @tutuca.Val?
   mut each_attr : WrapperAttr?
@@ -27,7 +26,6 @@ fn AttrParser::new(px : ParseContext) -> AttrParser {
   {
     px,
     items: [],
-    has_dynamic: false,
     wrappers: [],
     text_child: None,
     each_attr: None,
@@ -73,17 +71,35 @@ fn AttrParser::parse(
       self.items.push(ConstA(name~, val=Const(lit~, from_macro=false)))
     }
   }
-  let p_attrs = if self.has_dynamic {
-    Attrs::DynAttrs(self.items)
-  } else {
-    const_attrs_from_items(self.items)
+  {
+    attrs: attrs_of_items(self.items),
+    wrappers: self.wrappers,
+    text_child: self.text_child,
   }
-  { attrs: p_attrs, wrappers: self.wrappers, text_child: self.text_child }
+}
+
+///|
+pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs {
+  let dynamic = items
+    .iter()
+    .any(item => {
+      match item {
+        // A macro-var-sourced constant stays constant (JS comment).
+        Plain(val~, ..) => !(val is Const(..))
+        RawHtml(_) | If(_) => true
+        ConstA(_) => false
+      }
+    })
+  if dynamic {
+    DynAttrs(items)
+  } else {
+    const_attrs_from_items(items)
+  }
 }
 
 ///|
 /// Collapse an all-constant item list into the evaluated map (JS
-/// ConstAttrs.fromAttrs; every val is Const when has_dynamic stayed false).
+/// ConstAttrs.fromAttrs; every val is Const in a list nothing made dynamic).
 fn const_attrs_from_items(items : Array[AttrItem]) -> Attrs {
   let m : Map[String, @tutuca.Lit] = Map([])
   for item in items {
@@ -111,13 +127,10 @@ fn AttrParser::parse_attr(
     self.px.pval(value, @tutuca.parse_text)
   }
   match val {
-    Some(v) => {
+    Some(v) =>
+      // A macro-var-sourced constant stays constant (JS comment):
+      // attrs_of_items keeps a Plain(Const) in the constant collapse.
       self.items.push(Plain(name~, val=v))
-      // A macro-var-sourced constant stays constant (JS comment).
-      if !(v is Const(..)) {
-        self.has_dynamic = true
-      }
-    }
     None => self.px.issue(BadValue(role=Attr(name~), value~))
   }
 }
@@ -167,7 +180,6 @@ fn AttrParser::parse_directive(
       // Pushed even when the value failed to parse (JS keeps the attr with
       // the null-const sentinel).
       self.items.push(RawHtml(val~))
-      self.has_dynamic = true
     }
     "push-view" => {
       let val = self.directive_value(directive_name, s, @tutuca.parse_text)
@@ -246,7 +258,6 @@ fn AttrParser::parse_if(
       let if_attr = IfAttr::{ name, cond_val, then_val: None, else_val: None }
       self.if_attr = Some(if_attr)
       self.items.push(If(if_attr))
-      self.has_dynamic = true
     }
     None => self.px.issue(BadValue(role=IfDirective(name~), value~))
   }
