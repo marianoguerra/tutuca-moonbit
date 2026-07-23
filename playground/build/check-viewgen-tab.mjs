@@ -32,7 +32,7 @@ new Function(genSrc)(); // publishes globalThis.__tutucaViewgen
 const starterSrc = readFileSync(join(OUT, "starter.js"), "utf8");
 const window = {};
 new Function("window", starterSrc)(window);
-const example = window.EXAMPLES["Counter (view tab)"];
+const example = window.EXAMPLES["Counter"];
 if (!example || !example.view) throw new Error("starter has no view-tab example");
 
 // The driver reads the component name from a `<!-- name: X -->` comment.

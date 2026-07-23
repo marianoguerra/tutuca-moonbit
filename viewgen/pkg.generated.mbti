@@ -37,7 +37,6 @@ pub suberror GenError {
   BadMacroName(String)
   MixedViewIds
   NoMainViewFor(String)
-  NoMainView
   UnclosedTemplate(String)
   ViewParseIssue(view~ : String, issue~ : String)
   EmptyView(String)

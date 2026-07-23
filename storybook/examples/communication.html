@@ -1,0 +1,42 @@
+<template id="Status">
+  <div class="alert alert-info" @show="truthy? .message">
+    <span class="msg" @text=".message"></span>
+    <small>(flashed <x text=".count"></x> times)</small>
+  </div>
+</template>
+<template id="SendReceive">
+  <section class="flex flex-col gap-2">
+    <x render=".status"></x>
+    <input class="input" :value=".draft" @on.input="$setDraft value"
+      @on.keydown+send="submit"
+      placeholder="Type a message and press Enter">
+    <div class="flex gap-2">
+      <button class="btn btn-primary send" @on.click="submit">Send</button>
+      <button class="btn btn-ghost clear" @on.click="clearStatus">Clear status</button>
+    </div>
+  </section>
+</template>
+<template id="TreeItem">
+  <style>user-select: none;
+.head { cursor: pointer; }
+.head:before { content: "⏺️"; margin-right: 0.25rem; }
+.head.type-file:before { content: "📄️"; }
+.head.open.type-dir:before { content: "📂️"; }
+.head.closed.type-dir:before { content: "📁️"; }</style>
+  <section>
+    <p class="head"
+      @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
+      @text=".label" @on.click="onItemClick"></p>
+    <div class="pl-3 pt-1 flex flex-col gap-2 kids" @show="$areChildsVisible">
+      <x render-each=".items"></x>
+    </div>
+  </section>
+</template>
+<template id="TreeRoot">
+  <div class="flex flex-col gap-3">
+    <x render=".root"></x>
+    <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
+      <li @each=".log"><x text="@value"></x></li>
+    </ul>
+  </div>
+</template>

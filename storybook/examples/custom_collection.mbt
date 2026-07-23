@@ -42,16 +42,9 @@ priv struct SongState {
 
 ///|
 fn song_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view="<span class=\"song\" @text=\".title\"></span>",
-      ),
-    },
-    name="Song",
-    init=SongState::{ title: "" },
-  )
+  @component.component(views=song_views(), name="Song", init=SongState::{
+    title: "",
+  })
 }
 
 ///|
@@ -64,19 +57,7 @@ priv struct PlaylistState {
 ///|
 fn playlist_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<ul class="flex flex-col gap-1">
-          #|  <li @each=".songs" class="flex gap-2 items-center">
-          #|    <x render-it></x>
-          #|    <button class="btn btn-xs rm" @on.click="$removeSong @key">remove</button>
-          #|  </li>
-          #|</ul>
-        ),
-      ),
-    },
+    views=playlist_views(),
     name="Playlist",
     init=PlaylistState::{ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
     mutate={

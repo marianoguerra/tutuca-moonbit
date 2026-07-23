@@ -138,7 +138,7 @@ renderer memo keys, so they must be minted at load time, not baked in.
 A view that calls a macro cannot be compiled ahead of time (macros are
 registered from MoonBit at runtime), so the whole file falls back to the
 source path; `--no-ir` opts out by hand. Across the ported example library,
-306 of 324 views compile to a tree.
+every view compiles to a tree except the macro-using ones.
 
 Regenerate through the task, not the CLI — `moon fmt` owns the layout of the
 generated pair:

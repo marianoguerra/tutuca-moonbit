@@ -9,6 +9,16 @@ plain MoonBit struct, and every handler is compiler-checked against it.
 Every code block below tagged `mbt check` is compiled and executed by
 `moon test docs`, so this document cannot drift from the API.
 
+The examples here build each view inline with `@anode.View::new(raw_view="…")`
+and match dispatches as raw `Input(name, args)` strings — the shortest form to
+read on one screen, and the escape hatch for genuinely dynamic views. For real
+components the recommended path is **ahead-of-time views**: keep the template in
+an `.html` file and run `tutuca gen-views`, which compiles it and generates a
+typed `<Comp>Msg` so a misspelled or unhandled `@on` handler is a *compile
+error* rather than a silent no-op. See the "Views (`views~` + `gen-views`)"
+section of the [README](../README.mbt.md), `demo/counterlib/` for the worked
+example, and the playground's View tab.
+
 ## The mental model
 
 Three rules explain everything else:

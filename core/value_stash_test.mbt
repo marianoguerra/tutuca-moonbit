@@ -64,7 +64,7 @@ test "coercing accessors" {
   let s : @core.Value = Str("x")
   let b : @core.Value = Bool(true)
   let nil : @core.Value = Null
-  let m : @core.Value = Map({ "a": @core.Value::Num(1) })
+  let m : @core.Value = Map({ "a": Num(1) })
   assert_eq(n.int(), 3)
   assert_eq(s.int(default=5), 5)
   assert_eq(s.str(), "x")

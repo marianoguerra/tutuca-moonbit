@@ -15,22 +15,11 @@ priv struct TableRowState {
 
 ///|
 fn table_row_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<tr>
-          #|  <td class="name" @text=".name"></td>
-          #|  <td class="qty" @text=".qty"></td>
-          #|  <td class="price" @text=".price"></td>
-          #|</tr>
-        ),
-      ),
-    },
-    name="TableRow",
-    init=TableRowState::{ name: "", qty: 0, price: 0.0 },
-  )
+  @component.component(views=table_row_views(), name="TableRow", init=TableRowState::{
+    name: "",
+    qty: 0,
+    price: 0.0,
+  })
 }
 
 ///|
@@ -42,23 +31,9 @@ priv struct ItemTableState {
 /// `<tr @x render-each=".rows">` — without the `@x` the parser would drop an
 /// `<x>` here, since `<x>` is not valid inside `<tbody>`.
 fn item_table_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<table class="table">
-          #|  <thead><tr><th>Name</th><th>Qty</th><th>Price</th></tr></thead>
-          #|  <tbody>
-          #|    <tr @x render-each=".rows"></tr>
-          #|  </tbody>
-          #|</table>
-        ),
-      ),
-    },
-    name="ItemTable",
-    init=ItemTableState::{ rows: [] },
-  )
+  @component.component(views=item_table_views(), name="ItemTable", init=ItemTableState::{
+    rows: [],
+  })
 }
 
 ///|
@@ -69,18 +44,10 @@ priv struct SelectOptionState {
 
 ///|
 fn select_option_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<option :value=".value" @text=".label"></option>
-        ),
-      ),
-    },
-    name="SelectOption",
-    init=SelectOptionState::{ value: "", label: "" },
-  )
+  @component.component(views=select_option_views(), name="SelectOption", init=SelectOptionState::{
+    value: "",
+    label: "",
+  })
 }
 
 ///|
@@ -92,20 +59,10 @@ priv struct ItemSelectState {
 ///|
 /// Same trick inside `<select>`: `<option @x render-each=".options">`.
 fn item_select_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<select class="select" :value=".current" @on.input="$setCurrent value">
-          #|  <option @x render-each=".options"></option>
-          #|</select>
-        ),
-      ),
-    },
-    name="ItemSelect",
-    init=ItemSelectState::{ options: [], current: "" },
-  )
+  @component.component(views=item_select_views(), name="ItemSelect", init=ItemSelectState::{
+    options: [],
+    current: "",
+  })
 }
 
 ///|
@@ -114,17 +71,7 @@ priv struct PseudoXNoState {} derive(ToJson, FromJson)
 ///|
 fn pseudo_x_demo_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div>
-          #|  <x render=".table"></x>
-          #|  <x render=".select"></x>
-          #|</div>
-        ),
-      ),
-    },
+    views=pseudo_x_demo_views(),
     name="PseudoXDemo",
     init=PseudoXNoState::{  },
     specs={

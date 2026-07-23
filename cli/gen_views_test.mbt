@@ -21,7 +21,8 @@ test "the input path decides the component name and the output file" {
       input="demo/counterlib/counter.html",
       target="demo/counterlib/counter_view_gen.mbt",
       name="Counter",
-      dry_run=false
+      dry_run=false,
+      ..
     ),
   )
 }

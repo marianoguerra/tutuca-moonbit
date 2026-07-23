@@ -107,8 +107,6 @@ pub suberror GenError {
   MixedViewIds
   /// A component in the file declares no `main` view.
   NoMainViewFor(String)
-  /// Every `<template>` carries an id, so no view is the main one.
-  NoMainView
   /// A `<template>` is never closed.
   UnclosedTemplate(String)
   /// The view does not parse, or parses with issues (a view that would warn

@@ -2,26 +2,138 @@
 package "marianoguerra/tutuca/storybook/examples"
 
 import {
+  "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
 }
 
 // Values
 pub fn all_examples() -> Array[ExampleModule]
 
+pub let attribute_binding_common_style : String
+
+pub fn[S] attribute_binding_compute((AttributeBindingMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let attribute_binding_fields : Array[String]
+
+pub let attribute_binding_global_style : String
+
+pub fn[S : ToJson] attribute_binding_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn attribute_binding_module() -> @component.ModuleDef
+
+pub fn[S] attribute_binding_mutate((AttributeBindingMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] attribute_binding_swap((AttributeBindingMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn attribute_binding_views() -> Map[String, @anode.View]
+
+pub let composability_common_style : String
+
+pub fn[S] composability_compute((ComposabilityMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let composability_fields : Array[String]
+
+pub let composability_global_style : String
+
+pub fn[S : ToJson] composability_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn composability_module() -> @component.ModuleDef
 
+pub fn[S] composability_mutate((ComposabilityMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] composability_swap((ComposabilityMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn composability_views() -> Map[String, @anode.View]
+
+pub let conditional_attributes_common_style : String
+
+pub fn[S] conditional_attributes_compute((ConditionalAttributesMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let conditional_attributes_fields : Array[String]
+
+pub let conditional_attributes_global_style : String
+
+pub fn[S : ToJson] conditional_attributes_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn conditional_attributes_module() -> @component.ModuleDef
+
+pub fn[S] conditional_attributes_mutate((ConditionalAttributesMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] conditional_attributes_swap((ConditionalAttributesMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn conditional_attributes_views() -> Map[String, @anode.View]
 
 pub fn counter_module() -> @component.ModuleDef
 
 pub fn custom_collection_module() -> @component.ModuleDef
 
+pub let danger_set_inner_html_common_style : String
+
+pub let danger_set_inner_html_fields : Array[String]
+
+pub let danger_set_inner_html_global_style : String
+
+pub fn[S : ToJson] danger_set_inner_html_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn danger_set_inner_html_module() -> @component.ModuleDef
 
+pub fn danger_set_inner_html_views() -> Map[String, @anode.View]
+
+pub let dn_d_example_common_style : String
+
+pub fn[S] dn_d_example_compute((DnDExampleMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let dn_d_example_fields : Array[String]
+
+pub let dn_d_example_global_style : String
+
+pub fn[S : ToJson] dn_d_example_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] dn_d_example_mutate((DnDExampleMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] dn_d_example_swap((DnDExampleMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn dn_d_example_views() -> Map[String, @anode.View]
+
 pub fn dnd_module() -> @component.ModuleDef
+
+pub let dse_editor_common_style : String
+
+pub let dse_editor_fields : Array[String]
+
+pub let dse_editor_global_style : String
+
+pub fn[S : ToJson] dse_editor_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn dse_editor_views() -> Map[String, @anode.View]
+
+pub let dse_entry_common_style : String
+
+pub fn[S] dse_entry_compute((DseEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let dse_entry_fields : Array[String]
+
+pub let dse_entry_global_style : String
+
+pub fn[S : ToJson] dse_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] dse_entry_mutate((DseEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] dse_entry_swap((DseEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn dse_entry_views() -> Map[String, @anode.View]
+
+pub let dse_root_common_style : String
+
+pub let dse_root_fields : Array[String]
+
+pub let dse_root_global_style : String
+
+pub fn[S : ToJson] dse_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn dse_root_views() -> Map[String, @anode.View]
 
 pub fn dynamic_bindings_module() -> @component.ModuleDef
 
@@ -29,29 +141,357 @@ pub fn dynamic_path_module() -> @component.ModuleDef
 
 pub fn dynamic_selected_edit_module() -> @component.ModuleDef
 
+pub let emoji_picker_common_style : String
+
+pub fn[S] emoji_picker_compute((EmojiPickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let emoji_picker_fields : Array[String]
+
+pub let emoji_picker_global_style : String
+
+pub fn[S : ToJson] emoji_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] emoji_picker_mutate((EmojiPickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] emoji_picker_swap((EmojiPickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn emoji_picker_views() -> Map[String, @anode.View]
+
+pub let entry_common_style : String
+
+pub fn[S] entry_compute((EntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let entry_editor_and_selector_common_style : String
+
+pub fn[S] entry_editor_and_selector_compute((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let entry_editor_and_selector_fields : Array[String]
+
+pub let entry_editor_and_selector_global_style : String
+
+pub fn[S : ToJson] entry_editor_and_selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] entry_editor_and_selector_mutate((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] entry_editor_and_selector_swap((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn entry_editor_and_selector_views() -> Map[String, @anode.View]
+
+pub let entry_fields : Array[String]
+
+pub let entry_global_style : String
+
+pub fn[S : ToJson] entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn entry_module() -> @component.ModuleDef
+
+pub fn[S] entry_mutate((EntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] entry_swap((EntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn entry_views() -> Map[String, @anode.View]
+
+pub let event_modifiers_common_style : String
+
+pub fn[S] event_modifiers_compute((EventModifiersMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let event_modifiers_fields : Array[String]
+
+pub let event_modifiers_global_style : String
+
+pub fn[S : ToJson] event_modifiers_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn event_modifiers_module() -> @component.ModuleDef
 
+pub fn[S] event_modifiers_mutate((EventModifiersMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] event_modifiers_swap((EventModifiersMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn event_modifiers_views() -> Map[String, @anode.View]
+
 pub fn failing_request_handlers() -> Map[String, @component.RequestFn]
+
+pub let file_picker_common_style : String
+
+pub fn[S] file_picker_compute((FilePickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let file_picker_fields : Array[String]
+
+pub let file_picker_global_style : String
+
+pub fn[S : ToJson] file_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn file_picker_module() -> @component.ModuleDef
 
+pub fn[S] file_picker_mutate((FilePickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] file_picker_swap((FilePickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn file_picker_views() -> Map[String, @anode.View]
+
 pub fn filter_paginate_module() -> @component.ModuleDef
+
+pub let greeting_common_style : String
+
+pub let greeting_fields : Array[String]
+
+pub let greeting_global_style : String
+
+pub fn[S : ToJson] greeting_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn greeting_views() -> Map[String, @anode.View]
+
+pub let item_common_style : String
+
+pub fn[S] item_compute((ItemMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let item_fields : Array[String]
+
+pub let item_global_style : String
+
+pub fn[S : ToJson] item_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] item_mutate((ItemMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub let item_select_common_style : String
+
+pub fn[S] item_select_compute((ItemSelectMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let item_select_fields : Array[String]
+
+pub let item_select_global_style : String
+
+pub fn[S : ToJson] item_select_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] item_select_mutate((ItemSelectMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] item_select_swap((ItemSelectMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn item_select_views() -> Map[String, @anode.View]
+
+pub fn[S] item_swap((ItemMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub let item_table_common_style : String
+
+pub let item_table_fields : Array[String]
+
+pub let item_table_global_style : String
+
+pub fn[S : ToJson] item_table_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn item_table_views() -> Map[String, @anode.View]
+
+pub fn item_views() -> Map[String, @anode.View]
 
 pub fn items() -> Array[@core.Value]
 
+pub let items_common_style : String
+
+pub fn[S] items_compute((ItemsMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let items_fields : Array[String]
+
+pub let items_global_style : String
+
+pub fn[S : ToJson] items_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] items_mutate((ItemsMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] items_swap((ItemsMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn items_views() -> Map[String, @anode.View]
+
+pub let json_array_common_style : String
+
+pub fn[S] json_array_compute((JsonArrayMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_array_fields : Array[String]
+
+pub let json_array_global_style : String
+
+pub fn[S : ToJson] json_array_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_array_mutate((JsonArrayMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_array_swap((JsonArrayMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_array_views() -> Map[String, @anode.View]
+
+pub let json_bool_common_style : String
+
+pub fn[S] json_bool_compute((JsonBoolMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_bool_fields : Array[String]
+
+pub let json_bool_global_style : String
+
+pub fn[S : ToJson] json_bool_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_bool_mutate((JsonBoolMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_bool_swap((JsonBoolMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_bool_views() -> Map[String, @anode.View]
+
 pub fn json_module() -> @component.ModuleDef
+
+pub let json_null_common_style : String
+
+pub let json_null_fields : Array[String]
+
+pub let json_null_global_style : String
+
+pub fn[S : ToJson] json_null_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn json_null_views() -> Map[String, @anode.View]
+
+pub let json_number_common_style : String
+
+pub fn[S] json_number_compute((JsonNumberMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_number_fields : Array[String]
+
+pub let json_number_global_style : String
+
+pub fn[S : ToJson] json_number_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_number_mutate((JsonNumberMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_number_swap((JsonNumberMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_number_views() -> Map[String, @anode.View]
+
+pub let json_object_common_style : String
+
+pub fn[S] json_object_compute((JsonObjectMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_object_fields : Array[String]
+
+pub let json_object_global_style : String
+
+pub let json_object_key_val_common_style : String
+
+pub fn[S] json_object_key_val_compute((JsonObjectKeyValMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_object_key_val_fields : Array[String]
+
+pub let json_object_key_val_global_style : String
+
+pub fn[S : ToJson] json_object_key_val_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_object_key_val_mutate((JsonObjectKeyValMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_object_key_val_swap((JsonObjectKeyValMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_object_key_val_views() -> Map[String, @anode.View]
+
+pub fn[S : ToJson] json_object_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_object_mutate((JsonObjectMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_object_swap((JsonObjectMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_object_views() -> Map[String, @anode.View]
+
+pub let json_selector_common_style : String
+
+pub fn[S] json_selector_compute((JsonSelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_selector_fields : Array[String]
+
+pub let json_selector_global_style : String
+
+pub fn[S : ToJson] json_selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_selector_mutate((JsonSelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_selector_swap((JsonSelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_selector_views() -> Map[String, @anode.View]
+
+pub let json_string_common_style : String
+
+pub fn[S] json_string_compute((JsonStringMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let json_string_fields : Array[String]
+
+pub let json_string_global_style : String
+
+pub fn[S : ToJson] json_string_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] json_string_mutate((JsonStringMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] json_string_swap((JsonStringMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn json_string_views() -> Map[String, @anode.View]
 
 pub fn lint_errors_module() -> @component.ModuleDef
 
+pub let list_and_filter_common_style : String
+
+pub fn[S] list_and_filter_compute((ListAndFilterMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let list_and_filter_fields : Array[String]
+
+pub let list_and_filter_global_style : String
+
+pub fn[S : ToJson] list_and_filter_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn list_and_filter_module() -> @component.ModuleDef
+
+pub fn[S] list_and_filter_mutate((ListAndFilterMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] list_and_filter_swap((ListAndFilterMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn list_and_filter_views() -> Map[String, @anode.View]
+
+pub let list_filter_enrich_common_style : String
+
+pub fn[S] list_filter_enrich_compute((ListFilterEnrichMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let list_filter_enrich_fields : Array[String]
+
+pub let list_filter_enrich_global_style : String
+
+pub fn[S : ToJson] list_filter_enrich_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn list_filter_enrich_module() -> @component.ModuleDef
 
+pub fn[S] list_filter_enrich_mutate((ListFilterEnrichMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] list_filter_enrich_swap((ListFilterEnrichMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn list_filter_enrich_views() -> Map[String, @anode.View]
+
+pub let list_filter_enrich_with_common_style : String
+
+pub fn[S] list_filter_enrich_with_compute((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let list_filter_enrich_with_fields : Array[String]
+
+pub let list_filter_enrich_with_global_style : String
+
+pub fn[S : ToJson] list_filter_enrich_with_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn list_filter_enrich_with_module() -> @component.ModuleDef
 
+pub fn[S] list_filter_enrich_with_mutate((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] list_filter_enrich_with_swap((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn list_filter_enrich_with_views() -> Map[String, @anode.View]
+
+pub let list_iteration_common_style : String
+
+pub let list_iteration_fields : Array[String]
+
+pub let list_iteration_global_style : String
+
+pub fn[S : ToJson] list_iteration_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn list_iteration_module() -> @component.ModuleDef
+
+pub fn list_iteration_views() -> Map[String, @anode.View]
 
 pub fn macro_named_slots_module() -> @component.ModuleDef
 
@@ -63,31 +503,333 @@ pub fn macro_static_module() -> @component.ModuleDef
 
 pub fn mathml_formula_module() -> @component.ModuleDef
 
+pub let minimum_viable_component_common_style : String
+
+pub let minimum_viable_component_fields : Array[String]
+
+pub let minimum_viable_component_global_style : String
+
+pub fn[S : ToJson] minimum_viable_component_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn minimum_viable_component_views() -> Map[String, @anode.View]
+
 pub fn minimum_viable_module() -> @component.ModuleDef
+
+pub let multiple_views_common_style : String
+
+pub let multiple_views_fields : Array[String]
+
+pub let multiple_views_global_style : String
+
+pub fn[S : ToJson] multiple_views_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn multiple_views_module() -> @component.ModuleDef
 
+pub fn multiple_views_views() -> Map[String, @anode.View]
+
+pub let page_common_style : String
+
+pub let page_fields : Array[String]
+
+pub let page_global_style : String
+
+pub fn[S : ToJson] page_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn page_views() -> Map[String, @anode.View]
+
+pub let pagination_common_style : String
+
+pub fn[S] pagination_compute((PaginationMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let pagination_fields : Array[String]
+
+pub let pagination_global_style : String
+
+pub fn[S : ToJson] pagination_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn pagination_module() -> @component.ModuleDef
+
+pub fn[S] pagination_mutate((PaginationMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] pagination_swap((PaginationMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn pagination_views() -> Map[String, @anode.View]
+
+pub let panel_common_style : String
+
+pub let panel_fields : Array[String]
+
+pub let panel_global_style : String
+
+pub fn[S : ToJson] panel_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn panel_views() -> Map[String, @anode.View]
 
 pub fn personal_site_module() -> @component.ModuleDef
 
+pub let playlist_common_style : String
+
+pub fn[S] playlist_compute((PlaylistMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let playlist_fields : Array[String]
+
+pub let playlist_global_style : String
+
+pub fn[S : ToJson] playlist_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] playlist_mutate((PlaylistMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] playlist_swap((PlaylistMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn playlist_views() -> Map[String, @anode.View]
+
+pub let pseudo_x_demo_common_style : String
+
+pub let pseudo_x_demo_fields : Array[String]
+
+pub let pseudo_x_demo_global_style : String
+
+pub fn[S : ToJson] pseudo_x_demo_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn pseudo_x_demo_views() -> Map[String, @anode.View]
+
 pub fn pseudo_x_module() -> @component.ModuleDef
+
+pub let push_view_common_style : String
+
+pub fn[S] push_view_compute((PushViewMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let push_view_fields : Array[String]
+
+pub let push_view_global_style : String
+
+pub fn[S : ToJson] push_view_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn push_view_module() -> @component.ModuleDef
 
+pub fn[S] push_view_mutate((PushViewMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] push_view_swap((PushViewMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn push_view_views() -> Map[String, @anode.View]
+
+pub let quadratic_common_style : String
+
+pub fn[S] quadratic_compute((QuadraticMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let quadratic_fields : Array[String]
+
+pub let quadratic_global_style : String
+
+pub fn[S : ToJson] quadratic_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] quadratic_mutate((QuadraticMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] quadratic_swap((QuadraticMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn quadratic_views() -> Map[String, @anode.View]
+
 pub fn render_child_module() -> @component.ModuleDef
+
+pub let render_with_scope_common_style : String
+
+pub fn[S] render_with_scope_compute((RenderWithScopeMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let render_with_scope_fields : Array[String]
+
+pub let render_with_scope_global_style : String
+
+pub fn[S : ToJson] render_with_scope_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn render_with_scope_module() -> @component.ModuleDef
 
+pub fn[S] render_with_scope_mutate((RenderWithScopeMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] render_with_scope_swap((RenderWithScopeMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn render_with_scope_views() -> Map[String, @anode.View]
+
+pub let request_example_common_style : String
+
+pub fn[S] request_example_compute((RequestExampleMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let request_example_fields : Array[String]
+
+pub let request_example_global_style : String
+
+pub fn[S : ToJson] request_example_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] request_example_mutate((RequestExampleMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] request_example_swap((RequestExampleMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn request_example_views() -> Map[String, @anode.View]
+
 pub fn request_module(requests? : Map[String, @component.RequestFn]) -> @component.ModuleDef
+
+pub let select_option_common_style : String
+
+pub let select_option_fields : Array[String]
+
+pub let select_option_global_style : String
+
+pub fn[S : ToJson] select_option_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn select_option_views() -> Map[String, @anode.View]
+
+pub let selector_common_style : String
+
+pub fn[S] selector_compute((SelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let selector_entry_common_style : String
+
+pub fn[S] selector_entry_compute((SelectorEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let selector_entry_fields : Array[String]
+
+pub let selector_entry_global_style : String
+
+pub fn[S : ToJson] selector_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] selector_entry_mutate((SelectorEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] selector_entry_swap((SelectorEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn selector_entry_views() -> Map[String, @anode.View]
+
+pub let selector_fields : Array[String]
+
+pub let selector_global_style : String
+
+pub fn[S : ToJson] selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] selector_mutate((SelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] selector_swap((SelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn selector_views() -> Map[String, @anode.View]
+
+pub let send_receive_common_style : String
+
+pub fn[S] send_receive_compute((SendReceiveMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let send_receive_fields : Array[String]
+
+pub let send_receive_global_style : String
+
+pub fn[S : ToJson] send_receive_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn send_receive_module() -> @component.ModuleDef
 
+pub fn[S] send_receive_mutate((SendReceiveMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] send_receive_swap((SendReceiveMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn send_receive_views() -> Map[String, @anode.View]
+
+pub let seq_item_access_common_style : String
+
+pub fn[S] seq_item_access_compute((SeqItemAccessMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let seq_item_access_fields : Array[String]
+
+pub let seq_item_access_global_style : String
+
+pub fn[S : ToJson] seq_item_access_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn seq_item_access_module() -> @component.ModuleDef
+
+pub fn[S] seq_item_access_mutate((SeqItemAccessMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] seq_item_access_swap((SeqItemAccessMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn seq_item_access_views() -> Map[String, @anode.View]
+
+pub let sheet_common_style : String
+
+pub fn[S] sheet_compute((SheetMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let sheet_fields : Array[String]
+
+pub let sheet_global_style : String
+
+pub fn[S : ToJson] sheet_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] sheet_mutate((SheetMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] sheet_swap((SheetMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn sheet_views() -> Map[String, @anode.View]
+
+pub let show_hide_common_style : String
+
+pub fn[S] show_hide_compute((ShowHideMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let show_hide_fields : Array[String]
+
+pub let show_hide_global_style : String
+
+pub fn[S : ToJson] show_hide_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn show_hide_module() -> @component.ModuleDef
 
+pub fn[S] show_hide_mutate((ShowHideMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] show_hide_swap((ShowHideMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn show_hide_views() -> Map[String, @anode.View]
+
+pub let song_common_style : String
+
+pub let song_fields : Array[String]
+
+pub let song_global_style : String
+
+pub fn[S : ToJson] song_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn song_views() -> Map[String, @anode.View]
+
+pub let static_view_component_common_style : String
+
+pub let static_view_component_fields : Array[String]
+
+pub let static_view_component_global_style : String
+
+pub fn[S : ToJson] static_view_component_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn static_view_component_views() -> Map[String, @anode.View]
+
 pub fn static_view_module() -> @component.ModuleDef
+
+pub let status_common_style : String
+
+pub let status_fields : Array[String]
+
+pub let status_global_style : String
+
+pub fn[S : ToJson] status_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn status_views() -> Map[String, @anode.View]
+
+pub let styles_example_common_style : String
+
+pub let styles_example_fields : Array[String]
+
+pub let styles_example_global_style : String
+
+pub fn[S : ToJson] styles_example_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub let styles_example_root_common_style : String
+
+pub let styles_example_root_fields : Array[String]
+
+pub let styles_example_root_global_style : String
+
+pub fn[S : ToJson] styles_example_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn styles_example_root_views() -> Map[String, @anode.View]
+
+pub fn styles_example_views() -> Map[String, @anode.View]
 
 pub fn styles_module() -> @component.ModuleDef
 
@@ -97,25 +839,334 @@ pub fn svg_icon_macro_module() -> @component.ModuleDef
 
 pub fn svg_interactive_module() -> @component.ModuleDef
 
+pub let swatch_picker_common_style : String
+
+pub fn[S] swatch_picker_compute((SwatchPickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let swatch_picker_fields : Array[String]
+
+pub let swatch_picker_global_style : String
+
+pub fn[S : ToJson] swatch_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] swatch_picker_mutate((SwatchPickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] swatch_picker_swap((SwatchPickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn swatch_picker_views() -> Map[String, @anode.View]
+
+pub let tabbed_u_i_common_style : String
+
+pub fn[S] tabbed_u_i_compute((TabbedUIMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let tabbed_u_i_fields : Array[String]
+
+pub let tabbed_u_i_global_style : String
+
+pub fn[S : ToJson] tabbed_u_i_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] tabbed_u_i_mutate((TabbedUIMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] tabbed_u_i_swap((TabbedUIMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn tabbed_u_i_views() -> Map[String, @anode.View]
+
 pub fn tabbed_ui_module() -> @component.ModuleDef
 
+pub let table_row_common_style : String
+
+pub let table_row_fields : Array[String]
+
+pub let table_row_global_style : String
+
+pub fn[S : ToJson] table_row_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn table_row_views() -> Map[String, @anode.View]
+
+pub let text_directive_common_style : String
+
+pub fn[S] text_directive_compute((TextDirectiveMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let text_directive_fields : Array[String]
+
+pub let text_directive_global_style : String
+
+pub fn[S : ToJson] text_directive_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn text_directive_module() -> @component.ModuleDef
+
+pub fn[S] text_directive_mutate((TextDirectiveMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] text_directive_swap((TextDirectiveMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn text_directive_views() -> Map[String, @anode.View]
 
 pub fn todo_macros_module() -> @component.ModuleDef
 
 pub fn todo_module() -> @component.ModuleDef
 
+pub let toolbar_common_style : String
+
+pub let toolbar_fields : Array[String]
+
+pub let toolbar_global_style : String
+
+pub fn[S : ToJson] toolbar_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn toolbar_views() -> Map[String, @anode.View]
+
+pub let traffic_light_common_style : String
+
+pub fn[S] traffic_light_compute((TrafficLightMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let traffic_light_fields : Array[String]
+
+pub let traffic_light_global_style : String
+
+pub fn[S : ToJson] traffic_light_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn traffic_light_module() -> @component.ModuleDef
 
+pub fn[S] traffic_light_mutate((TrafficLightMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] traffic_light_swap((TrafficLightMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn traffic_light_views() -> Map[String, @anode.View]
+
+pub let tree_item_common_style : String
+
+pub fn[S] tree_item_compute((TreeItemMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let tree_item_fields : Array[String]
+
+pub let tree_item_global_style : String
+
+pub fn[S : ToJson] tree_item_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] tree_item_mutate((TreeItemMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] tree_item_swap((TreeItemMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn tree_item_views() -> Map[String, @anode.View]
+
 pub fn tree_module() -> @component.ModuleDef
+
+pub let tree_root_common_style : String
+
+pub let tree_root_fields : Array[String]
+
+pub let tree_root_global_style : String
+
+pub fn[S : ToJson] tree_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn tree_root_views() -> Map[String, @anode.View]
 
 pub fn visual_wasm_module() -> @component.ModuleDef
 
 pub fn web_component_module() -> @component.ModuleDef
 
+pub let workspace_common_style : String
+
+pub fn[S] workspace_compute((WorkspaceMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let workspace_fields : Array[String]
+
+pub let workspace_global_style : String
+
+pub fn[S : ToJson] workspace_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] workspace_mutate((WorkspaceMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] workspace_swap((WorkspaceMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn workspace_views() -> Map[String, @anode.View]
+
 // Errors
 
 // Types and methods
+pub(all) enum AttributeBindingMethod {
+  SetBool
+  SetRawNumber
+  SetStr
+} derive(Eq, @debug.Debug)
+pub fn AttributeBindingMethod::name(Self) -> String
+
+pub(all) enum AttributeBindingView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn AttributeBindingView::name(Self) -> String
+
+pub(all) enum ComposabilityId {
+  TabDnd
+  TabJson
+  TabPersonalSite
+  TabTodo
+  TabTree
+  TabVisualWasm
+} derive(Eq, @debug.Debug)
+pub fn ComposabilityId::id(Self) -> String
+pub fn ComposabilityId::selector(Self) -> String
+
+pub(all) enum ComposabilityMethod {
+  SetActiveSection
+} derive(Eq, @debug.Debug)
+pub fn ComposabilityMethod::name(Self) -> String
+
+pub(all) enum ComposabilityView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ComposabilityView::name(Self) -> String
+
+pub(all) enum ConditionalAttributesMethod {
+  ToggleIsActive
+} derive(Eq, @debug.Debug)
+pub fn ConditionalAttributesMethod::name(Self) -> String
+
+pub(all) enum ConditionalAttributesView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ConditionalAttributesView::name(Self) -> String
+
+pub(all) enum DangerSetInnerHtmlView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn DangerSetInnerHtmlView::name(Self) -> String
+
+pub(all) enum DnDExampleInput {
+  OnDropOnItem
+} derive(Eq, @debug.Debug)
+pub fn DnDExampleInput::name(Self) -> String
+pub fn DnDExampleInput::parse(String) -> Self?
+
+pub(all) enum DnDExampleMethod {
+  ResetQuery
+  SetQuery
+} derive(Eq, @debug.Debug)
+pub fn DnDExampleMethod::name(Self) -> String
+
+pub(all) enum DnDExampleMsg {
+  OnDropOnItem(@core.Value, @core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DnDExampleMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum DnDExampleView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn DnDExampleView::name(Self) -> String
+
+pub(all) enum DseEditorView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn DseEditorView::name(Self) -> String
+
+pub(all) enum DseEntryMethod {
+  SetName
+} derive(Eq, @debug.Debug)
+pub fn DseEntryMethod::name(Self) -> String
+
+pub(all) enum DseEntryView {
+  Main
+  Edit
+} derive(Eq, @debug.Debug)
+pub fn DseEntryView::name(Self) -> String
+
+pub(all) enum DseRootInput {
+  SelectItem
+} derive(Eq, @debug.Debug)
+pub fn DseRootInput::name(Self) -> String
+pub fn DseRootInput::parse(String) -> Self?
+
+pub(all) enum DseRootMsg {
+  SelectItem(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DseRootMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum DseRootView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn DseRootView::name(Self) -> String
+
+pub(all) enum EmojiPickerInput {
+  OnEmojiClick
+} derive(Eq, @debug.Debug)
+pub fn EmojiPickerInput::name(Self) -> String
+pub fn EmojiPickerInput::parse(String) -> Self?
+
+pub(all) enum EmojiPickerMethod {
+  ToggleIsPickerVisible
+} derive(Eq, @debug.Debug)
+pub fn EmojiPickerMethod::name(Self) -> String
+
+pub(all) enum EmojiPickerMsg {
+  OnEmojiClick(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EmojiPickerMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum EmojiPickerView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn EmojiPickerView::name(Self) -> String
+
+pub(all) enum EntryEditorAndSelectorInput {
+  OnAddItem
+} derive(Eq, @debug.Debug)
+pub fn EntryEditorAndSelectorInput::name(Self) -> String
+pub fn EntryEditorAndSelectorInput::parse(String) -> Self?
+
+pub(all) enum EntryEditorAndSelectorMethod {
+  RemoveInItemsAt
+} derive(Eq, @debug.Debug)
+pub fn EntryEditorAndSelectorMethod::name(Self) -> String
+
+pub(all) enum EntryEditorAndSelectorMsg {
+  OnAddItem
+  Unknown(String, Array[@core.Value])
+}
+pub fn EntryEditorAndSelectorMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum EntryEditorAndSelectorView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn EntryEditorAndSelectorView::name(Self) -> String
+
+pub(all) enum EntryMethod {
+  SetDescription
+  SetTitle
+} derive(Eq, @debug.Debug)
+pub fn EntryMethod::name(Self) -> String
+
+pub(all) enum EntryView {
+  Main
+  Edit
+} derive(Eq, @debug.Debug)
+pub fn EntryView::name(Self) -> String
+
+pub(all) enum EventModifiersInput {
+  OnInput
+} derive(Eq, @debug.Debug)
+pub fn EventModifiersInput::name(Self) -> String
+pub fn EventModifiersInput::parse(String) -> Self?
+
+pub(all) enum EventModifiersMethod {
+  ResetQuery
+  SetLastSentSearch
+} derive(Eq, @debug.Debug)
+pub fn EventModifiersMethod::name(Self) -> String
+
+pub(all) enum EventModifiersMsg {
+  OnInput(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EventModifiersMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum EventModifiersView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn EventModifiersView::name(Self) -> String
+
 pub struct ExampleModule {
   name : String
   root : String
@@ -124,6 +1175,558 @@ pub struct ExampleModule {
   init : Bool
 }
 pub fn ExampleModule::root_args(Self) -> Map[String, @core.Value]
+
+pub(all) enum FilePickerInput {
+  OnPickFile
+} derive(Eq, @debug.Debug)
+pub fn FilePickerInput::name(Self) -> String
+pub fn FilePickerInput::parse(String) -> Self?
+
+pub(all) enum FilePickerMethod {
+  LastModifiedLabel
+  SizeLabel
+  TypeLabel
+} derive(Eq, @debug.Debug)
+pub fn FilePickerMethod::name(Self) -> String
+
+pub(all) enum FilePickerMsg {
+  OnPickFile(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn FilePickerMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum FilePickerView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn FilePickerView::name(Self) -> String
+
+pub(all) enum GreetingView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn GreetingView::name(Self) -> String
+
+pub(all) enum ItemMethod {
+  SetCompleted
+  SetText
+} derive(Eq, @debug.Debug)
+pub fn ItemMethod::name(Self) -> String
+
+pub(all) enum ItemSelectMethod {
+  SetCurrent
+} derive(Eq, @debug.Debug)
+pub fn ItemSelectMethod::name(Self) -> String
+
+pub(all) enum ItemSelectView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ItemSelectView::name(Self) -> String
+
+pub(all) enum ItemTableView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ItemTableView::name(Self) -> String
+
+pub(all) enum ItemView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ItemView::name(Self) -> String
+
+pub(all) enum ItemsInput {
+  OnAddItem
+} derive(Eq, @debug.Debug)
+pub fn ItemsInput::name(Self) -> String
+pub fn ItemsInput::parse(String) -> Self?
+
+pub(all) enum ItemsMethod {
+  RemoveInItemsAt
+} derive(Eq, @debug.Debug)
+pub fn ItemsMethod::name(Self) -> String
+
+pub(all) enum ItemsMsg {
+  OnAddItem
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemsMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ItemsView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ItemsView::name(Self) -> String
+
+pub(all) enum JsonArrayInput {
+  AddItem
+  OnDropOnItem
+} derive(Eq, @debug.Debug)
+pub fn JsonArrayInput::name(Self) -> String
+pub fn JsonArrayInput::parse(String) -> Self?
+
+pub(all) enum JsonArrayMethod {
+  RemoveInItemsAt
+} derive(Eq, @debug.Debug)
+pub fn JsonArrayMethod::name(Self) -> String
+
+pub(all) enum JsonArrayMsg {
+  AddItem
+  OnDropOnItem(@core.Value, @core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonArrayMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonArrayView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonArrayView::name(Self) -> String
+
+pub(all) enum JsonBoolMethod {
+  ToggleValue
+} derive(Eq, @debug.Debug)
+pub fn JsonBoolMethod::name(Self) -> String
+
+pub(all) enum JsonBoolView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonBoolView::name(Self) -> String
+
+pub(all) enum JsonNullView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonNullView::name(Self) -> String
+
+pub(all) enum JsonNumberMethod {
+  SetRawValue
+} derive(Eq, @debug.Debug)
+pub fn JsonNumberMethod::name(Self) -> String
+
+pub(all) enum JsonNumberView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonNumberView::name(Self) -> String
+
+pub(all) enum JsonObjectInput {
+  AddItem
+  OnDropOnItem
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectInput::name(Self) -> String
+pub fn JsonObjectInput::parse(String) -> Self?
+
+pub(all) enum JsonObjectKeyValMethod {
+  SetKey
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectKeyValMethod::name(Self) -> String
+
+pub(all) enum JsonObjectKeyValView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectKeyValView::name(Self) -> String
+
+pub(all) enum JsonObjectMethod {
+  RemoveInItemsAt
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectMethod::name(Self) -> String
+
+pub(all) enum JsonObjectMsg {
+  AddItem
+  OnDropOnItem(@core.Value, @core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonObjectMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum JsonObjectView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectView::name(Self) -> String
+
+pub(all) enum JsonSelectorMethod {
+  SetToArray
+  SetToBool
+  SetToNull
+  SetToNumber
+  SetToObject
+  SetToString
+} derive(Eq, @debug.Debug)
+pub fn JsonSelectorMethod::name(Self) -> String
+
+pub(all) enum JsonSelectorView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonSelectorView::name(Self) -> String
+
+pub(all) enum JsonStringMethod {
+  SetValue
+} derive(Eq, @debug.Debug)
+pub fn JsonStringMethod::name(Self) -> String
+
+pub(all) enum JsonStringView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn JsonStringView::name(Self) -> String
+
+pub(all) enum ListAndFilterMethod {
+  ResetQuery
+  SetQuery
+} derive(Eq, @debug.Debug)
+pub fn ListAndFilterMethod::name(Self) -> String
+
+pub(all) enum ListAndFilterView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ListAndFilterView::name(Self) -> String
+
+pub(all) enum ListFilterEnrichMethod {
+  ResetQuery
+  SetQuery
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichMethod::name(Self) -> String
+
+pub(all) enum ListFilterEnrichView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichView::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithMethod {
+  ResetQuery
+  SetQuery
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithMethod::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithView::name(Self) -> String
+
+pub(all) enum ListIterationView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ListIterationView::name(Self) -> String
+
+pub(all) enum MinimumViableComponentView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn MinimumViableComponentView::name(Self) -> String
+
+pub(all) enum MultipleViewsView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn MultipleViewsView::name(Self) -> String
+
+pub(all) enum PageView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PageView::name(Self) -> String
+
+pub(all) enum PaginationInput {
+  Next
+  Prev
+} derive(Eq, @debug.Debug)
+pub fn PaginationInput::name(Self) -> String
+pub fn PaginationInput::parse(String) -> Self?
+
+pub(all) enum PaginationMethod {
+  IsFirstPage
+  IsLastPage
+  PageLabel
+} derive(Eq, @debug.Debug)
+pub fn PaginationMethod::name(Self) -> String
+
+pub(all) enum PaginationMsg {
+  Next
+  Prev
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaginationMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum PaginationView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PaginationView::name(Self) -> String
+
+pub(all) enum PanelView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PanelView::name(Self) -> String
+
+pub(all) enum PlaylistMethod {
+  RemoveSong
+} derive(Eq, @debug.Debug)
+pub fn PlaylistMethod::name(Self) -> String
+
+pub(all) enum PlaylistView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PlaylistView::name(Self) -> String
+
+pub(all) enum PseudoXDemoView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PseudoXDemoView::name(Self) -> String
+
+pub(all) enum PushViewMethod {
+  GetToggleLabel
+  ResetQuery
+  SetQuery
+  ToggleView
+} derive(Eq, @debug.Debug)
+pub fn PushViewMethod::name(Self) -> String
+
+pub(all) enum PushViewView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PushViewView::name(Self) -> String
+
+pub(all) enum QuadraticMethod {
+  Classify
+  Discriminant
+  SetA
+  SetB
+  SetC
+} derive(Eq, @debug.Debug)
+pub fn QuadraticMethod::name(Self) -> String
+
+pub(all) enum QuadraticView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn QuadraticView::name(Self) -> String
+
+pub(all) enum RenderWithScopeMethod {
+  SetText
+} derive(Eq, @debug.Debug)
+pub fn RenderWithScopeMethod::name(Self) -> String
+
+pub(all) enum RenderWithScopeView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn RenderWithScopeView::name(Self) -> String
+
+pub(all) enum RequestExampleInput {
+  LoadAnotherWay
+} derive(Eq, @debug.Debug)
+pub fn RequestExampleInput::name(Self) -> String
+pub fn RequestExampleInput::parse(String) -> Self?
+
+pub(all) enum RequestExampleMethod {
+  ResetQuery
+  SetQuery
+  ToggleView
+} derive(Eq, @debug.Debug)
+pub fn RequestExampleMethod::name(Self) -> String
+
+pub(all) enum RequestExampleMsg {
+  LoadAnotherWay
+  Unknown(String, Array[@core.Value])
+}
+pub fn RequestExampleMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RequestExampleView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn RequestExampleView::name(Self) -> String
+
+pub(all) enum SelectOptionView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SelectOptionView::name(Self) -> String
+
+pub(all) enum SelectorEntryMethod {
+  SetLabel
+  SetValue
+} derive(Eq, @debug.Debug)
+pub fn SelectorEntryMethod::name(Self) -> String
+
+pub(all) enum SelectorEntryView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SelectorEntryView::name(Self) -> String
+
+pub(all) enum SelectorMethod {
+  SetSelectedValue
+} derive(Eq, @debug.Debug)
+pub fn SelectorMethod::name(Self) -> String
+
+pub(all) enum SelectorView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SelectorView::name(Self) -> String
+
+pub(all) enum SendReceiveInput {
+  ClearStatus
+  Submit
+} derive(Eq, @debug.Debug)
+pub fn SendReceiveInput::name(Self) -> String
+pub fn SendReceiveInput::parse(String) -> Self?
+
+pub(all) enum SendReceiveMethod {
+  SetDraft
+} derive(Eq, @debug.Debug)
+pub fn SendReceiveMethod::name(Self) -> String
+
+pub(all) enum SendReceiveMsg {
+  ClearStatus
+  Submit
+  Unknown(String, Array[@core.Value])
+}
+pub fn SendReceiveMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SendReceiveView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SendReceiveView::name(Self) -> String
+
+pub(all) enum SeqItemAccessMethod {
+  GetMaxIndex
+  SetCurrentIndex
+  SetCurrentKey
+} derive(Eq, @debug.Debug)
+pub fn SeqItemAccessMethod::name(Self) -> String
+
+pub(all) enum SeqItemAccessView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SeqItemAccessView::name(Self) -> String
+
+pub(all) enum SheetMethod {
+  SetTitle
+} derive(Eq, @debug.Debug)
+pub fn SheetMethod::name(Self) -> String
+
+pub(all) enum SheetView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SheetView::name(Self) -> String
+
+pub(all) enum ShowHideMethod {
+  IncCount
+  Label
+  ToggleIsOpen
+} derive(Eq, @debug.Debug)
+pub fn ShowHideMethod::name(Self) -> String
+
+pub(all) enum ShowHideView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ShowHideView::name(Self) -> String
+
+pub(all) enum SongView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SongView::name(Self) -> String
+
+pub(all) enum StaticViewComponentView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StaticViewComponentView::name(Self) -> String
+
+pub(all) enum StatusView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StatusView::name(Self) -> String
+
+pub(all) enum StylesExampleRootView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StylesExampleRootView::name(Self) -> String
+
+pub(all) enum StylesExampleView {
+  Main
+  One
+  Two
+} derive(Eq, @debug.Debug)
+pub fn StylesExampleView::name(Self) -> String
+
+pub(all) enum SwatchPickerMethod {
+  SetColor
+} derive(Eq, @debug.Debug)
+pub fn SwatchPickerMethod::name(Self) -> String
+
+pub(all) enum SwatchPickerView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SwatchPickerView::name(Self) -> String
+
+pub(all) enum TabbedUIId {
+  TFeatures
+  TOverview
+  TPricing
+} derive(Eq, @debug.Debug)
+pub fn TabbedUIId::id(Self) -> String
+pub fn TabbedUIId::selector(Self) -> String
+
+pub(all) enum TabbedUIMethod {
+  SetTab
+} derive(Eq, @debug.Debug)
+pub fn TabbedUIMethod::name(Self) -> String
+
+pub(all) enum TabbedUIView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TabbedUIView::name(Self) -> String
+
+pub(all) enum TableRowView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TableRowView::name(Self) -> String
+
+pub(all) enum TextDirectiveMethod {
+  GetStrUpper
+} derive(Eq, @debug.Debug)
+pub fn TextDirectiveMethod::name(Self) -> String
+
+pub(all) enum TextDirectiveView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TextDirectiveView::name(Self) -> String
+
+pub(all) enum ToolbarView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ToolbarView::name(Self) -> String
+
+pub(all) enum TrafficLightMethod {
+  Light
+  NextLight
+} derive(Eq, @debug.Debug)
+pub fn TrafficLightMethod::name(Self) -> String
+
+pub(all) enum TrafficLightView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TrafficLightView::name(Self) -> String
+
+pub(all) enum TreeItemInput {
+  OnItemClick
+} derive(Eq, @debug.Debug)
+pub fn TreeItemInput::name(Self) -> String
+pub fn TreeItemInput::parse(String) -> Self?
+
+pub(all) enum TreeItemMethod {
+  AreChildsVisible
+} derive(Eq, @debug.Debug)
+pub fn TreeItemMethod::name(Self) -> String
+
+pub(all) enum TreeItemMsg {
+  OnItemClick
+  Unknown(String, Array[@core.Value])
+}
+pub fn TreeItemMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum TreeItemView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TreeItemView::name(Self) -> String
+
+pub(all) enum TreeRootView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn TreeRootView::name(Self) -> String
+
+pub(all) enum WorkspaceMethod {
+  SheetTitle
+} derive(Eq, @debug.Debug)
+pub fn WorkspaceMethod::name(Self) -> String
+
+pub(all) enum WorkspaceView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn WorkspaceView::name(Self) -> String
 
 // Type aliases
 

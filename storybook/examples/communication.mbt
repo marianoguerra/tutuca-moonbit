@@ -30,17 +30,7 @@ priv struct StatusState {
 /// the path is the only coupling.
 fn status_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="alert alert-info" @show="truthy? .message">
-          #|  <span class="msg" @text=".message"></span>
-          #|  <small>(flashed <x text=".count"></x> times)</small>
-          #|</div>
-        ),
-      ),
-    },
+    views=status_views(),
     name="Status",
     init=StatusState::{ message: "", count: 0 },
     update=(s : StatusState, msg, _ctx) => {
@@ -65,23 +55,7 @@ priv struct SendReceiveState {
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-2">
-          #|  <x render=".status"></x>
-          #|  <input class="input" :value=".draft" @on.input="$setDraft value"
-          #|    @on.keydown+send="submit"
-          #|    placeholder="Type a message and press Enter" />
-          #|  <div class="flex gap-2">
-          #|    <button class="btn btn-primary send" @on.click="submit">Send</button>
-          #|    <button class="btn btn-ghost clear" @on.click="clearStatus">Clear status</button>
-          #|  </div>
-          #|</section>
-        ),
-      ),
-    },
+    views=send_receive_views(),
     name="SendReceive",
     init=SendReceiveState::{ draft: "" },
     specs={ "status": @component.FieldSpec::comp("Status") },
@@ -146,29 +120,7 @@ priv struct TreeItemState {
 /// they are plain class methods in JS too.
 fn tree_item_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <p class="head"
-          #|    @if.class=".isOpen" @then="$'head open type-{.type}'" @else="$'head closed type-{.type}'"
-          #|    @text=".label" @on.click="onItemClick"></p>
-          #|  <div class="pl-3 pt-1 flex flex-col gap-2 kids" @show="$areChildsVisible">
-          #|    <x render-each=".items"></x>
-          #|  </div>
-          #|</section>
-        ),
-        style=(
-          #|user-select: none;
-          #|.head { cursor: pointer; }
-          #|.head:before { content: "⏺️"; margin-right: 0.25rem; }
-          #|.head.type-file:before { content: "📄️"; }
-          #|.head.open.type-dir:before { content: "📂️"; }
-          #|.head.closed.type-dir:before { content: "📁️"; }
-        ),
-      ),
-    },
+    views=tree_item_views(),
     name="TreeItem",
     init=TreeItemState::{
       type_: "dir",
@@ -214,19 +166,7 @@ priv struct TreeRootState {
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex flex-col gap-3">
-          #|  <x render=".root"></x>
-          #|  <ul class="flex flex-col gap-2 max-h-[40vh] overflow-y-auto log">
-          #|    <li @each=".log"><x text="@value"></x></li>
-          #|  </ul>
-          #|</div>
-        ),
-      ),
-    },
+    views=tree_root_views(),
     name="TreeRoot",
     init=TreeRootState::{ log: [] },
     specs={ "root": @component.FieldSpec::comp("TreeItem") },

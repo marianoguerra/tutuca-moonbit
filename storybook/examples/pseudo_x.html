@@ -1,0 +1,29 @@
+<template id="TableRow">
+  <tr>
+    <td class="name" @text=".name"></td>
+    <td class="qty" @text=".qty"></td>
+    <td class="price" @text=".price"></td>
+  </tr>
+</template>
+<template id="ItemTable">
+  <table class="table">
+    <thead><tr><th>Name</th><th>Qty</th><th>Price</th></tr></thead>
+    <tbody>
+      <tr @x render-each=".rows"></tr>
+    </tbody>
+  </table>
+</template>
+<template id="SelectOption">
+  <option :value=".value" @text=".label"></option>
+</template>
+<template id="ItemSelect">
+  <select class="select" :value=".current" @on.input="$setCurrent value">
+    <option @x render-each=".options"></option>
+  </select>
+</template>
+<template id="PseudoXDemo">
+  <div>
+    <x render=".table"></x>
+    <x render=".select"></x>
+  </div>
+</template>

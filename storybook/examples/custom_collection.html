@@ -1,0 +1,9 @@
+<template id="Playlist">
+  <ul class="flex flex-col gap-1">
+    <li @each=".songs" class="flex gap-2 items-center">
+      <x render-it></x>
+      <button class="btn btn-xs rm" @on.click="$removeSong @key">remove</button>
+    </li>
+  </ul>
+</template>
+<template id="Song"><span class="song" @text=".title"></span></template>

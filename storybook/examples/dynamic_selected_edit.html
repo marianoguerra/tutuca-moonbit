@@ -1,0 +1,30 @@
+<template id="DseRoot">
+  <div class="flex flex-col gap-3 p-3">
+    <div class="alert">
+      <span>Selected key = <b class="selected-key" @text=".selectedKey"></b></span>
+    </div>
+    <div class="flex flex-col gap-2">
+      <span class="text-xs opacity-60">Entries — rendered from the *items dynamic (owner):</span>
+      <div @each="*items" class="flex gap-3 items-center owner-row">
+        <x render-it></x>
+        <button class="btn btn-xs btn-soft select" @on.click="selectItem @key">select</button>
+      </div>
+    </div>
+    <x render=".editor"></x>
+  </div>
+</template>
+<template id="DseEditor">
+  <div class="card bg-base-200 p-3 gap-3 editor">
+    <span class="text-xs opacity-60">Editor (child component)</span>
+    <div class="flex flex-col gap-1">
+      <span class="text-xs opacity-60">All entries — rendered from the *items lookup:</span>
+      <div @each="*items" class="flex gap-3 flex-wrap child-items"><x render-it></x></div>
+    </div>
+    <div class="flex flex-col gap-1">
+      <span class="text-xs opacity-60">Editing the *selected entry:</span>
+      <x render="*selected" as="edit"></x>
+    </div>
+  </div>
+</template>
+<template id="DseEntry"><span class="font-mono entry" @text=".name"></span></template>
+<template id="DseEntry:edit"><input class="input input-bordered w-full edit-name" :value=".name" @on.input="$setName value" placeholder="Entry name"></template>

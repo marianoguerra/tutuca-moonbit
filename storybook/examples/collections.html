@@ -1,0 +1,34 @@
+<template id="RenderWithScope">
+  <section class="flex flex-col gap-3">
+    <input class="input" :value=".text" @on.input="$setText value">
+    <div @enrich-with="enrichScope">
+      <p>Text: <span class="v-text" @text=".text"></span></p>
+      <p>Len: <span class="v-len" @text="@len"></span></p>
+      <p>Upper: <span class="v-upper" @text="@upper"></span></p>
+    </div>
+  </section>
+</template>
+<template id="ListFilterEnrich">
+  <section class="flex flex-col gap-3">
+    <input type="search" class="input" :value=".query"
+      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+      placeholder="Filter entries">
+    <ul>
+      <li @each=".items" @when="filterItem" @enrich-with="enrichItem">
+        <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> characters)
+      </li>
+    </ul>
+  </section>
+</template>
+<template id="ListFilterEnrichWith">
+  <section class="flex flex-col gap-3">
+    <input type="search" class="input" :value=".query"
+      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+      placeholder="Filter entries">
+    <ul>
+      <li @each=".items" @when="filterItem" @enrich-with="enrichItem" @loop-with="getIterData">
+        <span @text="@key"></span>: <x text="@value"></x> (<x text="@count"></x> / <x text="@total"></x>)
+      </li>
+    </ul>
+  </section>
+</template>

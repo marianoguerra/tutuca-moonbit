@@ -2,25 +2,138 @@
 package "marianoguerra/tutuca/demo/universal_wasm"
 
 import {
-  "mizchi/js/core",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "moonbitlang/core/debug",
 }
 
 // Values
+pub let component_entry_common_style : String
+
+pub let component_entry_fields : Array[String]
+
+pub let component_entry_global_style : String
+
+pub fn[S : ToJson] component_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn component_entry_views() -> Map[String, @anode.View]
+
+pub let component_list_common_style : String
+
+pub fn[S] component_list_compute((ComponentListMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value]
+
+pub let component_list_fields : Array[String]
+
+pub let component_list_global_style : String
+
+pub fn[S : ToJson] component_list_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] component_list_mutate((ComponentListMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> S)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> S]
+
+pub fn[S] component_list_swap((ComponentListMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?]
+
+pub fn component_list_views() -> Map[String, @anode.View]
+
+pub let component_picker_common_style : String
+
+pub fn[S] component_picker_compute((ComponentPickerMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value]
+
+pub let component_picker_fields : Array[String]
+
+pub let component_picker_global_style : String
+
+pub fn[S : ToJson] component_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] component_picker_mutate((ComponentPickerMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> S)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> S]
+
+pub fn[S] component_picker_swap((ComponentPickerMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?]
+
+pub fn component_picker_views() -> Map[String, @anode.View]
+
 pub fn dyncomp_on_load_error(Int, String) -> Unit
 
 pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
 
 pub fn mount() -> Unit
 
-pub fn on_event(@core.Any) -> Unit
+pub fn on_event(@mizchi/js/core.Any) -> Unit
 
 pub fn refresh_classes() -> Unit
 
 pub fn state_json() -> String
 
+pub let universal_wasm_common_style : String
+
+pub let universal_wasm_fields : Array[String]
+
+pub let universal_wasm_global_style : String
+
+pub fn[S : ToJson] universal_wasm_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn universal_wasm_views() -> Map[String, @anode.View]
+
 // Errors
 
 // Types and methods
+pub(all) enum ComponentEntryInput {
+  OnSelect
+} derive(Eq, @debug.Debug)
+pub fn ComponentEntryInput::name(Self) -> String
+pub fn ComponentEntryInput::parse(String) -> Self?
+
+pub(all) enum ComponentEntryMsg {
+  OnSelect
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentEntryMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ComponentEntryView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ComponentEntryView::name(Self) -> String
+
+pub(all) enum ComponentListInput {
+  OnAdd
+} derive(Eq, @debug.Debug)
+pub fn ComponentListInput::name(Self) -> String
+pub fn ComponentListInput::parse(String) -> Self?
+
+pub(all) enum ComponentListMethod {
+  FlexStyle
+  SetAlign
+  SetDir
+  SetGap
+  SetJustify
+  ToggleShowSettings
+  ToggleWrap
+} derive(Eq, @debug.Debug)
+pub fn ComponentListMethod::name(Self) -> String
+
+pub(all) enum ComponentListMsg {
+  OnAdd
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentListMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ComponentListView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ComponentListView::name(Self) -> String
+
+pub(all) enum ComponentPickerMethod {
+  SetFilterText
+} derive(Eq, @debug.Debug)
+pub fn ComponentPickerMethod::name(Self) -> String
+
+pub(all) enum ComponentPickerView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn ComponentPickerView::name(Self) -> String
+
+pub(all) enum UniversalWasmView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn UniversalWasmView::name(Self) -> String
 
 // Type aliases
 

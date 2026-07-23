@@ -15,6 +15,7 @@ import {
   "moonbitlang/core/cmp",
   "moonbitlang/core/string",
   "moonbitlang/core/json",
+  "moonbitlang/core/debug",
 }
 
 // The headless harness (@harness) mounts a module as a live app on the

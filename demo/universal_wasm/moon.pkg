@@ -11,6 +11,7 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/core" @tutuca,
   "moonbitlang/core/json",
+  "moonbitlang/core/debug",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",

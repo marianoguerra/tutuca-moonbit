@@ -1,7 +1,10 @@
-// The same equivalence claim as gen_views_ir_test.mbt, swept over every view
-// in the ported example library (storybook/examples — 30-odd components
+// The same equivalence claim as gen_views_ir_test.mbt, swept over every
+// runtime-compiled view in the ported example library (storybook/examples —
 // covering loops, scopes, macros, teleport, drag-and-drop, SVG, components
-// rendering components).
+// rendering components). Most examples now build their views ahead of time
+// (their trees are committed *_view_ir_gen.mbt), so `corpus_views()` only
+// sees the ones still parsed at runtime (`raw_view` set) — the macro-using
+// and genuinely-dynamic escape-hatch examples.
 //
 // For each view: parse it, emit its tree as MoonBit source, and check the
 // tree the emitter round-trips through @viewgen matches what the parser
@@ -95,7 +98,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   inspect(
     "\{emitted} views compiled to a tree, \{unsupported} use macros",
     content=(
-      #|306 views compiled to a tree, 18 use macros
+      #|220 views compiled to a tree, 18 use macros
     ),
   )
 }

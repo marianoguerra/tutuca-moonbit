@@ -15,25 +15,7 @@ priv struct EmojiPickerState {
 ///|
 fn emoji_picker_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section @on.emoji-click="onEmojiClick value" class="join join-vertical gap-3 items-center">
-          #|  <p class="hint" @hide="truthy? .current">
-          #|    Select the <em>Toggle Picker</em> button and select an emoji, it will be
-          #|    displayed here
-          #|  </p>
-          #|  <p class="label" @show="truthy? .current">Selected emoji:</p>
-          #|  <span class="current text-9xl" @show="truthy? .current" @text=".current"></span>
-          #|  <button class="btn btn-sm toggle-btn" @on.click="$toggleIsPickerVisible">
-          #|    Toggle Picker
-          #|  </button>
-          #|  <emoji-picker @show=".isPickerVisible"></emoji-picker>
-          #|</section>
-        ),
-      ),
-    },
+    views=emoji_picker_views(),
     name="EmojiPicker",
     init=EmojiPickerState::{ current: Null, isPickerVisible: false },
     update=(s : EmojiPickerState, msg, _ctx) => {

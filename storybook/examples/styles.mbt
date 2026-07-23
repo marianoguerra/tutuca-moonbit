@@ -18,57 +18,10 @@ priv struct StylesNoState {} derive(ToJson, FromJson)
 ///|
 fn styles_example_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <p>View: main</p>
-          #|  <p class="mine">My Style</p>
-          #|  <p class="common">Common Style</p>
-          #|  <p class="styles-example-global-class">Global Style</p>
-          #|</section>
-        ),
-        style=(
-          #|.mine { color: red; }
-        ),
-      ),
-      "one": @anode.View::new(
-        "one",
-        raw_view=(
-          #|<section>
-          #|  <p>View: one</p>
-          #|  <p class="mine">My Style</p>
-          #|  <p class="common">Common Style</p>
-          #|  <p class="styles-example-global-class">Global Style</p>
-          #|</section>
-        ),
-      ),
-      "two": @anode.View::new(
-        "two",
-        raw_view=(
-          #|<section>
-          #|  <p>View: two</p>
-          #|  <p class="mine">My Style</p>
-          #|  <p class="common">Common Style</p>
-          #|  <p class="styles-example-global-class">Global Style</p>
-          #|</section>
-        ),
-        style=(
-          #|.mine { color: orange; text-decoration: underline; }
-        ),
-      ),
-    },
+    views=styles_example_views(),
     name="StylesExample",
-    common_style=(
-      #|padding: 0.75rem;
-      #|border: 1px solid currentColor;
-      #|border-radius: 0.5rem;
-      #|.common { color: yellow; }
-    ),
-    global_style=(
-      #|.styles-example-global-class { color: green; }
-    ),
+    common_style=styles_example_common_style,
+    global_style=styles_example_global_style,
     init=StylesNoState::{  },
   )
 }
@@ -76,18 +29,7 @@ fn styles_example_comp() -> @component.Component {
 ///|
 fn styles_example_root_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <x render=".value"></x>
-          #|  <x render=".value" as="one"></x>
-          #|  <x render=".value" as="two"></x>
-          #|</section>
-        ),
-      ),
-    },
+    views=styles_example_root_views(),
     name="StylesExampleRoot",
     init=StylesNoState::{  },
     specs={ "value": @component.FieldSpec::comp("StylesExample") },

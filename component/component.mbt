@@ -77,7 +77,7 @@ fn new_component(
     alter_names,
     generated_names,
     has_update,
-    make_fn: _args => @tutuca.Value::Null,
+    make_fn: _args => Null,
     raw_provide: provide,
     raw_lookup: lookup,
     provide: Map([]),

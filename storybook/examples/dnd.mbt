@@ -45,35 +45,7 @@ priv struct DnDState {
 ///|
 fn dnd_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <input type="search" class="input" :value=".query"
-          #|    @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-          #|    placeholder="Filter entries" />
-          #|  <div>
-          #|    <div class="cursor-grab row" @each=".items" @when="filterItem"
-          #|      draggable="true"
-          #|      data-dragtype="my-list-item"
-          #|      data-droptarget="my-list-item"
-          #|      @on.drop="onDropOnItem @key dragInfo">
-          #|      <span class="k" @text="@key"></span>: <x text="@value"></x>
-          #|    </div>
-          #|  </div>
-          #|</section>
-        ),
-        style=(
-          #|[data-dragging="1"] { opacity: 0.5; }
-          #|[data-draggingover="my-list-item"] {
-          #|  border-top: 2rem solid transparent;
-          #|  outline: 1px solid #77777777;
-          #|  transition: 0.15s border-top ease;
-          #|}
-        ),
-      ),
-    },
+    views=dn_d_example_views(),
     name="DnDExample",
     init=DnDState::{ items: [], query: "" },
     when={
@@ -85,9 +57,9 @@ fn dnd_comp() -> @component.Component {
       },
     },
     update=(s : DnDState, msg, _ctx) => {
-      match msg {
+      match DnDExampleMsg::of_dispatch(msg) {
         // args: [@key (the TARGET row's key), dragInfo]
-        Input("onDropOnItem", [Num(t), Obj(di), ..]) => {
+        Some(OnDropOnItem(Num(t), Obj(di))) => {
           let target = t.to_int()
           // the SOURCE row's key, read off the drag's captured stack
           let source = match di.obj_field("lookupBind") {
@@ -100,7 +72,7 @@ fn dnd_comp() -> @component.Component {
           }
           Some({ ..s, items: move_index_to_index(s.items, source, target) })
         }
-        _ => None
+        Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
       }
     },
   )

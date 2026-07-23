@@ -11,22 +11,9 @@ priv struct ListIterationState {
 
 ///|
 fn list_iteration_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <ul>
-          #|    <li @each=".items"><span class="k" @text="@key"></span>: <x text="@value"></x></li>
-          #|  </ul>
-          #|</section>
-        ),
-      ),
-    },
-    name="ListIteration",
-    init=ListIterationState::{ items: [] },
-  )
+  @component.component(views=list_iteration_views(), name="ListIteration", init=ListIterationState::{
+    items: [],
+  })
 }
 
 ///|

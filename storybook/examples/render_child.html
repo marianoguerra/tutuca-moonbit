@@ -1,0 +1,34 @@
+<template id="Greeting">
+  <p class="p-2 border rounded">
+    Hello, <strong @text=".name"></strong>!
+  </p>
+</template>
+<template id="Page">
+  <section class="flex flex-col gap-2">
+    <h2 class="text-lg">Page header</h2>
+    <x render=".greeting"></x>
+    <p class="opacity-60">&mdash; end of page &mdash;</p>
+  </section>
+</template>
+<template id="Entry">
+  <div class="card bg-base-100 shadow-sm">
+    <div class="card-body">
+      <h2 class="card-title" @text=".title"></h2>
+      <p @text=".description"></p>
+    </div>
+  </div>
+</template>
+<template id="Entry:edit">
+  <div class="card bg-base-100 shadow-sm gap-3">
+    <div class="card-body">
+      <input class="input title" :value=".title" @on.input="$setTitle value">
+      <input class="input desc" :value=".description" @on.input="$setDescription value">
+    </div>
+  </div>
+</template>
+<template id="MultipleViews">
+  <section class="flex flex-col gap-3">
+    <x render=".value"></x>
+    <x render=".value" as="edit"></x>
+  </section>
+</template>

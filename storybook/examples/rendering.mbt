@@ -38,24 +38,7 @@ priv struct PushViewState {
 /// read-only and editable at once.
 fn push_view_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <div class="flex justify-between">
-          #|    <input type="search" class="input" :value=".query"
-          #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-          #|      placeholder="Filter entries" />
-          #|    <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="$toggleView"></button>
-          #|  </div>
-          #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @push-view=".view">
-          #|    <x render-each=".items" @when="filterItem"></x>
-          #|  </div>
-          #|</section>
-        ),
-      ),
-    },
+    views=push_view_views(),
     name="PushView",
     init=PushViewState::{ items: [], query: "", view: "main" },
     mutate={
@@ -123,22 +106,7 @@ priv struct SeqItemAccessState {
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-          #|    @on.input="$setCurrentIndex valueAsInt" />
-          #|  <x render=".byIndex[.currentIndex]"></x>
-          #|  <select class="select" :value=".currentKey" @on.input="$setCurrentKey value">
-          #|    <option @each=".byKey" :value="@key" @text="@value.title"></option>
-          #|  </select>
-          #|  <x render=".byKey[.currentKey]"></x>
-          #|</section>
-        ),
-      ),
-    },
+    views=seq_item_access_views(),
     name="SeqItemAccess",
     init=SeqItemAccessState::{
       byKey: Map([]),
@@ -193,26 +161,7 @@ priv struct PaginationState {
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
 fn pagination_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <div class="join">
-          #|    <button class="btn join-item prev" @on.click="prev" :disabled="$isFirstPage">&lsaquo; Prev</button>
-          #|    <button class="btn join-item btn-disabled label" @text="$pageLabel"></button>
-          #|    <button class="btn join-item next" @on.click="next" :disabled="$isLastPage">Next &rsaquo;</button>
-          #|  </div>
-          #|  <ul class="flex flex-col gap-1">
-          #|    <li @each=".items" @loop-with="paginate" class="flex gap-2 items-center">
-          #|      <span class="badge badge-neutral" @text="@key"></span>
-          #|      <x text="@value"></x>
-          #|    </li>
-          #|  </ul>
-          #|</section>
-        ),
-      ),
-    },
+    views=pagination_views(),
     name="Pagination",
     init=PaginationState::{ items: [], page: 0, pageSize: 5 },
     compute={
@@ -228,11 +177,11 @@ fn pagination_comp() -> @component.Component {
       },
     },
     update=(s : PaginationState, msg, _ctx) => {
-      match msg {
-        Input("prev", _) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
-        Input("next", _) =>
+      match PaginationMsg::of_dispatch(msg) {
+        Some(Prev) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
+        Some(Next) =>
           Some({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })
-        _ => None
+        Some(Unknown(_, _)) | None => None
       }
     },
     loop_with={

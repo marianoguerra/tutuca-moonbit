@@ -85,30 +85,7 @@ fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
 ///|
 fn file_picker_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <label class="flex flex-col gap-1">
-          #|    <span>Pick a file</span>
-          #|    <input type="file" class="file-input" @on.change="onPickFile value" />
-          #|  </label>
-          #|
-          #|  <table class="table" @show=".hasFile">
-          #|    <tbody>
-          #|      <tr><th>Name</th><td class="fname" @text=".name"></td></tr>
-          #|      <tr><th>Size</th><td class="fsize" @text="$sizeLabel"></td></tr>
-          #|      <tr><th>Type</th><td class="ftype" @text="$typeLabel"></td></tr>
-          #|      <tr><th>Last modified</th><td class="fmodified" @text="$lastModifiedLabel"></td></tr>
-          #|    </tbody>
-          #|  </table>
-          #|
-          #|  <p class="empty" @hide=".hasFile">No file selected yet — pick one above.</p>
-          #|</section>
-        ),
-      ),
-    },
+    views=file_picker_views(),
     name="FilePicker",
     // The File metadata is flattened into plain fields so the view can bind
     // each piece reactively. `hasFile` gates summary vs. empty-state.

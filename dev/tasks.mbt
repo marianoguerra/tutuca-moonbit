@@ -108,15 +108,7 @@ pub fn tasks() -> Array[Task] {
     {
       name: "gen-views",
       about: "regenerate the checked-in *_view_gen.mbt from their .html sources",
-      commands: [
-        // One entry per repo-owned view file. Run this after editing an
-        // .html view, and in CI followed by `git diff --exit-code` to catch a
-        // generated module that has drifted from its source.
-        moon("gen-views · demo/counterlib", [
-          "run", "--target", "native", "cmd/main", "--", "gen-views", "demo/counterlib/counter.html",
-          "--name", "Counter",
-        ]),
-      ],
+      commands: gen_views_commands(),
     },
     {
       name: "coverage",
@@ -189,6 +181,54 @@ pub fn tasks() -> Array[Task] {
       ],
     },
   ]
+}
+
+///|
+/// One entry per repo-owned view file. Run after editing an .html view, and in
+/// CI followed by `git diff --exit-code` to catch a generated module that has
+/// drifted from its source. A file whose components carry template ids needs no
+/// `--name`; a bare single-component `<template>` names its component with one.
+fn gen_views_commands() -> Array[Command] {
+  // (relative .html path, --name override or None)
+  let files : Array[(String, String?)] = [
+    ("demo/counterlib/counter.html", Some("Counter")),
+    ("demo/universal_wasm/universal_wasm.html", None),
+    ("storybook/examples/basics.html", None),
+    ("storybook/examples/collections.html", None),
+    ("storybook/examples/communication.html", None),
+    ("storybook/examples/composability.html", Some("Composability")),
+    ("storybook/examples/conditionals.html", None),
+    ("storybook/examples/custom_collection.html", None),
+    ("storybook/examples/dnd.html", Some("DnDExample")),
+    ("storybook/examples/dynamic.html", None),
+    ("storybook/examples/dynamic_selected_edit.html", None),
+    ("storybook/examples/file_picker.html", Some("FilePicker")),
+    ("storybook/examples/graphics.html", None),
+    ("storybook/examples/json.html", None),
+    ("storybook/examples/list_iteration.html", Some("ListIteration")),
+    ("storybook/examples/pseudo_x.html", None),
+    ("storybook/examples/render_child.html", None),
+    ("storybook/examples/rendering.html", None),
+    ("storybook/examples/request.html", Some("RequestExample")),
+    ("storybook/examples/state_and_updates.html", None),
+    ("storybook/examples/styles.html", None),
+    ("storybook/examples/todo.html", None),
+    ("storybook/examples/web_component.html", Some("EmojiPicker")),
+  ]
+  files.map(entry => {
+    let (path, name) = entry
+    let args = [
+      "run", "--target", "native", "cmd/main", "--", "gen-views", path,
+    ]
+    match name {
+      Some(n) => {
+        args.push("--name")
+        args.push(n)
+      }
+      None => ()
+    }
+    moon("gen-views · " + path, args)
+  })
 }
 
 ///|

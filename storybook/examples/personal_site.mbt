@@ -241,7 +241,7 @@ fn ps_entry_comp() -> @component.Component {
         }
       },
     },
-    init=PsEntryState::{
+    init={
       title: "?",
       description: "",
       lang: "en",

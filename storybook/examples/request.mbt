@@ -29,27 +29,7 @@ priv struct RequestExampleState {
 ///|
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="flex flex-col gap-3">
-          #|  <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>
-          #|  <div class="flex justify-between" @hide=".isLoading">
-          #|    <input type="search" class="input" :value=".query"
-          #|      @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
-          #|      placeholder="Filter entries" />
-          #|    <button class="btn bnt-sm btn-primary btn-outline another" @on.click="loadAnotherWay">Load Another Way</button>
-          #|    <button class="btn bnt-sm btn-primary toggle-btn" @text=".view" @on.click="$toggleView"></button>
-          #|  </div>
-          #|  <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @hide=".isLoading" @push-view=".view">
-          #|    <x render-each=".items" @when="filterItem"></x>
-          #|  </div>
-          #|  <div class="error" @show="truthy? .error"><x text=".error"></x></div>
-          #|</section>
-        ),
-      ),
-    },
+    views=request_example_views(),
     name="RequestExample",
     init=RequestExampleState::{
       items: [],

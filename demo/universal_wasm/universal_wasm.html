@@ -1,0 +1,61 @@
+<template id="UniversalWasm">
+  <div class="min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3">
+    <div class="rounded-box border-2 border-dashed border-base-300 bg-base-100 p-4 text-center opacity-70" data-droptarget="tutuca-wasm-component">
+      Drop a <code class="font-mono">.tutuca.tar.gz</code> bundle to register its wasm components
+    </div>
+    <p class="text-sm opacity-70" @text=".status"></p>
+    <x render=".list"></x>
+  </div>
+</template>
+<template id="ComponentList">
+  <section class="indicator w-full">
+    <button class="indicator-item indicator-top indicator-start btn btn-sm btn-ghost btn-circle" title="Layout settings" @on.click="$toggleShowSettings">
+      <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
+    </button>
+    <button class="indicator-item indicator-top indicator-end btn btn-sm btn-ghost btn-circle" title="Add component" @on.click="onAdd">
+      <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
+    </button>
+    <div class="w-full flex flex-col gap-3 pt-6 min-h-[5rem]">
+      <div class="card bg-base-100 border border-base-300 p-3" @show=".showSettings">
+        <div class="flex flex-wrap gap-3 items-end">
+          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">direction</span>
+            <select class="select select-bordered select-sm" :value=".dir" @on.input="$setDir value">
+              <option value="row">row</option><option value="column">column</option><option value="row-reverse">row-reverse</option><option value="column-reverse">column-reverse</option>
+            </select></label>
+          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">justify</span>
+            <select class="select select-bordered select-sm" :value=".justify" @on.input="$setJustify value">
+              <option value="flex-start">flex-start</option><option value="center">center</option><option value="flex-end">flex-end</option><option value="space-between">space-between</option><option value="space-around">space-around</option>
+            </select></label>
+          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">align</span>
+            <select class="select select-bordered select-sm" :value=".align" @on.input="$setAlign value">
+              <option value="stretch">stretch</option><option value="flex-start">flex-start</option><option value="center">center</option><option value="flex-end">flex-end</option>
+            </select></label>
+          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">gap (px)</span>
+            <input type="number" class="input input-bordered input-sm w-20" :value=".gap" @on.input="$setGap valueAsInt"></label>
+          <label class="flex items-center gap-2 cursor-pointer"><span class="text-xs opacity-70">wrap</span>
+            <input type="checkbox" class="checkbox checkbox-sm" :checked=".wrap" @on.input="$toggleWrap"></label>
+        </div>
+      </div>
+      <p class="text-sm italic opacity-60" @show="empty? .entries">Empty canvas — ⚙ to change the layout, ＋ to add a component.</p>
+      <div class="items-start" :style="$flexStyle"><x render-each=".entries"></x></div>
+    </div>
+  </section>
+</template>
+<template id="ComponentPicker">
+  <div class="w-full">
+    <div class="card bg-base-100 border border-base-300 shadow-sm" @hide="truthy? .selected">
+      <div class="card-body gap-2 p-3">
+        <input class="input input-bordered input-sm w-full" placeholder="Filter components…" :value=".filterText" @on.input="$setFilterText value">
+        <p class="text-sm italic opacity-60" @show="empty? .items">No components yet — drop a <code class="font-mono">.tutuca.tar.gz</code> bundle.</p>
+        <ul class="menu menu-sm bg-base-100 rounded-box p-0" @hide="empty? .items"><x render-each=".items" @when="matchesFilter"></x></ul>
+      </div>
+    </div>
+    <div @show="truthy? .selected"><x render=".selected"></x></div>
+  </div>
+</template>
+<template id="ComponentEntry">
+  <li class="cursor-pointer rounded-lg px-3 py-2 hover:bg-base-300 flex items-center gap-2" @on.click="onSelect">
+    <span class="badge badge-sm badge-ghost">wasm</span>
+    <span class="text-sm" @text=".label"></span>
+  </li>
+</template>

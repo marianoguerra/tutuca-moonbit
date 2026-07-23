@@ -1,0 +1,38 @@
+<template id="StylesExample">
+  <style>.mine { color: red; }</style>
+  <section>
+    <p>View: main</p>
+    <p class="mine">My Style</p>
+    <p class="common">Common Style</p>
+    <p class="styles-example-global-class">Global Style</p>
+  </section>
+</template>
+<template id="StylesExample:one">
+  <section>
+    <p>View: one</p>
+    <p class="mine">My Style</p>
+    <p class="common">Common Style</p>
+    <p class="styles-example-global-class">Global Style</p>
+  </section>
+</template>
+<template id="StylesExample:two">
+  <style>.mine { color: orange; text-decoration: underline; }</style>
+  <section>
+    <p>View: two</p>
+    <p class="mine">My Style</p>
+    <p class="common">Common Style</p>
+    <p class="styles-example-global-class">Global Style</p>
+  </section>
+</template>
+<template id="StylesExampleRoot">
+  <section class="flex flex-col gap-3">
+    <x render=".value"></x>
+    <x render=".value" as="one"></x>
+    <x render=".value" as="two"></x>
+  </section>
+</template>
+<style>padding: 0.75rem;
+border: 1px solid currentColor;
+border-radius: 0.5rem;
+.common { color: yellow; }</style>
+<style data-global>.styles-example-global-class { color: green; }</style>
