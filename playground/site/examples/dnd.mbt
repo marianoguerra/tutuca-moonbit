@@ -22,7 +22,7 @@ fn build() -> @component.ModuleDef {
         _ => true
       },
     },
-    update=(s : DnDState, msg, _ctx) => match DnDExampleMsg::of_dispatch(msg) {
+    update=(s : DnDState, msg, _ctx) => match DnDExampleMsg::from_dispatch(msg) {
       // args: [@key (the TARGET row's key), dragInfo]
       Some(OnDropOnItem(Num(t), Obj(di))) => {
         let target = t.to_int()

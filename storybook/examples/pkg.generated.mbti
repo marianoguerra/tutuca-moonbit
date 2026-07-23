@@ -1131,7 +1131,7 @@ pub(all) enum CounterMsg {
   Dec
   Unknown(String, Array[@core.Value])
 }
-pub fn CounterMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum CounterView {
   Main
@@ -1159,7 +1159,7 @@ pub(all) enum DnDExampleMsg {
   OnDropOnItem(@core.Value, @core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn DnDExampleMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn DnDExampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum DnDExampleView {
   Main
@@ -1192,7 +1192,7 @@ pub(all) enum DseRootMsg {
   SelectItem(@core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn DseRootMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn DseRootMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum DseRootView {
   Main
@@ -1214,7 +1214,7 @@ pub(all) enum EmojiPickerMsg {
   OnEmojiClick(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn EmojiPickerMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn EmojiPickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum EmojiPickerView {
   Main
@@ -1236,7 +1236,7 @@ pub(all) enum EntryEditorAndSelectorMsg {
   OnAddItem
   Unknown(String, Array[@core.Value])
 }
-pub fn EntryEditorAndSelectorMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn EntryEditorAndSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum EntryEditorAndSelectorView {
   Main
@@ -1271,7 +1271,7 @@ pub(all) enum EventModifiersMsg {
   OnInput(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn EventModifiersMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn EventModifiersMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum EventModifiersView {
   Main
@@ -1304,7 +1304,7 @@ pub(all) enum FilePickerMsg {
   OnPickFile(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn FilePickerMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn FilePickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum FilePickerView {
   Main
@@ -1357,7 +1357,7 @@ pub(all) enum ItemsMsg {
   OnAddItem
   Unknown(String, Array[@core.Value])
 }
-pub fn ItemsMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn ItemsMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum ItemsView {
   Main
@@ -1381,7 +1381,7 @@ pub(all) enum JsonArrayMsg {
   OnDropOnItem(@core.Value, @core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn JsonArrayMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn JsonArrayMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum JsonArrayView {
   Main
@@ -1440,7 +1440,7 @@ pub(all) enum JsonObjectMsg {
   OnDropOnItem(@core.Value, @core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn JsonObjectMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn JsonObjectMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum JsonObjectView {
   Main
@@ -1544,7 +1544,7 @@ pub(all) enum PaginationMsg {
   Prev
   Unknown(String, Array[@core.Value])
 }
-pub fn PaginationMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn PaginationMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum PaginationView {
   Main
@@ -1649,7 +1649,7 @@ pub(all) enum RequestExampleMsg {
   LoadAnotherWay
   Unknown(String, Array[@core.Value])
 }
-pub fn RequestExampleMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn RequestExampleMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RequestExampleView {
   Main
@@ -1680,7 +1680,7 @@ pub(all) enum RootMsg {
   OnToggleSortByEnd
   Unknown(String, Array[@core.Value])
 }
-pub fn RootMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum RootView {
   Main
@@ -1730,7 +1730,7 @@ pub(all) enum SendReceiveMsg {
   Submit
   Unknown(String, Array[@core.Value])
 }
-pub fn SendReceiveMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn SendReceiveMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum SendReceiveView {
   Main
@@ -1877,7 +1877,7 @@ pub(all) enum TreeItemMsg {
   OnItemClick
   Unknown(String, Array[@core.Value])
 }
-pub fn TreeItemMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn TreeItemMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum TreeItemView {
   Main

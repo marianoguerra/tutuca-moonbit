@@ -14,7 +14,7 @@ fn build() -> @component.ModuleDef {
     views=counter_views(),
     name="Counter",
     init=CounterState::{ count: 0 },
-    update=(s : CounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
+    update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
       Some(Unknown(_, _)) | None => None
     },

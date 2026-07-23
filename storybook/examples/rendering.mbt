@@ -177,7 +177,7 @@ fn pagination_comp() -> @component.Component {
       },
     },
     update=(s : PaginationState, msg, _ctx) => {
-      match PaginationMsg::of_dispatch(msg) {
+      match PaginationMsg::from_dispatch(msg) {
         Some(Prev) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
         Some(Next) =>
           Some({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })

@@ -69,7 +69,7 @@ For a component named `Counter` the generated module declares
 `counter_views()` (the built views, for `views~`),
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
-`CounterMsg::of_dispatch`), `CounterMethod` with `counter_mutate` /
+`CounterMsg::from_dispatch`), `CounterMethod` with `counter_mutate` /
 `counter_compute` / `counter_swap` (the `$`-callables, as exhaustive matches),
 `CounterView` / `CounterId`, and `counter_fields` /
 `counter_missing_fields`. The package it lands in must import
@@ -79,7 +79,7 @@ inferred from the argument shapes at the call sites, plus
 The payoff is in `update` (see `demo/counterlib/` for the worked example):
 
 ```mbt nocheck
-update=(s : CounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
+update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
   Some(Add(d)) => ...          // `d` is a Double: `@on.click="add 1"`
   Some(SetLabel(l)) => ...     // `l` is a String: `@on.input="setLabel value"`
   Some(ResetCount) => None

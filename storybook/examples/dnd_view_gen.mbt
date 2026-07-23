@@ -65,7 +65,7 @@ pub(all) enum DnDExampleMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn DnDExampleMsg::of_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
+pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

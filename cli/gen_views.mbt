@@ -89,7 +89,7 @@ let gen_views_help : String =
   #|    counter_main_view / counter_views()  the view sources, for component()
   #|    CounterInput / CounterMsg            @on handler names, with the argument
   #|                                         shapes inferred from the call sites,
-  #|                                         plus CounterMsg::of_dispatch
+  #|                                         plus CounterMsg::from_dispatch
   #|    CounterMethod + counter_mutate/…     $-callable names as exhaustive matches
   #|    CounterView / CounterId              view names and element ids
   #|    counter_fields / …_missing_fields    the state fields the views read

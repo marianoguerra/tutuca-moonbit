@@ -264,7 +264,7 @@ fn emit_component(
       "///|\n" +
       "/// None for Receive / Bubble / Response — those names are raised by\n" +
       "/// component code, never written in a view, so the views cannot type them.\n" +
-      "pub fn \{t}Msg::of_dispatch(d : @component.Dispatch) -> \{t}Msg? {\n" +
+      "pub fn \{t}Msg::from_dispatch(d : @component.Dispatch) -> \{t}Msg? {\n" +
       "  guard d is Input(name, args) else { return None }\n" +
       "  Some(\n" +
       "    match (name, args) {\n",

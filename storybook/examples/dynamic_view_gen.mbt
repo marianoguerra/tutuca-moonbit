@@ -301,7 +301,7 @@ pub(all) enum EntryEditorAndSelectorMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn EntryEditorAndSelectorMsg::of_dispatch(
+pub fn EntryEditorAndSelectorMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> EntryEditorAndSelectorMsg? {
   guard d is Input(name, args) else { return None }

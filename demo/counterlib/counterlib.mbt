@@ -31,7 +31,7 @@ pub fn counter_comp() -> @component.Component {
     views=counter_views(),
     init=CounterState::{ label: "Counter", count: 0, history: [] },
     update=(s : CounterState, msg, _ctx) => {
-      match CounterMsg::of_dispatch(msg) {
+      match CounterMsg::from_dispatch(msg) {
         Some(Add(d)) => {
           let next = s.count + d.to_int()
           Some({ ..s, count: next, history: s.history + [next] })

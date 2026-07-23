@@ -322,7 +322,7 @@ pub(all) enum PaginationMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn PaginationMsg::of_dispatch(d : @component.Dispatch) -> PaginationMsg? {
+pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

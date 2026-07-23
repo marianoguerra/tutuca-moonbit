@@ -65,7 +65,7 @@ pub(all) enum CounterMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn CounterMsg::of_dispatch(d : @component.Dispatch) -> CounterMsg? {
+pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

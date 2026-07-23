@@ -32,7 +32,7 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
     views=items_views(),
     name="Items",
     init=TodoItemsState::{ items: [] },
-    update=(s : TodoItemsState, msg, _ctx) => match ItemsMsg::of_dispatch(msg) {
+    update=(s : TodoItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
       Some(Unknown(_, _)) | None => None
     },

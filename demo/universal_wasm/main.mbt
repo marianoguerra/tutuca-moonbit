@@ -45,7 +45,7 @@ fn component_entry_comp() -> @component.Component {
     name="ComponentEntry",
     init=EntryState::{ module_: "", name: "", label: "" },
     update=(s : EntryState, msg, ctx) => {
-      match ComponentEntryMsg::of_dispatch(msg) {
+      match ComponentEntryMsg::from_dispatch(msg) {
         Some(OnSelect) => {
           ctx.bubble("componentSelected", [Str(s.module_), Str(s.name)])
           Some(s)

@@ -115,7 +115,7 @@ instead of making you remember to regenerate.
 For `--name Counter` the module declares `counter_views()` /
 `counter_common_style` / `counter_global_style` (feed straight into
 `component()` as `views~` / `common_style~` / `global_style~`),
-`CounterInput` + `CounterMsg` with `CounterMsg::of_dispatch` (payload types
+`CounterInput` + `CounterMsg` with `CounterMsg::from_dispatch` (payload types
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
 -> `@tutuca.Value`), `CounterMethod` + `counter_mutate`/`_compute`/`_swap`

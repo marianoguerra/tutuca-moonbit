@@ -117,7 +117,9 @@ pub(all) enum SendReceiveMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn SendReceiveMsg::of_dispatch(d : @component.Dispatch) -> SendReceiveMsg? {
+pub fn SendReceiveMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> SendReceiveMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
@@ -279,7 +281,7 @@ pub(all) enum TreeItemMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn TreeItemMsg::of_dispatch(d : @component.Dispatch) -> TreeItemMsg? {
+pub fn TreeItemMsg::from_dispatch(d : @component.Dispatch) -> TreeItemMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

@@ -56,7 +56,7 @@ fn dse_root_comp() -> @component.Component {
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
     update=(s : DseRootState, msg, _ctx) => {
-      match DseRootMsg::of_dispatch(msg) {
+      match DseRootMsg::from_dispatch(msg) {
         Some(SelectItem(Str(key))) => Some({ ..s, selectedKey: key })
         Some(SelectItem(_)) | Some(Unknown(_, _)) | None => None
       }

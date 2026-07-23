@@ -202,7 +202,7 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
     name="JsonArray",
     init=JsonItemsState::{ items: [] },
     update=(s : JsonItemsState, msg, _ctx) => {
-      match JsonArrayMsg::of_dispatch(msg) {
+      match JsonArrayMsg::from_dispatch(msg) {
         // add a fresh JsonSelector so the user can pick the new element's type
         Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
         Some(OnDropOnItem(a0, a1)) =>
@@ -238,7 +238,7 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
     name="JsonObject",
     init=JsonItemsState::{ items: [] },
     update=(s : JsonItemsState, msg, _ctx) => {
-      match JsonObjectMsg::of_dispatch(msg) {
+      match JsonObjectMsg::from_dispatch(msg) {
         // a key/value row whose value is a fresh selector
         Some(AddItem) => {
           let row = match reg.comps.get("JsonObjectKeyVal") {

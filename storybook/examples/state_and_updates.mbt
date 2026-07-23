@@ -120,7 +120,7 @@ fn event_modifiers_comp() -> @component.Component {
     name="EventModifiers",
     init=EventModifiersState::{ query: "", lastSentSearch: Null },
     update=(s : EventModifiersState, msg, _ctx) => {
-      match EventModifiersMsg::of_dispatch(msg) {
+      match EventModifiersMsg::from_dispatch(msg) {
         Some(OnInput(v)) => Some({ ..s, query: v })
         Some(Unknown(_, _)) | None => None
       }

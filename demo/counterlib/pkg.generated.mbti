@@ -51,7 +51,7 @@ pub(all) enum CounterMsg {
   SetLabel(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn CounterMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum CounterView {
   Main

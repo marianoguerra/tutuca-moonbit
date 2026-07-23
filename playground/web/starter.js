@@ -45,7 +45,7 @@ fn build() -> @component.ModuleDef {
     init=CounterState::{ count: 0, label: "clicks" },
     // CounterMsg is generated from the @on handlers in the View tab, with
     // payload types read off the call sites — \`add 1\` makes Add(Double).
-    update=(s : CounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
+    update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Add(d)) => Some({ ..s, count: s.count + d.to_int() })
       Some(Unknown(_, _)) | None => None
     },

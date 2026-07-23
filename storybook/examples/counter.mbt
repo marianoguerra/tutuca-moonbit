@@ -23,7 +23,7 @@ fn counter_comp() -> @component.Component {
       }
     }),
     update=(s : ExampleCounterState, msg, _ctx) => {
-      match CounterMsg::of_dispatch(msg) {
+      match CounterMsg::from_dispatch(msg) {
         // views call input handlers by bare name: @on.click="dec"
         Some(Dec) => Some({ count: s.count - 1 })
         Some(Unknown(_, _)) | None => None

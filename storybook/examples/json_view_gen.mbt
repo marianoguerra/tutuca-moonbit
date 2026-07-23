@@ -592,7 +592,7 @@ pub(all) enum JsonArrayMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn JsonArrayMsg::of_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
+pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
@@ -873,7 +873,7 @@ pub(all) enum JsonObjectMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn JsonObjectMsg::of_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
+pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

@@ -65,7 +65,9 @@ pub(all) enum EmojiPickerMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn EmojiPickerMsg::of_dispatch(d : @component.Dispatch) -> EmojiPickerMsg? {
+pub fn EmojiPickerMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> EmojiPickerMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

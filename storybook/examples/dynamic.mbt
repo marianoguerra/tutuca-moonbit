@@ -61,7 +61,7 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
     specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
     update=(s : EntryEditorState, msg, _ctx) => {
-      match EntryEditorAndSelectorMsg::of_dispatch(msg) {
+      match EntryEditorAndSelectorMsg::from_dispatch(msg) {
         Some(OnAddItem) => {
           let num = s.items.length() + 1
           Some({

@@ -65,7 +65,7 @@ pub(all) enum DseRootMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn DseRootMsg::of_dispatch(d : @component.Dispatch) -> DseRootMsg? {
+pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {

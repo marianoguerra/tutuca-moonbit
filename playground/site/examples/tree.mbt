@@ -32,7 +32,7 @@ fn tree_item_comp() -> @component.Component {
       ),
     },
     // A raw `match msg`: this component handles a Bubble, which the views
-    // cannot declare, so `TreeItemMsg::of_dispatch` cannot type it.
+    // cannot declare, so `TreeItemMsg::from_dispatch` cannot type it.
     update=(s : TreeItemState, msg, ctx) => match msg {
       // emit an event any ancestor may observe (payload: this item's own
       // instance value, read off the dispatch path — its leaf is self),

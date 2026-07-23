@@ -20,7 +20,7 @@ fn cx_counter_comp() -> @component.Component {
     name="Counter",
     init=CxCounterState::{ count: 0 },
     mutate={ "inc": (s : CxCounterState, _a) => { count: s.count + 1 } },
-    update=(s : CxCounterState, msg, _ctx) => match CounterMsg::of_dispatch(msg) {
+    update=(s : CxCounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
       Some(Unknown(_, _)) | None => None
     },
@@ -50,7 +50,7 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
     views=items_views(),
     name="Items",
     init=CxTodoItemsState::{ items: [] },
-    update=(s : CxTodoItemsState, msg, _ctx) => match ItemsMsg::of_dispatch(msg) {
+    update=(s : CxTodoItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
       Some(Unknown(_, _)) | None => None
     },

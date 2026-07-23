@@ -112,7 +112,7 @@ pub(all) enum ComponentListMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn ComponentListMsg::of_dispatch(
+pub fn ComponentListMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> ComponentListMsg? {
   guard d is Input(name, args) else { return None }
@@ -435,7 +435,7 @@ pub(all) enum ComponentEntryMsg {
 ///|
 /// None for Receive / Bubble / Response — those names are raised by
 /// component code, never written in a view, so the views cannot type them.
-pub fn ComponentEntryMsg::of_dispatch(
+pub fn ComponentEntryMsg::from_dispatch(
   d : @component.Dispatch,
 ) -> ComponentEntryMsg? {
   guard d is Input(name, args) else { return None }

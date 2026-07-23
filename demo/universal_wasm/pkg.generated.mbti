@@ -85,7 +85,7 @@ pub(all) enum ComponentEntryMsg {
   OnSelect
   Unknown(String, Array[@marianoguerra/tutuca/core.Value])
 }
-pub fn ComponentEntryMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentEntryMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum ComponentEntryView {
   Main
@@ -113,7 +113,7 @@ pub(all) enum ComponentListMsg {
   OnAdd
   Unknown(String, Array[@marianoguerra/tutuca/core.Value])
 }
-pub fn ComponentListMsg::of_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentListMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum ComponentListView {
   Main

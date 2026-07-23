@@ -8,6 +8,11 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- The generated `XMsg::of_dispatch` is now `XMsg::from_dispatch`, matching the
+  `from_*` prefix the rest of the codebase and MoonBit core use for named
+  source conversions (`View::from_ir`, `Value::from_json`). The suffix stays:
+  it names the source type, which is the only place a reader of an `update`
+  closure learns that `msg` is a `@component.Dispatch`.
 - `@viewgen.compiled_views` is now `@viewgen.build_views`. The old name
   predates 0.5.0, when the component argument was `compiled_views~`; with
   views always being `@anode.View` values there is no compiled-vs-uncompiled
@@ -18,6 +23,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- Every GitHub link on the landing site pointed at `marianoguerra/tutuca`,
+  the upstream JS framework, rather than at this port
+  (`marianoguerra/tutuca-moonbit`). "What's Next" now links both, and the
+  nav / hero / footer link the port.
 - The example library's last runtime-built static views (counter,
   personal_site, filter_paginate) are compiled ahead of time. What still
   builds views at runtime does so because it cannot be generated: dyncomp
