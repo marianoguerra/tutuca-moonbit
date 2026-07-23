@@ -99,9 +99,7 @@ fn[S : ToJson] encode_state(s : S) -> Map[String, @tutuca.Value] {
       Object(m) => {
         let out : Map[String, @tutuca.Value] = Map([])
         for k, jv in m {
-          let v : @tutuca.Value = @json.from_json(jv) catch {
-            _ => Null
-          }
+          let v : @tutuca.Value = @json.from_json(jv) catch { _ => Null }
           out[k] = v
         }
         out

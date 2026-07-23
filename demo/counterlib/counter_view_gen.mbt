@@ -141,4 +141,3 @@ pub fn CounterId::id(self : CounterId) -> String {
 pub fn CounterId::selector(self : CounterId) -> String {
   "#" + self.id()
 }
-

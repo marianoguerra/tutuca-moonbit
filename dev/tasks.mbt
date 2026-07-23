@@ -188,6 +188,9 @@ pub fn tasks() -> Array[Task] {
 /// CI followed by `git diff --exit-code` to catch a generated module that has
 /// drifted from its source. A file whose components carry template ids needs no
 /// `--name`; a bare single-component `<template>` names its component with one.
+///
+/// The CLI emits unformatted source, so the run ends with `moon fmt` — that is
+/// what makes the checked-in pair reproducible and the drift check meaningful.
 fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
@@ -215,7 +218,7 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/todo.html", None),
     ("storybook/examples/web_component.html", Some("EmojiPicker")),
   ]
-  files.map(entry => {
+  let commands = files.map(entry => {
     let (path, name) = entry
     let args = [
       "run", "--target", "native", "cmd/main", "--", "gen-views", path,
@@ -229,6 +232,8 @@ fn gen_views_commands() -> Array[Command] {
     }
     moon("gen-views · " + path, args)
   })
+  commands.push(moon("fmt", ["fmt"]))
+  commands
 }
 
 ///|

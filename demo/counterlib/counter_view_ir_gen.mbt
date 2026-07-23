@@ -24,9 +24,7 @@ fn counter_main_view_ir() -> @anode.View {
           Dom({
             tag: "span",
             attrs: ConstAttrs({ "id": LStr("count") }),
-            childs: [
-              RenderText({ node_id: Some(1), val: Field("count") }),
-            ],
+            childs: [RenderText({ node_id: Some(1), val: Field("count") })],
             ns: None,
           }),
         ],
@@ -36,33 +34,31 @@ fn counter_main_view_ir() -> @anode.View {
       Dom({
         tag: "button",
         attrs: ConstAttrs({ "id": LStr("inc"), "data-eid": LNum(0.0) }),
-        childs: [
-          Text({ val: "+1" }),
-        ],
+        childs: [Text({ val: "+1" })],
         ns: None,
       }),
       Text({ val: " " }),
       Dom({
         tag: "button",
         attrs: ConstAttrs({ "id": LStr("dec"), "data-eid": LNum(1.0) }),
-        childs: [
-          Text({ val: "-1" }),
-        ],
+        childs: [Text({ val: "-1" })],
         ns: None,
       }),
       Text({ val: " " }),
       Dom({
         tag: "button",
         attrs: ConstAttrs({ "id": LStr("reset"), "data-eid": LNum(2.0) }),
-        childs: [
-          Text({ val: "reset" }),
-        ],
+        childs: [Text({ val: "reset" })],
         ns: None,
       }),
       Text({ val: " " }),
       Dom({
         tag: "input",
-        attrs: DynAttrs([ConstA(name="id", val=Const(lit=LStr("label"), from_macro=false)), Plain(name="value", val=Field("label")), ConstA(name="data-eid", val=Const(lit=LNum(3.0), from_macro=false))]),
+        attrs: DynAttrs([
+          ConstA(name="id", val=Const(lit=LStr("label"), from_macro=false)),
+          Plain(name="value", val=Field("label")),
+          ConstA(name="data-eid", val=Const(lit=LNum(3.0), from_macro=false)),
+        ]),
         childs: [],
         ns: None,
       }),
@@ -73,13 +69,16 @@ fn counter_main_view_ir() -> @anode.View {
         childs: [
           Each({
             node_id: 3,
-            iter_info: { val: Field("history"), when_val: None, loop_with_val: None, enrich_with_val: None },
+            iter_info: {
+              val: Field("history"),
+              when_val: None,
+              loop_with_val: None,
+              enrich_with_val: None,
+            },
             node: Dom({
               tag: "li",
               attrs: ConstAttrs(Map([])),
-              childs: [
-                RenderText({ node_id: Some(2), val: Bind("value") }),
-              ],
+              childs: [RenderText({ node_id: Some(2), val: Bind("value") })],
               ns: None,
             }),
             from_render_each: false,
@@ -94,26 +93,61 @@ fn counter_main_view_ir() -> @anode.View {
     {
       id: 0,
       handlers: [
-        { name: "click", handler: { handler: HandlerName(name="add", ns=Input), args: [Const(lit=LNum(1.0), from_macro=false)] }, modifiers: [] },
+        {
+          name: "click",
+          handler: {
+            handler: HandlerName(name="add", ns=Input),
+            args: [Const(lit=LNum(1.0), from_macro=false)],
+          },
+          modifiers: [],
+        },
       ],
     },
     {
       id: 1,
       handlers: [
-        { name: "click", handler: { handler: HandlerName(name="add", ns=Input), args: [Const(lit=LNum(-1.0), from_macro=false)] }, modifiers: [] },
+        {
+          name: "click",
+          handler: {
+            handler: HandlerName(name="add", ns=Input),
+            args: [Const(lit=LNum(-1.0), from_macro=false)],
+          },
+          modifiers: [],
+        },
       ],
     },
     {
       id: 2,
       handlers: [
-        { name: "click", handler: { handler: HandlerName(name="resetCount", ns=Input), args: [] }, modifiers: [] },
+        {
+          name: "click",
+          handler: {
+            handler: HandlerName(name="resetCount", ns=Input),
+            args: [],
+          },
+          modifiers: [],
+        },
       ],
     },
     {
       id: 3,
       handlers: [
-        { name: "input", handler: { handler: HandlerName(name="setLabel", ns=Input), args: [Name("value")] }, modifiers: [] },
-        { name: "keydown", handler: { handler: HandlerName(name="setLabel", ns=Input), args: [Const(lit=LStr("sent!"), from_macro=false)] }, modifiers: ["send"] },
+        {
+          name: "input",
+          handler: {
+            handler: HandlerName(name="setLabel", ns=Input),
+            args: [Name("value")],
+          },
+          modifiers: [],
+        },
+        {
+          name: "keydown",
+          handler: {
+            handler: HandlerName(name="setLabel", ns=Input),
+            args: [Const(lit=LStr("sent!"), from_macro=false)],
+          },
+          modifiers: ["send"],
+        },
       ],
     },
   ]
@@ -129,8 +163,5 @@ fn counter_main_view_ir() -> @anode.View {
 /// The component's views, already compiled — pass as `views~` to
 /// @component.component.
 pub fn counter_views() -> Map[String, @anode.View] {
-  {
-    "main": counter_main_view_ir(),
-  }
+  { "main": counter_main_view_ir() }
 }
-
