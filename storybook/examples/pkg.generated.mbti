@@ -11,6 +11,16 @@ import {
 // Values
 pub fn all_examples() -> Array[ExampleModule]
 
+pub let alt_url_common_style : String
+
+pub let alt_url_fields : Array[String]
+
+pub let alt_url_global_style : String
+
+pub fn[S : ToJson] alt_url_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn alt_url_views() -> Map[String, @anode.View]
+
 pub let attribute_binding_common_style : String
 
 pub fn[S] attribute_binding_compute((AttributeBindingMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
@@ -65,7 +75,23 @@ pub fn[S] conditional_attributes_swap((ConditionalAttributesMethod) -> ((S, Arra
 
 pub fn conditional_attributes_views() -> Map[String, @anode.View]
 
+pub let counter_common_style : String
+
+pub fn[S] counter_compute((CounterMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let counter_fields : Array[String]
+
+pub let counter_global_style : String
+
+pub fn[S : ToJson] counter_missing_fields(S, extra? : Array[String]) -> Array[String]
+
 pub fn counter_module() -> @component.ModuleDef
+
+pub fn[S] counter_mutate((CounterMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] counter_swap((CounterMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn counter_views() -> Map[String, @anode.View]
 
 pub fn custom_collection_module() -> @component.ModuleDef
 
@@ -565,6 +591,22 @@ pub fn[S : ToJson] panel_missing_fields(S, extra? : Array[String]) -> Array[Stri
 
 pub fn panel_views() -> Map[String, @anode.View]
 
+pub let person_common_style : String
+
+pub fn[S] person_compute((PersonMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let person_fields : Array[String]
+
+pub let person_global_style : String
+
+pub fn[S : ToJson] person_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] person_mutate((PersonMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] person_swap((PersonMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn person_views() -> Map[String, @anode.View]
+
 pub fn personal_site_module() -> @component.ModuleDef
 
 pub let playlist_common_style : String
@@ -582,6 +624,22 @@ pub fn[S] playlist_mutate((PlaylistMethod) -> ((S, Array[@core.Value]) -> S)?) -
 pub fn[S] playlist_swap((PlaylistMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn playlist_views() -> Map[String, @anode.View]
+
+pub let ps_entry_common_style : String
+
+pub fn[S] ps_entry_compute((PsEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let ps_entry_fields : Array[String]
+
+pub let ps_entry_global_style : String
+
+pub fn[S : ToJson] ps_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] ps_entry_mutate((PsEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] ps_entry_swap((PsEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn ps_entry_views() -> Map[String, @anode.View]
 
 pub let pseudo_x_demo_common_style : String
 
@@ -666,6 +724,22 @@ pub fn[S] request_example_swap((RequestExampleMethod) -> ((S, Array[@core.Value]
 pub fn request_example_views() -> Map[String, @anode.View]
 
 pub fn request_module(requests? : Map[String, @component.RequestFn]) -> @component.ModuleDef
+
+pub let root_common_style : String
+
+pub fn[S] root_compute((RootMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+
+pub let root_fields : Array[String]
+
+pub let root_global_style : String
+
+pub fn[S : ToJson] root_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] root_mutate((RootMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+
+pub fn[S] root_swap((RootMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn root_views() -> Map[String, @anode.View]
 
 pub let select_option_common_style : String
 
@@ -810,6 +884,16 @@ pub let status_global_style : String
 pub fn[S : ToJson] status_missing_fields(S, extra? : Array[String]) -> Array[String]
 
 pub fn status_views() -> Map[String, @anode.View]
+
+pub let strategies_common_style : String
+
+pub let strategies_fields : Array[String]
+
+pub let strategies_global_style : String
+
+pub fn[S : ToJson] strategies_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn strategies_views() -> Map[String, @anode.View]
 
 pub let styles_example_common_style : String
 
@@ -984,6 +1068,11 @@ pub fn workspace_views() -> Map[String, @anode.View]
 // Errors
 
 // Types and methods
+pub(all) enum AltUrlView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn AltUrlView::name(Self) -> String
+
 pub(all) enum AttributeBindingMethod {
   SetBool
   SetRawNumber
@@ -1026,6 +1115,28 @@ pub(all) enum ConditionalAttributesView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ConditionalAttributesView::name(Self) -> String
+
+pub(all) enum CounterInput {
+  Dec
+} derive(Eq, @debug.Debug)
+pub fn CounterInput::name(Self) -> String
+pub fn CounterInput::parse(String) -> Self?
+
+pub(all) enum CounterMethod {
+  Inc
+} derive(Eq, @debug.Debug)
+pub fn CounterMethod::name(Self) -> String
+
+pub(all) enum CounterMsg {
+  Dec
+  Unknown(String, Array[@core.Value])
+}
+pub fn CounterMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CounterView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn CounterView::name(Self) -> String
 
 pub(all) enum DangerSetInnerHtmlView {
   Main
@@ -1445,6 +1556,18 @@ pub(all) enum PanelView {
 } derive(Eq, @debug.Debug)
 pub fn PanelView::name(Self) -> String
 
+pub(all) enum PersonMethod {
+  SetActive
+  SetEmail
+  SetName
+} derive(Eq, @debug.Debug)
+pub fn PersonMethod::name(Self) -> String
+
+pub(all) enum PersonView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PersonView::name(Self) -> String
+
 pub(all) enum PlaylistMethod {
   RemoveSong
 } derive(Eq, @debug.Debug)
@@ -1454,6 +1577,18 @@ pub(all) enum PlaylistView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PlaylistView::name(Self) -> String
+
+pub(all) enum PsEntryMethod {
+  IsSpanish
+  LangFlag
+  YearDisplay
+} derive(Eq, @debug.Debug)
+pub fn PsEntryMethod::name(Self) -> String
+
+pub(all) enum PsEntryView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn PsEntryView::name(Self) -> String
 
 pub(all) enum PseudoXDemoView {
   Main
@@ -1520,6 +1655,37 @@ pub(all) enum RequestExampleView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn RequestExampleView::name(Self) -> String
+
+pub(all) enum RootInput {
+  OnCategoryToggle
+  OnRoleToggle
+  OnToggleFeaturedFirst
+  OnToggleSortAsc
+  OnToggleSortByEnd
+} derive(Eq, @debug.Debug)
+pub fn RootInput::name(Self) -> String
+pub fn RootInput::parse(String) -> Self?
+
+pub(all) enum RootMethod {
+  ClearFilters
+  HasActiveFilters
+} derive(Eq, @debug.Debug)
+pub fn RootMethod::name(Self) -> String
+
+pub(all) enum RootMsg {
+  OnCategoryToggle(@core.Value, Bool)
+  OnRoleToggle(@core.Value, Bool)
+  OnToggleFeaturedFirst
+  OnToggleSortAsc
+  OnToggleSortByEnd
+  Unknown(String, Array[@core.Value])
+}
+pub fn RootMsg::of_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RootView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn RootView::name(Self) -> String
 
 pub(all) enum SelectOptionView {
   Main
@@ -1619,6 +1785,11 @@ pub(all) enum StatusView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn StatusView::name(Self) -> String
+
+pub(all) enum StrategiesView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StrategiesView::name(Self) -> String
 
 pub(all) enum StylesExampleRootView {
   Main

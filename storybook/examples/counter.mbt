@@ -13,35 +13,20 @@ priv struct ExampleCounterState {
 ///|
 fn counter_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="join join-vertical">
-          #|  <button class="btn btn-error" @on.click="dec">-</button>
-          #|  <div class="stats">
-          #|    <div class="stat text-center">
-          #|      <div class="stat-title">Count</div>
-          #|      <div class="stat-value" @text=".count"></div>
-          #|      <div class="stat-desc">Current Count</div>
-          #|    </div>
-          #|  </div>
-          #|  <button class="btn btn-success" @on.click="$inc">+</button>
-          #|</div>
-        ),
-      ),
-    },
+    views=counter_views(),
     name="Counter",
     init=ExampleCounterState::{ count: 0 },
-    mutate={
-      // views call mutate handlers with a `$` prefix: @on.click="$inc"
-      "inc": (s : ExampleCounterState, _args) => { count: s.count + 1 },
-    },
+    // views call mutate handlers with a `$` prefix: @on.click="$inc"
+    mutate=counter_mutate(m => {
+      match m {
+        Inc => Some((s : ExampleCounterState, _args) => { count: s.count + 1 })
+      }
+    }),
     update=(s : ExampleCounterState, msg, _ctx) => {
-      match msg {
+      match CounterMsg::of_dispatch(msg) {
         // views call input handlers by bare name: @on.click="dec"
-        Input("dec", _) => Some({ count: s.count - 1 })
-        _ => None
+        Some(Dec) => Some({ count: s.count - 1 })
+        Some(Unknown(_, _)) | None => None
       }
     },
   )

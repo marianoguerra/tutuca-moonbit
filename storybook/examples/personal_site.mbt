@@ -173,18 +173,10 @@ priv struct AltUrlState {
 
 ///|
 fn alt_url_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
-        ),
-      ),
-    },
-    name="AltUrl",
-    init=AltUrlState::{ label: "", url: "#" },
-  )
+  @component.component(views=alt_url_views(), name="AltUrl", init=AltUrlState::{
+    label: "",
+    url: "#",
+  })
 }
 
 ///|
@@ -204,30 +196,8 @@ priv struct PsEntryState {
 ///|
 fn ps_entry_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="card bg-base-200 shadow-sm p-2 sm:p-3 flex flex-col gap-2 ps-entry">
-          #|  <div class="flex gap-1 sm:gap-2 flex-wrap items-center">
-          #|    <span class="star" @show=".featured">⭐</span>
-          #|    <span class="flag" @show="$isSpanish" @text="$langFlag"></span>
-          #|    <span class="badge badge-ghost badge-sm border-0 font-bold years" @show="truthy? .startYear" @text="$yearDisplay"></span>
-          #|    <span class="badge badge-neutral badge-sm border-0 font-bold role" @show=".role" @text=".role"></span>
-          #|  </div>
-          #|  <a :href=".url" target="_blank" class="link link-hover"><h2 class="font-bold title" @text=".title"></h2></a>
-          #|  <p class="text-sm opacity-70 desc" @text=".description"></p>
-          #|  <div class="flex gap-1 sm:gap-2 flex-wrap cats">
-          #|    <span @each=".categories" @enrich-with="enrichCategoryBadge" :class="@badgeClass" @text="@value"></span>
-          #|  </div>
-          #|  <div class="alts" @hide="empty? .altUrls">
-          #|    <ul><li @each=".altUrls"><x render-it></x></li></ul>
-          #|  </div>
-          #|</div>
-        ),
-      ),
-    },
-    name="PSEntry",
+    views=ps_entry_views(),
+    name="PsEntry",
     enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
@@ -323,59 +293,22 @@ priv struct PsRootState {
 } derive(ToJson, FromJson)
 
 ///|
+/// Root's generated views plus the one view that cannot be generated: the
+/// margaui decoy interpolates `ps_category_decoy_classes()` — a MoonBit value
+/// — into its class list, so it has to be built at runtime.
+fn root_views_with_decoy() -> Map[String, @anode.View] {
+  let views = root_views()
+  views["_margauiClasses"] = @anode.View::new(
+    "_margauiClasses",
+    raw_view="<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>",
+  )
+  views
+}
+
+///|
 fn root_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section class="ps-root flex flex-col gap-4">
-          #|  <div class="card bg-base-200 p-4 controls">
-          #|    <p class="text-sm mb-4">💡 Click tags to toggle. Solo / unsolo toggle with <kbd class="text-mono">alt/option + click</kbd>.</p>
-          #|    <div class="grid grid-cols-1 sm:grid-cols-[auto_1fr] gap-y-1 sm:gap-x-3 sm:gap-y-3 items-start">
-          #|      <span class="font-semibold text-sm pt-1">Categories</span>
-          #|      <div class="cat-facets flex flex-wrap gap-2">
-          #|        <button @each=".allCategories" @enrich-with="enrichCategoryBindings"
-          #|          :class="@btnClass" @on.click="onCategoryToggle @key isAlt" @text="@value"></button>
-          #|      </div>
-          #|      <span class="font-semibold text-sm pt-1">Roles</span>
-          #|      <div class="role-facets flex flex-wrap gap-2">
-          #|        <button @each=".allRoles" @enrich-with="enrichRoleBindings"
-          #|          :class="@btnClass" @on.click="onRoleToggle @key isAlt" @text="@value"></button>
-          #|      </div>
-          #|      <span class="font-semibold text-sm pt-1">Sort By</span>
-          #|      <div class="flex flex-wrap items-center gap-2">
-          #|        <label class="swap btn btn-xs btn-outline btn-primary">
-          #|          <input type="checkbox" class="sort-end" :checked=".sortByEnd" @on.change="onToggleSortByEnd" />
-          #|          <span class="swap-on">End Year</span>
-          #|          <span class="swap-off">Start Year</span>
-          #|        </label>
-          #|        <label class="swap btn btn-xs btn-outline btn-primary">
-          #|          <input type="checkbox" class="sort-asc" :checked=".sortAsc" @on.change="onToggleSortAsc" />
-          #|          <span class="swap-on">↑ Oldest first</span>
-          #|          <span class="swap-off">↓ Newest first</span>
-          #|        </label>
-          #|        <label class="flex items-center gap-2 cursor-pointer">
-          #|          <input type="checkbox" class="toggle toggle-sm feat-first" :checked=".featuredFirst" @on.change="onToggleFeaturedFirst" />
-          #|          <span class="text-sm">Featured first</span>
-          #|        </label>
-          #|      </div>
-          #|    </div>
-          #|    <div class="flex flex-wrap items-center gap-4 mt-4">
-          #|      <button class="btn btn-outline btn-sm clear-filters" @on.click="$clearFilters" @show="$hasActiveFilters">Clear Filters</button>
-          #|    </div>
-          #|  </div>
-          #|  <div class="entries flex flex-col gap-3">
-          #|    <div class="entry-row" @each=".allEntries" @when="filterEntry"><x render-it></x></div>
-          #|  </div>
-          #|</section>
-        ),
-      ),
-      "_margauiClasses": @anode.View::new(
-        "_margauiClasses",
-        raw_view="<p class=\"btn btn-xs btn-neutral btn-ghost border-0 badge badge-sm font-bold opacity-40 ring-1 ring-neutral-content/30 \{ps_category_decoy_classes()}\"></p>",
-      ),
-    },
+    views=root_views_with_decoy(),
     name="Root",
     init=PsRootState::{
       allEntries: [],

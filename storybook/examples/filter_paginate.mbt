@@ -129,30 +129,22 @@ priv struct PersonState {
 
 ///|
 fn person_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="person flex gap-2 items-center grow">
-          #|  <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name" />
-          #|  <input class="input input-sm grow email" :value=".email" @on.input="$setEmail value" placeholder="email" />
-          #|  <label class="label cursor-pointer gap-1 chk-label">
-          #|    <input type="checkbox" class="checkbox checkbox-sm active" :checked=".active" @on.input="$setActive value" />
-          #|    active
-          #|  </label>
-          #|</div>
-        ),
-      ),
-    },
-    name="Person",
-    init=PersonState::{ name: "", email: "", active: false },
-  )
+  @component.component(views=person_views(), name="Person", init=PersonState::{
+    name: "",
+    email: "",
+    active: false,
+  })
 }
 
 ///|
 /// The pager markup + <ul>, parametrized by the <li> directives so the three
 /// strategies share everything but their scanning handler.
+///
+/// This is why the three strategy components build their view at runtime
+/// rather than through gen-views: the whole point of the example is the SAME
+/// markup under three different `@when` / `@loop-with` pairs, which a static
+/// .html file could only express by repeating it three times. `Person` and
+/// `Strategies`, which are plain static markup, are generated.
 fn people_view(li_attrs : String) -> String {
   "<section class=\"flex flex-col gap-3\" @enrich-with=\"pagerInfo\">" +
   "<input type=\"search\" class=\"input q\" :value=\".query\" @on.input=\"search value\" placeholder=\"Filter by name or email\" />" +
@@ -328,18 +320,7 @@ priv struct StrategiesState {} derive(ToJson, FromJson)
 ///|
 fn strategies_comp() -> @component.Component {
   @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex flex-col gap-6">
-          #|  <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>
-          #|  <div class="flex flex-col gap-1"><h3 class="font-bold">2. Shared — one count + one partial collect</h3><x render=".shared"></x></div>
-          #|  <div class="flex flex-col gap-1"><h3 class="font-bold">3. Coupled — one scan; loop-with forwards the enrich's keys</h3><x render=".coupled"></x></div>
-          #|</div>
-        ),
-      ),
-    },
+    views=strategies_views(),
     name="Strategies",
     init=StrategiesState::{  },
     specs={
