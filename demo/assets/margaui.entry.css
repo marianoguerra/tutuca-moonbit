@@ -1,0 +1,98 @@
+/* Adapted margaui entry for the marianoguerra/tailwindcss (MoonBit) compiler.
+ * Derived from margaui's own entry.css with two edits:
+ *   1. `@import "tailwindcss" source(none)` is inlined as tailwindcss.css's four
+ *      lines below — its nested `./tw/*` imports are margaui-root-relative, so
+ *      importing tailwindcss.css directly resolves them under tw/tw/ and fails.
+ *   2. the scan-only `@source` directive is dropped — candidate classes come
+ *      from tutuca's collect_classes(), not content scanning.
+ * The imports resolve against a margaui checkout; keys in the generated bundle
+ * stay entry-relative and compile with base = "". Regenerate the bundle + the
+ * embedded module with: moon run --target native cmd/dev -- margaui-bundle */
+@layer theme, base, components, utilities;
+@import "./tw/theme.css" layer(theme);
+@import "./tw/preflight.css" layer(base);
+@import "./tw/utilities.css" layer(utilities);
+
+/* Example corpus for CLI builds; replace or extend with @source
+   directives pointing at your own content. */
+
+@import "./base/theme-colors.css";
+@import "./base/properties.css";
+@import "./base/colormix.css";
+@import "./base/rootcolor.css";
+@import "./base/rootscrollgutter.css";
+@import "./base/rootscrolllock.css";
+@import "./base/scrollbar.css";
+@import "./base/svg.css";
+
+@import "./themes/theme.css";
+
+@import "./src/alert.css";
+@import "./src/aura.css";
+@import "./src/avatar.css";
+@import "./src/badge.css";
+@import "./src/breadcrumbs.css";
+@import "./src/button.css";
+@import "./src/calendar.css";
+@import "./src/card.css";
+@import "./src/carousel.css";
+@import "./src/chat.css";
+@import "./src/checkbox.css";
+@import "./src/collapse.css";
+@import "./src/countdown.css";
+@import "./src/diff.css";
+@import "./src/divider.css";
+@import "./src/dock.css";
+@import "./src/drawer.css";
+@import "./src/dropdown.css";
+@import "./src/fab.css";
+@import "./src/fieldset.css";
+@import "./src/file-input.css";
+@import "./src/filter.css";
+@import "./src/footer.css";
+@import "./src/glass.css";
+@import "./src/hero.css";
+@import "./src/hover-3d.css";
+@import "./src/hover-gallery.css";
+@import "./src/indicator.css";
+@import "./src/input.css";
+@import "./src/join.css";
+@import "./src/kbd.css";
+@import "./src/label.css";
+@import "./src/link.css";
+@import "./src/list.css";
+@import "./src/loading.css";
+@import "./src/mask.css";
+@import "./src/megamenu.css";
+@import "./src/menu.css";
+@import "./src/mockup-browser.css";
+@import "./src/mockup-code.css";
+@import "./src/mockup-phone.css";
+@import "./src/mockup-window.css";
+@import "./src/modal.css";
+@import "./src/navbar.css";
+@import "./src/otp.css";
+@import "./src/progress.css";
+@import "./src/radial-progress.css";
+@import "./src/radio.css";
+@import "./src/radius.css";
+@import "./src/range.css";
+@import "./src/rating.css";
+@import "./src/select.css";
+@import "./src/skeleton.css";
+@import "./src/stack.css";
+@import "./src/stat.css";
+@import "./src/status.css";
+@import "./src/steps.css";
+@import "./src/swap.css";
+@import "./src/tab.css";
+@import "./src/table.css";
+@import "./src/text-rotate.css";
+@import "./src/textarea.css";
+@import "./src/theme-controller.css";
+@import "./src/timeline.css";
+@import "./src/toast.css";
+@import "./src/toggle.css";
+@import "./src/tooltip.css";
+@import "./src/typography.css";
+@import "./src/validator.css";

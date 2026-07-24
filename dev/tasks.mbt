@@ -426,6 +426,9 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "storybook-bundle" {
     return Some(storybook_bundle_steps())
   }
+  if name == "margaui-bundle" {
+    return Some(margaui_bundle_steps())
+  }
   if name == "universal" {
     return Some(universal_steps())
   }
@@ -546,6 +549,35 @@ pub fn skill_embed_steps() -> Array[Step] {
 }
 
 ///|
+const MARGAUI_BUNDLE_BIN = "_build/native/debug/build/cmd/margaui-bundle/margaui-bundle.exe"
+
+///|
+/// Regenerate the margaui bundle + its embedded module (demo/margaui/bundle_gen.mbt)
+/// by running the tailwindcss `bundle` graph walk over margaui's CSS. Needs a
+/// margaui checkout (default sibling ../margaui). Kept out of `dist`/`ci`: it is
+/// a rare regen run only when margaui itself changes, and requires that checkout.
+/// The generated module is committed, so normal builds never run this.
+pub fn margaui_bundle_steps() -> Array[Step] {
+  [
+    Run(
+      moon("build · margaui-bundle tool", [
+        "build", "--target", "native", "cmd/margaui-bundle",
+      ]),
+    ),
+    Run({
+      label: "bundle margaui CSS graph → demo/assets/margaui.bundle.json + embed",
+      prog: MARGAUI_BUNDLE_BIN,
+      args: [
+        "-i", "demo/assets/margaui.entry.css", "--base", "../margaui", "-o", "demo/assets/margaui.bundle.json",
+        "--emit-mbt", "demo/margaui/bundle_gen.mbt",
+      ],
+    }),
+    // the tool emits `#|` raw-string blocks unformatted; fmt settles them.
+    Run(moon("fmt", ["fmt"])),
+  ]
+}
+
+///|
 /// Human-readable list of every task (base + ci + dist), for `--help` / unknown.
 pub fn help_text() -> String {
   let sb = StringBuilder::new()
@@ -580,6 +612,9 @@ pub fn help_text() -> String {
   )
   line(
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
+  )
+  line(
+    "margaui-bundle", "regenerate demo/margaui/bundle_gen.mbt from a margaui checkout (../margaui)",
   )
   sb.to_string()
 }

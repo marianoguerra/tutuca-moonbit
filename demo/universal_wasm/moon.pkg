@@ -13,6 +13,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  "marianoguerra/tutuca/demo/margaui",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
 }
@@ -29,7 +30,7 @@ options(
         "on_event",
         "dyncomp_on_loaded",
         "dyncomp_on_load_error",
-        "refresh_classes",
+        "refresh_margaui",
         "state_json",
       ],
       "use-js-builtin-string": true,

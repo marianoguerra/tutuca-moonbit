@@ -341,24 +341,28 @@ fn universal_module() -> @component.ModuleDef {
 let app_ref : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
 
 ///|
-/// Publish the app's utility-class set to globalThis.__tutuca_classes for the
-/// page's applyMargaui() to compile (mirrors demo/storybook_wasm). Called at
-/// mount and again (via the exported refresh_classes) after a bundle loads, so
-/// guest-view classes get compiled too.
-fn publish_classes() -> Unit {
+/// Compile the app's utility-class set to CSS in MoonBit (via the
+/// marianoguerra/tailwindcss port) and inject it as <style id="margaui-css">
+/// (mirrors demo/storybook_wasm). Called at mount and again (via the exported
+/// refresh_margaui) after a bundle loads, so guest-view classes get compiled
+/// too. index.html pre-places an empty <style id="margaui-css"> early in <head>
+/// so the upsert keeps it ahead of any lazily-loaded palette <link>.
+fn apply_margaui() -> Unit {
   guard app_ref.val is Some(app) else { return }
-  let arr = @core.new_array()
-  for c in app.scope.comps.collect_classes() {
-    let _ = arr._call("push", [@core.any(c)])
+  let css = @margaui.compile_classes(app.scope.comps.collect_classes()) catch {
+    err => {
+      @tutuca.warn("margaui compile failed: \{err}")
+      return
+    }
   }
-  @core.global_this()._set("__tutuca_classes", arr)
+  @wglue.inject_style(@wglue.document(), "margaui-css", css)
 }
 
 ///|
-/// Re-publish classes after a guest bundle registers (the loader re-runs
-/// applyMargaui afterward). Exported.
-pub fn refresh_classes() -> Unit {
-  publish_classes()
+/// Recompile + reinject margaui CSS after a guest bundle registers new views
+/// (and thus new utility classes). Exported; the loader calls it post-load.
+pub fn refresh_margaui() -> Unit {
+  apply_margaui()
 }
 
 // --- lifecycle exports ---------------------------------------------------
@@ -373,7 +377,7 @@ pub fn mount() -> Unit {
   // used by the sample counter). The picker/list requests are in the module.
   app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @dhw.set_app(app, @wglue.document())
-  publish_classes()
+  apply_margaui()
 }
 
 ///|

@@ -11,8 +11,9 @@
 //    `tutuca:component` guests (URL loads and dropped .tutuca.tar.gz
 //    archives; see dyncomp/host/wasm/glue.mbt for the conventions)
 //  - `instantiate`: fetch + instantiate a wasm-gc module with those imports
-//  - `applyMargaui`: compile the class set the module published on
-//    globalThis.__tutuca_classes and inject it as <style id="margaui-css">
+//
+// margaui styling is compiled in MoonBit (the host's mount() / refresh_margaui),
+// not here — the page only pre-places an empty <style id="margaui-css">.
 
 export function createJsCoreImports() {
   return {
@@ -129,25 +130,10 @@ export async function instantiate(wasmUrl, makeExtra) {
   return exports;
 }
 
-// Compile the margaui class set the wasm module published on globalThis
-// (__tutuca_classes) into CSS and inject it. Call AFTER mount().
-export async function applyMargaui(force = false) {
-  const classes = globalThis.__tutuca_classes ?? [];
-  const existing = document.getElementById("margaui-css");
-  // first call: skip if nothing to do or already compiled. force=true (after a
-  // bundle loads) recompiles the now-larger class set, replacing the style.
-  if (!classes.length || (existing && !force)) return;
-  try {
-    const { compile } = await import("https://cdn.jsdelivr.net/npm/margaui/+esm");
-    const css = await compile(classes);
-    const style = existing ?? document.createElement("style");
-    style.id = "margaui-css";
-    style.textContent = css;
-    if (!existing) document.head.appendChild(style);
-  } catch (err) {
-    console.warn("margaui compile skipped:", err);
-  }
-}
+// margaui compilation now happens in MoonBit: the host's mount() compiles the
+// collected class set to CSS (marianoguerra/tailwindcss) and injects
+// <style id="margaui-css">, and refresh_margaui() recompiles after a bundle
+// loads. No page-side compile / CDN import remains.
 
 // --- single-file bundle unpacking (native, dependency-free) ---
 
@@ -328,10 +314,10 @@ export function createTcompImports(getExports) {
           return WebAssembly.compile(wasm);
         };
         await finishLoad(mod, getCoreModule, loadId);
-        // the bundle's views registered new margaui utility classes; re-publish
-        // and recompile so guest styling (e.g. the counter/todo cards) applies
-        getExports().refresh_classes?.();
-        await applyMargaui(true);
+        // the bundle's views registered new margaui utility classes; the host
+        // recompiles + reinjects <style id="margaui-css"> in MoonBit so guest
+        // styling (e.g. the counter/todo cards) applies
+        getExports().refresh_margaui?.();
       } finally {
         URL.revokeObjectURL(url);
       }

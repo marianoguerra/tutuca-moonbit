@@ -1,0 +1,13 @@
+// MargaUI styling for the tutuca demo hosts, compiled in MoonBit instead of the
+// old JS/CDN margaui `compile`. `compile_classes` turns the class set that
+// collect_classes() gathered into CSS via the marianoguerra/tailwindcss port,
+// resolving margaui's @import graph from the embedded bundle (bundle_gen.mbt).
+// Regenerate the bundle with: moon run --target native cmd/dev -- margaui-bundle
+import {
+  "marianoguerra/tailwindcss" @tw,
+}
+
+// The demo hosts that use this are wasm-gc; compile_sync is the wasm-gc-safe
+// path. Widen this if a js/native host ever compiles margaui in MoonBit.
+
+supported_targets = "wasm-gc"

@@ -5,8 +5,6 @@
 
 import { instantiate, createTcompImports } from "./wasm-loader-lib.mjs";
 
-export { applyMargaui } from "./wasm-loader-lib.mjs";
-
 // Make the page a drop target: cancel the browser's default file-open on both
 // dragover and drop, and feed each dropped file to loadArchive. JS allocates
 // the load ids (negative, never in the host's notify_paths) so completion

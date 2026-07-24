@@ -250,21 +250,34 @@ pub fn mount() -> Unit {
   @wglue.install(app)
   @wglue.install_styles(app, doc)
   @dhw.set_app(app, doc)
-  // publish the collected margaui class set (gallery chrome + every example's
-  // classes) for index.html's margaui compile step — same path as the other
-  // wasm demos.
-  publish_classes(app.scope.comps.collect_classes())
+  // compile the collected margaui class set (gallery chrome + every example's
+  // classes) to CSS in MoonBit and inject it — same path as the other wasm demo.
+  apply_margaui(app, doc)
 }
 
 ///|
-/// Publish the collected margaui class set as a JS array on globalThis so the
-/// page's margaui compile step can turn it into CSS.
-fn publish_classes(classes : Array[String]) -> Unit {
-  let arr = @core.new_array()
-  for c in classes {
-    let _ = arr._call("push", [@core.any(c)])
+/// Compile the collected margaui/Tailwind class set to CSS (via the MoonBit
+/// marianoguerra/tailwindcss port) and inject it as <style id="margaui-css">.
+/// Replaces the old page-side CDN margaui compile. index.html pre-places an
+/// empty <style id="margaui-css"> early in <head> so the upsert keeps it ahead
+/// of any lazily-loaded palette <link> in the cascade.
+fn apply_margaui(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
+  let css = @margaui.compile_classes(app.scope.comps.collect_classes()) catch {
+    err => {
+      @tutuca.warn("margaui compile failed: \{err}")
+      return
+    }
   }
-  @core.global_this()._set("__tutuca_classes", arr)
+  @wglue.inject_style(doc, "margaui-css", css)
+}
+
+///|
+/// Recompile + reinject margaui CSS for the mounted gallery. JS calls this after
+/// a dyncomp bundle registers new views (and thus new utility classes). No-op
+/// before mount.
+pub fn refresh_margaui() -> Unit {
+  guard current_app.val is Some(app) else { return }
+  apply_margaui(app, @wglue.document())
 }
 
 ///|

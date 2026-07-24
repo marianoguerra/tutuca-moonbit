@@ -5,8 +5,6 @@
 
 import { instantiate, createTcompImports } from "./wasm-loader-lib.mjs";
 
-export { applyMargaui } from "./wasm-loader-lib.mjs";
-
 export async function loadWasm(wasmUrl) {
   return instantiate(wasmUrl, (getExports) => ({
     tcomp: createTcompImports(getExports),

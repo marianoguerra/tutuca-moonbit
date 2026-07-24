@@ -1,0 +1,22 @@
+// Dev-only native tool: snapshot margaui's CSS `@import` graph into a bundle and
+// regenerate the embedded MoonBit module the wasm/js hosts compile against.
+//
+// This is the same operation as `marianoguerra/tailwindcss`'s CLI `bundle`
+// subcommand (it calls the identical `@tw.collect_imports`), plus a codegen step
+// that inlines the entry + bundle as `#|` raw strings so wasm-gc (no filesystem)
+// can read them. Not shipped — see the moon.mod exclude list.
+//
+// Run via: moon run --target native cmd/dev -- margaui-bundle
+// (needs a margaui checkout; default ../margaui, override with --base).
+import {
+  "marianoguerra/tailwindcss" @tw,
+  "marianoguerra/tailwindcss/loader/fs" @twfs,
+  "moonbitlang/async",
+  "moonbitlang/x/fs",
+  "moonbitlang/x/sys",
+  "moonbitlang/core/string",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")
