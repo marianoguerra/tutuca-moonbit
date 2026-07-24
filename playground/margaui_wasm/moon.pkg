@@ -1,0 +1,20 @@
+// margaui compiler for the playground, compiled to wasm-gc. Same compiler and
+// embedded bundle the wasm demos use (demo/margaui), exposed as a single
+// `compile(classesJson) -> css` export. Shipped as margaui.wasm (release +
+// wasm-opt), far smaller than the js build; playground/web/runtime.js
+// instantiates it and calls compile(). With use-js-builtin-string the String
+// arg/return marshal directly as JS strings across the boundary.
+import {
+  "marianoguerra/tutuca/demo/margaui",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "wasm-gc"
+
+pkgtype(kind: "executable")
+
+options(
+  link: {
+    "wasm-gc": { "exports": [ "compile" ], "use-js-builtin-string": true },
+  },
+)

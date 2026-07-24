@@ -44,16 +44,35 @@ fn moon(label : String, args : Array[String]) -> Command {
   { label, prog: "moon", args }
 }
 
+///|
+/// Shrink a wasm-gc module in place with `moon-wasm-opt` (ships with moon, on
+/// PATH via ~/.moon/bin). `-Oz` roughly halves the release module (~4.8 MB ->
+/// ~2.6 MB for storybook). `--all-features` lets the optimizer read moon's
+/// gc/js-string output; `--disable-custom-descriptors` stops it emitting `exact`
+/// heap types, which browsers reject without an experimental flag.
+fn wasm_opt(path : String) -> Command {
+  {
+    label: "wasm-opt -Oz · " + path,
+    prog: "moon-wasm-opt",
+    args: [
+      "--all-features", "--disable-custom-descriptors", "-Oz", path, "-o", path,
+    ],
+  }
+}
+
 // --- build-output and dist layout paths (moon's default debug build) ---
 
 ///|
 const COUNTER_JS = "_build/js/debug/build/demo/counter/counter.js"
 
 ///|
-const COUNTER_WASM = "_build/wasm-gc/debug/build/demo/counter_wasm/counter_wasm.wasm"
+// dist ships the RELEASE wasm (the debug build is ~4x larger: 18 MB vs ~4.8 MB
+// for storybook), then shrinks it further with wasm-opt (see wasm_opt / the
+// `moon build … --release` steps in dist_steps / universal_steps).
+const COUNTER_WASM = "_build/wasm-gc/release/build/demo/counter_wasm/counter_wasm.wasm"
 
 ///|
-const STORYBOOK_WASM = "_build/wasm-gc/debug/build/demo/storybook_wasm/storybook_wasm.wasm"
+const STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/storybook_wasm/storybook_wasm.wasm"
 
 ///|
 // moon names the native executable `.exe` on every OS, including Linux.
@@ -297,6 +316,14 @@ fn dist_steps() -> Array[Step] {
   for cmd in build_commands() {
     steps.push(Run(cmd))
   }
+  // ship the RELEASE wasm demos (build_commands builds debug for the smoke).
+  steps.push(
+    Run(
+      moon("build · wasm-gc demos (release)", [
+        "build", "--target", "wasm-gc", "--release", "demo/counter_wasm", "demo/storybook_wasm",
+      ]),
+    ),
+  )
   steps.push(Mkdir(DIST))
   steps.push(Mkdir("\{DIST}/counter"))
   steps.push(Mkdir("\{DIST}/counter-wasm"))
@@ -310,6 +337,7 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Copy(from=COUNTER_WASM, to="\{DIST}/counter-wasm/counter_wasm.wasm"),
   )
+  steps.push(Run(wasm_opt("\{DIST}/counter-wasm/counter_wasm.wasm")))
   steps.push(
     Copy(
       from="demo/counter_wasm/loader.mjs",
@@ -334,6 +362,7 @@ fn dist_steps() -> Array[Step] {
   steps.push(
     Copy(from=STORYBOOK_WASM, to="\{DIST}/storybook/storybook_wasm.wasm"),
   )
+  steps.push(Run(wasm_opt("\{DIST}/storybook/storybook_wasm.wasm")))
   // the storybook host imports the dynamic-component bridge (tcomp namespace),
   // so it ships that loader plus the counter guest bundle its Dynamic pane
   // loads at runtime
@@ -469,7 +498,7 @@ pub fn storybook_bundle_steps() -> Array[Step] {
 }
 
 ///|
-const UNIVERSAL_WASM = "_build/wasm-gc/debug/build/demo/universal_wasm/universal_wasm.wasm"
+const UNIVERSAL_WASM = "_build/wasm-gc/release/build/demo/universal_wasm/universal_wasm.wasm"
 
 ///|
 /// Assemble the universal wasm-component demo into dist/universal: the wasm-gc
@@ -480,8 +509,8 @@ const UNIVERSAL_WASM = "_build/wasm-gc/debug/build/demo/universal_wasm/universal
 pub fn universal_steps() -> Array[Step] {
   [
     Run(
-      moon("build · wasm-gc universal demo", [
-        "build", "--target", "wasm-gc", "demo/universal_wasm",
+      moon("build · wasm-gc universal demo (release)", [
+        "build", "--target", "wasm-gc", "--release", "demo/universal_wasm",
       ]),
     ),
     Run({
@@ -504,6 +533,7 @@ pub fn universal_steps() -> Array[Step] {
     Mkdir("\{DIST}/universal"),
     Mkdir("\{DIST}/universal/examples"),
     Copy(from=UNIVERSAL_WASM, to="\{DIST}/universal/universal_wasm.wasm"),
+    Run(wasm_opt("\{DIST}/universal/universal_wasm.wasm")),
     Copy(
       from="demo/universal_wasm/loader.mjs",
       to="\{DIST}/universal/loader.mjs",

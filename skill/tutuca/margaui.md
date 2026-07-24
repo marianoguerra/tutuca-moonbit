@@ -143,10 +143,11 @@ the loader after a dyncomp bundle registers new classes.
 **js target**: same shape with `app/browser`'s `@glue.inject_style`. If the
 compile must run in the page instead of the module (e.g. the in-browser
 playground, which mounts freshly-compiled user code in an iframe), ship the
-compiler to js as a small executable that publishes a compile function — see
-`playground/margaui_js` (published as `globalThis.__tutucaMargaui`) and its use
-in `playground/web/runtime.js`. Either way there is no JS margaui package, no
-CDN import, and no `globalThis` class hand-off between MoonBit and the page.
+compiler as a small **wasm-gc** executable exporting `compile(classesJson) ->
+css` — see `playground/margaui_wasm` (built release + wasm-opt to `margaui.wasm`,
+~0.47 MB) and its use in `playground/web/runtime.js`. Either way there is no JS
+margaui package, no CDN import, and no `globalThis` class hand-off between
+MoonBit and the page.
 
 ## Pitfall: assembled class names are invisible to the scanner
 

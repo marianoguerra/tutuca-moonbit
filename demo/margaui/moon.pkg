@@ -7,8 +7,8 @@ import {
   "marianoguerra/tailwindcss" @tw,
 }
 
-// Used by the wasm-gc demo hosts and (built to js) by playground/margaui_js,
-// which ships a browser margaui compiler. compile_sync needs no async runtime,
-// so it is safe on both backends.
+// Used by the wasm-gc demo hosts and by playground/margaui_wasm (which ships a
+// browser margaui compiler). All importers are wasm-gc; compile_sync needs no
+// async runtime, so it is safe there.
 
-supported_targets = "-all+js+wasm-gc"
+supported_targets = "wasm-gc"

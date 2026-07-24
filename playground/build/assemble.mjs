@@ -117,13 +117,23 @@ console.log("building viewgen (js) ...");
 execSync("moon build --target js playground/viewgen_js", { cwd: REPO, stdio: "inherit" });
 cpSync(join(buildDir("js"), "playground/viewgen_js/viewgen_js.js"), join(OUT, "viewgen.js"));
 
-// The margaui class compiler, compiled to js: previews need it in the BROWSER
-// to turn a mounted app's class set into CSS (marianoguerra/tailwindcss + the
-// embedded margaui bundle). Like viewgen, moonc's js output is a classic-script
-// IIFE that publishes globalThis.__tutucaMargaui on load; runtime.js loads it.
-console.log("building margaui (js) ...");
-execSync("moon build --target js playground/margaui_js", { cwd: REPO, stdio: "inherit" });
-cpSync(join(buildDir("js"), "playground/margaui_js/margaui_js.js"), join(OUT, "margaui.js"));
+// The margaui class compiler, compiled to wasm-gc: previews need it in the
+// BROWSER to turn a mounted app's class set into CSS (marianoguerra/tailwindcss
+// + the embedded margaui bundle). Shipped as wasm-gc + wasm-opt -Oz — ~3x
+// smaller than the js build (~0.47 MB vs ~1.5 MB). runtime.js instantiates it
+// and calls its `compile(classesJson) -> css` export.
+console.log("building margaui (wasm-gc, release) ...");
+execSync("moon build --target wasm-gc --release playground/margaui_wasm", { cwd: REPO, stdio: "inherit" });
+const margauiWasm = join(OUT, "margaui.wasm");
+cpSync(
+  join(REPO, "_build/wasm-gc/release/build/playground/margaui_wasm/margaui_wasm.wasm"),
+  margauiWasm,
+);
+console.log("optimizing margaui.wasm (wasm-opt -Oz) ...");
+execSync(
+  `moon-wasm-opt --all-features --disable-custom-descriptors -Oz "${margauiWasm}" -o "${margauiWasm}"`,
+  { cwd: REPO, stdio: "inherit" },
+);
 
 // Bundle the shared CodeMirror editor to a single ESM file both the standalone
 // shell (driver.js) and the embeddable element (site/embed.js) import.

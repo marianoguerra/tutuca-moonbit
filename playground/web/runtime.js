@@ -55,15 +55,23 @@ export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
 
 // margaui (the CSS class compiler the docs examples use) — the same MoonBit
 // compiler (marianoguerra/tailwindcss + the embedded margaui bundle) the demo
-// pages use, shipped as ./margaui.js (see assemble.mjs). Loaded once, lazily,
-// and only when a preview actually publishes classes; the module publishes
-// globalThis.__tutucaMargaui(classesJson) -> css on load. Light + dark theme
-// vars are compiled into that CSS, so no external theme stylesheet is needed.
+// pages use, shipped as ./margaui.wasm (wasm-gc + wasm-opt, ~0.47 MB; see
+// assemble.mjs). Instantiated once, lazily, and only when a preview actually
+// publishes classes; its `compile(classesJson) -> css` export marshals strings
+// directly via js-string-builtins. Light + dark theme vars are compiled into
+// that CSS, so no external theme stylesheet is needed.
 let _margauiCompile = null;
 function margauiCompile() {
-  _margauiCompile ??= import(new URL("./margaui.js", import.meta.url)).then(
-    () => globalThis.__tutucaMargaui,
-  );
+  _margauiCompile ??= (async () => {
+    const url = new URL("./margaui.wasm", import.meta.url);
+    const bytes = await (await fetch(url)).arrayBuffer();
+    // moon emits js-string-builtin imports plus imported string constants
+    // under module "_"; the engine supplies both from these opts (Chrome-class).
+    const opts = { builtins: ["js-string"], importedStringConstants: "_" };
+    const { instance } = await WebAssembly.instantiate(bytes, {}, opts);
+    if (instance.exports._start) instance.exports._start();
+    return (classesJson) => instance.exports.compile(classesJson);
+  })();
   return _margauiCompile;
 }
 

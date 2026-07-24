@@ -111,7 +111,7 @@ in MoonBit: the host's `mount()` hands `collect_classes()` to `demo/margaui`'s
 bundle) and injects the resulting `<style id="margaui-css">`, re-running it from
 the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
 no `globalThis` class hand-off. The in-browser playground uses the same compiler
-shipped to js (`playground/margaui_js` → `margaui.js`).
+shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
 
 The raw `moon` commands below still work and are what the tasks run underneath.
 
