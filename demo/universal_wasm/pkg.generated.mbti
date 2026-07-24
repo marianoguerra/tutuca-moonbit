@@ -58,7 +58,7 @@ pub fn mount() -> Unit
 
 pub fn on_event(@mizchi/js/core.Any) -> Unit
 
-pub fn refresh_classes() -> Unit
+pub fn refresh_margaui() -> Unit
 
 pub fn state_json() -> String
 

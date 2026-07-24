@@ -7,7 +7,8 @@ import {
   "marianoguerra/tailwindcss" @tw,
 }
 
-// The demo hosts that use this are wasm-gc; compile_sync is the wasm-gc-safe
-// path. Widen this if a js/native host ever compiles margaui in MoonBit.
+// Used by the wasm-gc demo hosts and (built to js) by playground/margaui_js,
+// which ships a browser margaui compiler. compile_sync needs no async runtime,
+// so it is safe on both backends.
 
-supported_targets = "wasm-gc"
+supported_targets = "-all+js+wasm-gc"

@@ -88,9 +88,9 @@ pub fn state_json() -> String {
 }
 
 ///|
-/// The margaui class set the mounted views can show, as a JSON array string,
-/// so the page can compile it to CSS (the browser-side half of the js host's
-/// publish_classes_ffi).
+/// The margaui class set the mounted views can show, as a JSON array string.
+/// The page reads it via `__tutuca.classes()` and hands it to the MoonBit
+/// margaui compiler (playground margaui.js) to turn into CSS.
 pub fn classes_json() -> String {
   match current.val {
     Some(app) => {

@@ -56,7 +56,7 @@ When authoring tutuca code, also load this if available:
 | Embedded CLI commands, flags, exit codes, linter rules                                         | [cli.md](./cli.md)             |
 | `Bubble` / `send`-`Receive` / async `request`-`Response` channels, catch-all arms, `RequestFn` registration | [request-response.md](./request-response.md) |
 | Drag & drop, dynamic bindings (`*x`), pseudo-`x`, custom collections via the `Obj` trait | [advanced.md](./advanced.md)   |
-| Setting up MargaUI styling — `collect_classes()`, the CDN compile step, `inject_style` | [margaui.md](./margaui.md)     |
+| Setting up MargaUI styling — `collect_classes()`, the MoonBit compile step, `inject_style` | [margaui.md](./margaui.md)     |
 | Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |
 | Authoring tests — `moon test` blocks, the `@harness` mount/drive/read API, designing handlers for testability | [testing.md](./testing.md) |
 | Task-oriented recipes — iteration, filtering, conditional content, conditional attributes, dynamic vars, composition, events | [patterns/README.md](./patterns/README.md) |

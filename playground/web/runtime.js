@@ -53,13 +53,17 @@ export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
   };
 }
 
-// margaui (the CSS class compiler the docs examples use) — same CDN build the
-// compiled demo pages compile against. Loaded once, lazily, and only when a
-// preview actually publishes classes.
-const MARGAUI_THEME = "https://marianoguerra.github.io/margaui/themes/theme.css";
+// margaui (the CSS class compiler the docs examples use) — the same MoonBit
+// compiler (marianoguerra/tailwindcss + the embedded margaui bundle) the demo
+// pages use, shipped as ./margaui.js (see assemble.mjs). Loaded once, lazily,
+// and only when a preview actually publishes classes; the module publishes
+// globalThis.__tutucaMargaui(classesJson) -> css on load. Light + dark theme
+// vars are compiled into that CSS, so no external theme stylesheet is needed.
 let _margauiCompile = null;
 function margauiCompile() {
-  _margauiCompile ??= import("https://cdn.jsdelivr.net/npm/margaui/+esm").then((m) => m.compile);
+  _margauiCompile ??= import(new URL("./margaui.js", import.meta.url)).then(
+    () => globalThis.__tutucaMargaui,
+  );
   return _margauiCompile;
 }
 
@@ -78,11 +82,9 @@ export function mount(container, jsText, { onState, margaui = true } = {}) {
   const doc = iframe.contentDocument;
   const blobUrl = URL.createObjectURL(new Blob([jsText], { type: "text/javascript" }));
   const dark = typeof matchMedia === "function" && matchMedia("(prefers-color-scheme: dark)").matches;
-  const themeLink = margaui ? `<link rel="stylesheet" href="${MARGAUI_THEME}">` : "";
   doc.open();
   doc.write(
     `<!doctype html><html data-theme="${dark ? "dark" : "light"}"><head><meta charset="utf-8">` +
-      themeLink +
       `<style>body{font-family:system-ui,sans-serif;margin:1rem}</style></head>` +
       `<body><div id="app"></div><script type="module" src="${blobUrl}"><\/script></body></html>`,
   );
@@ -103,16 +105,19 @@ export function mount(container, jsText, { onState, margaui = true } = {}) {
   let styled = false;
   const styleMargaui = async () => {
     if (styled) return;
-    let classes = null;
+    let classesJson = null;
     try {
-      classes = win.__tutuca && win.__tutuca.classes ? JSON.parse(win.__tutuca.classes()) : null;
+      classesJson = win.__tutuca && win.__tutuca.classes ? win.__tutuca.classes() : null;
     } catch {}
-    if (classes == null) return;
+    if (classesJson == null) return;
     styled = true;
+    let classes = [];
+    try { classes = JSON.parse(classesJson); } catch {}
     if (!classes.length) return;
     try {
+      // the published compiler parses the JSON class array and returns CSS
       const compile = await margauiCompile();
-      const css = await compile(classes);
+      const css = compile(classesJson);
       const style = doc.createElement("style");
       style.textContent = css;
       doc.head.appendChild(style);

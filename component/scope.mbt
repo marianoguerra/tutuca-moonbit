@@ -47,10 +47,10 @@ pub fn Components::compile_styles(self : Components) -> String {
 /// Every class name the registered components' compiled views can show, for a
 /// margaui-style scanner (the port of JS collectAppClassesInSet, util/
 /// parsectx.js). Walks each component's compiled view roots via
-/// ANode::collect_classes; the caller hands the result to margaui's compiler
-/// (the demos publish it for the CDN compile step — tutuca collects, margaui
-/// compiles, exactly as in JS extra.js compileClassesToStyleText). Sorted for
-/// a stable order across runs. Call after compile.
+/// ANode::collect_classes; the caller hands the result to a margaui compiler
+/// (the demos pass it to demo/margaui's compile_classes — the MoonBit
+/// marianoguerra/tailwindcss port — then inject the CSS: tutuca collects,
+/// margaui compiles). Sorted for a stable order across runs. Call after compile.
 pub fn Components::collect_classes(self : Components) -> Array[String] {
   let into : Set[String] = Set([])
   for _, comp in self.by_id {

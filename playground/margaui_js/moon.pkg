@@ -1,0 +1,15 @@
+// margaui compiler for the playground, compiled to js. The playground mounts
+// the user's freshly-compiled module in an iframe and needs to compile the
+// class set that module publishes (`__tutuca.classes()`) into CSS — in the
+// browser, like the compiled demo pages. moonc's js output is a plain IIFE, so
+// this ships as a classic script that publishes globalThis.__tutucaMargaui on
+// load; playground/web/runtime.js loads it and calls it. Same compiler and
+// embedded bundle the wasm demos use (demo/margaui), so previews match.
+import {
+  "marianoguerra/tutuca/demo/margaui",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

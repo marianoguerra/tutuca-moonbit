@@ -105,11 +105,13 @@ each DOM event instead of receiving a closure. `demo/counter_wasm`,
 `demo/universal_wasm`, and `demo/storybook_wasm` are the wasm-gc hosts
 (`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
 mounts the `storybook/ui` gallery over the whole example registry, and
-`universal_wasm` hosts the dyncomp guest bundles). margaui styling works the same in both backends: the host
-publishes the collected class set on `globalThis.__tutuca_classes` and the page
-compiles it via margaui's CDN build (the wasm page drives that compile from its
-loader after `mount()`, since its module's top-level await races the page's
-inline compile script).
+`universal_wasm` hosts the dyncomp guest bundles). margaui styling is compiled
+in MoonBit: the host's `mount()` hands `collect_classes()` to `demo/margaui`'s
+`compile_classes` (the `marianoguerra/tailwindcss` port + an embedded margaui
+bundle) and injects the resulting `<style id="margaui-css">`, re-running it from
+the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
+no `globalThis` class hand-off. The in-browser playground uses the same compiler
+shipped to js (`playground/margaui_js` → `margaui.js`).
 
 The raw `moon` commands below still work and are what the tasks run underneath.
 

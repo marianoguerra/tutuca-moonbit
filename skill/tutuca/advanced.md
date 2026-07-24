@@ -260,5 +260,5 @@ trait*, ported from `storybook/examples/custom_collection.mbt`.
 ## Tailwind / MargaUI Class Compilation
 
 Moved to [margaui.md](./margaui.md) — collecting the class set with
-`collect_classes()`, the CDN compile step, `inject_style`, and the
+`collect_classes()`, the MoonBit compile step, `inject_style`, and the
 assembled-class-names decoy-view pitfall.

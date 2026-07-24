@@ -1,0 +1,18 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/demo/margaui"
+
+// Values
+pub fn compile_classes(ArrayView[String]) -> String raise
+
+pub let margaui_bundle : Array[(String, String)]
+
+pub let margaui_entry : String
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits
+

@@ -16,6 +16,8 @@ pub fn on_event(@core.Any) -> Unit
 
 pub fn on_popstate() -> Unit
 
+pub fn refresh_margaui() -> Unit
+
 // Errors
 
 // Types and methods

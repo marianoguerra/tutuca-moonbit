@@ -987,7 +987,7 @@ coverage.
 - [advanced.md](./advanced.md) — dynamic bindings (`*x`), pseudo-`@x` for
   `<select>` / `<table>` / `<tr>`, drag & drop, custom collections.
 - [margaui.md](./margaui.md) — setting up MargaUI styling:
-  `collect_classes()`, the CDN compile step, and `inject_style`.
+  `collect_classes()`, the MoonBit compile step, and `inject_style`.
 - [semantics.md](./semantics.md) — runtime semantics: path steps, the
   transaction lifecycle, dyn-var teleporting, and async key pinning
   (`live_path`).

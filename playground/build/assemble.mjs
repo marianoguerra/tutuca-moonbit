@@ -117,6 +117,14 @@ console.log("building viewgen (js) ...");
 execSync("moon build --target js playground/viewgen_js", { cwd: REPO, stdio: "inherit" });
 cpSync(join(buildDir("js"), "playground/viewgen_js/viewgen_js.js"), join(OUT, "viewgen.js"));
 
+// The margaui class compiler, compiled to js: previews need it in the BROWSER
+// to turn a mounted app's class set into CSS (marianoguerra/tailwindcss + the
+// embedded margaui bundle). Like viewgen, moonc's js output is a classic-script
+// IIFE that publishes globalThis.__tutucaMargaui on load; runtime.js loads it.
+console.log("building margaui (js) ...");
+execSync("moon build --target js playground/margaui_js", { cwd: REPO, stdio: "inherit" });
+cpSync(join(buildDir("js"), "playground/margaui_js/margaui_js.js"), join(OUT, "margaui.js"));
+
 // Bundle the shared CodeMirror editor to a single ESM file both the standalone
 // shell (driver.js) and the embeddable element (site/embed.js) import.
 await esbuild({

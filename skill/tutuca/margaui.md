@@ -12,54 +12,31 @@ literal class the compiled views can show —
 `@anode.ANode::collect_classes`) — that class list is compiled to CSS,
 and the host injects the result as `<style id="margaui-css">`.
 
-There are two ways to run the compile step:
-
-- **In MoonBit (offline, no CDN) — what the wasm demos do.** The
-  [`marianoguerra/tailwindcss`](https://github.com/marianoguerra/tailwindcss-moonbit)
-  package is a MoonBit port of the Tailwind v4 compiler. margaui's whole
-  `@import` graph is snapshotted into an embedded bundle once, and the host
-  compiles the collected classes against it with `@tw.compile_sync`. See
-  [Compile in MoonBit](#compile-in-moonbit-what-the-demos-do) below.
-- **In JS (quick start) — margaui's own `compile`.** The page imports
-  margaui's `compile` (class names → CSS) from a CDN or a vendored copy and
-  injects the result. Lightest to wire up; needs the network (or vendored
-  files) at runtime. Described under [Get margaui](#get-margaui).
+The compile step runs **in MoonBit** via
+[`marianoguerra/tailwindcss`](https://github.com/marianoguerra/tailwindcss-moonbit),
+a MoonBit port of the Tailwind v4 compiler — no JS margaui package, no CDN, no
+network at runtime. margaui's whole `@import` graph is snapshotted into an
+embedded bundle once (the wasm demos and the in-browser playground use the same
+compiler + bundle), and the host compiles the collected classes against it with
+`@tw.compile_sync`. See [Compile in MoonBit](#compile-in-moonbit-what-the-demos-do).
 
 ## Get margaui
 
-margaui ships two pieces: a `compile` function (class names → CSS text)
-and a `theme.css` stylesheet — both consumed by the **host page's JS**,
-not by MoonBit code.
+You do **not** need margaui's JS package — the compiler is the MoonBit
+`marianoguerra/tailwindcss` port and the class CSS is built from an embedded
+bundle (see [Compile in MoonBit](#compile-in-moonbit-what-the-demos-do)). The
+light and dark theme variables are compiled into that CSS too.
 
-### CDN (no install)
-
-```html
-<link
-  rel="stylesheet"
-  href="https://marianoguerra.github.io/margaui/themes/theme.css"
-/>
-```
-
-and in the page's module script,
-`import { compile } from "https://cdn.jsdelivr.net/npm/margaui/+esm"`
-(full wiring below).
-
-### Vendoring
-
-Copy a prebuilt `margaui.min.js` and a `theme.css` into the project and
-import from the local path — useful for offline builds or pinning an
-exact version:
+The only thing you may still fetch from margaui is the **extra theme palettes**
+(dracula, nord, …), which are plain CSS custom-property stylesheets with no
+MoonBit equivalent. Link one lazily when the user picks it:
 
 ```html
-<link rel="stylesheet" href="./vendor/theme.css" />
-<script type="module">
-  import { compile } from "./vendor/margaui.min.js";
-  // …
-</script>
+<link rel="stylesheet" href="https://marianoguerra.github.io/margaui/themes/dracula.css" />
 ```
 
-Trade-off: no runtime network dependency and a frozen version, at the
-cost of updating the vendored files by hand.
+(or vendor those `.css` files for a fully offline build). Light + dark need no
+link — they are in the compiled `margaui-css`.
 
 ## Dark mode and the other palettes
 
@@ -146,52 +123,30 @@ call `compile_sync` after mount.
 
 ## Wire it into tutuca
 
-Whatever the backend, the integration is the same three steps: after
-mounting, **collect** the class set on the MoonBit side, **compile** it
-with margaui on the JS side, **inject** the CSS.
+The integration is three steps, all on the MoonBit side: after mounting,
+**collect** the class set, **compile** it, **inject** the CSS.
 
-**js target** (the `demo/examples` pattern): the MoonBit `main` publishes
-the class list on `globalThis` through a tiny FFI, and the page's module
-script compiles + injects:
+**wasm-gc target** (the `demo/*_wasm` pattern): `mount()` compiles + injects in
+MoonBit; the page only pre-places an empty `<style id="margaui-css">` in
+`<head>` (so injection keeps a stable, early cascade position — palette links
+appended later still win) and calls `exports.mount()`:
 
 ```moonbit
-///|
-extern "js" fn publish_classes_ffi(classes : String) -> Unit =
-  #|(s) => { globalThis.__tutuca_classes = s ? s.split(" ") : [] }
-
-// in main, after App::from_module / @glue.install / install_styles:
-publish_classes_ffi(app.scope.comps.collect_classes().join(" "))
+// in the host's mount(), after the app is built:
+let css = @margaui.compile_classes(app.scope.comps.collect_classes())
+@wglue.inject_style(doc, "margaui-css", css) // app/wasm inject_style upserts by id
 ```
 
-```html
-<script src="…/your_host.js"></script>
-<script type="module">
-  // the classic script above ran main() and published the class set
-  // (module scripts are deferred, so ordering is guaranteed)
-  const classes = globalThis.__tutuca_classes ?? [];
-  if (classes.length > 0) {
-    const { compile } = await import("https://cdn.jsdelivr.net/npm/margaui/+esm");
-    const css = await compile(classes);
-    const style = document.createElement("style");
-    style.id = "margaui-css";
-    style.textContent = css;
-    document.head.appendChild(style);
-  }
-</script>
-```
+Export a `refresh_margaui()` that re-runs the same two lines, and call it from
+the loader after a dyncomp bundle registers new classes.
 
-Alternatively compile in JS and hand the CSS back to MoonBit:
-`@glue.inject_style(doc, "margaui-css", css)` (from
-`marianoguerra/tutuca/app/browser`) upserts a `<style id=…>` element —
-the same helper exists in `app/wasm` for the wasm-gc backend.
-
-**wasm-gc target** (the `demo/*_wasm` pattern): the demos no longer use the JS
-compile above — the wasm `mount()` compiles the collected classes in MoonBit and
-injects `<style id="margaui-css">` itself (see
-[Compile in MoonBit](#compile-in-moonbit-what-the-demos-do)). The page just
-pre-places an empty `<style id="margaui-css">` in `<head>` (so injection keeps a
-stable, early cascade position) and calls `exports.mount()`; there is no
-page-side `compile` and no `globalThis` hand-off.
+**js target**: same shape with `app/browser`'s `@glue.inject_style`. If the
+compile must run in the page instead of the module (e.g. the in-browser
+playground, which mounts freshly-compiled user code in an iframe), ship the
+compiler to js as a small executable that publishes a compile function — see
+`playground/margaui_js` (published as `globalThis.__tutucaMargaui`) and its use
+in `playground/web/runtime.js`. Either way there is no JS margaui package, no
+CDN import, and no `globalThis` class hand-off between MoonBit and the page.
 
 ## Pitfall: assembled class names are invisible to the scanner
 

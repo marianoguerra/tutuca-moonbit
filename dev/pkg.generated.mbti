@@ -8,6 +8,8 @@ import {
 // Values
 pub fn help_text() -> String
 
+pub fn margaui_bundle_steps() -> Array[Step]
+
 pub fn plan(String) -> Array[Step]?
 
 pub fn rewrite(String, old_src~ : String, new_src~ : String) -> String
