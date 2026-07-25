@@ -2,7 +2,9 @@
 /// Regenerate the margaui bundle + its embedded MoonBit module.
 ///
 /// `-i <entry.css>`  the adapted margaui entry (default demo/assets/margaui.entry.css)
-/// `--base <dir>`    margaui checkout the entry's @imports resolve against (default ../margaui)
+/// `--base <dir>`    margaui checkout the entry's @imports resolve against
+///                   (default _build/margaui — where scripts/fetch-margaui.mjs
+///                   clones the pinned margaui ref)
 /// `-o <bundle.json>` the raw path->content bundle (default demo/assets/margaui.bundle.json)
 /// `--emit-mbt <p>`  the embedded module (default demo/margaui/bundle_gen.mbt)
 ///
@@ -11,7 +13,7 @@
 async fn main {
   let args = @sys.get_cli_args()
   let mut input = "demo/assets/margaui.entry.css"
-  let mut base = "../margaui"
+  let mut base = "_build/margaui"
   let mut output = "demo/assets/margaui.bundle.json"
   let mut emit_mbt = "demo/margaui/bundle_gen.mbt"
   let mut index = 1

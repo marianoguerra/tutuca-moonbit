@@ -46,6 +46,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   uses are unchanged (`compile_sync` for `demo/margaui`, `collect_imports` for
   `cmd/margaui-bundle`): the compiled margaui CSS and the regenerated
   `demo/assets/margaui.bundle.json` are byte-identical to 0.1.3's.
+- The `margaui-bundle` task no longer needs a sibling `../margaui` working
+  copy. `scripts/fetch-margaui.mjs` clones margaui from GitHub at a pinned tag
+  into the gitignored `_build/margaui`, which is also the tool's new default
+  `--base`. The pin is what makes the committed bundle reproducible — anyone
+  can now regenerate it and get the same bytes; before, the result depended on
+  whatever state the local checkout happened to be in. Bump `MARGAUI_REF` to
+  pick up new margaui CSS.
 
 ### Fixed
 

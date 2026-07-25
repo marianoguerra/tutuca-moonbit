@@ -7,7 +7,8 @@
 // can read them. Not shipped — see the moon.mod exclude list.
 //
 // Run via: moon run --target native cmd/dev -- margaui-bundle
-// (needs a margaui checkout; default ../margaui, override with --base).
+// (the task clones margaui at the ref pinned in scripts/fetch-margaui.mjs into
+// _build/margaui first; --base points at any other checkout).
 import {
   "marianoguerra/tailwindcss" @tw,
   "marianoguerra/tailwindcss/loader/fs" @twfs,

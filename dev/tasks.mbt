@@ -582,13 +582,25 @@ pub fn skill_embed_steps() -> Array[Step] {
 const MARGAUI_BUNDLE_BIN = "_build/native/debug/build/cmd/margaui-bundle/margaui-bundle.exe"
 
 ///|
+/// Where scripts/fetch-margaui.mjs puts the margaui checkout: a gitignored,
+/// throwaway spot under _build/, so the regen needs nothing but network.
+const MARGAUI_CHECKOUT = "_build/margaui"
+
+///|
 /// Regenerate the margaui bundle + its embedded module (demo/margaui/bundle_gen.mbt)
-/// by running the tailwindcss `bundle` graph walk over margaui's CSS. Needs a
-/// margaui checkout (default sibling ../margaui). Kept out of `dist`/`ci`: it is
-/// a rare regen run only when margaui itself changes, and requires that checkout.
+/// by running the tailwindcss `bundle` graph walk over margaui's CSS. The CSS
+/// comes from a shallow clone of margaui at the ref pinned in
+/// scripts/fetch-margaui.mjs — no sibling checkout to set up, and the pin makes
+/// the committed bundle reproducible. Kept out of `dist`/`ci`: it is a rare
+/// regen run (only when margaui itself changes) and it needs the network.
 /// The generated module is committed, so normal builds never run this.
 pub fn margaui_bundle_steps() -> Array[Step] {
   [
+    Run({
+      label: "fetch margaui (pinned ref) → " + MARGAUI_CHECKOUT,
+      prog: "node",
+      args: ["scripts/fetch-margaui.mjs"],
+    }),
     Run(
       moon("build · margaui-bundle tool", [
         "build", "--target", "native", "cmd/margaui-bundle",
@@ -598,8 +610,14 @@ pub fn margaui_bundle_steps() -> Array[Step] {
       label: "bundle margaui CSS graph → demo/assets/margaui.bundle.json + embed",
       prog: MARGAUI_BUNDLE_BIN,
       args: [
-        "-i", "demo/assets/margaui.entry.css", "--base", "../margaui", "-o", "demo/assets/margaui.bundle.json",
-        "--emit-mbt", "demo/margaui/bundle_gen.mbt",
+        "-i",
+        "demo/assets/margaui.entry.css",
+        "--base",
+        MARGAUI_CHECKOUT,
+        "-o",
+        "demo/assets/margaui.bundle.json",
+        "--emit-mbt",
+        "demo/margaui/bundle_gen.mbt",
       ],
     }),
     // the tool emits `#|` raw-string blocks unformatted; fmt settles them.
@@ -644,7 +662,7 @@ pub fn help_text() -> String {
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
   )
   line(
-    "margaui-bundle", "regenerate demo/margaui/bundle_gen.mbt from a margaui checkout (../margaui)",
+    "margaui-bundle", "regenerate demo/margaui/bundle_gen.mbt from a margaui clone at the pinned ref (needs network)",
   )
   sb.to_string()
 }

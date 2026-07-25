@@ -92,11 +92,16 @@ styling works offline. The moving parts, all in-repo:
   `bundle` graph walk (`@tw.collect_imports`) over an adapted margaui entry
   (`demo/assets/margaui.entry.css`) and emits `demo/margaui/bundle_gen.mbt` — the
   `@import` map as an embedded `Array[(String, String)]`, plus the entry string.
-  Regenerate against a margaui checkout (default `../margaui`) with:
+  Regenerate with:
 
   ```sh
   moon run --target native cmd/dev -- margaui-bundle
   ```
+
+  The task clones margaui from GitHub at the ref pinned in
+  `scripts/fetch-margaui.mjs` into the gitignored `_build/margaui` — no local
+  checkout to set up, and the pin is what makes the committed bundle
+  reproducible. Bump that ref to pick up new margaui CSS.
 
 - **The compile helper.** `demo/margaui`'s
   `compile_classes(classes) -> String` builds a `MemoryStylesheetLoader` from the
