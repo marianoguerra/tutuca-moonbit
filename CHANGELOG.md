@@ -42,6 +42,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 - The `gen-views` task runs `moon fmt` after generating. The CLI emits
   unformatted source, so `gen-views` followed by `git diff --exit-code` — the
   drift check the docs describe — always reported churn before this.
+- `marianoguerra/tailwindcss` is now 0.2.0 (was 0.1.3). The two APIs tutuca
+  uses are unchanged (`compile_sync` for `demo/margaui`, `collect_imports` for
+  `cmd/margaui-bundle`): the compiled margaui CSS and the regenerated
+  `demo/assets/margaui.bundle.json` are byte-identical to 0.1.3's.
 
 ### Fixed
 
