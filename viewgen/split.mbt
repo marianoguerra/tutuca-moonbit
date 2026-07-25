@@ -59,6 +59,12 @@ fn is_space(c : Char) -> Bool {
 ///|
 /// Slice [start, end_) out of `chars`, skipping any style region that starts
 /// inside it. Regions are in source order and never overlap.
+///
+/// Copies the runs BETWEEN the regions rather than walking char by char and
+/// re-scanning every region at each one: that cost `chars × regions` per view,
+/// so the whole file cost `chars × regions`, quadratic in a view file's size
+/// (both factors grow with it). One `from_array` per run, at most one run more
+/// than there are regions in the span.
 fn slice_without_styles(
   chars : Array[Char],
   start : Int,
@@ -67,20 +73,22 @@ fn slice_without_styles(
 ) -> String {
   let sb = StringBuilder::new()
   let mut i = start
-  while i < end_ {
-    let mut jumped = false
-    for s in styles {
-      if s.start == i {
-        i = s.end_
-        jumped = true
-        break
-      }
-    }
-    if jumped {
+  for s in styles {
+    // Before the span (or inside a region already skipped — regions never
+    // overlap, so `i` is only ever past one that has been jumped).
+    if s.start < i {
       continue
     }
-    sb.write_char(chars[i])
-    i = i + 1
+    // In source order, so nothing after this one starts inside the span.
+    if s.start >= end_ {
+      break
+    }
+    sb.write_string(String::from_array(chars[i:s.start]))
+    i = s.end_
+  }
+  // A region may end past the span; then there is no trailing run.
+  if i < end_ {
+    sb.write_string(String::from_array(chars[i:end_]))
   }
   sb.to_string()
 }

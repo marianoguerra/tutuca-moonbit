@@ -11,6 +11,8 @@ pub fn build_views(ViewSet, macros? : Array[MacroDef]) -> Map[String, @anode.Vie
 
 pub fn emit_ir_module(String, String, ViewFile) -> String raise GenError
 
+pub fn emit_ir_module_opt(String, String, ViewFile) -> String?
+
 pub fn emit_module(String, String, ViewFile, debug_derive? : Bool) -> String raise GenError
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError

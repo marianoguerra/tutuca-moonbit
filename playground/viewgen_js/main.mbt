@@ -32,8 +32,8 @@ fn generate_json(html : String, name : String) -> String {
         debug_derive=false,
       ).to_json(),
     }
-    if @viewgen.ir_supported(views) {
-      m["ir"] = @viewgen.emit_ir_module(name, "view.html", views).to_json()
+    if @viewgen.emit_ir_module_opt(name, "view.html", views) is Some(src) {
+      m["ir"] = src.to_json()
     }
     m
   } catch {

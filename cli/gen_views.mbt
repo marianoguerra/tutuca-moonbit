@@ -278,10 +278,8 @@ pub fn gen_views(
     // The compiled tree goes in its own module: it is by far the biggest
     // part of the output and nothing in the types file depends on it, so a
     // component that opts out just never references it.
-    if ir && @viewgen.ir_supported(views) {
-      files.push(
-        (ir_target(target), @viewgen.emit_ir_module(name, file, views)),
-      )
+    if ir && @viewgen.emit_ir_module_opt(name, file, views) is Some(src) {
+      files.push((ir_target(target), src))
     }
   } catch {
     e =>

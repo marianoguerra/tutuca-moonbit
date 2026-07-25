@@ -180,6 +180,19 @@ declare pub fn emit_ir_module(
 ) -> String raise GenError
 
 ///|
+/// The companion IR module, or None when the file cannot be emitted as compiled
+/// trees — `ir_supported` and `emit_ir_module` in one pass.
+///
+/// Prefer this to the pair: they compile every view separately, so asking the
+/// question costs as much as emitting the answer. `ir_supported` remains for
+/// callers that only want to know.
+declare pub fn emit_ir_module_opt(
+  name : String,
+  source_file : String,
+  file : ViewFile,
+) -> String?
+
+///|
 /// Build the compiled views directly, skipping codegen — the same value the
 /// emitted IR module reconstructs.
 declare pub fn build_views(

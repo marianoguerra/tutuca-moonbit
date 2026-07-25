@@ -442,6 +442,23 @@ pub fn emit_ir_module(
 }
 
 ///|
+/// `ir_supported` and `emit_ir_module` in one pass: emitting a view IS the
+/// check, so the failure that made `ir_supported` answer false is the same one
+/// caught here — asking first only bought a second compile of every view.
+///
+/// Output is all-or-nothing: the builder is discarded with the error, so a file
+/// that fails on its last view emits nothing rather than a truncated module.
+pub fn emit_ir_module_opt(
+  name : String,
+  source_file : String,
+  file : ViewFile,
+) -> String? {
+  Some(emit_ir_module(name, source_file, file)) catch {
+    _ => None
+  }
+}
+
+///|
 fn emit_ir_header(
   t : String,
   v : String,
