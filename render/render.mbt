@@ -188,20 +188,37 @@ fn render_site(
 /// the inherited @push-view trail + the render-site node id + the innermost
 /// loop key (so sibling list items of the same component cache separately).
 /// `\x1f` can't appear in a view name or key, so the fields can't merge.
+/// Written into a builder rather than interpolated, and walking `view_names`
+/// backwards rather than asking `view_trail()` to materialize the reversed copy
+/// and then joining it: this runs once per render site per pass, so a 1000-row
+/// list paid for three throwaway allocations per row per render.
 fn site_cache_key(
   rv : ResolvedView,
   node_id : Int?,
   stack : RenderStack,
 ) -> String {
-  let nid = match node_id {
-    Some(n) => n.to_string()
-    None => ""
+  let sb = StringBuilder::new()
+  sb.write_string(rv.cid.to_string())
+  sb.write_char('\u{1f}')
+  sb.write_string(rv.vid)
+  sb.write_char('\u{1f}')
+  // The trail innermost-first, i.e. view_trail() order.
+  let names = stack.view_names
+  for i = names.length() - 1; i >= 0; i = i - 1 {
+    sb.write_string(names[i])
+    if i > 0 {
+      sb.write_char(',')
+    }
   }
-  let loop_key = match stack.binds.get("key") {
-    Some(k) => k.to_display_string()
-    None => ""
+  sb.write_char('\u{1f}')
+  if node_id is Some(n) {
+    sb.write_string(n.to_string())
   }
-  "\{rv.cid}\u{1f}\{rv.vid}\u{1f}\{stack.view_trail().join(",")}\u{1f}\{nid}\u{1f}\{loop_key}"
+  sb.write_char('\u{1f}')
+  if stack.binds.get("key") is Some(k) {
+    sb.write_string(k.to_display_string())
+  }
+  sb.to_string()
 }
 
 ///|

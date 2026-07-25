@@ -1,16 +1,19 @@
-# View pipeline performance log
+# Performance log
 
-One entry per measured change to `viewgen/` (and below it `anode/`), in the
-order they landed. Method: `moon bench --release benchmarks` on wasm-gc and
-native, back to back, before and after; for a change under ~5% the affected
-bench is run 3× on each side (`-p marianoguerra/tutuca/benchmarks -f <file> -i
-<n>`) and the medians compared. A change that does not move a number gets
-reverted, not kept "because it should be faster".
+One entry per measured change, in the order they landed. Method:
+`node benchmarks/report.mjs [--target native]` on wasm-gc and native, back to
+back, before and after (`--save` / `--baseline` do the bookkeeping); for a change
+under ~5% the affected bench is run 3× on each side (`moon bench -p
+marianoguerra/tutuca/benchmarks -f <file> -i <n>`) and the medians compared. A
+change that does not move a number gets reverted, not kept "because it should be
+faster".
 
-Every entry keeps the workload's output checksums unchanged
-(`viewparse_bench_test.mbt` pins them), and `cmd/dev -- gen-views` followed by
-`git diff --exit-code` confirms every checked-in `*_view_gen.mbt` still
-regenerates byte-identically.
+Every entry leaves output unchanged. For the view pipeline that means the
+workload checksums (`viewparse_bench_test.mbt` pins them) plus `cmd/dev --
+gen-views` followed by `git diff --exit-code`; for the runtime it means the full
+797-test suite, a good number of which are DOM snapshots.
+
+# The view pipeline
 
 ## Baseline — 2026-07-25, `7def62d`
 
@@ -112,6 +115,8 @@ Scaling probe (`build` on one view holding 1×/2×/4× every view body):
 | 2×       | 21.43 ms | 17.76 ms | 2.07×              |
 | 4×       | 45.19 ms | 37.33 ms | 4.36×              |
 
+# The runtime
+
 ## 3. `Harness::find` stops at the match it wants — patches −30% to −78%
 
 Found by profiling the update suite, not by reading the code: `harness::matches`
@@ -171,7 +176,31 @@ number of them DOM snapshots carrying these comments) checks thoroughly.
 
 Nothing regressed outside the two known-noisy benches.
 
-## Runtime numbers — 2026-07-25, after #1–#4
+## 5. `site_cache_key` written, not interpolated — big updates −4%
+
+Same shape as #4, one layer up: the render cache's per-slot key was an
+interpolated string built once per render site per pass, and it called
+`view_trail()` — which materializes a reversed copy of the trail — then joined
+it, on top of `render_site`'s own call. Three throwaway allocations per row per
+render.
+
+Built into a `StringBuilder` instead, walking `view_names` backwards rather than
+reversing it. Same key, so the cache behaves identically.
+
+| Workload (native)            |          |
+|------------------------------|----------|
+| `patch add+remove todo 1000` | −3.7%    |
+| `patch toggle todo 1000`     | −3.1%    |
+| `patch page people 1000`     | −3.7%    |
+| `patch switch view`          | −3.3%    |
+
+Small workloads are flat — at 10 rows this is a handful of allocations against a
+fixed per-pass cost, and the difference is inside their run-to-run spread. Kept
+because five independent benches moved the same way; a single reading at this
+size would not have been enough (`patch noop todo 10` alone swings ±18% between
+runs, which is how this nearly got reverted).
+
+## Runtime numbers — 2026-07-25, after #1–#5
 
 ### Render: mount + first render + serialize
 
@@ -211,7 +240,8 @@ itself is ~130 µs of that.
 | `toggle todo 1000`           | 11.50 ms | 12.10 ms |
 | `add+remove todo 1000`       | 21.04 ms | 25.53 ms |
 
-Three things fall out of this table, all still true after #4:
+Three things fall out of this table (measured after #4; #5 moves the 1000-row
+rows down another ~4%), all still true:
 
 1. **A one-row change costs a whole-list pass.** Ticking one checkbox in a
    1000-row list is 6.1 ms (half of 12.10), against 19.3 ms to mount and render
@@ -260,9 +290,6 @@ In the update path (the biggest numbers on the board):
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
   per pass. Comparing the two entry lists directly, or an identity check first,
   would skip most of it.
-- **`site_cache_key`** builds an interpolated string per render site per pass —
-  and calls `view_trail()` (which allocates via `Array::rev`) twice per site once
-  you count `render_site`'s own call. Same shape as #4, one layer up.
 - **State through `Json`**: typed state derives `ToJson`/`FromJson`; worth
   confirming an update does not round-trip through it. (Part of what the 2.2% in
   `stringify` was is now gone with #4 — reprofile before chasing this.)
