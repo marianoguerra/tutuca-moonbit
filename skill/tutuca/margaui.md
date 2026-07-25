@@ -162,6 +162,17 @@ Other flags: `--entry <file>` compiles your own CSS entry instead of the
 embedded one (resolving its `@import`s from disk, so a project theme or
 `@source` setup works), and `--polyfills <0..3>` matches the compiler's levels.
 
+While authoring, let `watch` do both — view modules and stylesheet stay current
+together, so a class you just typed is styled by the time you reload:
+
+```sh
+tutuca watch src/ --margaui-css public/app.css
+```
+
+It runs the same collect/compile/write path the one-shot command does, over
+every watched view, once per settled batch. `--css-entry` / `--css-classes`
+forward to `--entry` / `--classes`; pass them if your build does.
+
 ## Wire it into tutuca
 
 The integration is three steps, all on the MoonBit side: after mounting,

@@ -85,7 +85,9 @@ moon run --target native cmd/dev -- <task>
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
 manages the `.html` files that already have a generated sibling, so pointing
-it at a project root does not try to compile `index.html`.
+it at a project root does not try to compile `index.html`. Add
+`--tailwind-css`/`--margaui-css <file>` and it rewrites that stylesheet too,
+once per settled batch over every watched view.
 
 The `playground` task ends with `playground/build/check-viewgen-tab.mjs`: the
 View tab generates a MoonBit module in the browser and feeds it to the
@@ -152,7 +154,10 @@ so margaui resolves its `./tw/*` imports against the good copies.
 
 `tutuca gen-tailwind-css` / `gen-margaui-css` are the build-time face of the same
 pipeline: the class collection a host does at mount time, run over a project's
-view files instead, so an AOT project can ship a static stylesheet.
+view files instead, so an AOT project can ship a static stylesheet. `tutuca watch
+--margaui-css <file>` keeps that stylesheet current alongside the view modules —
+`WatchPlan` carries a whole `CssPlan`, so it runs the same path rather than a
+second implementation of it.
 
 The raw `moon` commands below still work and are what the tasks run underneath.
 

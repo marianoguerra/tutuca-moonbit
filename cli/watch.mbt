@@ -20,11 +20,19 @@ pub(all) struct WatchPlan {
   name : String?
   out : String?
   ir : Bool
+  /// Refresh a stylesheet after every settled batch, or None to watch views
+  /// only. It is a whole `CssPlan` rather than a couple of loose fields so the
+  /// shell can run the SAME collect/compile/write path `gen-margaui-css` runs —
+  /// a stylesheet that differs between watch and a one-shot build would be
+  /// worse than no stylesheet at all.
+  css : CssPlan?
 } derive(Debug, Eq)
 
 ///|
 let watch_help : String =
   #|tutuca watch [path...] [--out <dir>] [--name <Name>] [--no-ir]
+  #|             [--tailwind-css <file> | --margaui-css <file>]
+  #|             [--css-entry <file>] [--css-classes <file>]
   #|
   #|  Watches view files and regenerates their MoonBit modules on every save,
   #|  so the generated types are always current and the compiler is what tells
@@ -41,6 +49,15 @@ let watch_help : String =
   #|  own components with `id="Comp:view"` never needs it.
   #|
   #|  --out, --name and --no-ir mean what they do for `gen-views`.
+  #|
+  #|  --tailwind-css / --margaui-css also rewrite that stylesheet after every
+  #|  settled batch, so a new class in a view is styled by the time you reload.
+  #|  The two are alternatives — they are the same choice `gen-tailwind-css` and
+  #|  `gen-margaui-css` make. The stylesheet is a whole-project artifact, so it
+  #|  is rebuilt once per batch over EVERY watched view, not per changed file.
+  #|  --css-entry and --css-classes are the CSS commands' --entry / --classes;
+  #|  pass them here if your build passes them, or watch will write a stylesheet
+  #|  that differs from the one you ship. Polyfills are always the default (3).
   #|  Ctrl-C to stop.
   #|
 
@@ -52,6 +69,10 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut name : String? = None
   let mut out : String? = None
   let mut ir = true
+  let mut tailwind_css : String? = None
+  let mut margaui_css : String? = None
+  let mut css_entry : String? = None
+  let mut css_classes : String? = None
   let mut i = 0
   while i < args.length() {
     let a = args[i]
@@ -78,6 +99,26 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
           match value_of("--out") {
             Some(v) => out = Some(v)
             None => return Done(missing_value(opts, "--out"))
+          }
+        } else if a.has_prefix("--tailwind-css") {
+          match value_of("--tailwind-css") {
+            Some(v) => tailwind_css = Some(v)
+            None => return Done(missing_value(opts, "--tailwind-css"))
+          }
+        } else if a.has_prefix("--margaui-css") {
+          match value_of("--margaui-css") {
+            Some(v) => margaui_css = Some(v)
+            None => return Done(missing_value(opts, "--margaui-css"))
+          }
+        } else if a.has_prefix("--css-entry") {
+          match value_of("--css-entry") {
+            Some(v) => css_entry = Some(v)
+            None => return Done(missing_value(opts, "--css-entry"))
+          }
+        } else if a.has_prefix("--css-classes") {
+          match value_of("--css-classes") {
+            Some(v) => css_classes = Some(v)
+            None => return Done(missing_value(opts, "--css-classes"))
           }
         } else if a.has_prefix("-") {
           return Done(
@@ -111,15 +152,58 @@ fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
       ),
     )
   }
+  if tailwind_css is Some(_) && margaui_css is Some(_) {
+    return Done(
+      error_emit(
+        opts,
+        err(
+          CODE_USAGE_MUTUALLY_EXCLUSIVE,
+          "--tailwind-css and --margaui-css write the same file from different stylesheets",
+          hint="pick one: --margaui-css if your views use margaui components, --tailwind-css otherwise",
+        ),
+      ),
+    )
+  }
+  let css_target = match (tailwind_css, margaui_css) {
+    (Some(t), _) => Some((t, false))
+    (_, Some(t)) => Some((t, true))
+    _ => None
+  }
+  // Silently ignoring these would leave watch writing a stylesheet that differs
+  // from the built one for a reason nothing on screen explains.
+  if css_target is None && (css_entry is Some(_) || css_classes is Some(_)) {
+    return Done(
+      error_emit(
+        opts,
+        err(
+          CODE_USAGE_MISSING_ARGUMENT,
+          "--css-entry/--css-classes need --tailwind-css or --margaui-css",
+          hint="they configure the stylesheet watch writes; without one of those, watch writes no stylesheet",
+        ),
+      ),
+    )
+  }
+  let watched = if paths.is_empty() { ["."] } else { paths }
   Watch(opts, plan={
-    paths: if paths.is_empty() {
-      ["."]
-    } else {
-      paths
-    },
+    paths: watched,
     name,
     out,
     ir,
+    css: match css_target {
+      None => None
+      Some((target, margaui)) =>
+        Some({
+          // The same roots watch resolves its view files from, so the class set
+          // is the whole watched project rather than whatever last changed.
+          paths: watched,
+          out: Some(target),
+          entry: css_entry,
+          extra_classes: css_classes,
+          print_classes: false,
+          polyfills: 3,
+          margaui,
+        })
+    },
   })
 }
 
@@ -184,6 +268,12 @@ pub fn watch_generated_line(target : String) -> String {
 /// so nothing is prefixed here and the path is not printed twice.
 pub fn watch_error_line(message : String) -> String {
   "  ✗ \{message}\n"
+}
+
+///|
+/// The line printed after watch rewrites the stylesheet.
+pub fn watch_css_line(target : String, classes~ : Int) -> String {
+  "  → \{target} (\{classes} classes)\n"
 }
 
 ///|

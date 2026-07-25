@@ -231,6 +231,26 @@ let commands : Array[CommandSpec] = [
         type_="boolean",
         description="Skip the companion compiled-tree module.",
       ),
+      flag(
+        "tailwind-css",
+        type_="string",
+        description="Also rewrite this stylesheet from the watched views, against stock Tailwind.",
+      ),
+      flag(
+        "margaui-css",
+        type_="string",
+        description="Also rewrite this stylesheet from the watched views, against Tailwind + margaui.",
+      ),
+      flag(
+        "css-entry",
+        type_="string",
+        description="The CSS commands' --entry, for the stylesheet watch writes.",
+      ),
+      flag(
+        "css-classes",
+        type_="string",
+        description="The CSS commands' --classes, for the stylesheet watch writes.",
+      ),
       help_flag,
     ],
     positionals: [

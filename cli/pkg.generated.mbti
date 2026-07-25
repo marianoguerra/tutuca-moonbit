@@ -79,6 +79,8 @@ pub let skill_files : Array[(String, String)]
 
 pub fn watch_banner(Array[String], Array[String]) -> String
 
+pub fn watch_css_line(String, classes~ : Int) -> String
+
 pub fn watch_error_line(String) -> String
 
 pub fn watch_generated_line(String) -> String
@@ -171,6 +173,7 @@ pub(all) struct WatchPlan {
   name : String?
   out : String?
   ir : Bool
+  css : CssPlan?
 } derive(Eq, @debug.Debug)
 
 // Type aliases

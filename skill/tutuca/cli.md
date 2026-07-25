@@ -29,7 +29,7 @@ inspect a component, the answer is a `moon test` block.
 | `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
-| `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir` |
+| `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
 | `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>`, `--out <dir>`. A static file server: the gallery is a wasm host built by `cmd/dev -- dist` |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary by the dev `skill-embed` task. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
@@ -146,6 +146,27 @@ anything a handler computes) is not in the source to be found.
   resolving its `@import`s from disk — use it for a project theme, `@source`
   directives or custom utilities.
 - `--polyfills <0..3>` — 0=none, 1=`@property`, 2=`color-mix`, 3=all (default).
+
+### `watch --margaui-css` — keep the stylesheet current too
+
+The full authoring loop in one process: view modules regenerate on save, and the
+stylesheet is rewritten with them.
+
+```sh
+tutuca watch src/ --margaui-css public/app.css
+```
+
+`--tailwind-css` is the same for stock Tailwind; the two are alternatives, the
+same choice the two CSS commands make. `--css-entry` and `--css-classes` are the
+CSS commands' `--entry` / `--classes` — pass them here if your build passes
+them, or watch will write a stylesheet that differs from the one you ship.
+Polyfills are always the default (3).
+
+The stylesheet is rebuilt over **every** watched view, once per settled batch —
+not per changed file. It is a whole-project artifact, so a class you delete has
+to leave it too, and compiling is the expensive half of the loop. A view that
+will not parse is reported once by the regeneration pass and leaves the previous
+stylesheet in place; the next save fixes it.
 
 ## Global flags
 

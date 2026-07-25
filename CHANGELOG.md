@@ -84,6 +84,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   from disk), `--polyfills`, and — for the literal-only limit the runtime
   collector also has — `--print-classes` to see what was collected and
   `--classes <file>` to add back the names a view assembles at run time.
+- `tutuca watch --tailwind-css <file>` / `--margaui-css <file>` — keep a
+  stylesheet current alongside the view modules, so the authoring loop is one
+  process again. Rebuilt over every watched view once per settled batch (a
+  stylesheet is a whole-project artifact, and compiling is the expensive half),
+  and `WatchPlan` carries a whole `CssPlan` so watch runs the very same
+  collect/compile/write path the one-shot commands do. `--css-entry` and
+  `--css-classes` forward to their `--entry` / `--classes`.
 - `css/` — a published, target-agnostic package holding the stylesheet bundles
   and `compile_tailwind` / `compile_margaui`. It replaces `demo/margaui`, which
   was wasm-gc-only and excluded from the published archive; the wasm demo hosts

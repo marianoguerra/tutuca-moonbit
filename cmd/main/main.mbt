@@ -265,43 +265,74 @@ async fn run_gen_css(
     )
     return
   }
-  let sources : Array[(String, String)] = []
-  for path in files {
-    let source = @fs.read_file(path).text() catch {
-      e => {
-        emit_and_exit(
-          @cli.error_emit(
-            opts,
-            @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
-          ),
-        )
-        return
-      }
-    }
-    sources.push((path, source))
-  }
-  let classes = match @cli.collect_view_classes(sources) {
+  let classes = match css_candidates(plan, files) {
     Ok(classes) => classes
     Err(shape) => {
       emit_and_exit(@cli.error_emit(opts, shape))
       return
     }
   }
+  if plan.print_classes {
+    emit_and_exit({ out: @cli.class_list_text(classes), err: "", exit_code: 0 })
+    return
+  }
+  let css = match compile_css(plan, classes) {
+    Ok(css) => css
+    Err(shape) => {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
+    }
+  }
+  match plan.out {
+    None => emit_and_exit({ out: css, err: "", exit_code: 0 })
+    Some(target) =>
+      match write_css(target, css) {
+        Err(shape) => emit_and_exit(@cli.error_emit(opts, shape))
+        Ok(_) =>
+          emit_and_exit({
+            out: @cli.gen_css_success(
+              target,
+              files=files.length(),
+              classes=classes.length(),
+            ),
+            err: "",
+            exit_code: 0,
+          })
+      }
+  }
+}
+
+// The CSS build in three steps. They return an ErrShape instead of exiting so
+// `watch` can report a failure and stay in its loop — a view saved mid-edit must
+// not kill the watcher, and neither must a stylesheet that briefly cannot build.
+
+///|
+/// Read `files`, collect the literal classes their views use, and merge in the
+/// `--classes` candidates.
+async fn css_candidates(
+  plan : @cli.CssPlan,
+  files : Array[String],
+) -> Result[Array[String], @cli.ErrShape] noraise {
+  let sources : Array[(String, String)] = []
+  for path in files {
+    let source = @fs.read_file(path).text() catch {
+      e => return Err(@cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"))
+    }
+    sources.push((path, source))
+  }
+  let classes = match @cli.collect_view_classes(sources) {
+    Ok(classes) => classes
+    Err(shape) => return Err(shape)
+  }
   // Names the collector cannot see because the view assembles them at run time.
   // Merged through a Set so a candidate listed in both places is not duplicated,
   // then re-sorted so the output does not depend on which source it came from.
   match plan.extra_classes {
+    None => ()
     Some(path) => {
       let extra = @fs.read_file(path).text() catch {
-        e => {
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
-            ),
-          )
-          return
-        }
+        e =>
+          return Err(@cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"))
       }
       let merged : Set[String] = Set([])
       for c in classes {
@@ -319,42 +350,8 @@ async fn run_gen_css(
       }
       classes.sort_by(@cli.lex_compare)
     }
-    None => ()
   }
-  if plan.print_classes {
-    emit_and_exit({ out: @cli.class_list_text(classes), err: "", exit_code: 0 })
-    return
-  }
-  let css = compile_css(opts, plan, classes)
-  match plan.out {
-    None => emit_and_exit({ out: css, err: "", exit_code: 0 })
-    Some(target) => {
-      try {
-        let dir = parent_dir(target)
-        if dir != "" && !@fs.exists(dir) {
-          @fs.mkdir(dir, recursive=true)
-        }
-        @fs.write_file(target, css, create_mode=CreateOrTruncate)
-      } catch {
-        e =>
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(@cli.CODE_INTERNAL, "failed to write \{target}: \{e}"),
-            ),
-          )
-      }
-      emit_and_exit({
-        out: @cli.gen_css_success(
-          target,
-          files=files.length(),
-          classes=classes.length(),
-        ),
-        err: "",
-        exit_code: 0,
-      })
-    }
-  }
+  Ok(classes)
 }
 
 ///|
@@ -365,24 +362,16 @@ async fn run_gen_css(
 /// a project's own entry, whose imports the async loader resolves from disk —
 /// the same shape `marianoguerra/tailwindcss`'s own CLI uses.
 async fn compile_css(
-  opts : @cli.GlobalOpts,
   plan : @cli.CssPlan,
   classes : Array[String],
-) -> String noraise {
-  let result = match plan.entry {
+) -> Result[String, @cli.ErrShape] noraise {
+  match plan.entry {
     Some(path) => {
       let source = @fs.read_file(path).text() catch {
-        e => {
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
-            ),
-          )
-          return ""
-        }
+        e =>
+          return Err(@cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"))
       }
-      @tw.compile(
+      let css = @tw.compile(
         source,
         options=@tw.CompileOptions::new(
           base=parent_dir(path),
@@ -391,45 +380,90 @@ async fn compile_css(
           polyfills=plan.polyfills,
         ),
       ).build(classes) catch {
-        e => {
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(
-                @cli.CODE_INTERNAL,
-                "\{e}",
-                hint="--entry resolves the stylesheet's @imports relative to its own directory",
-                where_=path,
-              ),
+        e =>
+          return Err(
+            @cli.err(
+              @cli.CODE_INTERNAL,
+              "\{e}",
+              hint="--entry resolves the stylesheet's @imports relative to its own directory",
+              where_=path,
             ),
           )
-          return ""
-        }
       }
+      Ok(css)
     }
-    None =>
-      try {
+    None => {
+      let css = try {
         if plan.margaui {
           @css.compile_margaui(classes, polyfills=plan.polyfills)
         } else {
           @css.compile_tailwind(classes, polyfills=plan.polyfills)
         }
       } catch {
-        e => {
-          emit_and_exit(
-            @cli.error_emit(
-              opts,
-              @cli.err(
-                @cli.CODE_INTERNAL,
-                "compiling the embedded stylesheets failed: \{e}",
-              ),
+        e =>
+          return Err(
+            @cli.err(
+              @cli.CODE_INTERNAL,
+              "compiling the embedded stylesheets failed: \{e}",
             ),
           )
-          return ""
-        }
       }
+      Ok(css)
+    }
   }
-  result
+}
+
+///|
+async fn write_css(
+  target : String,
+  css : String,
+) -> Result[Unit, @cli.ErrShape] noraise {
+  try {
+    let dir = parent_dir(target)
+    if dir != "" && !@fs.exists(dir) {
+      @fs.mkdir(dir, recursive=true)
+    }
+    @fs.write_file(target, css, create_mode=CreateOrTruncate)
+    Ok(())
+  } catch {
+    e => Err(@cli.err(@cli.CODE_INTERNAL, "failed to write \{target}: \{e}"))
+  }
+}
+
+///|
+/// Rebuild the stylesheet `watch` was asked to keep current.
+///
+/// Over EVERY watched view, not just the changed ones: a stylesheet is a
+/// whole-project artifact, so a class dropped from the file you just saved has
+/// to disappear from it too. Failures print and the loop continues.
+async fn refresh_watch_css(
+  plan : @cli.CssPlan,
+  files : Array[String],
+) -> Unit noraise {
+  guard plan.out is Some(target) else { return }
+  let classes = match css_candidates(plan, files) {
+    Ok(classes) => classes
+    Err(shape) => {
+      // A view that will not parse has already been reported, file by file, by
+      // the regenerate pass — and it is the same message. Only say something
+      // the run of ✗ lines above does not already say.
+      if shape.code != @cli.CODE_VIEW_GEN_FAILED {
+        write_out(@cli.watch_error_line(shape.message))
+      }
+      return
+    }
+  }
+  let css = match compile_css(plan, classes) {
+    Ok(css) => css
+    Err(shape) => {
+      write_out(@cli.watch_error_line(shape.message))
+      return
+    }
+  }
+  match write_css(target, css) {
+    Err(shape) => write_out(@cli.watch_error_line(shape.message))
+    Ok(_) => write_out(@cli.watch_css_line(target, classes=classes.length()))
+  }
 }
 
 ///|
@@ -579,6 +613,9 @@ async fn run_watch(
   for f in files {
     regenerate(f, plan)
   }
+  if plan.css is Some(css_plan) {
+    refresh_watch_css(css_plan, files)
+  }
   let watcher = @fswatch.start(roots) catch {
     e => {
       emit_and_exit(
@@ -604,6 +641,7 @@ async fn run_watch(
     // One save can surface several events for the same file (write, then
     // metadata); regenerate each path once per drain.
     let done : Map[String, Bool] = Map([])
+    let mut regenerated = false
     for e in events {
       if !@cli.is_view_path(e.path) || done.contains(e.path) {
         continue
@@ -625,6 +663,12 @@ async fn run_watch(
       }
       write_out("\{e.path}\n")
       regenerate(e.path, plan)
+      regenerated = true
+    }
+    // Once per settled batch, not once per file: the stylesheet covers the
+    // whole project, and compiling it is the expensive half of the loop.
+    if regenerated && plan.css is Some(css_plan) {
+      refresh_watch_css(css_plan, files)
     }
   }
 }

@@ -188,6 +188,10 @@ declare pub fn gen_css_success(
 declare pub fn class_list_text(classes : Array[String]) -> String
 
 ///|
+/// The line printed after `watch` rewrites the stylesheet.
+declare pub fn watch_css_line(target : String, classes~ : Int) -> String
+
+///|
 /// Byte-lexicographic string order — NOT `String`'s own `Compare`, which sorts
 /// by length first. Shared with the shell so the class list it merges
 /// `--classes` into keeps the same order this produced.

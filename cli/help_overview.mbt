@@ -43,10 +43,18 @@ let overview_body : String =
   #|      collected; --classes adds back what was not.
   #|
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
+  #|        [--tailwind-css <file> | --margaui-css <file>]
+  #|        [--css-entry <file>] [--css-classes <file>]
   #|      Re-run gen-views on every save. Paths are .html files or directories;
   #|      a directory contributes the .html files that already have a generated
   #|      sibling, so pointing it at a project root does not try to compile
   #|      index.html. Defaults to the current directory.
+  #|        --tailwind-css / --margaui-css  also rewrite that stylesheet after
+  #|                  every settled batch, so a class you just added is styled
+  #|                  by the time you reload. Rebuilt over every watched view,
+  #|                  once per batch — a stylesheet is a whole-project artifact.
+  #|        --css-entry, --css-classes  the CSS commands' --entry / --classes.
+  #|                  Pass them here if your build passes them.
   #|
   #|  storybook [dir] [--port <n>] [--out <dir>]
   #|      Serve the pre-built storybook gallery bundle over HTTP (default port
