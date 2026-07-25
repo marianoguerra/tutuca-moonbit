@@ -4,15 +4,21 @@ package "marianoguerra/tutuca/benchmarks"
 // Values
 pub let all_views : String
 
-pub fn build() -> Int
+pub fn build(String) -> Int
 
-pub fn gen() -> Int
+pub let corpora : Array[(String, String)]
 
-pub fn split() -> Int
+pub fn gen(String) -> Int
 
-pub let stages : Array[(String, () -> Int)]
+pub fn giant_view(Int) -> String
 
-pub fn surface() -> Int
+pub let one_big_view_body : String
+
+pub fn split(String) -> Int
+
+pub let stages : Array[(String, (String) -> Int)]
+
+pub fn surface(String) -> Int
 
 // Errors
 

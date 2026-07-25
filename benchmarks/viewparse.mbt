@@ -1,5 +1,6 @@
 // The view-pipeline workload, split into the stages `tutuca gen-views` runs so
-// a profile can be attributed to one of them.
+// a profile can be attributed to one of them, over either corpus (see
+// corpus_gen.mbt): the same nodes as 108 small views, or as one enormous one.
 //
 // Every stage returns a checksum that depends on its whole output, so nothing
 // can be optimized away, and the numbers double as a correctness canary: a
@@ -10,8 +11,8 @@
 
 ///|
 /// Stage 1: source text -> per-component raw view sources.
-pub fn split() -> Int {
-  let file = split_workload()
+pub fn split(source : String) -> Int {
+  let file = split_corpus(source)
   let mut n = file.macros.length()
   for c in file.components {
     n = n + c.name.length() + c.common_style.length() + c.global_style.length()
@@ -25,8 +26,8 @@ pub fn split() -> Int {
 ///|
 /// Stage 2: compile every view and extract its typed surface. This is where the
 /// views actually go through @anode (and, under it, the HTML parser).
-pub fn surface() -> Int {
-  let file = split_workload()
+pub fn surface(source : String) -> Int {
+  let file = split_corpus(source)
   let mut n = 0
   for c in file.components {
     let s = @viewgen.view_surface(c.views, macros=file.macros) catch {
@@ -41,8 +42,8 @@ pub fn surface() -> Int {
 ///|
 /// Stage 3: build the compiled views without emitting anything — the value the
 /// generated IR module reconstructs.
-pub fn build() -> Int {
-  let file = split_workload()
+pub fn build(source : String) -> Int {
+  let file = split_corpus(source)
   let mut n = 0
   for c in file.components {
     n = n +
@@ -56,31 +57,29 @@ pub fn build() -> Int {
 ///|
 /// The whole thing, exactly as cli/gen_views.mbt drives it: split, emit the
 /// types module, then the companion IR module.
-pub fn gen() -> Int {
-  let file = split_workload()
-  try {
-    let mut n = @viewgen.emit_module(WORKLOAD_NAME, WORKLOAD_FILE, file).length()
-    if @viewgen.ir_supported(file) {
-      n = n +
-        @viewgen.emit_ir_module(WORKLOAD_NAME, WORKLOAD_FILE, file).length()
-    }
-    n
-  } catch {
+pub fn gen(source : String) -> Int {
+  let file = split_corpus(source)
+  let mut n = (@viewgen.emit_module(WORKLOAD_NAME, WORKLOAD_FILE, file) catch {
     e => fail_stage("gen", e)
+  }).length()
+  if @viewgen.emit_ir_module_opt(WORKLOAD_NAME, WORKLOAD_FILE, file)
+    is Some(src) {
+    n = n + src.length()
   }
+  n
 }
 
 ///|
-/// The component-name fallback and cited source file the emitters want. The
-/// workload names every component, so the fallback is never used.
+/// The component-name fallback and cited source file the emitters want. Both
+/// corpora name every component, so the fallback is never used.
 const WORKLOAD_NAME = "Bench"
 
 ///|
-const WORKLOAD_FILE = "all_views.html"
+const WORKLOAD_FILE = "corpus.html"
 
 ///|
-fn split_workload() -> @viewgen.ViewFile {
-  @viewgen.split_file(all_views) catch {
+fn split_corpus(source : String) -> @viewgen.ViewFile {
+  @viewgen.split_file(source) catch {
     e => fail_stage("split", e)
   }
 }
@@ -91,9 +90,30 @@ fn[T] fail_stage(stage : String, e : @viewgen.GenError) -> T {
 }
 
 ///|
-/// One entry per named workload, so the executable shell and the `moon bench`
-/// blocks agree on the set.
-pub let stages : Array[(String, () -> Int)] = [
+/// `one_big_view_body` wrapped in a `<template>` `times` times over: one view
+/// holding `times` copies of every view body in the repo. `giant_view(1)` is
+/// benchmarks/one_big_view.html; higher counts are the scaling probe.
+pub fn giant_view(times : Int) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("<template id=\"GiantView\">\n")
+  for _ in 0..<times {
+    sb.write_string(one_big_view_body)
+    sb.write_char('\n')
+  }
+  sb.write_string("</template>")
+  sb.to_string()
+}
+
+///|
+/// The two corpora, and the four stages each is run through — so the executable
+/// shell and the `moon bench` blocks agree on the set.
+pub let corpora : Array[(String, String)] = [
+  ("many-views", all_views),
+  ("one-big-view", giant_view(1)),
+]
+
+///|
+pub let stages : Array[(String, (String) -> Int)] = [
   ("split", split),
   ("surface", surface),
   ("build", build),
