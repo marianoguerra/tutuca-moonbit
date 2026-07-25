@@ -243,15 +243,17 @@ margaui classes.)
 ## When authoring class lists
 
 Write margaui/Tailwind classes as **literal lists** in `class=` /
-`:class` so the collector sees them. Load the margaui skill alongside
-this one if available (`tutuca install-skill --margaui-skill`) — it
-lists the available components and their canonical class strings, which
-is what the `compile` step expects.
+`:class` so the collector sees them. For the component catalogue, load
+margaui's own skill alongside this one: it lives in the margaui repo
+under `.claude/skills/margaui/` (one file per component, with the
+canonical class strings the `compile` step expects). `tutuca
+install-skill` does **not** ship it — the MoonBit port bundles only the
+tutuca skill.
 
 ## See also
 
 - [styles.md](./styles.md) — scoped/global component CSS.
 - [advanced.md](./advanced.md) — dynamic bindings, drag & drop, and other
   advanced view features.
-- [cli.md](./cli.md) — `install-skill --margaui-skill` installs the
-  margaui skill.
+- [cli.md](./cli.md) — `install-skill` installs this skill (the tutuca
+  one; margaui's is not bundled).
