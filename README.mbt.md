@@ -31,15 +31,14 @@ and formal `spec.mbt`. From the bottom up:
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Demos & docs** | `demo/`, `playground/`, `storybook/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
 
-The `tutuca` CLI comes in two shapes, because a native binary cannot import
-user code. The **stock** binary (`cmd/main`) ships what needs no user module:
+The `tutuca` CLI does the work that happens outside the compiler:
 `gen-views`, `watch`, `storybook`, `install-skill`, `feedback`,
-`agent-context`, `help`. To inspect *your* components a project **embeds** the
-CLI — a `main` that hands its own `ModuleDef` to `@cli.plan_with_module` — and
-that binary additionally gets `get` / `list` / `examples` / `show` / `lint` /
-`render`, with an optional component name and no module path. `demo/counter_cli`
-is the worked example; `tutuca agent-context` reports which set the binary
-running it has.
+`agent-context` and `help`. It does not inspect, document, lint or render
+components — this is an ahead-of-time port, so those questions belong to
+`gen-views` (which makes a bad field reference or an unhandled `@on` handler a
+*build* error), to `moon check`, and to `moon test` over
+`testing/harness`. There is no module path and no way to point the binary at
+one.
 
 ## Views (`views~` + `gen-views`)
 

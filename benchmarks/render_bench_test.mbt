@@ -132,7 +132,7 @@ test "render workload shape" {
   inspect(
     @benchmarks.render_all_examples(),
     content=(
-      #|65964
+      #|65894
     ),
   )
 }

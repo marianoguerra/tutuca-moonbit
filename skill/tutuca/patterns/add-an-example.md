@@ -1,7 +1,7 @@
 # Add an example for a component
 
-**Problem:** show a component (and its states) so `tutuca render`, the
-harness tests, and the demo hosts can all mount it.
+**Problem:** show a component (and its states) so the harness tests, the
+storybook and the demo hosts can all mount it.
 
 Add `ExampleDef`s to the module's `ModuleDef`:
 
@@ -28,8 +28,7 @@ states, parameterize the module with `requests?` and build the example's
 module with a fixture (`respond(Ok(...))` / `respond(Err(...))` / never
 respond to hold a loading state) — the pattern in `storybook/examples/request.mbt`.
 
-The same example is then reachable three ways: `tutuca render --title
-"Loading"` (embedded CLI), `@harness.mount_example(foo_module(),
-"Loading")` (tests), and a demo host page mounting the module. If a demo
-host keeps a catalog (like `demo/examples`), register the module in its
-example list.
+The same example is then reachable two ways: `@harness.mount_example(
+foo_module(), "Loading")` in a test, and the storybook / a demo host page
+mounting the module. If a demo host keeps a catalog (like `demo/examples`),
+register the module in its example list.

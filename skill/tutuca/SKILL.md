@@ -1,6 +1,6 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions with a typed state struct, `#|` raw-string HTML views, `@`-directives, the `update` dispatch match plus `mutate` / `compute` and the typed render buckets, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or running the embedded `tutuca` CLI (`lint` / `render` / `show`). Covers the post-edit `tutuca lint` → `moon test` → `tutuca render --title "<example>"` verification recipe.
+description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions with a typed state struct, `#|` raw-string HTML views, `@`-directives, the `update` dispatch match plus `mutate` / `compute` and the typed render buckets, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or generating views with `tutuca gen-views`. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
 ---
 
 <!-- The MoonBit tutuca skill lives at skill/tutuca/ in this repo and is
@@ -20,16 +20,17 @@ are `ModuleDef` values, and tests run under `moon test`. Read
 After editing a tutuca module, run these before declaring the edit done:
 
 ```sh
-tutuca lint                          # undefined fields/handlers (exit 2 on errors)
-moon test                            # @harness interaction tests (non-zero on failures)
-tutuca render --title "<example>"    # mount the example covering the change (exit 3 on crash)
+tutuca gen-views <view>.html --name <Comp>   # …or leave `tutuca watch` running
+moon check                                   # handlers vs state, views vs types
+moon test                                    # @harness interaction tests
 ```
 
-`tutuca` here is the project's **embedded CLI binary** — a native `main`
-that hands its own `ModuleDef` to `@cli.plan_with_module(argv, Some(module))`
-(see [cli.md](./cli.md)); there is no path-based module loading. Full
-recipe — when to skip `moon test`, adding a covering example — in
-[core.md](./core.md#verifying-changes).
+This is an ahead-of-time port: there is **no `tutuca lint` and no
+`tutuca render`**. An undefined field or an unhandled `@on` handler is a
+*build* error in the generated view module, not a finding from a run-time
+linter — so `moon check` is the lint step. Full recipe in
+[core.md](./core.md#verifying-changes); command details in
+[cli.md](./cli.md).
 
 ## Companion skills
 

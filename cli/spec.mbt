@@ -1,39 +1,32 @@
-// Spec for the CLI core: pure port of the tutuca CLI's dispatch layer
-// (tools/tutuca.js) plus the three commands that need no value/component
-// layer (help, agent-context, feedback). Everything module-shaped is a stub
-// (see registry.mbt for the per-command blockers). READONLY by convention:
-// concrete public data types plus `declare` stubs; implementations live in
-// separate files.
+// Spec for the CLI core. READONLY by convention: concrete public data types
+// plus `declare` stubs; implementations live in separate files.
+//
+// What this CLI is, and is not. tutuca-mb compiles ahead of time, so anything
+// that can be known about a component is known to the COMPILER: `gen-views`
+// turns a view file into typed MoonBit — a misspelled field or an unhandled
+// `@on` handler is a build error — and component behaviour is checked by
+// `moon test` over the `testing/harness` package. The CLI therefore does not
+// inspect, document, lint or render components at run time. It has no notion
+// of "a module" at all. What is left are the jobs that genuinely happen
+// outside the compiler: generating view modules, watching them, serving a
+// pre-built gallery, installing the skill, and describing itself.
 //
 // The core is deliberately I/O-free: `plan(argv)` returns an `Outcome` and
 // the native shell (cmd/main) writes stdout/stderr, reads stdin, touches the
 // filesystem and exits. This keeps the core testable on any target.
 
 ///|
-/// Which command set the running binary has. The stock `tutuca` binary is
-/// `Stock`; a project binary that compiles its `ModuleDef` in and calls
-/// `plan_with_module` is `Embedded` and additionally has the module commands.
-/// Everything user-visible that differs between the two — `help`,
-/// `agent-context`, the unknown-command error — takes this rather than
-/// guessing.
-pub(all) enum CliMode {
-  Stock
-  Embedded
-} derive(Debug, Eq)
-
-///|
-/// Global flags extracted before command dispatch (tools/tutuca.js
-/// extractGlobals, minus `--module`: nothing here loads a module from a path).
+/// Global flags extracted before command dispatch. `json` switches the error
+/// envelope to a machine-readable one; there is nothing else to format, since
+/// no command emits a structured result.
 pub(all) struct GlobalOpts {
-  format : String?
-  output : String?
-  pretty : Bool
+  json : Bool
   help : Bool
 } derive(Debug, Eq)
 
 ///|
-/// A coded CLI error (tools/cli/errors.js emitError shape). Rendering is
-/// format-aware: plain text, or a single-line JSON envelope under --json.
+/// A coded CLI error. Rendering is plain text, or a single-line JSON
+/// envelope under --json.
 pub(all) struct ErrShape {
   code : String
   message : String
@@ -44,8 +37,7 @@ pub(all) struct ErrShape {
 } derive(Debug, Eq)
 
 ///|
-/// Flag metadata for help + the agent-context schema (mirrors the flag
-/// objects in tools/cli/commands/_no-module.js and agent-context.js).
+/// Flag metadata for help + the agent-context schema.
 pub(all) struct FlagSpec {
   name : String
   short : String?
@@ -63,28 +55,13 @@ pub(all) struct PositionalSpec {
 } derive(Debug, Eq)
 
 ///|
-/// Every registered command is runnable in the mode that registers it, so
-/// there is no "implemented?" flag: `needs_module` says which set it belongs
-/// to and that is the whole story.
+/// One command. Every registered command is runnable — there is no
+/// "implemented?" flag and no second command set.
 pub(all) struct CommandSpec {
   name : String
   describe : String
-  needs_module : Bool
-  needs_env : Bool
-  default_format : String?
   flags : Array[FlagSpec]
   positionals : Array[PositionalSpec]
-} derive(Debug, Eq)
-
-///|
-/// One row of the component-linter rule table (tools/core/lint-rules.js),
-/// emitted as JSON by `agent-context` and as a grouped text table by
-/// `tutuca help lint`.
-pub(all) struct LintRule {
-  code : String
-  level : String
-  group : String
-  summary : String
 } derive(Debug, Eq)
 
 ///|
@@ -169,21 +146,18 @@ declare pub fn watch_name(path : String, name : String?) -> String
 declare pub fn watch_sibling(path : String) -> String
 
 ///|
-/// Port of extractGlobals (tools/tutuca.js). Returns the parsed globals and
-/// remaining positionals; on an unknown --format value returns the opts too
-/// so the error can be rendered format-aware.
+/// Split argv into the global flags and the remaining positionals.
 declare pub fn extract_globals(
   argv : Array[String],
-) -> Result[(GlobalOpts, Array[String]), (GlobalOpts, ErrShape)]
+) -> (GlobalOpts, Array[String])
 
 ///|
-/// Render an ErrShape to stderr text (tools/cli/errors.js emitError, minus
-/// the exit): plain text, or a one-line JSON envelope when format is json.
+/// Render an ErrShape to stderr text: plain text, or a one-line JSON
+/// envelope under --json.
 declare fn render_error(opts : GlobalOpts, shape : ErrShape) -> String
 
 ///|
-/// ErrShape constructor with emitError's defaults (exit code 1, everything
-/// else absent).
+/// ErrShape constructor: exit code 1, everything else absent.
 declare pub fn err(
   code : String,
   message : String,
@@ -198,24 +172,13 @@ declare pub fn err(
 declare pub fn error_emit(opts : GlobalOpts, shape : ErrShape) -> Emit
 
 ///|
-/// The commands a binary in `mode` has, in agent-context order.
-declare fn commands_for(mode : CliMode) -> Array[CommandSpec]
+/// Registry lookup by command name.
+declare pub fn find_command(name : String) -> CommandSpec?
 
 ///|
-/// Registry lookup by command name, within a mode's command set.
-declare pub fn find_command(mode : CliMode, name : String) -> CommandSpec?
-
-///|
-/// A mode's command names in registry (= agent-context) order.
-declare pub fn command_names(mode : CliMode) -> Array[String]
-
-///|
-/// True for a command only a module-embedding binary has.
-declare fn is_module_command(name : String) -> Bool
-
-///|
-/// Every name the CLI knows in either mode — the did-you-mean candidates.
-declare fn all_command_names() -> Array[String]
+/// Every command name, in registry (= agent-context) order. Also the
+/// did-you-mean candidate list.
+declare pub fn command_names() -> Array[String]
 
 ///|
 /// "Did you mean" suggestion against valid names, using the lint package's
@@ -226,30 +189,22 @@ declare fn did_you_mean(
 ) -> @lint.Suggestion?
 
 ///|
-/// Port of suggestionToMessage (tools/format/lint.js): human tail line for a
-/// suggestion.
+/// Human tail line for a suggestion.
 declare fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String?
 
 ///|
-/// Full CLI reference for `mode` (`tutuca help` with no argument), including
-/// trailing newline.
-declare pub fn overview(mode : CliMode) -> String
+/// Full CLI reference (`tutuca help` with no argument), trailing newline
+/// included.
+declare pub fn overview() -> String
 
 ///|
-/// `tutuca help [command]` for `mode`.
-declare fn run_help(mode : CliMode, target : String?, opts : GlobalOpts) -> Emit
+/// `tutuca help [command]`.
+declare fn run_help(target : String?, opts : GlobalOpts) -> Emit
 
 ///|
 /// The machine-readable schema printed by `tutuca agent-context`
-/// (schemaVersion 4), including trailing newline. It describes the command
-/// set the RUNNING binary has, so an agent reading it never sees a command it
-/// cannot invoke.
-declare pub fn agent_context_text(mode : CliMode) -> String
-
-///|
-/// The error a stock binary gives for a module command: the command is real,
-/// this binary just has no module to run it against.
-declare fn needs_embedded_module(name : String, opts : GlobalOpts) -> Emit
+/// (schemaVersion 5), trailing newline included.
+declare pub fn agent_context_text() -> String
 
 ///|
 /// Parse `tutuca feedback`'s own args: -h/--help prints the command help,
@@ -282,15 +237,3 @@ declare pub fn feedback_success_line(file : String) -> String
 /// Epoch milliseconds -> "YYYY-MM-DDTHH:MM:SS.mmmZ", matching JS
 /// Date.toISOString().
 declare pub fn iso8601_utc(ms : UInt64) -> String
-
-///|
-/// The dispatcher for a binary that COMPILED A MODULE IN — the MoonBit
-/// module-input answer: a native binary cannot load user code, so a user
-/// project embeds the CLI by building a main that calls this with its own
-/// `ModuleDef` (demo/counter_cli is the worked example). It runs the whole
-/// `Embedded` command set: the module commands against `module_`, everything
-/// stock exactly as `plan` does. With None this is exactly `plan`.
-declare pub fn plan_with_module(
-  argv : Array[String],
-  module_ : @component.ModuleDef?,
-) -> Outcome

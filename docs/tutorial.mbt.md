@@ -715,58 +715,37 @@ fn main {
 (`@bdom` = `vdom/browser`, `@glue` = `app/browser`; see `demo/counter` for
 the full package. `demo/counter_wasm` + `app/wasm` is the wasm-gc twin.)
 
-## Inspecting your module from the CLI
+## Verifying a change
 
-A native binary cannot import user code, so the stock `tutuca` binary has no
-way to reach your components — there is no module path to hand it. Instead
-your project **embeds the CLI**: a small `main` passes `argv` plus your own
-`ModuleDef` to `@cli.plan_with_module`, and that binary gets `get` / `list` /
-`examples` / `show` / `lint` / `render` over the module compiled into it.
-
-`demo/counter_cli` is the whole thing — a `moon.pkg` importing
-`marianoguerra/tutuca/cli` and your library, and this `main`:
-
-```mbt nocheck
-///|
-fn main {
-  let argv = @env.args().iter().drop(1).to_array()
-  match @cli.plan_with_module(argv, Some(@counterlib.module_def())) {
-    Done(emit) => {
-      if emit.out != "" {
-        print(emit.out)
-      }
-      if emit.err != "" {
-        print(emit.err)
-      }
-      process_exit(emit.exit_code)
-    }
-    // the outcomes that need I/O the shell owns; cmd/main handles them all
-    _ => process_exit(1)
-  }
-}
-```
-
-The command comes first and an optional component name second — no module
-path:
+There is no `tutuca lint` and no `tutuca render`: tutuca-mb compiles ahead of
+time, so the questions a linter would answer at run time are answered earlier,
+by the compiler.
 
 ```sh
-moon run --target native demo/counter_cli -- get              # module summary
-moon run --target native demo/counter_cli -- list             # components
-moon run --target native demo/counter_cli -- show Counter     # API docs for one
-moon run --target native demo/counter_cli -- lint             # exit 2 on errors
-moon run --target native demo/counter_cli -- render --title "Basic Counter"
-moon run --target native demo/counter_cli -- agent-context    # JSON schema
+moon run --target native cmd/main -- gen-views src/counter.html --name Counter
+moon check                       # every handler against its state struct
+moon test                        # behaviour, through the real event pipeline
 ```
 
-The stock binary keeps the commands that need no module — compiling views
-ahead of time, watching them, serving the storybook bundle, installing the
-skill:
+`gen-views` is the interesting one. It turns the view file into typed MoonBit:
+a `CounterMsg` enum with one variant per `@on` handler, a `CounterMethod` for
+the `$`-callables, and `counter_fields` for the fields the view reads. So a
+misspelled field or an `@on` handler nothing handles is a **build error** —
+not a finding you have to remember to go looking for. Adding a handler to the
+`.html` and regenerating breaks the build until `update` handles it.
+
+While editing, `tutuca watch` keeps the generated modules current on every
+save:
 
 ```sh
-moon run --target native cmd/main -- gen-views path/to/views.html
 moon run --target native cmd/main -- watch demo/counterlib
-moon run --target native cmd/main -- help                # the full reference
-moon run --target native cmd/dev  -- dist                # build demos + storybook
+```
+
+To look at components rendered, build the storybook and serve it:
+
+```sh
+moon run --target native cmd/dev  -- dist
+moon run --target native cmd/main -- storybook
 ```
 
 ## Where to go next

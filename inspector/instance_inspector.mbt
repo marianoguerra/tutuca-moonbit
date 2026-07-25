@@ -1,6 +1,6 @@
 // Port of src/components/tutuca/instance-inspector.js — the field → value
 // rows of a live component instance, plus a tabbed explorer over one
-// instance (values / definition / lint).
+// instance (values / definition).
 //
 // Typed-state deviations:
 // - instances are opaque Values (Obj); field names/order come from the
@@ -169,15 +169,12 @@ priv struct InstanceExplorerState {
   activeTab : String
   instanceView : @tutuca.Value
   componentView : @tutuca.Value
-  lintView : @tutuca.Value
   hasComponent : Bool
-  hasLint : Bool
 } derive(ToJson, FromJson)
 
 ///|
-/// Up to three tabs over one instance: its values (InstanceInspector), its
-/// definition (ComponentInspector) and — when provided — its lint findings
-/// (LintReport). A tab only appears when it has content.
+/// Two tabs over one instance: its values (InstanceInspector) and its
+/// definition (ComponentInspector).
 fn instance_explorer_comp() -> @component.Component {
   @component.component(
     views={
@@ -200,13 +197,6 @@ fn instance_explorer_comp() -> @component.Component {
           #|      @on.click="$setActiveTab 'component'">
           #|      Component
           #|    </a>
-          #|    <a role="tab" @show=".hasLint"
-          #|      @if.class="equals? .activeTab 'lint'"
-          #|      @then="'tab tab-active tab-lint'"
-          #|      @else="'tab tab-lint'"
-          #|      @on.click="$setActiveTab 'lint'">
-          #|      Lint
-          #|    </a>
           #|  </div>
           #|  <div @show="equals? .activeTab 'instance'">
           #|    <x render=".instanceView"></x>
@@ -217,9 +207,6 @@ fn instance_explorer_comp() -> @component.Component {
           #|      Pass the Component descriptor to inspect its definition.
           #|    </div>
           #|  </div>
-          #|  <div @show="equals? .activeTab 'lint'">
-          #|    <x render=".lintView"></x>
-          #|  </div>
           #|</div>
         ),
       ),
@@ -229,31 +216,21 @@ fn instance_explorer_comp() -> @component.Component {
       activeTab: "instance",
       instanceView: Null,
       componentView: Null,
-      lintView: Null,
       hasComponent: false,
-      hasLint: false,
     },
   )
 }
 
 ///|
-/// JS InstanceExplorer.Class.fromData: instance + definition (+ lint) tabs.
-/// `lint_findings` are `finding_value` Maps (see lint_inspector.mbt).
+/// Instance + definition tabs over one value.
 fn Inspector::explore_instance(
   self : Inspector,
   v : @tutuca.Value,
   comp : @component.Component,
-  lint_findings? : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  let lint_view = match lint_findings {
-    Some(findings) => self.lint_report(findings)
-    None => Null
-  }
   self.make_("InstanceExplorer", args={
     "instanceView": self.inspect_instance(v, comp),
     "componentView": self.inspect_component(comp),
-    "lintView": lint_view,
     "hasComponent": Bool(true),
-    "hasLint": Bool(lint_findings is Some(_)),
   })
 }

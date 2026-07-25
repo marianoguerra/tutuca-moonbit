@@ -151,7 +151,7 @@ The raw `moon` commands below still work and are what the tasks run underneath.
   `moon check` / `moon test` covers only the target-agnostic packages. Full
   coverage needs all three: `moon test` (wasm-gc), `moon test --target js`
   (vdom/browser, app/browser, demo/counter — happy-dom based)
-  and `moon test --target native` (cli shells: cmd/main, demo/counter_cli).
+  and `moon test --target native` (the cli shell: cmd/main).
   Run `moon check --target js` and `--target native` too before handing off —
   each target surfaces warnings the others don't.
 

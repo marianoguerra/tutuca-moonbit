@@ -75,6 +75,6 @@ test "watch and gen-views agree on output paths and names" {
 
 ///|
 test "watch is in the registry" {
-  assert_true(@cli.find_command(Stock, "watch") is Some(_))
+  assert_true(@cli.find_command("watch") is Some(_))
   assert_true(@cli.plan(["help", "watch"]) is Done(_))
 }

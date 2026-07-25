@@ -43,7 +43,7 @@ fn mount_render(
 
 ///|
 /// The one example that is not a workload: `lint-errors` exists to be broken —
-/// its views carry the bad values `tutuca lint` is supposed to report, one of
+/// its views carry deliberately bad values, one of
 /// which is a `render` op that recurses without terminating. Mounting it prints
 /// a parse issue per view and never returns.
 const SKIPPED_EXAMPLE = "lint-errors"

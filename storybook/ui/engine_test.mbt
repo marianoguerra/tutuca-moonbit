@@ -3,20 +3,6 @@
 // example's own harness test; here we only check the storybook shell wiring.
 
 ///|
-fn lint_text(comp : @component.Component) -> String {
-  let findings = @cli.check_component(comp)
-  if findings.is_empty() {
-    "No issues found."
-  } else {
-    let lines : Array[String] = []
-    for f in findings {
-      lines.push(f.line())
-    }
-    lines.join("\n")
-  }
-}
-
-///|
 fn pick(ids : Array[String]) -> Array[@sb.Section] {
   let all = @sb.stories()
   let picked : Array[@sb.Story] = []
@@ -33,12 +19,7 @@ test "storybook mounts sidebar + first preview" {
   let sections = pick(["counter", "traffic-light", "tabbed-ui", "lint-errors"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
-    sections,
-    container,
-    @vdom.RenderOpts::new(doc),
-    lint=lint_text,
-  )
+  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let html = container.to_html()
   // sidebar entries for every picked story
   assert_true(html.contains("nav-counter"))
@@ -61,12 +42,7 @@ test "init-driven story loads its data after mount" {
   let sections = pick(["request-example"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
-    sections,
-    container,
-    @vdom.RenderOpts::new(doc),
-    lint=lint_text,
-  )
+  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let html = container.to_html()
   assert_true(html.contains("Tutuca"))
   assert_true(html.contains("MoonBit"))
@@ -130,12 +106,7 @@ test "storybook renders the filter box, focus buttons, and collapse toggle" {
   let sections = pick(["counter", "traffic-light", "lint-errors"])
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
-    sections,
-    container,
-    @vdom.RenderOpts::new(doc),
-    lint=lint_text,
-  )
+  let _app = mount(sections, container, @vdom.RenderOpts::new(doc))
   let html = container.to_html()
   // the sidebar filter input
   assert_true(html.contains("placeholder=\"Filter\""))
@@ -158,7 +129,6 @@ test "URL state restores the selected story, focus, and filter" {
     sections,
     container,
     @vdom.RenderOpts::new(doc),
-    lint=lint_text,
     url_handlers=url_fixture("traffic-light", "tabbed-ui", "counter"),
   )
   // selection + focus id came from the URL, overriding the default (counter)
@@ -178,7 +148,6 @@ test "URL state restores the theme into the switcher" {
     sections,
     container,
     @vdom.RenderOpts::new(doc),
-    lint=lint_text,
     url_handlers=url_fixture("", "", "", theme="dracula"),
   )
   // the resolved theme name syncs the switcher's shown value
@@ -194,29 +163,10 @@ test "empty URL state keeps the default selection and clears focus" {
     sections,
     container,
     @vdom.RenderOpts::new(doc),
-    lint=lint_text,
     url_handlers=url_fixture("", "", ""),
   )
   // default selection is the first story; no focus
   assert_true(root_field(app, "active") == Str("counter"))
   assert_true(root_field(app, "focus") == Str(""))
   assert_true(root_field(app, "focusValue") is Null)
-}
-
-///|
-test "lint callback surfaces findings for the lint-errors story" {
-  // the callback the host wires must produce non-empty text for a component
-  // that has lint issues, so the Lint panel is not blank.
-  let sections = pick(["lint-errors"])
-  let doc = @memdom.document()
-  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
-  let _app = mount(
-    sections,
-    container,
-    @vdom.RenderOpts::new(doc),
-    lint=lint_text,
-  )
-  let html = container.to_html()
-  // lint-errors intentionally trips rules; the panel text lands in the pane
-  assert_false(html.contains("No issues found."))
 }

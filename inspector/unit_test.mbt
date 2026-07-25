@@ -217,82 +217,6 @@ test "inspect_component builds one section per non-empty group" {
 }
 
 ///|
-fn sample_findings() -> Array[@tutuca.Value] {
-  [
-    @inspector.finding_value(
-      "METHOD_VAL_NOT_IMPLEMENTED", "error", "Broken/view", "Method '$missing' is not implemented",
-    ),
-    @inspector.finding_value(
-      "FIELD_VAL_NOT_DEFINED", "error", "Broken/view", "Field '.nope' is not defined",
-    ),
-    @inspector.finding_value(
-      "REDUNDANT_TEMPLATE_STRING",
-      "warn",
-      "Broken/view",
-      "Redundant string template",
-      suggestion="$'{.title}' → .title",
-    ),
-    @inspector.finding_value(
-      "PLACEHOLDERLESS_TEMPLATE_STRING", "hint", "Broken/view", "String template has no dynamic parts",
-    ),
-    @inspector.finding_value(
-      "CONSTANT_CONDITION", "warn", "Other.provide.x", "Constant condition",
-    ),
-  ]
-}
-
-///|
-test "lint_report aggregates totals and groups findings by component" {
-  let insp = @inspector.Inspector::new()
-  let r = insp.lint_report(sample_findings(), title="broken module")
-  assert_true(oget(r, "title") is Str("broken module"))
-  assert_true(oget(r, "errors") is Num(2))
-  assert_true(oget(r, "warnings") is Num(2))
-  assert_true(oget(r, "hints") is Num(1))
-  assert_true(oget(r, "clean") is Bool(false))
-  inspect(otext(r, "errText"), content="2 errors")
-  inspect(otext(r, "hintText"), content="1 hint")
-  let groups = olist(r, "components")
-  inspect(groups.length(), content="2")
-  let broken = groups[0]
-  assert_true(oget(broken, "componentName") is Str("Broken"))
-  inspect(otext(broken, "countText"), content="2 errors, 1 warning, 1 hint")
-  // expanded because it has error-level findings
-  assert_true(oget(broken, "isExpanded") is Bool(true))
-  inspect(olist(broken, "items").length(), content="4")
-  let other = groups[1]
-  assert_true(oget(other, "componentName") is Str("Other"))
-  inspect(otext(other, "countText"), content="1 warning")
-  assert_true(oget(other, "isExpanded") is Bool(false))
-}
-
-///|
-test "lint findings: soft severity badge + suggestion surface" {
-  let insp = @inspector.Inspector::new()
-  let r = insp.lint_report(sample_findings())
-  let broken = olist(r, "components")[0]
-  let first = olist(broken, "items")[0]
-  assert_true(oget(first, "level") is Str("error"))
-  assert_true(otext(first, "levelBadgeClass").contains("badge-soft"))
-  assert_true(otext(first, "levelBadgeClass").contains("badge-error"))
-  assert_true(ocall(first, "hasSuggestion") is Bool(false))
-  let warn = olist(broken, "items")[2]
-  assert_true(ocall(warn, "hasSuggestion") is Bool(true))
-  assert_true(oget(warn, "suggestion") is Str(s) && s.contains("→"))
-  assert_true(otext(warn, "levelBadgeClass").contains("badge-warning"))
-  // the detail tab holds the whole finding Map, inspectable
-  assert_true(ocall(first, "hasDetail") is Bool(true))
-}
-
-///|
-test "clean lint report flags clean and has no component groups" {
-  let insp = @inspector.Inspector::new()
-  let r = insp.lint_report([])
-  assert_true(oget(r, "clean") is Bool(true))
-  inspect(olist(r, "components").length(), content="0")
-}
-
-///|
 test "instance_snapshot + inspect_instance expose the field rows" {
   let insp = @inspector.Inspector::new()
   let comp = sample_comp()
@@ -428,22 +352,15 @@ test "build_inspector_views resolves the descriptor through a registry" {
   let comps = @component.Components::new()
   comps.register(comp)
   let card = comp.make({ "title": Str("Hi") })
-  let views = insp.build_inspector_views(
-    card,
-    comps~,
-    lint_findings=sample_findings(),
-  )
+  let views = insp.build_inspector_views(card, comps~)
   assert_true(views.has_component)
-  assert_true(views.has_lint)
   assert_true(oget(views.component_view, "compName") is Str("RichSample"))
   inspect(
     otext(oget(views.instance_view, "value"), "typeText"),
     content="RichSample",
   )
-  assert_true(oget(views.lint_view, "errors") is Num(2))
   // without a registry the value falls back to the data inspector
   let plain = insp.build_inspector_views(Num(3))
   assert_false(plain.has_component)
-  assert_false(plain.has_lint)
   assert_true(plain.component_view is Null)
 }

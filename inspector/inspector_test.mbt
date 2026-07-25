@@ -170,7 +170,7 @@ test "instance inspector: field rows render name : value" {
 }
 
 ///|
-test "instance explorer: tabs switch between instance/component/lint" {
+test "instance explorer: tabs switch between instance and component" {
   let h = @harness.mount_example(
     @inspector.inspector_module(),
     "Instance Explorer",
@@ -189,42 +189,8 @@ test "instance explorer: tabs switch between instance/component/lint" {
     content="tab tab-active tab-component",
   )
   inspect(h.text(".comp-title"), content="SampleCard")
-  h.click(".tab-lint")
-  inspect(h.text(".lint-errors"), content="2 errors")
-}
-
-///|
-test "lint report: tallies, auto-expanded error group, suggestion line" {
-  let h = @harness.mount_example(
-    @inspector.inspector_module(),
-    "Lint Report With Findings",
-  )
-  inspect(h.text(".lint-title"), content="broken module")
-  inspect(h.text(".lint-errors"), content="2 errors")
-  inspect(h.text(".lint-warnings"), content="2 warnings")
-  inspect(h.text(".lint-hints"), content="1 hint")
-  inspect(h.find_all(".lint-clean").length(), content="0")
-  // the Broken group is auto-expanded (it has errors); Other stays collapsed
-  assert_true(h.texts(".lint-component") == ["Broken", "Other"])
-  inspect(h.find_all(".lint-finding").length(), content="4")
-  let msgs = h.texts(".finding-message")
-  assert_true(
-    msgs.contains("Field '.nope' is not defined (in @text, on <span>)"),
-  )
-  assert_true(h.texts(".finding-suggestion").contains("$'{.title}' → .title"))
-  // expanding Other reveals its finding too
-  h.click(".lint-component", nth=1)
-  inspect(h.find_all(".lint-finding").length(), content="5")
-}
-
-///|
-test "lint report: a clean run shows the clean badge" {
-  let h = @harness.mount_example(
-    @inspector.inspector_module(),
-    "Lint Report Clean",
-  )
-  inspect(h.text(".lint-clean"), content="✓ clean")
-  inspect(h.find_all(".lint-component").length(), content="0")
+  // there is no third tab: lint is a compile-time concern, not a panel
+  inspect(h.find_all(".tab-lint").length(), content="0")
 }
 
 ///|

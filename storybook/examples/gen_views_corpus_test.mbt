@@ -115,7 +115,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   inspect(
     "\{emitted} views compiled to a tree, \{unsupported} use macros",
     content=(
-      #|211 views compiled to a tree, 18 use macros
+      #|206 views compiled to a tree, 18 use macros
     ),
   )
 }

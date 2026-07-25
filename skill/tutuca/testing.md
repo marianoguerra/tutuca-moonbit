@@ -50,8 +50,8 @@ in-memory DOM (`memdom`), and render once:
 - `@harness.mount(module, "CompName", args?={...})` — mount a component
   by name with optional root args.
 - `@harness.mount_example(module, "Example Title")` — mount one of the
-  module's `ExampleDef`s by title (the same artifact `tutuca render`
-  and the browser hosts show, so a passing test and a working page are
+  module's `ExampleDef`s by title (the same artifact the storybook and
+  the browser hosts show, so a passing test and a working page are
   the same thing).
 
 **Driving** — each fires a real event through the transactor and settles
@@ -107,8 +107,9 @@ organize by `moon test` block names and files.
 ## What to test
 
 Run tests when the change is observable behavior — handlers, coercion,
-interaction flows. Skip them for pure template/styling tweaks;
-`tutuca render` covers those.
+interaction flows. For pure template/styling tweaks, `gen-views` plus
+`moon check` already prove the view compiles; mount it in the storybook if
+you want to look at it.
 
 - **Interaction flows** (the default) — mount with the harness, drive
   events, assert the DOM. This exercises the template wiring, the

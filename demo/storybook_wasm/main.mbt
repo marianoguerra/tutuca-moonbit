@@ -9,22 +9,6 @@ fn main {
 }
 
 ///|
-/// Per-pane Lint text: the CLI's component checker, formatted one finding per
-/// line (or a clean-bill message). Pure, so it runs on wasm-gc too.
-fn lint_text(comp : @component.Component) -> String {
-  let findings = @cli.check_component(comp)
-  if findings.is_empty() {
-    "No issues found."
-  } else {
-    let lines : Array[String] = []
-    for f in findings {
-      lines.push(f.line())
-    }
-    lines.join("\n")
-  }
-}
-
-///|
 /// The mounted gallery app, stashed so the `on_popstate` export can re-restore
 /// URL state on Back/Forward. tutuca has no lifecycle, so — like the JS
 /// storybook's `window.addEventListener("popstate", …)` — the host re-sends
@@ -242,7 +226,6 @@ pub fn mount() -> Unit {
     sections,
     root,
     opts,
-    lint=lint_text,
     url_handlers=url_request_handlers(),
   )
   current_app.val = Some(app)

@@ -146,8 +146,8 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
   scanner", and the worked decoy view in `storybook/examples/personal_site.mbt`
   (`_margauiClasses`).
 
-- **Do close the loop after every change** with `tutuca lint` → `moon test` →
-  `tutuca render`. → [core.md](./core.md) "Verifying changes"
+- **Do close the loop after every change** with `gen-views` → `moon check` →
+  `moon test`. → [core.md](./core.md) "Verifying changes"
 
 ## Smells & refactors
 

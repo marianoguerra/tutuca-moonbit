@@ -7,7 +7,6 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
-  "marianoguerra/tutuca/cli",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/demo/margaui",

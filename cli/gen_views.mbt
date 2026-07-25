@@ -20,14 +20,15 @@ pub(all) struct GenPlan {
 } derive(Debug, Eq)
 
 ///|
-/// The view-only half of the linter, run at generation time.
+/// View diagnostics, reported at generation time.
 ///
-/// These rules need nothing but the view text, so making them wait for a
-/// separate `tutuca lint` run is arbitrary — the generator is already
-/// parsing every view. The rules that need the component (which names are
-/// fields, which are methods, what is registered in the scope) stay in
-/// `check_component`, and the ones the generated types make impossible are
-/// gone for good.
+/// This is where view checking happens, and the only place it happens: these
+/// rules need nothing but the view text, and the generator is already parsing
+/// every view. The rules that used to need a live component — which names are
+/// fields, which are methods, what is registered in the scope — are not
+/// deferred to a run-time linter any more; the generated types answer them at
+/// compile time, and what the types cannot express is not worth a second,
+/// weaker check.
 fn view_diagnostics(
   file : @viewgen.ViewFile,
   fallback : String,

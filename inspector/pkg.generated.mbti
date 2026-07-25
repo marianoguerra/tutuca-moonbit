@@ -12,8 +12,6 @@ pub fn component_summary(@component.Component) -> @core.Value
 
 pub fn deep_expand(@core.Value) -> @core.Value
 
-pub fn finding_value(String, String, String, String, suggestion? : String) -> @core.Value
-
 pub fn inspector_module() -> @component.ModuleDef
 
 pub fn instance_snapshot(@core.Value, @component.Component) -> @core.Value
@@ -26,12 +24,11 @@ pub fn path_keys_label(Array[@core.StepKey]) -> String
 pub struct Inspector {
   comps : Map[String, @component.Component]
 }
-pub fn Inspector::build_inspector_views(Self, @core.Value, comps? : @component.Components, lint_findings? : Array[@core.Value]) -> InspectorViews
+pub fn Inspector::build_inspector_views(Self, @core.Value, comps? : @component.Components) -> InspectorViews
 pub fn Inspector::classify(Self, @core.Value) -> @core.Value
 pub fn Inspector::classify_schema(Self, @core.Value) -> @core.Value
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
 pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
-pub fn Inspector::lint_report(Self, Array[@core.Value], title? : String, path? : String) -> @core.Value
 pub fn Inspector::module_(Self) -> @component.ModuleDef
 pub fn Inspector::new() -> Self
 pub fn Inspector::record_to_entry(Self, @transactor.ObserveRecord, inspect? : (@core.Value) -> @core.Value, path_label? : String, time? : String) -> @core.Value
@@ -40,9 +37,7 @@ pub fn Inspector::schema_view(Self, @core.Value) -> @core.Value
 pub struct InspectorViews {
   instance_view : @core.Value
   component_view : @core.Value
-  lint_view : @core.Value
   has_component : Bool
-  has_lint : Bool
 }
 
 // Type aliases

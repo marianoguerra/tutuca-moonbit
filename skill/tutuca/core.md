@@ -22,19 +22,25 @@ or when using the embedded `tutuca` CLI.
 ## Verifying changes
 
 After editing a tutuca module, run these checks before declaring the
-edit done:
+edit done. This is an ahead-of-time port, so the first two are the
+compiler — there is no run-time linter to run.
 
-1. **Lint the module** — catches undefined fields/handlers/macros/events
-   (all the `*_NOT_DEFINED` / `*_NOT_REFERENCED` codes):
+1. **Regenerate the views, if you edited an `.html`** — the generator is
+   the view checker: a view that would emit a parse issue fails
+   generation instead of shipping.
 
-        tutuca lint
-        tutuca lint Button        # scope to one component
+        tutuca gen-views src/button.html --name Button
+        tutuca watch src/                 # …or leave this running
 
-   `tutuca` is the project's embedded CLI binary (a `main` calling
-   `@cli.plan_with_module` with the project's `ModuleDef` — see
-   [cli.md](./cli.md)). Exits `2` on any error-level finding.
+2. **Type-check** — this is the lint step. The generated module gives
+   `update` a `ButtonMsg` to match on and `button_fields` for the fields
+   the view reads, so an undefined field, an unimplemented `$`-method or
+   an `@on` handler nothing handles is a **build error**:
 
-2. **Test component behavior** — when the edit changes handlers,
+        moon check
+        moon check --target native        # and js; each surfaces its own
+
+3. **Test component behavior** — when the edit changes handlers,
    field coercion, or interaction flows (anything observable beyond a
    single static render), run the test suite:
 
@@ -46,26 +52,15 @@ edit done:
    component tests are plain `test "..." { ... }` blocks that mount the
    module on the in-memory DOM via the
    `marianoguerra/tutuca/testing/harness` package and assert with
-   MoonBit's built-ins. Skip this step when the change is purely
-   templates/styling — `render` already covers that. Authoring patterns
-   (the harness API, designing handlers for testability, worked test
-   blocks) in [testing.md](./testing.md).
+   MoonBit's built-ins. A test that mounts the example covering your
+   change is what proves the component mounts, and it lets you assert
+   what it rendered. Authoring
+   patterns in [testing.md](./testing.md).
 
-3. **Render the example(s) that exercise the feature you changed** —
-   confirms the component actually mounts in a headless DOM with the new
-   behavior. Pick the example whose `title` matches the feature, or
-   filter by component:
+4. **Look at it, if it is visual** — build the gallery and serve it:
 
-        tutuca render --title "Disabled state"
-        tutuca render Button
-
-   Exits `3` if a render crashes. If no example covers the feature
-   you're adding, add an `ExampleDef` to the `ModuleDef` first — that's
-   how the feature becomes verifiable (see
-   [patterns/add-an-example.md](./patterns/add-an-example.md)). Add
-   `--pretty` when you need to read the emitted HTML to verify structure
-   (attributes, nesting, text); omit it when you only care that the
-   render didn't crash.
+        moon run --target native cmd/dev -- dist
+        tutuca storybook
 
 Full reference: [cli.md](./cli.md).
 
@@ -182,9 +177,9 @@ The same `ModuleDef` value drives three hosts:
   }
   ```
 
-- **The embedded CLI** — a native `main` calling
-  `@cli.plan_with_module(argv, Some(counter_module()))` (see
-  [cli.md](./cli.md)).
+- **The storybook gallery** — register the module's examples and mount
+  the whole set as one app (see [cli.md](./cli.md) for building and
+  serving it).
 
 ## Mental model
 
@@ -607,15 +602,16 @@ does not upgrade the element.
 ### When nothing renders (or renders unstyled)
 
 A few mistakes fail quietly — no error, just a blank or unstyled result, which
-is the slowest kind to debug. **Run `tutuca lint` first**: it catches
-several of these. The usual suspects:
+is the slowest kind to debug. **Regenerate the views and run `moon check`
+first**: several of these become build errors that way. The usual suspects:
 
 - **Unparseable attribute value** → the attribute is silently dropped. A bare
   multi-word value isn't a string — quote it (`:label="'two words'"`) or make it
-  a template (`:label="$'{.a} {.b}'"`). Lint flags this as `BAD_VALUE`.
+  a template (`:label="$'{.a} {.b}'"`). `gen-views` rejects this as
+  `BAD_VALUE` rather than generating a module for it.
 - **camelCase attribute on a custom element** → setter no-op (see the lowercasing
-  note above). Use kebab-case attributes. Not lintable — the HTML parser
-  lowercases the name before either tutuca or the linter sees it.
+  note above). Use kebab-case attributes. Not detectable — the HTML parser
+  lowercases the name before either tutuca or the generator sees it.
 - **Forgotten margaui decoy view** → classes assembled in `compute` entries or
   interpolations render unstyled. See [margaui.md](./margaui.md). Not lintable.
 - **A whitespace-only view** → blank render. A *leading* newline before the
@@ -947,9 +943,8 @@ pub fn my_module() -> @component.ModuleDef {
 ```
 
 One `ModuleDef` drives the headless tests (`@harness.mount`), the
-browser hosts (`App::from_module`), and the embedded CLI
-(`@cli.plan_with_module`) — a passing test and a working page are the
-same artifact.
+browser hosts (`App::from_module`) and the storybook gallery — a passing
+test and a working page are the same artifact.
 
 **Per-example request mocking**: parameterize the module function with
 an optional `requests?` argument, defaulting to the real handlers, and
@@ -966,9 +961,9 @@ pub fn request_module(
 
 Best practice: have `components` list **every** component the module
 defines — child and helper components included — and give each one at
-least one `ExampleDef`. A component left out of `components` is invisible
-to `tutuca lint`/`render`/`show`, so it silently loses linting and render
-coverage.
+least one `ExampleDef`. A component left out of `components` cannot be
+resolved by name at render time (`<x render=".child">` finds nothing), and
+its examples never reach the storybook or a harness test.
 
 ## See also
 

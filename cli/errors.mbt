@@ -1,6 +1,6 @@
-// Error codes and rendering: port of tools/cli/errors.js (CODES table +
-// emitError) and tools/format/lint.js suggestionToMessage. Code strings are
-// kept verbatim, including the un-prefixed EXAMPLES_SHAPE_MISMATCH.
+// Error codes and rendering. Every code here is one this CLI can actually
+// emit — the format/module-shape codes went with the commands that produced
+// them.
 
 ///|
 pub const CODE_USAGE_UNKNOWN_COMMAND : String = "ERR_USAGE_UNKNOWN_COMMAND"
@@ -12,25 +12,10 @@ pub const CODE_USAGE_UNKNOWN_FLAG : String = "ERR_USAGE_UNKNOWN_FLAG"
 pub const CODE_USAGE_BAD_FLAG_VALUE : String = "ERR_USAGE_BAD_FLAG_VALUE"
 
 ///|
-pub const CODE_USAGE_MISSING_MODULE : String = "ERR_USAGE_MISSING_MODULE"
-
-///|
 pub const CODE_USAGE_MUTUALLY_EXCLUSIVE : String = "ERR_USAGE_MUTUALLY_EXCLUSIVE"
 
 ///|
 pub const CODE_USAGE_MISSING_ARGUMENT : String = "ERR_USAGE_MISSING_ARGUMENT"
-
-///|
-pub const CODE_FORMAT_UNKNOWN : String = "ERR_FORMAT_UNKNOWN"
-
-///|
-pub const CODE_FORMAT_UNSUPPORTED : String = "ERR_FORMAT_UNSUPPORTED"
-
-///|
-pub const CODE_MODULE_LOAD_FAILED : String = "ERR_MODULE_LOAD_FAILED"
-
-///|
-pub const CODE_MODULE_SHAPE_MISMATCH : String = "EXAMPLES_SHAPE_MISMATCH"
 
 ///|
 pub const CODE_SKILL_ASSETS_MISSING : String = "ERR_SKILL_ASSETS_MISSING"
@@ -45,27 +30,21 @@ pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
 pub const CODE_INTERNAL : String = "ERR_INTERNAL"
 
 ///|
-/// All codes in the CODES-table order agent-context emits as `errorCodes`.
+/// Every code, in the order agent-context emits them as `errorCodes`.
 pub let error_codes : Array[String] = [
   CODE_USAGE_UNKNOWN_COMMAND,
   CODE_USAGE_UNKNOWN_FLAG,
   CODE_USAGE_BAD_FLAG_VALUE,
-  CODE_USAGE_MISSING_MODULE,
   CODE_USAGE_MUTUALLY_EXCLUSIVE,
   CODE_USAGE_MISSING_ARGUMENT,
   CODE_VIEW_GEN_FAILED,
-  CODE_FORMAT_UNKNOWN,
-  CODE_FORMAT_UNSUPPORTED,
-  CODE_MODULE_LOAD_FAILED,
-  CODE_MODULE_SHAPE_MISMATCH,
   CODE_SKILL_ASSETS_MISSING,
   CODE_SKILL_TARGET_EXISTS,
   CODE_INTERNAL,
 ]
 
 ///|
-/// ErrShape constructor with the same defaults emitError applies
-/// (exit code 1, everything else absent).
+/// ErrShape constructor: exit code 1, everything else absent.
 pub fn err(
   code : String,
   message : String,
@@ -129,7 +108,7 @@ fn suggestion_to_json(suggestion : @lint.Suggestion) -> Json {
 
 ///|
 fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
-  if opts.format == Some("json") {
+  if opts.json {
     let error : Map[String, Json] = {
       "code": shape.code.to_json(),
       "message": shape.message.to_json(),

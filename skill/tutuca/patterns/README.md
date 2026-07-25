@@ -45,4 +45,4 @@ task.
 
 ## Examples & catalog
 
-- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving `tutuca render`, the harness tests, and the demo hosts.
+- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving the harness tests, the storybook, and the demo hosts.

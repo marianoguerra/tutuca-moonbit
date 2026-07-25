@@ -51,17 +51,13 @@ ci:
 
 # ── use ────────────────────────────────────────────────────────────────────
 
-# run the embedded tutuca CLI: just cli examples | just cli render <example> | just cli lint
+# run the tutuca CLI: just cli help | just cli gen-views <file.html>
 cli *ARGS:
     {{cli}} {{ARGS}}
 
-# render an example module to HTML via the CLI
-render *ARGS:
-    {{cli}} render {{ARGS}}
-
-# lint the bundled example modules via the CLI
-lint *ARGS:
-    {{cli}} lint {{ARGS}}
+# compile a view file into its typed MoonBit module
+gen-views *ARGS:
+    {{cli}} gen-views {{ARGS}}
 
 # ── package ────────────────────────────────────────────────────────────────
 

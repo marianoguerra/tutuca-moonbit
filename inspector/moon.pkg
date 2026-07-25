@@ -13,10 +13,9 @@ import {
 }
 
 // The headless harness (@harness) mounts the inspector module as a live app on
-// the in-memory DOM; the cli import powers the lint smoke test.
+// the in-memory DOM.
 import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/render",
-  "marianoguerra/tutuca/cli",
   "moonbitlang/core/test",
 } for "test"

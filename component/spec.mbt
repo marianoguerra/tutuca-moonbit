@@ -422,7 +422,7 @@ pub(all) struct ExampleDef {
 /// The module-shape convention (the port of the JS getComponents()/
 /// getExamples() ES-module contract): a native binary cannot load user code,
 /// so a "module" is a VALUE user projects build programmatically and hand to
-/// tooling (e.g. @cli.plan_with_module). getTests() joins with the test
+/// tooling. getTests() joins with the test
 /// runner port.
 pub(all) struct ModuleDef {
   name : String

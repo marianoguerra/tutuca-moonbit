@@ -20,27 +20,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   short-circuit an unchanged write. `patch noop todo 1000` went 8.33 ms → 19.5
   µs (−99.8%); `toggle`, `add+remove`, `move` and the render path are
   unchanged within noise. See `benchmarks/OPTIMIZATIONS.md` #6.
-- **The CLI has two honest command sets instead of one misleading one.** The
-  stock `tutuca` binary ships only the commands that need no user module
-  (`help`, `feedback`, `install-skill`, `storybook`, `gen-views`, `watch`,
-  `agent-context`). The module commands (`get`, `list`, `examples`, `show`,
-  `lint`, `render`) exist only in a project binary that compiles its
-  `ModuleDef` in and calls `@cli.plan_with_module` — they no longer appear in
-  the stock binary's `help` or `agent-context` as commands it cannot run, and
-  they no longer carry a `module-path` positional, because nothing here loads
-  a module from a path. Asking the stock binary for one is now a coded
-  `ERR_USAGE_MISSING_MODULE` pointing at `plan_with_module` and
-  `demo/counter_cli`.
-- `agent-context` is `schemaVersion` 4: it reports `mode` (`stock` /
-  `embedded`), describes the command set the running binary actually has, and
-  drops the `moduleFirst` / `moduleFlag` keys and the `--module` global flag.
-  Exit codes 2 and 3 are listed only in embedded mode, where `lint` and
-  `render` can produce them.
+- **The CLI does only what the compiler cannot.** tutuca-mb compiles ahead of
+  time, so mimicking the JS CLI's dynamic module inspection was answering
+  questions later and more weakly than the build already answers them. The
+  module commands (`get`, `list`, `examples`, `show`, `lint`, `render`),
+  `plan_with_module`, the component linter behind `lint`, and the
+  `demo/counter_cli` embedding demo are all removed — as is the idea that a
+  project embeds the CLI. What ships is `gen-views`, `watch`, `storybook`,
+  `install-skill`, `feedback`, `agent-context` and `help`: the jobs that
+  genuinely happen outside the compiler. View checking runs at GENERATION
+  time (a view that would emit a parse issue fails `gen-views`), and
+  everything the linter used to report about fields and handlers is a type
+  error in the generated view module.
+- `agent-context` is `schemaVersion` 5: one command set, no `mode`, no
+  `lintCodes`, no `formats`, no per-command `needsModule` / `needsEnv` /
+  `defaultFormat`. Its `invocation.note` says where the checks went, so an
+  agent reading the schema does not go looking for a `lint` command.
+- Global flags are `--json` and `--help`. `--format`, `--output` and
+  `--pretty` existed to shape module-command output and are gone with it;
+  `--json` now only switches the error envelope. Exit codes are 0 and 1 —
+  2 (lint findings) and 3 (render crash) went with their commands.
+- The storybook's per-story Lint panel and the inspector's Lint view are
+  removed along with the linter that fed them.
 - `tutuca storybook` is a static file server and nothing else: `--dry-run` and
   the accepted-but-ignored `--no-margaui` / `--no-check` / `--no-tests` are
   gone. With them went the runtime `cli` → `storybook` dependency, so the
   storybook packages are now excluded from the published archive and stay in
-  the repo as demos and as the corpus the lint/view sweeps run over.
+  the repo as demos and as the corpus the view-generation sweep runs over.
 - `README.md` is a short repository README rather than a symlink to
   `README.mbt.md`; the detailed guide remains the executable `README.mbt.md`.
 - One parameterized guest builder (`guests/build-guest.mjs <name>`) replaces
@@ -71,9 +77,10 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   codes and `warn_hook` stay public — they are documented extension points.
   `@core.Val::render`, `@core.Value::entries` and `@core.parse_handler_arg`
   were dead and are deleted outright.
-- `@cli.stub` and the `CmdImpl` enum: every registered command is runnable in
-  the mode that registers it, so there is nothing left to stub. `GlobalOpts`
-  loses `module_path`.
+- `@cli.plan_with_module`, `@cli.check_component` and the whole component
+  linter (`LintFinding`, `LintRule`, the rule/style tables), `@cli.stub` and
+  `CmdImpl`, `CliMode`, and `@inspector`'s lint report components. `GlobalOpts`
+  is down to `json` and `help`.
 
 ## [0.5.3]
 

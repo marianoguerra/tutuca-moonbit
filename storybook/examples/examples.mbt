@@ -4,7 +4,8 @@
 //   - the storybook gallery (storybook/ + storybook/ui) — grouped into sections
 //     and mounted as one live app (demo/storybook_wasm)
 //   - the headless tests    (*_test.mbt) — mount and drive them
-//   - the CLI               (plan_with_module) — `render` / `lint` / `show`
+//   - the view-corpus sweep (gen_views_corpus_test.mbt) — every view through
+//     the generator
 //
 // Names match the JS file they were ported from (docs/examples/<name>.js).
 

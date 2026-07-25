@@ -17,7 +17,8 @@ are the same artifact:
   transactor, and assert the resulting DOM;
 - the **storybook gallery** (`storybook/` + `storybook/ui`, hosted by
   `demo/storybook_wasm`) — grouped into sections and mounted as one app;
-- the **CLI** (`cli.plan_with_module`) — `render`, `lint`, `show`.
+- the **view-corpus sweep** (`gen_views_corpus_test.mbt`) — every view in
+  this corpus through the ahead-of-time generator.
 
 ## Running them
 

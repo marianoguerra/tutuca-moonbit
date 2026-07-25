@@ -1,5 +1,5 @@
 // Browser boot for the counter demo: the SAME ModuleDef that drives the
-// embedded CLI (demo/counter_cli) mounted as a live app.
+// counter library mounted as a live app.
 
 ///|
 fn main {

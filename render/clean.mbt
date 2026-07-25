@@ -19,7 +19,7 @@ fn is_meta_comment(text : String) -> Bool {
 
 ///|
 /// A copy of `v` without §…§ meta comments or internal data-* attributes —
-/// for `tutuca render`-style output and snapshot-friendly HTML. Regular
+/// for snapshot-friendly HTML. Regular
 /// comments and user data-* attributes survive.
 pub fn clean_vdom(v : @vdom.Vdom) -> @vdom.Vdom? {
   match v {

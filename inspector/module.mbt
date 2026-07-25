@@ -12,7 +12,6 @@
 //   ComponentInspector.Class.fromData(c) -> insp.inspect_component(c)
 //   InstanceInspector.Class.fromData(i)  -> insp.inspect_instance(i)
 //   InstanceExplorer.Class.fromData(...) -> insp.explore_instance(...)
-//   LintReport.Class.fromData(...)       -> insp.lint_report(findings)
 //   recordToEntry(record, ...)           -> insp.record_to_entry(record, ...)
 //
 // NOT PORTED: test-inspector.js (TestReport & co). Its data source was the
@@ -82,9 +81,6 @@ pub fn Inspector::new() -> Inspector {
       instance_explorer_comp(),
       instance_inspector_comp(),
       instance_fields_comp(),
-      lint_report_comp(),
-      lint_component_comp(),
-      lint_finding_comp(),
     ] {
     insp.comps[c.name] = c
   }
@@ -107,9 +103,7 @@ fn Inspector::components(self : Inspector) -> Array[@component.Component] {
 pub struct InspectorViews {
   instance_view : @tutuca.Value
   component_view : @tutuca.Value
-  lint_view : @tutuca.Value
   has_component : Bool
-  has_lint : Bool
 }
 
 ///|
@@ -119,12 +113,10 @@ pub struct InspectorViews {
 ///   value         — the instance/value to inspect (e.g. a drive value)
 ///   comps         — a component registry used to resolve the value's
 ///                   descriptor (JS `scope.getCompFor(value)`)
-///   lint_findings — prebuilt `finding_value` Maps; omit to skip the Lint view
 pub fn Inspector::build_inspector_views(
   self : Inspector,
   value : @tutuca.Value,
   comps? : @component.Components,
-  lint_findings? : Array[@tutuca.Value],
 ) -> InspectorViews {
   let comp = match comps {
     Some(cs) => cs.get_comp_for(value)
@@ -135,17 +127,7 @@ pub fn Inspector::build_inspector_views(
     Some(c) => self.inspect_component(c)
     None => Null
   }
-  let lint_view = match lint_findings {
-    Some(fs) => self.lint_report(fs)
-    None => Null
-  }
-  {
-    instance_view,
-    component_view,
-    lint_view,
-    has_component: comp is Some(_),
-    has_lint: lint_findings is Some(_),
-  }
+  { instance_view, component_view, has_component: comp is Some(_) }
 }
 
 // ---------------------------------------------------------------------------
@@ -239,35 +221,6 @@ fn sample_card_comp() -> @component.Component {
     compute={ "label": (s : SampleState, _args) => Str(s.title) },
     mutate={ "bump": (s : SampleState, _args) => { ..s, count: s.count + 1 } },
   )
-}
-
-///|
-fn sample_lint_findings() -> Array[@tutuca.Value] {
-  [
-    finding_value(
-      "METHOD_VAL_NOT_IMPLEMENTED", "error", "Broken/view", "Method '$missingMethod' is not implemented in @on.click",
-    ),
-    finding_value(
-      "FIELD_VAL_NOT_DEFINED", "error", "Broken/view", "Field '.nope' is not defined (in @text, on <span>)",
-    ),
-    finding_value(
-      "REDUNDANT_TEMPLATE_STRING",
-      "warn",
-      "Broken/view",
-      "Redundant string template — '{.title}' should be just '.title'",
-      suggestion="$'{.title}' → .title",
-    ),
-    finding_value(
-      "PLACEHOLDERLESS_TEMPLATE_STRING",
-      "hint",
-      "Broken/view",
-      "String template has no dynamic parts — use the literal 'btn' instead",
-      suggestion="$'btn' → 'btn'",
-    ),
-    finding_value(
-      "CONSTANT_CONDITION", "warn", "Other/view", "Constant condition 'open' — reference a field ('.name') or method ('$name')",
-    ),
-  ]
 }
 
 ///|
@@ -467,33 +420,8 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
     {
       component: "InstanceExplorer",
       title: "Instance Explorer",
-      args: instance_args(
-        insp.explore_instance(
-          card,
-          sample_card,
-          lint_findings=sample_lint_findings(),
-        ),
-        [
-          "activeTab", "instanceView", "componentView", "lintView", "hasComponent",
-          "hasLint",
-        ],
-      ),
-      view: None,
-    },
-    {
-      component: "LintReport",
-      title: "Lint Report With Findings",
-      args: instance_args(
-        insp.lint_report(sample_lint_findings(), title="broken module"),
-        ["title", "path", "errors", "warnings", "hints", "clean", "components"],
-      ),
-      view: None,
-    },
-    {
-      component: "LintReport",
-      title: "Lint Report Clean",
-      args: instance_args(insp.lint_report([], title="good module"), [
-        "title", "path", "errors", "warnings", "hints", "clean", "components",
+      args: instance_args(insp.explore_instance(card, sample_card), [
+        "activeTab", "instanceView", "componentView", "hasComponent",
       ]),
       view: None,
     },

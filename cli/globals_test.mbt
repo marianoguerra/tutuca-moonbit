@@ -1,66 +1,36 @@
-// extract_globals: every flag spelling from extractGlobals (tools/tutuca.js).
+// extract_globals: there are only two global flags, and everything else is a
+// positional for the command's own parser.
 
 ///|
-fn ok_opts(argv : Array[String]) -> (@cli.GlobalOpts, Array[String]) {
-  match @cli.extract_globals(argv) {
-    Ok(pair) => pair
-    Err(_) => abort("expected Ok for \{@debug.to_string(argv)}")
-  }
-}
-
-///|
-test "format flag spellings" {
-  @debug.assert_eq(ok_opts(["-f", "json"]).0.format, Some("json"))
-  @debug.assert_eq(ok_opts(["--format", "md"]).0.format, Some("md"))
-  @debug.assert_eq(ok_opts(["--format=html"]).0.format, Some("html"))
-  @debug.assert_eq(ok_opts(["--json"]).0.format, Some("json"))
-  @debug.assert_eq(ok_opts([]).0.format, None)
-}
-
-///|
-test "output, pretty, help flags" {
-  let (opts, rest) = ok_opts(["render", "-o", "out.html", "--pretty", "-h"])
-  @debug.assert_eq(opts.output, Some("out.html"))
-  assert_true(opts.pretty)
+test "the two global flags" {
+  let (opts, rest) = @cli.extract_globals(["watch", "--json", "src", "-h"])
+  assert_true(opts.json)
   assert_true(opts.help)
-  @debug.assert_eq(rest, ["render"])
-  @debug.assert_eq(ok_opts(["--output=x"]).0.output, Some("x"))
-  assert_true(ok_opts(["--help"]).0.help)
-}
-
-///|
-test "there is no --module: nothing loads a module from a path" {
-  // It parses as a positional like any other unknown word, rather than being
-  // silently accepted and ignored.
-  let (opts, rest) = ok_opts(["get", "--module=./other.js"])
-  @debug.assert_eq(opts.format, None)
-  @debug.assert_eq(rest, ["get", "--module=./other.js"])
-  assert_false(@cli.global_flag_names.contains("module"))
+  @debug.assert_eq(rest, ["watch", "src"])
+  assert_true(@cli.extract_globals(["--help"]).0.help)
+  assert_false(@cli.extract_globals([]).0.json)
 }
 
 ///|
 test "globals can appear anywhere; positionals keep order" {
-  let (opts, rest) = ok_opts(["get", "--json", "Button"])
-  @debug.assert_eq(opts.format, Some("json"))
-  @debug.assert_eq(rest, ["get", "Button"])
+  let (opts, rest) = @cli.extract_globals(["gen-views", "--json", "a.html"])
+  assert_true(opts.json)
+  @debug.assert_eq(rest, ["gen-views", "a.html"])
 }
 
 ///|
-test "unknown format is a coded error with a suggestion" {
-  match @cli.extract_globals(["-f", "jsn"]) {
-    Ok(_) => abort("expected Err")
-    Err((opts, shape)) => {
-      @debug.assert_eq(opts.format, Some("jsn"))
-      assert_eq(shape.code, "ERR_FORMAT_UNKNOWN")
-      assert_eq(shape.message, "Unknown format 'jsn'")
-      assert_true(shape.suggestion is Some(ReplaceName(from="jsn", to="json")))
-      @debug.assert_eq(shape.hint, Some("Valid formats: cli, md, json, html"))
-      assert_eq(shape.exit_code, 1)
-    }
+test "the module-era global flags are gone, not silently accepted" {
+  // --module, --format, --output and --pretty existed to point at a module
+  // and to shape module-command output. They now fall through as positionals
+  // (and a command's own parser rejects them as unknown flags).
+  let (_, rest) = @cli.extract_globals([
+    "watch", "--module=./m.js", "--format=json", "-o", "out.html", "--pretty",
+  ])
+  @debug.assert_eq(rest, [
+    "watch", "--module=./m.js", "--format=json", "-o", "out.html", "--pretty",
+  ])
+  for gone in ["module", "format", "output", "pretty"] {
+    assert_false(@cli.global_flag_names.contains(gone))
   }
-}
-
-///|
-test "--json after a bad -f wins, like the JS end-of-loop validation" {
-  @debug.assert_eq(ok_opts(["-f", "xml", "--json"]).0.format, Some("json"))
+  @debug.assert_eq(@cli.global_flag_names, ["json", "help"])
 }

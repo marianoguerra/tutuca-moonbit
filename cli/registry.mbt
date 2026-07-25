@@ -1,21 +1,11 @@
 // Command registry: single source of truth for dispatch, `help`, and the
 // `agent-context` schema.
 //
-// There are TWO command sets, because there are two binaries.
-//
-//   STOCK — what `moon run cmd/main` (and a released `tutuca`) ships. A native
-//   binary cannot load user code, so it has no way to reach a user's
-//   components: everything here works on files or on itself.
-//
-//   MODULE — get/list/examples/show/lint/render. These run against a
-//   `@component.ModuleDef` VALUE, so they exist only in a project binary that
-//   compiles its module in and calls `plan_with_module` (demo/counter_cli is
-//   the worked example). They take an optional component-name filter as their
-//   first positional and NO module path: the module is the one compiled in.
-//
-// The JS CLI's module-path convention has no analogue here, so neither set
-// carries a `module-path` positional or a `--module` flag. `CliMode` picks the
-// set, and `agent-context` reports the set the running binary actually has.
+// One command set. tutuca-mb compiles ahead of time, so there is nothing here
+// that inspects a user's components: `gen-views` makes their views typed
+// MoonBit at build time (a bad field or an unhandled handler is a compile
+// error) and `moon test` runs their behaviour. What is left is the work that
+// really does happen outside the compiler.
 
 ///|
 let help_flag : FlagSpec = flag("help", short="h", type_="boolean")
@@ -42,114 +32,18 @@ fn positional(
 }
 
 ///|
-/// The one positional every module command shares: which component to operate
-/// on. Omit it for all of them.
-fn module_positionals() -> Array[PositionalSpec] {
-  [
-    positional(
-      "name",
-      required=false,
-      description="Component name filter (operate on one component).",
-    ),
-  ]
-}
-
-///|
-fn module_cmd(
-  name : String,
-  describe : String,
-  default_format~ : String,
-  needs_env? : Bool = false,
-  flags? : Array[FlagSpec] = [],
-) -> CommandSpec {
-  {
-    name,
-    describe,
-    needs_module: true,
-    needs_env,
-    default_format: Some(default_format),
-    flags,
-    positionals: module_positionals(),
-  }
-}
-
-///|
-/// Commands that run against the embedded `ModuleDef`. Present only in
-/// `Embedded` mode; `plan_with_module` is the only thing that runs them.
-let module_commands : Array[CommandSpec] = [
-  module_cmd(
-    "get",
-    "Summarize the module's components and counts.",
-    default_format="cli",
-  ),
-  module_cmd("list", "List components in the module.", default_format="cli", flags=[
-    flag(
-      "limit",
-      type_="string",
-      description="Cap number of components emitted (0 = all). Truncated output is signaled by `truncated: true` in JSON.",
-    ),
-  ]),
-  module_cmd("examples", "List examples in the module.", default_format="cli", flags=[
-    flag(
-      "limit",
-      type_="string",
-      description="Cap total number of example items emitted (0 = all).",
-    ),
-  ]),
-  module_cmd(
-    "show",
-    "Show API docs for components (optional <name> for one).",
-    default_format="md",
-  ),
-  // view HTML linting + component provide/lookup shape checks; exit code 2 on
-  // error-level findings.
-  module_cmd(
-    "lint",
-    "Run the lint checks on components (optional <name> for one).",
-    default_format="cli",
-    needs_env=true,
-  ),
-  // examples mounted headlessly on memdom, output cleaned via clean_vdom.
-  // Exit code 3 (render crash) is reserved and documented but unreachable.
-  module_cmd(
-    "render",
-    "Render examples to HTML (optional <name> to filter by component).",
-    default_format="md",
-    needs_env=true,
-    flags=[
-      flag("title", type_="string", description="Filter by example title."),
-      flag("view", type_="string", description="Override example's view name."),
-    ],
-  ),
-]
-
-// No `test` command: MoonBit's own `moon test` is the test runner. Component
-// tests are authored as native `moon test "..." { ... }` blocks using the
-// built-in assertions (`assert_eq`, `assert_true(x is Pattern)`,
-// `@test.assert_raise`, `inspect`/`debug_inspect`) and the reusable headless
-// harness in `marianoguerra/tutuca/testing/harness` (mount + drive + read DOM
-// back). See AGENTS.md for the jest-matcher → built-in mapping. The `dev`
-// task runner wraps `moon test` (moon run --target native cmd/dev -- test).
-
-///|
-/// Commands the stock binary ships: they need no user module, so they work
-/// the same whether or not a module is compiled in. Present in BOTH modes.
-let stock_commands : Array[CommandSpec] = [
+/// Every command, in the order `agent-context` reports them and did-you-mean
+/// ranks them.
+let commands : Array[CommandSpec] = [
   {
     name: "help",
     describe: "Show usage. `help <command>` for per-command detail.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [help_flag],
     positionals: [positional("command", required=false)],
   },
   {
     name: "feedback",
     describe: "Record freeform feedback (bug, confusion, suggestion) to ~/.tutuca/feedback.jsonl.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [help_flag],
     positionals: [
       positional(
@@ -166,9 +60,6 @@ let stock_commands : Array[CommandSpec] = [
   {
     name: "install-skill",
     describe: "Install the bundled tutuca Claude Code skill into .claude/skills/.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [
       flag("user", type_="boolean", description="Install at ~/.claude/skills/."),
       flag(
@@ -202,9 +93,6 @@ let stock_commands : Array[CommandSpec] = [
   {
     name: "storybook",
     describe: "Serve (or copy) the pre-built storybook gallery bundle.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [
       flag(
         "port",
@@ -232,9 +120,6 @@ let stock_commands : Array[CommandSpec] = [
   {
     name: "gen-views",
     describe: "Compile an .html file of views into a MoonBit module of typed view surfaces.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [
       flag(
         "name",
@@ -270,9 +155,6 @@ let stock_commands : Array[CommandSpec] = [
   {
     name: "watch",
     describe: "Watch view files and regenerate their MoonBit modules on change.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [
       flag(
         "name",
@@ -302,28 +184,14 @@ let stock_commands : Array[CommandSpec] = [
   {
     name: "agent-context",
     describe: "Print a machine-readable schema (commands, flags, exit codes) as JSON.",
-    needs_module: false,
-    needs_env: false,
-    default_format: None,
     flags: [],
     positionals: [],
   },
 ]
 
 ///|
-/// The commands a binary in `mode` actually has. Module commands come first so
-/// `agent-context` and the did-you-mean candidate list keep a stable order
-/// with the module surface up top, where it is the interesting part.
-fn commands_for(mode : CliMode) -> Array[CommandSpec] {
-  match mode {
-    Stock => stock_commands
-    Embedded => module_commands + stock_commands
-  }
-}
-
-///|
-pub fn find_command(mode : CliMode, name : String) -> CommandSpec? {
-  for c in commands_for(mode) {
+pub fn find_command(name : String) -> CommandSpec? {
+  for c in commands {
     if c.name == name {
       return Some(c)
     }
@@ -332,27 +200,6 @@ pub fn find_command(mode : CliMode, name : String) -> CommandSpec? {
 }
 
 ///|
-pub fn command_names(mode : CliMode) -> Array[String] {
-  commands_for(mode).map(c => c.name)
-}
-
-///|
-/// True for a command that only a module-embedding binary has. Stock dispatch
-/// uses it to say "this needs an embedded module" instead of the misleading
-/// "unknown command".
-fn is_module_command(name : String) -> Bool {
-  for c in module_commands {
-    if c.name == name {
-      return true
-    }
-  }
-  false
-}
-
-///|
-/// Did-you-mean candidates: every name the CLI knows in either mode, so a typo
-/// for `lint` is recognized as one even in a stock binary that cannot run it
-/// (dispatch then explains why, rather than pretending the name is unknown).
-fn all_command_names() -> Array[String] {
-  commands_for(Embedded).map(c => c.name)
+pub fn command_names() -> Array[String] {
+  commands.map(c => c.name)
 }

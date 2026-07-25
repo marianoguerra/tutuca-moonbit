@@ -1,10 +1,5 @@
 ///|
-let no_opts : @cli.GlobalOpts = {
-  format: None,
-  output: None,
-  pretty: false,
-  help: false,
-}
+let no_opts : @cli.GlobalOpts = { json: false, help: false }
 
 ///|
 fn plan_gen(args : Array[String]) -> @cli.Outcome {
@@ -181,17 +176,16 @@ test "a successful plan carries one file" {
 
 ///|
 test "gen-views is in the command registry, so help and agent-context see it" {
-  assert_true(@cli.find_command(Stock, "gen-views") is Some(_))
-  assert_true(@cli.command_names(Stock).contains("gen-views"))
+  assert_true(@cli.find_command("gen-views") is Some(_))
+  assert_true(@cli.command_names().contains("gen-views"))
   let _ = no_opts
   assert_true(@cli.plan(["help", "gen-views"]) is Done(_))
 }
 
 ///|
 test "view-only lint rules report at generation time" {
-  // These needed a separate `tutuca lint` run before: nothing about them
-  // depends on the component, only on the view text the generator is
-  // already parsing.
+  // Nothing about these depends on a live component — only on the view text
+  // the generator is already parsing, which is why they can be build errors.
   let r = @cli.gen_views(
     (
       #|<template>

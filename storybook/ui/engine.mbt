@@ -5,7 +5,7 @@
 // filter box and a collapse toggle) drives a single `active` string field;
 // each story has a `@show`-gated pane that renders its pre-built instance via
 // `<x render=".sN">` (resolved by component id, so a foreign-scope instance
-// renders fine) plus a collapsible Lint panel and a "focus" button. Focus mode
+// renders fine) plus a "focus" button. Focus mode
 // (`.focus`/`.focusValue`) shows one story fullscreen. Selection, the filter,
 // and the focused story sync to the URL query string through the host's
 // `persistState`/`loadState` request handlers (see demo/storybook_wasm), so a
@@ -33,13 +33,6 @@ fn esc(s : String) -> String {
 /// the generator honest if a title-derived id ever carries a quote.
 fn esc_attr(s : String) -> String {
   esc(s).replace(old="'", new="&#39;")
-}
-
-///|
-/// Default lint callback: no findings. Hosts pass cli's check_component-backed
-/// formatter to fill the Lint panel.
-fn no_lint(_c : @component.Component) -> String {
-  ""
 }
 
 ///|
@@ -412,7 +405,7 @@ impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
               let filter = str_of(state.get("filter"))
               let theme = str_of(state.get("theme"))
               let mut out = self.set("theme", Str(theme))
-              // Any story id selects its pane (renderable panes and lint
+              // Any story id selects its pane (renderable panes and
               // fixtures alike); an id that matches nothing just leaves every
               // pane hidden.
               if story != "" {
@@ -554,7 +547,6 @@ fn build_shell(
   for sec in sections {
     for s in sec.stories {
       defaults["s\{idx}"] = Null
-      defaults["l\{idx}"] = Str("")
       defaults["v\{idx}"] = Bool(true)
       if s.renderable {
         id_to_field[s.id] = "s\{idx}"
@@ -584,13 +576,9 @@ fn build_shell(
       } else {
         sb.write_string(
           "<div class=\"border border-base-300 rounded-lg p-4 bg-base-100 text-sm opacity-60\">" +
-          "This is a lint fixture — see the Lint panel below.</div>",
+          "This story is a deliberately-broken view fixture; it is listed but not rendered.</div>",
         )
       }
-      sb.write_string(
-        "<details class=\"mt-3\"><summary class=\"cursor-pointer text-sm opacity-60\">Lint</summary>" +
-        "<pre class=\"text-xs mt-2 whitespace-pre-wrap opacity-80\" @text=\".l\{idx}\"></pre></details>",
-      )
       sb.write_string("</section>")
       idx = idx + 1
     }
@@ -636,7 +624,6 @@ pub fn[N : @vdom.DomWalk] mount(
   sections : Array[@sb.Section],
   root_node : N,
   opts : @vdom.RenderOpts[N],
-  lint? : (@component.Component) -> String = no_lint,
   url_handlers? : Map[String, @component.RequestFn] = Map([]),
 ) -> @app.App[N] raise {
   let root_scope = @component.ComponentStack::new()
@@ -656,20 +643,15 @@ pub fn[N : @vdom.DomWalk] mount(
         fields["active"] = Str(s.id)
       }
       match child.lookup_component(s.root) {
-        Some(comp) => {
-          // lint fixtures are linted but never rendered (their views trip
-          // rules on purpose); build an instance only for renderable stories.
+        Some(comp) =>
+          // deliberately-broken fixtures are listed but never rendered
+          // (their views trip parse issues on purpose).
           fields["s\{idx}"] = if s.renderable {
             comp.make(s.args)
           } else {
             Null
           }
-          fields["l\{idx}"] = Str(lint(comp))
-        }
-        None => {
-          fields["s\{idx}"] = Null
-          fields["l\{idx}"] = Str("(root component '\{s.root}' not found)")
-        }
+        None => fields["s\{idx}"] = Null
       }
       idx = idx + 1
     }
