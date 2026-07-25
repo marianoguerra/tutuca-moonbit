@@ -1,0 +1,19 @@
+/* Stock Tailwind entry for the marianoguerra/tailwindcss (MoonBit) compiler.
+ * This is what upstream's `@import "tailwindcss"` expands to — tailwindcss.css's
+ * four lines, written out directly because its nested `./tw/*` imports are
+ * root-relative and would otherwise resolve under tw/tw/ and fail.
+ *
+ * No `@source` directive: candidate classes come from tutuca's collect_classes()
+ * over the project's views, not from content scanning.
+ *
+ * The imports resolve against _build/tailwind (scripts/fetch-tailwind.mjs
+ * extracts them there from the pinned tailwindcss npm tarball), so the generated
+ * bundle's keys stay entry-relative — `tw/theme.css` and friends — which is also
+ * what margaui.entry.css asks for. That is deliberate: one file map serves both
+ * compiles, and margaui's own hand-mirrored tw/*.css are never read.
+ * Regenerate the bundle + the embedded module with:
+ *   moon run --target native cmd/dev -- css-bundle */
+@layer theme, base, components, utilities;
+@import "./tw/theme.css" layer(theme);
+@import "./tw/preflight.css" layer(base);
+@import "./tw/utilities.css" layer(utilities);

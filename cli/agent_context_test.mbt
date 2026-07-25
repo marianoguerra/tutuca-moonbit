@@ -43,7 +43,8 @@ test "schema top-level shape" {
 test "the command list is exactly the commands that exist" {
   guard schema() is Object(top)
   @debug.assert_eq(names_of(top), [
-    "help", "feedback", "install-skill", "storybook", "gen-views", "watch", "agent-context",
+    "help", "feedback", "install-skill", "storybook", "gen-views", "gen-tailwind-css",
+    "gen-margaui-css", "watch", "agent-context",
   ])
 }
 

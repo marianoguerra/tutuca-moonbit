@@ -9,7 +9,7 @@ fn main {
 /// JS strings. Never raises — a parse or compile failure returns "" so the
 /// preview renders unstyled rather than throwing.
 pub fn compile(classes_json : String) -> String {
-  @margaui.compile_classes(parse_classes(classes_json)) catch {
+  @css.compile_margaui(parse_classes(classes_json)) catch {
     _ => ""
   }
 }

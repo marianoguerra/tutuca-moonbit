@@ -245,7 +245,7 @@ pub fn mount() -> Unit {
 /// empty <style id="margaui-css"> early in <head> so the upsert keeps it ahead
 /// of any lazily-loaded palette <link> in the cascade.
 fn apply_margaui(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
-  let css = @margaui.compile_classes(app.scope.comps.collect_classes()) catch {
+  let css = @css.compile_margaui(app.scope.comps.collect_classes()) catch {
     err => {
       @tutuca.warn("margaui compile failed: \{err}")
       return

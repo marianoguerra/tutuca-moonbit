@@ -50,7 +50,7 @@ options(
     "scripts",
     "dev",
     "cmd/dev",
-    "cmd/margaui-bundle",
+    "cmd/css-bundle",
     "storybook",
     "package.json",
     "package-lock.json",

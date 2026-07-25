@@ -239,6 +239,200 @@ async fn run_gen_views(
 }
 
 ///|
+/// The shell half of `gen-tailwind-css` / `gen-margaui-css`: walk the roots for
+/// view files, read them, collect their classes through the pure core, compile
+/// those into CSS, and write the result.
+///
+/// The discovery rule is `watch`'s, deliberately — an explicit .html is taken at
+/// its word, a directory contributes the .html files that already have a
+/// generated sibling. A project's views are exactly the gen-views-managed ones,
+/// and the rule is what keeps `index.html` from being parsed as a view.
+async fn run_gen_css(
+  opts : @cli.GlobalOpts,
+  plan : @cli.CssPlan,
+) -> Unit noraise {
+  let files = collect_view_files(plan.paths)
+  if files.length() == 0 {
+    emit_and_exit(
+      @cli.error_emit(
+        opts,
+        @cli.err(
+          @cli.CODE_USAGE_MISSING_ARGUMENT,
+          "no view files found under \{plan.paths.join(", ")}",
+          hint="a directory contributes the .html files that already have a <stem>_view_gen.mbt sibling; run `tutuca gen-views` first, or pass the .html paths directly",
+        ),
+      ),
+    )
+    return
+  }
+  let sources : Array[(String, String)] = []
+  for path in files {
+    let source = @fs.read_file(path).text() catch {
+      e => {
+        emit_and_exit(
+          @cli.error_emit(
+            opts,
+            @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
+          ),
+        )
+        return
+      }
+    }
+    sources.push((path, source))
+  }
+  let classes = match @cli.collect_view_classes(sources) {
+    Ok(classes) => classes
+    Err(shape) => {
+      emit_and_exit(@cli.error_emit(opts, shape))
+      return
+    }
+  }
+  // Names the collector cannot see because the view assembles them at run time.
+  // Merged through a Set so a candidate listed in both places is not duplicated,
+  // then re-sorted so the output does not depend on which source it came from.
+  match plan.extra_classes {
+    Some(path) => {
+      let extra = @fs.read_file(path).text() catch {
+        e => {
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
+            ),
+          )
+          return
+        }
+      }
+      let merged : Set[String] = Set([])
+      for c in classes {
+        merged.add(c)
+      }
+      for line in extra.split("\n") {
+        let name = line.trim(chars=" \t\r").to_owned()
+        if name != "" {
+          merged.add(name)
+        }
+      }
+      classes.clear()
+      for c in merged {
+        classes.push(c)
+      }
+      classes.sort_by(@cli.lex_compare)
+    }
+    None => ()
+  }
+  if plan.print_classes {
+    emit_and_exit({ out: @cli.class_list_text(classes), err: "", exit_code: 0 })
+    return
+  }
+  let css = compile_css(opts, plan, classes)
+  match plan.out {
+    None => emit_and_exit({ out: css, err: "", exit_code: 0 })
+    Some(target) => {
+      try {
+        let dir = parent_dir(target)
+        if dir != "" && !@fs.exists(dir) {
+          @fs.mkdir(dir, recursive=true)
+        }
+        @fs.write_file(target, css, create_mode=CreateOrTruncate)
+      } catch {
+        e =>
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(@cli.CODE_INTERNAL, "failed to write \{target}: \{e}"),
+            ),
+          )
+      }
+      emit_and_exit({
+        out: @cli.gen_css_success(
+          target,
+          files=files.length(),
+          classes=classes.length(),
+        ),
+        err: "",
+        exit_code: 0,
+      })
+    }
+  }
+}
+
+///|
+/// Compile `classes` against the stylesheets the plan asks for.
+///
+/// The embedded path is sync and target-agnostic (the `css` package resolves its
+/// `@import` graph from a bundle compiled in). `--entry` is the filesystem path:
+/// a project's own entry, whose imports the async loader resolves from disk —
+/// the same shape `marianoguerra/tailwindcss`'s own CLI uses.
+async fn compile_css(
+  opts : @cli.GlobalOpts,
+  plan : @cli.CssPlan,
+  classes : Array[String],
+) -> String noraise {
+  let result = match plan.entry {
+    Some(path) => {
+      let source = @fs.read_file(path).text() catch {
+        e => {
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(@cli.CODE_INTERNAL, "cannot read \{path}: \{e}"),
+            ),
+          )
+          return ""
+        }
+      }
+      @tw.compile(
+        source,
+        options=@tw.CompileOptions::new(
+          base=parent_dir(path),
+          from=path,
+          loader=@twfs.FsStylesheetLoader::new(),
+          polyfills=plan.polyfills,
+        ),
+      ).build(classes) catch {
+        e => {
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(
+                @cli.CODE_INTERNAL,
+                "\{e}",
+                hint="--entry resolves the stylesheet's @imports relative to its own directory",
+                where_=path,
+              ),
+            ),
+          )
+          return ""
+        }
+      }
+    }
+    None =>
+      try {
+        if plan.margaui {
+          @css.compile_margaui(classes, polyfills=plan.polyfills)
+        } else {
+          @css.compile_tailwind(classes, polyfills=plan.polyfills)
+        }
+      } catch {
+        e => {
+          emit_and_exit(
+            @cli.error_emit(
+              opts,
+              @cli.err(
+                @cli.CODE_INTERNAL,
+                "compiling the embedded stylesheets failed: \{e}",
+              ),
+            ),
+          )
+          return ""
+        }
+      }
+  }
+  result
+}
+
+///|
 /// Every view file a watched path contributes.
 ///
 /// An explicit .html path is taken at its word; a directory contributes the
@@ -448,5 +642,6 @@ async fn main {
     GenViews(opts, input~, target~, name~, dry_run~, ir~) =>
       run_gen_views(opts, input, target, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
+    GenCss(opts, plan~) => run_gen_css(opts, plan)
   }
 }

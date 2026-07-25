@@ -6,9 +6,9 @@ import {
 }
 
 // Values
-pub fn help_text() -> String
+pub fn css_bundle_steps() -> Array[Step]
 
-pub fn margaui_bundle_steps() -> Array[Step]
+pub fn help_text() -> String
 
 pub fn plan(String) -> Array[Step]?
 

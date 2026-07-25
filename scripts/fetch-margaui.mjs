@@ -1,14 +1,19 @@
-// Fetch the margaui checkout that the `margaui-bundle` dev task resolves
-// demo/assets/margaui.entry.css's `@import`s against, into the gitignored
+// Fetch the margaui checkout that the `css-bundle` dev task resolves
+// css/assets/margaui.entry.css's `@import`s against, into the gitignored
 // _build/margaui/. Nothing in the repo depends on a sibling ../margaui working
 // copy any more: the source of truth is the pinned tag below, cloned from
 // GitHub on demand (shallow, ~6 MB) and thrown away with the rest of _build/.
 //
 // The pin is what makes the regen reproducible — the committed
-// demo/assets/margaui.bundle.json + demo/margaui/bundle_gen.mbt are exactly
+// css/assets/margaui.bundle.json + css/margaui_bundle_gen.mbt are exactly
 // what this ref produces. To pick up new margaui CSS: bump MARGAUI_REF, re-run
-// `moon run --target native cmd/dev -- margaui-bundle`, and commit the pin
+// `moon run --target native cmd/dev -- css-bundle`, and commit the pin
 // together with the regenerated bundle.
+//
+// Only margaui's own CSS is taken from here. The stock Tailwind stylesheets
+// come from scripts/fetch-tailwind.mjs instead — margaui vendors a manual
+// mirror of them in tw/, and it has run behind the upstream the MoonBit
+// compiler port is derived from.
 //
 // Run directly:  node scripts/fetch-margaui.mjs [--ref <tag>] [--force]
 // Or import:     import { ensureMargaui } from "./fetch-margaui.mjs"

@@ -5,9 +5,18 @@
  *      importing tailwindcss.css directly resolves them under tw/tw/ and fails.
  *   2. the scan-only `@source` directive is dropped — candidate classes come
  *      from tutuca's collect_classes(), not content scanning.
- * The imports resolve against a margaui checkout; keys in the generated bundle
- * stay entry-relative and compile with base = "". Regenerate the bundle + the
- * embedded module with: moon run --target native cmd/dev -- margaui-bundle */
+ * The `./src/*`, `./base/*` and `./themes/*` imports resolve against a margaui
+ * checkout; keys in the generated bundle stay entry-relative and compile with
+ * base = "".
+ *
+ * The four `./tw/*` lines below are NOT bundled from that checkout: the
+ * css-bundle task runs this entry with `--skip-prefix tw/`, so they resolve at
+ * compile time against tailwind_bundle instead — the stock stylesheets pinned to
+ * the version the compiler port is derived from (see tailwind.entry.css and
+ * scripts/fetch-tailwind.mjs). margaui's own tw/*.css are a hand-maintained
+ * mirror that has run a minor version behind, and the engine reading them is
+ * not. Regenerate the bundle + the embedded module with:
+ *   moon run --target native cmd/dev -- css-bundle */
 @layer theme, base, components, utilities;
 @import "./tw/theme.css" layer(theme);
 @import "./tw/preflight.css" layer(base);

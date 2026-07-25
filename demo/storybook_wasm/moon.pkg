@@ -9,7 +9,7 @@ import {
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
-  "marianoguerra/tutuca/demo/margaui",
+  "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/storybook" @sb,
   "marianoguerra/tutuca/storybook/ui" @sbui,
   "marianoguerra/tutuca/vdom",

@@ -349,7 +349,7 @@ let app_ref : Ref[@app.App[@wdom.WasmNode]?] = { val: None }
 /// so the upsert keeps it ahead of any lazily-loaded palette <link>.
 fn apply_margaui() -> Unit {
   guard app_ref.val is Some(app) else { return }
-  let css = @margaui.compile_classes(app.scope.comps.collect_classes()) catch {
+  let css = @css.compile_margaui(app.scope.comps.collect_classes()) catch {
     err => {
       @tutuca.warn("margaui compile failed: \{err}")
       return

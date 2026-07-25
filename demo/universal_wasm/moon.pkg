@@ -13,7 +13,7 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
-  "marianoguerra/tutuca/demo/margaui",
+  "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
 }

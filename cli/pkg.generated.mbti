@@ -29,6 +29,10 @@ pub const VERSION : String = "0.1.0"
 
 pub fn agent_context_text() -> String
 
+pub fn class_list_text(Array[String]) -> String
+
+pub fn collect_view_classes(Array[(String, String)]) -> Result[Array[String], ErrShape]
+
 pub fn command_names() -> Array[String]
 
 pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
@@ -49,6 +53,8 @@ pub fn feedback_success_line(String) -> String
 
 pub fn find_command(String) -> CommandSpec?
 
+pub fn gen_css_success(String, files~ : Int, classes~ : Int) -> String
+
 pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
 pub fn gen_views_success(String, String) -> String
@@ -62,6 +68,8 @@ pub fn install_skill_target_exists(GlobalOpts, String) -> Emit
 pub fn is_view_path(String) -> Bool
 
 pub fn iso8601_utc(UInt64) -> String
+
+pub fn lex_compare(String, String) -> Int
 
 pub fn overview() -> String
 
@@ -89,6 +97,16 @@ pub(all) struct CommandSpec {
   describe : String
   flags : Array[FlagSpec]
   positionals : Array[PositionalSpec]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct CssPlan {
+  paths : Array[String]
+  out : String?
+  entry : String?
+  extra_classes : String?
+  print_classes : Bool
+  polyfills : Int
+  margaui : Bool
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Emit {
@@ -131,6 +149,7 @@ pub(all) enum Outcome {
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
+  GenCss(GlobalOpts, plan~ : CssPlan)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct PositionalSpec {

@@ -100,6 +100,35 @@ pub(all) enum Outcome {
   /// Regenerate view modules as their .html files change. The core decides
   /// what to watch; the shell owns the watcher and the filesystem.
   Watch(GlobalOpts, plan~ : WatchPlan)
+  /// Compile the classes a project's views use into CSS (gen_css.mbt). The core
+  /// decides the roots and the flags; the shell walks the tree, reads the view
+  /// files, calls `collect_view_classes` and then the compiler, and writes the
+  /// result.
+  GenCss(GlobalOpts, plan~ : CssPlan)
+} derive(Debug, Eq)
+
+///|
+/// What `gen-tailwind-css` / `gen-margaui-css` asked for. `margaui` is the only
+/// difference between the two commands: which stylesheet set the collected
+/// classes are compiled against.
+pub(all) struct CssPlan {
+  /// View files or directories to search. Never empty — the parser defaults it
+  /// to ["."], the same root `watch` takes.
+  paths : Array[String]
+  /// Where to write the CSS; None means stdout.
+  out : String?
+  /// A CSS entry on disk to compile instead of the embedded one, with its
+  /// `@import`s resolved from the filesystem.
+  entry : String?
+  /// A file of extra candidate class names, one per line — the escape hatch for
+  /// names the collector cannot see because the view assembles them at run time.
+  extra_classes : String?
+  /// Print the collected class names instead of compiling them.
+  print_classes : Bool
+  /// The compiler's polyfill level, 0..3 (`@tw.POLYFILL_*`).
+  polyfills : Int
+  /// Compile against Tailwind + margaui rather than Tailwind alone.
+  margaui : Bool
 } derive(Debug, Eq)
 
 ///|
@@ -127,6 +156,42 @@ declare pub fn gen_views(
 /// Parse `watch` arguments: finishes purely on help and usage errors,
 /// otherwise returns a Watch outcome for the shell to carry out.
 declare fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome
+
+///|
+/// Parse the shared arguments of `gen-tailwind-css` / `gen-margaui-css`:
+/// finishes purely on help and usage errors, otherwise returns a GenCss
+/// outcome for the shell to carry out.
+declare fn run_gen_css(
+  args : Array[String],
+  opts : GlobalOpts,
+  margaui~ : Bool,
+) -> Outcome
+
+///|
+/// Every literal class name the given (path, source) view files use, sorted
+/// and deduped — the file-level twin of `@component.Components::collect_classes`.
+/// The pure half of both CSS commands.
+declare pub fn collect_view_classes(
+  sources : Array[(String, String)],
+) -> Result[Array[String], ErrShape]
+
+///|
+/// The line the shell prints after writing the CSS.
+declare pub fn gen_css_success(
+  target : String,
+  files~ : Int,
+  classes~ : Int,
+) -> String
+
+///|
+/// `--print-classes` output: one class name per line.
+declare pub fn class_list_text(classes : Array[String]) -> String
+
+///|
+/// Byte-lexicographic string order — NOT `String`'s own `Compare`, which sorts
+/// by length first. Shared with the shell so the class list it merges
+/// `--classes` into keeps the same order this produced.
+declare pub fn lex_compare(a : String, b : String) -> Int
 
 ///|
 /// True for a path the watcher should react to; everything else in a watched

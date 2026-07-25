@@ -1,0 +1,14 @@
+// Tailwind and margaui styling for tutuca, compiled in MoonBit instead of a
+// JS/CDN build. `compile_tailwind` / `compile_margaui` turn the class set that
+// collect_classes() gathered into CSS via the marianoguerra/tailwindcss port,
+// resolving each entry's @import graph from an embedded bundle
+// (tailwind_bundle_gen.mbt, margaui_bundle_gen.mbt).
+//
+// Regenerate both bundles with: moon run --target native cmd/dev -- css-bundle
+//
+// Target-agnostic on purpose. compile_sync needs no async runtime, so the wasm
+// demo hosts, the js playground and the native CLI (`tutuca gen-tailwind-css` /
+// `gen-margaui-css`, through cmd/main) all share this one package.
+import {
+  "marianoguerra/tailwindcss" @tw,
+}

@@ -88,30 +88,40 @@ The wasm demos (`demo/storybook_wasm`, `demo/universal_wasm`) compile margaui
 **in MoonBit** via `marianoguerra/tailwindcss`, so there is no CDN import and
 styling works offline. The moving parts, all in-repo:
 
-- **The bundle.** `cmd/margaui-bundle` (a dev tool) runs the tailwindcss
-  `bundle` graph walk (`@tw.collect_imports`) over an adapted margaui entry
-  (`demo/assets/margaui.entry.css`) and emits `demo/margaui/bundle_gen.mbt` — the
-  `@import` map as an embedded `Array[(String, String)]`, plus the entry string.
-  Regenerate with:
+- **The bundles.** `cmd/css-bundle` (a dev tool) runs the tailwindcss `bundle`
+  graph walk (`@tw.collect_imports`) over each entry in `css/assets/` and emits
+  two embedded modules — `css/tailwind_bundle_gen.mbt` and
+  `css/margaui_bundle_gen.mbt`, each an `@import` map as an
+  `Array[(String, String)]` plus its entry string. Regenerate both with:
 
   ```sh
-  moon run --target native cmd/dev -- margaui-bundle
+  moon run --target native cmd/dev -- css-bundle
   ```
 
   The task clones margaui from GitHub at the ref pinned in
-  `scripts/fetch-margaui.mjs` into the gitignored `_build/margaui` — no local
-  checkout to set up, and the pin is what makes the committed bundle
-  reproducible. Bump that ref to pick up new margaui CSS.
+  `scripts/fetch-margaui.mjs` into the gitignored `_build/margaui`, and downloads
+  the `tailwindcss` npm tarball at the version pinned in
+  `scripts/fetch-tailwind.mjs` into `_build/tailwind` — no local checkout to set
+  up, and the pins are what make the committed bundles reproducible. Bump a pin
+  to pick up new CSS.
 
-- **The compile helper.** `demo/margaui`'s
-  `compile_classes(classes) -> String` builds a `MemoryStylesheetLoader` from the
-  embedded bundle and calls `@tw.compile_sync(margaui_entry, …).build(classes)`
-  (`compile_sync` is the wasm-gc-safe path — no async runtime).
+  Stock Tailwind's `theme`/`preflight`/`utilities` come from **npm**, not from
+  margaui's `tw/` directory. margaui vendors a hand-maintained mirror of those
+  files that has run behind upstream, and the MoonBit compiler is ported from one
+  exact Tailwind tag — so the stylesheets are pinned to that same tag, and
+  `fetch-tailwind.mjs` fails the build if the two pins drift apart.
+
+- **The compile helpers.** `css`'s `compile_margaui(classes) -> String` builds a
+  `MemoryStylesheetLoader` over both bundles (margaui's entry imports `./tw/*`,
+  which live in the Tailwind one) and calls
+  `@tw.compile_sync(margaui_entry, …).build(classes)` — `compile_sync` is the
+  wasm-gc-safe path, no async runtime. `compile_tailwind(classes)` is the same
+  against stock Tailwind alone, with no component layers.
 
 - **The host.** After `mount()`, the host compiles + injects in one step:
 
   ```moonbit
-  let css = @margaui.compile_classes(app.scope.comps.collect_classes())
+  let css = @css.compile_margaui(app.scope.comps.collect_classes())
   @wglue.inject_style(doc, "margaui-css", css)   // app/wasm inject_style
   ```
 
@@ -126,6 +136,32 @@ otherwise), and the scan-only `@source` line is dropped (candidates come from
 add the `marianoguerra/tailwindcss` dep, generate a bundle the same way, and
 call `compile_sync` after mount.
 
+## Compile at build time (the CLI)
+
+If your views are ahead-of-time compiled (`gen-views`), you do not need to
+compile in the browser at all — the CLI runs the same collection over the view
+**files** and writes a stylesheet:
+
+```sh
+tutuca gen-margaui-css  src/ -o public/app.css   # Tailwind + margaui components
+tutuca gen-tailwind-css src/ -o public/app.css   # stock Tailwind only
+```
+
+Paths follow `watch`'s rule: a directory contributes the `.html` files that
+already have a generated sibling, so pointing it at a project root does not try
+to compile `index.html`. Defaults to the current directory. The stylesheets are
+compiled into the binary — no Node, no CDN, no margaui checkout.
+
+The same literal-only limit applies (see "What the collector cannot see" below).
+`--print-classes` shows exactly what was collected, one name per line, and
+`--classes <file>` feeds back the names a view assembles at run time. Note that
+an interpolated `$'badge badge-{.kind}'` contributes its literal prefix
+`badge-`, which compiles to nothing — a stub in the list, not the real name.
+
+Other flags: `--entry <file>` compiles your own CSS entry instead of the
+embedded one (resolving its `@import`s from disk, so a project theme or
+`@source` setup works), and `--polyfills <0..3>` matches the compiler's levels.
+
 ## Wire it into tutuca
 
 The integration is three steps, all on the MoonBit side: after mounting,
@@ -138,7 +174,7 @@ appended later still win) and calls `exports.mount()`:
 
 ```moonbit
 // in the host's mount(), after the app is built:
-let css = @margaui.compile_classes(app.scope.comps.collect_classes())
+let css = @css.compile_margaui(app.scope.comps.collect_classes())
 @wglue.inject_style(doc, "margaui-css", css) // app/wasm inject_style upserts by id
 ```
 

@@ -21,6 +21,27 @@ let overview_body : String =
   #|        --dry-run print the generated modules instead of writing them
   #|        --no-ir   skip the companion <stem>_view_ir_gen.mbt
   #|
+  #|  gen-tailwind-css [path...] [-o <file>] [--entry <file>] [--classes <file>]
+  #|                   [--print-classes] [--polyfills <0..3>]
+  #|  gen-margaui-css  [path...] (same flags)
+  #|      Compile the classes a project's views use into CSS: gen-tailwind-css
+  #|      against stock Tailwind, gen-margaui-css against Tailwind + margaui's
+  #|      component layers. Paths follow the same rule as `watch` — a directory
+  #|      contributes the .html files that already have a generated sibling —
+  #|      and default to the current directory. The stylesheets are compiled
+  #|      into the binary; no Node, no CDN, no checkout.
+  #|        -o, --out       write the CSS here (default: stdout)
+  #|        --entry         compile this CSS entry instead of the embedded one,
+  #|                        resolving its @imports from disk
+  #|        --classes       extra candidate class names, one per line
+  #|        --print-classes print the collected classes instead of the CSS
+  #|        --polyfills     0=none, 1=@property, 2=color-mix, 3=all (default 3)
+  #|
+  #|      Only LITERAL class names are collected, the same limit a running host
+  #|      has: a name the view assembles at run time (`:class="$'bg-{.color}'"`)
+  #|      is not in the source to be found. --print-classes shows what was
+  #|      collected; --classes adds back what was not.
+  #|
   #|  watch [path...] [--name <Name>] [--out <dir>] [--no-ir]
   #|      Re-run gen-views on every save. Paths are .html files or directories;
   #|      a directory contributes the .html files that already have a generated

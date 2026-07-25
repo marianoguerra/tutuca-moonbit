@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The embedded Tailwind stylesheets were a minor version behind the compiler
+  reading them.** `theme.css` / `preflight.css` came from margaui's `tw/`
+  directory, which margaui's own README calls a manual mirror — at v0.5606.3 it
+  was still missing the `mauve`, `olive`, `mist` and `taupe` palettes upstream
+  added in **4.3.2**, on top of 4.3.3's `--font-sans` change and the
+  `oklch(… 0 none)` achromatic form for `zinc-50` and `neutral-50…950`.
+  Meanwhile `marianoguerra/tailwindcss` is ported from **v4.3.3** exactly. The
+  `css-bundle` task now takes those three files from the `tailwindcss` npm
+  tarball pinned to the port's own `UPSTREAM.md` tag, and
+  `scripts/fetch-tailwind.mjs` fails the build if the two pins drift apart;
+  margaui's copies are dropped from its bundle (`--skip-prefix tw/`) and its
+  `./tw/*` imports resolve against the good ones. The wasm demos gain the four
+  palettes and a different default `--font-sans` stack.
+
 ### Changed
 
 - **A no-op interaction no longer re-renders.** Writing a component field the
@@ -56,6 +72,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`tutuca gen-tailwind-css` and `tutuca gen-margaui-css`** — build-time CSS
+  from a project's views. tutuca already knows which classes a view uses; these
+  run that same collection over the view *files* and compile the result, so an
+  ahead-of-time project can ship a static stylesheet holding exactly the
+  utilities it uses, with no Node, no CDN and no margaui checkout. Paths follow
+  `watch`'s rule (a directory contributes the `.html` files that already have a
+  generated sibling), defaulting to the current directory. `gen-margaui-css`
+  output is a superset of `gen-tailwind-css` for the same views. Flags:
+  `-o/--out`, `--entry` (compile your own CSS entry, resolving its `@import`s
+  from disk), `--polyfills`, and — for the literal-only limit the runtime
+  collector also has — `--print-classes` to see what was collected and
+  `--classes <file>` to add back the names a view assembles at run time.
+- `css/` — a published, target-agnostic package holding the stylesheet bundles
+  and `compile_tailwind` / `compile_margaui`. It replaces `demo/margaui`, which
+  was wasm-gc-only and excluded from the published archive; the wasm demo hosts
+  and the playground now compile through it, as does the CLI.
 - `cmd/dev -- gen-guest-bindings`: regenerate both MoonBit guest binding trees
   from the canonical WIT and drift-check them. `wit-bindgen` emits its FFI
   shims in hash order, so `guests/gen-bindings.mjs` normalizes the output —

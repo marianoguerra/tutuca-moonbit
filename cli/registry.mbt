@@ -32,6 +32,49 @@ fn positional(
 }
 
 ///|
+/// Shared by both CSS commands: they differ only in which stylesheets the
+/// collected classes compile against, so one flag set covers both and cannot
+/// drift apart.
+let css_flags : Array[FlagSpec] = [
+  flag(
+    "out",
+    short="o",
+    type_="string",
+    description="Write the CSS here (default: stdout).",
+  ),
+  flag(
+    "entry",
+    type_="string",
+    description="Compile this CSS entry instead of the embedded one, resolving its @imports from disk.",
+  ),
+  flag(
+    "classes",
+    type_="string",
+    description="Extra candidate class names, one per line, for names a view assembles at run time.",
+  ),
+  flag(
+    "print-classes",
+    type_="boolean",
+    description="Print the collected class names instead of the CSS.",
+  ),
+  flag(
+    "polyfills",
+    type_="string",
+    enum_=["0", "1", "2", "3"],
+    description="0=none, 1=@property, 2=color-mix, 3=all (default 3).",
+  ),
+  help_flag,
+]
+
+///|
+let css_positional : PositionalSpec = positional(
+  "path",
+  required=false,
+  description="View files or directories to search (default: the current directory).",
+  note="A directory contributes the .html files that already have a generated sibling.",
+)
+
+///|
 /// Every command, in the order `agent-context` reports them and did-you-mean
 /// ranks them.
 let commands : Array[CommandSpec] = [
@@ -150,6 +193,23 @@ let commands : Array[CommandSpec] = [
         description="The .html file holding the component's views.",
       ),
     ],
+  },
+  // Build-time CSS (gen_css.mbt). The same class collection a running host does
+  // before injecting a <style>, run over the view files instead — so an
+  // ahead-of-time project can ship a stylesheet holding only what it uses. Two
+  // commands rather than one flag, because the stylesheet set is the whole
+  // decision: stock Tailwind, or Tailwind plus margaui's components.
+  {
+    name: "gen-tailwind-css",
+    describe: "Compile the classes a project's views use into CSS, against stock Tailwind.",
+    flags: css_flags,
+    positionals: [css_positional],
+  },
+  {
+    name: "gen-margaui-css",
+    describe: "Compile the classes a project's views use into CSS, against Tailwind + margaui.",
+    flags: css_flags,
+    positionals: [css_positional],
   },
   // The authoring loop for views: `gen-views` on every save (watch.mbt).
   {

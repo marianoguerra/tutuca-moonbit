@@ -80,6 +80,7 @@ moon run --target native cmd/dev -- <task>
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+| `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -120,12 +121,38 @@ each DOM event instead of receiving a closure. `demo/counter_wasm`,
 (`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
 mounts the `storybook/ui` gallery over the whole example registry, and
 `universal_wasm` hosts the dyncomp guest bundles). margaui styling is compiled
-in MoonBit: the host's `mount()` hands `collect_classes()` to `demo/margaui`'s
-`compile_classes` (the `marianoguerra/tailwindcss` port + an embedded margaui
-bundle) and injects the resulting `<style id="margaui-css">`, re-running it from
+in MoonBit: the host's `mount()` hands `collect_classes()` to `css`'s
+`compile_margaui` (the `marianoguerra/tailwindcss` port + embedded stylesheet
+bundles) and injects the resulting `<style id="margaui-css">`, re-running it from
 the exported `refresh_margaui()` after a dyncomp bundle loads. No CDN build and
 no `globalThis` class hand-off. The in-browser playground uses the same compiler
 shipped to wasm-gc (`playground/margaui_wasm` → `margaui.wasm`, release + wasm-opt).
+
+### Styling (`css/`)
+
+`css/` is the one place stylesheets live, and it is published — the wasm hosts,
+the js playground and the native CLI all compile through it. Two generated
+bundles, split by provenance and regenerated together by `cmd/dev -- css-bundle`:
+
+- `css/tailwind_bundle_gen.mbt` — stock Tailwind's `theme` / `preflight` /
+  `utilities`, taken from the **`tailwindcss` npm tarball** at the version pinned
+  in `scripts/fetch-tailwind.mjs`.
+- `css/margaui_bundle_gen.mbt` — margaui's `base/`, `themes/` and `src/*.css`,
+  from a clone at the ref pinned in `scripts/fetch-margaui.mjs`, with its `tw/*`
+  dropped (`--skip-prefix tw/`).
+
+**Take `tw/*.css` from npm, never from the margaui checkout.** margaui's own
+`tw/README.md` calls its copies a manual mirror and they lag — at v0.5606.3 they
+were still missing the `mauve`/`olive`/`mist`/`taupe` palettes upstream added in
+4.3.2. The compiler is ported from one exact tag
+(`.mooncakes/marianoguerra/tailwindcss/UPSTREAM.md`), so the stylesheets must
+come from that tag or the engine and its data disagree; `fetch-tailwind.mjs`
+fails the build if the two pins drift apart. `compile_margaui` merges both maps,
+so margaui resolves its `./tw/*` imports against the good copies.
+
+`tutuca gen-tailwind-css` / `gen-margaui-css` are the build-time face of the same
+pipeline: the class collection a host does at mount time, run over a project's
+view files instead, so an AOT project can ship a static stylesheet.
 
 The raw `moon` commands below still work and are what the tasks run underneath.
 

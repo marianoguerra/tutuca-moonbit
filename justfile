@@ -59,6 +59,14 @@ cli *ARGS:
 gen-views *ARGS:
     {{cli}} gen-views {{ARGS}}
 
+# compile a project's view classes into CSS (stock Tailwind)
+gen-tailwind-css *ARGS:
+    {{cli}} gen-tailwind-css {{ARGS}}
+
+# compile a project's view classes into CSS (Tailwind + margaui)
+gen-margaui-css *ARGS:
+    {{cli}} gen-margaui-css {{ARGS}}
+
 # ── package ────────────────────────────────────────────────────────────────
 
 # build all applicable targets (wasm-gc, native CLI, js)
@@ -68,6 +76,10 @@ build:
 # regenerate cli/skill_assets_gen.mbt from skill/tutuca/ (never edit it by hand)
 skill-embed:
     {{dev}} skill-embed
+
+# regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned upstreams (needs network)
+css-bundle:
+    {{dev}} css-bundle
 
 # build demos + storybook + playground into a self-contained runnable dist/
 dist:

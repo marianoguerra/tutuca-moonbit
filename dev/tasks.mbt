@@ -517,8 +517,8 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "storybook-bundle" {
     return Some(storybook_bundle_steps())
   }
-  if name == "margaui-bundle" {
-    return Some(margaui_bundle_steps())
+  if name == "css-bundle" {
+    return Some(css_bundle_steps())
   }
   if name == "universal" {
     return Some(universal_steps())
@@ -641,7 +641,7 @@ pub fn skill_embed_steps() -> Array[Step] {
 }
 
 ///|
-const MARGAUI_BUNDLE_BIN = "_build/native/debug/build/cmd/margaui-bundle/margaui-bundle.exe"
+const CSS_BUNDLE_BIN = "_build/native/debug/build/cmd/css-bundle/css-bundle.exe"
 
 ///|
 /// Where scripts/fetch-margaui.mjs puts the margaui checkout: a gitignored,
@@ -649,37 +649,73 @@ const MARGAUI_BUNDLE_BIN = "_build/native/debug/build/cmd/margaui-bundle/margaui
 const MARGAUI_CHECKOUT = "_build/margaui"
 
 ///|
-/// Regenerate the margaui bundle + its embedded module (demo/margaui/bundle_gen.mbt)
-/// by running the tailwindcss `bundle` graph walk over margaui's CSS. The CSS
-/// comes from a shallow clone of margaui at the ref pinned in
-/// scripts/fetch-margaui.mjs — no sibling checkout to set up, and the pin makes
-/// the committed bundle reproducible. Kept out of `dist`/`ci`: it is a rare
-/// regen run (only when margaui itself changes) and it needs the network.
-/// The generated module is committed, so normal builds never run this.
-pub fn margaui_bundle_steps() -> Array[Step] {
+/// Where scripts/fetch-tailwind.mjs extracts the stock Tailwind stylesheets from
+/// the pinned npm tarball. Kept separate from the margaui checkout on purpose:
+/// margaui vendors its own tw/*.css as a hand-maintained mirror, and it has run
+/// behind the upstream the compiler port is derived from.
+const TAILWIND_CHECKOUT = "_build/tailwind"
+
+///|
+/// Regenerate both CSS bundles + their embedded modules (css/tailwind_bundle_gen.mbt,
+/// css/margaui_bundle_gen.mbt) by running the tailwindcss `bundle` graph walk over
+/// each entry. The stock Tailwind stylesheets come from the npm release pinned in
+/// scripts/fetch-tailwind.mjs (which also fails if that pin drifts from the tag the
+/// MoonBit compiler was ported from); margaui's component layers come from a shallow
+/// clone at the ref pinned in scripts/fetch-margaui.mjs. No sibling checkout to set
+/// up, and the pins make the committed bundles reproducible. Kept out of `dist`/`ci`:
+/// it is a rare regen run (only when margaui or Tailwind changes) and it needs the
+/// network. The generated modules are committed, so normal builds never run this.
+pub fn css_bundle_steps() -> Array[Step] {
   [
+    Run({
+      label: "fetch tailwind (pinned version) → " + TAILWIND_CHECKOUT,
+      prog: "node",
+      args: ["scripts/fetch-tailwind.mjs"],
+    }),
     Run({
       label: "fetch margaui (pinned ref) → " + MARGAUI_CHECKOUT,
       prog: "node",
       args: ["scripts/fetch-margaui.mjs"],
     }),
     Run(
-      moon("build · margaui-bundle tool", [
-        "build", "--target", "native", "cmd/margaui-bundle",
+      moon("build · css-bundle tool", [
+        "build", "--target", "native", "cmd/css-bundle",
       ]),
     ),
     Run({
-      label: "bundle margaui CSS graph → demo/assets/margaui.bundle.json + embed",
-      prog: MARGAUI_BUNDLE_BIN,
+      label: "bundle tailwind CSS graph → css/assets/tailwind.bundle.json + embed",
+      prog: CSS_BUNDLE_BIN,
       args: [
         "-i",
-        "demo/assets/margaui.entry.css",
+        "css/assets/tailwind.entry.css",
+        "--base",
+        TAILWIND_CHECKOUT,
+        "-o",
+        "css/assets/tailwind.bundle.json",
+        "--emit-mbt",
+        "css/tailwind_bundle_gen.mbt",
+        "--prefix",
+        "tailwind",
+      ],
+    }),
+    Run({
+      label: "bundle margaui CSS graph → css/assets/margaui.bundle.json + embed",
+      prog: CSS_BUNDLE_BIN,
+      args: [
+        "-i",
+        "css/assets/margaui.entry.css",
         "--base",
         MARGAUI_CHECKOUT,
         "-o",
-        "demo/assets/margaui.bundle.json",
+        "css/assets/margaui.bundle.json",
         "--emit-mbt",
-        "demo/margaui/bundle_gen.mbt",
+        "css/margaui_bundle_gen.mbt",
+        "--prefix",
+        "margaui",
+        // margaui's own tw/*.css are stale; compile_margaui resolves ./tw/*
+        // against tailwind_bundle instead.
+        "--skip-prefix",
+        "tw/",
       ],
     }),
     // the tool emits `#|` raw-string blocks unformatted; fmt settles them.
@@ -724,7 +760,7 @@ pub fn help_text() -> String {
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
   )
   line(
-    "margaui-bundle", "regenerate demo/margaui/bundle_gen.mbt from a margaui clone at the pinned ref (needs network)",
+    "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",
   )
   sb.to_string()
 }

@@ -27,6 +27,8 @@ inspect a component, the answer is a `moon test` block.
 | Command                  | Purpose                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
 | `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
+| `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
+| `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir` |
 | `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>`, `--out <dir>`. A static file server: the gallery is a wasm host built by `cmd/dev -- dist` |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary by the dev `skill-embed` task. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
@@ -111,6 +113,39 @@ check; fields declared through `specs~` go in `extra~`.
   with `moon run --target native cmd/dev -- dist`, then
   `tutuca storybook [dir] [--port <n>] [--out <dir>]` serves it (static
   HTTP) or copies it (`--out`).
+
+### `gen-tailwind-css` / `gen-margaui-css` — build-time CSS
+
+The class set a running host collects before injecting a `<style>`, collected
+from the view **files** instead — so an ahead-of-time project ships a stylesheet
+holding only the utilities it actually uses.
+
+```sh
+tutuca gen-margaui-css src/ -o public/app.css
+```
+
+Paths are `.html` files or directories, and follow `watch`'s rule: a directory
+contributes the `.html` files that already have a generated sibling, so pointing
+this at a project root does not try to compile `index.html`. Defaults to the
+current directory. The stylesheets are compiled into the binary — no Node, no
+CDN, no checkout. The two commands differ only in which stylesheets the classes
+compile against; `gen-margaui-css` output is a superset of `gen-tailwind-css`
+for the same views.
+
+Only **literal** class names are collected, the same limit the runtime collector
+has: a name the view assembles at run time (`:class="$'bg-{.color}'"`, or
+anything a handler computes) is not in the source to be found.
+
+- `--print-classes` prints what was collected, one per line, instead of the CSS.
+  Start here when a style is missing. Note that `$'badge badge-{.kind}'`
+  contributes its literal prefix `badge-` — a stub that compiles to nothing, not
+  the real name.
+- `--classes <file>` adds candidates from a file, one per line, for exactly
+  those names.
+- `--entry <file>` compiles your own CSS entry instead of the embedded one,
+  resolving its `@import`s from disk — use it for a project theme, `@source`
+  directives or custom utilities.
+- `--polyfills <0..3>` — 0=none, 1=`@property`, 2=`color-mix`, 3=all (default).
 
 ## Global flags
 

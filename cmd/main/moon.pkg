@@ -3,6 +3,9 @@
 // Run with: moon run --target native cmd/main -- <args>
 import {
   "marianoguerra/tutuca/cli",
+  "marianoguerra/tutuca/css",
+  "marianoguerra/tailwindcss" @tw,
+  "marianoguerra/tailwindcss/loader/fs" @twfs,
   "moonbitlang/async",
   "moonbitlang/async/fs",
   "moonbitlang/async/http",
