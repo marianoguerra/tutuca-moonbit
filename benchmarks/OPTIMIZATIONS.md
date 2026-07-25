@@ -138,22 +138,55 @@ What is left of the harness in these numbers is now benchmarked directly:
 selector sits after the list, so its walk is unavoidable without caching nodes,
 which would silently measure nothing the moment a patch replaced one).
 
-## Runtime baseline — 2026-07-25, after #1–#3
+## 4. Meta comments written, not stringified — renders −21%, updates −31%
+
+(tw-mb techniques #3 and #13.) Every component render site and every `@each`
+iteration emits a `§{…}§` boundary comment, and `Meta::to_comment_text` built a
+`Json` object and called `stringify()` to produce it. A 1000-row list therefore
+allocated and threw away ~2000 `Json` objects **per render pass** — and an update
+is a render pass. It showed as 2.2% self time in `Json::stringify` with a
+matching share of the 11.4% in the collector and 4.4% in array allocation.
+
+The three shapes are fixed and closed, so there is nothing for a generic encoder
+to decide: write them straight into a `StringBuilder`. String fields keep a
+fallback to `Json::stringify` for anything outside printable ASCII, so the
+escaping rules stay in one place — the point is to skip an allocation, not to
+reimplement them. Output is byte-identical, which the 797-test suite (a good
+number of them DOM snapshots carrying these comments) checks thoroughly.
+
+| Workload                     | wasm-gc | native  |
+|------------------------------|---------|---------|
+| `render list 100`            |         | −21.5%  |
+| `render list 1000`           |         | −21.0%  |
+| `render todo 100`            |         | −16.9%  |
+| `render todo 1000`           |         | −15.8%  |
+| `patch noop todo 10`         | −21.0%  | −34.3%  |
+| `patch noop todo 1000`       | −18.8%  | −27.8%  |
+| `patch toggle todo 100`      | −25.1%  | −30.4%  |
+| `patch toggle todo 1000`     | −13.2%  | −22.6%  |
+| `patch add+remove todo 100`  | −27.1%  | −30.6%  |
+| `patch add+remove todo 1000` | −12.9%  | −16.2%  |
+| `patch switch view`          |  −7.1%  | −11.0%  |
+| `patch counter`              |  −5.1%  | −11.2%  |
+
+Nothing regressed outside the two known-noisy benches.
+
+## Runtime numbers — 2026-07-25, after #1–#4
 
 ### Render: mount + first render + serialize
 
 | Workload           | wasm-gc  | native   |
 |--------------------|----------|----------|
-| `list 10`          |  46.7 µs |  85.0 µs |
-| `list 100`         | 402.6 µs | 712.6 µs |
-| `list 1000`        |  7.45 ms |  7.51 ms |
-| `todo 0`           |  10.7 µs |  17.7 µs |
-| `todo 10`          | 156.8 µs | 210.8 µs |
-| `todo 100`         |  1.73 ms |  1.94 ms |
-| `todo 1000`        | 28.49 ms | 22.30 ms |
-| `people 1000`      | 471.9 µs | 585.6 µs |
-| `json 8x4` (deep)  |  5.05 ms |  6.75 ms |
-| `all examples`     | 30.40 ms | 23.33 ms |
+| `list 10`          |  38.5 µs |  70.7 µs |
+| `list 100`         | 337.0 µs | 572.0 µs |
+| `list 1000`        |  6.64 ms |  6.16 ms |
+| `todo 0`           |  10.0 µs |  16.3 µs |
+| `todo 10`          | 139.5 µs | 184.8 µs |
+| `todo 100`         |  1.58 ms |  1.67 ms |
+| `todo 1000`        | 26.81 ms | 19.32 ms |
+| `people 1000`      | 468.3 µs | 604.0 µs |
+| `json 8x4` (deep)  |  5.18 ms |  7.25 ms |
+| `all examples`     | 31.57 ms | 21.20 ms |
 
 `todo` (a child component per row) costs ~3× `list` (plain values) at every size,
 and both are linear in the row count. `people 1000` is cheap because pagination
@@ -164,33 +197,35 @@ itself is ~130 µs of that.
 
 | Workload                     | wasm-gc  | native   |
 |------------------------------|----------|----------|
-| `counter`                    |  21.4 µs |  33.5 µs |
-| `switch view`                |  61.8 µs |  87.7 µs |
-| `noop todo 10`               |  97.8 µs | 151.7 µs |
-| `toggle todo 10`             | 105.7 µs | 146.5 µs |
-| `add+remove todo 10`         | 129.2 µs | 185.7 µs |
-| `move json 8x4`              | 193.1 µs | 218.3 µs |
-| `page people 1000`           | 557.3 µs | 764.4 µs |
-| `refilter people 1000`       |  1.65 ms |  1.59 ms |
-| `toggle todo 100`            | 718.8 µs | 932.4 µs |
-| `add+remove todo 100`        |  1.16 ms |  1.48 ms |
-| `noop todo 1000`             | 10.46 ms | 11.11 ms |
-| `toggle todo 1000`           | 12.74 ms | 14.43 ms |
-| `add+remove todo 1000`       | 22.92 ms | 28.38 ms |
+| `counter`                    |  20.2 µs |  30.0 µs |
+| `switch view`                |  59.0 µs |  79.7 µs |
+| `noop todo 10`               |  78.6 µs |  98.6 µs |
+| `toggle todo 10`             |  87.8 µs | 110.7 µs |
+| `add+remove todo 10`         | 105.1 µs | 136.6 µs |
+| `move json 8x4`              | 177.3 µs | 190.4 µs |
+| `page people 1000`           | 547.2 µs | 748.4 µs |
+| `refilter people 1000`       |  1.73 ms |  1.61 ms |
+| `toggle todo 100`            | 550.7 µs | 681.1 µs |
+| `add+remove todo 100`        | 874.9 µs |  1.09 ms |
+| `noop todo 1000`             |  8.77 ms |  8.77 ms |
+| `toggle todo 1000`           | 11.50 ms | 12.10 ms |
+| `add+remove todo 1000`       | 21.04 ms | 25.53 ms |
 
-Three things fall out of this table:
+Three things fall out of this table, all still true after #4:
 
 1. **A one-row change costs a whole-list pass.** Ticking one checkbox in a
-   1000-row list is 7.2 ms (half of 14.43), against 22.3 ms to mount and render
+   1000-row list is 6.1 ms (half of 12.10), against 19.3 ms to mount and render
    the entire list from nothing. The `RenderCache` exists to short-circuit
    subtrees whose value is physically unchanged, and the transactor swaps state
-   with structural sharing, so in principle 999 rows should hit it.
-2. **A no-op costs almost as much as a real change.** `noop todo 1000` is 11.11 ms
-   against `toggle`'s 14.43: setting a field to the value it already holds does
-   77% of the work of changing it. The ~2.7 ms difference is the actual DOM write;
+   with structural sharing — but a cache hit only skips the *child component's*
+   view. The parent's `@each` still evaluates every item, builds every row
+   wrapper, and hands the differ 1000 rows to walk.
+2. **A no-op costs almost as much as a real change.** `noop todo 1000` is 8.77 ms
+   against `toggle`'s 12.10: setting a field to the value it already holds does
+   72% of the work of changing it. The difference is the actual DOM write;
    everything else is re-render and diff that could not have mattered.
-3. **The list-shape change is superlinear.** `add+remove` goes 185.7 µs → 1.48 ms
-   → 28.38 ms for 10 → 100 → 1000 rows: 8.0× then 19.2× for 10× the rows. Part of
+3. **The list-shape change is superlinear.** `add+remove` goes 136.6 µs → 1.09 ms
+   → 25.53 ms for 10 → 100 → 1000 rows: 8.0× then 23× for 10× the rows. Part of
    that is `memdom`'s array-backed children (both `detach`'s index scan and the
    splice are O(children), where a real DOM is O(1)); part is an unkeyed differ
    walking every row after the insert.
@@ -225,10 +260,12 @@ In the update path (the biggest numbers on the board):
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
   per pass. Comparing the two entry lists directly, or an identity check first,
   would skip most of it.
-- **`Meta::to_comment_text`** (1.8%): the `§Comp§`/`§Each§` meta comments are
-  rebuilt as strings on every pass. tw-mb #3 and #13 were exactly this.
-- **State through `Json`** (2.2% in `stringify`): typed state derives
-  `ToJson`/`FromJson`, and an update appears to round-trip through it.
+- **`site_cache_key`** builds an interpolated string per render site per pass —
+  and calls `view_trail()` (which allocates via `Array::rev`) twice per site once
+  you count `render_site`'s own call. Same shape as #4, one layer up.
+- **State through `Json`**: typed state derives `ToJson`/`FromJson`; worth
+  confirming an update does not round-trip through it. (Part of what the 2.2% in
+  `stringify` was is now gone with #4 — reprofile before chasing this.)
 - **`memdom` children as an array**: makes move-heavy patches quadratic. A
   doubly-linked sibling list would match a real DOM, at the cost of touching
   every `childs` user.
