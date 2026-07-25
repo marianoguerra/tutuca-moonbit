@@ -144,9 +144,9 @@ bundles, split by provenance and regenerated together by `cmd/dev -- css-bundle`
   dropped (`--skip-prefix tw/`).
 
 **Take `tw/*.css` from npm, never from the margaui checkout.** margaui's own
-`tw/README.md` calls its copies a manual mirror and they lag — at v0.5606.3 they
-were still missing the `mauve`/`olive`/`mist`/`taupe` palettes upstream added in
-4.3.2. The compiler is ported from one exact tag
+`tw/README.md` calls its copies a manual mirror and they lag — at v0.5704.0 they
+are still missing the `mauve`/`olive`/`mist`/`taupe` palettes upstream added in
+4.3.2, and still carry the pre-4.3.3 `--font-sans` stack. The compiler is ported from one exact tag
 (`.mooncakes/marianoguerra/tailwindcss/UPSTREAM.md`), so the stylesheets must
 come from that tag or the engine and its data disagree; `fetch-tailwind.mjs`
 fails the build if the two pins drift apart. `compile_margaui` merges both maps,

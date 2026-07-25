@@ -4,7 +4,7 @@
 //
 // These files come from the published `tailwindcss` npm tarball, NOT from the
 // margaui checkout. margaui carries its own tw/*.css, but its own README calls
-// them a manual mirror, and they lag: at v0.5606.3 they were still missing the
+// them a manual mirror, and they lag: at v0.5704.0 they are still missing the
 // mauve/olive/mist/taupe palettes upstream added in 4.3.2, on top of the 4.3.3
 // deltas. The compiler we run them through — marianoguerra/tailwindcss — is
 // ported from one exact upstream tag, so the stylesheets have to come from that

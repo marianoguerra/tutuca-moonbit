@@ -337,6 +337,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  font-size: 0.875rem;
       #|  height: var(--size);
       #|  min-width: var(--size);
+      #|  flex-shrink: 0;
       #|}
       #|
       #|/* Size variants */
@@ -376,6 +377,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|@utility otp {
       #|  position: relative;
       #|  display: inline-flex;
+      #|  direction: ltr;
       #|  font-family: var(--font-mono);
       #|  clip-path: inset(-3.5px 3.5px -3.5px -3.5px);
       #|  border-radius: var(--radius-field);
@@ -759,11 +761,11 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|      content: "";
       #|      background-color: var(--tab-border-color);
       #|      transition: background-color 0.2s ease;
-      #|      width: 80%;
+      #|      width: calc(100% - var(--tab-p) * 2);
       #|      height: 3px;
       #|      border-radius: var(--radius-field);
       #|      bottom: 0;
-      #|      left: 10%;
+      #|      left: var(--tab-p);
       #|      position: absolute;
       #|    }
       #|
@@ -2621,7 +2623,8 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|      }
       #|    }
       #|
-      #|    &.menu-disabled {
+      #|    &.menu-disabled,
+      #|    & [disabled] {
       #|      pointer-events: none;
       #|      color: var(--color-base-content);
       #|
@@ -2715,12 +2718,86 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  }
       #|}
       #|
+      #|/* Paged menu: instead of expanding submenus in place, the open branch replaces
+      #|   the panel and its summary becomes a "Back" row (label overridable with
+      #|   aria-label). Only affects menus built from li > details > summary. */
+      #|@utility menu-paged {
+      #|  --menu-paged-arrow: 135deg;
+      #|  --menu-paged-back-arrow: -45deg;
+      #|
+      #|  [dir="rtl"] & {
+      #|    --menu-paged-arrow: -45deg;
+      #|    --menu-paged-back-arrow: 135deg;
+      #|  }
+      #|
+      #|  /* no nesting guide line — the submenu is a page, not an indented branch */
+      #|  :where(li ul):before {
+      #|    --tw-content: none;
+      #|    content: var(--tw-content);
+      #|  }
+      #|
+      #|  details[open] > summary {
+      #|    font-size: 0;
+      #|
+      #|    &:not(:active) {
+      #|      transition-duration: 0s;
+      #|    }
+      #|
+      #|    &:before {
+      #|      --tw-content: "Back";
+      #|      content: var(--tw-content);
+      #|      font-size: 0.875rem;
+      #|    }
+      #|
+      #|    &[aria-label]:before {
+      #|      content: attr(aria-label);
+      #|    }
+      #|  }
+      #|
+      #|  details::details-content {
+      #|    transition: none;
+      #|  }
+      #|
+      #|  /* hide everything that is not on the open branch */
+      #|  &:has(> li > details[open]) > li:not(:has(> details[open])),
+      #|  :where(ul:has(> li > details[open]) > li:not(:has(> details[open]))) {
+      #|    display: none;
+      #|  }
+      #|
+      #|  /* collapse the branch wrappers so the submenu fills the panel */
+      #|  :where(li:has(> details[open]), details[open], details[open] > ul),
+      #|  :where(details[open])::details-content {
+      #|    display: contents;
+      #|  }
+      #|
+      #|  /* only the deepest open summary stays visible as the Back row */
+      #|  :where(details[open]:has(> ul > li > details[open]) > summary) {
+      #|    display: none;
+      #|  }
+      #|
+      #|  :where(li > details > summary):after {
+      #|    rotate: var(--menu-paged-arrow);
+      #|    transition: none;
+      #|    translate: 0;
+      #|  }
+      #|
+      #|  :where(li > details[open] > summary):after {
+      #|    rotate: var(--menu-paged-back-arrow);
+      #|    order: -1;
+      #|    justify-self: flex-start;
+      #|  }
+      #|}
+      #|
       #|/* Size variants */
       #|@utility menu-xs {
       #|  :where(li:not(.menu-title) > *:not(ul, details, .menu-title)),
       #|  :where(li:not(.menu-title) > details > summary:not(.menu-title)) {
       #|    padding-inline: 0.5rem;
       #|    padding-block: 0.25rem;
+      #|    font-size: 0.6875rem;
+      #|  }
+      #|
+      #|  details[open] > summary:before {
       #|    font-size: 0.6875rem;
       #|  }
       #|
@@ -2737,6 +2814,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    font-size: 0.75rem;
       #|  }
       #|
+      #|  details[open] > summary:before {
+      #|    font-size: 0.75rem;
+      #|  }
+      #|
       #|  .menu-title {
       #|    padding: 0.375rem 0.625rem;
       #|  }
@@ -2747,6 +2828,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  :where(li:not(.menu-title) > details > summary:not(.menu-title)) {
       #|    padding-inline: 0.75rem;
       #|    padding-block: 0.375rem;
+      #|    font-size: 0.875rem;
+      #|  }
+      #|
+      #|  details[open] > summary:before {
       #|    font-size: 0.875rem;
       #|  }
       #|
@@ -2763,6 +2848,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    font-size: 1.125rem;
       #|  }
       #|
+      #|  details[open] > summary:before {
+      #|    font-size: 1.125rem;
+      #|  }
+      #|
       #|  .menu-title {
       #|    padding: 0.75rem 1.5rem;
       #|  }
@@ -2773,6 +2862,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  :where(li:not(.menu-title) > details > summary:not(.menu-title)) {
       #|    padding-inline: 1.25rem;
       #|    padding-block: 0.375rem;
+      #|    font-size: 1.375rem;
+      #|  }
+      #|
+      #|  details[open] > summary:before {
       #|    font-size: 1.375rem;
       #|  }
       #|
@@ -3353,7 +3446,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  :where(input[type="url"]),
       #|  :where(input[type="email"]) {
-      #|    direction: ltr;
+      #|    text-align: left;
       #|  }
       #|
       #|  :where(input[type="date"]) {
@@ -3390,7 +3483,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -0.75rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|
       #|  &::-webkit-calendar-picker-indicator {
@@ -3487,7 +3580,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -0.25rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|}
       #|
@@ -3497,7 +3590,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -0.5rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|}
       #|
@@ -3507,7 +3600,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -0.75rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|}
       #|
@@ -3517,7 +3610,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -0.75rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|}
       #|
@@ -3527,7 +3620,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|  &[type="number"]::-webkit-inner-spin-button {
       #|    margin-block: -1rem;
-      #|    margin-inline-end: -0.75rem;
+      #|    margin-inline-end: -10px;
       #|  }
       #|}
       #|
@@ -3742,7 +3835,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|      opacity 0.1s ease-out;
       #|    background-color: oklch(0% 0 0 / 0.4);
       #|
-      #|    .modal-box {
+      #|    & > .modal-box {
       #|      translate: 0 0;
       #|      scale: 1;
       #|      opacity: 1;
@@ -3832,7 +3925,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|@utility modal-bottom {
       #|  place-items: end;
       #|
-      #|  .modal-box {
+      #|  & > .modal-box {
       #|    height: auto;
       #|    width: 100%;
       #|    max-width: none;
@@ -3849,7 +3942,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|@utility modal-top {
       #|  place-items: start;
       #|
-      #|  .modal-box {
+      #|  & > .modal-box {
       #|    height: auto;
       #|    width: 100%;
       #|    max-width: none;
@@ -3866,7 +3959,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|@utility modal-middle {
       #|  place-items: center;
       #|
-      #|  .modal-box {
+      #|  & > .modal-box {
       #|    height: auto;
       #|    width: calc(11 / 12 * 100%);
       #|    max-width: 32rem;
@@ -3883,7 +3976,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|@utility modal-start {
       #|  place-items: start;
       #|
-      #|  .modal-box {
+      #|  & > .modal-box {
       #|    height: 100vh;
       #|    max-height: none;
       #|    width: auto;
@@ -3894,13 +3987,17 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    --modal-tr: var(--radius-box);
       #|    --modal-bl: 0;
       #|    --modal-br: var(--radius-box);
+      #|
+      #|    [dir="rtl"] & {
+      #|      translate: 100% 0;
+      #|    }
       #|  }
       #|}
       #|
       #|@utility modal-end {
       #|  place-items: end;
       #|
-      #|  .modal-box {
+      #|  & > .modal-box {
       #|    height: 100vh;
       #|    max-height: none;
       #|    width: auto;
@@ -3911,6 +4008,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    --modal-tr: 0;
       #|    --modal-bl: var(--radius-box);
       #|    --modal-br: 0;
+      #|
+      #|    [dir="rtl"] & {
+      #|      translate: -100% 0;
+      #|    }
       #|  }
       #|}
       #|
@@ -4748,6 +4849,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  position: relative;
       #|  display: inline-flex;
       #|  vertical-align: middle;
+      #|  align-self: center;
       #|
       #|  & > div {
       #|    display: block;
@@ -5938,10 +6040,16 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    cursor: not-allowed;
       #|    border-color: var(--color-base-200);
       #|    background-color: var(--color-base-200);
-      #|    color: var(--color-base-content);
+      #|    box-shadow: none;
       #|
-      #|    @supports (color: color-mix(in lab, red, red)) {
-      #|      color: var(--mg-subtle-40);
+      #|    /* scoped to the select itself: a wrapper's other children keep their color */
+      #|    &:is(select),
+      #|    & :is(select) {
+      #|      color: var(--color-base-content);
+      #|
+      #|      @supports (color: color-mix(in lab, red, red)) {
+      #|        color: var(--mg-subtle-40);
+      #|      }
       #|    }
       #|
       #|    &::placeholder {
@@ -6476,7 +6584,10 @@ pub let margaui_bundle : Array[(String, String)] = [
   (
     "src/loading.css",
     (
-      #|/* Component: loading */
+      #|/* Component: loading.
+      #|   Each variant declares the slow mask first and the fast one under
+      #|   `prefers-reduced-motion: no-preference`, so the animation slows down
+      #|   instead of stopping when the user asks for reduced motion. */
       #|
       #|/* Base loading */
       #|@utility loading {
@@ -6489,32 +6600,56 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  mask-size: 100%;
       #|  mask-repeat: no-repeat;
       #|  mask-position: center;
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' stroke='black' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform-origin='center'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='2s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dasharray' values='0,150;42,150;42,150' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-16;-59' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' stroke='black' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform-origin='center'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='8s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dasharray' values='0,150;42,150;42,150' keyTimes='0;0.475;1' dur='6s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-16;-59' keyTimes='0;0.475;1' dur='6s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
       #|}
       #|
       #|/* Animation variants */
       #|@utility loading-spinner {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' stroke='black' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform-origin='center'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='2s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dasharray' values='0,150;42,150;42,150' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-16;-59' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' stroke='black' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform-origin='center'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='8s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dasharray' values='0,150;42,150;42,150' keyTimes='0;0.475;1' dur='6s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-16;-59' keyTimes='0;0.475;1' dur='6s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' stroke='black' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cg transform-origin='center'%3E%3Ccircle cx='12' cy='12' r='9.5' fill='none' stroke-width='3' stroke-linecap='round'%3E%3CanimateTransform attributeName='transform' type='rotate' from='0 12 12' to='360 12 12' dur='2s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dasharray' values='0,150;42,150;42,150' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-dashoffset' values='0;-16;-59' keyTimes='0;0.475;1' dur='1.5s' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|@utility loading-dots {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3C/circle%3E%3Ccircle cx='12' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.1s'/%3E%3C/circle%3E%3Ccircle cx='20' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.2s'/%3E%3C/circle%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='3s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3C/circle%3E%3Ccircle cx='12' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='3s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.1s'/%3E%3C/circle%3E%3Ccircle cx='20' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='3s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.2s'/%3E%3C/circle%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Ccircle cx='4' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3C/circle%3E%3Ccircle cx='12' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.1s'/%3E%3C/circle%3E%3Ccircle cx='20' cy='12' r='3'%3E%3Canimate attributeName='cy' values='12;6;12;12' keyTimes='0;0.286;0.571;1' dur='1.05s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1' begin='0.2s'/%3E%3C/circle%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|@utility loading-ring {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' xmlns='http://www.w3.org/2000/svg' stroke='white'%3E%3Cg fill='none' fill-rule='evenodd' stroke-width='2'%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='0s' dur='1.8s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='0s' dur='1.8s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='-0.9s' dur='1.8s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='-0.9s' dur='1.8s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' xmlns='http://www.w3.org/2000/svg' stroke='white'%3E%3Cg fill='none' fill-rule='evenodd' stroke-width='2'%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='0s' dur='5.4s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='0s' dur='5.4s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='-0.9s' dur='5.4s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='-0.9s' dur='5.4s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg width='44' height='44' viewBox='0 0 44 44' xmlns='http://www.w3.org/2000/svg' stroke='white'%3E%3Cg fill='none' fill-rule='evenodd' stroke-width='2'%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='0s' dur='1.8s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='0s' dur='1.8s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3Ccircle cx='22' cy='22' r='1'%3E%3Canimate attributeName='r' begin='-0.9s' dur='1.8s' values='1;20' calcMode='spline' keyTimes='0;1' keySplines='0.165,0.84,0.44,1' repeatCount='indefinite'/%3E%3Canimate attributeName='stroke-opacity' begin='-0.9s' dur='1.8s' values='1;0' calcMode='spline' keyTimes='0;1' keySplines='0.3,0.61,0.355,1' repeatCount='indefinite'/%3E%3C/circle%3E%3C/g%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|@utility loading-ball {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='12' cy='5' rx='4' ry='4'%3E%3Canimate attributeName='cy' values='5;20;20.5;20;5' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3Canimate attributeName='rx' values='4;4;4.8;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='ry' values='4;4;3;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite'/%3E%3C/ellipse%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='12' cy='5' rx='4' ry='4'%3E%3Canimate attributeName='cy' values='5;20;20.5;20;5' keyTimes='0;0.469;0.5;0.531;1' dur='2s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3Canimate attributeName='rx' values='4;4;4.8;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='2s' repeatCount='indefinite'/%3E%3Canimate attributeName='ry' values='4;4;3;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='2s' repeatCount='indefinite'/%3E%3C/ellipse%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Cellipse cx='12' cy='5' rx='4' ry='4'%3E%3Canimate attributeName='cy' values='5;20;20.5;20;5' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite' keySplines='.33,0,.66,.33;.33,.66,.66,1'/%3E%3Canimate attributeName='rx' values='4;4;4.8;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='ry' values='4;4;3;4;4' keyTimes='0;0.469;0.5;0.531;1' dur='.8s' repeatCount='indefinite'/%3E%3C/ellipse%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|@utility loading-bars {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3C/rect%3E%3Crect x='9' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3C/rect%3E%3Crect x='17' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3C/rect%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite'/%3E%3C/rect%3E%3Crect x='9' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.65s'/%3E%3C/rect%3E%3Crect x='17' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='2.4s' repeatCount='indefinite' begin='-0.5s'/%3E%3C/rect%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg width='24' height='24' viewBox='0 0 24 24' xmlns='http://www.w3.org/2000/svg'%3E%3Crect x='1' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite'/%3E%3C/rect%3E%3Crect x='9' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.65s'/%3E%3C/rect%3E%3Crect x='17' y='1' width='6' height='22'%3E%3Canimate attributeName='y' values='1;5;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='height' values='22;14;22' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3Canimate attributeName='opacity' values='1;0.2;1' keyTimes='0;0.938;1' dur='.8s' repeatCount='indefinite' begin='-0.5s'/%3E%3C/rect%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|@utility loading-infinity {
-      #|  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' style='shape-rendering:auto;' width='200px' height='200px' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid'%3E%3Cpath fill='none' stroke='black' stroke-width='10' stroke-dasharray='205.271 51.318' d='M24.3 30C11.4 30 5 43.3 5 50s6.4 20 19.3 20c19.3 0 32.1-40 51.4-40C88.6 30 95 43.3 95 50s-6.4 20-19.3 20C56.4 70 43.6 30 24.3 30z' stroke-linecap='round' style='transform:scale(0.8);transform-origin:50px 50px'%3E%3Canimate attributeName='stroke-dashoffset' repeatCount='indefinite' dur='2s' keyTimes='0;1' values='0;256.589'/%3E%3C/path%3E%3C/svg%3E");
+      #|  mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' style='shape-rendering:auto;' width='200px' height='200px' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid'%3E%3Cpath fill='none' stroke='black' stroke-width='10' stroke-dasharray='205.271 51.318' d='M24.3 30C11.4 30 5 43.3 5 50s6.4 20 19.3 20c19.3 0 32.1-40 51.4-40C88.6 30 95 43.3 95 50s-6.4 20-19.3 20C56.4 70 43.6 30 24.3 30z' stroke-linecap='round' style='transform:scale(0.8);transform-origin:50px 50px'%3E%3Canimate attributeName='stroke-dashoffset' repeatCount='indefinite' dur='6s' keyTimes='0;1' values='0;256.589'/%3E%3C/path%3E%3C/svg%3E");
+      #|
+      #|  @media (prefers-reduced-motion: no-preference) {
+      #|    mask-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' xmlns:xlink='http://www.w3.org/1999/xlink' style='shape-rendering:auto;' width='200px' height='200px' viewBox='0 0 100 100' preserveAspectRatio='xMidYMid'%3E%3Cpath fill='none' stroke='black' stroke-width='10' stroke-dasharray='205.271 51.318' d='M24.3 30C11.4 30 5 43.3 5 50s6.4 20 19.3 20c19.3 0 32.1-40 51.4-40C88.6 30 95 43.3 95 50s-6.4 20-19.3 20C56.4 70 43.6 30 24.3 30z' stroke-linecap='round' style='transform:scale(0.8);transform-origin:50px 50px'%3E%3Canimate attributeName='stroke-dashoffset' repeatCount='indefinite' dur='2s' keyTimes='0;1' values='0;256.589'/%3E%3C/path%3E%3C/svg%3E");
+      #|  }
       #|}
       #|
       #|/* Size variants */
@@ -6958,18 +7093,24 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|    font-size: 0.7rem;
       #|  }
       #|  ::part(day):hover {
-      #|    &:not(selected, today) {
-      #|      background: var(--color-base-200);
-      #|    }
+      #|    background: var(--color-base-200);
       #|  }
       #|  ::part(button day today) {
       #|    background: var(--color-primary);
       #|    color: var(--color-primary-content);
       #|  }
+      #|  /* today/selected re-assert their own background so the generic day hover
+      #|     above doesn't wash them out */
+      #|  ::part(button day today):hover {
+      #|    background: var(--color-primary);
+      #|  }
       #|  ::part(selected) {
       #|    color: var(--color-base-100);
       #|    background: var(--color-base-content);
       #|    border-radius: var(--radius-field);
+      #|  }
+      #|  ::part(selected):hover {
+      #|    background: var(--color-base-content);
       #|  }
       #|  ::part(range-inner) {
       #|    border-radius: 0;
@@ -8248,6 +8389,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|@utility fieldset-legend {
       #|  margin-bottom: -0.25rem;
+      #|  margin-inline-end: auto;
       #|  display: flex;
       #|  align-items: center;
       #|  justify-content: space-between;
@@ -8830,11 +8972,19 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  &::-webkit-progress-value {
       #|    border-radius: var(--radius-box);
       #|    background-color: currentColor;
+      #|
+      #|    @media (prefers-reduced-motion: no-preference) {
+      #|      transition: inline-size 0.3s;
+      #|    }
       #|  }
       #|
       #|  &::-moz-progress-bar {
       #|    border-radius: var(--radius-box);
       #|    background-color: currentcolor;
+      #|
+      #|    @media (prefers-reduced-motion: no-preference) {
+      #|      transition: inline-size 0.3s;
+      #|    }
       #|  }
       #|}
       #|
@@ -9613,9 +9763,10 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|@utility indicator-center {
       #|  --indicator-s: 50%;
-      #|  --indicator-e: 50%;
+      #|  --indicator-e: auto;
       #|  --indicator-x: -50%;
       #|  [dir="rtl"] & {
+      #|    --indicator-e: 50%;
       #|    --indicator-x: 50%;
       #|  }
       #|}
@@ -9640,7 +9791,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|
       #|@utility indicator-middle {
       #|  --indicator-t: 50%;
-      #|  --indicator-b: 50%;
+      #|  --indicator-b: auto;
       #|  --indicator-y: -50%;
       #|}
       #|
@@ -10629,6 +10780,7 @@ pub let margaui_bundle : Array[(String, String)] = [
       #|  height: var(--size);
       #|  width: var(--size);
       #|  place-content: center;
+      #|  flex-shrink: 0;
       #|  border-radius: calc(infinity* 1px);
       #|  background-color: transparent;
       #|  color: var(--color-base-content);

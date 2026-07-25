@@ -13,7 +13,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   directory, which margaui's own README calls a manual mirror — at v0.5606.3 it
   was still missing the `mauve`, `olive`, `mist` and `taupe` palettes upstream
   added in **4.3.2**, on top of 4.3.3's `--font-sans` change and the
-  `oklch(… 0 none)` achromatic form for `zinc-50` and `neutral-50…950`.
+  `oklch(… 0 none)` achromatic form for `zinc-50` and `neutral-50…950` (at
+  v0.5704.0 the palettes and the font stack are still behind).
   Meanwhile `marianoguerra/tailwindcss` is ported from **v4.3.3** exactly. The
   `css-bundle` task now takes those three files from the `tailwindcss` npm
   tarball pinned to the port's own `UPSTREAM.md` tag, and
@@ -24,6 +25,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **margaui bumped to v0.5704.0** (from v0.5606.3). `MARGAUI_REF` in
+  `scripts/fetch-margaui.mjs` moves and `css/margaui_bundle_gen.mbt` +
+  `css/assets/margaui.bundle.json` are regenerated from that tag — same 80
+  files, no utility renamed or removed, so no view needs changing. New:
+  `menu-paged`, a menu whose open submenu replaces the panel instead of
+  expanding in place, with its `summary` turning into a "Back" row
+  (`aria-label` overrides the label). Fixes across `avatar` (centred
+  `align-self`), `calendar` (hover no longer washes out today/selected),
+  `fieldset`, `indicator` (start/end offsets default to `auto`), `input`
+  (LTR fields align by `text-align`, pixel-exact affix insets), `kbd` and
+  `radial-progress` (`flex-shrink: 0`), `menu` (`[disabled]` styled like
+  `menu-disabled`), `modal` (child-scoped `.modal-box`, RTL slide), `otp`
+  (forced LTR), `select` (subtle placeholder colour no longer leaks to a
+  wrapper's other children), and `tab` (indicator width from `--tab-p`).
+  `loading` and `progress` now treat reduced motion as the default and put
+  the fast animation behind `prefers-reduced-motion: no-preference`. margaui's
+  own `tw/*.css` is still skipped — the stock Tailwind stylesheets keep coming
+  from the pinned npm tarball.
 - **A no-op interaction no longer re-renders.** Writing a component field the
   value it already holds now keeps the instance — and so the root — as the
   SAME object, so the transactor reports no swap and `App::render_now` is

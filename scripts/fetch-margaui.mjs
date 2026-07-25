@@ -23,7 +23,7 @@ import { execFileSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 
 // The margaui release the committed bundle was generated from.
-export const MARGAUI_REF = "v0.5606.3";
+export const MARGAUI_REF = "v0.5704.0";
 export const MARGAUI_REPO = "https://github.com/marianoguerra/margaui.git";
 
 const ROOT = join(dirname(fileURLToPath(import.meta.url)), "..");
