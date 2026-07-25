@@ -1,8 +1,35 @@
-# benchmarks — view pipeline
+# benchmarks
 
-Performance benchmarks for the ahead-of-time view compiler (`viewgen/`, and
-`anode/` + the vendored HTML parser under it). Repo tooling: excluded from
-`moon package`, not part of the published library.
+Performance benchmarks for tutuca, in three suites:
+
+| Suite       | Measures                                              | Files |
+|-------------|-------------------------------------------------------|-------|
+| view        | the ahead-of-time view compiler (`viewgen/`, `anode/` and the vendored HTML parser under it) | `viewparse.mbt`, `scaling_bench_test.mbt` |
+| render      | mounting a component tree and rendering it the first time | `render.mbt` |
+| diff/patch  | changing a mounted app: re-render, diff, patch         | `patch.mbt` |
+
+Repo tooling: excluded from `moon package`, not part of the published library.
+
+```
+moon run --target native cmd/dev -- bench      # everything, both targets
+node benchmarks/report.mjs [--target native] [--file <bench_test.mbt>]
+```
+
+`report.mjs` runs `moon bench` and collapses its three lines per benchmark into
+one. `--save before.json` then `--baseline before.json` is the A/B loop:
+
+```
+node benchmarks/report.mjs --target native --save /tmp/before.json
+# ...make the change...
+node benchmarks/report.mjs --target native --baseline /tmp/before.json
+```
+
+Known-noisy benches, not to be used for judging a change: `render all examples`
+(±13–26%) and `render json 3x4` (±31–38%). Everything else lands under ±5%.
+
+---
+
+# The view suite
 
 ## The workloads
 
@@ -35,15 +62,9 @@ separately, neither of which matters for a parser benchmark: file-level
 does with them), and a source file with no `<template>` at all would be wrapped
 in one — currently none are.
 
-## Running it
+## The stages
 
-```
-moon run --target native cmd/dev -- bench            # just bench
-moon bench --release benchmarks                      # wasm-gc only
-moon bench --release --target native benchmarks
-```
-
-Four stages per corpus, matching what `tutuca gen-views` does:
+Four per corpus, matching what `tutuca gen-views` does:
 
 | Stage     | What it runs                                                   |
 |-----------|----------------------------------------------------------------|
@@ -91,4 +112,74 @@ moon-pprof summary --diff /tmp/base-js.pb.gz /tmp/patched-js.pb.gz
 `perf record` on the native binary would be the most representative, but needs
 `kernel.perf_event_paranoid <= 2`.
 
-See [OPTIMIZATIONS.md](OPTIMIZATIONS.md) for the measured changes.
+`benchmarks/cmd/render` is the same kind of shell for the render and diff/patch
+suites; substitute it for `cmd/viewparse` above.
+
+---
+
+# The render suite
+
+Mounts a component tree as a live app on the in-memory DOM (`@memdom` runs on
+every backend, so this stays target-agnostic) via `testing/harness`, then reads
+the rendered DOM back. Two axes:
+
+- **feature coverage** — `render all examples` mounts all 50 usable modules in
+  `storybook/examples` with the args the storybook and the CLI mount them with.
+  Between them they render every view directive the framework has. (The 51st,
+  `lint-errors`, exists to be broken: one of its bad values is a `render` op that
+  recurses forever.)
+- **data size** — the same view over 0, 1, 5, 10, 100 and 1000 items:
+  - `list` — `@each` over plain values, no child components (the floor)
+  - `todo` — `@each` + `<x render-it>`: every row is its own component
+  - `people` — the same list behind `@filter-with` / `@enrich-with` +
+    pagination, so the pipeline walks every item while only a page reaches the
+    DOM
+  - `json` — the JSON editor's array nested into itself, so *depth* grows
+
+The seeded state is built once per size and memoized: building 1000 component
+instances costs more than rendering them, and leaving that inside the timed
+closure both drowned the signal and made whole samples differ 3×.
+
+---
+
+# The diff/patch suite
+
+The render suite measures the FIRST render. This one measures every one after it:
+new state → re-render → diff against the live tree → patch the DOM.
+
+- the app is mounted once, outside the bench, and shared across iterations
+- every workload is a **round trip** (a change and the change back), so a shared
+  app never drifts — each number is *two* diff+patch passes
+- `patch_test.mbt` asserts each round trip restores the DOM it started from, so
+  the sharing is checked rather than assumed
+- the witness is `render_count()`, an Int, not the serialized DOM — serializing a
+  1000-row list costs several times the patch being measured
+
+Ordered by how much of the tree the change touches:
+
+| Workload      | Change                                                      |
+|---------------|-------------------------------------------------------------|
+| `noop`        | set a checkbox to the value it already has — the differ walks, the DOM is untouched |
+| `counter`     | one text node                                               |
+| `toggle`      | one row's attributes                                        |
+| `add+remove`  | append a row, drop the first: same length, rotated by one    |
+| `move`        | drag a row two places and back — nodes move, not change      |
+| `page`        | a page of rows replaced by different ones                    |
+| `refilter`    | a query change: the pipeline re-runs over every item         |
+| `switch view` | a whole component subtree leaves and another arrives         |
+
+The in-memory DOM is the point, not a limitation: `@memdom`'s primitives are
+array splices with no layout, style or event system behind them, so what is left
+is tutuca's own diff and patch. Two things about the setup are worth knowing:
+
+- **Harness overhead is measured, not assumed.** Each dispatched event resolves a
+  selector first. `Harness::find` now stops at the match it wants instead of
+  collecting every one, which cut these numbers by 30–78%; the `find …` benches
+  time the remaining walk alone so it can be subtracted (5.5 µs for `.checkbox`
+  on a 1000-row list, 38 µs for `.next`, which sits after the list).
+- **`memdom` removal is O(children), where a real DOM is O(1).** Children are an
+  `Array`, so both the index scan in `detach` and the splice are linear. It
+  inflates move-heavy patches; see OPTIMIZATIONS.md's open list.
+
+See [OPTIMIZATIONS.md](OPTIMIZATIONS.md) for the baselines and the measured
+changes.

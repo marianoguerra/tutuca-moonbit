@@ -1,12 +1,21 @@
 // Performance benchmarks for the view pipeline (source text -> generated
-// MoonBit). Pure like @viewgen itself: the workload text is embedded in
-// all_views_gen.mbt, so the same bench runs on wasm-gc, wasm, js and native
-// without a filesystem. benchmarks/cmd/viewparse is the executable shell.
+// MoonBit) and for the render path (a mounted app on the in-memory DOM).
+//
+// Target-agnostic like the code under measurement: the view corpora are
+// embedded in corpus_gen.mbt and @memdom runs everywhere, so the same benches
+// run on wasm-gc, wasm, js and native with no filesystem and no browser.
+// benchmarks/cmd/viewparse is the executable shell for the profilers.
 //
 // Excluded from `moon package` (see moon.mod) — it is repo tooling, not part
 // of the published library.
 import {
   "marianoguerra/tutuca/viewgen",
+  // The render benchmarks mount the ported examples as live apps, exactly as
+  // the headless tests and the storybook do.
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/storybook/examples",
+  "marianoguerra/tutuca/testing/harness",
 }
 
 import {

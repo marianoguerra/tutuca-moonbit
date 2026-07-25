@@ -146,12 +146,21 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "bench",
-      about: "time the view pipeline over benchmarks/all_views.html (wasm-gc + native, release)",
+      about: "time the view pipeline, the render path and diff/patch (wasm-gc + native, release)",
+      // report.mjs runs `moon bench` and collapses its three lines per
+      // benchmark into one, which is the difference between reading 32 numbers
+      // and scrolling past 96. It also takes --save/--baseline for A/B runs.
       commands: [
-        moon("bench · wasm-gc", ["bench", "--release", "benchmarks"]),
-        moon("bench · native", [
-          "bench", "--release", "--target", "native", "benchmarks",
-        ]),
+        {
+          label: "bench · wasm-gc",
+          prog: "node",
+          args: ["benchmarks/report.mjs"],
+        },
+        {
+          label: "bench · native",
+          prog: "node",
+          args: ["benchmarks/report.mjs", "--target", "native"],
+        },
       ],
     },
     {

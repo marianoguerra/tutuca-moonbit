@@ -1,6 +1,12 @@
 // Generated using `moon info`, DON'T EDIT IT
 package "marianoguerra/tutuca/benchmarks"
 
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/testing/harness",
+}
+
 // Values
 pub let all_views : String
 
@@ -8,17 +14,71 @@ pub fn build(String) -> Int
 
 pub let corpora : Array[(String, String)]
 
+pub fn find_cost(@harness.Harness, String) -> Int
+
 pub fn gen(String) -> Int
 
 pub fn giant_view(Int) -> String
 
+pub fn json_args(Int, Int) -> Map[String, @core.Value]
+
+pub fn list_args(Int) -> Map[String, @core.Value]
+
+pub fn mount_counter() -> @harness.Harness
+
+pub fn mount_json(Int, Int) -> @harness.Harness
+
+pub fn mount_people(Int) -> @harness.Harness
+
+pub fn mount_tabs() -> @harness.Harness
+
+pub fn mount_todo(Int) -> @harness.Harness
+
 pub let one_big_view_body : String
+
+pub fn patch_add_remove(@harness.Harness) -> Int
+
+pub fn patch_counter(@harness.Harness) -> Int
+
+pub fn patch_move(@harness.Harness) -> Int
+
+pub fn patch_noop(@harness.Harness) -> Int
+
+pub fn patch_page(@harness.Harness) -> Int
+
+pub fn patch_refilter(@harness.Harness) -> Int
+
+pub fn patch_switch_view(@harness.Harness) -> Int
+
+pub fn patch_toggle(@harness.Harness) -> Int
+
+pub fn patch_workloads() -> Array[(String, () -> Int)]
+
+pub fn people_args(Int) -> Map[String, @core.Value]
+
+pub fn render_all_examples() -> Int
+
+pub fn render_json(Int, Int) -> Int
+
+pub fn render_list(Int) -> Int
+
+pub fn render_people(Int) -> Int
+
+pub fn render_todo(Int) -> Int
+
+pub fn render_workloads() -> Array[(String, () -> Int)]
+
+pub let sizes : Array[Int]
 
 pub fn split(String) -> Int
 
 pub let stages : Array[(String, (String) -> Int)]
 
 pub fn surface(String) -> Int
+
+pub fn todo_args(Int) -> Map[String, @core.Value]
+
+pub let todo_module : @component.ModuleDef
 
 // Errors
 

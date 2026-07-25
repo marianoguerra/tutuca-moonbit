@@ -1,0 +1,15 @@
+// Executable shell for the runtime benchmarks: mounts the render workloads and
+// runs the update round trips a fixed number of times, printing each one's
+// checksum. No argv and no filesystem, so the same binary shape works on every
+// backend — the profiler drives repetition, not a flag. Twin of cmd/viewparse.
+//
+//   moon build --target js --release benchmarks/cmd/render
+//   node --cpu-prof --cpu-prof-dir=/tmp/prof --cpu-prof-interval=200 \
+//     _build/js/release/build/benchmarks/cmd/render/render.js
+//   moon-pprof cpuprofile2pprof /tmp/prof/CPU.*.cpuprofile /tmp/render.pb.gz
+//   moon-pprof summary /tmp/render.pb.gz
+import {
+  "marianoguerra/tutuca/benchmarks",
+}
+
+pkgtype(kind: "executable")

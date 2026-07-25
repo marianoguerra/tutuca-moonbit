@@ -177,14 +177,39 @@ pub fn Harness::find_all(
 
 ///|
 /// The nth (default first) element matching the selector.
+///
+/// Stops at the nth match instead of collecting every one: the usual call asks
+/// for the first element of a long list, and walking the remaining rows to throw
+/// them away is the dominant cost of driving a big DOM (it showed up as ~4% of
+/// benchmarks/'s update profile before this). A miss still visits everything, so
+/// the count in the failure message is the true total.
 pub fn Harness::find(
   self : Harness,
   sel : String,
   nth? : Int = 0,
 ) -> @memdom.MemNode raise {
-  let hits = self.find_all(sel)
-  guard hits.get(nth) is Some(n) else {
-    fail("find: no element \{nth} matching '\{sel}' (found \{hits.length()})")
+  let s = parse_selector(sel)
+  let mut seen = 0
+  let mut found : @memdom.MemNode? = None
+  fn walk(n : @memdom.MemNode) {
+    if matches(n, s) {
+      if seen == nth {
+        found = Some(n)
+        return
+      }
+      seen = seen + 1
+    }
+    for c in n.childs {
+      walk(c)
+      if found is Some(_) {
+        return
+      }
+    }
+  }
+
+  walk(self.container)
+  guard found is Some(n) else {
+    fail("find: no element \{nth} matching '\{sel}' (found \{seen})")
   }
   n
 }

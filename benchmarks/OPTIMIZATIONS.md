@@ -112,9 +112,128 @@ Scaling probe (`build` on one view holding 1×/2×/4× every view body):
 | 2×       | 21.43 ms | 17.76 ms | 2.07×              |
 | 4×       | 45.19 ms | 37.33 ms | 4.36×              |
 
+## 3. `Harness::find` stops at the match it wants — patches −30% to −78%
+
+Found by profiling the update suite, not by reading the code: `harness::matches`
+and `find_all`'s walk were ~4% of the whole update profile. Every dispatched
+event resolves its selector first, and `find(sel, nth=0)` was calling `find_all`
+— collecting every match in the DOM, then indexing element 0. On a 1000-row list
+that is a full-tree walk to answer a question the first row settles.
+
+Early exit, same semantics (a miss still visits everything, so the count in the
+failure message stays honest). This is measurement infrastructure rather than
+framework code, but it is also what every `testing/harness` test does dozens of
+times.
+
+| Workload (native)          | before   | after    |          |
+|----------------------------|----------|----------|----------|
+| `patch noop todo 1000`     | 20.62 ms | 11.11 ms | −46.1%   |
+| `patch toggle todo 1000`   | 23.25 ms | 14.43 ms | −37.9%   |
+| `patch add+remove todo 1000` | 40.02 ms | 28.38 ms | −29.1% |
+| `patch move json 8x4`      | 986.94 µs | 218.26 µs | −77.9%  |
+| `patch page people 1000`   | 833.20 µs | 764.44 µs | −8.3%   |
+
+What is left of the harness in these numbers is now benchmarked directly:
+`find .checkbox todo 1000` is 5.5 µs and `find .next people 1000` is 37.8 µs (that
+selector sits after the list, so its walk is unavoidable without caching nodes,
+which would silently measure nothing the moment a patch replaced one).
+
+## Runtime baseline — 2026-07-25, after #1–#3
+
+### Render: mount + first render + serialize
+
+| Workload           | wasm-gc  | native   |
+|--------------------|----------|----------|
+| `list 10`          |  46.7 µs |  85.0 µs |
+| `list 100`         | 402.6 µs | 712.6 µs |
+| `list 1000`        |  7.45 ms |  7.51 ms |
+| `todo 0`           |  10.7 µs |  17.7 µs |
+| `todo 10`          | 156.8 µs | 210.8 µs |
+| `todo 100`         |  1.73 ms |  1.94 ms |
+| `todo 1000`        | 28.49 ms | 22.30 ms |
+| `people 1000`      | 471.9 µs | 585.6 µs |
+| `json 8x4` (deep)  |  5.05 ms |  6.75 ms |
+| `all examples`     | 30.40 ms | 23.33 ms |
+
+`todo` (a child component per row) costs ~3× `list` (plain values) at every size,
+and both are linear in the row count. `people 1000` is cheap because pagination
+bounds the DOM even though the pipeline still walks all 1000 items — the filter
+itself is ~130 µs of that.
+
+### Diff/patch: two round-trip passes per number
+
+| Workload                     | wasm-gc  | native   |
+|------------------------------|----------|----------|
+| `counter`                    |  21.4 µs |  33.5 µs |
+| `switch view`                |  61.8 µs |  87.7 µs |
+| `noop todo 10`               |  97.8 µs | 151.7 µs |
+| `toggle todo 10`             | 105.7 µs | 146.5 µs |
+| `add+remove todo 10`         | 129.2 µs | 185.7 µs |
+| `move json 8x4`              | 193.1 µs | 218.3 µs |
+| `page people 1000`           | 557.3 µs | 764.4 µs |
+| `refilter people 1000`       |  1.65 ms |  1.59 ms |
+| `toggle todo 100`            | 718.8 µs | 932.4 µs |
+| `add+remove todo 100`        |  1.16 ms |  1.48 ms |
+| `noop todo 1000`             | 10.46 ms | 11.11 ms |
+| `toggle todo 1000`           | 12.74 ms | 14.43 ms |
+| `add+remove todo 1000`       | 22.92 ms | 28.38 ms |
+
+Three things fall out of this table:
+
+1. **A one-row change costs a whole-list pass.** Ticking one checkbox in a
+   1000-row list is 7.2 ms (half of 14.43), against 22.3 ms to mount and render
+   the entire list from nothing. The `RenderCache` exists to short-circuit
+   subtrees whose value is physically unchanged, and the transactor swaps state
+   with structural sharing, so in principle 999 rows should hit it.
+2. **A no-op costs almost as much as a real change.** `noop todo 1000` is 11.11 ms
+   against `toggle`'s 14.43: setting a field to the value it already holds does
+   77% of the work of changing it. The ~2.7 ms difference is the actual DOM write;
+   everything else is re-render and diff that could not have mattered.
+3. **The list-shape change is superlinear.** `add+remove` goes 185.7 µs → 1.48 ms
+   → 28.38 ms for 10 → 100 → 1000 rows: 8.0× then 19.2× for 10× the rows. Part of
+   that is `memdom`'s array-backed children (both `detach`'s index scan and the
+   splice are O(children), where a real DOM is O(1)); part is an unkeyed differ
+   walking every row after the insert.
+
+Where the update time goes (js/V8 profile of the update workloads, self time):
+
+```
+11.4%  (garbage collector)
+ 9.6%  Eq::equal
+ 6.9%  vdom::morph_children
+ 6.2%  Map::contains_kv[String, AttrValue]
+ 4.4%  $make_array_len_and_init
+ 3.4%  Iter::next over map pairs
+ 2.5%  vdom::normalize_childs
+ 2.2%  json::Json::stringify        <- state round-tripping through Json
+ 2.1%  render::RenderCache::get
+ 1.8%  render::Meta::to_comment_text  <- meta comments rebuilt as strings
+```
+
 ## Not yet tried
 
-Ranked by what the profile says is left:
+Ranked by what the profiles say is left.
+
+In the update path (the biggest numbers on the board):
+
+- **Why the `RenderCache` misses.** 5.6 ms of a no-op on 1000 rows says almost
+  nothing is being reused. Either the transactor is not preserving the identity of
+  untouched rows, or the per-slot cache key differs between passes, or `@each`
+  item sites are not cache sites at all. Worth answering before optimizing
+  anything below it.
+- **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
+  9.6%). Comparing two attribute maps hashes every key; a diff does it per node
+  per pass. Comparing the two entry lists directly, or an identity check first,
+  would skip most of it.
+- **`Meta::to_comment_text`** (1.8%): the `§Comp§`/`§Each§` meta comments are
+  rebuilt as strings on every pass. tw-mb #3 and #13 were exactly this.
+- **State through `Json`** (2.2% in `stringify`): typed state derives
+  `ToJson`/`FromJson`, and an update appears to round-trip through it.
+- **`memdom` children as an array**: makes move-heavy patches quadratic. A
+  doubly-linked sibling list would match a real DOM, at the cost of touching
+  every `childs` user.
+
+In the view pipeline:
 
 - **`Tokenizer::new` per view** (6.7% self on the many-views corpus). It is
   `input.to_array()` plus setup in the vendored `moonbit-community/html`; the
