@@ -1,0 +1,14 @@
+// Performance benchmarks for the view pipeline (source text -> generated
+// MoonBit). Pure like @viewgen itself: the workload text is embedded in
+// all_views_gen.mbt, so the same bench runs on wasm-gc, wasm, js and native
+// without a filesystem. benchmarks/cmd/viewparse is the executable shell.
+//
+// Excluded from `moon package` (see moon.mod) — it is repo tooling, not part
+// of the published library.
+import {
+  "marianoguerra/tutuca/viewgen",
+}
+
+import {
+  "moonbitlang/core/bench",
+} for "test"

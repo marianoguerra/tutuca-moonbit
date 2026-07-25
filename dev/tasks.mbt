@@ -130,6 +130,31 @@ pub fn tasks() -> Array[Task] {
       commands: gen_views_commands(),
     },
     {
+      name: "bench-views",
+      about: "regenerate benchmarks/all_views.{html,_gen.mbt} — every repo view concatenated, names prefixed",
+      commands: [
+        {
+          label: "build · benchmark view corpus",
+          prog: "node",
+          args: ["benchmarks/build.mjs"],
+        },
+        // The generator emits one `#|` line per source line, which `moon fmt`
+        // leaves alone but the surrounding module needs formatting like any
+        // other generated file (same reason gen-views formats).
+        moon("fmt", ["fmt"]),
+      ],
+    },
+    {
+      name: "bench",
+      about: "time the view pipeline over benchmarks/all_views.html (wasm-gc + native, release)",
+      commands: [
+        moon("bench · wasm-gc", ["bench", "--release", "benchmarks"]),
+        moon("bench · native", [
+          "bench", "--release", "--target", "native", "benchmarks",
+        ]),
+      ],
+    },
+    {
       name: "coverage",
       about: "run coverage analysis",
       commands: [moon("coverage analyze", ["coverage", "analyze"])],

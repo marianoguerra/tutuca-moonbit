@@ -37,6 +37,7 @@ import {
 
 options(
   exclude: [
+    "benchmarks",
     "guests",
     "playground",
     "demo",

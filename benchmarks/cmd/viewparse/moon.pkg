@@ -1,0 +1,12 @@
+// Executable shell for the view-pipeline benchmark: runs each stage of
+// @benchmarks a fixed number of times and prints the checksums. No argv and no
+// filesystem, so the same binary shape works on every backend — the profiler
+// drives repetition (`moon-pprof profile --iterations`), not a flag.
+//
+//   moon build --target wasm-gc --release benchmarks/cmd/viewparse
+//   moon-pprof profile _build/wasm-gc/release/build/benchmarks/cmd/viewparse/viewparse.wasm
+import {
+  "marianoguerra/tutuca/benchmarks",
+}
+
+pkgtype(kind: "executable")
