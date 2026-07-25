@@ -6,8 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.5.3]
+
 ### Added
 
+- `benchmarks/` — three benchmark suites, all target-agnostic (the view corpora
+  are embedded as strings and `@memdom` runs everywhere, so they need neither a
+  filesystem nor a browser): the **view pipeline** over every view `.html` in
+  the repo, both as one file of 108 views and as one enormous view, plus a
+  1×/2×/4× probe for costs that are superlinear in a single view's size; the
+  **render path** over all 50 usable example modules and over lists of 0 to
+  1000 items in four shapes; and **diff/patch**, where each workload is a change
+  and the change back applied to an app mounted once, from a no-op through a
+  one-row edit to switching views. `benchmarks/report.mjs` collapses `moon
+  bench`'s output to one line per benchmark and takes `--save` / `--baseline`
+  for A/B runs; `cmd/dev -- bench` and `-- bench-views` drive it, and
+  `benchmarks/OPTIMIZATIONS.md` is the log. Repo-only, excluded from
+  `moon package`.
+- `@viewgen.emit_ir_module_opt`: the companion IR module, or None when the file
+  cannot be emitted as compiled trees — `ir_supported` and `emit_ir_module` in
+  one pass. `ir_supported` stays for callers that only want the answer.
 - `@anode` builders for the AST: `h`, `text`, `dyn_text`, `frag`, `attr` /
   `attr_num` / `dyn_attr` / `if_attr` / `eid`, `show` / `hide` / `each` /
   `render` / `scope`, `on`, and the `const_*` value shorthands. They are the
@@ -19,6 +37,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- Performance, all measured on `benchmarks/` and all leaving output
+  byte-identical (the generated `*_view_gen.mbt` files still regenerate
+  unchanged, and the DOM snapshots in the test suite are untouched):
+  - `tutuca gen-views` is 16–18% faster. `if ir_supported(file) {
+    emit_ir_module(...) }` compiled every view twice, since both halves go
+    through the same parse; with `emit_module`'s own pass that made three
+    compiles of every view per job. `emit_ir_module_opt` does the check by
+    emitting.
+  - `@viewgen`'s `split` stage is 6% faster and no longer superlinear in a view
+    file's size: recovering a view's source walked its span one character at a
+    time and rescanned the whole style-region array at each one. It now copies
+    the runs between the regions.
+  - Rendering is up to 21% faster and updating up to 34%. Every render site and
+    every `@each` iteration emits a `§{…}§` boundary comment, and building it
+    meant allocating a `Json` object and stringifying it — ~2000 of them per
+    pass for a 1000-row list. Those, and the render cache's per-slot key, are
+    now written straight into a `StringBuilder`.
+- `@harness.Harness::find` stops at the match it asks for instead of collecting
+  every match in the DOM and indexing one. Same semantics; on a long list it is
+  the difference between a full-tree walk and a few nodes, which is worth 30–78%
+  on the update benchmarks and shows up in any test that drives a large DOM.
 - `gen-views` emits the compiled tree with those builders instead of raw
   struct literals: the 26 checked-in `*_view_ir_gen.mbt` files went from 6530
   to 3121 lines, and a `<button class="x">-</button>` from seven lines to one.
