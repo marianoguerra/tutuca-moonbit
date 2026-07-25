@@ -5,7 +5,6 @@ let plain_opts : @cli.GlobalOpts = {
   format: None,
   output: None,
   pretty: false,
-  module_path: None,
   help: false,
 }
 

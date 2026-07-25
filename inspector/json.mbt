@@ -579,7 +579,7 @@ fn Inspector::property(
 
 ///|
 /// JS DataInspector.Class.fromData: classify + wrap in the DataInspector.
-pub fn Inspector::inspect_value(
+fn Inspector::inspect_value(
   self : Inspector,
   v : @tutuca.Value,
 ) -> @tutuca.Value {

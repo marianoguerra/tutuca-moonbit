@@ -44,15 +44,6 @@ pub fn Value::list(self : Value) -> Array[Value] {
 }
 
 ///|
-/// The map payload; empty for non-maps.
-pub fn Value::entries(self : Value) -> Map[String, Value] {
-  match self {
-    Map(m) => m
-    _ => Map([])
-  }
-}
-
-///|
 /// Field access that works on Map values and Obj instances alike; Null for
 /// anything else (including missing fields).
 pub fn Value::field(self : Value, name : String) -> Value {

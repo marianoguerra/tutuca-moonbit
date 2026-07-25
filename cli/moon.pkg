@@ -11,13 +11,17 @@ import {
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
-  "marianoguerra/tutuca/storybook" @sb,
   "marianoguerra/tutuca/viewgen",
 }
 
+// No storybook import, at runtime or in tests: `tutuca storybook` serves a
+// pre-built bundle and needs no knowledge of the story registry, and the
+// storybook packages are repo demos/fixtures excluded from the published
+// archive (see moon.mod). The view-corpus test that used to live here — every
+// example's views through gen-views — now runs from storybook/examples, which
+// is where the corpus is.
 import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
-  "marianoguerra/tutuca/storybook/examples",
   "marianoguerra/tutuca/anode",
 } for "test"

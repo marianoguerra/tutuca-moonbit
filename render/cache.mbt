@@ -104,6 +104,23 @@ pub fn RenderCache::next_generation(self : RenderCache) -> Unit {
 }
 
 ///|
+/// (hit, miss) since the last evict, WITHOUT clearing — the instrumentation
+/// read. `evict` answers the same question but empties the cache doing it,
+/// which makes it useless for watching a running app (or for a test that
+/// wants to assert what the next pass did).
+pub fn RenderCache::stats(self : RenderCache) -> (Int, Int) {
+  (self.hit, self.miss)
+}
+
+///|
+/// The number of entries the cache is holding, current generation plus the
+/// one behind it. Bounded growth is the whole reason there are two
+/// generations, so it is worth being able to look.
+pub fn RenderCache::size(self : RenderCache) -> (Int, Int) {
+  (self.cur.length(), self.prev.length())
+}
+
+///|
 /// Clear everything and return (hit, miss) counters since the last evict
 /// (JS WeakMapDomCache.evict).
 pub fn RenderCache::evict(self : RenderCache) -> (Int, Int) {

@@ -401,11 +401,6 @@ pub fn parse_provide(s : String, ctx : ParseCtx) -> Val? {
 }
 
 ///|
-pub fn parse_handler_arg(s : String, ctx : ParseCtx) -> Val? {
-  parse_single(s, ctx, GValue)
-}
-
-///|
 pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> Val? {
   parse_single(s, ctx, GAll)
 }

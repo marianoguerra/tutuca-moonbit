@@ -52,7 +52,7 @@ pub fn variant_name(name : String) -> String {
 
 ///|
 /// "Counter" -> "counter", "TodoList" -> "todo_list".
-pub fn value_prefix(name : String) -> String {
+fn value_prefix(name : String) -> String {
   let sb = StringBuilder::new()
   let mut prev_alnum = false
   for i, c in name.to_array() {
@@ -77,7 +77,7 @@ pub fn value_prefix(name : String) -> String {
 /// The component name as a MoonBit type prefix, validated: it heads every
 /// generated type, so a name that is not an identifier would emit code that
 /// does not compile.
-pub fn type_prefix(name : String) -> String raise GenError {
+fn type_prefix(name : String) -> String raise GenError {
   let chars = name.to_array()
   if chars.length() == 0 || !is_alpha(chars[0]) {
     raise BadComponentName(name)
@@ -96,7 +96,7 @@ pub fn type_prefix(name : String) -> String raise GenError {
 /// Map source names to variant names, refusing any pair that collides — two
 /// handlers named `set-label` and `setLabel` would otherwise silently emit
 /// one variant and drop a case.
-pub fn variants_for(
+fn variants_for(
   names : Array[String],
 ) -> Array[(String, String)] raise GenError {
   let seen : Map[String, String] = Map([])

@@ -68,7 +68,7 @@ fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
 /// order (its positions ARE the ids elements carry in `data-eid`).
 ///
 /// Call before the tree is optimized — `View::from_ir` does.
-pub fn ParseContext::from_ir(
+fn ParseContext::from_ir(
   root : ANode,
   events : Array[NodeEvents],
 ) -> ParseContext {
@@ -101,7 +101,7 @@ pub fn ParseContext::from_ir(
 /// `id = events.length()`, so a NodeEvents id IS its position — emitting the
 /// ids would only be a chance to disagree with the array.
 pub fn events_of(handlers : Array[Array[NodeEvent]]) -> Array[NodeEvents] {
-  handlers.mapi((id, handlers) => NodeEvents::{ id, handlers })
+  handlers.mapi((id, handlers) => { id, handlers })
 }
 
 ///|

@@ -70,9 +70,13 @@ PATCH = fixes).
 ### What ships
 
 `options(exclude: ...)` in `moon.mod` keeps the tarball to the library
-packages, the CLI, the storybook and `docs/`. The demo, playground, `dyncomp`
+packages, the CLI and `docs/`. The storybook, demo, playground, `dyncomp`
 and wasm-component guest hosts, the `dev`/`cmd/dev` task runner, `scripts/`,
-`skill/` and `package.json` are repo-only. If you add a package that a shipped
+`skill/` and `package.json` are repo-only. `storybook/` is excluded because
+nothing published depends on it: `tutuca storybook` serves a pre-built bundle
+and needs no story registry, and `testing/harness`'s demo test defines its own
+module. It stays in the repo as a demo and as the corpus the lint and
+view-generation sweeps run over. If you add a package that a shipped
 package imports, make sure it is not under an excluded directory — verify by
 unpacking `_build/publish/*.zip` into an empty directory and running
 `moon check` / `moon test` there, which is what a consumer sees.

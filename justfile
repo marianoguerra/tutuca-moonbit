@@ -87,8 +87,13 @@ playground:
 
 # build the wasm-component guest bundles (dyncomp demos)
 guests:
-    cd guests/counter && node build.mjs
-    cd guests/todo && node build.mjs
+    node guests/build-guest.mjs counter
+    node guests/build-guest.mjs todo
+    node guests/rust-counter/build.mjs
+
+# regenerate the guests' MoonBit bindings from dyncomp/wit, then drift-check
+guest-bindings:
+    {{dev}} gen-guest-bindings
 
 # dry-run package the module for mooncakes.io
 package:

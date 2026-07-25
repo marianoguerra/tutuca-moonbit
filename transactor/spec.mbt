@@ -66,7 +66,7 @@ pub struct Completion {
 }
 
 ///|
-declare pub fn Completion::new() -> Completion
+declare fn Completion::new() -> Completion
 
 ///|
 /// Run `cb` once this transaction's own handler has run (immediately if it
@@ -86,16 +86,16 @@ declare pub fn Completion::on_subtree_settled(
 
 ///|
 /// Register an outstanding unit; returns a one-shot release.
-declare pub fn Completion::track(self : Completion) -> () -> Unit
+declare fn Completion::track(self : Completion) -> () -> Unit
 
 ///|
-declare pub fn Completion::mark_self_settled(self : Completion) -> Unit
+declare fn Completion::mark_self_settled(self : Completion) -> Unit
 
 ///|
-declare pub fn Completion::ensure_self_settled(self : Completion) -> Unit
+declare fn Completion::ensure_self_settled(self : Completion) -> Unit
 
 ///|
-declare pub fn Completion::release_self(self : Completion) -> Unit
+declare fn Completion::release_self(self : Completion) -> Unit
 
 ///|
 /// What an observer record describes (JS observeKind strings as an enum).

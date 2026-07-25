@@ -10,14 +10,24 @@
 // filesystem and exits. This keeps the core testable on any target.
 
 ///|
+/// Which command set the running binary has. The stock `tutuca` binary is
+/// `Stock`; a project binary that compiles its `ModuleDef` in and calls
+/// `plan_with_module` is `Embedded` and additionally has the module commands.
+/// Everything user-visible that differs between the two — `help`,
+/// `agent-context`, the unknown-command error — takes this rather than
+/// guessing.
+pub(all) enum CliMode {
+  Stock
+  Embedded
+} derive(Debug, Eq)
+
+///|
 /// Global flags extracted before command dispatch (tools/tutuca.js
-/// extractGlobals). `module_path` is `--module`; the second positional
-/// alternative is resolved during dispatch.
+/// extractGlobals, minus `--module`: nothing here loads a module from a path).
 pub(all) struct GlobalOpts {
   format : String?
   output : String?
   pretty : Bool
-  module_path : String?
   help : Bool
 } derive(Debug, Eq)
 
@@ -53,15 +63,9 @@ pub(all) struct PositionalSpec {
 } derive(Debug, Eq)
 
 ///|
-/// Whether a command is actually runnable in the MoonBit port. `Stub`
-/// carries the blocker list printed by the shared stub emitter and echoed as
-/// a TODO(port) comment on the registry entry.
-pub(all) enum CmdImpl {
-  Wired
-  Stub(Array[String])
-} derive(Debug, Eq)
-
-///|
+/// Every registered command is runnable in the mode that registers it, so
+/// there is no "implemented?" flag: `needs_module` says which set it belongs
+/// to and that is the whole story.
 pub(all) struct CommandSpec {
   name : String
   describe : String
@@ -70,7 +74,6 @@ pub(all) struct CommandSpec {
   default_format : String?
   flags : Array[FlagSpec]
   positionals : Array[PositionalSpec]
-  impl_ : CmdImpl
 } derive(Debug, Eq)
 
 ///|
@@ -129,7 +132,7 @@ declare pub fn plan(argv : Array[String]) -> Outcome
 ///|
 /// Parse `gen-views` arguments: finishes purely on help and usage errors,
 /// otherwise returns a GenViews outcome for the shell to carry out.
-declare pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
+declare fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// Compile view source into the generated MoonBit module (viewgen/), the
@@ -146,7 +149,7 @@ declare pub fn gen_views(
 ///|
 /// Parse `watch` arguments: finishes purely on help and usage errors,
 /// otherwise returns a Watch outcome for the shell to carry out.
-declare pub fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome
+declare fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// True for a path the watcher should react to; everything else in a watched
@@ -176,7 +179,7 @@ declare pub fn extract_globals(
 ///|
 /// Render an ErrShape to stderr text (tools/cli/errors.js emitError, minus
 /// the exit): plain text, or a one-line JSON envelope when format is json.
-declare pub fn render_error(opts : GlobalOpts, shape : ErrShape) -> String
+declare fn render_error(opts : GlobalOpts, shape : ErrShape) -> String
 
 ///|
 /// ErrShape constructor with emitError's defaults (exit code 1, everything
@@ -195,18 +198,29 @@ declare pub fn err(
 declare pub fn error_emit(opts : GlobalOpts, shape : ErrShape) -> Emit
 
 ///|
-/// Registry lookup by command name.
-declare pub fn find_command(name : String) -> CommandSpec?
+/// The commands a binary in `mode` has, in agent-context order.
+declare fn commands_for(mode : CliMode) -> Array[CommandSpec]
 
 ///|
-/// All command names in registry (= agent-context) order; the did-you-mean
-/// candidate list.
-declare pub fn command_names() -> Array[String]
+/// Registry lookup by command name, within a mode's command set.
+declare pub fn find_command(mode : CliMode, name : String) -> CommandSpec?
+
+///|
+/// A mode's command names in registry (= agent-context) order.
+declare pub fn command_names(mode : CliMode) -> Array[String]
+
+///|
+/// True for a command only a module-embedding binary has.
+declare fn is_module_command(name : String) -> Bool
+
+///|
+/// Every name the CLI knows in either mode — the did-you-mean candidates.
+declare fn all_command_names() -> Array[String]
 
 ///|
 /// "Did you mean" suggestion against valid names, using the lint package's
 /// Damerau-Levenshtein closest_name.
-declare pub fn did_you_mean(
+declare fn did_you_mean(
   name : String,
   candidates : Array[String],
 ) -> @lint.Suggestion?
@@ -214,31 +228,33 @@ declare pub fn did_you_mean(
 ///|
 /// Port of suggestionToMessage (tools/format/lint.js): human tail line for a
 /// suggestion.
-declare pub fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String?
+declare fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String?
 
 ///|
-/// Full CLI reference (`tutuca help` with no argument), including trailing
-/// newline.
-declare pub fn overview() -> String
+/// Full CLI reference for `mode` (`tutuca help` with no argument), including
+/// trailing newline.
+declare pub fn overview(mode : CliMode) -> String
 
 ///|
-/// `tutuca help [command]` (tools/cli/commands/help.js run()).
-declare pub fn run_help(target : String?, opts : GlobalOpts) -> Emit
+/// `tutuca help [command]` for `mode`.
+declare fn run_help(mode : CliMode, target : String?, opts : GlobalOpts) -> Emit
 
 ///|
 /// The machine-readable schema printed by `tutuca agent-context`
-/// (schemaVersion 3), including trailing newline.
-declare pub fn agent_context_text() -> String
+/// (schemaVersion 4), including trailing newline. It describes the command
+/// set the RUNNING binary has, so an agent reading it never sees a command it
+/// cannot invoke.
+declare pub fn agent_context_text(mode : CliMode) -> String
 
 ///|
-/// Shared "not implemented" emitter for stub commands: stderr message with
-/// the blocker list, exit code 1.
-declare pub fn stub(name : String, missing : Array[String]) -> Emit
+/// The error a stock binary gives for a module command: the command is real,
+/// this binary just has no module to run it against.
+declare fn needs_embedded_module(name : String, opts : GlobalOpts) -> Emit
 
 ///|
 /// Parse `tutuca feedback`'s own args: -h/--help prints the command help,
 /// other flags are rejected, positionals join into the message.
-declare pub fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome
+declare fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome
 
 ///|
 /// One feedback.jsonl record line: {"ts":...,"version":...,"message":...}
@@ -268,12 +284,12 @@ declare pub fn feedback_success_line(file : String) -> String
 declare pub fn iso8601_utc(ms : UInt64) -> String
 
 ///|
-/// The module-aware dispatcher: like plan(), but when a ModuleDef is
-/// provided the module-shaped commands (get/list/examples/show/render/lint)
-/// RUN instead of stubbing — the MoonBit module-input answer: user projects
-/// embed the CLI by building a main that calls this with their module. The
-/// module-path positional is not expected in this mode; the first bare
-/// positional is a component-name filter. With None this is exactly plan().
+/// The dispatcher for a binary that COMPILED A MODULE IN — the MoonBit
+/// module-input answer: a native binary cannot load user code, so a user
+/// project embeds the CLI by building a main that calls this with its own
+/// `ModuleDef` (demo/counter_cli is the worked example). It runs the whole
+/// `Embedded` command set: the module commands against `module_`, everything
+/// stock exactly as `plan` does. With None this is exactly `plan`.
 declare pub fn plan_with_module(
   argv : Array[String],
   module_ : @component.ModuleDef?,

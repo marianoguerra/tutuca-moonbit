@@ -1,7 +1,10 @@
-// The same equivalence claim as gen_views_ir_test.mbt, swept over every
-// runtime-compiled view in the ported example library (storybook/examples —
-// covering loops, scopes, macros, teleport, drag-and-drop, SVG, components
-// rendering components). Most examples now build their views ahead of time
+// The same equivalence claim as cli/gen_views_ir_test.mbt, swept over every
+// runtime-compiled view in THIS example library (covering loops, scopes,
+// macros, teleport, drag-and-drop, SVG, components rendering components).
+// It lives here, with the corpus, rather than in cli/: the CLI package has no
+// dependency on the storybook packages in either direction, so that they can
+// stay repo demos and be excluded from the published archive.
+// Most examples now build their views ahead of time
 // (their trees are committed *_view_ir_gen.mbt), so `corpus_views()` only
 // sees the ones still parsed at runtime (`raw_view` set) — the macro-using
 // and genuinely-dynamic escape-hatch examples.
@@ -12,6 +15,20 @@
 // verified here is the tree/event model — that every construct in the corpus
 // is expressible, and that ir_supported is honest about the ones that are not
 // (macro users).
+
+///|
+/// The node id a node was filed under, for the "every node is at its own
+/// index" check below. Only the id-carrying node kinds answer.
+fn node_id_of(n : @anode.ANode) -> Int? {
+  match n {
+    RenderText(d) => d.node_id
+    Render(d) => Some(d.node_id)
+    RenderIt(d) => Some(d.node_id)
+    Show(d) | Hide(d) | PushView(d) | Scope(d) => d.node_id
+    Each(d) => Some(d.node_id)
+    _ => None
+  }
+}
 
 ///|
 /// Every (component, view name, source) in the example library.

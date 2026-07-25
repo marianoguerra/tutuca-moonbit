@@ -9,14 +9,25 @@
 
 ///|
 /// A round trip that must be an exact identity on the DOM.
+///
+/// `rerenders` says whether the round trip is expected to re-render at all.
+/// Every real change does; the NO-OP round trip does not, and that is the
+/// point of it — writing a field the value it already holds settles to the
+/// same root object, so `App::render_now` is never reached. Asserting the
+/// render count here is what keeps that property from silently regressing.
 fn assert_round_trip(
   h : @harness.Harness,
   run : (@harness.Harness) -> Int,
+  rerenders? : Bool = true,
 ) -> Unit raise {
   let before = h.html()
   let renders = h.render_count()
   let after_count = run(h)
-  assert_true(after_count > renders) // it re-rendered at all
+  if rerenders {
+    assert_true(after_count > renders)
+  } else {
+    assert_eq(after_count, renders)
+  }
   assert_eq(h.html(), before)
   // …and again, since the benches run it thousands of times over.
   let _ = run(h)
@@ -24,8 +35,12 @@ fn assert_round_trip(
 }
 
 ///|
-test "noop round trip leaves the DOM identical" {
-  assert_round_trip(@benchmarks.mount_todo(10), @benchmarks.patch_noop)
+test "noop round trip renders nothing at all" {
+  assert_round_trip(
+    @benchmarks.mount_todo(10),
+    @benchmarks.patch_noop,
+    rerenders=false,
+  )
 }
 
 ///|

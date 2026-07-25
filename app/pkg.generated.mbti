@@ -12,8 +12,6 @@ import {
 // Values
 pub fn[N : @vdom.DomWalk] dispatch_dom_event(@transactor.Transactor, N, String, N, @component.Components) -> Bool
 
-pub fn[N : @vdom.DomWalk] dispatch_event(@transactor.Transactor, N, @render.DomEvent, N, @component.Components) -> Bool
-
 // Errors
 
 // Types and methods

@@ -59,12 +59,16 @@ No changes to `render/`, `vdom/`, or `transactor/` are needed.
   WebAssembly/component-model#525). The host app stays wasm-gc; a guest is a
   *separate* linear-memory wasm instance, bridged by JS. Only data and
   handles cross — which the opaque-state contract is built around.
-- Guest pipeline: `wit-bindgen moonbit wit/ --out-dir .` → fill in
-  `interface/**/stub.mbt` → `moon build --target wasm` → `wasm-tools
+- Guest pipeline: `wit-bindgen moonbit <this dir's wit/> --out-dir .` → fill
+  in `interface/**/stub.mbt` → `moon build --target wasm` → `wasm-tools
   component embed wit … --encoding utf16` (MoonBit strings are UTF-16) →
   `wasm-tools component new` → `npx @bytecodealliance/jco transpile
   --instantiation async` for the browser. All four tools are
   version-coupled; pin them and commit generated bindings.
+  In this repo the pipeline is `guests/build-guest.mjs <name>` (both MoonBit
+  guests share it) and `cmd/dev -- gen-guest-bindings` (regenerate + drift
+  check). `wit/tutuca-component.wit` here is the ONE copy: no guest keeps
+  its own, so host and guests cannot drift apart.
   (npm note: the package is `@bytecodealliance/jco`; the bare `jco` npm name
   is a dependency-confusion placeholder.)
 - The world imports **no WASI**, so no preview2 shims are needed in the

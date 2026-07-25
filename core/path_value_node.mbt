@@ -49,6 +49,14 @@ pub impl PathNode for Value with fn item(self, key) {
 pub impl PathNode for Value with fn with_field(self, name, v) {
   match (self, v.as_value()) {
     (Map(m), Some(value)) => {
+      // Writing back the very object already stored leaves the container
+      // structurally identical, so hand back THIS one: the spine rebuild
+      // above collapses level by level and the root keeps its identity,
+      // which is what the render cache and the transactor's change check
+      // both read as "nothing happened".
+      if m.get(name) is Some(old) && physical_equal(old, value) {
+        return Some(self as &PathNode)
+      }
       let out = m.copy()
       out[name] = value
       Some(Value::Map(out) as &PathNode)
@@ -67,6 +75,10 @@ pub impl PathNode for Value with fn with_item(self, key, v) {
   match (self, key, v.as_value()) {
     (List(a), KInt(i), Some(value)) =>
       if i >= 0 && i < a.length() {
+        // see with_field: an identical write keeps the container's identity
+        if physical_equal(a[i], value) {
+          return Some(self as &PathNode)
+        }
         let out = a.copy()
         out[i] = value
         Some(Value::List(out) as &PathNode)
@@ -74,6 +86,9 @@ pub impl PathNode for Value with fn with_item(self, key, v) {
         None
       }
     (Map(m), KStr(s), Some(value)) => {
+      if m.get(s) is Some(old) && physical_equal(old, value) {
+        return Some(self as &PathNode)
+      }
       let out = m.copy()
       out[s] = value
       Some(Value::Map(out) as &PathNode)

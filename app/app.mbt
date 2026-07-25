@@ -61,7 +61,7 @@ fn modifiers_pass(
 /// against the rebuilt stack CARRYING the event (so `value`/`key`/`isCtrl`
 /// resolve), push through the Input channel, and drain. Returns false when
 /// reconstruction found no handler.
-pub fn[N : @vdom.DomWalk] dispatch_event(
+fn[N : @vdom.DomWalk] dispatch_event(
   tx : @transactor.Transactor,
   node : N,
   e : @render.DomEvent,

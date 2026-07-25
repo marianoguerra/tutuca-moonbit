@@ -51,7 +51,7 @@ fn level_name(level : @lint.LintLevel) -> String {
 }
 
 ///|
-pub fn LintFinding::to_json_value(self : LintFinding) -> Json {
+fn LintFinding::to_json_value(self : LintFinding) -> Json {
   let obj : Map[String, Json] = {
     "code": self.code.to_json(),
     "level": level_name(self.level).to_json(),

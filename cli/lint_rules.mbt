@@ -14,7 +14,7 @@
 // SUGGEST_BINDING_MEMBER.
 
 ///|
-pub let lint_rules : Array[LintRule] = [
+let lint_rules : Array[LintRule] = [
   {
     code: "FIELD_VAL_NOT_DEFINED",
     level: "error",

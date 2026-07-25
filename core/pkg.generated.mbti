@@ -16,8 +16,6 @@ pub fn parse_component(String, ParseCtx) -> Val?
 
 pub fn parse_field(String, ParseCtx) -> Val?
 
-pub fn parse_handler_arg(String, ParseCtx) -> Val?
-
 pub fn parse_input_handler(String, ParseCtx) -> HandlerParse?
 
 pub fn parse_macro_attr(String, ParseCtx) -> Val?
@@ -30,11 +28,11 @@ pub fn parse_text(String, ParseCtx) -> Val?
 
 pub fn parse_token(String, ParseCtx) -> Val?
 
+pub fn same_node(&PathNode, &PathNode) -> Bool
+
 pub fn size_of(Value) -> Int?
 
 pub fn step_get(&PathNode, Step) -> &PathNode?
-
-pub fn step_put(&PathNode, Step, &PathNode) -> &PathNode?
 
 pub fn step_with_key(Step, PathKey) -> Step
 
@@ -147,7 +145,6 @@ pub fn PathChanges::build_path(Self) -> DispatchPath
 pub fn PathChanges::field(Self, String) -> Self
 pub fn PathChanges::index(Self, String, Int) -> Self
 pub fn PathChanges::key(Self, String, String) -> Self
-pub fn PathChanges::of(&Ctx) -> Self
 pub fn PathChanges::send(Self, String, Array[Value]) -> Unit
 
 pub(all) enum PathKey {
@@ -162,10 +159,7 @@ pub(all) enum Pred {
   IsNull
   Equals
 } derive(Eq, @debug.Debug)
-pub fn Pred::apply(Self, Array[Value]) -> Bool
-pub fn Pred::arity(Self) -> Int
 pub fn Pred::name(Self) -> String
-pub fn Pred::of_name(String) -> Self?
 
 pub(all) struct RequestOpts {
   on_ok_name : String?
@@ -207,7 +201,6 @@ pub(all) enum Val {
 pub fn Val::eval(Self, &Stack) -> Value
 pub fn Val::eval_as_handler(Self, &Stack) -> Value
 pub fn Val::is_literal(Self) -> Bool
-pub fn Val::render(Self, &Stack) -> Value?
 pub fn Val::to_path_item(Self) -> Step?
 pub impl Show for Val
 
@@ -222,7 +215,6 @@ pub(all) enum Value {
   Obj(&Obj)
 }
 pub fn Value::bool(Self, default? : Bool) -> Bool
-pub fn Value::entries(Self) -> Map[String, Self]
 pub fn Value::field(Self, String) -> Self
 pub fn Value::from_json(Json) -> Self
 pub fn Value::int(Self, default? : Int) -> Int

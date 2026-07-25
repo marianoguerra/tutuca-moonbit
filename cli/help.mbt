@@ -3,9 +3,9 @@
 // (generated verbatim from the JS CLI output).
 
 ///|
-pub fn run_help(target : String?, opts : GlobalOpts) -> Emit {
+fn run_help(mode : CliMode, target : String?, opts : GlobalOpts) -> Emit {
   match target {
-    None => { out: overview(), err: "", exit_code: 0 }
+    None => { out: overview(mode), err: "", exit_code: 0 }
     Some("help") =>
       {
         out: "help: Show usage. `help <command>` for per-command detail.\n",
@@ -13,17 +13,10 @@ pub fn run_help(target : String?, opts : GlobalOpts) -> Emit {
         exit_code: 0,
       }
     Some(name) =>
-      match find_command(name) {
-        None =>
-          error_emit(
-            opts,
-            err(
-              CODE_USAGE_UNKNOWN_COMMAND,
-              "Unknown command '\{name}'",
-              suggestion?=did_you_mean(name, command_names()),
-              hint="Run `tutuca help` for the full reference.",
-            ),
-          )
+      match find_command(mode, name) {
+        // `help lint` in a stock binary explains what lint needs rather than
+        // documenting a command this binary cannot run.
+        None => unresolved_command(name, opts)
         Some(cmd) => {
           let buf = StringBuilder::new()
           buf.write_string("\{cmd.name}: \{cmd.describe}\n")

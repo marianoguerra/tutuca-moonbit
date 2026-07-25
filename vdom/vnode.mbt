@@ -2,10 +2,10 @@
 pub let html_ns : String = "http://www.w3.org/1999/xhtml"
 
 ///|
-pub let svg_uri : String = "http://www.w3.org/2000/svg"
+let svg_uri : String = "http://www.w3.org/2000/svg"
 
 ///|
-pub let math_uri : String = "http://www.w3.org/1998/Math/MathML"
+let math_uri : String = "http://www.w3.org/1998/Math/MathML"
 
 ///|
 /// Element namespace. `None` at use sites means HTML (the null namespace).
@@ -82,7 +82,7 @@ pub fn Vdom::node_type(self : Vdom) -> Int {
 
 ///|
 /// The reconciliation key: only element nodes carry one (JS `getKey`).
-pub fn Vdom::key(self : Vdom) -> String? {
+fn Vdom::key(self : Vdom) -> String? {
   match self {
     Node(el) => el.key
     _ => None
@@ -92,7 +92,7 @@ pub fn Vdom::key(self : Vdom) -> String? {
 ///|
 /// Same tag, namespace and key — morphing may patch in place (JS
 /// `isSameKind`).
-pub fn VElem::is_same_kind(self : VElem, other : VElem) -> Bool {
+fn VElem::is_same_kind(self : VElem, other : VElem) -> Bool {
   self.tag == other.tag && self.ns == other.ns && self.key == other.key
 }
 

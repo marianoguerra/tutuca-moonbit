@@ -214,7 +214,9 @@ fn[S : ToJson + @json.FromJson] make_typed(
     Some(s) => s
     None => tspec.init
   }
-  Obj(TypedInstance::{ spec: tspec, state, fields })
+  // through to_value() so the instance's memoized box is the one every
+  // later reader sees
+  TypedInstance::make(tspec, state, fields).to_value()
 }
 
 ///|

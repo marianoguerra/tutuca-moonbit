@@ -49,13 +49,9 @@ pub fn hide(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) -> AttrItem
 
-pub fn maybe_fragment(Array[ANode]) -> ANode
-
 pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String]) -> NodeEvent
 
 pub fn optimize_node(ANode) -> ANode
-
-pub fn parse_attributes(Array[(String, String)], ParseContext, parse_all? : Bool) -> AttrParseResult
 
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
@@ -99,14 +95,9 @@ pub(all) enum ANode {
   RenderOnce(RenderOnceData)
 } derive(@debug.Debug)
 pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
-pub fn ANode::condense_whitespace(Self, replacement? : String) -> Unit
 pub fn ANode::has_newline(Self) -> Bool
-pub fn ANode::is_constant(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool
-pub fn ANode::optimize(Self) -> Unit
 pub fn ANode::parse(String, ParseContext) -> Self?
-pub fn ANode::set_data_attr(Self, String, @core.Lit) -> Unit
-pub fn ANode::wrap_node(Self, Self) -> Unit
 
 pub(all) enum AttrItem {
   Plain(name~ : String, val~ : @core.Val)
@@ -126,8 +117,6 @@ pub(all) enum Attrs {
   DynAttrs(Array[AttrItem])
 } derive(@debug.Debug)
 pub fn Attrs::is_constant(Self) -> Bool
-pub fn Attrs::set_data_attr(Self, String, @core.Lit) -> Unit
-pub fn Attrs::to_macro_vars(Self) -> Map[String, String]
 
 pub(all) enum BadValueRole {
   XOp(op~ : String)
@@ -224,11 +213,7 @@ pub struct ParseContext {
 }
 pub fn ParseContext::compile(Self, &MacroScope) -> Unit raise MacroError
 pub fn ParseContext::enter_macro(Self, String, Map[String, String], Map[String, ANode]) -> Self
-pub fn ParseContext::from_ir(ANode, Array[NodeEvents]) -> Self
-pub fn ParseContext::is_inside_macro(Self, String) -> Bool
 pub fn ParseContext::new(handler? : &ParseHandler, cache_const_nodes? : Bool) -> Self
-pub fn ParseContext::new_macro_node(Self, String, Map[String, String], Array[ANode]) -> ANode
-pub fn ParseContext::register_events(Self) -> NodeEvents
 
 pub(all) enum ParseIssue {
   UnknownDirective(name~ : String, value~ : String)

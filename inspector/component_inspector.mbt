@@ -357,7 +357,7 @@ fn Inspector::comp_names_section(
 ///|
 /// Build a ComponentInspector instance from a `component_summary` snapshot
 /// (JS ComponentInspector.Class.fromData). Empty groups are omitted.
-pub fn Inspector::component_view(
+fn Inspector::component_view(
   self : Inspector,
   summary : @tutuca.Value,
 ) -> @tutuca.Value {

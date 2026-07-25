@@ -3,7 +3,6 @@ let no_opts : @cli.GlobalOpts = {
   format: None,
   output: None,
   pretty: false,
-  module_path: None,
   help: false,
 }
 
@@ -182,8 +181,8 @@ test "a successful plan carries one file" {
 
 ///|
 test "gen-views is in the command registry, so help and agent-context see it" {
-  assert_true(@cli.find_command("gen-views") is Some(_))
-  assert_true(@cli.command_names().contains("gen-views"))
+  assert_true(@cli.find_command(Stock, "gen-views") is Some(_))
+  assert_true(@cli.command_names(Stock).contains("gen-views"))
   let _ = no_opts
   assert_true(@cli.plan(["help", "gen-views"]) is Done(_))
 }

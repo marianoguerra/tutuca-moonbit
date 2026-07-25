@@ -315,15 +315,35 @@ test "lint flags render-it outside a loop and scoped-style leaks" {
 }
 
 ///|
-test "non-module commands and help fall back to the plain dispatcher" {
+test "stock commands and help fall back to the shared dispatcher" {
   let help = run(["get", "-h"], demo_module())
   assert_eq(help.exit_code, 0)
   assert_true(help.out.has_prefix("get: Summarize"))
   let unknown = run(["frobnicate"], demo_module())
   assert_true(unknown.exit_code != 0)
-  // and with no module, module commands still stub (unchanged behavior)
-  match @cli.plan(["get", "./m.js"]) {
-    Done(e) => assert_true(e.err.contains("not implemented"))
+  // stock commands work the same in an embedded binary
+  let sb = run(["storybook", "-h"], demo_module())
+  assert_eq(sb.exit_code, 0)
+  assert_true(sb.out.has_prefix("tutuca storybook"))
+}
+
+///|
+test "an embedded binary describes ITS command set, not the stock one" {
+  // help and agent-context reached through plan_with_module must report the
+  // module commands; the same binary's stock-only sibling must not.
+  let bare = run([], demo_module())
+  assert_true(bare.out == @cli.overview(Embedded))
+  assert_true(bare.out.contains("COMMANDS (over the embedded module)"))
+  let ctx = run(["agent-context"], demo_module())
+  assert_true(ctx.out == @cli.agent_context_text(Embedded))
+  assert_true(ctx.out.contains("\"mode\": \"embedded\""))
+  assert_false(ctx.out.contains("module-path"))
+}
+
+///|
+test "plan_with_module(None) is exactly plan" {
+  match @cli.plan_with_module(["get"], None) {
+    Done(e) => assert_true(e.err.contains("needs a module"))
     _ => fail("unexpected outcome")
   }
 }

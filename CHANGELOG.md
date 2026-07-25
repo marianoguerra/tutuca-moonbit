@@ -6,6 +6,75 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **A no-op interaction no longer re-renders.** Writing a component field the
+  value it already holds now keeps the instance — and so the root — as the
+  SAME object, so the transactor reports no swap and `App::render_now` is
+  never reached. Getting there meant preserving identity at three seams that
+  were throwing it away on every update: an instance now memoizes its `Value`
+  (each `Obj(self)` cast used to allocate a fresh one); `with_state` keeps the
+  old object for every encoded field equal to the one it replaces, instead of
+  taking whatever the `Json` round trip rebuilt; and `TypedInstance::set`,
+  `Value::with_field`/`with_item` and the transactor's root check all
+  short-circuit an unchanged write. `patch noop todo 1000` went 8.33 ms → 19.5
+  µs (−99.8%); `toggle`, `add+remove`, `move` and the render path are
+  unchanged within noise. See `benchmarks/OPTIMIZATIONS.md` #6.
+- **The CLI has two honest command sets instead of one misleading one.** The
+  stock `tutuca` binary ships only the commands that need no user module
+  (`help`, `feedback`, `install-skill`, `storybook`, `gen-views`, `watch`,
+  `agent-context`). The module commands (`get`, `list`, `examples`, `show`,
+  `lint`, `render`) exist only in a project binary that compiles its
+  `ModuleDef` in and calls `@cli.plan_with_module` — they no longer appear in
+  the stock binary's `help` or `agent-context` as commands it cannot run, and
+  they no longer carry a `module-path` positional, because nothing here loads
+  a module from a path. Asking the stock binary for one is now a coded
+  `ERR_USAGE_MISSING_MODULE` pointing at `plan_with_module` and
+  `demo/counter_cli`.
+- `agent-context` is `schemaVersion` 4: it reports `mode` (`stock` /
+  `embedded`), describes the command set the running binary actually has, and
+  drops the `moduleFirst` / `moduleFlag` keys and the `--module` global flag.
+  Exit codes 2 and 3 are listed only in embedded mode, where `lint` and
+  `render` can produce them.
+- `tutuca storybook` is a static file server and nothing else: `--dry-run` and
+  the accepted-but-ignored `--no-margaui` / `--no-check` / `--no-tests` are
+  gone. With them went the runtime `cli` → `storybook` dependency, so the
+  storybook packages are now excluded from the published archive and stay in
+  the repo as demos and as the corpus the lint/view sweeps run over.
+- `README.md` is a short repository README rather than a symlink to
+  `README.mbt.md`; the detailed guide remains the executable `README.mbt.md`.
+- One parameterized guest builder (`guests/build-guest.mjs <name>`) replaces
+  the duplicated `guests/{counter,todo}/build.mjs`, and
+  `dyncomp/wit/tutuca-component.wit` is the sole WIT: the per-guest copies are
+  gone and every guest (including the Rust one) reads that file.
+
+### Added
+
+- `cmd/dev -- gen-guest-bindings`: regenerate both MoonBit guest binding trees
+  from the canonical WIT and drift-check them. `wit-bindgen` emits its FFI
+  shims in hash order, so `guests/gen-bindings.mjs` normalizes the output —
+  which is what makes the checked-in trees reproducible at all.
+- `@render.RenderCache::stats` / `::size`: read the hit/miss counters and entry
+  counts without clearing the cache, which `evict` cannot do.
+- `@tutuca.same_node`: physical identity across the `&PathNode` trait-object
+  boxing, which a plain `physical_equal` defeats.
+
+### Removed
+
+- A large amount of public API that nothing outside its own package used:
+  `@cli`'s command-dispatch internals (`run_help`, `run_storybook`,
+  `render_error`, `did_you_mean`, the command tables …), `@anode`'s AST
+  mutators and macro internals, `@core`'s `Pred` accessors and `step_put`,
+  `@transactor`'s `Completion` API, `@vdom`'s `morph_node`/`morph_children`
+  and namespace URIs, `@viewgen`'s naming helpers, `@inspector`'s per-view
+  methods, and `@component`'s `FieldSpec` constructors. The stable CLI error
+  codes and `warn_hook` stay public — they are documented extension points.
+  `@core.Val::render`, `@core.Value::entries` and `@core.parse_handler_arg`
+  were dead and are deleted outright.
+- `@cli.stub` and the `CmdImpl` enum: every registered command is runnable in
+  the mode that registers it, so there is nothing left to stub. `GlobalOpts`
+  loses `module_path`.
+
 ## [0.5.3]
 
 ### Added

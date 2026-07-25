@@ -1,51 +1,53 @@
-// `tutuca storybook` — serve the pre-built storybook gallery.
+// `tutuca storybook` — serve (or copy) the pre-built storybook gallery.
 //
-// Divergence from the JS CLI (documented in help_overview.mbt): the MoonBit
-// port compiles AOT and the native binary cannot load user code, so there is
-// no runtime *.dev.js discovery. The gallery is the compiled example registry
-// (storybook/), baked into a wasm host at build time. This command therefore
-// SERVES that pre-built bundle (or copies it with --out, or lists it with
-// --dry-run) rather than scanning a directory. `dir` optionally points at a
-// bundle directory to serve instead of the one shipped next to the binary.
+// The MoonBit port compiles AOT and the native binary cannot load user code,
+// so there is no runtime *.dev.js discovery: the gallery is the compiled
+// example registry baked into a wasm host at build time by
+// `cmd/dev -- dist`. What is left for the CLI is a static file server, so
+// that is all this command is — serve a directory, or copy it with --out.
+// It knows nothing about the story registry, which is why `cli` does not
+// depend on the `storybook` packages at all.
 
 ///|
 let storybook_help : String =
-  #|tutuca storybook [dir] [--port <n>] [--out <dir>] [--dry-run [--json]]
+  #|tutuca storybook [dir] [--port <n>] [--out <dir>]
   #|
-  #|  Serve the pre-built storybook gallery: the compiled example registry,
-  #|  grouped into sections, rendered as one interactive WebAssembly app.
+  #|  Serve the pre-built storybook gallery bundle over HTTP.
   #|
-  #|  dir         a pre-built bundle directory to serve (default: the bundle
-  #|              shipped next to the binary, i.e. dist/storybook).
+  #|  dir         the bundle directory to serve (default: the bundle shipped
+  #|              next to the binary, i.e. dist/storybook).
   #|  --port <n>  preferred port (default 4321; falls back to a free port).
   #|  --out <dir> copy the static bundle to <dir> instead of serving.
-  #|  --dry-run   print the compiled story registry instead of serving
-  #|              (add --json for structured output).
   #|
-  #|  Unlike the JS CLI this does not scan for *.dev.js: the port compiles
-  #|  ahead of time, so stories are the compiled examples baked into the host.
+  #|  Build the bundle with `moon run --target native cmd/dev -- dist`.
   #|
 
 ///|
-/// Parse storybook's args and either finish purely (help, dry-run, usage
-/// errors) or hand the shell a serve/copy request.
-pub fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
+/// Parse storybook's args and either finish purely (help, usage errors) or
+/// hand the shell a serve/copy request.
+fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut dir = ""
   let mut port = 4321
   let mut out : String? = None
-  let mut dry_run = false
-  let mut json = false
   let mut i = 0
+  fn bad_port(v : String) -> Outcome {
+    Done(
+      error_emit(
+        opts,
+        err(
+          CODE_USAGE_BAD_FLAG_VALUE,
+          "invalid --port value '\{v}'",
+          hint="pass a positive integer, e.g. --port 4321",
+        ),
+      ),
+    )
+  }
+
   while i < args.length() {
     let a = args[i]
     match a {
       "-h" | "--help" =>
         return Done({ out: storybook_help, err: "", exit_code: 0 })
-      "--dry-run" => dry_run = true
-      "--json" => json = true
-      // accepted for CLI-surface parity; these are build-time concerns for the
-      // compiled host and have no effect on serving.
-      "--no-margaui" | "--no-check" | "--no-tests" => ()
       "--port" | "--out" => {
         i = i + 1
         if i >= args.length() {
@@ -63,17 +65,7 @@ pub fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
         if a == "--port" {
           match parse_port(args[i]) {
             Some(p) => port = p
-            None =>
-              return Done(
-                error_emit(
-                  opts,
-                  err(
-                    CODE_USAGE_UNKNOWN_FLAG,
-                    "invalid --port value '\{args[i]}'",
-                    hint="pass a positive integer, e.g. --port 4321",
-                  ),
-                ),
-              )
+            None => return bad_port(args[i])
           }
         } else {
           out = Some(args[i])
@@ -84,17 +76,7 @@ pub fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
           let val = other[7:].to_owned()
           match parse_port(val) {
             Some(p) => port = p
-            None =>
-              return Done(
-                error_emit(
-                  opts,
-                  err(
-                    CODE_USAGE_UNKNOWN_FLAG,
-                    "invalid --port value '\{val}'",
-                    hint="pass a positive integer, e.g. --port 4321",
-                  ),
-                ),
-              )
+            None => return bad_port(val)
           }
         } else if other.has_prefix("--out=") {
           out = Some(other[6:].to_owned())
@@ -117,16 +99,6 @@ pub fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
   }
   if opts.help {
     return Done({ out: storybook_help, err: "", exit_code: 0 })
-  }
-  if dry_run {
-    let sections = @sb.sections_of(@sb.stories())
-    let want_json = json || opts.format is Some("json")
-    let out_text = if want_json {
-      @sb.dry_run_json(sections).stringify(indent=2, escape_slash=false) + "\n"
-    } else {
-      @sb.dry_run_text(sections)
-    }
-    return Done({ out: out_text, err: "", exit_code: 0 })
   }
   ServeStorybook(opts, dir~, port~, out~)
 }

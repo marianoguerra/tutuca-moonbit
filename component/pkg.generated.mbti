@@ -111,9 +111,7 @@ pub(all) struct FieldSpec {
   kind : FieldKind
   default : @core.Value
 } derive(@debug.Debug)
-pub fn FieldSpec::coerce_or_default(Self, @core.Value) -> @core.Value
 pub fn FieldSpec::comp(String, args? : Map[String, @core.Value]) -> Self
-pub fn FieldSpec::of_default(@core.Value) -> Self
 pub fn FieldSpec::omap(default? : Map[String, @core.Value]) -> Self
 pub fn FieldSpec::set(members? : Array[String]) -> Self
 

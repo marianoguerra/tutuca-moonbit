@@ -78,10 +78,7 @@ pub fn err(
 }
 
 ///|
-pub fn did_you_mean(
-  name : String,
-  candidates : Array[String],
-) -> @lint.Suggestion? {
+fn did_you_mean(name : String, candidates : Array[String]) -> @lint.Suggestion? {
   match @lint.closest_name(name, candidates) {
     Some(to) => Some(ReplaceName(from=name, to~))
     None => None
@@ -89,7 +86,7 @@ pub fn did_you_mean(
 }
 
 ///|
-pub fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String? {
+fn suggestion_to_message(suggestion : @lint.Suggestion?) -> String? {
   match suggestion {
     None => None
     Some(ReplaceName(to~, ..)) => Some("did you mean '\{to}'?")
@@ -131,7 +128,7 @@ fn suggestion_to_json(suggestion : @lint.Suggestion) -> Json {
 }
 
 ///|
-pub fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
+fn render_error(opts : GlobalOpts, shape : ErrShape) -> String {
   if opts.format == Some("json") {
     let error : Map[String, Json] = {
       "code": shape.code.to_json(),

@@ -715,12 +715,58 @@ fn main {
 (`@bdom` = `vdom/browser`, `@glue` = `app/browser`; see `demo/counter` for
 the full package. `demo/counter_wasm` + `app/wasm` is the wasm-gc twin.)
 
-The native CLI works on modules too:
+## Inspecting your module from the CLI
+
+A native binary cannot import user code, so the stock `tutuca` binary has no
+way to reach your components — there is no module path to hand it. Instead
+your project **embeds the CLI**: a small `main` passes `argv` plus your own
+`ModuleDef` to `@cli.plan_with_module`, and that binary gets `get` / `list` /
+`examples` / `show` / `lint` / `render` over the module compiled into it.
+
+`demo/counter_cli` is the whole thing — a `moon.pkg` importing
+`marianoguerra/tutuca/cli` and your library, and this `main`:
+
+```mbt nocheck
+///|
+fn main {
+  let argv = @env.args().iter().drop(1).to_array()
+  match @cli.plan_with_module(argv, Some(@counterlib.module_def())) {
+    Done(emit) => {
+      if emit.out != "" {
+        print(emit.out)
+      }
+      if emit.err != "" {
+        print(emit.err)
+      }
+      process_exit(emit.exit_code)
+    }
+    // the outcomes that need I/O the shell owns; cmd/main handles them all
+    _ => process_exit(1)
+  }
+}
+```
+
+The command comes first and an optional component name second — no module
+path:
 
 ```sh
-moon run --target native cmd/main -- render <example>   # render to HTML
-moon run --target native cmd/main -- lint <view>        # lint a view
-moon run --target native cmd/dev -- dist                # build demos + storybook
+moon run --target native demo/counter_cli -- get              # module summary
+moon run --target native demo/counter_cli -- list             # components
+moon run --target native demo/counter_cli -- show Counter     # API docs for one
+moon run --target native demo/counter_cli -- lint             # exit 2 on errors
+moon run --target native demo/counter_cli -- render --title "Basic Counter"
+moon run --target native demo/counter_cli -- agent-context    # JSON schema
+```
+
+The stock binary keeps the commands that need no module — compiling views
+ahead of time, watching them, serving the storybook bundle, installing the
+skill:
+
+```sh
+moon run --target native cmd/main -- gen-views path/to/views.html
+moon run --target native cmd/main -- watch demo/counterlib
+moon run --target native cmd/main -- help                # the full reference
+moon run --target native cmd/dev  -- dist                # build demos + storybook
 ```
 
 ## Where to go next

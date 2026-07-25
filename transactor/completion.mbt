@@ -2,7 +2,7 @@
 // promises).
 
 ///|
-pub fn Completion::new() -> Completion {
+fn Completion::new() -> Completion {
   {
     pending: 1, // the self-unit, released after handler + after_transaction
     self_settled: false,
@@ -35,7 +35,7 @@ pub fn Completion::on_subtree_settled(
 }
 
 ///|
-pub fn Completion::mark_self_settled(self : Completion) -> Unit {
+fn Completion::mark_self_settled(self : Completion) -> Unit {
   if self.self_settled {
     return
   }
@@ -47,14 +47,14 @@ pub fn Completion::mark_self_settled(self : Completion) -> Unit {
 }
 
 ///|
-pub fn Completion::ensure_self_settled(self : Completion) -> Unit {
+fn Completion::ensure_self_settled(self : Completion) -> Unit {
   if !self.self_settled {
     self.mark_self_settled()
   }
 }
 
 ///|
-pub fn Completion::track(self : Completion) -> () -> Unit {
+fn Completion::track(self : Completion) -> () -> Unit {
   self.pending += 1
   let done : Ref[Bool] = { val: false }
   () => {
@@ -66,7 +66,7 @@ pub fn Completion::track(self : Completion) -> () -> Unit {
 }
 
 ///|
-pub fn Completion::release_self(self : Completion) -> Unit {
+fn Completion::release_self(self : Completion) -> Unit {
   if self.self_released {
     return
   }

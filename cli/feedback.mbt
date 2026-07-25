@@ -23,7 +23,7 @@ let feedback_help_text : String =
 /// Parse `tutuca feedback`'s own args. The JS version lets node:util
 /// parseArgs throw an uncaught stack trace on an unknown flag; here it gets
 /// the same coded error the dispatcher uses elsewhere.
-pub fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome {
+fn run_feedback(args : Array[String], opts : GlobalOpts) -> Outcome {
   let positionals : Array[String] = []
   for a in args {
     if a == "-h" || a == "--help" {

@@ -45,13 +45,19 @@ component name second — no module path:
 tutuca <command> [name] [flags]
 ```
 
-(`agent-context` still describes the JS-compatible
-`tutuca <command> <module-path> [name]` schema with a `module-path`
-positional and `--module` flag; the embedded binary ignores the path —
-the compiled-in module is the module.) `tutuca help` prints the full
-reference; `tutuca help <command>` prints per-command detail
+`agent-context` describes the command set of the binary running it: an
+embedded binary reports `"mode": "embedded"` and the module commands, each
+with the optional `name` filter as its only positional; the stock binary
+reports `"mode": "stock"` and omits them entirely. There is no
+`module-path` positional and no `--module` flag in either — nothing here
+loads a module from a path. `tutuca help` prints the full reference (also
+mode-specific); `tutuca help <command>` prints per-command detail
 (`tutuca help lint` includes the lint-rule table). Bare `tutuca` / `-h`
 prints the overview.
+
+Asking the STOCK binary for a module command is a coded error, not a
+mystery: `ERR_USAGE_MISSING_MODULE`, "'lint' needs a module, and this
+binary has none compiled in", pointing at `plan_with_module`.
 
 ## Commands
 
@@ -75,7 +81,8 @@ Plain commands (no module needed):
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code, error code, and lint code                             |
 | `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir` |
-| `install-skill`          | Copy a bundled Claude Code skill (this one) into `.claude/skills/` — the skill assets are embedded into the binary by the dev `dist` tooling. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force`, `--all`, `--margaui-skill` |
+| `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>`, `--out <dir>`. It is a static file server: the gallery is a wasm host built ahead of time by `cmd/dev -- dist` |
+| `install-skill`          | Copy the bundled tutuca Claude Code skill (this one) into `.claude/skills/` — the assets are compiled into the binary by the dev `skill-embed` task. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
 
 ### `gen-views` — ahead-of-time views
 
@@ -195,12 +202,12 @@ Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 | `ERR_USAGE_UNKNOWN_COMMAND`   | command name not recognized                   |
 | `ERR_USAGE_UNKNOWN_FLAG`      | flag not recognized for the command           |
 | `ERR_USAGE_BAD_FLAG_VALUE`    | flag rejected the value (e.g. wrong type)     |
-| `ERR_USAGE_MISSING_MODULE`    | command needs a module but none was embedded/given |
+| `ERR_USAGE_MISSING_MODULE`    | a module command in a binary with no module compiled in |
 | `ERR_USAGE_MISSING_ARGUMENT`  | required positional/stdin missing             |
 | `ERR_USAGE_MUTUALLY_EXCLUSIVE`| conflicting flags                             |
 | `ERR_FORMAT_UNKNOWN`          | `--format` value not in {cli,md,json,html}    |
 | `ERR_FORMAT_UNSUPPORTED`      | format chosen doesn't support the result kind |
-| `ERR_MODULE_LOAD_FAILED`      | module input failed (path form; stubbed here) |
+| `ERR_MODULE_LOAD_FAILED`      | reserved: no path-based module loading exists here |
 | `EXAMPLES_SHAPE_MISMATCH`     | module value had a non-conforming shape       |
 | `ERR_INTERNAL`                | a command crashed on the module               |
 | `ERR_SKILL_ASSETS_MISSING`    | bundled skill assets not found                |

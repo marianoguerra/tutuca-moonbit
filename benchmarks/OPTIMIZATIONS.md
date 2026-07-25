@@ -3,15 +3,19 @@
 One entry per measured change, in the order they landed. Method:
 `node benchmarks/report.mjs [--target native]` on wasm-gc and native, back to
 back, before and after (`--save` / `--baseline` do the bookkeeping); for a change
-under ~5% the affected bench is run 3× on each side (`moon bench -p
-marianoguerra/tutuca/benchmarks -f <file> -i <n>`) and the medians compared. A
+under ~5% — and for ANY change whose size is comparable to this machine's
+run-to-run drift — the affected bench file is run 3× on each side with the two
+sides **alternating in one loop** (stash, measure, pop, measure) and the medians
+compared. Non-interleaved runs have shown ±10% swings on benchmarks the change
+could not touch; see #6. A
 change that does not move a number gets reverted, not kept "because it should be
 faster".
 
 Every entry leaves output unchanged. For the view pipeline that means the
 workload checksums (`viewparse_bench_test.mbt` pins them) plus `cmd/dev --
 gen-views` followed by `git diff --exit-code`; for the runtime it means the full
-797-test suite, a good number of which are DOM snapshots.
+823-test suite (823 default / 821 native / 8 js browser), a good
+number of which are DOM snapshots.
 
 # The view pipeline
 
@@ -156,7 +160,7 @@ The three shapes are fixed and closed, so there is nothing for a generic encoder
 to decide: write them straight into a `StringBuilder`. String fields keep a
 fallback to `Json::stringify` for anything outside printable ASCII, so the
 escaping rules stay in one place — the point is to skip an allocation, not to
-reimplement them. Output is byte-identical, which the 797-test suite (a good
+reimplement them. Output is byte-identical, which the full test suite (a good
 number of them DOM snapshots carrying these comments) checks thoroughly.
 
 | Workload                     | wasm-gc | native  |
@@ -240,8 +244,9 @@ itself is ~130 µs of that.
 | `toggle todo 1000`           | 11.50 ms | 12.10 ms |
 | `add+remove todo 1000`       | 21.04 ms | 25.53 ms |
 
-Three things fall out of this table (measured after #4; #5 moves the 1000-row
-rows down another ~4%), all still true:
+Three things fell out of this table (measured after #4; #5 moves the 1000-row
+rows down another ~4%). #6 has since answered the second one — the numbers
+below are the state of things that prompted it:
 
 1. **A one-row change costs a whole-list pass.** Ticking one checkbox in a
    1000-row list is 6.1 ms (half of 12.10), against 19.3 ms to mount and render
@@ -254,6 +259,9 @@ rows down another ~4%), all still true:
    against `toggle`'s 12.10: setting a field to the value it already holds does
    72% of the work of changing it. The difference is the actual DOM write;
    everything else is re-render and diff that could not have mattered.
+   *(Fixed in #6: a no-op is now 19.5 µs, because it no longer re-renders at
+   all. `toggle` is unchanged — that work is not avoidable, only the work for a
+   change that isn't one was.)*
 3. **The list-shape change is superlinear.** `add+remove` goes 136.6 µs → 1.09 ms
    → 25.53 ms for 10 → 100 → 1000 rows: 8.0× then 23× for 10× the rows. Part of
    that is `memdom`'s array-backed children (both `detach`'s index scan and the
@@ -275,17 +283,84 @@ Where the update time goes (js/V8 profile of the update workloads, self time):
  1.8%  render::Meta::to_comment_text  <- meta comments rebuilt as strings
 ```
 
+## 6. A no-op update is a no-op — `patch noop` −83% / −99.8%
+
+This answers the "why the `RenderCache` misses" question that headed the list
+below, and the answer was upstream of the cache: **the state never kept its
+identity long enough to be recognised**.
+
+Three things were throwing identity away on every single update:
+
+1. `TypedInstance::to_value()` returned a fresh `Obj(self)` each call. That cast
+   allocates, so one instance presented a different `Value` every time it
+   crossed the value seam — and the cache keys on `physical_equal` of exactly
+   that object. Memoized into the instance now: one instance, one `Value`.
+2. `with_state` re-encoded the state struct through `Json`, which rebuilds
+   every container even when nothing about it changed. Each freshly encoded
+   field is now compared with the one it replaces and the OLD object kept when
+   they are equal, so a field the handler didn't touch keeps the exact object
+   the last render cached.
+3. Nothing short-circuited a write of an equal value. `TypedInstance::set`
+   returns `self`, `Value::with_field`/`with_item` return the untouched
+   container, and `Path::update` / the transactor compare through the
+   `&PathNode` boxing (`@tutuca.same_node`) instead of `physical_equal`, which
+   a trait-object cast defeats. So the whole copy-on-write spine collapses and
+   the transactor sees the root it already had.
+
+Together: an interaction that writes a field the value it already holds no
+longer swaps the root, so `on_change` never fires, `app.dirty` is never set and
+`App::render_now` is never reached. `patch noop todo 1000` stops being "a full
+render + diff that could not have mattered" and becomes event routing plus the
+harness's selector walk.
+
+The comparison in (2) is **fuel-bounded** (`REUSE_FUEL`, component/instance.mbt).
+Fuel is spent only where the two sides do not already share structure, so a list
+of child components — which the value stash restores by reference — costs one
+unit and is fully preserved, while a 1000-item list of plain maps gives up after
+a handful of deep compares and keeps the new object. That is what holds `page`
+and `refilter` (the two workloads whose state is a 1000-item plain-data list) at
++4.7% / +4.6% instead of +6.1% / +5.4%: preserving identity is worth paying for
+only where it is nearly free.
+
+| Workload (native, median of 3 interleaved rounds) | before | after | |
+|---|---|---|---|
+| `patch noop todo 1000`   |  8.33 ms  | 19.5 µs | **−99.8%** |
+| `patch noop todo 10`     | 116.5 µs  | 19.6 µs | **−83.2%** |
+| `patch toggle todo 1000` | 11.97 ms  | 12.00 ms | +0.3% |
+| `patch toggle todo 100`  | 665.8 µs  | 689.9 µs | +3.6% |
+| `patch add+remove todo 1000` | 24.15 ms | 24.51 ms | +1.5% |
+| `patch page people 1000` | 723.8 µs  | 758.0 µs | +4.7% |
+| `patch refilter people 1000` | 1.51 ms | 1.58 ms | +4.6% |
+| `patch move json 8x4`    | 190.6 µs  | 189.8 µs | −0.4% |
+| `patch counter`          |  29.9 µs  |  29.4 µs | −1.6% |
+
+Render (mount + first render) and the whole view pipeline are unchanged within
+noise on both backends: `render todo 1000` +1.1%, `render list 1000` +0.8%,
+`render all examples` −1.1% (native, median of 2 interleaved full-suite rounds).
+wasm-gc agrees, including the headline: `patch noop todo 1000` 7.96 ms → 15 µs.
+
+Method note: this is the first entry where run-to-run drift mattered more than
+the change. A non-interleaved before/after showed +50% on benchmarks the change
+cannot touch (the view pipeline has no state in it at all), so every number here
+comes from before and after runs **alternating in one loop**, medians of three.
+`page people 1000` was the one bench that survived that treatment as a real
+regression, which is what prompted the fuel bound.
+
+The two remaining costs are real and worth naming: an update still re-encodes
+the whole state struct through `Json` (the comparison is on top of that, not
+instead of it), and the transactor still walks the copy-on-write spine before
+discovering nothing changed.
+
+`patch_test.mbt` asserts the no-op round trip does not move `render_count`, and
+`component/identity_test.mbt` pins the identity rules directly, so a regression
+here fails a test rather than only showing up as a slower number.
+
 ## Not yet tried
 
 Ranked by what the profiles say is left.
 
 In the update path (the biggest numbers on the board):
 
-- **Why the `RenderCache` misses.** 5.6 ms of a no-op on 1000 rows says almost
-  nothing is being reused. Either the transactor is not preserving the identity of
-  untouched rows, or the per-slot cache key differs between passes, or `@each`
-  item sites are not cache sites at all. Worth answering before optimizing
-  anything below it.
 - **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
   per pass. Comparing the two entry lists directly, or an identity check first,

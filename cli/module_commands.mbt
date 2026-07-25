@@ -409,58 +409,54 @@ pub fn plan_with_module(
   argv : Array[String],
   module_ : @component.ModuleDef?,
 ) -> Outcome {
-  match module_ {
-    None => plan(argv)
-    Some(m) => {
-      let (opts, rest) = match extract_globals(argv) {
-        Ok(pair) => pair
-        Err((opts, shape)) => return Done(error_emit(opts, shape))
-      }
-      guard rest.get(0) is Some(command) else { return plan(argv) }
-      let command_args = rest.iter().drop(1).to_array()
-      // module commands only; everything else keeps the plain dispatch
-      // (help/feedback/agent-context/unknown-command handling)
-      match find_command(command) {
-        Some(cmd) if cmd.needs_module && !opts.help => {
-          let args = parse_mod_args(command_args)
-          if args.bad_limit is Some(v) {
-            return Done(
-              error_emit(
-                opts,
-                err(
-                  CODE_USAGE_BAD_FLAG_VALUE,
-                  "--limit expects an integer, got '\{v}'",
-                ),
-              ),
-            )
-          }
-          // resolve the output format: explicit --format/--json, else the
-          // command's default (JS emit() falls back to defaultFormat).
-          let fmt = opts.format.unwrap_or(cmd.default_format.unwrap_or("cli"))
-          let emit = try {
-            match command {
-              "get" => run_get(m, fmt)
-              "list" => run_list(m, args, fmt)
-              "examples" => run_examples(m, args, fmt)
-              "show" => run_show(m, args, fmt)
-              "render" => run_render(m, args, opts, fmt)
-              "lint" => run_lint(m, args, fmt)
-              _ => stub(command, ["not module-runnable yet"])
-            }
-          } catch {
-            _ =>
-              error_emit(
-                opts,
-                err(
-                  CODE_INTERNAL,
-                  "command '\{command}' failed on module '\{m.name}'",
-                ),
-              )
-          }
-          Done(emit)
-        }
-        _ => plan(argv)
-      }
-    }
+  guard module_ is Some(m) else { return plan(argv) }
+  let (opts, rest) = match extract_globals(argv) {
+    Ok(pair) => pair
+    Err((opts, shape)) => return Done(error_emit(opts, shape))
   }
+  guard rest.get(0) is Some(command) else { return plan_stock(argv, Embedded) }
+  let command_args = rest.iter().drop(1).to_array()
+  // Module commands run here; every stock command (and the unknown-command
+  // reporting) stays with the shared dispatcher, told it is in Embedded mode
+  // so `help` and `agent-context` describe THIS binary's command set.
+  guard find_command(Embedded, command) is Some(cmd) &&
+    cmd.needs_module &&
+    !opts.help else {
+    return plan_stock(argv, Embedded)
+  }
+  let args = parse_mod_args(command_args)
+  if args.bad_limit is Some(v) {
+    return Done(
+      error_emit(
+        opts,
+        err(CODE_USAGE_BAD_FLAG_VALUE, "--limit expects an integer, got '\{v}'"),
+      ),
+    )
+  }
+  // resolve the output format: explicit --format/--json, else the command's
+  // own default.
+  let fmt = opts.format.unwrap_or(cmd.default_format.unwrap_or("cli"))
+  let emit = try {
+    match command {
+      "get" => run_get(m, fmt)
+      "list" => run_list(m, args, fmt)
+      "examples" => run_examples(m, args, fmt)
+      "show" => run_show(m, args, fmt)
+      "render" => run_render(m, args, opts, fmt)
+      "lint" => run_lint(m, args, fmt)
+      // unreachable: `cmd.needs_module` is true only for the six above
+      _ =>
+        error_emit(
+          opts,
+          err(CODE_INTERNAL, "module command '\{command}' has no runner"),
+        )
+    }
+  } catch {
+    _ =>
+      error_emit(
+        opts,
+        err(CODE_INTERNAL, "command '\{command}' failed on module '\{m.name}'"),
+      )
+  }
+  Done(emit)
 }

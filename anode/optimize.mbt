@@ -35,7 +35,7 @@ pub fn optimize_node(node : ANode) -> ANode {
 }
 
 ///|
-pub fn ANode::optimize(self : ANode) -> Unit {
+fn ANode::optimize(self : ANode) -> Unit {
   match self {
     Dom(d) => optimize_childs(d.childs)
     Fragment(d) => optimize_childs(d.childs)

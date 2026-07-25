@@ -93,7 +93,7 @@ pub fn Inspector::new() -> Inspector {
 
 ///|
 /// Every inspector component, in registration order (JS getComponents()).
-pub fn Inspector::components(self : Inspector) -> Array[@component.Component] {
+fn Inspector::components(self : Inspector) -> Array[@component.Component] {
   self.comps.values().collect()
 }
 

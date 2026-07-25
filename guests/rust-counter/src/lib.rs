@@ -3,8 +3,10 @@
 //! code. Handlers are functional (self in, self out); the host renders the
 //! views and drives everything.
 
+// The repo's ONE WIT source (see guests/guests.mjs) — guests keep no copy, so
+// a guest cannot silently implement a different contract than the host.
 wit_bindgen::generate!({
-    path: "wit",
+    path: "../../dyncomp/wit",
     world: "dynamic-component",
 });
 

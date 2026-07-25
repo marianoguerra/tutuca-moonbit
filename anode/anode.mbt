@@ -37,10 +37,7 @@ pub fn ANode::has_newline(self : ANode) -> Bool {
 }
 
 ///|
-pub fn ANode::condense_whitespace(
-  self : ANode,
-  replacement? : String = "",
-) -> Unit {
+fn ANode::condense_whitespace(self : ANode, replacement? : String = "") -> Unit {
   match self {
     Text(d) | Comment(d) => d.val = replacement
     _ => ()
@@ -48,7 +45,7 @@ pub fn ANode::condense_whitespace(
 }
 
 ///|
-pub fn ANode::is_constant(self : ANode) -> Bool {
+fn ANode::is_constant(self : ANode) -> Bool {
   match self {
     Text(_) | Comment(_) => true
     Dom(d) => d.attrs.is_constant() && d.childs.iter().all(c => c.is_constant())
@@ -65,11 +62,7 @@ pub fn ANode::is_constant(self : ANode) -> Bool {
 }
 
 ///|
-pub fn ANode::set_data_attr(
-  self : ANode,
-  key : String,
-  val : @tutuca.Lit,
-) -> Unit {
+fn ANode::set_data_attr(self : ANode, key : String, val : @tutuca.Lit) -> Unit {
   match self {
     Dom(d) => d.attrs.set_data_attr(key, val)
     Fragment(d) =>
@@ -91,7 +84,7 @@ pub fn ANode::set_data_attr(
 }
 
 ///|
-pub fn ANode::wrap_node(self : ANode, node : ANode) -> Unit {
+fn ANode::wrap_node(self : ANode, node : ANode) -> Unit {
   match self {
     Show(d) | Hide(d) | PushView(d) => d.node = node
     Scope(d) => {
@@ -108,7 +101,7 @@ pub fn ANode::wrap_node(self : ANode, node : ANode) -> Unit {
 }
 
 ///|
-pub fn maybe_fragment(childs : Array[ANode]) -> ANode {
+fn maybe_fragment(childs : Array[ANode]) -> ANode {
   if childs.length() == 1 {
     childs[0]
   } else {

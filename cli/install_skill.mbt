@@ -39,7 +39,7 @@ let install_skill_help : String =
 ///|
 /// Parse install-skill's own args and either finish purely (help, dry-run,
 /// usage errors, missing assets) or hand the shell a write plan.
-pub fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
+fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut user = false
   let mut project = false
   let mut dot_agents = false

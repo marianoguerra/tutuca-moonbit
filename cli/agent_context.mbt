@@ -1,9 +1,16 @@
-// `tutuca agent-context`: port of tools/cli/commands/agent-context.js.
-// Emits the schemaVersion-3 JSON schema of the whole CLI surface. Key order
-// mirrors the JS object literals (Json objects are insertion-ordered maps).
+// `tutuca agent-context`: the machine-readable schema of the CLI surface.
+//
+// It describes the command set the RUNNING binary has, not a superset: a
+// stock binary reports only the commands that need no user module, and an
+// embedded one additionally reports the module commands — without a
+// module-path positional, because there is no such thing here. An agent that
+// reads this can invoke everything it sees.
 
 ///|
-const SCHEMA_VERSION : Int = 3
+/// 4: mode-aware. The set of commands, the invocation shape and the exit
+/// codes now depend on `mode`, and the module-path positional / `--module`
+/// flag of the JS-compatible schema are gone.
+const SCHEMA_VERSION : Int = 4
 
 ///|
 fn global_flags_schema() -> Array[FlagSpec] {
@@ -31,23 +38,48 @@ fn global_flags_schema() -> Array[FlagSpec] {
       type_="boolean",
       description="Pretty-print HTML/JSON output.",
     ),
-    flag(
-      "module",
-      type_="string",
-      description="Alternative to first-positional module path.",
-    ),
     flag("help", short="h", type_="boolean", description="Show help."),
   ]
 }
 
 ///|
-fn exit_codes_schema() -> Array[(Int, String)] {
-  [
+/// Exit codes a binary in `mode` can actually produce. 2 and 3 belong to
+/// `lint` and `render`, so a stock binary never reports them.
+fn exit_codes_schema(mode : CliMode) -> Array[(Int, String)] {
+  let codes : Array[(Int, String)] = [
     (0, "success"),
     (1, "usage error (bad args, missing module, bad module shape)"),
-    (2, "lint findings at error level (lint command)"),
-    (3, "render crash (render command)"),
   ]
+  if mode is Embedded {
+    codes.push((2, "lint findings at error level (lint command)"))
+    codes.push((3, "render crash (render command)"))
+  }
+  codes
+}
+
+///|
+fn mode_name(mode : CliMode) -> String {
+  match mode {
+    Stock => "stock"
+    Embedded => "embedded"
+  }
+}
+
+///|
+/// How to invoke this binary, and what its mode means.
+fn invocation_schema(mode : CliMode) -> Json {
+  match mode {
+    Stock =>
+      {
+        "synopsis": "tutuca <command> [flags]",
+        "note": "This is the stock tutuca binary: it ships only the commands that need no user module. The module commands (get, list, examples, show, lint, render) run against a @component.ModuleDef value and exist only in a project binary that compiles its module in and calls @cli.plan_with_module(argv, your_module) — see demo/counter_cli. There is no module path and no --module flag: a native binary cannot load user code.",
+      }
+    Embedded =>
+      {
+        "synopsis": "tutuca <command> [name] [flags]",
+        "note": "This binary has a module compiled in, so the module commands run against it. Their first positional is an OPTIONAL component-name filter, not a module path — the module is the one compiled in.",
+      }
+  }
 }
 
 ///|
@@ -120,28 +152,24 @@ fn lint_rule_to_json(r : LintRule) -> Json {
 }
 
 ///|
-pub fn agent_context_text() -> String {
+pub fn agent_context_text(mode : CliMode) -> String {
   let schema : Json = {
     "schemaVersion": SCHEMA_VERSION.to_json(),
     "cli": "tutuca",
     "version": VERSION.to_json(),
-    "invocation": {
-      "synopsis": "tutuca <command> <module-path> [name] [flags]",
-      "moduleFirst": false,
-      "moduleFlag": "module",
-      "note": "For module-required commands, the module path is the second positional. Use --module=<path> as an alternative.",
-    },
+    "mode": mode_name(mode).to_json(),
+    "invocation": invocation_schema(mode),
     "globalFlags": Json::array(global_flags_schema().map(flag_to_json)),
     "formats": format_names.to_json(),
     "exitCodes": Json::array(
-      exit_codes_schema().map(pair => {
+      exit_codes_schema(mode).map(pair => {
         let j : Json = { "code": pair.0.to_json(), "meaning": pair.1.to_json() }
         j
       }),
     ),
     "errorCodes": error_codes.to_json(),
     "lintCodes": Json::array(lint_rules.map(lint_rule_to_json)),
-    "commands": Json::array(commands.map(command_to_json)),
+    "commands": Json::array(commands_for(mode).map(command_to_json)),
   }
   schema.stringify(indent=2, escape_slash=false) + "\n"
 }

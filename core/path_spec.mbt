@@ -225,7 +225,7 @@ declare pub fn step_get(node : &PathNode, step : Step) -> &PathNode?
 /// Rebuild one spine level: a new node with the child this step addresses
 /// replaced by `child`. None when the step is unaddressable on `node`
 /// (the caller leaves the tree untouched).
-declare pub fn step_put(
+declare fn step_put(
   node : &PathNode,
   step : Step,
   child : &PathNode,
@@ -258,6 +258,15 @@ declare pub fn Path::pop_step(self : Path) -> Path
 ///|
 /// The value this path resolves to, or None at the first unresolvable step.
 declare pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode?
+
+///|
+/// "These two nodes are the same object", across the trait-object boxing.
+/// Casting a `Value` to `&PathNode` allocates, so two boxes carrying the
+/// SAME `Value` are not `physical_equal` — compare what they carry instead.
+/// This is the no-change signal every copy-on-write caller reads: `set_value`
+/// returns the untouched spine, and identity is what the render cache and the
+/// transactor's root-swap check are keyed on.
+declare pub fn same_node(a : &PathNode, b : &PathNode) -> Bool
 
 ///|
 /// Replace the leaf: walk down collecting intermediates, rebuild the spine

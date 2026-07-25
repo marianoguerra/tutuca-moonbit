@@ -45,10 +45,7 @@ pub fn ParseContext::enter_macro(
 }
 
 ///|
-pub fn ParseContext::is_inside_macro(
-  self : ParseContext,
-  name : String,
-) -> Bool {
+fn ParseContext::is_inside_macro(self : ParseContext, name : String) -> Bool {
   if self.frame is Some(f) && f.macro_name == name {
     return true
   }
@@ -59,7 +56,7 @@ pub fn ParseContext::is_inside_macro(
 }
 
 ///|
-pub fn ParseContext::register_events(self : ParseContext) -> NodeEvents {
+fn ParseContext::register_events(self : ParseContext) -> NodeEvents {
   let events = NodeEvents::{ id: self.events.length(), handlers: [] }
   self.events.push(events)
   events
@@ -141,7 +138,7 @@ fn ParseContext::add_node(self : ParseContext, make : (Int) -> ANode) -> ANode {
 }
 
 ///|
-pub fn ParseContext::new_macro_node(
+fn ParseContext::new_macro_node(
   self : ParseContext,
   name : String,
   m_attrs : Map[String, String],

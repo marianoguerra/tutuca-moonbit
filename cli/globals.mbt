@@ -1,13 +1,13 @@
 // Global-flag extraction: port of extractGlobals (tools/tutuca.js:12-54).
 
 ///|
-pub let format_names : Array[String] = ["cli", "md", "json", "html"]
+let format_names : Array[String] = ["cli", "md", "json", "html"]
 
 ///|
 /// Flag names listed as valid in unknown-flag hints. Includes "no-color"
 /// for parity: the JS CLI lists it without ever parsing it.
 pub let global_flag_names : Array[String] = [
-  "format", "output", "pretty", "module", "json", "help", "no-color",
+  "format", "output", "pretty", "json", "help", "no-color",
 ]
 
 ///|
@@ -18,7 +18,6 @@ pub fn extract_globals(
   let mut format : String? = None
   let mut output : String? = None
   let mut pretty = false
-  let mut module_path : String? = None
   let mut help = false
   let take_value = (i : Int) => {
     if i < argv.length() {
@@ -44,11 +43,6 @@ pub fn extract_globals(
       output = Some(a[9:].to_owned())
     } else if a == "--pretty" {
       pretty = true
-    } else if a == "--module" {
-      i += 1
-      module_path = take_value(i)
-    } else if a.has_prefix("--module=") {
-      module_path = Some(a[9:].to_owned())
     } else if a == "-h" || a == "--help" {
       help = true
     } else {
@@ -56,7 +50,7 @@ pub fn extract_globals(
     }
     i += 1
   }
-  let opts : GlobalOpts = { format, output, pretty, module_path, help }
+  let opts : GlobalOpts = { format, output, pretty, help }
   match format {
     Some(f) =>
       if format_names.contains(f) {

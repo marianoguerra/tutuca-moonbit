@@ -130,6 +130,11 @@ pub fn tasks() -> Array[Task] {
       commands: gen_views_commands(),
     },
     {
+      name: "gen-guest-bindings",
+      about: "regenerate the checked-in guest bindings from dyncomp/wit, then drift-check them",
+      commands: gen_guest_bindings_commands(),
+    },
+    {
       name: "bench-views",
       about: "regenerate benchmarks/all_views.{html,_gen.mbt} — every repo view concatenated, names prefixed",
       commands: [
@@ -296,6 +301,29 @@ fn gen_views_commands() -> Array[Command] {
   })
   commands.push(moon("fmt", ["fmt"]))
   commands
+}
+
+///|
+/// Regenerate BOTH MoonBit guest binding trees from the one WIT
+/// (dyncomp/wit/tutuca-component.wit), then prove the checked-in output is
+/// reproducible. Same shape as `gen-views`: the generator normalizes and
+/// formats, so a clean `git diff` is the whole check. The Rust guest reads
+/// the same WIT through its `generate!` macro and needs no checked-in
+/// bindings. See guests/gen-bindings.mjs for why normalization is needed
+/// (wit-bindgen emits its FFI shims in hash order).
+fn gen_guest_bindings_commands() -> Array[Command] {
+  [
+    {
+      label: "wit-bindgen · guests/{counter,todo} from dyncomp/wit",
+      prog: "node",
+      args: ["guests/gen-bindings.mjs"],
+    },
+    {
+      label: "drift check · guests/ is reproducible from the WIT",
+      prog: "git",
+      args: ["diff", "--exit-code", "--", "guests"],
+    },
+  ]
 }
 
 ///|
@@ -511,7 +539,7 @@ pub fn storybook_bundle_steps() -> Array[Step] {
     Run({
       label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
       prog: "node",
-      args: ["guests/counter/build.mjs"],
+      args: ["guests/build-guest.mjs", "counter"],
     }),
     Mkdir("\{DIST}/storybook"),
     Mkdir("\{DIST}/storybook/counter"),
@@ -550,12 +578,12 @@ pub fn universal_steps() -> Array[Step] {
     Run({
       label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
       prog: "node",
-      args: ["guests/counter/build.mjs"],
+      args: ["guests/build-guest.mjs", "counter"],
     }),
     Run({
       label: "build · todo guest bundle (wit-bindgen output → component → ESM)",
       prog: "node",
-      args: ["guests/todo/build.mjs"],
+      args: ["guests/build-guest.mjs", "todo"],
     }),
     // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
     // cargo + the wasm32-unknown-unknown target)

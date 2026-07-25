@@ -3,3 +3,7 @@ import {
   "marianoguerra/tutuca/anode",
   "moonbitlang/core/json",
 }
+
+import {
+  "moonbitlang/core/debug",
+} for "test"

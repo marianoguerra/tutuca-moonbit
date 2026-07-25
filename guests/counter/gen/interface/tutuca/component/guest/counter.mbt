@@ -50,8 +50,7 @@ impl DynComponent for Counter with fn handle(self, bucket, name, _event, args) {
     (RESPONSE, "double") =>
       match args {
         // response args are [result, error]
-        [@values.Value::Number(n), ..] =>
-          Some(self.next(n) as &DynComponent)
+        [@values.Value::Number(n), ..] => Some(self.next(n) as &DynComponent)
         _ => None
       }
     // boundary exercise: sum a host list of numbers (guest -> values import)
@@ -96,8 +95,7 @@ impl DynComponent for Counter with fn call_method(self, name, _args) {
 ///|
 impl DynComponent for Counter with fn with_field(self, name, v) {
   match (name, v) {
-    ("count", @values.Value::Number(n)) =>
-      Some(self.next(n) as &DynComponent)
+    ("count", @values.Value::Number(n)) => Some(self.next(n) as &DynComponent)
     _ => None
   }
 }
@@ -164,7 +162,8 @@ fn counter_def() -> ComponentDef {
   }
 }
 
-///| Two nested child Counters, created through control.make-instance and
+///|
+/// Two nested child Counters, created through control.make-instance and
 /// exposed as instance-token fields the host renders with <x render>.
 priv struct Pair {
   left : UInt64

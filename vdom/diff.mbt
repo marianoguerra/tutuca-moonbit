@@ -33,7 +33,7 @@ pub fn diff_props(
 /// Morph `dom_node` (currently rendering `source`) into `target`. Returns the
 /// node representing `target` — the same node patched in place when the kinds
 /// match, or a replacement created via `to_dom`.
-pub fn[N : DomNode] morph_node(
+fn[N : DomNode] morph_node(
   dom_node : N,
   source : Vdom,
   target : Vdom,
@@ -99,7 +99,7 @@ pub fn[N : DomNode] morph_node(
 /// `new_childs`: unkeyed equal-length lists morph pairwise in place; anything
 /// else goes through key-map matching with an unkeyed cursor, positional
 /// insert_before, and a backward removal pass.
-pub fn[N : DomNode] morph_children(
+fn[N : DomNode] morph_children(
   parent : N,
   old_childs : Array[Vdom],
   new_childs : Array[Vdom],

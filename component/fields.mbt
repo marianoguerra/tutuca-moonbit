@@ -1,7 +1,7 @@
 // Field specs (the field half of src/oo.js classFromData).
 
 ///|
-pub fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec {
+fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec {
   let kind : FieldKind = match v {
     Bool(_) => FBool
     Str(_) => FText
@@ -49,7 +49,7 @@ fn set_value(members : Array[@tutuca.Value]) -> @tutuca.Value {
 }
 
 ///|
-pub fn FieldSpec::coerce_or_default(
+fn FieldSpec::coerce_or_default(
   self : FieldSpec,
   v : @tutuca.Value,
 ) -> @tutuca.Value {

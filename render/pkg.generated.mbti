@@ -69,6 +69,8 @@ pub fn RenderCache::get(Self, String, @core.Value, @component.DynBinds?) -> @vdo
 pub fn RenderCache::new() -> Self
 pub fn RenderCache::next_generation(Self) -> Unit
 pub fn RenderCache::set(Self, String, @core.Value, @component.DynBinds?, @vdom.Vdom) -> Unit
+pub fn RenderCache::size(Self) -> (Int, Int)
+pub fn RenderCache::stats(Self) -> (Int, Int)
 
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver

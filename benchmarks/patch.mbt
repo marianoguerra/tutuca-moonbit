@@ -77,12 +77,22 @@ pub fn mount_tabs() -> @harness.Harness {
 
 // ---------------------------------------------------------------------------
 // The round trips. Each returns render_count() so the bench has a cheap witness
-// that the app actually re-rendered.
+// of how much re-rendering the interaction caused — for every workload but
+// `noop`, that count goes up.
 
 ///|
-/// NO-OP: set the first row's checkbox to the value it already has, twice. The
-/// state swaps to an equal value, so the renderer and the differ do their full
-/// walk and the DOM ends up untouched — the floor for any change at this size.
+/// NO-OP: set the first row's checkbox to the value it already has, twice.
+///
+/// This measures the cost of an interaction that changes nothing. Writing a
+/// field the value it already holds keeps the component instance (and so the
+/// root) the SAME object, so the transactor reports no swap and the app never
+/// reaches render_now: what is left is event routing and the harness's
+/// selector walk. It is the floor for any interaction, and the gap between it
+/// and `toggle` is what an actual one-row change costs.
+///
+/// `patch_test.mbt` asserts the render count does NOT move here, so a
+/// regression that reintroduces the render shows up as a failing test and not
+/// just a slower number.
 pub fn patch_noop(h : @harness.Harness) -> Int {
   let before = h.checked_of(".checkbox") catch { e => fail_patch("noop", e) }
   act("noop", () => h.check(".checkbox", before))

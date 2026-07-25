@@ -128,7 +128,7 @@ pub fn render_json(depth : Int, breadth : Int) -> Int {
 pub fn list_args(n : Int) -> Map[String, @tutuca.Value] {
   {
     "items": items_for(list_items, n, () => {
-      List(Array::makei(n, i => @tutuca.Value::Str("item \{i}")))
+      List(Array::makei(n, i => Str("item \{i}")))
     }),
   }
 }

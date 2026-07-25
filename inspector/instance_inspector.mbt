@@ -152,7 +152,7 @@ pub fn Inspector::inspect_instance(
 ///|
 /// The same for a plain Value + optional descriptor: with a comp it shows the
 /// field rows, without one it falls back to the data inspector.
-pub fn Inspector::inspect_value_as_instance(
+fn Inspector::inspect_value_as_instance(
   self : Inspector,
   v : @tutuca.Value,
   comp : @component.Component?,
@@ -239,7 +239,7 @@ fn instance_explorer_comp() -> @component.Component {
 ///|
 /// JS InstanceExplorer.Class.fromData: instance + definition (+ lint) tabs.
 /// `lint_findings` are `finding_value` Maps (see lint_inspector.mbt).
-pub fn Inspector::explore_instance(
+fn Inspector::explore_instance(
   self : Inspector,
   v : @tutuca.Value,
   comp : @component.Component,

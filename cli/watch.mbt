@@ -47,7 +47,7 @@ let watch_help : String =
 ///|
 /// Parse `watch`'s own args. Finishes purely on help and usage errors,
 /// otherwise hands the shell the plan.
-pub fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
+fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
   let paths : Array[String] = []
   let mut name : String? = None
   let mut out : String? = None

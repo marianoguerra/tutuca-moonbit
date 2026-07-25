@@ -20,9 +20,14 @@ import {
 
 // The headless harness (@harness) mounts a module as a live app on the
 // in-memory DOM and dispatches real events through it.
+// @cli here (never the other way round): the lint sweeps and the view-corpus
+// sweep drive the CLI's checkers over this corpus. cli/ itself does not
+// depend on the storybook packages at all, which is what lets them stay repo
+// demos and be excluded from the published archive.
 import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/cli",
+  "marianoguerra/tutuca/viewgen",
   "moonbitlang/core/test",
 } for "test"

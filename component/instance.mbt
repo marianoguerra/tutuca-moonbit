@@ -77,6 +77,21 @@ priv struct TypedInstance[S] {
   spec : TypedSpec[S]
   state : S
   fields : Map[String, @tutuca.Value]
+  // Memoized `Obj(self)`. Every seam downstream of an instance — the render
+  // cache, Path copy-on-write, the transactor's root-swap check — compares
+  // Values by IDENTITY, and each `Obj(self)` cast allocates a fresh box. One
+  // stable Value per instance is what lets an unchanged instance still look
+  // unchanged after a round trip through the value world.
+  mut boxed : @tutuca.Value?
+}
+
+///|
+fn[S] TypedInstance::make(
+  spec : TypedSpec[S],
+  state : S,
+  fields : Map[String, @tutuca.Value],
+) -> TypedInstance[S] {
+  { spec, state, fields, boxed: None }
 }
 
 ///|
@@ -128,18 +143,99 @@ fn[S : @json.FromJson] decode_state(
 }
 
 ///|
+/// How much comparing an encoded field may cost before `reuse_equal` gives up
+/// and keeps the new object. Fuel is spent ONLY where the two sides don't
+/// already share structure, so this is not a size limit on state — it is a
+/// limit on how deep a scan is worth doing to save an allocation.
+const REUSE_FUEL = 64
+
+///|
+/// "These two are equal, and finding that out was cheap."
+///
+/// Keeping the old object is an optimization, so answering `false` is always
+/// safe — which is what lets this give up instead of paying for a deep scan.
+/// Fuel is spent only where the two sides do NOT already share structure: a
+/// list of child components rebuilt by the Json round trip compares
+/// element-wise in O(1) each (the value stash restores every `Obj` by
+/// reference) and costs one unit for the list itself, while a 1000-item list
+/// of plain maps would cost a deep map compare per element and bails out
+/// after the first handful. Identity is preserved exactly where preserving it
+/// is nearly free, which is also where it pays: the subtrees a transaction
+/// did not touch.
+fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
+  if physical_equal(a, b) {
+    return true
+  }
+  if fuel.val <= 0 {
+    return false
+  }
+  fuel.val -= 1
+  match (a, b) {
+    (List(x), List(y)) => {
+      if x.length() != y.length() {
+        return false
+      }
+      for i in 0..<x.length() {
+        if !reuse_equal(x[i], y[i], fuel) {
+          return false
+        }
+      }
+      true
+    }
+    (Map(x), Map(y)) => {
+      if x.length() != y.length() {
+        return false
+      }
+      for k, v in x {
+        match y.get(k) {
+          Some(v2) => if !reuse_equal(v, v2, fuel) { return false }
+          None => return false
+        }
+      }
+      true
+    }
+    _ => a == b
+  }
+}
+
+///|
 /// New instance from an updated state; slot fields (not part of S) carry over.
+///
+/// Encoding round-trips through Json, which rebuilds every container even
+/// when nothing about it changed — and identity is exactly what the render
+/// cache and Path copy-on-write read. So each freshly encoded field is
+/// compared with the one it replaces and the OLD object kept when the two are
+/// equal; a rebuilt-but-equal list would otherwise invalidate a subtree that
+/// did not move. When no encoded field and no slot field changed, the
+/// ORIGINAL instance is returned, and the no-op reaches the transactor as
+/// "the root is the same object": no re-render is scheduled.
 fn[S : ToJson] TypedInstance::with_state(
   self : TypedInstance[S],
   s : S,
 ) -> TypedInstance[S] {
-  let fields = encode_state(s)
+  let encoded = encode_state(s)
+  let fields : Map[String, @tutuca.Value] = Map([])
+  let mut changed = false
+  for name, v in encoded {
+    let fuel = Ref(REUSE_FUEL)
+    match self.fields.get(name) {
+      Some(old) if reuse_equal(old, v, fuel) => fields[name] = old
+      _ => {
+        changed = true
+        fields[name] = v
+      }
+    }
+  }
+  // slot fields (spec-declared, not part of S) are untouched by the state
   for name, v in self.fields {
     if !fields.contains(name) {
       fields[name] = v
     }
   }
-  { spec: self.spec, state: s, fields }
+  if !changed && fields.length() == self.fields.length() {
+    return self
+  }
+  TypedInstance::make(self.spec, s, fields)
 }
 
 ///|
@@ -160,23 +256,42 @@ fn[S : @json.FromJson] TypedInstance::set(
 ) -> TypedInstance[S] {
   guard self.spec.comp is Some(comp) else { return self }
   guard comp.specs.get(name) is Some(fspec) else { return self }
+  let coerced = fspec.coerce_or_default(v)
+  // Writing a value equal to the one already stored changes nothing, so keep
+  // THIS instance — a `$setCompleted value` that re-sends the value the
+  // checkbox already holds must not look like a state change. Values are
+  // immutable data, so equality is the right test here; keeping the instance
+  // is what lets the copy-on-write spine above collapse (see
+  // `Value::with_field`), and it is what makes a no-op interaction free.
+  if self.fields.get(name) is Some(old) &&
+    reuse_equal(old, coerced, Ref(REUSE_FUEL)) {
+    return self
+  }
   let fields = self.fields.copy()
-  fields[name] = fspec.coerce_or_default(v)
+  fields[name] = coerced
   if self.spec.s_fields.contains(name) {
     match decode_state(fields, self.spec.s_fields) {
-      Some(s) => { spec: self.spec, state: s, fields }
+      Some(s) => TypedInstance::make(self.spec, s, fields)
       None => self
     }
   } else {
-    { spec: self.spec, state: self.state, fields }
+    TypedInstance::make(self.spec, self.state, fields)
   }
 }
 
 ///|
+/// The instance as a Value — the SAME Value every time (see `boxed`).
 fn[S : ToJson + @json.FromJson] TypedInstance::to_value(
   self : TypedInstance[S],
 ) -> @tutuca.Value {
-  Obj(self)
+  match self.boxed {
+    Some(v) => v
+    None => {
+      let v : @tutuca.Value = Obj(self)
+      self.boxed = Some(v)
+      v
+    }
+  }
 }
 
 ///|

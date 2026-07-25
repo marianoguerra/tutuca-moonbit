@@ -4,7 +4,18 @@
 ///|
 /// Structural equality (immutable.js `is` over our Value shapes). NaN equals
 /// NaN (Object.is); Fn values compare by reference.
+///
+/// The identity fast path is not just an optimization of the common case: the
+/// runtime shares structure aggressively (copy-on-write spines, the value
+/// stash restoring Obj/Fn by reference), so most comparisons of a rebuilt
+/// tree against its predecessor meet the SAME object a level or two down.
+/// Answering those in O(1) is what keeps an equality check over a 1000-item
+/// list proportional to what actually changed. It agrees with the arms below
+/// everywhere, NaN included.
 pub impl Eq for Value with fn equal(self, other) {
+  if physical_equal(self, other) {
+    return true
+  }
   match (self, other) {
     (Null, Null) => true
     (Bool(a), Bool(b)) => a == b
@@ -100,7 +111,7 @@ pub fn Value::to_display_string(self : Value) -> String {
 }
 
 ///|
-pub fn Pred::of_name(name : String) -> Pred? {
+fn Pred::of_name(name : String) -> Pred? {
   match name {
     "empty?" => Some(IsEmpty)
     "truthy?" => Some(IsTruthy)
@@ -123,7 +134,7 @@ pub fn Pred::name(self : Pred) -> String {
 }
 
 ///|
-pub fn Pred::arity(self : Pred) -> Int {
+fn Pred::arity(self : Pred) -> Int {
   match self {
     Equals => 2
     _ => 1
@@ -131,7 +142,7 @@ pub fn Pred::arity(self : Pred) -> Int {
 }
 
 ///|
-pub fn Pred::apply(self : Pred, args : Array[Value]) -> Bool {
+fn Pred::apply(self : Pred, args : Array[Value]) -> Bool {
   match self {
     IsEmpty => args[0] is Null || size_of(args[0]) is Some(0)
     IsTruthy => pred_truthy(args[0])
@@ -241,16 +252,6 @@ pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value {
     // machinery to call with event args.
     Method(name) => stack.lookup_field_raw(name)
     _ => self.eval(stack)
-  }
-}
-
-///|
-pub fn Val::render(self : Val, stack : &Stack) -> Value? {
-  match self {
-    // JS BaseVal.render is undefined for these; everything else renders as
-    // its eval.
-    Name(_) | HandlerName(..) | TypeName(_) | Predicate(..) => None
-    _ => Some(self.eval(stack))
   }
 }
 

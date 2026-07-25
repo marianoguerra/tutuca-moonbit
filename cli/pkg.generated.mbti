@@ -38,15 +38,11 @@ pub const CODE_VIEW_GEN_FAILED : String = "ERR_VIEW_GEN_FAILED"
 
 pub const VERSION : String = "0.1.0"
 
-pub fn agent_context_text() -> String
+pub fn agent_context_text(CliMode) -> String
 
 pub fn check_component(@component.Component) -> Array[LintFinding]
 
-pub fn command_names() -> Array[String]
-
-pub let commands : Array[CommandSpec]
-
-pub fn did_you_mean(String, Array[String]) -> @lint.Suggestion?
+pub fn command_names(CliMode) -> Array[String]
 
 pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
 
@@ -64,9 +60,7 @@ pub fn feedback_record_line(String, String, String) -> String
 
 pub fn feedback_success_line(String) -> String
 
-pub fn find_command(String) -> CommandSpec?
-
-pub let format_names : Array[String]
+pub fn find_command(CliMode, String) -> CommandSpec?
 
 pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
@@ -82,33 +76,13 @@ pub fn is_view_path(String) -> Bool
 
 pub fn iso8601_utc(UInt64) -> String
 
-pub let lint_rules : Array[LintRule]
-
-pub fn overview() -> String
+pub fn overview(CliMode) -> String
 
 pub fn plan(Array[String]) -> Outcome
 
 pub fn plan_with_module(Array[String], @component.ModuleDef?) -> Outcome
 
-pub fn render_error(GlobalOpts, ErrShape) -> String
-
-pub fn run_feedback(Array[String], GlobalOpts) -> Outcome
-
-pub fn run_gen_views(Array[String], GlobalOpts) -> Outcome
-
-pub fn run_help(String?, GlobalOpts) -> Emit
-
-pub fn run_install_skill(Array[String], GlobalOpts) -> Outcome
-
-pub fn run_storybook(Array[String], GlobalOpts) -> Outcome
-
-pub fn run_watch(Array[String], GlobalOpts) -> Outcome
-
 pub let skill_files : Array[(String, String)]
-
-pub fn stub(String, Array[String]) -> Emit
-
-pub fn suggestion_to_message(@lint.Suggestion?) -> String?
 
 pub fn watch_banner(Array[String], Array[String]) -> String
 
@@ -125,9 +99,9 @@ pub fn watch_target(String, String?) -> String
 // Errors
 
 // Types and methods
-pub(all) enum CmdImpl {
-  Wired
-  Stub(Array[String])
+pub(all) enum CliMode {
+  Stock
+  Embedded
 } derive(Eq, @debug.Debug)
 
 pub(all) struct CommandSpec {
@@ -138,7 +112,6 @@ pub(all) struct CommandSpec {
   default_format : String?
   flags : Array[FlagSpec]
   positionals : Array[PositionalSpec]
-  impl_ : CmdImpl
 } derive(Eq, @debug.Debug)
 
 pub(all) struct Emit {
@@ -173,7 +146,6 @@ pub(all) struct GlobalOpts {
   format : String?
   output : String?
   pretty : Bool
-  module_path : String?
   help : Bool
 } derive(Eq, @debug.Debug)
 
@@ -185,7 +157,6 @@ pub(all) struct LintFinding {
   suggestion : @lint.Suggestion?
 }
 pub fn LintFinding::line(Self) -> String
-pub fn LintFinding::to_json_value(Self) -> Json
 
 pub(all) struct LintRule {
   code : String

@@ -151,7 +151,7 @@ fn join_path(dir : String, file : String) -> String {
 ///|
 /// Parse gen-views' own args. Finishes purely on help and usage errors;
 /// otherwise hands the shell the input path to read and what to do with it.
-pub fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
+fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut input : String? = None
   let mut name : String? = None
   let mut out : String? = None

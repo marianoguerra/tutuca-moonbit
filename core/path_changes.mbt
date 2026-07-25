@@ -13,7 +13,7 @@ pub struct PathChanges {
 ///|
 /// A builder rooted at `ctx`'s dispatch path (JS `get at`). Usually reached
 /// through `Ctx::at`, exposed for callers holding a `&Ctx` directly.
-pub fn PathChanges::of(ctx : &Ctx) -> PathChanges {
+fn PathChanges::of(ctx : &Ctx) -> PathChanges {
   { ctx, steps: [] }
 }
 

@@ -36,7 +36,7 @@ pub(all) struct FieldSpec {
 
 ///|
 /// Infer the field kind from its default value (Null/Fn/Obj => FAny).
-declare pub fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
+declare fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
 
 ///|
 /// A component-typed slot field: default instance made via the scope at make
@@ -60,7 +60,7 @@ declare pub fn FieldSpec::omap(
 /// Coerce a write: a value of the matching shape passes through; anything
 /// else falls back to the default (the JS warn-and-keep path, silent here).
 /// FComp accepts any Obj.
-declare pub fn FieldSpec::coerce_or_default(
+declare fn FieldSpec::coerce_or_default(
   self : FieldSpec,
   v : @tutuca.Value,
 ) -> @tutuca.Value

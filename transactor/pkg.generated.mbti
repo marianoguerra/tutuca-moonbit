@@ -18,13 +18,8 @@ pub struct Completion {
   mut self_released : Bool
   // private fields
 }
-pub fn Completion::ensure_self_settled(Self) -> Unit
-pub fn Completion::mark_self_settled(Self) -> Unit
-pub fn Completion::new() -> Self
 pub fn Completion::on_settled(Self, () -> Unit) -> Unit
 pub fn Completion::on_subtree_settled(Self, () -> Unit) -> Unit
-pub fn Completion::release_self(Self) -> Unit
-pub fn Completion::track(Self) -> () -> Unit
 
 pub(all) struct NoRequests {
 }

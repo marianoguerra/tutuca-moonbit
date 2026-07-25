@@ -35,7 +35,7 @@ fn AttrParser::new(px : ParseContext) -> AttrParser {
 }
 
 ///|
-pub fn parse_attributes(
+fn parse_attributes(
   attrs : Array[(String, String)],
   px : ParseContext,
   parse_all? : Bool = false,
@@ -321,11 +321,7 @@ pub fn Attrs::is_constant(self : Attrs) -> Bool {
 }
 
 ///|
-pub fn Attrs::set_data_attr(
-  self : Attrs,
-  key : String,
-  val : @tutuca.Lit,
-) -> Unit {
+fn Attrs::set_data_attr(self : Attrs, key : String, val : @tutuca.Lit) -> Unit {
   match self {
     ConstAttrs(m) => m[key] = val
     DynAttrs(items) =>
@@ -344,7 +340,7 @@ fn lit_plain_string(lit : @tutuca.Lit) -> String {
 }
 
 ///|
-pub fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
+fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
   let r : Map[String, String] = Map([])
   match self {
     // JS: new ConstVal(`${value}`).toString() — the evaluated scalar is

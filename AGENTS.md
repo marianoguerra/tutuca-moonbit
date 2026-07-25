@@ -40,7 +40,20 @@ You can browse and install extra skills here:
   generating — run the task, not the CLI directly, and the checked-in files
   stay reproducible. (`cli/skill_assets_gen.mbt` is the exception: it is NOT
   fmt-stable, so revert it after a `moon fmt` and regenerate through
-  `skill-embed`.)
+  `skill-embed`. Since `gen-views` and `fmt` both end in `moon fmt`, run
+  `skill-embed` after either of them before checking for drift.)
+
+- The guest binding trees under `guests/counter/` and `guests/todo/` are
+  generated and checked in the same way, by `gen-guest-bindings`, from the ONE
+  WIT in the repo (`dyncomp/wit/tutuca-component.wit` — no guest keeps a copy,
+  and the Rust guest's `generate!` macro reads it too). `wit-bindgen`'s raw
+  output has to be normalized before it can be checked in meaningfully: it
+  emits its FFI shims in HASH order, which differs between two runs on the
+  same input. `guests/gen-bindings.mjs` sorts them (MoonBit `///|` blocks are
+  order-irrelevant) and drops the `moon.pkg.json` twins of the hand-maintained
+  package files, which is what makes the drift check honest. The handwritten
+  files in those trees (`sdk.mbt`, `counter.mbt`, `todo.mbt`) have names
+  wit-bindgen never emits, so regeneration leaves their contents alone.
 
 ## Tooling
 
@@ -65,6 +78,7 @@ moon run --target native cmd/dev -- <task>
 | `ci`       | `check` then `test`                                              |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
+| `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save

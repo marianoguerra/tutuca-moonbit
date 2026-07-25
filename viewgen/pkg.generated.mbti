@@ -21,13 +21,7 @@ pub fn ir_supported(ViewFile) -> Bool
 
 pub fn split_file(String) -> ViewFile raise GenError
 
-pub fn type_prefix(String) -> String raise GenError
-
-pub fn value_prefix(String) -> String
-
 pub fn variant_name(String) -> String
-
-pub fn variants_for(Array[String]) -> Array[(String, String)] raise GenError
 
 pub fn view_surface(Array[RawView], macros? : Array[MacroDef]) -> Surface raise GenError
 

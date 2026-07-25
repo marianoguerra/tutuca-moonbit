@@ -54,7 +54,7 @@ fn put_seq(
 }
 
 ///|
-pub fn step_put(node : &PathNode, step : Step, child : &PathNode) -> &PathNode? {
+fn step_put(node : &PathNode, step : Step, child : &PathNode) -> &PathNode? {
   match step {
     FieldStep(name) => node.with_field(name, child)
     SeqStep(field~, key~) | EachRenderItStep(field~, key~) =>

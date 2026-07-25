@@ -360,7 +360,11 @@ pub fn Transactor::settle(self : Transactor, max_turns? : Int = 10000) -> Unit {
 fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   let cur = self.root
   let next = if t.skip_self { cur } else { self.update_root_value(t, cur) }
-  if !physical_equal(next, cur) {
+  // `same_node` rather than `physical_equal`: the copy-on-write spine hands
+  // back the untouched root when a handler wrote a value equal to the one
+  // already there, but re-boxed into &PathNode. A root that did not change
+  // must not wake the observers — that is what makes a no-op update free.
+  if !@tutuca.same_node(next, cur) {
     self.root = next
     for cb in self.change_subs {
       cb(next, cur)
@@ -438,7 +442,7 @@ fn Transactor::update_root_value(
   match result {
     Some(new_leaf) => {
       t.obs_after = new_leaf.as_value()
-      if physical_equal(new_leaf, leaf) {
+      if @tutuca.same_node(new_leaf, leaf) {
         cur
       } else {
         txn_path.set_value(cur, new_leaf)

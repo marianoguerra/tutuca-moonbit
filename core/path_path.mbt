@@ -41,6 +41,17 @@ pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode? {
 }
 
 ///|
+pub fn same_node(a : &PathNode, b : &PathNode) -> Bool {
+  if physical_equal(a, b) {
+    return true
+  }
+  match (a.as_value(), b.as_value()) {
+    (Some(x), Some(y)) => physical_equal(x, y)
+    _ => false
+  }
+}
+
+///|
 pub fn Path::set_value(
   self : Path,
   root : &PathNode,
@@ -159,10 +170,11 @@ pub fn Path::update(
   guard resolved is Some(Handler(f)) else { return root }
   match f(args, NullCtx::{  }) {
     Some(new_leaf) =>
-      // Best-effort JS `newLeaf !== curLeaf` parity: a handler that somehow
-      // hands back the very same box skips the rebuild. The reliable no-change
-      // signal is returning None (boxing into &PathNode breaks identity).
-      if physical_equal(new_leaf, leaf) {
+      // JS `newLeaf !== curLeaf` parity: a handler that hands back the value
+      // it was given skips the rebuild. `same_node` sees through the
+      // &PathNode boxing, so an unchanged typed instance counts here and not
+      // only an explicit None.
+      if same_node(new_leaf, leaf) {
         root
       } else {
         self.set_value(root, new_leaf)

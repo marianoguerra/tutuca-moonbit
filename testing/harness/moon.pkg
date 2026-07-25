@@ -14,7 +14,11 @@ import {
   "marianoguerra/tutuca/vdom/memdom",
 }
 
-// Demo/verification test drives a real example module end to end.
+// The demo/verification test defines its own module (harness_test.mbt), so
+// this package depends on nothing outside the published library — the
+// storybook packages that used to supply it are repo demos, excluded from the
+// archive (see moon.mod).
 import {
-  "marianoguerra/tutuca/storybook/examples",
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/json",
 } for "test"

@@ -31,8 +31,12 @@ import {
 
 // What `moon publish` ships. Consumers get the library packages, the CLI
 // (cmd/main -> cli/) and the docs; they don't get the demo/playground/guest
-// hosts or the dev tooling, which only make sense inside this repo. storybook/
-// stays: cli/ and testing/harness both import it. Check with
+// hosts, the dev tooling, or the storybook — those only make sense inside
+// this repo. storybook/ went the same way as demo/ once nothing published
+// depended on it: `tutuca storybook` serves a pre-built bundle and needs no
+// story registry, and the harness's demo test defines its own module rather
+// than borrowing an example. The storybook packages stay in the repo as
+// demos and as the corpus the lint/view sweeps run over. Check with
 // `moon package --list`.
 
 options(
@@ -47,6 +51,7 @@ options(
     "dev",
     "cmd/dev",
     "cmd/margaui-bundle",
+    "storybook",
     "package.json",
     "package-lock.json",
   ],

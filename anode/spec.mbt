@@ -100,7 +100,7 @@ declare pub fn Attrs::is_constant(self : Attrs) -> Bool
 
 ///|
 /// Insert/overwrite a data-* attribute (JS setDataAttr on attr containers).
-declare pub fn Attrs::set_data_attr(
+declare fn Attrs::set_data_attr(
   self : Attrs,
   key : String,
   val : @tutuca.Lit,
@@ -109,7 +109,7 @@ declare pub fn Attrs::set_data_attr(
 ///|
 /// Macro-call attrs become SOURCE STRINGS keyed by name (JS toMacroVars):
 /// values round-trip through the value layer's original-syntax Show.
-declare pub fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String]
+declare fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String]
 
 ///|
 /// Node kinds a directive attribute can wrap the element with.
@@ -147,7 +147,7 @@ pub(all) struct AttrParseResult {
 /// Parse an ordered attribute list (as delivered by the HTML parser).
 /// `parse_all` is the macro-call mode: every `:attr` value parses with the
 /// widest grammar (JS parseMacroAttr) instead of the text grammar.
-declare pub fn parse_attributes(
+declare fn parse_attributes(
   attrs : Array[(String, String)],
   px : ParseContext,
   parse_all? : Bool = false,
@@ -310,20 +310,20 @@ declare pub fn ANode::has_newline(self : ANode) -> Bool
 
 ///|
 /// Replace a whitespace-only Text/Comment's text (whitespace condensing).
-declare pub fn ANode::condense_whitespace(
+declare fn ANode::condense_whitespace(
   self : ANode,
   replacement? : String = "",
 ) -> Unit
 
 ///|
-declare pub fn ANode::is_constant(self : ANode) -> Bool
+declare fn ANode::is_constant(self : ANode) -> Bool
 
 ///|
 /// Stamp a data-* attribute on the node's rendered output carrier(s):
 /// Dom → own attrs, Fragment → every child, wrappers → inner node,
 /// MacroCall → recorded and replayed on the expansion; render/text nodes
 /// produce no element of their own and ignore it.
-declare pub fn ANode::set_data_attr(
+declare fn ANode::set_data_attr(
   self : ANode,
   key : String,
   val : @tutuca.Lit,
@@ -332,12 +332,12 @@ declare pub fn ANode::set_data_attr(
 ///|
 /// Put `node` inside this wrapper variant (Show/Hide/PushView/Scope/Slot/Each).
 /// Scope additionally stamps data-nid on the wrapped node.
-declare pub fn ANode::wrap_node(self : ANode, node : ANode) -> Unit
+declare fn ANode::wrap_node(self : ANode, node : ANode) -> Unit
 
 ///|
 /// Recursively replace constant subtrees with RenderOnce markers (in place
 /// for children; use optimize_node for the root).
-declare pub fn ANode::optimize(self : ANode) -> Unit
+declare fn ANode::optimize(self : ANode) -> Unit
 
 ///|
 /// Collect the class names a margaui-style scanner can see (the port of JS
@@ -356,7 +356,7 @@ declare pub fn optimize_node(node : ANode) -> ANode
 
 ///|
 /// A single child stays bare; several become a Fragment (JS maybeFragment).
-declare pub fn maybe_fragment(childs : Array[ANode]) -> ANode
+declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 
 // ---------------------------------------------------------------------------
 // Builders (build.mbt): hyperscript-shaped constructors over the types above,
@@ -576,20 +576,20 @@ declare pub fn ParseContext::enter_macro(
 ) -> ParseContext
 
 ///|
-declare pub fn ParseContext::is_inside_macro(
+declare fn ParseContext::is_inside_macro(
   self : ParseContext,
   name : String,
 ) -> Bool
 
 ///|
 /// Allocate the next NodeEvents id (first event attr on an element).
-declare pub fn ParseContext::register_events(self : ParseContext) -> NodeEvents
+declare fn ParseContext::register_events(self : ParseContext) -> NodeEvents
 
 ///|
 /// Build a MacroCall from a call site's parsed attrs and children: `<x slot>`
 /// children become named slots, remaining non-whitespace children fill the
 /// default `_` slot (one shared array, matching the JS aliasing).
-declare pub fn ParseContext::new_macro_node(
+declare fn ParseContext::new_macro_node(
   self : ParseContext,
   name : String,
   m_attrs : Map[String, String],
@@ -645,7 +645,7 @@ pub(all) struct View {
 /// Rebuild the compile context of an ahead-of-time compiled view: `nodes` is
 /// recovered from `root`, `events` is the generator's table in registration
 /// order. Call before the tree is optimized.
-declare pub fn ParseContext::from_ir(
+declare fn ParseContext::from_ir(
   root : ANode,
   events : Array[NodeEvents],
 ) -> ParseContext

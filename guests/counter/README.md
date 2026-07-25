@@ -3,52 +3,64 @@
 The reference guest for the dynamic-wasm-component design
 ([`../../dyncomp/DESIGN.md`](../../dyncomp/DESIGN.md)): a counter with
 opaque native state and tutuca view strings, compiled to a WebAssembly
-component any `tutuca:component` host can load.
+component any `tutuca:component` host can load. This README is the shared
+reference for both MoonBit guests — [`../todo`](../todo/README.md) has the
+same shape and differs only in what it computes.
 
 ## Layout
 
-- `wit/` — copy of [`dyncomp/wit/tutuca-component.wit`](../../dyncomp/wit/tutuca-component.wit)
-- `moon.mod.json`, `gen/`, `interface/`, `world/` — `wit-bindgen moonbit`
-  output (committed; regenerate only when bumping the toolchain)
+- `moon.mod`, `gen/`, `interface/`, `world/` — `wit-bindgen moonbit`
+  output (committed; regenerate with the task below)
 - `gen/interface/tutuca/component/guest/sdk.mbt` — the guest SDK template:
   implements every generated `declare` over the `DynComponent` trait
 - `gen/interface/tutuca/component/guest/counter.mbt` — **the only file a
   component author writes**: a `Counter` struct implementing
   `DynComponent`, its `ComponentDef` (views/handlers/style), and
   `dyn_module()`
-- `build.mjs` — moon build → wasm-tools embed/new → jco transpile, into
-  `dist/` (gitignored)
+
+There is no `wit/` here. The one WIT in the repo is
+[`dyncomp/wit/tutuca-component.wit`](../../dyncomp/wit/tutuca-component.wit):
+the builder embeds that directory directly, `wit-bindgen` generates from
+it, and the Rust guest's `generate!` macro points at it — so a guest
+cannot silently implement a different contract than the host expects.
 
 ## Build & test
 
+Both MoonBit guests share one parameterized builder
+([`../build-guest.mjs`](../build-guest.mjs)): moon build → wasm-tools
+embed/new → jco transpile, into `dist/` (gitignored).
+
 ```sh
-node guests/counter/build.mjs          # dist/counter.component.wasm + dist/js/
+node guests/build-guest.mjs counter     # dist/counter.component.wasm + dist/js/
 node --test dyncomp/test/harness.test.mjs
 ```
+
+## Regenerating the bindings
+
+After a change to the WIT or a toolchain bump:
+
+```sh
+moon run --target native cmd/dev -- gen-guest-bindings
+```
+
+That regenerates BOTH guest trees from the canonical WIT and then runs
+`git diff --exit-code -- guests` — the trees are checked in, so a clean
+diff is the whole check. [`../gen-bindings.mjs`](../gen-bindings.mjs) does
+the work, and documents the two normalizations that make the output
+reproducible at all: dropping the `moon.pkg.json` / `moon.mod.json` twins
+of the hand-maintained extensionless package files, and sorting the
+`ffi.mbt` export shims, which wit-bindgen emits in hash order (its output
+genuinely differs between two runs on the same input).
+
+`sdk.mbt` and the component source (`counter.mbt` / `todo.mbt`) have names
+wit-bindgen never emits, so regeneration leaves their contents alone;
+`moon fmt` formats them like any other source.
 
 ## Toolchain (version-coupled — pin together)
 
 moon v0.10.x · wit-bindgen-cli 0.59.0 · wasm-tools 1.244.x ·
 `@bytecodealliance/jco` 1.25.x (repo devDependency; the bare `jco` npm name
 is a dependency-confusion placeholder — never install it).
-
-Regeneration overwrites only wit-bindgen's own outputs (`ffi.mbt`,
-`top.mbt`, `moon.pkg`, …). The handwritten files in the generated guest
-package — the component source and `sdk.mbt` — have names wit-bindgen never
-emits, but diff the tree after regenerating to be sure nothing was clobbered
-before committing.
-
-Regenerate bindings after a WIT or toolchain change with:
-
-```sh
-cd guests/counter && wit-bindgen moonbit wit/ --out-dir . --derive-eq --derive-show
-```
-
-`sdk.mbt` / `counter.mbt` are not wit-bindgen-managed files, so
-regeneration leaves them alone (it does rewrite `top.mbt`/`ffi.mbt`).
-Note `moon fmt` migrates the generated `moon.mod.json`/`moon.pkg.json` to
-the extensionless `moon.mod`/`moon.pkg` format; regeneration recreates the
-`.json` variants and the next `moon fmt` re-migrates — both states build.
 
 ## Gotchas (learned in the Phase 0 spike)
 
@@ -64,9 +76,9 @@ the extensionless `moon.mod`/`moon.pkg` format; regeneration recreates the
   the same call that requested it (its token is immediately valid to
   store and return, though).
 - The generated guest package's `moon.pkg` must import the `control`
-  interface package for `@control.*` calls; wit-bindgen regeneration
-  recreates `moon.pkg.json` files — delete them where an extensionless
-  `moon.pkg` exists (the extensionless ones are hand-maintained).
+  interface package for `@control.*` calls; that is why the regeneration
+  task drops the `moon.pkg.json` files wit-bindgen recreates — the
+  extensionless ones are hand-maintained.
 - jco (1.25) emits **unversioned** import keys at runtime
   (`'tutuca:component/values'`) even though its `.d.ts` says versioned;
   hosts should provide both.

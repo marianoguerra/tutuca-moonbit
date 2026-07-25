@@ -18,25 +18,31 @@ test "format flag spellings" {
 }
 
 ///|
-test "output, pretty, module, help flags" {
-  let (opts, rest) = ok_opts([
-    "render", "./m.js", "-o", "out.html", "--pretty", "--module=./other.js", "-h",
-  ])
+test "output, pretty, help flags" {
+  let (opts, rest) = ok_opts(["render", "-o", "out.html", "--pretty", "-h"])
   @debug.assert_eq(opts.output, Some("out.html"))
   assert_true(opts.pretty)
-  @debug.assert_eq(opts.module_path, Some("./other.js"))
   assert_true(opts.help)
-  @debug.assert_eq(rest, ["render", "./m.js"])
+  @debug.assert_eq(rest, ["render"])
   @debug.assert_eq(ok_opts(["--output=x"]).0.output, Some("x"))
-  @debug.assert_eq(ok_opts(["--module", "m.js"]).0.module_path, Some("m.js"))
   assert_true(ok_opts(["--help"]).0.help)
 }
 
 ///|
+test "there is no --module: nothing loads a module from a path" {
+  // It parses as a positional like any other unknown word, rather than being
+  // silently accepted and ignored.
+  let (opts, rest) = ok_opts(["get", "--module=./other.js"])
+  @debug.assert_eq(opts.format, None)
+  @debug.assert_eq(rest, ["get", "--module=./other.js"])
+  assert_false(@cli.global_flag_names.contains("module"))
+}
+
+///|
 test "globals can appear anywhere; positionals keep order" {
-  let (opts, rest) = ok_opts(["get", "--json", "./m.js", "Button"])
+  let (opts, rest) = ok_opts(["get", "--json", "Button"])
   @debug.assert_eq(opts.format, Some("json"))
-  @debug.assert_eq(rest, ["get", "./m.js", "Button"])
+  @debug.assert_eq(rest, ["get", "Button"])
 }
 
 ///|

@@ -328,10 +328,6 @@ declare pub fn parse_field(s : String, ctx : ParseCtx) -> Val?
 declare pub fn parse_provide(s : String, ctx : ParseCtx) -> Val?
 
 ///|
-/// A single argument passed to an event handler
-declare pub fn parse_handler_arg(s : String, ctx : ParseCtx) -> Val?
-
-///|
 /// Pass-through values on a macro-call element (:attr on a macro)
 declare pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> Val?
 
@@ -361,11 +357,6 @@ declare pub fn Val::eval(self : Val, stack : &Stack) -> Value
 declare pub fn Val::eval_as_handler(self : Val, stack : &Stack) -> Value
 
 ///|
-/// Render-slot value: Some(eval) for renderable kinds, None where the JS
-/// BaseVal.render returns undefined (Name, HandlerName, TypeName, Predicate).
-declare pub fn Val::render(self : Val, stack : &Stack) -> Value?
-
-///|
 /// Path step for path-bearing slots: Field and SeqAccess only
 declare pub fn Val::to_path_item(self : Val) -> Step?
 
@@ -384,18 +375,18 @@ declare pub fn Val::is_literal(self : Val) -> Bool
 declare pub impl Show for Val
 
 ///|
-declare pub fn Pred::of_name(name : String) -> Pred?
+declare fn Pred::of_name(name : String) -> Pred?
 
 ///|
 /// Source name: "empty?", "truthy?", "falsy?", "null?", "equals?"
 declare pub fn Pred::name(self : Pred) -> String
 
 ///|
-declare pub fn Pred::arity(self : Pred) -> Int
+declare fn Pred::arity(self : Pred) -> Int
 
 ///|
 /// Apply the predicate to already-evaluated args (length must equal arity)
-declare pub fn Pred::apply(self : Pred, args : Array[Value]) -> Bool
+declare fn Pred::apply(self : Pred, args : Array[Value]) -> Bool
 
 ///|
 /// JS sizeOf: Some(length) for Str/List/Map, None for unsized values
