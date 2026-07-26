@@ -8,10 +8,94 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state for the components in svg_more.mbt, which build
-/// their views in MoonBit rather than here — a macro body is
-/// registered at runtime, so it cannot be compiled ahead of time.
-/// No <template>: this file declares state and nothing else.
+/// The state of the IconGallery component.
+///
+/// Declared as `interface icon-gallery` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct IconGalleryState {
+  size : Int
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..IconGalleryState::zero(), label: "Counter" }
+fn IconGalleryState::zero() -> IconGalleryState {
+  IconGalleryState::{ size: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn icon_gallery_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(IconGalleryState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the IconGallery state declares — typed field names for tests and inspectors.
+pub(all) enum IconGalleryField {
+  Size
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn IconGalleryField::name(self : IconGalleryField) -> String {
+  match self {
+    Size => "size"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn IconGalleryField::kind(self : IconGalleryField) -> @component.FieldKind {
+  match self {
+    Size => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let icon_gallery_field_names : Array[String] = ["size"]
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let icon_gallery_schema_fingerprint : String = "17ce7599eac0af6f"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn icon_gallery_encode(s : IconGalleryState) -> Map[String, @tutuca.Value] {
+  { "size": Num(s.size.to_double()) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn icon_gallery_decode(f : Map[String, @tutuca.Value]) -> IconGalleryState? {
+  guard f.get("size") is Some(Num(t1_size)) else { return None }
+  let v_size = t1_size.to_int()
+  Some(IconGalleryState::{ size: v_size })
+}
+
+///|
+/// BarChart's view is here; IconGallery's is not. IconGallery calls a macro
+/// whose body a MoonBit function builds per icon path and registers at run
+/// time, so there is nothing to expand ahead of time — it stays a designated
+/// escape hatch (see macros.mbt).
 ///
 /// Declared as `interface bar-chart` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
@@ -100,85 +184,205 @@ fn bar_chart_decode(f : Map[String, @tutuca.Value]) -> BarChartState? {
 }
 
 ///|
-/// The state of the IconGallery component.
-///
-/// Declared as `interface icon-gallery` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
-priv struct IconGalleryState {
-  size : Int
-} derive(ToJson, FromJson)
-
-///|
-/// The zero state: every field at its type's empty value.
-///
-/// WIT declares no defaults — a default is a value, not a type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
-///
-///   init={ ..IconGalleryState::zero(), label: "Counter" }
-fn IconGalleryState::zero() -> IconGalleryState {
-  IconGalleryState::{ size: 0 }
-}
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn icon_gallery_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(IconGalleryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
-}
-
-///|
-/// Every field the IconGallery state declares — typed field names for tests and inspectors.
-pub(all) enum IconGalleryField {
-  Size
+/// The views declared in svg_more.html.
+pub(all) enum BarChartView {
+  Main
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn IconGalleryField::name(self : IconGalleryField) -> String {
+pub fn BarChartView::name(self : BarChartView) -> String {
   match self {
-    Size => "size"
+    Main => "main"
   }
 }
 
 ///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn IconGalleryField::kind(self : IconGalleryField) -> @component.FieldKind {
+/// The file-level style — pass as `common_style~`.
+pub let bar_chart_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let bar_chart_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum BarChartInput {
+  AddBar
+  Randomize
+  RemoveBar
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn BarChartInput::name(self : BarChartInput) -> String {
   match self {
-    Size => @component.FInt
+    AddBar => "addBar"
+    Randomize => "randomize"
+    RemoveBar => "removeBar"
   }
 }
 
 ///|
-/// Every field, in declaration order.
-pub let icon_gallery_field_names : Array[String] = ["size"]
+pub fn BarChartInput::parse(s : String) -> BarChartInput? {
+  match s {
+    "addBar" => Some(AddBar)
+    "randomize" => Some(Randomize)
+    "removeBar" => Some(RemoveBar)
+    _ => None
+  }
+}
 
 ///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let icon_gallery_schema_fingerprint : String = "17ce7599eac0af6f"
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to svg_more.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum BarChartMsg {
+  /// `@on.click="addBar …"`
+  AddBar
+  /// `@on.click="randomize …"`
+  Randomize
+  /// `@on.click="removeBar …"`
+  RemoveBar
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
 
 ///|
-/// The state as the fields map the render and path layers read, built
-/// field by field rather than through a `Json` round trip.
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("addBar", []) => AddBar
+      ("randomize", []) => Randomize
+      ("removeBar", []) => RemoveBar
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] bar_chart_swap(
+  f : (BarChartInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([AddBar, Randomize, RemoveBar] : Array[BarChartInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@enrich-with` handler named INSIDE an `@each`.
+pub(all) enum BarChartEnrich {
+  Bar
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn BarChartEnrich::name(self : BarChartEnrich) -> String {
+  match self {
+    Bar => "bar"
+  }
+}
+
+///|
+/// Build `enrich~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] bar_chart_enrich(
+  f : (BarChartEnrich) -> ((
+    S,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
+) -> Map[
+  String,
+  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
+] {
+  let out : Map[
+    String,
+    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
+  ] = Map([])
+  for m in ([Bar] : Array[BarChartEnrich]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@loop-with` handler the views name.
+pub(all) enum BarChartLoopWith {
+  Layout
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {
+  match self {
+    Layout => "layout"
+  }
+}
+
+///|
+/// Build `loop_with~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] bar_chart_loop_with(
+  f : (BarChartLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
+) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([])
+  for m in ([Layout] : Array[BarChartLoopWith]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
 ///
-/// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
-fn icon_gallery_encode(s : IconGalleryState) -> Map[String, @tutuca.Value] {
-  { "size": Num(s.size.to_double()) }
-}
-
-///|
-/// The fields map back into the state. None on a shape mismatch, which
-/// callers treat as a no-op write — the same contract as the JSON path.
-fn icon_gallery_decode(f : Map[String, @tutuca.Value]) -> IconGalleryState? {
-  guard f.get("size") is Some(Num(t1_size)) else { return None }
-  let v_size = t1_size.to_int()
-  Some(IconGalleryState::{ size: v_size })
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn bar_chart_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "6bab0bb9bb7de924",
+    fields: [
+      {
+        name: "values",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["addBar", "randomize", "removeBar"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

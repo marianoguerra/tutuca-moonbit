@@ -1,8 +1,8 @@
 <script type="tutuca/state">
-  // The state for the components in svg_more.mbt, which build
-  // their views in MoonBit rather than here — a macro body is
-  // registered at runtime, so it cannot be compiled ahead of time.
-  // No <template>: this file declares state and nothing else.
+  // BarChart's view is here; IconGallery's is not. IconGallery calls a macro
+  // whose body a MoonBit function builds per icon path and registers at run
+  // time, so there is nothing to expand ahead of time — it stays a designated
+  // escape hatch (see macros.mbt).
   interface bar-chart {
     record state {
       values: values,
@@ -14,3 +14,20 @@
     }
   }
 </script>
+
+<template id="BarChart">
+  <div class="flex flex-col gap-3">
+    <svg viewBox="0 0 300 120" role="img">
+      <line class="axis" x1="0" y1="110" x2="300" y2="110" stroke="#cbd5e1" stroke-width="1"></line>
+      <rect @each=".values" @loop-with="layout" @enrich-with="bar"
+        :x="@x" :y="@y" :width="@w" :height="@h" rx="3" fill="#6366f1"></rect>
+      <text @each=".values" @loop-with="layout" @enrich-with="bar"
+        :x="@cx" :y="@labelY" @text="@value" text-anchor="middle" font-size="10" fill="#475569"></text>
+    </svg>
+    <div class="join">
+      <button class="btn btn-primary join-item randomize" @on.click="randomize">Randomize</button>
+      <button class="btn join-item add" @on.click="addBar">Add bar</button>
+      <button class="btn join-item remove" @on.click="removeBar">Remove bar</button>
+    </div>
+  </div>
+</template>

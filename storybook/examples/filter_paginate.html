@@ -6,11 +6,12 @@
     active: bool,
     }
   }
-  // NaivePeople, SharedPeople and CoupledPeople build their views in MoonBit
-  // (each wraps the same table with a different @when/@loop-with), so they
-  // have no <template> here — but they share one state shape, and this is
-  // where it is declared.
-  interface people {
+  // SharedPeople and CoupledPeople deliberately share NaivePeople's state
+  // shape — comparing three strategies over one shape is what this example
+  // teaches, and the helpers below are typed on it. One schema, three
+  // components, three templates that differ only in the @when/@loop-with
+  // pair on the row.
+  interface naive-people {
     record state {
       items: values,
       query: string,
@@ -43,4 +44,58 @@
     <div class="flex flex-col gap-1"><h3 class="font-bold">2. Shared — one count + one partial collect</h3><x render=".shared"></x></div>
     <div class="flex flex-col gap-1"><h3 class="font-bold">3. Coupled — one scan; loop-with forwards the enrich's keys</h3><x render=".coupled"></x></div>
   </div>
+</template>
+
+<template id="NaivePeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @when="onlyMatches" @loop-with="tablePage" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
+</template>
+
+<template id="SharedPeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @when="onlyMatches" @loop-with="page" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
+</template>
+
+<template id="CoupledPeople">
+  <section class="flex flex-col gap-3" @enrich-with="pagerInfo">
+    <input type="search" class="input q" :value=".query" @on.input="search value" placeholder="Filter by name or email">
+    <ul class="flex flex-col gap-2">
+      <li @each=".items" @loop-with="forwardKeys" class="flex gap-2 items-center row">
+        <span class="badge badge-neutral" @text="@key"></span>
+        <x render-it></x>
+        <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
+      </li>
+    </ul>
+    <div class="join">
+      <button class="btn join-item prev" @on.click="prev" :disabled="@isFirst">Prev</button>
+      <button class="btn join-item btn-disabled pglabel" @text="@pageLabel"></button>
+      <button class="btn join-item next" @on.click="next" :disabled="@isLast">Next</button>
+    </div>
+  </section>
 </template>

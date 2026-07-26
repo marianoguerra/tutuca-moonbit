@@ -16,65 +16,47 @@
 /// the next heights from the current ones instead — still reactive, still
 /// re-renders the bars, just reproducible.
 fn bar_chart_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex flex-col gap-3">
-          #|  <svg viewBox="0 0 300 120" role="img">
-          #|    <line class="axis" x1="0" y1="110" x2="300" y2="110" stroke="#cbd5e1" stroke-width="1"></line>
-          #|    <rect @each=".values" @loop-with="layout" @enrich-with="bar"
-          #|      :x="@x" :y="@y" :width="@w" :height="@h" rx="3" fill="#6366f1"></rect>
-          #|    <text @each=".values" @loop-with="layout" @enrich-with="bar"
-          #|      :x="@cx" :y="@labelY" @text="@value" text-anchor="middle" font-size="10" fill="#475569"></text>
-          #|  </svg>
-          #|  <div class="join">
-          #|    <button class="btn btn-primary join-item randomize" @on.click="randomize">Randomize</button>
-          #|    <button class="btn join-item add" @on.click="addBar">Add bar</button>
-          #|    <button class="btn join-item remove" @on.click="removeBar">Remove bar</button>
-          #|  </div>
-          #|</div>
-        ),
-      ),
+  bar_chart_component(
+    init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)] },
+    loop_with=l => {
+      match l {
+        // once per render, before the loop: split the 300-wide viewBox among the
+        // bars there currently are
+        Layout =>
+          Some((_s, seq, _ctx) => {
+            let size = match seq {
+              List(a) => a.length()
+              _ => 1
+            }
+            let step = 300.0 / @cmp.maximum(1, size).to_double()
+            @component.LoopWith::new(
+              iter_data=Map({ "step": Num(step), "barW": Num(step * 0.62) }),
+            )
+          })
+      }
     },
-    name="BarChart",
-    init=BarChartState::{
-      values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)],
+    enrich=e => {
+      match e {
+        // per bar: index + value -> pixel geometry
+        Bar =>
+          Some((_s, binds, key, value, iter) => {
+            match (key, value, iter) {
+              (Num(k), Num(v), Map(idata)) => {
+                let step = num_of(idata.get("step"), 0.0)
+                let bar_w = num_of(idata.get("barW"), 0.0)
+                binds["x"] = Num(k * step + (step - bar_w) / 2.0)
+                binds["w"] = Num(bar_w)
+                binds["h"] = Num(v)
+                binds["y"] = Num(110.0 - v)
+                binds["cx"] = Num(k * step + step / 2.0)
+                binds["labelY"] = Num(110.0 - v - 5.0)
+              }
+              _ => ()
+            }
+          })
+      }
     },
-    loop_with={
-      // once per render, before the loop: split the 300-wide viewBox among the
-      // bars there currently are
-      "layout": (_s : BarChartState, seq, _ctx) => {
-        let size = match seq {
-          List(a) => a.length()
-          _ => 1
-        }
-        let step = 300.0 / @cmp.maximum(1, size).to_double()
-        @component.LoopWith::new(
-          iter_data=Map({ "step": Num(step), "barW": Num(step * 0.62) }),
-        )
-      },
-    },
-    enrich={
-      // per bar: index + value -> pixel geometry
-      "bar": (_s : BarChartState, binds, key, value, iter) => {
-        match (key, value, iter) {
-          (Num(k), Num(v), Map(idata)) => {
-            let step = num_of(idata.get("step"), 0.0)
-            let bar_w = num_of(idata.get("barW"), 0.0)
-            binds["x"] = Num(k * step + (step - bar_w) / 2.0)
-            binds["w"] = Num(bar_w)
-            binds["h"] = Num(v)
-            binds["y"] = Num(110.0 - v)
-            binds["cx"] = Num(k * step + step / 2.0)
-            binds["labelY"] = Num(110.0 - v - 5.0)
-          }
-          _ => ()
-        }
-      },
-    },
-    update=(s : BarChartState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match msg {
         Input("randomize", _) => {
           let next : Array[@tutuca.Value] = s.values.map(v => {
@@ -105,8 +87,6 @@ fn bar_chart_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=bar_chart_encode,
-    decode=bar_chart_decode,
   )
 }
 

@@ -8,127 +8,6 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// NaivePeople, SharedPeople and CoupledPeople build their views in MoonBit
-/// (each wraps the same table with a different @when/@loop-with), so they
-/// have no <template> here — but they share one state shape, and this is
-/// where it is declared.
-///
-/// Declared as `interface people` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
-priv struct PeopleState {
-  items : Array[@tutuca.Value]
-  query : String
-  page : Int
-  pageSize : Int
-} derive(ToJson, FromJson)
-
-///|
-/// The zero state: every field at its type's empty value.
-///
-/// WIT declares no defaults — a default is a value, not a type — so this
-/// is type-directed, and `init` spreads it to name only what differs:
-///
-///   init={ ..PeopleState::zero(), label: "Counter" }
-fn PeopleState::zero() -> PeopleState {
-  PeopleState::{ items: [], query: "", page: 0, pageSize: 0 }
-}
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn people_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PeopleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
-}
-
-///|
-/// Every field the People state declares — typed field names for tests and inspectors.
-pub(all) enum PeopleField {
-  Items
-  Query
-  Page
-  PageSize
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PeopleField::name(self : PeopleField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-    Page => "page"
-    PageSize => "pageSize"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PeopleField::kind(self : PeopleField) -> @component.FieldKind {
-  match self {
-    Items => @component.FList
-    Query => @component.FText
-    Page => @component.FInt
-    PageSize => @component.FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let people_field_names : Array[String] = [
-  "items", "query", "page", "pageSize",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let people_schema_fingerprint : String = "f3fdacad4cdd6a15"
-
-///|
-/// The state as the fields map the render and path layers read, built
-/// field by field rather than through a `Json` round trip.
-///
-/// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
-fn people_encode(s : PeopleState) -> Map[String, @tutuca.Value] {
-  {
-    "items": (List(s.items.map(x => x)) : @tutuca.Value),
-    "query": Str(s.query),
-    "page": Num(s.page.to_double()),
-    "pageSize": Num(s.pageSize.to_double()),
-  }
-}
-
-///|
-/// The fields map back into the state. None on a shape mismatch, which
-/// callers treat as a no-op write — the same contract as the JSON path.
-fn people_decode(f : Map[String, @tutuca.Value]) -> PeopleState? {
-  guard f.get("items") is Some(t1_items) else { return None }
-  guard t1_items is List(u1_items) else { return None }
-  let v_items : Array[@tutuca.Value] = []
-  for e1_items in u1_items {
-    let x1_items = e1_items
-    v_items.push(x1_items)
-  }
-  guard f.get("query") is Some(Str(v_query)) else { return None }
-  guard f.get("page") is Some(Num(t1_page)) else { return None }
-  let v_page = t1_page.to_int()
-  guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
-  let v_pageSize = t1_pageSize.to_int()
-  Some(PeopleState::{
-    items: v_items,
-    query: v_query,
-    page: v_page,
-    pageSize: v_pageSize,
-  })
-}
-
-///|
 /// The state of the Person component.
 ///
 /// Declared as `interface person` in the state block. Adding a
@@ -516,4 +395,812 @@ pub fn strategies_schema() -> @component.SchemaInfo {
     view_names: ["main"],
     init_names: [],
   }
+}
+
+///|
+/// SharedPeople and CoupledPeople deliberately share NaivePeople's state
+/// shape — comparing three strategies over one shape is what this example
+/// teaches, and the helpers below are typed on it. One schema, three
+/// components, three templates that differ only in the @when/@loop-with
+/// pair on the row.
+///
+/// Declared as `interface naive-people` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct NaivePeopleState {
+  items : Array[@tutuca.Value]
+  query : String
+  page : Int
+  pageSize : Int
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..NaivePeopleState::zero(), label: "Counter" }
+fn NaivePeopleState::zero() -> NaivePeopleState {
+  NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn naive_people_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(NaivePeopleState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the NaivePeople state declares — typed field names for tests and inspectors.
+pub(all) enum NaivePeopleField {
+  Items
+  Query
+  Page
+  PageSize
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleField::name(self : NaivePeopleField) -> String {
+  match self {
+    Items => "items"
+    Query => "query"
+    Page => "page"
+    PageSize => "pageSize"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn NaivePeopleField::kind(self : NaivePeopleField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    Query => @component.FText
+    Page => @component.FInt
+    PageSize => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let naive_people_field_names : Array[String] = [
+  "items", "query", "page", "pageSize",
+]
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let naive_people_schema_fingerprint : String = "1a6e19dbb5fd3c45"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn naive_people_encode(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "query": Str(s.query),
+    "page": Num(s.page.to_double()),
+    "pageSize": Num(s.pageSize.to_double()),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn naive_people_decode(f : Map[String, @tutuca.Value]) -> NaivePeopleState? {
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
+  }
+  guard f.get("query") is Some(Str(v_query)) else { return None }
+  guard f.get("page") is Some(Num(t1_page)) else { return None }
+  let v_page = t1_page.to_int()
+  guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
+  let v_pageSize = t1_pageSize.to_int()
+  Some(NaivePeopleState::{
+    items: v_items,
+    query: v_query,
+    page: v_page,
+    pageSize: v_pageSize,
+  })
+}
+
+///|
+/// The views declared in filter_paginate.html.
+pub(all) enum NaivePeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleView::name(self : NaivePeopleView) -> String {
+  match self {
+    Main => "main"
+  }
+}
+
+///|
+/// The file-level style — pass as `common_style~`.
+pub let naive_people_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let naive_people_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum NaivePeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleInput::name(self : NaivePeopleInput) -> String {
+  match self {
+    Next => "next"
+    Prev => "prev"
+    RemoveInItemsAt => "removeInItemsAt"
+    Search => "search"
+  }
+}
+
+///|
+pub fn NaivePeopleInput::parse(s : String) -> NaivePeopleInput? {
+  match s {
+    "next" => Some(Next)
+    "prev" => Some(Prev)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
+    "search" => Some(Search)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to filter_paginate.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum NaivePeopleMsg {
+  /// `@on.click="next …"`
+  Next
+  /// `@on.click="prev …"`
+  Prev
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
+  /// `@on.input="search …"`
+  Search(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn NaivePeopleMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> NaivePeopleMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("next", []) => Next
+      ("prev", []) => Prev
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      ("search", [Str(a0)]) => Search(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] naive_people_swap(
+  f : (NaivePeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[NaivePeopleInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@when` handler the views name.
+pub(all) enum NaivePeopleWhen {
+  OnlyMatches
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleWhen::name(self : NaivePeopleWhen) -> String {
+  match self {
+    OnlyMatches => "onlyMatches"
+  }
+}
+
+///|
+/// Build `when~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] naive_people_when(
+  f : (NaivePeopleWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
+) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([])
+  for m in ([OnlyMatches] : Array[NaivePeopleWhen]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@enrich-with` handler named with no `@each` around it.
+pub(all) enum NaivePeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleEnrichScope::name(self : NaivePeopleEnrichScope) -> String {
+  match self {
+    PagerInfo => "pagerInfo"
+  }
+}
+
+///|
+/// Build `enrich_scope~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] naive_people_enrich_scope(
+  f : (NaivePeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
+) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
+  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
+  for m in ([PagerInfo] : Array[NaivePeopleEnrichScope]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@loop-with` handler the views name.
+pub(all) enum NaivePeopleLoopWith {
+  TablePage
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
+  match self {
+    TablePage => "tablePage"
+  }
+}
+
+///|
+/// Build `loop_with~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] naive_people_loop_with(
+  f : (NaivePeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
+) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([])
+  for m in ([TablePage] : Array[NaivePeopleLoopWith]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn naive_people_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "1a6e19dbb5fd3c45",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "query",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "page",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "pageSize",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["next", "prev", "removeInItemsAt", "search"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
+/// The views declared in filter_paginate.html.
+pub(all) enum SharedPeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SharedPeopleView::name(self : SharedPeopleView) -> String {
+  match self {
+    Main => "main"
+  }
+}
+
+///|
+/// The file-level style — pass as `common_style~`.
+pub let shared_people_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let shared_people_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SharedPeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SharedPeopleInput::name(self : SharedPeopleInput) -> String {
+  match self {
+    Next => "next"
+    Prev => "prev"
+    RemoveInItemsAt => "removeInItemsAt"
+    Search => "search"
+  }
+}
+
+///|
+pub fn SharedPeopleInput::parse(s : String) -> SharedPeopleInput? {
+  match s {
+    "next" => Some(Next)
+    "prev" => Some(Prev)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
+    "search" => Some(Search)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to filter_paginate.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SharedPeopleMsg {
+  /// `@on.click="next …"`
+  Next
+  /// `@on.click="prev …"`
+  Prev
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
+  /// `@on.input="search …"`
+  Search(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SharedPeopleMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> SharedPeopleMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("next", []) => Next
+      ("prev", []) => Prev
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      ("search", [Str(a0)]) => Search(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] shared_people_swap(
+  f : (SharedPeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[SharedPeopleInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@when` handler the views name.
+pub(all) enum SharedPeopleWhen {
+  OnlyMatches
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SharedPeopleWhen::name(self : SharedPeopleWhen) -> String {
+  match self {
+    OnlyMatches => "onlyMatches"
+  }
+}
+
+///|
+/// Build `when~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] shared_people_when(
+  f : (SharedPeopleWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
+) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([])
+  for m in ([OnlyMatches] : Array[SharedPeopleWhen]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@enrich-with` handler named with no `@each` around it.
+pub(all) enum SharedPeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SharedPeopleEnrichScope::name(self : SharedPeopleEnrichScope) -> String {
+  match self {
+    PagerInfo => "pagerInfo"
+  }
+}
+
+///|
+/// Build `enrich_scope~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] shared_people_enrich_scope(
+  f : (SharedPeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
+) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
+  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
+  for m in ([PagerInfo] : Array[SharedPeopleEnrichScope]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@loop-with` handler the views name.
+pub(all) enum SharedPeopleLoopWith {
+  Page
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SharedPeopleLoopWith::name(self : SharedPeopleLoopWith) -> String {
+  match self {
+    Page => "page"
+  }
+}
+
+///|
+/// Build `loop_with~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] shared_people_loop_with(
+  f : (SharedPeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
+) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([])
+  for m in ([Page] : Array[SharedPeopleLoopWith]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// State fields the views read at a view's ROOT scope. Reads under an
+/// @each, an @enrich-with, a push-view or an <x render> address the loop
+/// item or the child component, not this state, so they are not listed.
+pub let shared_people_fields : Array[String] = []
+
+///|
+/// The fields in `shared_people_fields` that `s` does not carry — assert this is
+/// empty in a test. Fields the component declares through `specs~` rather
+/// than through its state struct go in `extra~`.
+pub fn[S : ToJson] shared_people_missing_fields(
+  s : S,
+  extra? : Array[String] = [],
+) -> Array[String] {
+  let present : Map[String, Bool] = Map([])
+  if s.to_json() is Object(o) {
+    for k, _ in o {
+      present[k] = true
+    }
+  }
+  for k in extra {
+    present[k] = true
+  }
+  shared_people_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The views declared in filter_paginate.html.
+pub(all) enum CoupledPeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CoupledPeopleView::name(self : CoupledPeopleView) -> String {
+  match self {
+    Main => "main"
+  }
+}
+
+///|
+/// The file-level style — pass as `common_style~`.
+pub let coupled_people_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let coupled_people_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum CoupledPeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CoupledPeopleInput::name(self : CoupledPeopleInput) -> String {
+  match self {
+    Next => "next"
+    Prev => "prev"
+    RemoveInItemsAt => "removeInItemsAt"
+    Search => "search"
+  }
+}
+
+///|
+pub fn CoupledPeopleInput::parse(s : String) -> CoupledPeopleInput? {
+  match s {
+    "next" => Some(Next)
+    "prev" => Some(Prev)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
+    "search" => Some(Search)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to filter_paginate.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum CoupledPeopleMsg {
+  /// `@on.click="next …"`
+  Next
+  /// `@on.click="prev …"`
+  Prev
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
+  /// `@on.input="search …"`
+  Search(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn CoupledPeopleMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> CoupledPeopleMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("next", []) => Next
+      ("prev", []) => Prev
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
+      ("search", [Str(a0)]) => Search(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] coupled_people_swap(
+  f : (CoupledPeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[CoupledPeopleInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@enrich-with` handler named with no `@each` around it.
+pub(all) enum CoupledPeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CoupledPeopleEnrichScope::name(
+  self : CoupledPeopleEnrichScope,
+) -> String {
+  match self {
+    PagerInfo => "pagerInfo"
+  }
+}
+
+///|
+/// Build `enrich_scope~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] coupled_people_enrich_scope(
+  f : (CoupledPeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
+) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
+  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
+  for m in ([PagerInfo] : Array[CoupledPeopleEnrichScope]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@loop-with` handler the views name.
+pub(all) enum CoupledPeopleLoopWith {
+  ForwardKeys
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CoupledPeopleLoopWith::name(self : CoupledPeopleLoopWith) -> String {
+  match self {
+    ForwardKeys => "forwardKeys"
+  }
+}
+
+///|
+/// Build `loop_with~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] coupled_people_loop_with(
+  f : (CoupledPeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
+) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([])
+  for m in ([ForwardKeys] : Array[CoupledPeopleLoopWith]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// State fields the views read at a view's ROOT scope. Reads under an
+/// @each, an @enrich-with, a push-view or an <x render> address the loop
+/// item or the child component, not this state, so they are not listed.
+pub let coupled_people_fields : Array[String] = []
+
+///|
+/// The fields in `coupled_people_fields` that `s` does not carry — assert this is
+/// empty in a test. Fields the component declares through `specs~` rather
+/// than through its state struct go in `extra~`.
+pub fn[S : ToJson] coupled_people_missing_fields(
+  s : S,
+  extra? : Array[String] = [],
+) -> Array[String] {
+  let present : Map[String, Bool] = Map([])
+  if s.to_json() is Object(o) {
+    for k, _ in o {
+      present[k] = true
+    }
+  }
+  for k in extra {
+    present[k] = true
+  }
+  coupled_people_fields.filter(f => !present.contains(f))
 }

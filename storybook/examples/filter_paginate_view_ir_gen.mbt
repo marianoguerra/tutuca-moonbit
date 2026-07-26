@@ -206,3 +206,412 @@ fn strategies_component(
     schema=strategies_schema(),
   )
 }
+
+///|
+/// The compiled `main` view.
+fn naive_people_main_view_ir() -> @anode.View {
+  @anode.View::from_ir(
+    "main",
+    @anode.scope(
+      2,
+      HandlerName(name="pagerInfo", ns=Alter),
+      @anode.h(
+        "section",
+        [
+          @anode.attr("class", "flex flex-col gap-3"),
+          @anode.attr_num("data-nid", 2.0),
+        ],
+        [
+          @anode.h(
+            "input",
+            [
+              @anode.attr("type", "search"),
+              @anode.attr("class", "input q"),
+              @anode.dyn_attr("value", Field("query")),
+              @anode.eid(0),
+              @anode.attr("placeholder", "Filter by name or email"),
+            ],
+            [],
+          ),
+          @anode.text(" "),
+          @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
+            @anode.each(
+              1,
+              Field("items"),
+              @anode.h(
+                "li",
+                [@anode.attr("class", "flex gap-2 items-center row")],
+                [
+                  @anode.h(
+                    "span",
+                    [@anode.attr("class", "badge badge-neutral")],
+                    [@anode.dyn_text(Bind("key"))],
+                  ),
+                  @anode.text(" "),
+                  @anode.render_it(0),
+                  @anode.text(" "),
+                  @anode.h(
+                    "button",
+                    [
+                      @anode.attr(
+                        "class", "btn btn-sm btn-error btn-outline rm",
+                      ),
+                      @anode.eid(1),
+                    ],
+                    [@anode.text("x")],
+                  ),
+                ],
+              ),
+              when_val=HandlerName(name="onlyMatches", ns=Alter),
+              loop_with_val=HandlerName(name="tablePage", ns=Alter),
+            ),
+          ]),
+          @anode.h("div", [@anode.attr("class", "join")], [
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item prev"),
+                @anode.eid(2),
+                @anode.dyn_attr("disabled", Bind("isFirst")),
+              ],
+              [@anode.text("Prev")],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [@anode.attr("class", "btn join-item btn-disabled pglabel")],
+              [@anode.dyn_text(Bind("pageLabel"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item next"),
+                @anode.eid(3),
+                @anode.dyn_attr("disabled", Bind("isLast")),
+              ],
+              [@anode.text("Next")],
+            ),
+          ]),
+        ],
+      ),
+    ),
+    [
+      [
+        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
+      [@anode.on("click", HandlerName(name="prev", ns=Input))],
+      [@anode.on("click", HandlerName(name="next", ns=Input))],
+    ],
+  )
+}
+
+///|
+/// The component's views, already compiled — pass as `views~` to
+/// @component.component.
+pub fn naive_people_views() -> Map[String, @anode.View] {
+  { "main": naive_people_main_view_ir() }
+}
+
+///|
+/// The NaivePeople component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn naive_people_component(
+  name? : String = "NaivePeople",
+  views? : Map[String, @anode.View] = naive_people_views(),
+  init? : NaivePeopleState = NaivePeopleState::zero(),
+  common_style? : String = naive_people_common_style,
+  global_style? : String = naive_people_global_style,
+  update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> NaivePeopleState?,
+  swap? : (NaivePeopleInput) -> ((
+    NaivePeopleState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (NaivePeopleWhen) -> ((
+    NaivePeopleState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
+  enrich_scope? : (NaivePeopleEnrichScope) -> ((NaivePeopleState) -> Map[
+    String,
+    @tutuca.Value,
+  ])?,
+  loop_with? : (NaivePeopleLoopWith) -> ((
+    NaivePeopleState,
+    @tutuca.Value,
+    @component.LoopCtx,
+  ) -> @component.LoopWith)?,
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    swap=match swap {
+      Some(f) => naive_people_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => naive_people_when(f)
+      None => Map([])
+    },
+    enrich_scope=match enrich_scope {
+      Some(f) => naive_people_enrich_scope(f)
+      None => Map([])
+    },
+    loop_with=match loop_with {
+      Some(f) => naive_people_loop_with(f)
+      None => Map([])
+    },
+    specs~,
+    provide~,
+    lookup~,
+    encode=naive_people_encode,
+    decode=naive_people_decode,
+    schema=naive_people_schema(),
+  )
+}
+
+///|
+/// The compiled `main` view.
+fn shared_people_main_view_ir() -> @anode.View {
+  @anode.View::from_ir(
+    "main",
+    @anode.scope(
+      2,
+      HandlerName(name="pagerInfo", ns=Alter),
+      @anode.h(
+        "section",
+        [
+          @anode.attr("class", "flex flex-col gap-3"),
+          @anode.attr_num("data-nid", 2.0),
+        ],
+        [
+          @anode.h(
+            "input",
+            [
+              @anode.attr("type", "search"),
+              @anode.attr("class", "input q"),
+              @anode.dyn_attr("value", Field("query")),
+              @anode.eid(0),
+              @anode.attr("placeholder", "Filter by name or email"),
+            ],
+            [],
+          ),
+          @anode.text(" "),
+          @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
+            @anode.each(
+              1,
+              Field("items"),
+              @anode.h(
+                "li",
+                [@anode.attr("class", "flex gap-2 items-center row")],
+                [
+                  @anode.h(
+                    "span",
+                    [@anode.attr("class", "badge badge-neutral")],
+                    [@anode.dyn_text(Bind("key"))],
+                  ),
+                  @anode.text(" "),
+                  @anode.render_it(0),
+                  @anode.text(" "),
+                  @anode.h(
+                    "button",
+                    [
+                      @anode.attr(
+                        "class", "btn btn-sm btn-error btn-outline rm",
+                      ),
+                      @anode.eid(1),
+                    ],
+                    [@anode.text("x")],
+                  ),
+                ],
+              ),
+              when_val=HandlerName(name="onlyMatches", ns=Alter),
+              loop_with_val=HandlerName(name="page", ns=Alter),
+            ),
+          ]),
+          @anode.h("div", [@anode.attr("class", "join")], [
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item prev"),
+                @anode.eid(2),
+                @anode.dyn_attr("disabled", Bind("isFirst")),
+              ],
+              [@anode.text("Prev")],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [@anode.attr("class", "btn join-item btn-disabled pglabel")],
+              [@anode.dyn_text(Bind("pageLabel"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item next"),
+                @anode.eid(3),
+                @anode.dyn_attr("disabled", Bind("isLast")),
+              ],
+              [@anode.text("Next")],
+            ),
+          ]),
+        ],
+      ),
+    ),
+    [
+      [
+        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
+      [@anode.on("click", HandlerName(name="prev", ns=Input))],
+      [@anode.on("click", HandlerName(name="next", ns=Input))],
+    ],
+  )
+}
+
+///|
+/// The component's views, already compiled — pass as `views~` to
+/// @component.component.
+pub fn shared_people_views() -> Map[String, @anode.View] {
+  { "main": shared_people_main_view_ir() }
+}
+
+///|
+/// The compiled `main` view.
+fn coupled_people_main_view_ir() -> @anode.View {
+  @anode.View::from_ir(
+    "main",
+    @anode.scope(
+      2,
+      HandlerName(name="pagerInfo", ns=Alter),
+      @anode.h(
+        "section",
+        [
+          @anode.attr("class", "flex flex-col gap-3"),
+          @anode.attr_num("data-nid", 2.0),
+        ],
+        [
+          @anode.h(
+            "input",
+            [
+              @anode.attr("type", "search"),
+              @anode.attr("class", "input q"),
+              @anode.dyn_attr("value", Field("query")),
+              @anode.eid(0),
+              @anode.attr("placeholder", "Filter by name or email"),
+            ],
+            [],
+          ),
+          @anode.text(" "),
+          @anode.h("ul", [@anode.attr("class", "flex flex-col gap-2")], [
+            @anode.each(
+              1,
+              Field("items"),
+              @anode.h(
+                "li",
+                [@anode.attr("class", "flex gap-2 items-center row")],
+                [
+                  @anode.h(
+                    "span",
+                    [@anode.attr("class", "badge badge-neutral")],
+                    [@anode.dyn_text(Bind("key"))],
+                  ),
+                  @anode.text(" "),
+                  @anode.render_it(0),
+                  @anode.text(" "),
+                  @anode.h(
+                    "button",
+                    [
+                      @anode.attr(
+                        "class", "btn btn-sm btn-error btn-outline rm",
+                      ),
+                      @anode.eid(1),
+                    ],
+                    [@anode.text("x")],
+                  ),
+                ],
+              ),
+              loop_with_val=HandlerName(name="forwardKeys", ns=Alter),
+            ),
+          ]),
+          @anode.h("div", [@anode.attr("class", "join")], [
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item prev"),
+                @anode.eid(2),
+                @anode.dyn_attr("disabled", Bind("isFirst")),
+              ],
+              [@anode.text("Prev")],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [@anode.attr("class", "btn join-item btn-disabled pglabel")],
+              [@anode.dyn_text(Bind("pageLabel"))],
+            ),
+            @anode.text(" "),
+            @anode.h(
+              "button",
+              [
+                @anode.attr("class", "btn join-item next"),
+                @anode.eid(3),
+                @anode.dyn_attr("disabled", Bind("isLast")),
+              ],
+              [@anode.text("Next")],
+            ),
+          ]),
+        ],
+      ),
+    ),
+    [
+      [
+        @anode.on("input", HandlerName(name="search", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
+      [@anode.on("click", HandlerName(name="prev", ns=Input))],
+      [@anode.on("click", HandlerName(name="next", ns=Input))],
+    ],
+  )
+}
+
+///|
+/// The component's views, already compiled — pass as `views~` to
+/// @component.component.
+pub fn coupled_people_views() -> Map[String, @anode.View] {
+  { "main": coupled_people_main_view_ir() }
+}
