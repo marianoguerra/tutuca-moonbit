@@ -274,7 +274,9 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/filter_paginate.html", None),
     ("storybook/examples/graphics.html", None),
     ("storybook/examples/json.html", None),
+    ("storybook/examples/lint_errors.html", None),
     ("storybook/examples/list_iteration.html", Some("ListIteration")),
+    ("storybook/examples/macros.html", None),
     ("storybook/examples/personal_site.html", None),
     ("storybook/examples/pseudo_x.html", None),
     ("storybook/examples/render_child.html", None),
@@ -282,7 +284,10 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/request.html", Some("RequestExample")),
     ("storybook/examples/state_and_updates.html", None),
     ("storybook/examples/styles.html", None),
+    ("storybook/examples/svg_more.html", None),
     ("storybook/examples/todo.html", None),
+    ("storybook/examples/todo_macros.html", None),
+    ("storybook/examples/visual_wasm.html", None),
     ("storybook/examples/web_component.html", Some("EmojiPicker")),
   ]
   let commands = files.map(entry => {

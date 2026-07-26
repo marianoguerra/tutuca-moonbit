@@ -93,7 +93,7 @@ fn ps_sort(
 }
 
 ///|
-fn ps_resort(s : PsRootState) -> PsRootState {
+fn ps_resort(s : RootState) -> RootState {
   {
     ..s,
     allEntries: ps_sort(s.allEntries, s.sortByEnd, s.sortAsc, s.featuredFirst),
@@ -171,11 +171,6 @@ fn ps_category_decoy_classes() -> String {
   parts.join(" ")
 }
 
-///|
-struct AltUrlState {
-  label : String
-  url : String
-} derive(ToJson, FromJson)
 
 ///|
 fn alt_url_comp() -> @component.Component {
@@ -183,22 +178,12 @@ fn alt_url_comp() -> @component.Component {
     views=alt_url_views(),
     name="AltUrl",
     init=AltUrlState::{ label: "", url: "#" },
+    encode=alt_url_encode,
+    decode=alt_url_decode,
+  
   )
 }
 
-///|
-struct PsEntryState {
-  title : String
-  description : String
-  lang : String
-  startYear : @tutuca.Value
-  endYear : @tutuca.Value
-  role : @tutuca.Value
-  featured : Bool
-  url : String
-  altUrls : Array[@tutuca.Value]
-  categories : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 fn ps_entry_comp() -> @component.Component {
@@ -208,7 +193,7 @@ fn ps_entry_comp() -> @component.Component {
     enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_s : PsEntryState, binds, _key, value, _iter) => match
+      "enrichCategoryBadge": (_s : PSEntryState, binds, _key, value, _iter) => match
         value {
         Str(cat) =>
           binds["badgeClass"] = Str(
@@ -217,7 +202,7 @@ fn ps_entry_comp() -> @component.Component {
         _ => ()
       },
     },
-    init=PsEntryState::{
+    init=PSEntryState::{
       title: "?",
       description: "",
       lang: "en",
@@ -230,13 +215,13 @@ fn ps_entry_comp() -> @component.Component {
       categories: [],
     },
     compute={
-      "langFlag": (s : PsEntryState, _args) => if s.lang == "es" {
+      "langFlag": (s : PSEntryState, _args) => if s.lang == "es" {
         Str("🇪🇸")
       } else {
         Str("🇬🇧")
       },
-      "isSpanish": (s : PsEntryState, _args) => Bool(s.lang == "es"),
-      "yearDisplay": (s : PsEntryState, _args) => match s.startYear {
+      "isSpanish": (s : PSEntryState, _args) => Bool(s.lang == "es"),
+      "yearDisplay": (s : PSEntryState, _args) => match s.startYear {
         Num(start) =>
           match s.endYear {
             Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
@@ -245,6 +230,9 @@ fn ps_entry_comp() -> @component.Component {
         _ => Str("")
       },
     },
+    encode=p_s_entry_encode,
+    decode=p_s_entry_decode,
+  
   )
 }
 
@@ -283,18 +271,6 @@ fn entry_from_data(
 }
 
 ///|
-struct PsRootState {
-  allEntries : Array[@tutuca.Value]
-  allCategories : Array[String]
-  allRoles : Array[String]
-  selectedCategories : Map[String, Bool]
-  selectedRoles : Map[String, Bool]
-  featuredFirst : Bool
-  sortByEnd : Bool
-  sortAsc : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// The Root views: the compiled ones from the View tab, plus one RUNTIME view.
 /// `_margauiClasses` is a decoy whose only job is to name every category color
 /// literally, so margaui's static class scan emits their CSS — and that list is
@@ -313,8 +289,10 @@ fn root_views_with_decoy() -> Map[String, @anode.View] {
 fn root_comp() -> @component.Component {
   @component.component(
     views=root_views_with_decoy(),
+    encode=root_encode,
+    decode=root_decode,
     name="Root",
-    init=PsRootState::{
+    init=RootState::{
         allEntries: [],
         allCategories: [],
         allRoles: [],
@@ -325,25 +303,25 @@ fn root_comp() -> @component.Component {
         sortAsc: false,
       },
     mutate={
-        "clearFilters": (s : PsRootState, _args) => {
+        "clearFilters": (s : RootState, _args) => {
           ..s,
           selectedCategories: ps_set_of(s.allCategories),
           selectedRoles: ps_set_of(s.allRoles),
         },
       },
     compute={
-        "hasActiveFilters": (s : PsRootState, _args) => Bool(
+        "hasActiveFilters": (s : RootState, _args) => Bool(
           s.selectedCategories.length() != s.allCategories.length() ||
           s.selectedRoles.length() != s.allRoles.length(),
         ),
       },
-    when={ "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(
+    when={ "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(
         s, e,
       ) },
     enrich={
         // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
         // the trailing `cat-btn on|off` tokens are the MB test hooks.
-        "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => match
+        "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => match
           value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
@@ -358,7 +336,7 @@ fn root_comp() -> @component.Component {
         // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
         // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
         // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-        "enrichRoleBindings": (s : PsRootState, binds, _key, value, _iter) => match
+        "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => match
           value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
@@ -373,7 +351,7 @@ fn root_comp() -> @component.Component {
           _ => ()
         },
       },
-    update=(s : PsRootState, msg, ctx) => match msg {
+    update=(s : RootState, msg, ctx) => match msg {
         Input("onCategoryToggle", args) =>
           Some({
             ..s,
@@ -447,7 +425,7 @@ fn root_comp() -> @component.Component {
 ///|
 /// The `filterEntry` @when: keep an entry when its role and at least one of
 /// its categories are selected.
-fn ps_filter_entry(s : PsRootState, entry : @tutuca.Value) -> Bool {
+fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
   if s.selectedRoles.length() > 0 {
     let r = obj_str(entry, "role")
     if !s.selectedRoles.contains(r) {

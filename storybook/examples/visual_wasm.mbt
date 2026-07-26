@@ -90,9 +90,6 @@ fn vw_insert_picker(
 // ─── Factories ───────────────────────────────────────────────────────────────
 
 ///|
-priv struct VwEmptyState {} derive(ToJson, FromJson)
-
-///|
 /// A leaf instruction: renders its label, no state.
 fn vw_instr(name : String, label : String) -> @component.Component {
   @component.component(
@@ -106,12 +103,6 @@ fn vw_instr(name : String, label : String) -> @component.Component {
     init=VwEmptyState::{  },
   )
 }
-
-///|
-priv struct VwImmState {
-  value : Int
-  rawValue : String
-} derive(ToJson, FromJson)
 
 ///|
 /// An instruction with an immediate integer operand (local.get 3, i32.const 42).
@@ -144,6 +135,8 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
         Str("\{s.rawValue.length() + 2}em")
       },
     },
+    encode=vw_imm_encode,
+    decode=vw_imm_decode,
   )
 }
 
@@ -335,11 +328,6 @@ fn vw_all_ids() -> Array[String] {
 // ─── Container components ─────────────────────────────────────────────────────
 
 ///|
-priv struct VwTypesState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
-
-///|
 fn vw_types_comp(reg : VwReg) -> @component.Component {
   @component.component(
     views={
@@ -379,6 +367,8 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         items: s.items + [vw_make_type(reg, "TypeI32")],
       },
     },
+    encode=vw_types_encode,
+    decode=vw_types_decode,
   )
 }
 
@@ -432,15 +422,6 @@ fn vw_blocklike_view(keyword : String) -> String {
 }
 
 ///|
-/// The state Block / Loop / Func share; `blockType` (and Func's `locals`) are
-/// component slots declared via `specs`, not state fields.
-priv struct VwContainerState {
-  items : Array[@tutuca.Value]
-  expanded : Bool
-  editing : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn vw_container_mutate(
   reg : VwReg,
 ) -> Map[String, (VwContainerState, Array[@tutuca.Value]) -> VwContainerState] {
@@ -481,6 +462,8 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
     },
     name="Block",
     init=vw_container_init(),
+    encode=vw_container_encode,
+    decode=vw_container_decode,
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     mutate=vw_container_mutate(reg),
     compute=vw_container_compute(),
@@ -499,6 +482,8 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
     },
     name="Loop",
     init=vw_container_init(),
+    encode=vw_container_encode,
+    decode=vw_container_decode,
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     mutate=vw_container_mutate(reg),
     compute=vw_container_compute(),
@@ -533,6 +518,8 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
     },
     name="Func",
     init=vw_container_init(),
+    encode=vw_container_encode,
+    decode=vw_container_decode,
     specs={
       "blockType": @component.FieldSpec::comp("BlockType"),
       "locals": @component.FieldSpec::comp("Types"),
@@ -541,19 +528,6 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
     compute=vw_container_compute(),
   )
 }
-
-///|
-priv struct VwIfState {
-  thn : Array[@tutuca.Value]
-  else_ : Array[@tutuca.Value]
-  expanded : Bool
-  editingIf : Bool
-  editingThn : Bool
-  editingElse : Bool
-} derive (
-  ToJson(fields(else_(rename="else"))),
-  FromJson(fields(else_(rename="else"))),
-)
 
 ///|
 fn vw_if_comp(reg : VwReg) -> @component.Component {
@@ -621,17 +595,10 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
         else_: s.else_ + [vw_make_picker(reg)],
       },
     },
+    encode=vw_if_encode,
+    decode=vw_if_decode,
   )
 }
-
-///|
-priv struct VwSectionState {
-  id : Int
-  name : String
-  items : Array[@tutuca.Value]
-  expanded : Bool
-  defaultItem : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 fn vw_section_comp() -> @component.Component {
@@ -665,14 +632,10 @@ fn vw_section_comp() -> @component.Component {
         items: s.items + [vw_with_editing(s.defaultItem)],
       },
     },
+    encode=vw_section_encode,
+    decode=vw_section_decode,
   )
 }
-
-///|
-priv struct VwMemoryState {
-  n : Int
-  m : Int
-} derive(ToJson, FromJson)
 
 ///|
 fn vw_int_value(args : Array[@tutuca.Value], fallback : Int) -> Int {
@@ -717,6 +680,8 @@ fn vw_memory_comp() -> @component.Component {
         m: vw_int_value(args, s.m),
       },
     },
+    encode=vw_memory_encode,
+    decode=vw_memory_decode,
   )
 }
 
@@ -748,13 +713,6 @@ fn vw_module_comp() -> @component.Component {
     },
   )
 }
-
-///|
-priv struct VwPickerState {
-  currentSection : String
-  instructions : Array[@tutuca.Value]
-  filter : String
-} derive(ToJson, FromJson)
 
 ///|
 /// The instruction picker: filter, category radios, and the pick list.
@@ -863,6 +821,8 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         }
       },
     },
+    encode=vw_picker_encode,
+    decode=vw_picker_decode,
   )
 }
 

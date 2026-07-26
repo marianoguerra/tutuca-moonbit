@@ -8,6 +8,135 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// NaivePeople, SharedPeople and CoupledPeople build their views in MoonBit
+/// (each wraps the same table with a different @when/@loop-with), so they
+/// have no <template> here — but they share one state shape, and this is
+/// where it is declared.
+///
+/// Declared as `interface people` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PeopleState {
+  items : Array[@tutuca.Value]
+  query : String
+  page : Int
+  pageSize : Int
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PeopleState::zero(), label: "Counter" }
+fn PeopleState::zero() -> PeopleState {
+  PeopleState::{ items: [], query: "", page: 0, pageSize: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn people_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PeopleState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the People state declares — typed field names for tests and inspectors.
+pub(all) enum PeopleField {
+  Items
+  Query
+  Page
+  PageSize
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PeopleField::name(self : PeopleField) -> String {
+  match self {
+    Items => "items"
+    Query => "query"
+    Page => "page"
+    PageSize => "pageSize"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PeopleField::kind(self : PeopleField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    Query => @component.FText
+    Page => @component.FInt
+    PageSize => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let people_field_names : Array[String] = [
+  "items", "query", "page", "pageSize",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn people_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let people_schema_fingerprint : String = "f3fdacad4cdd6a15"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn people_encode(s : PeopleState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "query": Str(s.query),
+    "page": Num(s.page.to_double()),
+    "pageSize": Num(s.pageSize.to_double()),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn people_decode(f : Map[String, @tutuca.Value]) -> PeopleState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  guard f.get("query") is Some(Str(v_query)) else { return None }
+  guard f.get("page") is Some(Num(n_page)) else { return None }
+  let v_page = n_page.to_int()
+  guard f.get("pageSize") is Some(Num(n_pageSize)) else { return None }
+  let v_pageSize = n_pageSize.to_int()
+  Some(PeopleState::{
+    items: v_items,
+    query: v_query,
+    page: v_page,
+    pageSize: v_pageSize,
+  })
+}
+
+///|
 /// The state of the Person component.
 ///
 /// Declared as `interface person` in the state block. Adding a

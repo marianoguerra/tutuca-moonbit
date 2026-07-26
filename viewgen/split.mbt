@@ -47,6 +47,11 @@ priv enum StyleKind {
   SView // inside a template (or the whole file when there are none)
   SCommon // top-level <style data-common>
   SGlobal // top-level <style data-global>
+  // A `tutuca/state` or `tutuca/init` block. Not a style at all — it rides
+  // in this list because the list IS the set of spans lifted out of view
+  // source, and a file with no templates is otherwise its own main view,
+  // schema included.
+  SLifted
 } derive(Eq)
 
 ///|
@@ -154,7 +159,7 @@ fn styles_within(
 ) -> String {
   let parts : Array[String] = []
   for s in styles {
-    if s.start >= start && s.start < end_ {
+    if s.kind != SLifted && s.start >= start && s.start < end_ {
       parts.push(s.text)
     }
   }
@@ -188,6 +193,36 @@ fn read_raw(tok : @html5.Tokenizer, tag : String) -> (String, Int) {
     }
   }
   (sb.to_string(), end_)
+}
+
+///|
+/// True when nothing but whitespace and HTML comments is left.
+///
+/// A comment above the schema must not turn a schema-only file back into a
+/// view: the note explaining why a file has no templates is exactly the kind
+/// of thing someone writes there.
+fn is_blank(src : String) -> Bool {
+  let chars = src.to_array()
+  let mut i = 0
+  while i < chars.length() {
+    if is_space(chars[i]) {
+      i = i + 1
+    } else if i + 3 < chars.length() &&
+      chars[i] == '<' &&
+      chars[i + 1] == '!' &&
+      chars[i + 2] == '-' &&
+      chars[i + 3] == '-' {
+      let mut j = i + 4
+      while j + 2 < chars.length() &&
+            !(chars[j] == '-' && chars[j + 1] == '-' && chars[j + 2] == '>') {
+        j = j + 1
+      }
+      i = if j + 2 < chars.length() { j + 3 } else { chars.length() }
+    } else {
+      return false
+    }
+  }
+  true
 }
 
 ///|
@@ -245,16 +280,18 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
           // tokenizer as markup and its text never counts as stray.
           "script" if attr_of(attrs, "type") is Some(STATE_TYPE) => {
             let content_at = after
-            let (text, _) = read_raw(tok, "script")
+            let (text, end_) = read_raw(tok, "script")
             if state_src is Some(_) {
               raise DuplicateStateBlock
             }
             state_src = Some((text, content_at))
+            styles.push({ start: before, end_, text: "", kind: SLifted })
           }
           "script" if attr_of(attrs, "type") is Some(INIT_TYPE) => {
             let content_at = after
-            let (text, _) = read_raw(tok, "script")
+            let (text, end_) = read_raw(tok, "script")
             init_src = Some((text, content_at))
+            styles.push({ start: before, end_, text: "", kind: SLifted })
           }
           "style" => {
             let (text, end_) = read_raw(tok, "style")
@@ -297,9 +334,16 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   let global_style = collect_style(styles, SGlobal)
   let state = parse_state_block(chars, state_src)
   let init = parse_init_block(chars, init_src, state)
-  // No templates at all: the file IS one unnamed component's main view.
+  // No templates at all: the file IS one unnamed component's main view —
+  // unless nothing is left once the schema is lifted out, which is a
+  // SCHEMA-ONLY file. Those exist so a component whose views are built at
+  // runtime (a macro user, a dynamically assembled view) can still declare
+  // its state.
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
+    if is_blank(src) {
+      return { components: [], macros: [], state, init }
+    }
     return {
       components: [
         {

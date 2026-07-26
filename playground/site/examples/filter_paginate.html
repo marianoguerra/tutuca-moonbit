@@ -1,3 +1,32 @@
+<script type="tutuca/state">
+  interface person {
+    record state {
+    name: string,
+    email: string,
+    active: bool,
+    }
+  }
+  interface naive-people {
+    record state {
+    items: values,
+    query: string,
+    page: s32,
+    page-size: s32,
+    }
+  }
+  interface strategies {
+    record state {
+    naive: component,
+    shared: component,
+    coupled: component,
+    }
+  }
+  // SharedPeople and CoupledPeople deliberately share NaivePeople's state
+  // shape — comparing three strategies over one shape is what this example
+  // teaches, and the helpers below are typed on it. One schema, three
+  // components.
+</script>
+
 <template id="Strategies">
   <div class="flex flex-col gap-6">
     <div class="flex flex-col gap-1"><h3 class="font-bold">1. Naive — two independent scans</h3><x render=".naive"></x></div>

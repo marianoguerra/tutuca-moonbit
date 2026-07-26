@@ -2,16 +2,6 @@
 // (logged below). Both components' views live in the View tab (tree.html) and
 // arrive here compiled, as `tree_item_views()` and `tree_root_views()`.
 
-///|
-struct TreeItemState {
-  type_ : String
-  label : String
-  isOpen : Bool
-  items : Array[@tutuca.Value]
-} derive (
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
 
 ///|
 /// A TreeItem renders its own children with `<x render-each=".items">` — the
@@ -51,15 +41,12 @@ fn tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
+    encode=tree_item_encode,
+    decode=tree_item_decode,
+  
   )
 }
 
-///|
-/// The root catches the bubbled event and records it — aggregate state kept
-/// without threading callbacks down the tree.
-struct TreeRootState {
-  log : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 fn tree_root_comp() -> @component.Component {
@@ -84,6 +71,9 @@ fn tree_root_comp() -> @component.Component {
       }
       _ => None
     },
+    encode=tree_root_encode,
+    decode=tree_root_decode,
+  
   )
 }
 

@@ -52,6 +52,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   interleaved A/B on the render path puts `patch counter` at 19.0/19.5 µs
   against 20.3 µs — a few percent, which is what a bridge that is not the
   bottleneck should look like.
+- **Schema-only view files.** A file may carry a `tutuca/state` block and no
+  `<template>`, which is how a component whose views are built in MoonBit
+  still gets a generated state type — the schema lives in a view file, so it
+  needs one even with no views. One file may also mix the two: templates for
+  some components, state alone for others. An interface with no template is
+  reported as a hint rather than an error, because it is also what a mistyped
+  interface name looks like.
 - **`gen-views --wit`** writes the schema back out as a self-contained `.wit`
   document for `wit-bindgen`, with the markers lowered; `<v>_schema_fingerprint`
   is its structural identity, over shape rather than over source text.

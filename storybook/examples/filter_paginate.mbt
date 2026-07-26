@@ -43,15 +43,6 @@ fn fp_pager_label(current : Int, page_count : Int, total : Int) -> String {
 }
 
 ///|
-/// The state every strategy shares — same fields, same defaults.
-priv struct PeopleState {
-  items : Array[@tutuca.Value]
-  query : String
-  page : Int
-  pageSize : Int
-} derive(ToJson, FromJson)
-
-///|
 fn fp_match_count(s : PeopleState) -> Int {
   let mut n = 0
   for p in s.items {
@@ -201,6 +192,8 @@ fn naive_people_comp() -> @component.Component {
         fp_num_keys(page_slice(all, start, s.pageSize))
       },
     },
+    encode=people_encode,
+    decode=people_decode,
   )
 }
 
@@ -246,6 +239,8 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
+    encode=people_encode,
+    decode=people_decode,
   )
 }
 
@@ -294,6 +289,8 @@ fn coupled_people_comp() -> @component.Component {
         }
       },
     },
+    encode=people_encode,
+    decode=people_decode,
   )
 }
 

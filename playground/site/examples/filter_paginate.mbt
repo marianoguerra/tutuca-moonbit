@@ -46,17 +46,9 @@ fn fp_pager_label(current : Int, page_count : Int, total : Int) -> String {
   "Page \{current + 1} of \{page_count} · \{total} match\{suffix}"
 }
 
-///|
-/// The state every strategy shares — same fields, same defaults.
-struct PeopleState {
-  items : Array[@tutuca.Value]
-  query : String
-  page : Int
-  pageSize : Int
-} derive(ToJson, FromJson)
 
 ///|
-fn fp_match_count(s : PeopleState) -> Int {
+fn fp_match_count(s : NaivePeopleState) -> Int {
   let mut n = 0
   for p in s.items {
     if fp_matches(p, s.query) {
@@ -72,7 +64,7 @@ fn fp_match_count(s : PeopleState) -> Int {
 /// `update` fn, and the `onlyMatches` @when predicate.
 fn fp_base_compute() -> Map[
   String,
-  (PeopleState, Array[@tutuca.Value]) -> @tutuca.Value,
+  (NaivePeopleState, Array[@tutuca.Value]) -> @tutuca.Value,
 ] {
   { "matchCount": (s, _args) => Num(fp_match_count(s).to_double()) }
 }
@@ -82,10 +74,10 @@ fn fp_base_compute() -> Map[
 /// message enum (NaivePeopleMsg, SharedPeopleMsg, …), so one shared handler
 /// can only speak the untyped dispatch they have in common.
 fn fp_update() -> (
-  PeopleState,
+  NaivePeopleState,
   @component.Dispatch,
   &@tutuca.Ctx,
-) -> PeopleState? {
+) -> NaivePeopleState? {
   (s, msg, _ctx) => match msg {
     // reset to page 0 on every query change, so a shrinking result set never
     // strands you on an empty page
@@ -109,7 +101,7 @@ fn fp_update() -> (
 ///|
 fn fp_only_matches() -> Map[
   String,
-  (PeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  (NaivePeopleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
 ] {
   {
     "onlyMatches": (s, _key, person, _iter) => fp_matches(person, s.query),
@@ -123,12 +115,6 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
   )
 }
 
-///|
-struct PersonState {
-  name : String
-  email : String
-  active : Bool
-} derive(ToJson, FromJson)
 
 ///|
 fn person_comp() -> @component.Component {
@@ -136,6 +122,9 @@ fn person_comp() -> @component.Component {
     views=person_views(),
     name="Person",
     init=PersonState::{ name: "", email: "", active: false },
+    encode=person_encode,
+    decode=person_decode,
+  
   )
 }
 
@@ -144,7 +133,7 @@ fn person_comp() -> @component.Component {
 /// the pager bindings the controls read. SharedPeople also reads `currentPage`
 /// from it; CoupledPeople stashes `__keys__` in it (added in that component's
 /// variant).
-fn fp_pager_info(s : PeopleState) -> Map[String, @tutuca.Value] {
+fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
   let total = fp_match_count(s)
   let (page_count, current) = fp_clamp(s.page, total, s.pageSize)
   {
@@ -162,13 +151,13 @@ fn naive_people_comp() -> @component.Component {
   @component.component(
     views=naive_people_views(),
     name="NaivePeople",
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
     loop_with={
-      "tablePage": (s : PeopleState, seq, ctx) => {
+      "tablePage": (s : NaivePeopleState, seq, ctx) => {
         let all : Array[Int] = []
         for i, v in seq.list() {
           if (ctx.filter)(Num(i.to_double()), v, Null) {
@@ -180,6 +169,9 @@ fn naive_people_comp() -> @component.Component {
         fp_num_keys(page_slice(all, start, s.pageSize))
       },
     },
+    encode=naive_people_encode,
+    decode=naive_people_decode,
+  
   )
 }
 
@@ -190,14 +182,17 @@ fn naive_people_comp() -> @component.Component {
 fn shared_people_comp() -> @component.Component {
   @component.component(
     views=shared_people_views(),
+    // The shared shape's codec: all three strategies seed from one state.
+    encode=naive_people_encode,
+    decode=naive_people_decode,
     name="SharedPeople",
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
     loop_with={
-      "page": (s : PeopleState, seq, ctx) => {
+      "page": (s : NaivePeopleState, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {
           Num(n) => n.to_int()
           _ => 0
@@ -220,6 +215,7 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
+  
   )
 }
 
@@ -229,12 +225,14 @@ fn shared_people_comp() -> @component.Component {
 fn coupled_people_comp() -> @component.Component {
   @component.component(
     views=coupled_people_views(),
+    encode=naive_people_encode,
+    decode=naive_people_decode,
     name="CoupledPeople",
-    init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     enrich_scope={
-      "pagerInfo": (s : PeopleState) => {
+      "pagerInfo": (s : NaivePeopleState) => {
         let all : Array[Int] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
@@ -256,12 +254,13 @@ fn coupled_people_comp() -> @component.Component {
       },
     },
     loop_with={
-      "forwardKeys": (_s : PeopleState, _seq, ctx) => match
+      "forwardKeys": (_s : NaivePeopleState, _seq, ctx) => match
         (ctx.lookup)("__keys__") {
         List(keys) => @component.LoopWith::new(keys~)
         _ => @component.LoopWith::new(keys=[])
       },
     },
+  
   )
 }
 
@@ -278,8 +277,6 @@ fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
   out
 }
 
-///|
-struct StrategiesState {} derive(ToJson, FromJson)
 
 ///|
 fn strategies_comp() -> @component.Component {

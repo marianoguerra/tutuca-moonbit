@@ -8,11 +8,6 @@
 // works on them.
 
 ///|
-priv struct BarChartState {
-  values : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
-
-///|
 /// A bar chart driven by a list field. `@loop-with` computes shared layout once,
 /// `@enrich-with` derives each bar's geometry, and the buttons mutate the data.
 ///
@@ -110,6 +105,8 @@ fn bar_chart_comp() -> @component.Component {
         _ => None
       }
     },
+    encode=bar_chart_encode,
+    decode=bar_chart_decode,
   )
 }
 
@@ -154,11 +151,6 @@ fn icon_macro(path : String) -> @anode.Macro {
 }
 
 ///|
-priv struct IconGalleryState {
-  size : Int
-} derive(ToJson, FromJson)
-
-///|
 fn icon_gallery_comp() -> @component.Component {
   @component.component(
     views={
@@ -188,6 +180,8 @@ fn icon_gallery_comp() -> @component.Component {
     },
     name="IconGallery",
     init=IconGalleryState::{ size: 40 },
+    encode=icon_gallery_encode,
+    decode=icon_gallery_decode,
   )
 }
 

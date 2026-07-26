@@ -1,3 +1,38 @@
+<script type="tutuca/state">
+  interface alt-url {
+    record state {
+    label: string,
+    url: string,
+    }
+  }
+  interface p-s-entry {
+    record state {
+    title: string,
+    description: string,
+    lang: string,
+    start-year: any,
+    end-year: any,
+    role: any,
+    featured: bool,
+    url: string,
+    alt-urls: values,
+    categories: values,
+    }
+  }
+  interface root {
+    record state {
+      all-entries: values,
+      all-categories: list<string>,
+      all-roles: list<string>,
+      selected-categories: text-set,
+      selected-roles: text-set,
+      featured-first: bool,
+      sort-by-end: bool,
+      sort-asc: bool,
+    }
+  }
+</script>
+
 <template id="AltUrl">
   <a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
 </template>

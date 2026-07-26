@@ -420,13 +420,16 @@ pub fn emit_module(
   // that matches nothing is a spelling difference between the block and the
   // templates, and silently generating no state for it would look exactly
   // like the schema not working.
-  let declared : Array[String] = []
-  for comp in file.components {
-    declared.push(comp.component_name(name))
-  }
+  let declared = declared_components(file, name)
+  // A schema entry with no matching template declares state for a component
+  // whose views are built in MoonBit. That is legitimate — and it may sit
+  // alongside components that DO have templates, because one file often
+  // holds both. It is also what a mistyped interface name looks like, so
+  // the CLI reports it as a diagnostic (cli/gen_views.mbt) rather than
+  // generating in silence.
   for def in file.state {
     if !declared.contains(def.component) {
-      raise StateForUnknownComponent(comp=def.component, known=declared)
+      emit_state_only(def, file, debug_derive, out)
     }
   }
   for comp in file.components {
@@ -444,6 +447,35 @@ pub fn emit_module(
     )
   }
   out.to_string()
+}
+
+///|
+/// The component names this file gives views to.
+pub fn declared_components(file : ViewFile, name : String) -> Array[String] {
+  let out : Array[String] = []
+  for comp in file.components {
+    out.push(comp.component_name(name))
+  }
+  out
+}
+
+///|
+/// The state half alone, for a component whose views are built at runtime.
+///
+/// No view surface to extract and nothing to check the schema against — the
+/// views this state belongs to are assembled in MoonBit, where the compiler
+/// checks them instead.
+fn emit_state_only(
+  def : @statedef.StateDef,
+  file : ViewFile,
+  debug_derive : Bool,
+  out : StringBuilder,
+) -> Unit raise GenError {
+  let t = type_prefix(def.component)
+  let v = value_prefix(def.component)
+  let derives = if debug_derive { "Eq, @debug.Debug" } else { "Eq" }
+  let inits = file.init.filter(p => p.0 == def.component).map(p => p.1)
+  emit_state(t, v, def, inits, derives, out)
 }
 
 ///|

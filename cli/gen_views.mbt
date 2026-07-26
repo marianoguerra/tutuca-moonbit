@@ -34,6 +34,22 @@ fn view_diagnostics(
   fallback : String,
 ) -> Array[String] {
   let out : Array[String] = []
+  // A schema interface with no template declares state for a component whose
+  // views are built in MoonBit. Legitimate, and also what a mistyped
+  // interface name looks like — so it is reported, not generated in silence.
+  let declared = @viewgen.declared_components(file, fallback)
+  for def in file.state {
+    if !declared.contains(def.component) {
+      out.push(
+        "state-without-views (hint) \{def.component}: the schema declares it but no <template> here gives it views" +
+        (if declared.is_empty() {
+          ""
+        } else {
+          " (this file declares \{declared.join(", ")})"
+        }),
+      )
+    }
+  }
   for comp in file.components {
     let cname = comp.component_name(fallback)
     for view in comp.views {

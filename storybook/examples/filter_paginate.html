@@ -6,6 +6,18 @@
     active: bool,
     }
   }
+  // NaivePeople, SharedPeople and CoupledPeople build their views in MoonBit
+  // (each wraps the same table with a different @when/@loop-with), so they
+  // have no <template> here — but they share one state shape, and this is
+  // where it is declared.
+  interface people {
+    record state {
+      items: values,
+      query: string,
+      page: s32,
+      page-size: s32,
+    }
+  }
   interface strategies {
     record state {
     naive: component,

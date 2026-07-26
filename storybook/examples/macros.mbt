@@ -19,9 +19,6 @@ fn badge_macro() -> @anode.Macro {
 }
 
 ///|
-priv struct MacrosNoState {} derive(ToJson, FromJson)
-
-///|
 fn static_macro_comp() -> @component.Component {
   @component.component(
     views={
@@ -69,11 +66,6 @@ fn param_badge_macro() -> @anode.Macro {
 }
 
 ///|
-priv struct MacroParamsState {
-  status : String
-} derive(ToJson, FromJson)
-
-///|
 fn macro_params_comp() -> @component.Component {
   @component.component(
     views={
@@ -92,6 +84,8 @@ fn macro_params_comp() -> @component.Component {
     },
     name="MacroParams",
     init=MacroParamsState::{ status: "active" },
+    encode=macro_params_encode,
+    decode=macro_params_decode,
   )
 }
 
@@ -130,11 +124,6 @@ fn card_macro() -> @anode.Macro {
 }
 
 ///|
-priv struct MacroSlotsState {
-  count : Int
-} derive(ToJson, FromJson)
-
-///|
 /// The `@on.click="$inc"` inside the second card's slot content calls `inc` on
 /// MacroSlots — macros have no methods of their own.
 fn macro_slots_comp() -> @component.Component {
@@ -158,6 +147,8 @@ fn macro_slots_comp() -> @component.Component {
     name="MacroSlots",
     init=MacroSlotsState::{ count: 0 },
     mutate={ "inc": (s : MacroSlotsState, _args) => { count: s.count + 1 } },
+    encode=macro_slots_encode,
+    decode=macro_slots_decode,
   )
 }
 
@@ -195,11 +186,6 @@ fn panel_macro() -> @anode.Macro {
 }
 
 ///|
-priv struct MacroNamedSlotsState {
-  count : Int
-} derive(ToJson, FromJson)
-
-///|
 fn macro_named_slots_comp() -> @component.Component {
   @component.component(
     views={
@@ -224,6 +210,8 @@ fn macro_named_slots_comp() -> @component.Component {
     mutate={
       "inc": (s : MacroNamedSlotsState, _args) => { count: s.count + 1 },
     },
+    encode=macro_named_slots_encode,
+    decode=macro_named_slots_decode,
   )
 }
 

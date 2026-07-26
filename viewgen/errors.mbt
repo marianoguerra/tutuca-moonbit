@@ -23,6 +23,8 @@ pub fn GenError::message(self : GenError) -> String {
       "\"\{name}\" is not usable as a component name: expected a name starting with a letter and made of letters, digits and underscores"
     BadStateBlock(line~, message~) | BadInitBlock(line~, message~) =>
       "line \{line}: \{message}"
+    NoViewsToCompile =>
+      "this file declares a schema and no <template>, so it has no views to compile"
     DuplicateStateBlock =>
       "two <script type=\"tutuca/state\"> blocks — one file declares one schema, with one interface per component"
     UnknownStateField(view~, name~, scope~, suggestion~) =>
@@ -35,12 +37,5 @@ pub fn GenError::message(self : GenError) -> String {
       "view \"\{view}\": `@each` needs a collection, but `\{expr}` is \{ty}"
     NotRenderable(view~, expr~, ty~) =>
       "view \"\{view}\": `<x render>` needs a component, but `\{expr}` is \{ty}"
-    StateForUnknownComponent(comp~, known~) =>
-      "the schema declares component \"\{comp}\", which no <template> in this file gives views" +
-      (if known.is_empty() {
-        ""
-      } else {
-        " (this file declares \{known.join(", ")})"
-      })
   }
 }

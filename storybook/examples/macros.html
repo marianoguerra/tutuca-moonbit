@@ -1,0 +1,25 @@
+<script type="tutuca/state">
+  // The state for the components in macros.mbt, which build
+  // their views in MoonBit rather than here — a macro body is
+  // registered at runtime, so it cannot be compiled ahead of time.
+  // No <template>: this file declares state and nothing else.
+  interface macros-no {
+    record state {
+    }
+  }
+  interface macro-params {
+    record state {
+      status: string,
+    }
+  }
+  interface macro-slots {
+    record state {
+      count: s32,
+    }
+  }
+  interface macro-named-slots {
+    record state {
+      count: s32,
+    }
+  }
+</script>

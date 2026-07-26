@@ -45,12 +45,19 @@
         <li>HTML-first</li>
         <li>Reactive value language</li>
       </ul>
-      <pre class="hero-teaser"><code>&lt;!-- counter.html --&gt;
+      <pre class="hero-teaser"><code>&lt;!-- counter.html — the state AND the view --&gt;
+&lt;script type="tutuca/state"&gt;
+  interface counter {
+    record state { count: s32 }
+  }
+&lt;/script&gt;
+
 &lt;template id="Counter"&gt;
   &lt;button @on.click="$inc" @text=".count"&gt;&lt;/button&gt;
 &lt;/template&gt;
 
-// counter.mbt — `tutuca gen-views` compiled the view above
+// counter.mbt — `tutuca gen-views` generated CounterState from
+// the schema above, and checked `.count` against it
 let counter = @component.component(
   name="Counter",
   views=counter_views(),

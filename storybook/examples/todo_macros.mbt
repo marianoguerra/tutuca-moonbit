@@ -57,12 +57,6 @@ fn tm_vbox_macro() -> @anode.Macro {
 }
 
 ///|
-priv struct TmItemState {
-  completed : Bool
-  text : String
-} derive(ToJson, FromJson)
-
-///|
 fn tm_item_comp() -> @component.Component {
   @component.component(
     views={
@@ -78,13 +72,10 @@ fn tm_item_comp() -> @component.Component {
     },
     name="Item",
     init=TmItemState::{ completed: false, text: "do the thing" },
+    encode=tm_item_encode,
+    decode=tm_item_decode,
   )
 }
-
-///|
-priv struct TmItemsState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 /// `:handler="onAddItem"` passes the handler NAME through the macro; the handler
@@ -126,6 +117,8 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
         _ => None
       }
     },
+    encode=tm_items_encode,
+    decode=tm_items_decode,
   )
 }
 

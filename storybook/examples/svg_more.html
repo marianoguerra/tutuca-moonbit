@@ -1,0 +1,16 @@
+<script type="tutuca/state">
+  // The state for the components in svg_more.mbt, which build
+  // their views in MoonBit rather than here — a macro body is
+  // registered at runtime, so it cannot be compiled ahead of time.
+  // No <template>: this file declares state and nothing else.
+  interface bar-chart {
+    record state {
+      values: values,
+    }
+  }
+  interface icon-gallery {
+    record state {
+      size: s32,
+    }
+  }
+</script>

@@ -1,3 +1,46 @@
+<script type="tutuca/state">
+  interface json-null {
+    record state {
+    }
+  }
+  interface json-bool {
+    record state {
+    value: bool,
+    }
+  }
+  interface json-string {
+    record state {
+    value: string,
+    }
+  }
+  interface json-number {
+    record state {
+    str-value: string,
+    value: f64,
+    }
+  }
+  interface json-selector {
+    record state {
+    }
+  }
+  interface json-array {
+    record state {
+    items: values,
+    }
+  }
+  interface json-object-key-val {
+    record state {
+    key: string,
+    value: any,
+    }
+  }
+  interface json-object {
+    record state {
+    items: values,
+    }
+  }
+</script>
+
 <template id="JsonNull">
   <span class="text-warning text-xs font-mono p-3 json-null">null</span>
 </template>

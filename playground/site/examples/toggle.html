@@ -1,3 +1,11 @@
+<script type="tutuca/state">
+  interface panel {
+    record state {
+    open: bool,
+    }
+  }
+</script>
+
 <template id="Panel">
   <section style="font-family:system-ui">
     <button @on.click="$toggleOpen" @text="$label"></button>

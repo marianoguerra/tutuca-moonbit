@@ -1,3 +1,20 @@
+<script type="tutuca/state">
+  interface tree-item {
+    record state {
+    %type: string,
+    label: string,
+    is-open: bool,
+    items: values,
+    }
+  }
+  interface tree-root {
+    record state {
+    log: values,
+    root: component,
+    }
+  }
+</script>
+
 <template id="TreeItem">
   <section>
     <p class="head"

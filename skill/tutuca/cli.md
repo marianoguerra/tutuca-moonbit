@@ -155,6 +155,15 @@ JSON, where integers past 2^53 lose precision), `result`, `future`, `stream`,
 `world`s and freestanding `func`s. `map<K, V>` is real WIT but the parser
 does not carry it yet.
 
+A file may carry a schema and **no** `<template>` at all. That is how a
+component whose views are built in MoonBit — a macro user, a dynamically
+assembled tree — still gets a generated state type: the schema lives in a
+view file, so it needs a view file even when it has no views. Such a file
+emits the state half only, and no view surface. The same applies per
+interface: one file may give templates to some components and declare state
+alone for others, and `gen-views` reports the latter as a hint rather than an
+error, since it is also what a mistyped interface name looks like.
+
 Named initial states go in a block of their own, because a default is a value
 and not a type:
 

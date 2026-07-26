@@ -16,15 +16,6 @@
 // INPUT_HANDLER_NOT_IMPLEMENTED.
 
 ///|
-priv struct LintDemoState {
-  count : Int
-  items : Array[@tutuca.Value]
-  kind : String
-  isOpen : Bool
-  child : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 fn lint_demo_comp() -> @component.Component {
   @component.component(
     views={
@@ -182,13 +173,10 @@ fn lint_demo_comp() -> @component.Component {
       // LOOKUP_TARGET_MALFORMED: target must be "Producer.provideName"
       "badTarget": { source: "NoDotHere", default: None },
     },
+    encode=lint_demo_encode,
+    decode=lint_demo_decode,
   )
 }
-
-///|
-priv struct HtmlLintDemoState {
-  count : Int
-} derive(ToJson, FromJson)
 
 ///|
 fn html_lint_demo_comp() -> @component.Component {
@@ -225,13 +213,10 @@ fn html_lint_demo_comp() -> @component.Component {
     },
     name="HtmlLintDemo",
     init=HtmlLintDemoState::{ count: 0 },
+    encode=html_lint_demo_encode,
+    decode=html_lint_demo_decode,
   )
 }
-
-///|
-priv struct ScopedStyleDemoState {
-  count : Int
-} derive(ToJson, FromJson)
 
 ///|
 fn scoped_style_demo_comp() -> @component.Component {
@@ -250,6 +235,8 @@ fn scoped_style_demo_comp() -> @component.Component {
       #|/* GLOBAL_SELECTOR_IN_SCOPED_STYLE: leading body becomes a dead descendant */
       #|body { margin: 0; }
     ),
+    encode=scoped_style_demo_encode,
+    decode=scoped_style_demo_decode,
   )
 }
 

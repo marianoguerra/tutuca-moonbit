@@ -137,21 +137,23 @@ test "named types become MoonBit types, and a keyword field escapes" {
 }
 
 ///|
-test "a schema for a component the file does not declare is an error" {
+test "a schema interface with no template declares state anyway" {
+  // Legitimate: a component whose views are built in MoonBit still wants a
+  // state type, and one file often holds both kinds. It is ALSO what a
+  // mistyped interface name looks like, so the CLI reports it on its
+  // non-fatal diagnostic channel rather than failing generation.
   let html =
     #|<script type="tutuca/state">
     #|  interface countr { record state { n: s32 } }
     #|</script>
     #|<template><p>hi</p></template>
   let file = @viewgen.split_file(html)
-  try @viewgen.emit_module("Counter", "c.html", file) |> ignore catch {
-    e => {
-      assert_true(e.message().contains("Countr"))
-      assert_true(e.message().contains("no <template>"))
-    }
-  } noraise {
-    _ => fail("expected the orphan schema to be reported")
-  }
+  assert_eq(@viewgen.declared_components(file, "Counter"), ["Counter"])
+  let src = @viewgen.emit_module("Counter", "c.html", file)
+  // The state is generated...
+  assert_true(src.contains("priv struct CountrState {"))
+  // ...but no view surface is invented for it.
+  assert_false(src.contains("CountrView"))
 }
 
 ///|
@@ -215,4 +217,50 @@ test "the block's angle brackets survive the HTML tokenizer" {
   assert_true(src.contains("  a : Array[Int]"))
   assert_true(src.contains("  b : String?"))
   assert_true(src.contains("  c : (Int, Bool)"))
+}
+
+///|
+test "a schema-only file declares state for views built at runtime" {
+  // No <template> at all. This is how a component whose views are assembled
+  // in MoonBit — a macro user, a dynamically built tree — still gets a
+  // generated state type: the schema lives in a view file, so it needs a
+  // view file even when it has no views.
+  let html =
+    #|<script type="tutuca/state">
+    #|  interface bar-chart {
+    #|    record state { title: string, values: values }
+    #|  }
+    #|</script>
+  let file = @viewgen.split_file(html)
+  assert_eq(file.components.length(), 0)
+  assert_eq(file.state.length(), 1)
+  let src = @viewgen.emit_module("BarChart", "bar_chart.html", file)
+  assert_true(src.contains("priv struct BarChartState {"))
+  assert_true(src.contains("pub(all) enum BarChartField {"))
+  // ...and NO view surface: there are no views to describe, and the schema
+  // block itself must not become one.
+  assert_false(src.contains("BarChartView"))
+  assert_false(src.contains("bar_chart_views"))
+  assert_false(src.contains("@anode"))
+  assert_false(src.contains("script"))
+  // There is no tree to compile either, so the IR module is simply absent.
+  assert_true(@viewgen.emit_ir_module_opt("BarChart", "b.html", file) is None)
+}
+
+///|
+test "a schema block is lifted out of a file that is its own main view" {
+  // A file with no <template> IS the main view. The schema must not end up
+  // inside it — before the block was lifted like a <style>, it compiled to a
+  // literal <script> element in the view tree.
+  let html =
+    #|<script type="tutuca/state">
+    #|  interface widget { record state { n: s32 } }
+    #|</script>
+    #|<p><x text=".n"></x></p>
+  let file = @viewgen.split_file(html)
+  assert_eq(file.components.length(), 1)
+  let view = file.components[0].views[0]
+  assert_false(view.source.contains("script"))
+  assert_false(view.source.contains("interface widget"))
+  assert_true(view.source.contains("<x text=\".n\">"))
 }

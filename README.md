@@ -4,13 +4,28 @@ A [MoonBit](https://docs.moonbitlang.com) port of
 [tutuca](https://github.com/marianoguerra/tutuca), a small UI framework built
 around a reactive value language, HTML-ish templates, and a virtual DOM.
 
-Components are a plain `derive(ToJson, FromJson)` state struct plus one
-`update` match, so every handler is checked against the state it mutates.
-Views are HTML-ish templates, compiled ahead of time into typed MoonBit
-modules. It runs on all three backends: **wasm-gc** (the default), **js** (the
-real-DOM adapter) and **native** (the CLI).
+A component declares its state and its views in one file, in a small subset
+of WIT and HTML-ish templates, and both are compiled ahead of time into typed
+MoonBit. Every handler is checked against the state it mutates, and so is
+every `.field` a view reads — including inside a loop. It runs on all three
+backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
+**native** (the CLI).
+
+```html
+<!-- counter.html -->
+<script type="tutuca/state">
+  interface counter {
+    record state { count: s32 }
+  }
+</script>
+
+<template id="Counter">
+  <button @on.click="$inc" @text=".count"></button>
+</template>
+```
 
 ```moonbit
+// CounterState came from the schema above; `.count` was checked against it.
 @component.component(
   views=counter_views(),
   name="Counter",

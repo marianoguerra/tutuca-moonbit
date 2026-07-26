@@ -1,0 +1,60 @@
+<script type="tutuca/state">
+  // The state for the components in visual_wasm.mbt, which build
+  // their views in MoonBit rather than here — a macro body is
+  // registered at runtime, so it cannot be compiled ahead of time.
+  // No <template>: this file declares state and nothing else.
+  interface vw-empty {
+    record state {
+    }
+  }
+  interface vw-imm {
+    record state {
+      value: s32,
+      raw-value: string,
+    }
+  }
+  interface vw-types {
+    record state {
+      items: values,
+    }
+  }
+  interface vw-container {
+    record state {
+      items: values,
+      expanded: bool,
+      editing: bool,
+    }
+  }
+  interface vw-if {
+    record state {
+      thn: values,
+      else: values,
+      expanded: bool,
+      editing-if: bool,
+      editing-thn: bool,
+      editing-else: bool,
+    }
+  }
+  interface vw-section {
+    record state {
+      id: s32,
+      name: string,
+      items: values,
+      expanded: bool,
+      default-item: any,
+    }
+  }
+  interface vw-memory {
+    record state {
+      n: s32,
+      m: s32,
+    }
+  }
+  interface vw-picker {
+    record state {
+      current-section: string,
+      instructions: values,
+      filter: string,
+    }
+  }
+</script>

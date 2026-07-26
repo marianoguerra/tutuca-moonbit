@@ -432,6 +432,9 @@ pub fn emit_ir_module(
   file : ViewFile,
 ) -> String raise GenError {
   let out = StringBuilder::new()
+  // A schema-only file declares no views, so there is no tree to compile —
+  // and no header to write, since the header names the first component.
+  guard !file.components.is_empty() else { raise NoViewsToCompile }
   let first = file.components[0].component_name(name)
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
   let scope = FileMacros::of(file.macros)

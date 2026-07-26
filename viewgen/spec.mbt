@@ -131,9 +131,8 @@ pub suberror GenError {
   BadStateBlock(line~ : Int, message~ : String)
   /// Two `<script type="tutuca/state">` blocks in one file.
   DuplicateStateBlock
-  /// The schema declares an interface that no `<template>` in the file
-  /// gives views — almost always a spelling difference between the two.
-  StateForUnknownComponent(comp~ : String, known~ : Array[String])
+  /// A schema-only file has no views to compile into a tree.
+  NoViewsToCompile
   /// The init block does not fit the schema.
   BadInitBlock(line~ : Int, message~ : String)
   /// A view reads a name the schema does not declare. THE headline check:
@@ -237,6 +236,14 @@ declare pub fn generate(
   name~ : String,
   source_file~ : String,
 ) -> String raise GenError
+
+///|
+/// The component names a file gives views to. A schema interface outside
+/// this set declares state for a component whose views are built in MoonBit.
+declare pub fn declared_components(
+  file : ViewFile,
+  name : String,
+) -> Array[String]
 
 ///|
 /// The component name for a ViewSet: its own, or the fallback the CLI passes

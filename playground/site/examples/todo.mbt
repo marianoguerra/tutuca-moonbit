@@ -3,39 +3,33 @@
 // `<template id="Item">` / `<template id="Items">` naming each. They arrive
 // here as `item_views()` and `items_views()`.
 
-///|
-struct TodoItemState {
-  completed : Bool
-  text : String
-} derive(ToJson, FromJson)
 
 ///|
 fn todo_item_comp() -> @component.Component {
   @component.component(
     views=item_views(),
     name="Item",
-    init=TodoItemState::{ completed: false, text: "do the thing" },
+    init=ItemState::{ completed: false, text: "do the thing" },
+    encode=item_encode,
+    decode=item_decode,
+  
   )
 }
 
-///|
-/// `<x render-it>` inside an `@each` renders whatever component instance the
-/// loop is currently on. `$removeInItemsAt @key` is a generated list mutator,
-/// passed the loop's key.
-struct TodoItemsState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
     views=items_views(),
     name="Items",
-    init=TodoItemsState::{ items: [] },
-    update=(s : TodoItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
+    init=ItemsState::{ items: [] },
+    update=(s : ItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
       Some(Unknown(_, _)) | None => None
     },
+    encode=items_encode,
+    decode=items_decode,
+  
   )
 }
 
