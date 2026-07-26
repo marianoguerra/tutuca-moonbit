@@ -10,18 +10,13 @@
 // is refused at an @on site, so a `$name` only ever reads a value.
 
 fn build() -> @component.ModuleDef {
-  let counter = @component.component(
-    views=counter_views(),
-    name="Counter",
+  let counter = counter_component(
     init=CounterState::{ count: 0 },
-    update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
       Some(Inc) => Some({ count: s.count + 1 })
       Some(Unknown(_, _)) | None => None
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=counter_encode,
-    decode=counter_decode,
   )
   @component.ModuleDef::new(
     name="counter",

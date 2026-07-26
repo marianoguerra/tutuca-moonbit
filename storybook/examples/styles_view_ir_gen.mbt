@@ -5,8 +5,13 @@
 // Passing styles_example_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -83,6 +88,75 @@ pub fn styles_example_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The StylesExample component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn styles_example_component(
+  name? : String = "StylesExample",
+  views? : Map[String, @anode.View] = styles_example_views(),
+  init? : StylesExampleState = StylesExampleState::zero(),
+  common_style? : String = styles_example_common_style,
+  global_style? : String = styles_example_global_style,
+  update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleState?,
+  compute? : Map[
+    String,
+    (StylesExampleState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (StylesExampleState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (StylesExampleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      StylesExampleState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (StylesExampleState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (StylesExampleState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=styles_example_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn styles_example_root_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -103,4 +177,73 @@ fn styles_example_root_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn styles_example_root_views() -> Map[String, @anode.View] {
   { "main": styles_example_root_main_view_ir() }
+}
+
+///|
+/// The StylesExampleRoot component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn styles_example_root_component(
+  name? : String = "StylesExampleRoot",
+  views? : Map[String, @anode.View] = styles_example_root_views(),
+  init? : StylesExampleRootState = StylesExampleRootState::zero(),
+  common_style? : String = styles_example_root_common_style,
+  global_style? : String = styles_example_root_global_style,
+  update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleRootState?,
+  compute? : Map[
+    String,
+    (StylesExampleRootState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (StylesExampleRootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (StylesExampleRootState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      StylesExampleRootState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (StylesExampleRootState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (StylesExampleRootState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=styles_example_root_schema(),
+  )
 }

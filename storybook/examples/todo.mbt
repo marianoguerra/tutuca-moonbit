@@ -8,14 +8,7 @@
 
 ///|
 fn todo_item_comp() -> @component.Component {
-  @component.component(
-    views=item_views(),
-    name="Item",
-    init=ItemState::{ completed: false, text: "do the thing" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=item_encode,
-    decode=item_decode,
-  )
+  item_component(init={ completed: false, text: "do the thing" })
 }
 
 ///|
@@ -23,24 +16,16 @@ fn todo_item_comp() -> @component.Component {
 /// loop is currently on. `$removeInItemsAt @key` is a generated list mutator,
 /// passed the loop's key.
 fn todo_items_comp(item : @component.Component) -> @component.Component {
-  @component.component(
-    views=items_views(),
-    name="Items",
-    init=ItemsState::{ items: [] },
-    update=(s : ItemsState, msg, _ctx) => {
-      match ItemsMsg::from_dispatch(msg) {
-        // Served by the mutators generated from the state's fields: the
-        // view spells them bare now, so they arrive as Inputs, and
-        // returning None falls through to them.
-        Some(RemoveInItemsAt(_)) => None
-        Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
-        Some(Unknown(_, _)) | None => None
-      }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=items_encode,
-    decode=items_decode,
-  )
+  items_component(init={ items: [] }, update=(s, msg, _ctx) => {
+    match ItemsMsg::from_dispatch(msg) {
+      // Served by the mutators generated from the state's fields: the
+      // view spells them bare now, so they arrive as Inputs, and
+      // returning None falls through to them.
+      Some(RemoveInItemsAt(_)) => None
+      Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
+      Some(Unknown(_, _)) | None => None
+    }
+  })
 }
 
 ///|

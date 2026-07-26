@@ -30,11 +30,9 @@ fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
 /// first and falls back to "main". Toggling one field flips every Entry between
 /// read-only and editable at once.
 fn push_view_comp() -> @component.Component {
-  @component.component(
-    views=push_view_views(),
-    name="PushView",
-    init=PushViewState::{ items: [], query: "", view: "main" },
-    update=(s : PushViewState, msg, _ctx) => {
+  push_view_component(
+    init={ items: [], query: "", view: "main" },
+    update=(s, msg, _ctx) => {
       match PushViewMsg::from_dispatch(msg) {
         Some(ToggleView) =>
           Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
@@ -44,7 +42,7 @@ fn push_view_comp() -> @component.Component {
       }
     },
     compute={
-      "getToggleLabel": (s : PushViewState, _args) => {
+      "getToggleLabel": (s, _args) => {
         if s.view == "main" {
           Str("Set Edit Mode")
         } else {
@@ -54,13 +52,8 @@ fn push_view_comp() -> @component.Component {
     },
     when={
       // the item is an Entry INSTANCE, so the filter calls its own method
-      "filterItem": (s : PushViewState, _k, item, _iter) => {
-        contains_text_filter(s.query, item)
-      },
+      "filterItem": (s, _k, item, _iter) => contains_text_filter(s.query, item),
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=push_view_encode,
-    decode=push_view_decode,
   )
 }
 
@@ -92,23 +85,13 @@ pub fn push_view_module() -> @component.ModuleDef {
 /// into the outer collection — by index for a List, by string key for a Map.
 /// `@text="@value.title"` is the one-level bind-member access.
 fn seq_item_access_comp() -> @component.Component {
-  @component.component(
-    views=seq_item_access_views(),
-    name="SeqItemAccess",
-    init=SeqItemAccessState::{
-      byKey: Map([]),
-      byIndex: [],
-      currentKey: Null,
-      currentIndex: 0,
-    },
+  seq_item_access_component(
+    init={ byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0 },
     compute={
-      "getMaxIndex": (s : SeqItemAccessState, _args) => {
+      "getMaxIndex": (s, _args) => {
         Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=seq_item_access_encode,
-    decode=seq_item_access_decode,
   )
 }
 
@@ -143,23 +126,15 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 /// slice range: `@each` never walks the off-page items. Slicing keeps each
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
 fn pagination_comp() -> @component.Component {
-  @component.component(
-    views=pagination_views(),
-    name="Pagination",
-    init=PaginationState::{ items: [], page: 0, pageSize: 5 },
+  pagination_component(
+    init={ items: [], page: 0, pageSize: 5 },
     compute={
-      "pageCount": (s : PaginationState, _args) => {
-        Num(page_count(s).to_double())
-      },
-      "pageLabel": (s : PaginationState, _args) => {
-        Str("Page \{s.page + 1} of \{page_count(s)}")
-      },
-      "isFirstPage": (s : PaginationState, _args) => Bool(s.page <= 0),
-      "isLastPage": (s : PaginationState, _args) => {
-        Bool(s.page >= page_count(s) - 1)
-      },
+      "pageCount": (s, _args) => Num(page_count(s).to_double()),
+      "pageLabel": (s, _args) => Str("Page \{s.page + 1} of \{page_count(s)}"),
+      "isFirstPage": (s, _args) => Bool(s.page <= 0),
+      "isLastPage": (s, _args) => Bool(s.page >= page_count(s) - 1),
     },
-    update=(s : PaginationState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match PaginationMsg::from_dispatch(msg) {
         Some(Prev) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
         Some(Next) =>
@@ -169,7 +144,7 @@ fn pagination_comp() -> @component.Component {
     },
     loop_with={
       // once per render: turn the current page into a slice range
-      "paginate": (s : PaginationState, seq, _ctx) => {
+      "paginate": (s, seq, _ctx) => {
         let total = match seq {
           List(a) => a.length()
           _ => 0
@@ -182,9 +157,6 @@ fn pagination_comp() -> @component.Component {
         )
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=pagination_encode,
-    decode=pagination_decode,
   )
 }
 

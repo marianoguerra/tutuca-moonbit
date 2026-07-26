@@ -17,20 +17,12 @@
 /// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
 /// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
-  @component.component(
-    views=render_with_scope_views(),
-    name="RenderWithScope",
-    init=RenderWithScopeState::{ text: "Hello" },
-    enrich_scope={
-      "enrichScope": (s : RenderWithScopeState) => {
-        "len": Num(s.text.length().to_double()),
-        "upper": Str(s.text.to_upper()),
-      },
+  render_with_scope_component(init={ text: "Hello" }, enrich_scope={
+    "enrichScope": s => {
+      "len": Num(s.text.length().to_double()),
+      "upper": Str(s.text.to_upper()),
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=render_with_scope_encode,
-    decode=render_with_scope_decode,
-  )
+  })
 }
 
 ///|
@@ -59,12 +51,10 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
 /// `enrich` inside a loop MUTATES the binds map it is handed — the return
 /// value is Unit. Setting `binds["count"]` makes `@count` readable in the row.
 fn list_filter_enrich_comp() -> @component.Component {
-  @component.component(
-    views=list_filter_enrich_views(),
-    name="ListFilterEnrich",
-    init=ListFilterEnrichState::{ items: [], query: "" },
+  list_filter_enrich_component(
+    init={ items: [], query: "" },
     when={
-      "filterItem": (s : ListFilterEnrichState, _key, value, _iter) => {
+      "filterItem": (s, _key, value, _iter) => {
         match value {
           Str(item) => item.to_lower().contains(s.query.to_lower())
           _ => true
@@ -72,16 +62,13 @@ fn list_filter_enrich_comp() -> @component.Component {
       },
     },
     enrich={
-      "enrichItem": (_s : ListFilterEnrichState, binds, _key, value, _iter) => {
+      "enrichItem": (_s, binds, _key, value, _iter) => {
         match value {
           Str(item) => binds["count"] = Num(item.length().to_double())
           _ => ()
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=list_filter_enrich_encode,
-    decode=list_filter_enrich_decode,
   )
 }
 
@@ -107,12 +94,10 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 /// instead of per item, and `totalChars` is summed over the WHOLE sequence,
 /// before any filtering.
 fn list_filter_enrich_with_comp() -> @component.Component {
-  @component.component(
-    views=list_filter_enrich_with_views(),
-    name="ListFilterEnrichWith",
-    init=ListFilterEnrichWithState::{ items: [], query: "" },
+  list_filter_enrich_with_component(
+    init={ items: [], query: "" },
     loop_with={
-      "getIterData": (s : ListFilterEnrichWithState, seq, _ctx) => {
+      "getIterData": (s, seq, _ctx) => {
         let mut total = 0
         for item in seq.list() {
           match item {
@@ -129,7 +114,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
       },
     },
     when={
-      "filterItem": (_s : ListFilterEnrichWithState, _key, value, iter) => {
+      "filterItem": (_s, _key, value, iter) => {
         match (value, iter) {
           (Str(item), Map(iter_data)) =>
             match iter_data.get("queryLower") {
@@ -141,7 +126,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
       },
     },
     enrich={
-      "enrichItem": (_s : ListFilterEnrichWithState, binds, _key, value, iter) => {
+      "enrichItem": (_s, binds, _key, value, iter) => {
         match (value, iter) {
           (Str(item), Map(iter_data)) => {
             binds["count"] = Num(item.length().to_double())
@@ -151,9 +136,6 @@ fn list_filter_enrich_with_comp() -> @component.Component {
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=list_filter_enrich_with_encode,
-    decode=list_filter_enrich_with_decode,
   )
 }
 

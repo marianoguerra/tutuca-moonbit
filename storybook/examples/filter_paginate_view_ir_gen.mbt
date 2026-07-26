@@ -5,8 +5,13 @@
 // Passing person_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -90,6 +95,73 @@ pub fn person_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The Person component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn person_component(
+  name? : String = "Person",
+  views? : Map[String, @anode.View] = person_views(),
+  init? : PersonState = PersonState::zero(),
+  common_style? : String = person_common_style,
+  global_style? : String = person_global_style,
+  update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> PersonState?,
+  compute? : Map[String, (PersonState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (PersonState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (PersonState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      PersonState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (PersonState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (PersonState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=person_encode,
+    decode=person_decode,
+    schema=person_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn strategies_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -125,4 +197,71 @@ fn strategies_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn strategies_views() -> Map[String, @anode.View] {
   { "main": strategies_main_view_ir() }
+}
+
+///|
+/// The Strategies component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn strategies_component(
+  name? : String = "Strategies",
+  views? : Map[String, @anode.View] = strategies_views(),
+  init? : StrategiesState = StrategiesState::zero(),
+  common_style? : String = strategies_common_style,
+  global_style? : String = strategies_global_style,
+  update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> StrategiesState?,
+  compute? : Map[
+    String,
+    (StrategiesState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (StrategiesState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (StrategiesState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      StrategiesState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (StrategiesState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (StrategiesState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=strategies_schema(),
+  )
 }

@@ -167,25 +167,16 @@ fn ps_category_decoy_classes() -> String {
 
 ///|
 fn alt_url_comp() -> @component.Component {
-  @component.component(
-    views=alt_url_views(),
-    name="AltUrl",
-    init=AltUrlState::{ label: "", url: "#" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=alt_url_encode,
-    decode=alt_url_decode,
-  )
+  alt_url_component(init={ label: "", url: "#" })
 }
 
 ///|
 fn ps_entry_comp() -> @component.Component {
-  @component.component(
-    views=ps_entry_views(),
-    name="PsEntry",
+  ps_entry_component(
     enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_s : PsEntryState, binds, _key, value, _iter) => {
+      "enrichCategoryBadge": (_s, binds, _key, value, _iter) => {
         match value {
           Str(cat) =>
             binds["badgeClass"] = Str(
@@ -208,15 +199,15 @@ fn ps_entry_comp() -> @component.Component {
       categories: [],
     },
     compute={
-      "langFlag": (s : PsEntryState, _args) => {
+      "langFlag": (s, _args) => {
         if s.lang == "es" {
           Str("🇪🇸")
         } else {
           Str("🇬🇧")
         }
       },
-      "isSpanish": (s : PsEntryState, _args) => Bool(s.lang == "es"),
-      "yearDisplay": (s : PsEntryState, _args) => {
+      "isSpanish": (s, _args) => Bool(s.lang == "es"),
+      "yearDisplay": (s, _args) => {
         match s.startYear {
           Num(start) =>
             match s.endYear {
@@ -227,9 +218,6 @@ fn ps_entry_comp() -> @component.Component {
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=ps_entry_encode,
-    decode=ps_entry_decode,
   )
 }
 
@@ -282,15 +270,11 @@ fn root_views_with_decoy() -> Map[String, @anode.View] {
 
 ///|
 fn root_comp() -> @component.Component {
-  @component.component(
+  root_component(
+    // The one argument this component overrides: its views are the generated
+    // ones plus a runtime-built decoy. Everything else the wrapper fills.
     views=root_views_with_decoy(),
-    name="Root",
-    // The schema-generated direct codec, in place of the JSON bridge. Wired
-    // by hand because this component wraps its generated views rather than
-    // passing them straight through.
-    encode=root_encode,
-    decode=root_decode,
-    init=RootState::{
+    init={
       allEntries: [],
       allCategories: [],
       allRoles: [],
@@ -301,20 +285,18 @@ fn root_comp() -> @component.Component {
       sortAsc: false,
     },
     compute={
-      "hasActiveFilters": (s : RootState, _args) => {
+      "hasActiveFilters": (s, _args) => {
         Bool(
           s.selectedCategories.length() != s.allCategories.length() ||
           s.selectedRoles.length() != s.allRoles.length(),
         )
       },
     },
-    when={
-      "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(s, e),
-    },
+    when={ "filterEntry": (s, _key, e, _iter) => ps_filter_entry(s, e) },
     enrich={
       // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
       // the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => {
+      "enrichCategoryBindings": (s, binds, _key, value, _iter) => {
         match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
@@ -330,7 +312,7 @@ fn root_comp() -> @component.Component {
       // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
       // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => {
+      "enrichRoleBindings": (s, binds, _key, value, _iter) => {
         match value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
@@ -346,7 +328,7 @@ fn root_comp() -> @component.Component {
         }
       },
     },
-    update=(s : RootState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         Input("clearFilters", _) =>
           Some({

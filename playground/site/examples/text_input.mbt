@@ -3,13 +3,8 @@
 // View tab (text_input.html) and arrives here as `greeter_views()`.
 
 fn build() -> @component.ModuleDef {
-  let greeter = @component.component(
-    views=greeter_views(),
-    name="Greeter",
+  let greeter = greeter_component(
     init=GreeterState::{ name: "world" },
-    encode=greeter_encode,
-    decode=greeter_decode,
-  
   )
   @component.ModuleDef::new(
     name="greeter",

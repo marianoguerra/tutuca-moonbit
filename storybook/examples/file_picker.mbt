@@ -72,19 +72,11 @@ fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
 
 ///|
 fn file_picker_comp() -> @component.Component {
-  @component.component(
-    views=file_picker_views(),
-    name="FilePicker",
+  file_picker_component(
     // The File metadata is flattened into plain fields so the view can bind
     // each piece reactively. `hasFile` gates summary vs. empty-state.
-    init=FilePickerState::{
-      name: "",
-      size: 0,
-      type_: "",
-      lastModified: 0,
-      hasFile: false,
-    },
-    update=(s : FilePickerState, msg, _ctx) => {
+    init={ name: "", size: 0, type_: "", lastModified: 0, hasFile: false },
+    update=(s, msg, _ctx) => {
       match msg {
         Input("onPickFile", args) =>
           Some(with_file(s, args.get(0).unwrap_or(Null)))
@@ -92,20 +84,15 @@ fn file_picker_comp() -> @component.Component {
       }
     },
     compute={
-      "sizeLabel": (s : FilePickerState, _args) => Str(format_size(s.size)),
-      "typeLabel": (s : FilePickerState, _args) => {
+      "sizeLabel": (s, _args) => Str(format_size(s.size)),
+      "typeLabel": (s, _args) => {
         match s.type_ {
           "" => Str("unknown")
           t => Str(t)
         }
       },
-      "lastModifiedLabel": (s : FilePickerState, _args) => {
-        Str(format_epoch_ms(s.lastModified))
-      },
+      "lastModifiedLabel": (s, _args) => Str(format_epoch_ms(s.lastModified)),
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=file_picker_encode,
-    decode=file_picker_decode,
   )
 }
 

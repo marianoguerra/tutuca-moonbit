@@ -19,17 +19,9 @@
 
 ///|
 fn request_example_comp(entry : @component.Component) -> @component.Component {
-  @component.component(
-    views=request_example_views(),
-    name="RequestExample",
-    init=RequestExampleState::{
-      items: [],
-      query: "",
-      view: "main",
-      isLoading: false,
-      error: Null,
-    },
-    update=(s : RequestExampleState, msg, ctx) => {
+  request_example_component(
+    init={ items: [], query: "", view: "main", isLoading: false, error: Null },
+    update=(s, msg, ctx) => {
       match msg {
         Input("toggleView", _) =>
           Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
@@ -67,13 +59,8 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
       }
     },
     when={
-      "filterItem": (s : RequestExampleState, _k, item, _iter) => {
-        contains_text_filter(s.query, item)
-      },
+      "filterItem": (s, _k, item, _iter) => contains_text_filter(s.query, item),
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=request_example_encode,
-    decode=request_example_decode,
   )
 }
 

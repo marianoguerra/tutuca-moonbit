@@ -6,14 +6,7 @@
 
 ///|
 fn list_iteration_comp() -> @component.Component {
-  @component.component(
-    views=list_iteration_views(),
-    name="ListIteration",
-    init=ListIterationState::{ items: [] },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=list_iteration_encode,
-    decode=list_iteration_decode,
-  )
+  list_iteration_component(init={ items: [] })
 }
 
 ///|

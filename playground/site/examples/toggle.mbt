@@ -4,18 +4,13 @@
 // `panel_views()`: no `@on` handler of its own, so no update at all.
 
 fn build() -> @component.ModuleDef {
-  let panel = @component.component(
-    views=panel_views(),
-    name="Panel",
+  let panel = panel_component(
     init=PanelState::{ open: false },
     compute={
-      "label": (s : PanelState, _a) => Str(
+      "label": (s, _a) => Str(
         if s.open { "Hide details" } else { "Show details" },
       ),
     },
-    encode=panel_encode,
-    decode=panel_decode,
-  
   )
   @component.ModuleDef::new(
     name="toggle",

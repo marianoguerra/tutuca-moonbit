@@ -30,11 +30,9 @@ fn main {
 
 ///|
 fn component_entry_comp() -> @component.Component {
-  @component.component(
-    views=component_entry_views(),
-    name="ComponentEntry",
-    init=ComponentEntryState::{ module_: "", name: "", label: "" },
-    update=(s : ComponentEntryState, msg, ctx) => {
+  component_entry_component(
+    init={ module_: "", name: "", label: "" },
+    update=(s, msg, ctx) => {
       match ComponentEntryMsg::from_dispatch(msg) {
         Some(OnSelect) => {
           ctx.bubble("componentSelected", [Str(s.module_), Str(s.name)])
@@ -46,30 +44,26 @@ fn component_entry_comp() -> @component.Component {
     // used by the picker's @when filter (called with the search text after the
     // dropped this-slot arg, like the parent app's matchesFilter)
     compute={
-      "containsText": (s : ComponentEntryState, args) => {
+      "containsText": (s, args) => {
         match args {
           [Str(q), ..] => Bool(s.label.contains(q))
           _ => Bool(false)
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=component_entry_encode,
-    decode=component_entry_decode,
   )
 }
 
 // --- ComponentPicker: selector that replaces itself with the pick --------
 
 ///|
+/// Once `.selected` is set, the picker chrome is hidden and only the chosen
+/// component renders — the picker "replaces itself". That is the views' doing,
+/// and they come from component_picker.html through the generated wrapper.
 fn component_picker_comp(entry : @component.Component) -> @component.Component {
-  @component.component(
-    // once .selected is set, the picker chrome is hidden and only the chosen
-    // component renders — the picker "replaces itself"
-    views=component_picker_views(),
-    name="ComponentPicker",
-    init=ComponentPickerState::{ filterText: "", items: [], selected: Null },
-    update=(s : ComponentPickerState, msg, ctx) => {
+  component_picker_component(
+    init={ filterText: "", items: [], selected: Null },
+    update=(s, msg, ctx) => {
       match msg {
         // fetch the list of registered components on init (forwarded here when
         // the picker is added to a list)
@@ -109,7 +103,7 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
     // @when predicate for render-each; keep rows whose entry's containsText
     // method matches the filter text
     when={
-      "matchesFilter": (s : ComponentPickerState, _key, item, _iter) => {
+      "matchesFilter": (s, _key, item, _iter) => {
         if s.filterText == "" {
           true
         } else {
@@ -120,9 +114,6 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=component_picker_encode,
-    decode=component_picker_decode,
   )
 }
 
@@ -153,14 +144,12 @@ fn entries_from_list(
 // --- ComponentList: the builtin flexbox canvas ---------------------------
 
 ///|
+/// The gear (layout) and + (add) are subtle ghost icon buttons pinned to the
+/// canvas corners via daisyUI's indicator; the canvas content is the
+/// indicator's normal child. All of that is in the views the wrapper supplies.
 fn component_list_comp() -> @component.Component {
-  @component.component(
-    // the gear (layout) and + (add) are subtle ghost icon buttons pinned to the
-    // canvas corners via daisyUI's indicator; the canvas content is the
-    // indicator's normal child
-    views=component_list_views(),
-    name="ComponentList",
-    init=ComponentListState::{
+  component_list_component(
+    init={
       entries: [],
       showSettings: false,
       dir: "row",
@@ -169,7 +158,7 @@ fn component_list_comp() -> @component.Component {
       gap: 12,
       wrap: true,
     },
-    update=(s : ComponentListState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         // append a fresh picker: request one, seed + init it in the response
         Input("onAdd", _) => {
@@ -204,16 +193,13 @@ fn component_list_comp() -> @component.Component {
     compute={
       // per-instance flexbox style from the settings fields (see visual_wasm
       // getInputWidth precedent for a compute returning a CSS string)
-      "flexStyle": (s : ComponentListState, _args) => {
+      "flexStyle": (s, _args) => {
         let wrap = if s.wrap { "wrap" } else { "nowrap" }
         Str(
           "display:flex;flex-direction:\{s.dir};gap:\{s.gap}px;justify-content:\{s.justify};align-items:\{s.align};flex-wrap:\{wrap}",
         )
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=component_list_encode,
-    decode=component_list_decode,
   )
 }
 
@@ -221,14 +207,12 @@ fn component_list_comp() -> @component.Component {
 
 ///|
 fn universal_shell_comp() -> @component.Component {
-  @component.component(
-    views=universal_wasm_views(),
-    name="UniversalWasm",
-    init=UniversalWasmState::{
+  universal_wasm_component(
+    init={
       status: "drop a .tutuca.tar.gz bundle, then “+ Add component” to place it",
     },
     specs={ "list": @component.FieldSpec::comp("ComponentList") },
-    update=(_s : UniversalWasmState, msg, ctx) => {
+    update=(_s, msg, ctx) => {
       match msg {
         Receive("dyncompLoaded", args) => {
           let module_name = match args {
@@ -250,9 +234,6 @@ fn universal_shell_comp() -> @component.Component {
         _ => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=universal_wasm_encode,
-    decode=universal_wasm_decode,
   )
 }
 

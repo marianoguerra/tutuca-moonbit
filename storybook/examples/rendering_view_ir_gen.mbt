@@ -5,8 +5,13 @@
 // Passing push_view_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -84,6 +89,73 @@ pub fn push_view_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The PushView component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn push_view_component(
+  name? : String = "PushView",
+  views? : Map[String, @anode.View] = push_view_views(),
+  init? : PushViewState = PushViewState::zero(),
+  common_style? : String = push_view_common_style,
+  global_style? : String = push_view_global_style,
+  update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> PushViewState?,
+  compute? : Map[String, (PushViewState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (PushViewState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (PushViewState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      PushViewState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (PushViewState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (PushViewState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=push_view_encode,
+    decode=push_view_decode,
+    schema=push_view_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn seq_item_access_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -146,6 +218,77 @@ pub fn seq_item_access_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The SeqItemAccess component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn seq_item_access_component(
+  name? : String = "SeqItemAccess",
+  views? : Map[String, @anode.View] = seq_item_access_views(),
+  init? : SeqItemAccessState = SeqItemAccessState::zero(),
+  common_style? : String = seq_item_access_common_style,
+  global_style? : String = seq_item_access_global_style,
+  update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> SeqItemAccessState?,
+  compute? : Map[
+    String,
+    (SeqItemAccessState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (SeqItemAccessState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (SeqItemAccessState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      SeqItemAccessState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (SeqItemAccessState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (SeqItemAccessState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=seq_item_access_encode,
+    decode=seq_item_access_decode,
+    schema=seq_item_access_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn pagination_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -205,4 +348,73 @@ fn pagination_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn pagination_views() -> Map[String, @anode.View] {
   { "main": pagination_main_view_ir() }
+}
+
+///|
+/// The Pagination component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn pagination_component(
+  name? : String = "Pagination",
+  views? : Map[String, @anode.View] = pagination_views(),
+  init? : PaginationState = PaginationState::zero(),
+  common_style? : String = pagination_common_style,
+  global_style? : String = pagination_global_style,
+  update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> PaginationState?,
+  compute? : Map[
+    String,
+    (PaginationState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (PaginationState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (PaginationState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      PaginationState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (PaginationState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (PaginationState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=pagination_encode,
+    decode=pagination_decode,
+    schema=pagination_schema(),
+  )
 }

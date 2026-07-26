@@ -37,26 +37,17 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 
 ///|
 fn song_comp() -> @component.Component {
-  @component.component(
-    views=song_views(),
-    name="Song",
-    init=SongState::{ title: "" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=song_encode,
-    decode=song_decode,
-  )
+  song_component(init={ title: "" })
 }
 
 ///|
 fn playlist_comp() -> @component.Component {
-  @component.component(
-    views=playlist_views(),
-    name="Playlist",
-    init=PlaylistState::{ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
+  playlist_component(
+    init={ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
     // The state only sees `&Obj`, so the removal REBUILDS the keyed list from
     // obj_seq_entries minus the key (there is no downcast back to KeyedList —
     // the port's trait-object rule).
-    update=(s : PlaylistState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match PlaylistMsg::from_dispatch(msg) {
         Some(RemoveSong(key_v)) => {
           guard key_v is Str(key) else { return None }
@@ -75,9 +66,6 @@ fn playlist_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=playlist_encode,
-    decode=playlist_decode,
   )
 }
 

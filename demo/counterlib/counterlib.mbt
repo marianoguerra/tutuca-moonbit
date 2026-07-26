@@ -14,8 +14,9 @@
 // schema does not declare fails generation outright.
 //
 // It emits two modules: counter_view_gen.mbt (the state type and the view
-// types) and counter_view_ir_gen.mbt (the already-compiled @anode tree,
-// taken by `views~`, which is why no view source is passed below).
+// types) and counter_view_ir_gen.mbt (the already-compiled @anode tree, plus
+// the `counter_component` wrapper called below — which is why the name, the
+// views, the styles, the codec and the schema are nowhere in this file).
 
 ///|
 /// Move the counter to `n`, remembering where it landed.
@@ -25,20 +26,13 @@ fn counter_at(s : CounterState, n : Int) -> CounterState {
 
 ///|
 pub fn counter_comp() -> @component.Component {
-  @component.component(
-    name="Counter",
-    // The views, already compiled (counter_view_ir_gen.mbt) — no template
-    // parsing at startup. For a runtime-parsed view instead, build the map
-    // with @anode.View::new.
-    views=counter_views(),
-    // What the schema declares, for the inspector — and it also stops the
-    // runtime inferring field kinds from the init value.
-    schema=counter_schema(),
-    // The named `fresh` state from the init block. Fixtures live there
-    // rather than in the schema because a default is a value, not a type —
-    // and each is checked against the schema at generation time.
+  counter_component(
+    // The named `fresh` state from the init block, in place of the zero state
+    // the wrapper would otherwise use. Fixtures live in that block rather
+    // than in the schema because a default is a value, not a type — and each
+    // is checked against the schema at generation time.
     init=CounterState::fresh(),
-    update=(s : CounterState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       // The Input bucket, typed from the views' `@on` attributes.
       match CounterMsg::from_dispatch(msg) {
         Some(Add(d)) => return Some(counter_at(s, s.count + d.to_int()))
@@ -56,24 +50,21 @@ pub fn counter_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=counter_encode,
-    decode=counter_decode,
   )
 }
 
 ///|
+/// The examples take their args from the init block rather than restating its
+/// values: `counter_init_args` is the encoded form of the same fixture the
+/// component seeds from, so the two cannot drift.
 pub fn module_def() -> @component.ModuleDef {
+  let args = (name : String) => counter_init_args(name).unwrap_or(Map([]))
   @component.ModuleDef::new(name="counter-demo", components=[counter_comp()], examples=[
     { component: "Counter", title: "fresh", args: Map([]), view: None },
     {
       component: "Counter",
       title: "with history",
-      args: {
-        "label": Str("Demo"),
-        "count": Num(3),
-        "history": List([Num(1), Num(2), Num(3)]),
-      },
+      args: args("with-history"),
       view: None,
     },
   ])

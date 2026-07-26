@@ -22,37 +22,29 @@ let palette : Array[@tutuca.Value] = [
 /// Clicking a `<circle>` sets `color`; the preview `<rect>` binds `:fill` to it,
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
-  @component.component(
-    views=swatch_picker_views(),
-    name="SwatchPicker",
-    init=SwatchPickerState::{ color: "#ef4444", palette },
-    enrich={
-      "swatch": (
-        // lay each swatch out along a row and ring the selected one; the typed
-        // state's current `color` field decides which ring shows
-        s : SwatchPickerState,
-        binds,
-        key,
-        value,
-        _iter,
-      ) => {
-        match key {
-          Num(k) => {
-            binds["cx"] = Num(32.0 + k * 46.0)
-            binds["ring"] = if value == Str(s.color) {
-              Str("#0f172a")
-            } else {
-              Str("transparent")
-            }
+  swatch_picker_component(init={ color: "#ef4444", palette }, enrich={
+    "swatch": (
+      // lay each swatch out along a row and ring the selected one; the typed
+      // state's current `color` field decides which ring shows
+      s : SwatchPickerState,
+      binds,
+      key,
+      value,
+      _iter,
+    ) => {
+      match key {
+        Num(k) => {
+          binds["cx"] = Num(32.0 + k * 46.0)
+          binds["ring"] = if value == Str(s.color) {
+            Str("#0f172a")
+          } else {
+            Str("transparent")
           }
-          _ => ()
         }
-      },
+        _ => ()
+      }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=swatch_picker_encode,
-    decode=swatch_picker_decode,
-  )
+  })
 }
 
 ///|
@@ -76,30 +68,20 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
 /// `@text` on an `<mn>` makes the displayed number reactive; the discriminant
 /// classifies the equation as the coefficients change.
 fn quadratic_comp() -> @component.Component {
-  @component.component(
-    views=quadratic_views(),
-    name="Quadratic",
-    init=QuadraticState::{ a: 1, b: -3, c: 2 },
-    compute={
-      // b² − 4ac decides how many real roots the equation has
-      "discriminant": (s : QuadraticState, _args) => {
-        Num(discriminant_of(s).to_double())
-      },
-      "classify": (s : QuadraticState, _args) => {
-        let d = discriminant_of(s)
-        if d > 0 {
-          Str("two distinct real roots")
-        } else if d == 0 {
-          Str("one repeated real root")
-        } else {
-          Str("no real roots")
-        }
-      },
+  quadratic_component(init={ a: 1, b: -3, c: 2 }, compute={
+    // b² − 4ac decides how many real roots the equation has
+    "discriminant": (s, _args) => Num(discriminant_of(s).to_double()),
+    "classify": (s, _args) => {
+      let d = discriminant_of(s)
+      if d > 0 {
+        Str("two distinct real roots")
+      } else if d == 0 {
+        Str("one repeated real root")
+      } else {
+        Str("no real roots")
+      }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=quadratic_encode,
-    decode=quadratic_decode,
-  )
+  })
 }
 
 ///|

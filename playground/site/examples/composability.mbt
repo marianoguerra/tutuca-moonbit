@@ -12,11 +12,9 @@
 // --- Counter (from the counter example) ------------------------------------
 
 fn cx_counter_comp() -> @component.Component {
-  @component.component(
-    views=counter_views(),
-    name="Counter",
+  counter_component(
     init=CounterState::{ count: 0 },
-    update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
@@ -24,32 +22,22 @@ fn cx_counter_comp() -> @component.Component {
       Some(Inc) => Some({ count: s.count + 1 })
       Some(Unknown(_, _)) | None => None
     },
-    encode=counter_encode,
-    decode=counter_decode,
-  
   )
 }
 
 // --- To-Do (from the todo example) -----------------------------------------
 
 fn cx_todo_item_comp() -> @component.Component {
-  @component.component(
-    views=item_views(),
-    name="Item",
+  item_component(
     init=ItemState::{ completed: false, text: "do the thing" },
-    encode=item_encode,
-    decode=item_decode,
-  
   )
 }
 
 
 fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
-  @component.component(
-    views=items_views(),
-    name="Items",
+  items_component(
     init=ItemsState::{ items: [] },
-    update=(s : ItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
@@ -57,18 +45,13 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
       Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
-    encode=items_encode,
-    decode=items_decode,
-  
   )
 }
 
 // --- Tree (from the tree example) ------------------------------------------
 
 fn cx_tree_item_comp() -> @component.Component {
-  @component.component(
-    views=tree_item_views(),
-    name="TreeItem",
+  tree_item_component(
     init=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
@@ -76,13 +59,13 @@ fn cx_tree_item_comp() -> @component.Component {
       items: [],
     },
     compute={
-      "areChildsVisible": (s : TreeItemState, _args) => Bool(
+      "areChildsVisible": (s, _args) => Bool(
         s.isOpen && s.items.length() > 0,
       ),
     },
     // a raw `match msg`: Bubble is raised by component code, so the views
     // cannot declare it and TreeItemMsg cannot type it
-    update=(s : TreeItemState, msg, ctx) => match msg {
+    update=(s, msg, ctx) => match msg {
       Input("onItemClick", _) => {
         let mut self_v : @tutuca.Value = Null
         ctx.walk_path((_id, inst) => {
@@ -95,20 +78,15 @@ fn cx_tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
-    encode=tree_item_encode,
-    decode=tree_item_decode,
-  
   )
 }
 
 
 fn cx_tree_root_comp() -> @component.Component {
-  @component.component(
-    views=tree_root_views(),
-    name="TreeRoot",
+  tree_root_component(
     init=TreeRootState::{ log: [] },
     specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s : TreeRootState, msg, _ctx) => match msg {
+    update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
@@ -124,9 +102,6 @@ fn cx_tree_root_comp() -> @component.Component {
       }
       _ => None
     },
-    encode=tree_root_encode,
-    decode=tree_root_decode,
-  
   )
 }
 
@@ -156,18 +131,13 @@ fn cx_tree_sample(item : @component.Component) -> @tutuca.Value {
 // --- The composing root ----------------------------------------------------
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
-  @component.component(
-    views=composability_views(),
-    name="Composability",
+  composability_component(
     init=ComposabilityState::{ activeSection: "counter" },
     specs={
       "counter": @component.FieldSpec::comp("Counter"),
       "todo": @component.FieldSpec::comp("Items"),
       "tree": @component.FieldSpec::comp("TreeRoot", args=tree_args),
     },
-    encode=composability_encode,
-    decode=composability_decode,
-  
   )
 }
 

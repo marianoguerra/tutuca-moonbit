@@ -20,6 +20,17 @@
 // whole `Json` object just to hand it to `from_json`.
 
 ///|
+/// Whether this component gets a direct codec at all.
+///
+/// The generated wrapper has to answer the same question — it names
+/// `<v>_encode`/`<v>_decode` only when they exist — so the condition is a
+/// function rather than a check spelled twice.
+fn has_direct_codec(def : @statedef.StateDef) -> Bool {
+  let carried = def.fields.filter(f => f.ty.in_struct())
+  !carried.is_empty() && carried.iter().all(f => direct(f.ty))
+}
+
+///|
 /// `<v>_encode` / `<v>_decode`, when every field has a direct form.
 ///
 /// A component with a nested record, variant or enum field is skipped: those
@@ -31,10 +42,8 @@ fn emit_codec(
   def : @statedef.StateDef,
   out : StringBuilder,
 ) -> Unit {
+  guard has_direct_codec(def) else { return }
   let carried = def.fields.filter(f => f.ty.in_struct())
-  if carried.is_empty() || !carried.iter().all(f => direct(f.ty)) {
-    return
-  }
   out.write_string(
     "///|\n" +
     "/// The state as the fields map the render and path layers read, built\n" +

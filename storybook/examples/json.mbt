@@ -46,45 +46,27 @@ fn json_make_selector(reg : JsonReg) -> @tutuca.Value {
 
 ///|
 fn json_null_comp() -> @component.Component {
-  @component.component(views=json_null_views(), name="JsonNull", init=JsonNullState::{
-
-  })
+  json_null_component()
 }
 
 ///|
 fn json_bool_comp() -> @component.Component {
-  @component.component(
-    views=json_bool_views(),
-    name="JsonBool",
-    init=JsonBoolState::{ value: true },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_bool_encode,
-    decode=json_bool_decode,
-  )
+  json_bool_component(init={ value: true })
 }
 
 ///|
 fn json_string_comp() -> @component.Component {
-  @component.component(
-    views=json_string_views(),
-    name="JsonString",
-    init=JsonStringState::{ value: "hello" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_string_encode,
-    decode=json_string_decode,
-  )
+  json_string_component(init={ value: "hello" })
 }
 
 ///|
 fn json_number_comp() -> @component.Component {
-  @component.component(
-    views=json_number_views(),
-    name="JsonNumber",
-    init=JsonNumberState::{ strValue: "0", value: 0 },
+  json_number_component(
+    init={ strValue: "0", value: 0 },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed `String` by the generator, so the arg no longer
     // has to be unpacked from an untyped list.
-    update=(s : JsonNumberState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match JsonNumberMsg::from_dispatch(msg) {
         Some(SetRawValue(raw)) => {
           let parsed : Double? = Some(@string.parse_double(raw)) catch {
@@ -100,9 +82,6 @@ fn json_number_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_number_encode,
-    decode=json_number_decode,
   )
 }
 
@@ -113,32 +92,17 @@ fn json_number_comp() -> @component.Component {
 /// bool button chooses the initial boolean — the event field reaches the
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_selector_views(),
-    name="JsonSelector",
-    init=JsonSelectorState::{  },
-    swap={
-      "setToNull": (_s : JsonSelectorState, _args, _ctx) => {
-        Some(reg.make_("JsonNull"))
-      },
-      "setToBool": (_s : JsonSelectorState, args, _ctx) => {
-        let is_ctrl = args.get(0) is Some(Bool(true))
-        Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
-      },
-      "setToNumber": (_s : JsonSelectorState, _args, _ctx) => {
-        Some(reg.make_("JsonNumber"))
-      },
-      "setToString": (_s : JsonSelectorState, _args, _ctx) => {
-        Some(reg.make_("JsonString"))
-      },
-      "setToArray": (_s : JsonSelectorState, _args, _ctx) => {
-        Some(reg.make_("JsonArray"))
-      },
-      "setToObject": (_s : JsonSelectorState, _args, _ctx) => {
-        Some(reg.make_("JsonObject"))
-      },
+  json_selector_component(swap={
+    "setToNull": (_s, _args, _ctx) => Some(reg.make_("JsonNull")),
+    "setToBool": (_s, args, _ctx) => {
+      let is_ctrl = args.get(0) is Some(Bool(true))
+      Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
     },
-  )
+    "setToNumber": (_s, _args, _ctx) => Some(reg.make_("JsonNumber")),
+    "setToString": (_s, _args, _ctx) => Some(reg.make_("JsonString")),
+    "setToArray": (_s, _args, _ctx) => Some(reg.make_("JsonArray")),
+    "setToObject": (_s, _args, _ctx) => Some(reg.make_("JsonObject")),
+  })
 }
 
 ///|
@@ -188,76 +152,53 @@ fn json_dropped_items(
 
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_array_views(),
-    name="JsonArray",
-    init=JsonArrayState::{ items: [] },
-    update=(s : JsonArrayState, msg, _ctx) => {
-      match JsonArrayMsg::from_dispatch(msg) {
-        // Served by the mutators generated from the state's fields: the
-        // view spells them bare now, so they arrive as Inputs, and
-        // returning None falls through to them.
-        Some(RemoveInItemsAt(_)) => None
-        // add a fresh JsonSelector so the user can pick the new element's type
-        Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
-        Some(OnDropOnItem(a0, a1)) =>
-          match json_dropped_items(s.items, [a0, a1]) {
-            Some(items) => Some({ items, })
-            None => None
-          }
-        Some(Unknown(_, _)) | None => None
-      }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_array_encode,
-    decode=json_array_decode,
-  )
+  json_array_component(init={ items: [] }, update=(s, msg, _ctx) => {
+    match JsonArrayMsg::from_dispatch(msg) {
+      // Served by the mutators generated from the state's fields: the
+      // view spells them bare now, so they arrive as Inputs, and
+      // returning None falls through to them.
+      Some(RemoveInItemsAt(_)) => None
+      // add a fresh JsonSelector so the user can pick the new element's type
+      Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
+      Some(OnDropOnItem(a0, a1)) =>
+        match json_dropped_items(s.items, [a0, a1]) {
+          Some(items) => Some({ items, })
+          None => None
+        }
+      Some(Unknown(_, _)) | None => None
+    }
+  })
 }
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
-  @component.component(
-    views=json_object_key_val_views(),
-    name="JsonObjectKeyVal",
-    init=JsonObjectKeyValState::{ key: "k", value: Null },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_object_key_val_encode,
-    decode=json_object_key_val_decode,
-  )
+  json_object_key_val_component(init={ key: "k", value: Null })
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_object_views(),
-    name="JsonObject",
-    init=JsonObjectState::{ items: [] },
-    update=(s : JsonObjectState, msg, _ctx) => {
-      match JsonObjectMsg::from_dispatch(msg) {
-        // Served by the mutators generated from the state's fields: the
-        // view spells them bare now, so they arrive as Inputs, and
-        // returning None falls through to them.
-        Some(RemoveInItemsAt(_)) => None
-        // a key/value row whose value is a fresh selector
-        Some(AddItem) => {
-          let row = match reg.comps.get("JsonObjectKeyVal") {
-            Some(kv) => kv.make({ "value": json_make_selector(reg) })
-            None => Null
-          }
-          Some({ items: s.items + [row] })
+  json_object_component(init={ items: [] }, update=(s, msg, _ctx) => {
+    match JsonObjectMsg::from_dispatch(msg) {
+      // Served by the mutators generated from the state's fields: the
+      // view spells them bare now, so they arrive as Inputs, and
+      // returning None falls through to them.
+      Some(RemoveInItemsAt(_)) => None
+      // a key/value row whose value is a fresh selector
+      Some(AddItem) => {
+        let row = match reg.comps.get("JsonObjectKeyVal") {
+          Some(kv) => kv.make({ "value": json_make_selector(reg) })
+          None => Null
         }
-        Some(OnDropOnItem(a0, a1)) =>
-          match json_dropped_items(s.items, [a0, a1]) {
-            Some(items) => Some({ items, })
-            None => None
-          }
-        Some(Unknown(_, _)) | None => None
+        Some({ items: s.items + [row] })
       }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=json_object_encode,
-    decode=json_object_decode,
-  )
+      Some(OnDropOnItem(a0, a1)) =>
+        match json_dropped_items(s.items, [a0, a1]) {
+          Some(items) => Some({ items, })
+          None => None
+        }
+      Some(Unknown(_, _)) | None => None
+    }
+  })
 }
 
 ///|

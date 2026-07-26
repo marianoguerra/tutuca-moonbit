@@ -38,19 +38,17 @@ fn move_index_to_index(
 
 ///|
 fn dnd_comp() -> @component.Component {
-  @component.component(
-    views=dn_d_example_views(),
-    name="DnDExample",
-    init=DnDExampleState::{ items: [], query: "" },
+  dn_d_example_component(
+    init={ items: [], query: "" },
     when={
-      "filterItem": (s : DnDExampleState, _key, value, _iter) => {
+      "filterItem": (s, _key, value, _iter) => {
         match value {
           Str(item) => item.contains(s.query)
           _ => true
         }
       },
     },
-    update=(s : DnDExampleState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match DnDExampleMsg::from_dispatch(msg) {
         // Served by the mutators generated from the state's fields: the
         // view spells them bare now, so they arrive as Inputs, and
@@ -73,9 +71,6 @@ fn dnd_comp() -> @component.Component {
         Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=dn_d_example_encode,
-    decode=dn_d_example_decode,
   )
 }
 

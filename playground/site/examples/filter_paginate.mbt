@@ -118,13 +118,8 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
 
 ///|
 fn person_comp() -> @component.Component {
-  @component.component(
-    views=person_views(),
-    name="Person",
+  person_component(
     init=PersonState::{ name: "", email: "", active: false },
-    encode=person_encode,
-    decode=person_decode,
-  
   )
 }
 
@@ -148,16 +143,14 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// 1. NAIVE — the table scans the whole list to build+slice its page; the pager
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
-  @component.component(
-    views=naive_people_views(),
-    name="NaivePeople",
+  naive_people_component(
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
     loop_with={
-      "tablePage": (s : NaivePeopleState, seq, ctx) => {
+      "tablePage": (s, seq, ctx) => {
         let all : Array[Int] = []
         for i, v in seq.list() {
           if (ctx.filter)(Num(i.to_double()), v, Null) {
@@ -169,9 +162,6 @@ fn naive_people_comp() -> @component.Component {
         fp_num_keys(page_slice(all, start, s.pageSize))
       },
     },
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-  
   )
 }
 
@@ -180,19 +170,22 @@ fn naive_people_comp() -> @component.Component {
 /// clamped page; the loop-with reads it (`lookup`) and reuses the @when
 /// (`filter`) to collect just this page's keys, early-exiting once it is full.
 fn shared_people_comp() -> @component.Component {
+  // No `shared_people_component`: this component has views but no schema of
+  // its own, so the generator emitted no state type to make a wrapper out of.
+  // Sharing NaivePeople's shape is the point of the example.
   @component.component(
     views=shared_people_views(),
+    name="SharedPeople",
     // The shared shape's codec: all three strategies seed from one state.
     encode=naive_people_encode,
     decode=naive_people_decode,
-    name="SharedPeople",
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
     loop_with={
-      "page": (s : NaivePeopleState, seq, ctx) => {
+      "page": (s, seq, ctx) => {
         let current = match (ctx.lookup)("currentPage") {
           Num(n) => n.to_int()
           _ => 0
@@ -215,7 +208,6 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
-  
   )
 }
 
@@ -223,16 +215,17 @@ fn shared_people_comp() -> @component.Component {
 /// 3. COUPLED — one scan total. The enrich builds the page keys into `__keys__`
 /// (and the pager labels); the loop-with does nothing but hand them back.
 fn coupled_people_comp() -> @component.Component {
+  // Schema-less like SharedPeople above, so no generated wrapper.
   @component.component(
     views=coupled_people_views(),
+    name="CoupledPeople",
     encode=naive_people_encode,
     decode=naive_people_decode,
-    name="CoupledPeople",
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     compute=fp_base_compute(),
     update=fp_update(),
     enrich_scope={
-      "pagerInfo": (s : NaivePeopleState) => {
+      "pagerInfo": (s) => {
         let all : Array[Int] = []
         for i, p in s.items {
           if fp_matches(p, s.query) {
@@ -254,13 +247,12 @@ fn coupled_people_comp() -> @component.Component {
       },
     },
     loop_with={
-      "forwardKeys": (_s : NaivePeopleState, _seq, ctx) => match
+      "forwardKeys": (_s, _seq, ctx) => match
         (ctx.lookup)("__keys__") {
         List(keys) => @component.LoopWith::new(keys~)
         _ => @component.LoopWith::new(keys=[])
       },
     },
-  
   )
 }
 
@@ -280,10 +272,7 @@ fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
 
 ///|
 fn strategies_comp() -> @component.Component {
-  @component.component(
-    views=strategies_views(),
-    name="Strategies",
-    init=StrategiesState::{  },
+  strategies_component(
     specs={
       "naive": @component.FieldSpec::comp("NaivePeople"),
       "shared": @component.FieldSpec::comp("SharedPeople"),

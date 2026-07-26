@@ -36,49 +36,34 @@ fn json_make_selector(reg : JsonReg) -> @tutuca.Value {
 
 ///|
 fn json_null_comp() -> @component.Component {
-  @component.component(
-    views=json_null_views(),
-    name="JsonNull",
-    init=JsonNullState::{  },
+  json_null_component(
   )
 }
 
 
 ///|
 fn json_bool_comp() -> @component.Component {
-  @component.component(
-    views=json_bool_views(),
-    name="JsonBool",
+  json_bool_component(
     init=JsonBoolState::{ value: true },
-    encode=json_bool_encode,
-    decode=json_bool_decode,
-  
   )
 }
 
 
 ///|
 fn json_string_comp() -> @component.Component {
-  @component.component(
-    views=json_string_views(),
-    name="JsonString",
+  json_string_component(
     init=JsonStringState::{ value: "hello" },
-    encode=json_string_encode,
-    decode=json_string_decode,
-  
   )
 }
 
 
 ///|
 fn json_number_comp() -> @component.Component {
-  @component.component(
-    views=json_number_views(),
-    name="JsonNumber",
+  json_number_component(
     init=JsonNumberState::{ strValue: "0", value: 0 },
     // Keep the raw string always, update the numeric value only when finite.
     // The payload is typed String by the generator, so no unpacking.
-    update=(s : JsonNumberState, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
       Some(SetRawValue(raw)) => {
         let parsed : Double? = Some(@string.parse_double(raw)) catch { _ => None }
         Some(match parsed {
@@ -88,9 +73,6 @@ fn json_number_comp() -> @component.Component {
       }
       Some(Unknown(_, _)) | None => None
     },
-    encode=json_number_encode,
-    decode=json_number_decode,
-  
   )
 }
 
@@ -101,28 +83,25 @@ fn json_number_comp() -> @component.Component {
 /// bool button chooses the initial boolean — the event field reaches the
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_selector_views(),
-    name="JsonSelector",
-    init=JsonSelectorState::{  },
+  json_selector_component(
     swap={
-      "setToNull": (_s : JsonSelectorState, _args, _ctx) => Some(
+      "setToNull": (_s, _args, _ctx) => Some(
         reg.make_("JsonNull"),
       ),
-      "setToBool": (_s : JsonSelectorState, args, _ctx) => {
+      "setToBool": (_s, args, _ctx) => {
         let is_ctrl = args.get(0) is Some(Bool(true))
         Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
       },
-      "setToNumber": (_s : JsonSelectorState, _args, _ctx) => Some(
+      "setToNumber": (_s, _args, _ctx) => Some(
         reg.make_("JsonNumber"),
       ),
-      "setToString": (_s : JsonSelectorState, _args, _ctx) => Some(
+      "setToString": (_s, _args, _ctx) => Some(
         reg.make_("JsonString"),
       ),
-      "setToArray": (_s : JsonSelectorState, _args, _ctx) => Some(
+      "setToArray": (_s, _args, _ctx) => Some(
         reg.make_("JsonArray"),
       ),
-      "setToObject": (_s : JsonSelectorState, _args, _ctx) => Some(
+      "setToObject": (_s, _args, _ctx) => Some(
         reg.make_("JsonObject"),
       ),
     },
@@ -177,11 +156,9 @@ fn json_dropped_items(
 
 ///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_array_views(),
-    name="JsonArray",
+  json_array_component(
     init=JsonArrayState::{ items: [] },
-    update=(s : JsonArrayState, msg, _ctx) => match JsonArrayMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match JsonArrayMsg::from_dispatch(msg) {
       // add a fresh JsonSelector so the user can pick the new element's type
       Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
       Some(OnDropOnItem(key, drag_info)) =>
@@ -195,32 +172,22 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
       Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
-    encode=json_array_encode,
-    decode=json_array_decode,
-  
   )
 }
 
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
-  @component.component(
-    views=json_object_key_val_views(),
-    name="JsonObjectKeyVal",
+  json_object_key_val_component(
     init=JsonObjectKeyValState::{ key: "k", value: Null },
-    encode=json_object_key_val_encode,
-    decode=json_object_key_val_decode,
-  
   )
 }
 
 ///|
 fn json_object_comp(reg : JsonReg) -> @component.Component {
-  @component.component(
-    views=json_object_views(),
-    name="JsonObject",
+  json_object_component(
     init=JsonObjectState::{ items: [] },
-    update=(s : JsonObjectState, msg, _ctx) => match JsonObjectMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match JsonObjectMsg::from_dispatch(msg) {
       // a key/value row whose value is a fresh selector
       Some(AddItem) => {
         let row = match reg.comps.get("JsonObjectKeyVal") {
@@ -240,9 +207,6 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
       Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
-    encode=json_object_encode,
-    decode=json_object_decode,
-  
   )
 }
 

@@ -25,10 +25,8 @@ fn composability_comp(
   json_args : Map[String, @tutuca.Value],
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
-  @component.component(
-    views=composability_views(),
-    name="Composability",
-    init=ComposabilityState::{ activeSection: "todo" },
+  composability_component(
+    init={ activeSection: "todo" },
     specs={
       "todo": @component.FieldSpec::comp("Items"),
       "json": @component.FieldSpec::comp("JsonArray", args=json_args),
@@ -37,7 +35,7 @@ fn composability_comp(
       "visualWasm": @component.FieldSpec::comp("Module"),
       "dnd": @component.FieldSpec::comp("DnDExample", args=dnd_args),
     },
-    update=(s : ComposabilityState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         // forward the host's init to the personal-site sub-app, which loads
         // its data through a request handler
@@ -52,9 +50,6 @@ fn composability_comp(
         _ => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=composability_encode,
-    decode=composability_decode,
   )
 }
 

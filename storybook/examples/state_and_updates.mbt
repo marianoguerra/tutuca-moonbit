@@ -15,20 +15,17 @@
 /// template. Typing calls the GENERATED `setStr`; the number input goes through
 /// a hand-written `setRawNumber` that parses and validates first.
 fn attribute_binding_comp() -> @component.Component {
-  @component.component(
-    views=attribute_binding_views(),
-    name="AttributeBinding",
-    init=AttributeBindingState::{
-      str: "hello",
-      num: 42,
-      bool: true,
-      notSet: Null,
-    },
-    // Parse-and-validate before writing: a bad number leaves state untouched
-    // (JS: `Number.isNaN(n) ? this : this.setNum(n)`). The payload is typed
-    // `String` by the generator — every call site passes one — so the
-    // untyped two-branch unpack is gone.
-    update=(s : AttributeBindingState, msg, _ctx) => {
+  attribute_binding_component(
+    init={ str: "hello", num: 42, bool: true, notSet: Null },
+    update=(
+      // Parse-and-validate before writing: a bad number leaves state untouched
+      // (JS: `Number.isNaN(n) ? this : this.setNum(n)`). The payload is typed
+      // `String` by the generator — every call site passes one — so the
+      // untyped two-branch unpack is gone.
+      s,
+      msg,
+      _ctx,
+    ) => {
       match AttributeBindingMsg::from_dispatch(msg) {
         Some(SetRawNumber(v)) =>
           match (Some(@string.parse_int(v)) catch { _ => None }) {
@@ -40,9 +37,6 @@ fn attribute_binding_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=attribute_binding_encode,
-    decode=attribute_binding_decode,
   )
 }
 
@@ -67,14 +61,7 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
 /// single @if the @then/@else infer the attribute name; with several, the extra
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
 fn conditional_attributes_comp() -> @component.Component {
-  @component.component(
-    views=conditional_attributes_views(),
-    name="ConditionalAttributes",
-    init=ConditionalAttributesState::{ isActive: true },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=conditional_attributes_encode,
-    decode=conditional_attributes_decode,
-  )
+  conditional_attributes_component(init={ isActive: true })
 }
 
 ///|
@@ -103,24 +90,20 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
 /// Modifiers filter events: `+send` fires only on Enter, `+cancel` only on
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
-  @component.component(
-    views=event_modifiers_views(),
-    name="EventModifiers",
-    init=EventModifiersState::{ query: "", lastSentSearch: Null },
-    update=(s : EventModifiersState, msg, _ctx) => {
-      match EventModifiersMsg::from_dispatch(msg) {
-        // Served by the mutators generated from the state's fields: the
-        // view spells them bare now, so they arrive as Inputs, and
-        // returning None falls through to them.
-        Some(ResetQuery | SetLastSentSearch(_)) => None
-        Some(OnInput(v)) => Some({ ..s, query: v })
-        Some(Unknown(_, _)) | None => None
-      }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=event_modifiers_encode,
-    decode=event_modifiers_decode,
-  )
+  event_modifiers_component(init={ query: "", lastSentSearch: Null }, update=(
+    s,
+    msg,
+    _ctx,
+  ) => {
+    match EventModifiersMsg::from_dispatch(msg) {
+      // Served by the mutators generated from the state's fields: the
+      // view spells them bare now, so they arrive as Inputs, and
+      // returning None falls through to them.
+      Some(ResetQuery | SetLastSentSearch(_)) => None
+      Some(OnInput(v)) => Some({ ..s, query: v })
+      Some(Unknown(_, _)) | None => None
+    }
+  })
 }
 
 ///|
@@ -147,12 +130,10 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 /// work directly on an `<x>` render op, wrapping the produced node with no
 /// extra DOM.
 fn show_hide_comp() -> @component.Component {
-  @component.component(
-    views=show_hide_views(),
-    name="ShowHide",
-    init=ShowHideState::{ isOpen: false, count: 0 },
+  show_hide_component(
+    init={ isOpen: false, count: 0 },
     compute={
-      "label": (s : ShowHideState, _args) => {
+      "label": (s, _args) => {
         if s.isOpen {
           Str("Hide details")
         } else {
@@ -160,7 +141,7 @@ fn show_hide_comp() -> @component.Component {
         }
       },
     },
-    update=(s : ShowHideState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match ShowHideMsg::from_dispatch(msg) {
         Some(IncCount) => Some({ ..s, count: s.count + 1 })
         // Served by the generated toggle for the `isOpen` field.
@@ -168,9 +149,6 @@ fn show_hide_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=show_hide_encode,
-    decode=show_hide_decode,
   )
 }
 

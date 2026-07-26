@@ -8,21 +8,17 @@
 
 ///|
 fn emoji_picker_comp() -> @component.Component {
-  @component.component(
-    views=emoji_picker_views(),
-    name="EmojiPicker",
-    init=EmojiPickerState::{ current: Null, isPickerVisible: false },
-    update=(s : EmojiPickerState, msg, _ctx) => {
-      match msg {
-        Input("onEmojiClick", [Map(detail), ..]) =>
-          Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
-        _ => None
-      }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=emoji_picker_encode,
-    decode=emoji_picker_decode,
-  )
+  emoji_picker_component(init={ current: Null, isPickerVisible: false }, update=(
+    s,
+    msg,
+    _ctx,
+  ) => {
+    match msg {
+      Input("onEmojiClick", [Map(detail), ..]) =>
+        Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
+      _ => None
+    }
+  })
 }
 
 ///|

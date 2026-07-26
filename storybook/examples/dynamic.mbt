@@ -9,14 +9,7 @@
 
 ///|
 fn selector_entry_comp() -> @component.Component {
-  @component.component(
-    views=selector_entry_views(),
-    name="SelectorEntry",
-    init=SelectorEntryState::{ value: "entry-value", label: "Entry Label" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=selector_entry_encode,
-    decode=selector_entry_decode,
-  )
+  selector_entry_component(init={ value: "entry-value", label: "Entry Label" })
 }
 
 ///|
@@ -24,33 +17,23 @@ fn selector_entry_comp() -> @component.Component {
 /// `*entries`. The `default` is used only when no producer is in the render
 /// stack.
 fn selector_comp() -> @component.Component {
-  @component.component(
-    views=selector_views(),
-    name="Selector",
-    init=SelectorState::{ items: [], selectedValue: Null },
-    lookup={
-      "entries": {
-        source: "EntryEditorAndSelector.entries",
-        default: Some(".items"),
-      },
+  selector_component(init={ items: [], selectedValue: Null }, lookup={
+    "entries": {
+      source: "EntryEditorAndSelector.entries",
+      default: Some(".items"),
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=selector_encode,
-    decode=selector_decode,
-  )
+  })
 }
 
 ///|
 /// The PRODUCER: every `provide` is evaluated and pushed onto the stack when the
 /// component is entered during render — there is no hook to opt in.
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
-  @component.component(
-    views=entry_editor_and_selector_views(),
-    name="EntryEditorAndSelector",
-    init=EntryEditorAndSelectorState::{ items: [] },
+  entry_editor_and_selector_component(
+    init={ items: [] },
     specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
-    update=(s : EntryEditorAndSelectorState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
         // Served by the mutators generated from the state's fields: the
         // view spells them bare now, so they arrive as Inputs, and
@@ -71,9 +54,6 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=entry_editor_and_selector_encode,
-    decode=entry_editor_and_selector_decode,
   )
 }
 
@@ -109,37 +89,20 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
 /// A dynamic var resolves to a VALUE, so it works anywhere a value is read —
 /// including as a component-render target: `<x render="*active">`.
 fn sheet_comp() -> @component.Component {
-  @component.component(
-    views=sheet_views(),
-    name="Sheet",
-    init=SheetState::{ title: "untitled" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=sheet_encode,
-    decode=sheet_decode,
-  )
+  sheet_component(init={ title: "untitled" })
 }
 
 ///|
 /// The consumer, far from the producer: it renders a component it does not own.
 fn toolbar_comp() -> @component.Component {
-  @component.component(
-    views=toolbar_views(),
-    name="Toolbar",
-    init=ToolbarState::{  },
-    lookup={
-      "active": { source: "Workspace.active", default: Some(".missing") },
-    },
-  )
+  toolbar_component(lookup={
+    "active": { source: "Workspace.active", default: Some(".missing") },
+  })
 }
 
 ///|
 fn panel_comp() -> @component.Component {
-  @component.component(
-    views=panel_views(),
-    name="Panel",
-    init=PanelState::{  },
-    specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
-  )
+  panel_component(specs={ "toolbar": @component.FieldSpec::comp("Toolbar") })
 }
 
 ///|
@@ -149,26 +112,21 @@ fn panel_comp() -> @component.Component {
 /// transaction lands on `Workspace.sheet`. The echoed title at the top is the
 /// proof; it updates in lock-step.
 fn workspace_comp() -> @component.Component {
-  @component.component(
-    views=workspace_views(),
-    name="Workspace",
-    init=WorkspaceState::{ sheet: Null },
+  workspace_component(
+    init={ sheet: Null },
     specs={
       "sheet": @component.FieldSpec::comp("Sheet"),
       "panel": @component.FieldSpec::comp("Panel"),
     },
     provide={ "active": ".sheet" },
     compute={
-      "sheetTitle": (s : WorkspaceState, _args) => {
+      "sheetTitle": (s, _args) => {
         match s.sheet {
           Obj(o) => o.obj_field("title").unwrap_or(Str(""))
           _ => Str("")
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=workspace_encode,
-    decode=workspace_decode,
   )
 }
 

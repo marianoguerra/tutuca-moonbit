@@ -7,9 +7,7 @@
 /// A TreeItem renders its own children with `<x render-each=".items">` — the
 /// component renders ITSELF, recursively, stopping where `items` is empty.
 fn tree_item_comp() -> @component.Component {
-  @component.component(
-    views=tree_item_views(),
-    name="TreeItem",
+  tree_item_component(
     init=TreeItemState::{
       type_: "dir",
       label: "A Tree Item",
@@ -17,13 +15,13 @@ fn tree_item_comp() -> @component.Component {
       items: [],
     },
     compute={
-      "areChildsVisible": (s : TreeItemState, _args) => Bool(
+      "areChildsVisible": (s, _args) => Bool(
         s.isOpen && s.items.length() > 0,
       ),
     },
     // A raw `match msg`: this component handles a Bubble, which the views
     // cannot declare, so `TreeItemMsg::from_dispatch` cannot type it.
-    update=(s : TreeItemState, msg, ctx) => match msg {
+    update=(s, msg, ctx) => match msg {
       // emit an event any ancestor may observe (payload: this item's own
       // instance value, read off the dispatch path — its leaf is self),
       // then toggle self
@@ -41,21 +39,16 @@ fn tree_item_comp() -> @component.Component {
       Bubble("treeItemSelected", _) => None
       _ => None
     },
-    encode=tree_item_encode,
-    decode=tree_item_decode,
-  
   )
 }
 
 
 ///|
 fn tree_root_comp() -> @component.Component {
-  @component.component(
-    views=tree_root_views(),
-    name="TreeRoot",
+  tree_root_component(
     init=TreeRootState::{ log: [] },
     specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s : TreeRootState, msg, _ctx) => match msg {
+    update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
           [Obj(o), ..] =>
@@ -71,9 +64,6 @@ fn tree_root_comp() -> @component.Component {
       }
       _ => None
     },
-    encode=tree_root_encode,
-    decode=tree_root_decode,
-  
   )
 }
 

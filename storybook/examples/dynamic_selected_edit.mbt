@@ -11,51 +11,36 @@
 
 ///|
 fn dse_entry_comp() -> @component.Component {
-  @component.component(
-    views=dse_entry_views(),
-    name="Entry",
-    init=DseEntryState::{ name: "" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=dse_entry_encode,
-    decode=dse_entry_decode,
-  )
+  dse_entry_component(name="Entry", init={ name: "" })
 }
 
 ///|
 fn dse_editor_comp() -> @component.Component {
-  @component.component(
-    views=dse_editor_views(),
+  dse_editor_component(
     name="Editor",
-    init=DseEditorState::{ missing: Null },
+    init={ missing: Null },
     // Consumer: forwards to Root's provides — a sequence and a single item.
     lookup={
       "items": { source: "Root.items", default: Some(".missing") },
       "selected": { source: "Root.selected", default: Some(".missing") },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=dse_editor_encode,
-    decode=dse_editor_decode,
   )
 }
 
 ///|
 fn dse_root_comp() -> @component.Component {
-  @component.component(
-    views=dse_root_views(),
+  dse_root_component(
     name="Root",
-    init=DseRootState::{ items: Map([]), selectedKey: "" },
+    init={ items: Map([]), selectedKey: "" },
     specs={ "editor": @component.FieldSpec::comp("Editor") },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
-    update=(s : DseRootState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match DseRootMsg::from_dispatch(msg) {
         Some(SelectItem(Str(key))) => Some({ ..s, selectedKey: key })
         Some(SelectItem(_)) | Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=dse_root_encode,
-    decode=dse_root_decode,
   )
 }
 

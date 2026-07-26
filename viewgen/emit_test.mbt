@@ -174,8 +174,13 @@ test "the generated counter tree" {
       #|// Passing counter_views() as `views~` means the template parser
       #|// never runs at startup.
       #|//
+      #|// A component that also declares a schema gets a `_component` wrapper
+      #|// beside its views: component() with the name, the views, the styles,
+      #|// the codec and the schema already filled in — pass it the handlers.
+      #|//
       #|// The package this file lives in must import:
-      #|//   "marianoguerra/tutuca/anode"
+      #|//   "marianoguerra/tutuca/anode", and for the wrapper
+      #|//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
       #|//
       #|// Every builder returns a FRESH tree: View::from_ir stamps and optimizes
       #|// it in place, and each component that adopts a view stamps its own

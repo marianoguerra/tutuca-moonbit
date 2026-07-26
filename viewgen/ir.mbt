@@ -439,7 +439,8 @@ pub fn emit_ir_module(
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
   let scope = FileMacros::of(file.macros)
   for comp in file.components {
-    emit_ir_component(comp.component_name(name), comp, scope, out)
+    let cname = comp.component_name(name)
+    emit_ir_component(cname, comp, scope, state_for(file, cname), out)
   }
   out.to_string()
 }
@@ -476,8 +477,13 @@ fn emit_ir_header(
     "// Passing \{v}_views() as `views~` means the template parser\n" +
     "// never runs at startup.\n" +
     "//\n" +
+    "// A component that also declares a schema gets a `_component` wrapper\n" +
+    "// beside its views: component() with the name, the views, the styles,\n" +
+    "// the codec and the schema already filled in — pass it the handlers.\n" +
+    "//\n" +
     "// The package this file lives in must import:\n" +
-    "//   \"marianoguerra/tutuca/anode\"\n" +
+    "//   \"marianoguerra/tutuca/anode\", and for the wrapper\n" +
+    "//   \"marianoguerra/tutuca/core\" @tutuca, \"marianoguerra/tutuca/component\"\n" +
     "//\n" +
     "// Every builder returns a FRESH tree: View::from_ir stamps and optimizes\n" +
     "// it in place, and each component that adopts a view stamps its own\n" +
@@ -487,16 +493,17 @@ fn emit_ir_header(
 }
 
 ///|
-/// One component's builders plus its `views()` map.
+/// One component's builders, its `views()` map, and — when it declares a
+/// schema — the `component()` wrapper that defaults to them.
 fn emit_ir_component(
   name : String,
   views : ViewSet,
   scope : FileMacros,
+  state : @statedef.StateDef?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
   let v = value_prefix(name)
-  let _ = t
   for view in views.views {
     let (root, events) = compiled_tree(view, scope)
     let fname = "\{v}_\{value_prefix(view.name)}_view_ir"
@@ -533,6 +540,13 @@ fn emit_ir_component(
     )
   }
   out.write_string("  }\n}\n\n")
+  // The wrapper defaults `views~` to the map just written, so it belongs
+  // with it rather than in the types module: the two arrive and leave
+  // together. A component with no schema has no state type to make its
+  // parameters out of, and keeps calling `component()` directly.
+  if state is Some(def) {
+    emit_wrapper(name, t, v, def, out)
+  }
 }
 
 ///|

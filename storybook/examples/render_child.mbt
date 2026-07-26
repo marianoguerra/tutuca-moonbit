@@ -8,14 +8,7 @@
 
 ///|
 fn greeting_comp() -> @component.Component {
-  @component.component(
-    views=greeting_views(),
-    name="Greeting",
-    init=GreetingState::{ name: "world" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=greeting_encode,
-    decode=greeting_decode,
-  )
+  greeting_component(init={ name: "world" })
 }
 
 ///|
@@ -24,7 +17,7 @@ fn greeting_comp() -> @component.Component {
 /// rather than JS's eagerly-built `Greeting.make({...})`. Same result, and it
 /// keeps the component definitions order-independent.
 fn page_comp() -> @component.Component {
-  @component.component(views=page_views(), name="Page", init=PageState::{  }, specs={
+  page_component(specs={
     "greeting": @component.FieldSpec::comp("Greeting", args={
       "name": Str("tutorial reader"),
     }),
@@ -47,21 +40,16 @@ pub fn render_child_module() -> @component.ModuleDef {
 /// `main` view and an `edit` view whose inputs two-way-bind the same fields.
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
-  @component.component(
-    views=entry_views(),
-    name="Entry",
-    init=EntryState::{ title: "Entry Title", description: "Entry Description" },
+  entry_component(
+    init={ title: "Entry Title", description: "Entry Description" },
     compute={
-      "containsText": (s : EntryState, args) => {
+      "containsText": (s, args) => {
         match args {
           [Str(v)] => Bool(s.title.contains(v) || s.description.contains(v))
           _ => Bool(false)
         }
       },
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=entry_encode,
-    decode=entry_decode,
   )
 }
 
@@ -86,12 +74,9 @@ pub fn entry_module() -> @component.ModuleDef {
 /// once through `as="edit"`. Editing the inputs updates both, because they are
 /// one value.
 fn multiple_views_comp() -> @component.Component {
-  @component.component(
-    views=multiple_views_views(),
-    name="MultipleViews",
-    init=MultipleViewsState::{  },
-    specs={ "value": @component.FieldSpec::comp("Entry") },
-  )
+  multiple_views_component(specs={
+    "value": @component.FieldSpec::comp("Entry"),
+  })
 }
 
 ///|

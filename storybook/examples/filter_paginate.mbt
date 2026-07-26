@@ -113,14 +113,7 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
 
 ///|
 fn person_comp() -> @component.Component {
-  @component.component(
-    views=person_views(),
-    name="Person",
-    init=PersonState::{ name: "", email: "", active: false },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=person_encode,
-    decode=person_decode,
-  )
+  person_component(init={ name: "", email: "", active: false })
 }
 
 ///|
@@ -309,16 +302,11 @@ fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
 
 ///|
 fn strategies_comp() -> @component.Component {
-  @component.component(
-    views=strategies_views(),
-    name="Strategies",
-    init=StrategiesState::{  },
-    specs={
-      "naive": @component.FieldSpec::comp("NaivePeople"),
-      "shared": @component.FieldSpec::comp("SharedPeople"),
-      "coupled": @component.FieldSpec::comp("CoupledPeople"),
-    },
-  )
+  strategies_component(specs={
+    "naive": @component.FieldSpec::comp("NaivePeople"),
+    "shared": @component.FieldSpec::comp("SharedPeople"),
+    "coupled": @component.FieldSpec::comp("CoupledPeople"),
+  })
 }
 
 ///|

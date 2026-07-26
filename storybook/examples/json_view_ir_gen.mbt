@@ -5,8 +5,13 @@
 // Passing json_selector_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -99,6 +104,73 @@ pub fn json_selector_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The JsonSelector component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_selector_component(
+  name? : String = "JsonSelector",
+  views? : Map[String, @anode.View] = json_selector_views(),
+  init? : JsonSelectorState = JsonSelectorState::zero(),
+  common_style? : String = json_selector_common_style,
+  global_style? : String = json_selector_global_style,
+  update? : (JsonSelectorState, @component.Dispatch, &@tutuca.Ctx) -> JsonSelectorState?,
+  compute? : Map[
+    String,
+    (JsonSelectorState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonSelectorState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonSelectorState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonSelectorState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonSelectorState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonSelectorState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=json_selector_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn json_null_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -117,6 +189,71 @@ fn json_null_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn json_null_views() -> Map[String, @anode.View] {
   { "main": json_null_main_view_ir() }
+}
+
+///|
+/// The JsonNull component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_null_component(
+  name? : String = "JsonNull",
+  views? : Map[String, @anode.View] = json_null_views(),
+  init? : JsonNullState = JsonNullState::zero(),
+  common_style? : String = json_null_common_style,
+  global_style? : String = json_null_global_style,
+  update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
+  compute? : Map[String, (JsonNullState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (JsonNullState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonNullState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonNullState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonNullState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonNullState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=json_null_schema(),
+  )
 }
 
 ///|
@@ -161,6 +298,73 @@ pub fn json_bool_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The JsonBool component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_bool_component(
+  name? : String = "JsonBool",
+  views? : Map[String, @anode.View] = json_bool_views(),
+  init? : JsonBoolState = JsonBoolState::zero(),
+  common_style? : String = json_bool_common_style,
+  global_style? : String = json_bool_global_style,
+  update? : (JsonBoolState, @component.Dispatch, &@tutuca.Ctx) -> JsonBoolState?,
+  compute? : Map[String, (JsonBoolState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (JsonBoolState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonBoolState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonBoolState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonBoolState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonBoolState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_bool_encode,
+    decode=json_bool_decode,
+    schema=json_bool_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn json_string_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -191,6 +395,75 @@ fn json_string_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn json_string_views() -> Map[String, @anode.View] {
   { "main": json_string_main_view_ir() }
+}
+
+///|
+/// The JsonString component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_string_component(
+  name? : String = "JsonString",
+  views? : Map[String, @anode.View] = json_string_views(),
+  init? : JsonStringState = JsonStringState::zero(),
+  common_style? : String = json_string_common_style,
+  global_style? : String = json_string_global_style,
+  update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> JsonStringState?,
+  compute? : Map[
+    String,
+    (JsonStringState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonStringState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonStringState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonStringState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonStringState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonStringState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_string_encode,
+    decode=json_string_decode,
+    schema=json_string_schema(),
+  )
 }
 
 ///|
@@ -226,6 +499,75 @@ fn json_number_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn json_number_views() -> Map[String, @anode.View] {
   { "main": json_number_main_view_ir() }
+}
+
+///|
+/// The JsonNumber component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_number_component(
+  name? : String = "JsonNumber",
+  views? : Map[String, @anode.View] = json_number_views(),
+  init? : JsonNumberState = JsonNumberState::zero(),
+  common_style? : String = json_number_common_style,
+  global_style? : String = json_number_global_style,
+  update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> JsonNumberState?,
+  compute? : Map[
+    String,
+    (JsonNumberState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonNumberState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonNumberState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonNumberState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonNumberState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonNumberState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_number_encode,
+    decode=json_number_decode,
+    schema=json_number_schema(),
+  )
 }
 
 ///|
@@ -310,6 +652,75 @@ pub fn json_array_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The JsonArray component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_array_component(
+  name? : String = "JsonArray",
+  views? : Map[String, @anode.View] = json_array_views(),
+  init? : JsonArrayState = JsonArrayState::zero(),
+  common_style? : String = json_array_common_style,
+  global_style? : String = json_array_global_style,
+  update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> JsonArrayState?,
+  compute? : Map[
+    String,
+    (JsonArrayState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonArrayState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonArrayState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonArrayState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonArrayState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonArrayState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_array_encode,
+    decode=json_array_decode,
+    schema=json_array_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn json_object_key_val_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -354,6 +765,77 @@ fn json_object_key_val_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn json_object_key_val_views() -> Map[String, @anode.View] {
   { "main": json_object_key_val_main_view_ir() }
+}
+
+///|
+/// The JsonObjectKeyVal component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_object_key_val_component(
+  name? : String = "JsonObjectKeyVal",
+  views? : Map[String, @anode.View] = json_object_key_val_views(),
+  init? : JsonObjectKeyValState = JsonObjectKeyValState::zero(),
+  common_style? : String = json_object_key_val_common_style,
+  global_style? : String = json_object_key_val_global_style,
+  update? : (JsonObjectKeyValState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectKeyValState?,
+  compute? : Map[
+    String,
+    (JsonObjectKeyValState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonObjectKeyValState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonObjectKeyValState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonObjectKeyValState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (JsonObjectKeyValState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (JsonObjectKeyValState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_object_key_val_encode,
+    decode=json_object_key_val_decode,
+    schema=json_object_key_val_schema(),
+  )
 }
 
 ///|
@@ -437,4 +919,73 @@ fn json_object_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn json_object_views() -> Map[String, @anode.View] {
   { "main": json_object_main_view_ir() }
+}
+
+///|
+/// The JsonObject component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn json_object_component(
+  name? : String = "JsonObject",
+  views? : Map[String, @anode.View] = json_object_views(),
+  init? : JsonObjectState = JsonObjectState::zero(),
+  common_style? : String = json_object_common_style,
+  global_style? : String = json_object_global_style,
+  update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectState?,
+  compute? : Map[
+    String,
+    (JsonObjectState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (JsonObjectState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (JsonObjectState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      JsonObjectState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (JsonObjectState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (JsonObjectState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=json_object_encode,
+    decode=json_object_decode,
+    schema=json_object_schema(),
+  )
 }

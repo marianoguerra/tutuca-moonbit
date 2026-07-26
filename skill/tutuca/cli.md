@@ -82,9 +82,19 @@ inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `CounterId`. A file that also carries a `<script type="tutuca/state">` block
 gets the state half: `CounterState` itself with its `ToJson`/`FromJson`
 derives, `CounterState::zero()`, `CounterField` with a declared `kind()`,
-`counter_specs()` for the `specs~` map, `counter_schema_fingerprint`, and a
-typed `CounterReceive`/`CounterBubble`/`CounterResponse` for each message
-bucket the schema declares.
+`counter_schema()` (the whole contract as static metadata, for `schema~` and
+the inspector) plus `counter_schema_fingerprint`, a direct
+`counter_encode`/`counter_decode` when every field has a direct Value form,
+and a typed `CounterReceive`/`CounterBubble`/`CounterResponse` for each
+message bucket the schema declares.
+
+Schema **and** templates together also get `counter_component(...)`, beside
+`counter_views()` in the IR module: `component()` with the name, the views,
+the styles, the codec and the schema already filled in, leaving the handlers.
+Call it instead of `@component.component(...)` — a fact the generator learns
+then reaches the component by regenerating rather than by editing every call
+site. `name`, `views`, `init` and the styles stay overridable; the codec and
+the schema are not parameters.
 
 `update` then pattern-matches typed messages, so adding an `@on` handler to
 the `.html` and regenerating breaks the build until it is handled, instead of

@@ -6,24 +6,17 @@
 
 ///|
 fn todo_item_comp() -> @component.Component {
-  @component.component(
-    views=item_views(),
-    name="Item",
+  item_component(
     init=ItemState::{ completed: false, text: "do the thing" },
-    encode=item_encode,
-    decode=item_decode,
-  
   )
 }
 
 
 ///|
 fn todo_items_comp(item : @component.Component) -> @component.Component {
-  @component.component(
-    views=items_views(),
-    name="Items",
+  items_component(
     init=ItemsState::{ items: [] },
-    update=(s : ItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
@@ -31,9 +24,6 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
-    encode=items_encode,
-    decode=items_decode,
-  
   )
 }
 

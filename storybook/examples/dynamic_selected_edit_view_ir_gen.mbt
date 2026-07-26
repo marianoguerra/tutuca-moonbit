@@ -5,8 +5,13 @@
 // Passing dse_root_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -73,6 +78,73 @@ pub fn dse_root_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The DseRoot component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn dse_root_component(
+  name? : String = "DseRoot",
+  views? : Map[String, @anode.View] = dse_root_views(),
+  init? : DseRootState = DseRootState::zero(),
+  common_style? : String = dse_root_common_style,
+  global_style? : String = dse_root_global_style,
+  update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> DseRootState?,
+  compute? : Map[String, (DseRootState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (DseRootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (DseRootState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      DseRootState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (DseRootState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (DseRootState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=dse_root_encode,
+    decode=dse_root_decode,
+    schema=dse_root_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn dse_editor_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -121,6 +193,75 @@ pub fn dse_editor_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The DseEditor component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn dse_editor_component(
+  name? : String = "DseEditor",
+  views? : Map[String, @anode.View] = dse_editor_views(),
+  init? : DseEditorState = DseEditorState::zero(),
+  common_style? : String = dse_editor_common_style,
+  global_style? : String = dse_editor_global_style,
+  update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> DseEditorState?,
+  compute? : Map[
+    String,
+    (DseEditorState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (DseEditorState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (DseEditorState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      DseEditorState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (DseEditorState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (DseEditorState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=dse_editor_encode,
+    decode=dse_editor_decode,
+    schema=dse_editor_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn dse_entry_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -162,4 +303,71 @@ fn dse_entry_edit_view_ir() -> @anode.View {
 /// @component.component.
 pub fn dse_entry_views() -> Map[String, @anode.View] {
   { "main": dse_entry_main_view_ir(), "edit": dse_entry_edit_view_ir() }
+}
+
+///|
+/// The DseEntry component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn dse_entry_component(
+  name? : String = "DseEntry",
+  views? : Map[String, @anode.View] = dse_entry_views(),
+  init? : DseEntryState = DseEntryState::zero(),
+  common_style? : String = dse_entry_common_style,
+  global_style? : String = dse_entry_global_style,
+  update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> DseEntryState?,
+  compute? : Map[String, (DseEntryState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  ),
+  swap? : Map[
+    String,
+    (DseEntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (DseEntryState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      DseEntryState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (DseEntryState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (DseEntryState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=dse_entry_encode,
+    decode=dse_entry_decode,
+    schema=dse_entry_schema(),
+  )
 }

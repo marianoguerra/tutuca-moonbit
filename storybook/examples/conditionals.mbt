@@ -12,25 +12,20 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 /// built-in binary predicate `equals?` (written predicate-first) in place of
 /// React's inline `&&`.
 fn traffic_light_comp() -> @component.Component {
-  @component.component(
-    views=traffic_light_views(),
-    name="TrafficLight",
-    init=TrafficLightState::{ lightIndex: 0 },
+  traffic_light_component(
+    init={ lightIndex: 0 },
     compute={
-      "light": (s : TrafficLightState, _args) => {
+      "light": (s, _args) => {
         Str(traffic_lights[s.lightIndex % traffic_lights.length()])
       },
     },
-    update=(s : TrafficLightState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match TrafficLightMsg::from_dispatch(msg) {
         Some(NextLight) =>
           Some({ lightIndex: (s.lightIndex + 1) % traffic_lights.length() })
         Some(Unknown(_, _)) | None => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=traffic_light_encode,
-    decode=traffic_light_decode,
   )
 }
 
@@ -62,14 +57,7 @@ pub fn traffic_light_module() -> @component.ModuleDef {
 /// visible panel, and the same predicate in `@if.class` highlights the active
 /// button. No per-tab flags, no component per tab.
 fn tabbed_ui_comp() -> @component.Component {
-  @component.component(
-    views=tabbed_u_i_views(),
-    name="TabbedUI",
-    init=TabbedUIState::{ tab: "overview" },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=tabbed_u_i_encode,
-    decode=tabbed_u_i_decode,
-  )
+  tabbed_u_i_component(init={ tab: "overview" })
 }
 
 ///|
@@ -93,22 +81,14 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
 /// Call convention (the renderer, render/render.mbt): a @when handler gets
 /// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
-  @component.component(
-    views=list_and_filter_views(),
-    name="ListAndFilter",
-    init=ListAndFilterState::{ items: [], query: "" },
-    when={
-      "filterItem": (s : ListAndFilterState, _key, value, _iter) => {
-        match value {
-          Str(item) => item.to_lower().contains(s.query.to_lower())
-          _ => true
-        }
-      },
+  list_and_filter_component(init={ items: [], query: "" }, when={
+    "filterItem": (s, _key, value, _iter) => {
+      match value {
+        Str(item) => item.to_lower().contains(s.query.to_lower())
+        _ => true
+      }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=list_and_filter_encode,
-    decode=list_and_filter_decode,
-  )
+  })
 }
 
 ///|

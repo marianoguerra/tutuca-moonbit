@@ -5,8 +5,13 @@
 // Passing minimum_viable_component_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -26,6 +31,75 @@ pub fn minimum_viable_component_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The MinimumViableComponent component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn minimum_viable_component_component(
+  name? : String = "MinimumViableComponent",
+  views? : Map[String, @anode.View] = minimum_viable_component_views(),
+  init? : MinimumViableComponentState = MinimumViableComponentState::zero(),
+  common_style? : String = minimum_viable_component_common_style,
+  global_style? : String = minimum_viable_component_global_style,
+  update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> MinimumViableComponentState?,
+  compute? : Map[
+    String,
+    (MinimumViableComponentState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (MinimumViableComponentState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (MinimumViableComponentState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      MinimumViableComponentState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (MinimumViableComponentState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (MinimumViableComponentState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=minimum_viable_component_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn static_view_component_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -40,6 +114,75 @@ fn static_view_component_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn static_view_component_views() -> Map[String, @anode.View] {
   { "main": static_view_component_main_view_ir() }
+}
+
+///|
+/// The StaticViewComponent component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles and its
+/// schema. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn static_view_component_component(
+  name? : String = "StaticViewComponent",
+  views? : Map[String, @anode.View] = static_view_component_views(),
+  init? : StaticViewComponentState = StaticViewComponentState::zero(),
+  common_style? : String = static_view_component_common_style,
+  global_style? : String = static_view_component_global_style,
+  update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> StaticViewComponentState?,
+  compute? : Map[
+    String,
+    (StaticViewComponentState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (StaticViewComponentState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (StaticViewComponentState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      StaticViewComponentState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (StaticViewComponentState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (StaticViewComponentState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    schema=static_view_component_schema(),
+  )
 }
 
 ///|
@@ -97,6 +240,77 @@ pub fn text_directive_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The TextDirective component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn text_directive_component(
+  name? : String = "TextDirective",
+  views? : Map[String, @anode.View] = text_directive_views(),
+  init? : TextDirectiveState = TextDirectiveState::zero(),
+  common_style? : String = text_directive_common_style,
+  global_style? : String = text_directive_global_style,
+  update? : (TextDirectiveState, @component.Dispatch, &@tutuca.Ctx) -> TextDirectiveState?,
+  compute? : Map[
+    String,
+    (TextDirectiveState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (TextDirectiveState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (TextDirectiveState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      TextDirectiveState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (TextDirectiveState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (TextDirectiveState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=text_directive_encode,
+    decode=text_directive_decode,
+    schema=text_directive_schema(),
+  )
+}
+
+///|
 /// The compiled `main` view.
 fn danger_set_inner_html_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
@@ -117,4 +331,75 @@ fn danger_set_inner_html_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn danger_set_inner_html_views() -> Map[String, @anode.View] {
   { "main": danger_set_inner_html_main_view_ir() }
+}
+
+///|
+/// The DangerSetInnerHtml component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn danger_set_inner_html_component(
+  name? : String = "DangerSetInnerHtml",
+  views? : Map[String, @anode.View] = danger_set_inner_html_views(),
+  init? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
+  common_style? : String = danger_set_inner_html_common_style,
+  global_style? : String = danger_set_inner_html_global_style,
+  update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> DangerSetInnerHtmlState?,
+  compute? : Map[
+    String,
+    (DangerSetInnerHtmlState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (DangerSetInnerHtmlState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (DangerSetInnerHtmlState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      DangerSetInnerHtmlState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[
+    String,
+    (DangerSetInnerHtmlState) -> Map[String, @tutuca.Value],
+  ] = Map([]),
+  loop_with? : Map[
+    String,
+    (DangerSetInnerHtmlState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=danger_set_inner_html_encode,
+    decode=danger_set_inner_html_decode,
+    schema=danger_set_inner_html_schema(),
+  )
 }

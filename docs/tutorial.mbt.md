@@ -742,6 +742,14 @@ nothing handles is a **build error** — not a finding you have to remember to
 go looking for. Adding a handler to the
 `.html` and regenerating breaks the build until `update` handles it.
 
+It also generates `counter_component(...)`, a wrapper over
+`@component.component` with the name, the views, the styles, the codec and the
+schema already filled in, so a schema-backed component's definition is its
+handlers and nothing else. Every example in this file predates a view file —
+they build views from `raw_view` strings — which is why they call
+`@component.component` directly; a component with an `.html` and a schema
+should call its wrapper.
+
 While editing, `tutuca watch` keeps the generated modules current on every
 save:
 

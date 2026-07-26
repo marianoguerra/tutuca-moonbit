@@ -61,7 +61,7 @@ the compiler cannot see:
 ```sh
 moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt      (the view vocabulary as types)
-# -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled `counter_views()`)
+# -> demo/counterlib/counter_view_ir_gen.mbt   (the compiled views + the wrapper)
 # both checked in; regenerate, never edit
 
 ```
@@ -72,7 +72,8 @@ template is that view's style; one at file level is the component's common
 style, or its global style with `data-global`.
 
 For a component named `Counter` the generated module declares
-`counter_views()` (the built views, for `views~`),
+`counter_views()` (the built views, for `views~`) and — with a schema —
+`counter_component()`, the wrapper that passes them,
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
 `CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` /
@@ -95,8 +96,8 @@ subset of WIT, next to the templates that read it:
 
 Then `CounterState` itself is generated — with its `ToJson`/`FromJson`
 derives, a `zero()`, a `CounterField` table whose `kind()` is declared rather
-than guessed from the seed value, and `counter_specs()` in place of a
-hand-written `specs~` — and every `.field` a view reads is checked against
+than guessed from the seed value, and `counter_schema()`, the whole contract
+as static metadata — and every `.field` a view reads is checked against
 it, inside an `@each` body as well as at the root. A misspelt field is a
 generation failure naming the near miss, where before it rendered as null.
 The `receive` / `bubble` / `response` buckets get typed enums too: those
@@ -151,17 +152,30 @@ macros belong in the view file rather than being registered from MoonBit:
 ### The compiled tree
 
 `gen-views` also emits `<stem>_view_ir_gen.mbt`: the `@anode.ANode` tree and
-event table each view parses into, as MoonBit code. Pass it as
-`views~` and the template parser never runs at startup:
+event table each view parses into, as MoonBit code, so the template parser
+never runs at startup. A component that declares a schema gets one more thing
+there — `counter_component`, a wrapper over `component()` with everything the
+view file already states filled in:
 
 ```moonbit nocheck
-@component.component(
-  name="Counter",
-  views=counter_views(),
-  init=CounterState::{ label: "Counter", count: 0, history: [] },
-  update=...,
+counter_component(
+  init=CounterState::fresh(),
+  update=(s, msg, _ctx) => ...,
 )
 ```
+
+Its name, its views, its styles, its direct codec and its schema are not
+arguments — the view file states them, and restating them is how a fact the
+generator learns fails to reach the component that needs it. Each is still a
+parameter, so `views=counter_views_with_extra()` or `name="Root"` overrides
+one when a component genuinely differs; only the handlers have nowhere else to
+come from. Being typed on `CounterState` rather than on a type variable, the
+wrapper is also what lets `update` be written `(s, msg, _ctx)` with no
+annotation.
+
+A component with no schema — a runtime-parsed view, a shape shared with a
+sibling — has no state type to build the parameters from, so it keeps calling
+`@component.component(views=..., name=..., init=...)` directly.
 
 There is no serialization format and no decoder: the AST is `pub(all)`, and the
 tree is written with anode's builders — plain constructors with the rarely-set

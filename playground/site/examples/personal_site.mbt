@@ -174,26 +174,20 @@ fn ps_category_decoy_classes() -> String {
 
 ///|
 fn alt_url_comp() -> @component.Component {
-  @component.component(
-    views=alt_url_views(),
-    name="AltUrl",
+  alt_url_component(
     init=AltUrlState::{ label: "", url: "#" },
-    encode=alt_url_encode,
-    decode=alt_url_decode,
-  
   )
 }
 
 
 ///|
 fn ps_entry_comp() -> @component.Component {
-  @component.component(
-    views=p_s_entry_views(),
+  p_s_entry_component(
     name="PSEntry",
     enrich={
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_s : PSEntryState, binds, _key, value, _iter) => match
+      "enrichCategoryBadge": (_s, binds, _key, value, _iter) => match
         value {
         Str(cat) =>
           binds["badgeClass"] = Str(
@@ -215,13 +209,13 @@ fn ps_entry_comp() -> @component.Component {
       categories: [],
     },
     compute={
-      "langFlag": (s : PSEntryState, _args) => if s.lang == "es" {
+      "langFlag": (s, _args) => if s.lang == "es" {
         Str("🇪🇸")
       } else {
         Str("🇬🇧")
       },
-      "isSpanish": (s : PSEntryState, _args) => Bool(s.lang == "es"),
-      "yearDisplay": (s : PSEntryState, _args) => match s.startYear {
+      "isSpanish": (s, _args) => Bool(s.lang == "es"),
+      "yearDisplay": (s, _args) => match s.startYear {
         Num(start) =>
           match s.endYear {
             Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
@@ -230,9 +224,6 @@ fn ps_entry_comp() -> @component.Component {
         _ => Str("")
       },
     },
-    encode=p_s_entry_encode,
-    decode=p_s_entry_decode,
-  
   )
 }
 

@@ -5,8 +5,13 @@
 // Passing emoji_picker_views() as `views~` means the template parser
 // never runs at startup.
 //
+// A component that also declares a schema gets a `_component` wrapper
+// beside its views: component() with the name, the views, the styles,
+// the codec and the schema already filled in — pass it the handlers.
+//
 // The package this file lives in must import:
-//   "marianoguerra/tutuca/anode"
+//   "marianoguerra/tutuca/anode", and for the wrapper
+//   "marianoguerra/tutuca/core" @tutuca, "marianoguerra/tutuca/component"
 //
 // Every builder returns a FRESH tree: View::from_ir stamps and optimizes
 // it in place, and each component that adopts a view stamps its own
@@ -74,4 +79,73 @@ fn emoji_picker_main_view_ir() -> @anode.View {
 /// @component.component.
 pub fn emoji_picker_views() -> Map[String, @anode.View] {
   { "main": emoji_picker_main_view_ir() }
+}
+
+///|
+/// The EmojiPicker component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+fn emoji_picker_component(
+  name? : String = "EmojiPicker",
+  views? : Map[String, @anode.View] = emoji_picker_views(),
+  init? : EmojiPickerState = EmojiPickerState::zero(),
+  common_style? : String = emoji_picker_common_style,
+  global_style? : String = emoji_picker_global_style,
+  update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> EmojiPickerState?,
+  compute? : Map[
+    String,
+    (EmojiPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
+  ] = Map([]),
+  swap? : Map[
+    String,
+    (EmojiPickerState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([]),
+  when? : Map[
+    String,
+    (EmojiPickerState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([]),
+  enrich? : Map[
+    String,
+    (
+      EmojiPickerState,
+      Map[String, @tutuca.Value],
+      @tutuca.Value,
+      @tutuca.Value,
+      @tutuca.Value,
+    ) -> Unit,
+  ] = Map([]),
+  enrich_scope? : Map[String, (EmojiPickerState) -> Map[String, @tutuca.Value]] = Map([],
+  ),
+  loop_with? : Map[
+    String,
+    (EmojiPickerState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
+  ] = Map([]),
+  specs? : Map[String, @component.FieldSpec] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    compute~,
+    swap~,
+    when~,
+    enrich~,
+    enrich_scope~,
+    loop_with~,
+    specs~,
+    provide~,
+    lookup~,
+    encode=emoji_picker_encode,
+    decode=emoji_picker_decode,
+    schema=emoji_picker_schema(),
+  )
 }

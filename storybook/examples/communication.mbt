@@ -23,22 +23,13 @@
 /// A sibling that owns its own state and knows nothing about who messages it —
 /// the path is the only coupling.
 fn status_comp() -> @component.Component {
-  @component.component(
-    views=status_views(),
-    name="Status",
-    init=StatusState::{ message: "", count: 0 },
-    update=(s : StatusState, msg, _ctx) => {
-      match msg {
-        Receive("flash", [Str(m), ..]) =>
-          Some({ message: m, count: s.count + 1 })
-        Receive("clear", _) => Some({ ..s, message: "" })
-        _ => None
-      }
-    },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=status_encode,
-    decode=status_decode,
-  )
+  status_component(init={ message: "", count: 0 }, update=(s, msg, _ctx) => {
+    match msg {
+      Receive("flash", [Str(m), ..]) => Some({ message: m, count: s.count + 1 })
+      Receive("clear", _) => Some({ ..s, message: "" })
+      _ => None
+    }
+  })
 }
 
 ///|
@@ -46,12 +37,10 @@ fn status_comp() -> @component.Component {
 /// `ctx.send(name, args)` dispatches a `Receive` arm on SELF (so several call
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
-  @component.component(
-    views=send_receive_views(),
-    name="SendReceive",
-    init=SendReceiveState::{ draft: "" },
+  send_receive_component(
+    init={ draft: "" },
     specs={ "status": @component.FieldSpec::comp("Status") },
-    update=(s : SendReceiveState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         Input("submit", _) => {
           let text = s.draft.trim().to_owned()
@@ -76,9 +65,6 @@ fn send_receive_comp() -> @component.Component {
         _ => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=send_receive_encode,
-    decode=send_receive_decode,
   )
 }
 
@@ -103,21 +89,12 @@ pub fn send_receive_module() -> @component.ModuleDef {
 /// Component and calls `.make(...)`. Nothing in the framework calls statics —
 /// they are plain class methods in JS too.
 fn tree_item_comp() -> @component.Component {
-  @component.component(
-    views=tree_item_views(),
-    name="TreeItem",
-    init=TreeItemState::{
-      type_: "dir",
-      label: "A Tree Item",
-      isOpen: true,
-      items: [],
-    },
+  tree_item_component(
+    init={ type_: "dir", label: "A Tree Item", isOpen: true, items: [] },
     compute={
-      "areChildsVisible": (s : TreeItemState, _args) => {
-        Bool(s.isOpen && s.items.length() > 0)
-      },
+      "areChildsVisible": (s, _args) => Bool(s.isOpen && s.items.length() > 0),
     },
-    update=(s : TreeItemState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         // emit an event any ancestor may observe, then toggle self. The event
         // carries this item's own instance value, read off the dispatch path
@@ -137,9 +114,6 @@ fn tree_item_comp() -> @component.Component {
         _ => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=tree_item_encode,
-    decode=tree_item_decode,
   )
 }
 
@@ -147,12 +121,10 @@ fn tree_item_comp() -> @component.Component {
 /// The root catches the bubbled event and records it — aggregate state kept
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
-  @component.component(
-    views=tree_root_views(),
-    name="TreeRoot",
-    init=TreeRootState::{ log: [] },
+  tree_root_component(
+    init={ log: [] },
     specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s : TreeRootState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match msg {
         Bubble("treeItemSelected", args) => {
           let label = match args {
@@ -170,9 +142,6 @@ fn tree_root_comp() -> @component.Component {
         _ => None
       }
     },
-    // The schema-generated direct codec, in place of the JSON bridge.
-    encode=tree_root_encode,
-    decode=tree_root_decode,
   )
 }
 

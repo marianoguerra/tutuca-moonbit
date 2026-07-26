@@ -8,17 +8,15 @@
 // argument shapes included.
 
 fn build() -> @component.ModuleDef {
-  let dnd = @component.component(
-    views=dn_d_example_views(),
-    name="DnDExample",
+  let dnd = dn_d_example_component(
     init=DnDExampleState::{ items: [], query: "" },
     when={
-      "filterItem": (s : DnDExampleState, _key, item, _iter) => match item {
+      "filterItem": (s, _key, item, _iter) => match item {
         Str(text) => text.contains(s.query)
         _ => true
       },
     },
-    update=(s : DnDExampleState, msg, _ctx) => match DnDExampleMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match DnDExampleMsg::from_dispatch(msg) {
       // args: [@key (the TARGET row's key), dragInfo]
       Some(OnDropOnItem(Num(t), Obj(di))) => {
         let target = t.to_int()
@@ -39,9 +37,6 @@ fn build() -> @component.ModuleDef {
   // returning None falls through to whatever answers them.
   Some(ResetQuery) => None
   Some(SetQuery(_)) => None},
-    encode=dn_d_example_encode,
-    decode=dn_d_example_decode,
-  
   )
   @component.ModuleDef::new(
     name="dnd-example",

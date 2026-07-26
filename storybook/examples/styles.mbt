@@ -14,23 +14,14 @@
 
 ///|
 fn styles_example_comp() -> @component.Component {
-  @component.component(
-    views=styles_example_views(),
-    name="StylesExample",
-    common_style=styles_example_common_style,
-    global_style=styles_example_global_style,
-    init=StylesExampleState::{  },
-  )
+  styles_example_component()
 }
 
 ///|
 fn styles_example_root_comp() -> @component.Component {
-  @component.component(
-    views=styles_example_root_views(),
-    name="StylesExampleRoot",
-    init=StylesExampleRootState::{  },
-    specs={ "value": @component.FieldSpec::comp("StylesExample") },
-  )
+  styles_example_root_component(specs={
+    "value": @component.FieldSpec::comp("StylesExample"),
+  })
 }
 
 ///|

@@ -424,6 +424,43 @@ priv struct MyCompState {
 )
 ```
 
+### Most of that is generated — use the wrapper
+
+The spec above is the **runtime-view** shape: views as `raw_view` strings, no
+schema. A component that keeps its views in an `.html` file **with** a
+`<script type="tutuca/state">` block gets a wrapper in its
+`<stem>_view_ir_gen.mbt`, and that is what you call:
+
+```moonbit nocheck
+// what you write
+fn my_comp_comp() -> @component.Component {
+  my_comp_component(
+    init=MyCompState::{ count: 0, items: [], isLoading: false, selected: Null },
+    update=(s, msg, ctx) => match msg { ... },
+  )
+}
+```
+
+`name`, `views`, `common_style`, `global_style`, `encode`, `decode` and
+`schema` are gone: the view file states them, and the wrapper passes them.
+Do **not** restate them — that is how a fact the generator learns fails to
+reach the component. `name`, `views`, `init` and the two styles are still
+parameters, so override one when a component genuinely differs (a registered
+name that is not the template id, views wrapped with a runtime-built extra).
+`encode`/`decode`/`schema` are not parameters at all.
+
+The wrapper is typed on the state struct rather than on a type variable, so
+lambda parameters need no annotation: write `(s, msg, ctx)`, not
+`(s : MyCompState, msg, ctx)`.
+
+`init` defaults to `MyCompState::zero()` — omit it when the zero state is what
+you want, and pass a `tutuca/init` fixture (`MyCompState::fresh()`) or a
+literal otherwise.
+
+Call `@component.component(...)` directly only when there is no wrapper: a
+runtime-parsed or macro-using view (no IR module), a component with no schema,
+or one whose state shape is a sibling's.
+
 `comp.make({...})` builds an instance from a `Map[String, Value]` of
 args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
 lists, maps, or example args. Missing fields get their defaults from
