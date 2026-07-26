@@ -75,9 +75,9 @@ moon run --target native cmd/dev -- <task>
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `check` then `test`                                              |
+| `ci`       | `gen-views` drift check, then `check` then `test`                |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
-| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, so follow with `git diff --exit-code` to catch drift |
+| `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |

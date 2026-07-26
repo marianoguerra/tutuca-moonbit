@@ -248,10 +248,11 @@ pub fn tasks() -> Array[Task] {
 }
 
 ///|
-/// One entry per repo-owned view file. Run after editing an .html view, and in
-/// CI followed by `git diff --exit-code` to catch a generated module that has
-/// drifted from its source. A file whose components carry template ids needs no
-/// `--name`; a bare single-component `<template>` names its component with one.
+/// One entry per repo-owned view file. Run after editing an .html view; it ends
+/// in its own `git diff --exit-code`, which is what lets `ci` include it to
+/// catch a generated module that has drifted from its source. A file whose
+/// components carry template ids needs no `--name`; a bare single-component
+/// `<template>` names its component with one.
 ///
 /// The CLI emits unformatted source, so the run ends with `moon fmt` — that is
 /// what makes the checked-in pair reproducible and the drift check meaningful.
@@ -305,6 +306,25 @@ fn gen_views_commands() -> Array[Command] {
     moon("gen-views · " + path, args)
   })
   commands.push(moon("fmt", ["fmt"]))
+  // The drift check, the same shape `gen-guest-bindings` uses: regenerating is
+  // only a guarantee if the checked-in pair is what regenerating produces. This
+  // is what makes `gen-views` safe to put in CI.
+  //
+  // Scoped to the generated modules by pathspec rather than run over the whole
+  // tree, because the `moon fmt` above formats every source: an unrelated file
+  // that was committed unformatted would otherwise fail here, reported as view
+  // drift. `*_view_gen.mbt` matches at any depth, so a new view file is covered
+  // the moment it is added to `files` above.
+  // `HEAD` rather than a bare `git diff`: the question is whether the COMMIT
+  // matches the sources, and a bare diff ignores anything already staged —
+  // which would let a `git add` of a stale module walk straight past.
+  commands.push({
+    label: "drift check · generated view modules match their .html",
+    prog: "git",
+    args: [
+      "diff", "--exit-code", "HEAD", "--", "*_view_gen.mbt", "*_view_ir_gen.mbt",
+    ],
+  })
   commands
 }
 
@@ -362,10 +382,15 @@ fn composites() -> Array[(String, String, Array[String])] {
   // this build-smoke is their regression guard. It also codegens the js/native
   // demo hosts, none of which have their own tests.
   [
+    // `gen-views` runs FIRST, and for its drift check rather than its output:
+    // every `*_view_gen.mbt` is checked in and compiled as an ordinary source,
+    // so a stale one type-checks and tests green while no longer describing the
+    // .html beside it. Catching that before `check` also means the rest of CI
+    // runs against modules that provably match their sources.
     (
       "ci",
-      "check + check-examples + test + build (build-smokes every backend & demo)",
-      ["check", "check-examples", "test", "build"],
+      "gen-views drift + check + check-examples + test + build (build-smokes every backend & demo)",
+      ["gen-views", "check", "check-examples", "test", "build"],
     ),
   ]
 }

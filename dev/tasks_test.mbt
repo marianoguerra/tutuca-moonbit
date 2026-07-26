@@ -38,11 +38,28 @@ test "plan resolves a base task to Run steps" {
 ///|
 test "plan expands the ci composite into its member tasks' steps" {
   let ci = @dev.plan("ci").unwrap_or([])
-  let expected = @dev.plan("check").unwrap_or([]) +
+  let expected = @dev.plan("gen-views").unwrap_or([]) +
+    @dev.plan("check").unwrap_or([]) +
     @dev.plan("check-examples").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])
   assert_true(ci == expected)
+}
+
+///|
+/// `gen-views` regenerating is only a guarantee if CI also checks that what it
+/// regenerated is what is checked in — the step that makes the whole ahead-of-
+/// time story enforceable rather than conventional. Pinned here because it is
+/// the last command, and appending anything after it would silently disarm it.
+test "gen-views ends in a drift check over the generated modules" {
+  let steps = @dev.plan("gen-views").unwrap_or([])
+  guard steps[steps.length() - 1] is Run(cmd) else {
+    fail("last gen-views step is not a command")
+  }
+  assert_eq(cmd.prog, "git")
+  assert_eq(cmd.args, [
+    "diff", "--exit-code", "HEAD", "--", "*_view_gen.mbt", "*_view_ir_gen.mbt",
+  ])
 }
 
 ///|
