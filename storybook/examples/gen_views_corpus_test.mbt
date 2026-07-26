@@ -119,7 +119,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   inspect(
     "\{emitted} views compiled to a tree, \{unsupported} cannot be generated",
     content=(
-      #|201 views compiled to a tree, 23 cannot be generated
+      #|168 views compiled to a tree, 20 cannot be generated
     ),
   )
 }

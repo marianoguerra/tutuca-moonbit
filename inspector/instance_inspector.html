@@ -1,0 +1,82 @@
+<script type="tutuca/state">
+  interface instance-fields {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-name: string,
+    }
+  }
+  interface instance-inspector {
+    record state {
+      value: any,
+    }
+  }
+  interface instance-explorer {
+    record state {
+      active-tab: string,
+      instance-view: any,
+      component-view: any,
+      has-component: bool,
+    }
+  }
+</script>
+
+<template id="InstanceFields">
+  <span class="font-mono text-sm leading-tight inline-block">
+    <span class="inline-flex items-center gap-2">
+      <button
+        type="button"
+        class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+        :disabled="$isItemsEmpty"
+        @on.click="toggleIsExpanded">
+        <span @text="$arrowText"></span>
+        <span class="font-semibold instance-fields" @text="$typeText"></span>
+        <span @text="$countText"></span>
+      </button>
+      <div @show="$showPagination" class="join">
+        <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+        <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+        <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+      </div>
+    </span>
+    <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5">
+      <x render-each=".items" @loop-with="getPageRange"></x>
+    </div>
+  </span>
+</template>
+
+<template id="InstanceInspector">
+  <span class="contents"><x render=".value"></x></span>
+</template>
+
+<template id="InstanceExplorer">
+  <div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
+    <div role="tablist" class="tabs">
+      <a role="tab"
+        @if.class="equals? .activeTab 'instance'"
+        @then="'tab tab-active tab-instance'"
+        @else="'tab tab-instance'"
+        @on.click="setActiveTab 'instance'">
+        Instance
+      </a>
+      <a role="tab" @show=".hasComponent"
+        @if.class="equals? .activeTab 'component'"
+        @then="'tab tab-active tab-component'"
+        @else="'tab tab-component'"
+        @on.click="setActiveTab 'component'">
+        Component
+      </a>
+    </div>
+    <div @show="equals? .activeTab 'instance'">
+      <x render=".instanceView"></x>
+    </div>
+    <div @show="equals? .activeTab 'component'">
+      <div @show=".hasComponent"><x render=".componentView"></x></div>
+      <div @hide=".hasComponent" class="text-base-content/50 text-xs">
+        Pass the Component descriptor to inspect its definition.
+      </div>
+    </div>
+  </div>
+</template>

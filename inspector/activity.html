@@ -1,0 +1,57 @@
+<script type="tutuca/state">
+  interface activity-entry {
+    record state {
+      kind: string,
+      name: string,
+      handler-name: string,
+      matched: string,
+      path-label: string,
+      time: string,
+      before: any,
+      after: any,
+      has-after: bool,
+    }
+  }
+  interface activity-log {
+    record state {
+      events: values,
+      has-events: bool,
+    }
+    /// Prepends one entry and caps the list. Raised from a host's observer
+    /// subscription, never from a view, so the schema is the only place it
+    /// can be declared.
+    variant receive { append-entry(any) }
+  }
+</script>
+
+<template id="ActivityEntry">
+  <div class="rounded border border-base-content/15 p-2 text-sm flex flex-col gap-1 activity-entry">
+    <div class="flex items-center gap-2 flex-wrap">
+      <span title="How this was dispatched: receive (send), bubble, response, input, or request" class="badge badge-sm badge-neutral entry-kind" @text=".kind"></span>
+      <span title="Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)" class="font-mono font-semibold entry-name" @text=".name"></span>
+      <span title="Actual handler that ran — shown only when it differs from the name" class="text-xs opacity-60 font-mono" @show="truthy? .handlerName" @text=".handlerName"></span>
+      <span title="Path to the target component" class="text-xs opacity-40 font-mono entry-path" @text=".pathLabel"></span>
+      <span title="Handler resolution — exact: matched by name · unknown: $unknown fallback · none: no handler (no-op)" class="badge badge-xs badge-ghost entry-matched" @show="truthy? .matched" @text=".matched"></span>
+      <span title="When this event ran" class="ml-auto text-xs opacity-40 font-mono tabular-nums entry-time" @text=".time"></span>
+    </div>
+    <div class="flex gap-3 items-start font-mono text-xs">
+      <div class="flex-1 min-w-0">
+        <div class="opacity-50" title="Target state before the handler ran">before</div>
+        <x render=".before"></x>
+      </div>
+      <div class="flex-1 min-w-0" @show=".hasAfter">
+        <div class="opacity-50" title="Target state after the handler ran">after</div>
+        <x render=".after"></x>
+      </div>
+    </div>
+  </div>
+</template>
+
+<template id="ActivityLog">
+  <div class="p-3 flex flex-col gap-2 max-h-[60vh] overflow-y-auto activity-log">
+    <div class="text-xs opacity-40 empty-hint" @hide=".hasEvents">
+      No activity yet — interact with the component.
+    </div>
+    <x render-each=".events"></x>
+  </div>
+</template>

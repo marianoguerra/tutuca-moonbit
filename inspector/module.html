@@ -1,0 +1,43 @@
+<script type="tutuca/state">
+  /// A sample descriptor exercising every summary channel (RichSample in
+  /// component-inspector.dev.js). Only introspected, never rendered — its
+  /// point is that every panel of the component inspector has something to
+  /// show, which is why it declares one of everything.
+  interface rich-sample {
+    record state {
+      title: string,
+      count: s32,
+      tags: values,
+      open: bool,
+    }
+    variant receive { ping }
+    variant bubble { on-child }
+    variant response { on-data }
+    /// Read by the inspector's own panels, not by these views.
+    double: func() -> s32;
+    label: func() -> string;
+  }
+  interface sample-card {
+    record state {
+      title: string,
+      count: s32,
+      tags: values,
+      open: bool,
+    }
+  }
+</script>
+
+<template id="RichSample">
+  <div @on.click="inc">
+    <span @text=".title"></span>
+    <span @each=".tags" @loop-with="rows"><x text="@value"></x></span>
+  </div>
+</template>
+
+<template id="RichSample:compact">
+  <span @text=".title" @on.click="reset"></span>
+</template>
+
+<template id="SampleCard">
+  <div class="card" @text="$label" @on.click="bump"></div>
+</template>

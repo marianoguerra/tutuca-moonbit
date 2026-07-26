@@ -10,6 +10,9 @@ import {
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/cmp",
   "moonbitlang/core/json",
+  // the generated *_view_gen.mbt modules derive @debug.Debug on their
+  // vocabulary enums
+  "moonbitlang/core/debug",
 }
 
 // The headless harness (@harness) mounts the inspector module as a live app on

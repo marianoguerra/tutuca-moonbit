@@ -145,65 +145,18 @@ fn summary_from_specs(comp : @component.Component) -> @tutuca.Value {
 // ---------------------------------------------------------------------------
 
 ///|
-priv struct NameState {
-  name : String
-} derive(ToJson, FromJson)
-
-///|
 /// A single name entry — used for methods and the handler channels, all of
 /// which are just lists of names.
 fn comp_name_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name" @text=".name"></span>
-        ),
-      ),
-    },
-    name="CompName",
-    init=NameState::{ name: "" },
-  )
+  comp_name_component()
 }
-
-///|
-priv struct CompFieldState {
-  name : String
-  typeName : String
-  child : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 /// A single field row: `name : type = <default value>`. The default value is
 /// rendered with the data inspector so it can recurse/expand.
 fn comp_field_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex items-center gap-2 leading-tight comp-field">
-          #|  <span class="text-base-content/70 font-mono text-sm" @text=".name"></span>
-          #|  <span class="text-base-content/30">:</span>
-          #|  <span class="text-base-content/50 font-mono text-xs" @text=".typeName"></span>
-          #|  <span class="text-base-content/30">=</span>
-          #|  <x render=".child"></x>
-          #|</div>
-        ),
-      ),
-    },
-    name="CompField",
-    init=CompFieldState::{ name: "", typeName: "", child: Null },
-  )
+  comp_field_component()
 }
-
-///|
-priv struct CompViewState {
-  name : String
-  rawView : String
-  isExpanded : Bool
-} derive(ToJson, FromJson)
 
 ///|
 /// A single view: its name plus the raw template source in a code block. The
@@ -211,32 +164,14 @@ priv struct CompViewState {
 /// ctrl/cmd-click bubbles `toggleAllViews` so the top-level inspector can
 /// toggle every one at once.
 fn comp_view_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex flex-col gap-0.5 leading-tight comp-view">
-          #|  <button
-          #|    type="button"
-          #|    class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start"
-          #|    @on.click="toggle isCtrl">
-          #|    <span @text="$arrowText"></span>
-          #|    <span class="font-mono text-sm comp-view-name" @text=".name"></span>
-          #|  </button>
-          #|  <pre @show=".isExpanded" class="text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"><code @text=".rawView"></code></pre>
-          #|</div>
-        ),
-      ),
+  comp_view_component(
+    compute=m => {
+      match m {
+        ArrowText =>
+          Some((s, _args) => Str(if s.isExpanded { "▼" } else { "▶" }))
+      }
     },
-    name="CompView",
-    init=CompViewState::{ name: "", rawView: "", isExpanded: false },
-    compute={
-      "arrowText": (s : CompViewState, _args) => {
-        Str(if s.isExpanded { "▼" } else { "▶" })
-      },
-    },
-    update=(s : CompViewState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         Input("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
@@ -255,13 +190,6 @@ fn comp_view_comp() -> @component.Component {
 /// A labelled, collapsible, paginated group of entries. Reuses the same
 /// composite machinery the JSON inspector uses; neutral chrome — hierarchy
 /// via weight, colour reserved for status/severity.
-priv struct CompSectionState {
-  items : Array[@tutuca.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  label : String
-} derive(ToJson, FromJson)
 
 ///|
 impl Composite for CompSectionState with fn items(self) {
@@ -290,31 +218,26 @@ impl Composite for CompSectionState with fn with_current_page(self, p) {
 
 ///|
 fn comp_section_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_composite_view(
-          type_class="font-semibold comp-section",
-          border_class="border-base-content/15",
-          toggle_handler="toggle isCtrl",
-        ),
-      ),
+  comp_section_component(
+    init={ ..CompSectionState::zero(), itemsPerPage: 10 },
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.label))
+        CountText => Some((s, _args) => Str("(\{s.items.length()})"))
+      }
     },
-    name="CompSection",
-    init=CompSectionState::{
-      items: [],
-      isExpanded: false,
-      itemsPerPage: 10,
-      currentPage: 0,
-      label: "",
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
     },
-    compute=composite_compute((s : CompSectionState) => s.label, s => {
-      let n = s.items.length()
-      "(\{n})"
-    }),
-    loop_with=composite_loop_with(),
-    update=(s : CompSectionState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         // Plain click toggles this section; ctrl/cmd-click bubbles up so the
         // inspector can toggle every section at once.
@@ -331,13 +254,6 @@ fn comp_section_comp() -> @component.Component {
     },
   )
 }
-
-///|
-priv struct ComponentInspectorState {
-  compName : String
-  compId : Int
-  sections : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 fn set_all_sections(
@@ -378,33 +294,17 @@ fn set_all_views(
 ///|
 /// Top-level wrapper: one CompSection per non-empty group of the summary.
 fn component_inspector_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="font-mono text-sm leading-tight flex flex-col gap-1 component-inspector">
-          #|  <div class="inline-flex items-center gap-2">
-          #|    <span class="font-semibold comp-title" @text=".compName"></span>
-          #|    <span class="text-base-content/40 text-xs" @text="$idText"></span>
-          #|  </div>
-          #|  <x render-each=".sections"></x>
-          #|</div>
-        ),
-      ),
+  component_inspector_component(
+    compute=m => {
+      match m {
+        IdText => Some((s, _args) => Str("#\{s.compId}"))
+      }
     },
-    name="ComponentInspector",
-    init=ComponentInspectorState::{ compName: "", compId: 0, sections: [] },
-    compute={
-      "idText": (s : ComponentInspectorState, _args) => Str("#\{s.compId}"),
-    },
-    update=(s : ComponentInspectorState, msg, _ctx) => {
-      match msg {
-        Bubble("toggleAllSections", args) =>
-          Some(set_all_sections(s, args.get(0) is Some(Bool(true))))
-        Bubble("toggleAllViews", args) =>
-          Some(set_all_views(s, args.get(0) is Some(Bool(true))))
-        _ => None
+    update=(s, msg, _ctx) => {
+      match ComponentInspectorBubble::from_dispatch(msg) {
+        Some(ToggleAllSections(on)) => Some(set_all_sections(s, on))
+        Some(ToggleAllViews(on)) => Some(set_all_views(s, on))
+        Some(Unknown(_, _)) | None => None
       }
     },
   )

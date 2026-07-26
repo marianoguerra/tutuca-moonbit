@@ -27,13 +27,7 @@ pub fn instance_snapshot(
 ///|
 /// The field → value rows of an instance. Field names/order come from the
 /// snapshot; each value renders (and recurses) like the other inspectors.
-priv struct InstanceFieldsState {
-  items : Array[@tutuca.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeName : String
-} derive(ToJson, FromJson)
+/// `InstanceFieldsState` is generated from instance_inspector.html.
 
 ///|
 impl Composite for InstanceFieldsState with fn items(self) {
@@ -62,30 +56,26 @@ impl Composite for InstanceFieldsState with fn with_current_page(self, p) {
 
 ///|
 fn instance_fields_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_composite_view(
-          type_class="font-semibold instance-fields",
-          border_class="border-base-content/15",
-        ),
-      ),
+  instance_fields_component(
+    init={ ..InstanceFieldsState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeName))
+        CountText => Some((s, _args) => Str("{\{s.items.length()}}"))
+      }
     },
-    name="InstanceFields",
-    update=(s : InstanceFieldsState, msg, _ctx) => composite_update(s, msg),
-    init=InstanceFieldsState::{
-      items: [],
-      isExpanded: false,
-      itemsPerPage: 10,
-      currentPage: 0,
-      typeName: "",
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
     },
-    compute=composite_compute((s : InstanceFieldsState) => s.typeName, s => {
-      let n = s.items.length()
-      "{\{n}}"
-    }),
-    loop_with=composite_loop_with(),
   )
 }
 
@@ -94,24 +84,12 @@ fn instance_fields_comp() -> @component.Component {
 /// snapshot it shows the field → value rows; for a non-instance it falls back
 /// to the plain data inspector.
 fn instance_inspector_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="contents"><x render=".value"></x></span>
-        ),
-      ),
-    },
-    name="InstanceInspector",
-    init=WrapperState::{ value: Null },
-    update=(s : WrapperState, msg, _ctx) => {
-      match msg {
-        Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
-        _ => None
-      }
-    },
-  )
+  instance_inspector_component(update=(s, msg, _ctx) => {
+    match msg {
+      Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
+      _ => None
+    }
+  })
 }
 
 ///|
@@ -166,60 +144,13 @@ fn Inspector::inspect_value_as_instance(
 }
 
 ///|
-priv struct InstanceExplorerState {
-  activeTab : String
-  instanceView : @tutuca.Value
-  componentView : @tutuca.Value
-  hasComponent : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// Two tabs over one instance: its values (InstanceInspector) and its
 /// definition (ComponentInspector).
 fn instance_explorer_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="font-mono text-sm leading-snug flex flex-col gap-3 instance-explorer">
-          #|  <div role="tablist" class="tabs">
-          #|    <a role="tab"
-          #|      @if.class="equals? .activeTab 'instance'"
-          #|      @then="'tab tab-active tab-instance'"
-          #|      @else="'tab tab-instance'"
-          #|      @on.click="setActiveTab 'instance'">
-          #|      Instance
-          #|    </a>
-          #|    <a role="tab" @show=".hasComponent"
-          #|      @if.class="equals? .activeTab 'component'"
-          #|      @then="'tab tab-active tab-component'"
-          #|      @else="'tab tab-component'"
-          #|      @on.click="setActiveTab 'component'">
-          #|      Component
-          #|    </a>
-          #|  </div>
-          #|  <div @show="equals? .activeTab 'instance'">
-          #|    <x render=".instanceView"></x>
-          #|  </div>
-          #|  <div @show="equals? .activeTab 'component'">
-          #|    <div @show=".hasComponent"><x render=".componentView"></x></div>
-          #|    <div @hide=".hasComponent" class="text-base-content/50 text-xs">
-          #|      Pass the Component descriptor to inspect its definition.
-          #|    </div>
-          #|  </div>
-          #|</div>
-        ),
-      ),
-    },
-    name="InstanceExplorer",
-    init=InstanceExplorerState::{
-      activeTab: "instance",
-      instanceView: Null,
-      componentView: Null,
-      hasComponent: false,
-    },
-  )
+  instance_explorer_component(init={
+    ..InstanceExplorerState::zero(),
+    activeTab: "instance",
+  })
 }
 
 ///|

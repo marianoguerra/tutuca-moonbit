@@ -152,88 +152,17 @@ fn instance_args(
 }
 
 ///|
-priv struct SampleState {
-  title : String
-  count : Int
-  tags : Array[@tutuca.Value]
-  open : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// A sample descriptor exercising every summary channel (RichSample in
 /// component-inspector.dev.js). Only introspected, never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div @text=".title"></div>
-        ),
-      ),
-      "compact": @anode.View::new(
-        "compact",
-        raw_view=(
-          #|<span @text=".title"></span>
-        ),
-      ),
+  rich_sample_component(
+    compute=m => {
+      match m {
+        Label => Some((s, _args) => Str(s.title))
+        Double => Some((s, _args) => Num((s.count * 2).to_double()))
+      }
     },
-    name="RichSample",
-    init=SampleState::{ title: "", count: 0, tags: [], open: false },
-    // Hand-written here because this demo builds its views at runtime, but
-    // the shape is exactly what `gen-views` emits for a component with a
-    // `tutuca/state` block. It is what makes the Update / Receive / Bubble /
-    // Response / Ids / Fixtures panels appear at all.
-    schema={
-      fingerprint: "richsample0000001",
-      fields: [
-        {
-          name: "title",
-          ty: "string",
-          kind: FText,
-          elem: None,
-          slot: None,
-          members: [],
-        },
-        {
-          name: "count",
-          ty: "s32",
-          kind: FInt,
-          elem: None,
-          slot: None,
-          members: [],
-        },
-        {
-          name: "tags",
-          ty: "values",
-          kind: FList,
-          elem: Some("any"),
-          slot: None,
-          members: [],
-        },
-        {
-          name: "open",
-          ty: "bool",
-          kind: FBool,
-          elem: None,
-          slot: None,
-          members: [],
-        },
-      ],
-      inputs: ["inc", "reset"],
-      receives: ["ping"],
-      bubbles: ["onChild"],
-      responses: ["onData"],
-      methods: ["double", "label"],
-      ids: [],
-      view_names: ["main", "compact"],
-      init_names: [],
-    },
-    compute={
-      "label": (s : SampleState, _args) => Str(s.title),
-      "double": (s : SampleState, _args) => Num((s.count * 2).to_double()),
-    },
-    update=(s : SampleState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match msg {
         Input("inc", _) => Some({ ..s, count: s.count + 1 })
         Input("reset", _) => Some({ ..s, count: 0 })
@@ -242,10 +171,11 @@ fn rich_sample_comp() -> @component.Component {
         _ => None
       }
     },
-    loop_with={
-      "rows": (s : SampleState, _seq, _ctx) => {
-        @component.LoopWith::new(start=0, end=s.count)
-      },
+    loop_with=l => {
+      match l {
+        Rows =>
+          Some((s, _seq, _ctx) => @component.LoopWith::new(start=0, end=s.count))
+      }
     },
   )
 }
@@ -254,19 +184,13 @@ fn rich_sample_comp() -> @component.Component {
 /// A small descriptor exercising a few field types (SampleCard in
 /// instance-inspector.dev.js).
 fn sample_card_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="card" @text=".title"></div>
-        ),
-      ),
+  sample_card_component(
+    compute=m => {
+      match m {
+        Label => Some((s, _args) => Str(s.title))
+      }
     },
-    name="SampleCard",
-    init=SampleState::{ title: "", count: 0, tags: [], open: false },
-    compute={ "label": (s : SampleState, _args) => Str(s.title) },
-    update=(s : SampleState, msg, _ctx) => {
+    update=(s, msg, _ctx) => {
       match msg {
         Input("bump", _) => Some({ ..s, count: s.count + 1 })
         _ => None

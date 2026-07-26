@@ -45,42 +45,58 @@ priv trait Composite {
 }
 
 ///|
-/// The plain composite state: JsonArray / JsonObject.
-priv struct CompositeState {
-  items : Array[@tutuca.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-} derive(ToJson, FromJson)
-
-///|
-impl Composite for CompositeState with fn items(self) {
+/// JsonArray and JsonObject have the same composite shape, and each now has
+/// its OWN generated state type — so the trait is implemented twice over
+/// identical bodies rather than once over a shared struct. That is the trade
+/// the generator makes everywhere: the state a view reads is described by the
+/// view file, not by a struct two components happen to share.
+impl Composite for JsonArrayState with fn items(self) {
   self.items
 }
 
 ///|
-impl Composite for CompositeState with fn is_expanded(self) {
+impl Composite for JsonArrayState with fn is_expanded(self) {
   self.isExpanded
 }
 
 ///|
-impl Composite for CompositeState with fn per_page(self) {
+impl Composite for JsonArrayState with fn per_page(self) {
   self.itemsPerPage
 }
 
 ///|
-impl Composite for CompositeState with fn current_page(self) {
+impl Composite for JsonArrayState with fn current_page(self) {
   self.currentPage
 }
 
 ///|
-impl Composite for CompositeState with fn with_current_page(self, p) {
+impl Composite for JsonArrayState with fn with_current_page(self, p) {
   { ..self, currentPage: p }
 }
 
 ///|
-fn composite_init() -> CompositeState {
-  { items: [], isExpanded: false, itemsPerPage: 10, currentPage: 0 }
+impl Composite for JsonObjectState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for JsonObjectState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for JsonObjectState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for JsonObjectState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for JsonObjectState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
 }
 
 ///|
@@ -110,27 +126,69 @@ fn[S : Composite] has_pagination(s : S) -> Bool {
 }
 
 ///|
-/// JS compositeMethods, parametrized by the two per-component texts (JS
-/// spreads `...compositeMethods` and overrides typeText/countText).
-fn[S : Composite] composite_compute(
-  type_text : (S) -> String,
-  count_text : (S) -> String,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  {
-    "arrowText": (s, _args) => Str(if s.is_expanded() { "▼" } else { "▶" }),
-    "isItemsEmpty": (s, _args) => Bool(s.items().length() == 0),
-    "typeText": (s, _args) => Str(type_text(s)),
-    "countText": (s, _args) => Str(count_text(s)),
-    "showPagination": (s, _args) => Bool(s.is_expanded() && has_pagination(s)),
-    "cannotPrevPage": (s, _args) => Bool(s.current_page() <= 0),
-    "cannotNextPage": (s, _args) => {
-      Bool(s.current_page() >= page_count_of(s) - 1)
-    },
-    "pageIndicatorText": (s, _args) => {
-      let cur = s.current_page() + 1
-      Str("\{cur} / \{page_count_of(s)}")
-    },
-  }
+/// The composite `$`-callables, one function each (JS compositeMethods).
+///
+/// Individually rather than as a bucket map: the buckets are keyed by each
+/// component's own generated Method enum now, so what is shared is the
+/// HANDLER, and the match that names it is per component — which is what
+/// makes a name added to the composite view a build error in every component
+/// that uses it.
+fn[S : Composite] composite_arrow_text(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  Str(if s.is_expanded() { "▼" } else { "▶" })
+}
+
+///|
+fn[S : Composite] composite_is_items_empty(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  Bool(s.items().length() == 0)
+}
+
+///|
+fn[S : Composite] composite_show_pagination(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  Bool(s.is_expanded() && has_pagination(s))
+}
+
+///|
+fn[S : Composite] composite_cannot_prev_page(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  Bool(s.current_page() <= 0)
+}
+
+///|
+fn[S : Composite] composite_cannot_next_page(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  Bool(s.current_page() >= page_count_of(s) - 1)
+}
+
+///|
+fn[S : Composite] composite_page_indicator_text(
+  s : S,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  let cur = s.current_page() + 1
+  Str("\{cur} / \{page_count_of(s)}")
+}
+
+///|
+/// The @loop-with hook slicing the iteration to one page (JS compositeAlter).
+fn[S : Composite] composite_page_range(
+  s : S,
+  _seq : @tutuca.Value,
+  _ctx : @component.LoopCtx,
+) -> @component.LoopWith {
+  @component.LoopWith::new(start=page_start_of(s), end=page_end_of(s))
 }
 
 ///|
@@ -163,138 +221,39 @@ fn[S : Composite] composite_update(s : S, msg : @component.Dispatch) -> S? {
   }
 }
 
-///|
-/// JS compositeAlter: the @loop-with hook slicing the iteration to one page.
-fn[S : Composite] composite_loop_with() -> Map[
-  String,
-  (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-] {
-  {
-    "getPageRange": (s, _seq, _ctx) => {
-      @component.LoopWith::new(start=page_start_of(s), end=page_end_of(s))
-    },
-  }
-}
-
-///|
-/// JS makeCompositeView({typeClass, borderClass, toggleHandler}).
-fn make_composite_view(
-  type_class? : String = "",
-  border_class? : String = "border-base-content/10",
-  toggle_handler? : String = "$toggleIsExpanded",
-) -> String {
-  let tpl =
-    #|<span class="font-mono text-sm leading-tight inline-block">
-    #|  <span class="inline-flex items-center gap-2">
-    #|    <button
-    #|      type="button"
-    #|      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
-    #|      :disabled="$isItemsEmpty"
-    #|      @on.click="__TOGGLE__">
-    #|      <span @text="$arrowText"></span>
-    #|      <span class="__TYPE_CLASS__" @text="$typeText"></span>
-    #|      <span @text="$countText"></span>
-    #|    </button>
-    #|    <div @show="$showPagination" class="join">
-    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
-    #|      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
-    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
-    #|    </div>
-    #|  </span>
-    #|  <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l __BORDER_CLASS__ pl-2 mt-0.5">
-    #|    <x render-each=".items" @loop-with="getPageRange"></x>
-    #|  </div>
-    #|</span>
-
-  tpl
-  .replace(old="__TOGGLE__", new=toggle_handler)
-  .replace(old="__TYPE_CLASS__", new=type_class)
-  .replace(old="__BORDER_CLASS__", new=border_class)
-}
-
 // ---------------------------------------------------------------------------
 // Leaf components
 // ---------------------------------------------------------------------------
 
 ///|
-priv struct EmptyState {} derive(ToJson, FromJson)
-
-///|
 fn json_null_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight text-warning italic json-null">null</span>
-        ),
-      ),
-    },
-    name="JsonNull",
-    init=EmptyState::{  },
-  )
+  json_null_component()
 }
-
-///|
-priv struct BoolValueState {
-  value : Bool
-} derive(ToJson, FromJson)
 
 ///|
 fn json_boolean_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span :class="$cssClass" @text="$text"></span>
-        ),
-      ),
-      "_margauiClasses": @anode.View::new(
-        "_margauiClasses",
-        raw_view=(
-          #|<p class="text-success text-warning"></p>
-        ),
-      ),
-    },
-    name="JsonBoolean",
-    init=BoolValueState::{ value: false },
-    compute={
-      "text": (s : BoolValueState, _args) => {
-        Str(if s.value { "true" } else { "false" })
-      },
-      "cssClass": (s : BoolValueState, _args) => {
-        let color = if s.value { "text-success" } else { "text-warning" }
-        Str("font-mono text-sm leading-tight json-boolean \{color}")
-      },
-    },
-  )
+  json_boolean_component(compute=m => {
+    match m {
+      Text => Some((s, _args) => Str(if s.value { "true" } else { "false" }))
+      CssClass =>
+        Some((s, _args) => {
+          let color = if s.value { "text-success" } else { "text-warning" }
+          Str("font-mono text-sm leading-tight json-boolean \{color}")
+        })
+    }
+  })
 }
 
 ///|
-priv struct NumValueState {
-  value : Double
-} derive(ToJson, FromJson)
-
-///|
 fn json_number_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight text-info json-number" @text="$text"></span>
-        ),
-      ),
-    },
-    name="JsonNumber",
-    init=NumValueState::{ value: 0 },
-    compute={
-      "text": (s : NumValueState, _args) => {
-        Str(@tutuca.Value::Num(s.value).to_display_string())
-      },
-    },
-  )
+  json_number_component(compute=m => {
+    match m {
+      Text =>
+        Some((s, _args) => {
+          Str((@tutuca.Value::Num(s.value) : @tutuca.Value).to_display_string())
+        })
+    }
+  })
 }
 
 ///|
@@ -317,66 +276,26 @@ fn json_quote(s : String) -> String {
 }
 
 ///|
-priv struct StrValueState {
-  value : String
-} derive(ToJson, FromJson)
-
-///|
 fn json_string_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string" :title=".value" @text="$text"></span>
-        ),
-      ),
-    },
-    name="JsonString",
-    init=StrValueState::{ value: "" },
-    compute={ "text": (s : StrValueState, _args) => Str(json_quote(s.value)) },
-  )
+  json_string_component(compute=m => {
+    match m {
+      Text => Some((s, _args) => Str(json_quote(s.value)))
+    }
+  })
 }
 
 ///|
 /// Leaf for `Value::Fn` (stands in for the JS JsFunction component — the port
 /// has no function names/kinds to show).
 fn value_fn_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight text-base-content/40 value-fn">function () &#123; … &#125;</span>
-        ),
-      ),
-    },
-    name="ValueFn",
-    init=EmptyState::{  },
-  )
+  value_fn_component()
 }
-
-///|
-priv struct TextState {
-  text : String
-} derive(ToJson, FromJson)
 
 ///|
 /// Leaf for an opaque `Value::Obj` (no `obj_seq_entries`): its `obj_debug`
 /// text, truncated. Stands in for the JS JsClassInstance/JsError leaves.
 fn value_obj_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj" :title=".text" @text=".text"></span>
-        ),
-      ),
-    },
-    name="ValueObj",
-    init=TextState::{ text: "" },
-  )
+  value_obj_component()
 }
 
 // ---------------------------------------------------------------------------
@@ -385,69 +304,58 @@ fn value_obj_comp() -> @component.Component {
 
 ///|
 fn json_array_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_composite_view(type_class="json-array"),
-      ),
+  json_array_component(
+    init={ ..JsonArrayState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((_s, _args) => Str("Array"))
+        CountText => Some((s, _args) => Str("(\{s.items.length()})"))
+      }
     },
-    name="JsonArray",
-    init=composite_init(),
-    compute=composite_compute(_s => "Array", s => {
-      let n = s.items.length()
-      "(\{n})"
-    }),
-    update=(s : CompositeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
 ///|
 fn json_object_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_composite_view(type_class="json-object"),
-      ),
+  json_object_component(
+    init={ ..JsonObjectState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((_s, _args) => Str("Object"))
+        CountText => Some((s, _args) => Str("{\{s.items.length()}}"))
+      }
     },
-    name="JsonObject",
-    init=composite_init(),
-    compute=composite_compute(_s => "Object", s => {
-      let n = s.items.length()
-      "{\{n}}"
-    }),
-    update=(s : CompositeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
 ///|
-priv struct PropertyState {
-  key : String
-  child : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 /// One key/value row of a composite (also stands in for the JS ImEntry).
 fn json_property_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="flex items-center gap-2 leading-tight json-property">
-          #|  <span class="text-base-content/60 font-mono text-sm" @text=".key"></span>
-          #|  <span class="text-base-content/30">:</span>
-          #|  <x render=".child"></x>
-          #|</div>
-        ),
-      ),
-    },
-    name="JsonProperty",
-    init=PropertyState::{ key: "", child: Null },
-  )
+  json_property_component()
 }
 
 // ---------------------------------------------------------------------------
@@ -493,33 +401,16 @@ fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
 }
 
 ///|
-priv struct WrapperState {
-  value : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 /// The single top-level value inspector (JS JsonViewer + DataInspector +
 /// ImInspector, collapsed — see the header comment): one `value` field holding
 /// the classified tree, the delegating toggle, and a pass-through view.
 fn data_inspector_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="contents"><x render=".value"></x></span>
-        ),
-      ),
-    },
-    name="DataInspector",
-    init=WrapperState::{ value: Null },
-    update=(s : WrapperState, msg, _ctx) => {
-      match msg {
-        Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
-        _ => None
-      }
-    },
-  )
+  data_inspector_component(update=(s, msg, _ctx) => {
+    match msg {
+      Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
+      _ => None
+    }
+  })
 }
 
 ///|

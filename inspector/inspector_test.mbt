@@ -157,16 +157,21 @@ test "component inspector: sections toggle one by one and all at once" {
 }
 
 ///|
-test "component inspector: a view's raw source expands verbatim" {
+/// A view compiled ahead of time carries no source: `View::from_ir` has a tree
+/// and an event table, and the template it came from stays in the .html file
+/// rather than being shipped in the binary to be printed. The panel says so
+/// instead of expanding an empty block. A view PARSED at run time (a dyncomp
+/// guest, the playground) still has its source and still shows it.
+test "component inspector: an AOT view expands to a note, not empty source" {
   let h = @harness.mount_example(
     @inspector.inspector_module(),
     "Component: Rich Sample (expanded)",
   )
-  // deep-expanded example: sections open, view sources open too
+  // deep-expanded example: sections open, view rows open too
   let views = h.texts(".comp-view")
   assert_true(views.length() == 2)
-  assert_true(h.find_all("pre").length() == 2)
-  assert_true(h.text("code").contains(".title"))
+  assert_true(h.find_all("pre").length() == 0)
+  assert_eq(h.find_all(".comp-view-aot").length(), 2)
 }
 
 ///|

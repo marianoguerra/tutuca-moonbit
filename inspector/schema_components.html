@@ -1,0 +1,291 @@
+<script type="tutuca/state">
+  interface schema-scalar {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-label: string,
+      badges: values,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-object {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-label: string,
+      badges: values,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-array {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-label: string,
+      badges: values,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-enum {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-label: string,
+      badges: values,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-combinator {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      type-label: string,
+      badges: values,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-const {
+    record state { value: any }
+  }
+  interface schema-conditional {
+    record state {
+      if-node: any,
+      then-node: any,
+      else-node: any,
+      title: string,
+      description: string,
+      deprecated: bool,
+    }
+  }
+  interface schema-not {
+    record state { child: any }
+  }
+  interface schema-boolean {
+    record state { value: bool }
+  }
+  interface schema-ref {
+    record state { target: string }
+  }
+</script>
+
+<template id="SchemaScalar">
+<span class="font-mono text-sm leading-tight inline-block">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+      :disabled="$isItemsEmpty"
+      @on.click="toggleIsExpanded">
+      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
+      <span class="text-success schema-scalar font-semibold" @text="$typeText"></span>
+      <span class="text-base-content/50" @text="$countText"></span>
+    </button>
+    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+    <div @show="$showPagination" class="join">
+      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+    </div>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div @show=".isExpanded" class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
+    <x render-each=".items" @loop-with="getPageRange"></x>
+  </div>
+</span>
+</template>
+
+<template id="SchemaObject">
+<span class="font-mono text-sm leading-tight inline-block">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+      :disabled="$isItemsEmpty"
+      @on.click="toggleIsExpanded">
+      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
+      <span class="text-primary schema-object font-semibold" @text="$typeText"></span>
+      <span class="text-base-content/50" @text="$countText"></span>
+    </button>
+    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+    <div @show="$showPagination" class="join">
+      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+    </div>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div @show=".isExpanded" class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
+    <x render-each=".items" @loop-with="getPageRange"></x>
+  </div>
+</span>
+</template>
+
+<template id="SchemaArray">
+<span class="font-mono text-sm leading-tight inline-block">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+      :disabled="$isItemsEmpty"
+      @on.click="toggleIsExpanded">
+      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
+      <span class="text-primary schema-array font-semibold" @text="$typeText"></span>
+      <span class="text-base-content/50" @text="$countText"></span>
+    </button>
+    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+    <div @show="$showPagination" class="join">
+      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+    </div>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div @show=".isExpanded" class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
+    <x render-each=".items" @loop-with="getPageRange"></x>
+  </div>
+</span>
+</template>
+
+<template id="SchemaEnum">
+<span class="font-mono text-sm leading-tight inline-block">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+      :disabled="$isItemsEmpty"
+      @on.click="toggleIsExpanded">
+      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
+      <span class="text-info schema-enum font-semibold" @text="$typeText"></span>
+      <span class="text-base-content/50" @text="$countText"></span>
+    </button>
+    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+    <div @show="$showPagination" class="join">
+      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+    </div>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5">
+    <x render-each=".items" @loop-with="getPageRange"></x>
+  </div>
+</span>
+</template>
+
+<template id="SchemaCombinator">
+<span class="font-mono text-sm leading-tight inline-block">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+      :disabled="$isItemsEmpty"
+      @on.click="toggleIsExpanded">
+      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
+      <span class="text-accent schema-combinator font-semibold" @text="$typeText"></span>
+      <span class="text-base-content/50" @text="$countText"></span>
+    </button>
+    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+    <div @show="$showPagination" class="join">
+      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+    </div>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5">
+    <x render-each=".items" @loop-with="getPageRange"></x>
+  </div>
+</span>
+</template>
+
+<template id="SchemaConst">
+<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const">
+  <span class="text-info font-semibold">const</span>
+  <span class="text-base-content/30">=</span>
+  <x render=".value"></x>
+</span>
+</template>
+
+<template id="SchemaConditional">
+<span class="font-mono text-sm leading-tight inline-block schema-conditional">
+  <span class="inline-flex items-center gap-2 flex-wrap">
+    <span class="text-accent font-semibold">conditional</span>
+    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
+  </span>
+  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
+  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
+  <div class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
+    <div @show="truthy? .ifNode" class="contents">
+      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+        <span class="text-info">if</span>
+        <span class="text-base-content/30">:</span>
+      </span>
+      <x render=".ifNode"></x>
+    </div>
+    <div @show="truthy? .thenNode" class="contents">
+      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+        <span class="text-success">then</span>
+        <span class="text-base-content/30">:</span>
+      </span>
+      <x render=".thenNode"></x>
+    </div>
+    <div @show="truthy? .elseNode" class="contents">
+      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+        <span class="text-warning">else</span>
+        <span class="text-base-content/30">:</span>
+      </span>
+      <x render=".elseNode"></x>
+    </div>
+  </div>
+</span>
+</template>
+
+<template id="SchemaNot">
+<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not">
+  <span class="text-error font-semibold">not</span>
+  <span class="text-base-content/30">:</span>
+  <x render=".child"></x>
+</span>
+</template>
+
+<template id="SchemaBoolean">
+<span :class="$cssClass" @text="$text"></span>
+</template>
+
+<template id="SchemaBoolean:_margauiClasses">
+<p class="text-success text-error"></p>
+</template>
+
+<template id="SchemaRef">
+<span class="font-mono text-sm leading-tight text-secondary schema-ref">→ <span @text=".target"></span></span>
+</template>

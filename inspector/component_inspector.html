@@ -1,0 +1,105 @@
+<script type="tutuca/state">
+  interface comp-name {
+    record state { name: string }
+  }
+  interface comp-field {
+    record state {
+      name: string,
+      type-name: string,
+      child: any,
+    }
+  }
+  interface comp-view {
+    record state {
+      name: string,
+      raw-view: string,
+      is-expanded: bool,
+    }
+  }
+  interface comp-section {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+      label: string,
+    }
+  }
+  interface component-inspector {
+    record state {
+      comp-name: string,
+      comp-id: s32,
+      sections: values,
+    }
+    /// Raised by a CompSection / CompView on a ctrl-click, so it arrives here
+    /// as a Bubble. No view of this component declares it.
+    variant bubble {
+      toggle-all-sections(bool),
+      toggle-all-views(bool),
+    }
+  }
+</script>
+
+<template id="CompName">
+  <span class="font-mono text-sm leading-tight badge badge-sm badge-ghost comp-name" @text=".name"></span>
+</template>
+
+<template id="CompField">
+  <div class="flex items-center gap-2 leading-tight comp-field">
+    <span class="text-base-content/70 font-mono text-sm" @text=".name"></span>
+    <span class="text-base-content/30">:</span>
+    <span class="text-base-content/50 font-mono text-xs" @text=".typeName"></span>
+    <span class="text-base-content/30">=</span>
+    <x render=".child"></x>
+  </div>
+</template>
+
+<template id="CompView">
+  <div class="flex flex-col gap-0.5 leading-tight comp-view">
+    <button
+      type="button"
+      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1 self-start"
+      @on.click="toggle isCtrl">
+      <span @text="$arrowText"></span>
+      <span class="font-mono text-sm comp-view-name" @text=".name"></span>
+    </button>
+    <div @show=".isExpanded">
+      <pre @show="truthy? .rawView" class="text-xs bg-base-200 rounded p-2 overflow-x-auto whitespace-pre-wrap"><code @text=".rawView"></code></pre>
+      <div @hide="truthy? .rawView" class="text-xs text-base-content/40 italic px-2 comp-view-aot">compiled ahead of time — the source is in the view file</div>
+    </div>
+  </div>
+</template>
+
+<template id="CompSection">
+  <span class="font-mono text-sm leading-tight inline-block">
+    <span class="inline-flex items-center gap-2">
+      <button
+        type="button"
+        class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+        :disabled="$isItemsEmpty"
+        @on.click="toggle isCtrl">
+        <span @text="$arrowText"></span>
+        <span class="font-semibold comp-section" @text="$typeText"></span>
+        <span @text="$countText"></span>
+      </button>
+      <div @show="$showPagination" class="join">
+        <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+        <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+        <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+      </div>
+    </span>
+    <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/15 pl-2 mt-0.5">
+      <x render-each=".items" @loop-with="getPageRange"></x>
+    </div>
+  </span>
+</template>
+
+<template id="ComponentInspector">
+  <div class="font-mono text-sm leading-tight flex flex-col gap-1 component-inspector">
+    <div class="inline-flex items-center gap-2">
+      <span class="font-semibold comp-title" @text=".compName"></span>
+      <span class="text-base-content/40 text-xs" @text="$idText"></span>
+    </div>
+    <x render-each=".sections"></x>
+  </div>
+</template>

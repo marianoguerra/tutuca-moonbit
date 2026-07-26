@@ -1,0 +1,18 @@
+<script type="tutuca/state">
+  interface schema-viewer {
+    record state {
+      value: any,
+      raw: any,
+      raw-schema: any,
+      show-raw: bool,
+    }
+  }
+</script>
+
+<template>
+  <div class="inline-flex flex-col items-start gap-1 schema-viewer">
+    <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="toggleShowRaw" @text="$toggleLabel"></button>
+    <x render=".value" @hide=".showRaw"></x>
+    <x render=".raw" @show=".showRaw"></x>
+  </div>
+</template>

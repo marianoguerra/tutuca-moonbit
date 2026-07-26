@@ -8,115 +8,10 @@
 // ---------------------------------------------------------------------------
 
 ///|
-/// JS schemaNodeFields: the composite state plus a type label, constraint
-/// badges and title/description/deprecated metadata. Shared by every
-/// collapsible schema-construct component.
-priv struct SchemaNodeState {
-  items : Array[@tutuca.Value]
-  isExpanded : Bool
-  itemsPerPage : Int
-  currentPage : Int
-  typeLabel : String
-  badges : Array[String]
-  title : String
-  description : String
-  deprecated : Bool
-} derive(ToJson, FromJson)
-
-///|
-impl Composite for SchemaNodeState with fn items(self) {
-  self.items
-}
-
-///|
-impl Composite for SchemaNodeState with fn is_expanded(self) {
-  self.isExpanded
-}
-
-///|
-impl Composite for SchemaNodeState with fn per_page(self) {
-  self.itemsPerPage
-}
-
-///|
-impl Composite for SchemaNodeState with fn current_page(self) {
-  self.currentPage
-}
-
-///|
-impl Composite for SchemaNodeState with fn with_current_page(self, p) {
-  { ..self, currentPage: p }
-}
-
-///|
-fn schema_node_init() -> SchemaNodeState {
-  {
-    items: [],
-    isExpanded: false,
-    itemsPerPage: 10,
-    currentPage: 0,
-    typeLabel: "",
-    badges: [],
-    title: "",
-    description: "",
-    deprecated: false,
-  }
-}
-
-///|
-fn schema_node_compute(
-  count_text : (SchemaNodeState) -> String,
-) -> Map[String, (SchemaNodeState, Array[@tutuca.Value]) -> @tutuca.Value] {
-  composite_compute(s => s.typeLabel, count_text)
-}
-
-///|
-/// Body of a collapsible node. `grid` (key/value rows) aligns every row's
-/// value into one column via a 2-column CSS grid whose rows are
-/// `display: contents`; `list` stacks single-element items one per line.
-const GRID_BODY : String =
-  #|<div @show=".isExpanded" class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
-  #|  <x render-each=".items" @loop-with="getPageRange"></x>
-  #|</div>
-
-///|
-const LIST_BODY : String =
-  #|<div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5">
-  #|  <x render-each=".items" @loop-with="getPageRange"></x>
-  #|</div>
-
-///|
-/// JS makeSchemaView(accent, body): the shared collapsible chrome — chevron +
-/// type label + count + badges + title/description + a body (grid or list).
-/// `accent` is interpolated as a literal so the margaui scanner sees it.
-fn make_schema_view(accent : String, body? : String = GRID_BODY) -> String {
-  let tpl =
-    #|<span class="font-mono text-sm leading-tight inline-block">
-    #|  <span class="inline-flex items-center gap-2 flex-wrap">
-    #|    <button
-    #|      type="button"
-    #|      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
-    #|      :disabled="$isItemsEmpty"
-    #|      @on.click="toggleIsExpanded">
-    #|      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
-    #|      <span class="__ACCENT__ font-semibold" @text="$typeText"></span>
-    #|      <span class="text-base-content/50" @text="$countText"></span>
-    #|    </button>
-    #|    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
-    #|    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
-    #|    <div @show="$showPagination" class="join">
-    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
-    #|      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
-    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
-    #|    </div>
-    #|  </span>
-    #|  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
-    #|  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
-    #|  __BODY__
-    #|</span>
-
-  tpl.replace(old="__ACCENT__", new=accent).replace(old="__BODY__", new=body)
-}
+/// The five collapsible schema-construct components share one shape — the
+/// composite fields plus a type label, badges and title/description/deprecated
+/// — declared once per component in schema_components.html and implemented
+/// against the generated states in schema_components.mbt.
 
 ///|
 fn schema_str(m : Map[String, @tutuca.Value], k : String) -> String {
@@ -368,79 +263,25 @@ fn Inspector::collect_extras(
 // ---------------------------------------------------------------------------
 
 ///|
-priv struct SchemaPropertyState {
-  key : String
-  child : @tutuca.Value
-  required : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// One object property row: key, optional required marker, then the child
 /// schema. `contents` so the cells land directly in the parent's grid.
 fn schema_property_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="contents">
-          #|  <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-          #|    <span class="text-base-content/60 schema-key" @text=".key"></span>
-          #|    <span @show=".required" class="text-error font-bold" title="required">*</span>
-          #|    <span class="text-base-content/30">:</span>
-          #|  </span>
-          #|  <x render=".child"></x>
-          #|</div>
-        ),
-      ),
-    },
-    name="SchemaProperty",
-    init=SchemaPropertyState::{ key: "", child: Null, required: false },
-  )
+  schema_property_component()
 }
-
-///|
-priv struct SchemaBranchState {
-  label : String
-  child : @tutuca.Value
-  labelClass : String
-} derive(ToJson, FromJson)
 
 ///|
 /// A labeled wrapper around a nested schema (object extras, applicators,
 /// $defs entries and embedded values).
 fn schema_branch_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="contents">
-          #|  <span class="flex items-center gap-1 leading-tight">
-          #|    <span :class="$labelCssClass" @text=".label"></span>
-          #|    <span class="text-base-content/30">:</span>
-          #|  </span>
-          #|  <x render=".child"></x>
-          #|</div>
-        ),
-      ),
-      "_margauiClasses": @anode.View::new(
-        "_margauiClasses",
-        raw_view=(
-          #|<p class="text-accent text-secondary text-info text-error"></p>
-        ),
-      ),
-    },
-    name="SchemaBranch",
-    init=SchemaBranchState::{
-      label: "",
-      child: Null,
-      labelClass: "text-accent",
-    },
-    compute={
-      "labelCssClass": (s : SchemaBranchState, _args) => {
-        Str("font-mono text-sm schema-branch-label \{s.labelClass}")
-      },
+  schema_branch_component(
+    init={ ..SchemaBranchState::zero(), labelClass: "text-accent" },
+    compute=m => {
+      match m {
+        LabelCssClass =>
+          Some((s, _args) => {
+            Str("font-mono text-sm schema-branch-label \{s.labelClass}")
+          })
+      }
     },
   )
 }

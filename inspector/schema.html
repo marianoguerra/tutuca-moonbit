@@ -1,0 +1,41 @@
+<script type="tutuca/state">
+  interface schema-property {
+    record state {
+      key: string,
+      child: any,
+      required: bool,
+    }
+  }
+  interface schema-branch {
+    record state {
+      label: string,
+      child: any,
+      label-class: string,
+    }
+  }
+</script>
+
+<template id="SchemaProperty">
+  <div class="contents">
+    <span class="font-mono text-sm flex items-center gap-1 leading-tight">
+      <span class="text-base-content/60 schema-key" @text=".key"></span>
+      <span @show=".required" class="text-error font-bold" title="required">*</span>
+      <span class="text-base-content/30">:</span>
+    </span>
+    <x render=".child"></x>
+  </div>
+</template>
+
+<template id="SchemaBranch">
+  <div class="contents">
+    <span class="flex items-center gap-1 leading-tight">
+      <span :class="$labelCssClass" @text=".label"></span>
+      <span class="text-base-content/30">:</span>
+    </span>
+    <x render=".child"></x>
+  </div>
+</template>
+
+<template id="SchemaBranch:_margauiClasses">
+  <p class="text-accent text-secondary text-info text-error"></p>
+</template>

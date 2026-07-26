@@ -3,20 +3,153 @@
 // builders that instantiate them. Split from schema.mbt; same package.
 
 ///|
+impl Composite for SchemaScalarState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for SchemaScalarState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaScalarState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaScalarState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaScalarState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+impl Composite for SchemaObjectState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for SchemaObjectState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaObjectState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaObjectState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaObjectState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+impl Composite for SchemaArrayState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for SchemaArrayState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaArrayState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaArrayState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaArrayState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+impl Composite for SchemaEnumState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for SchemaEnumState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaEnumState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaEnumState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaEnumState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
+impl Composite for SchemaCombinatorState with fn items(self) {
+  self.items
+}
+
+///|
+impl Composite for SchemaCombinatorState with fn is_expanded(self) {
+  self.isExpanded
+}
+
+///|
+impl Composite for SchemaCombinatorState with fn per_page(self) {
+  self.itemsPerPage
+}
+
+///|
+impl Composite for SchemaCombinatorState with fn current_page(self) {
+  self.currentPage
+}
+
+///|
+impl Composite for SchemaCombinatorState with fn with_current_page(self, p) {
+  { ..self, currentPage: p }
+}
+
+///|
 /// Primitive type(s): string / number / integer / boolean / null / multi-type.
 fn schema_scalar_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_schema_view("text-success schema-scalar"),
-      ),
+  schema_scalar_component(
+    init={ ..SchemaScalarState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeLabel))
+        CountText => Some((_s, _args) => Str(""))
+      }
     },
-    name="SchemaScalar",
-    init=schema_node_init(),
-    compute=schema_node_compute(_s => ""),
-    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
@@ -38,25 +171,30 @@ fn Inspector::schema_scalar_from(
 /// Object schema: property rows (with required markers) plus object-specific
 /// branches (additionalProperties / patternProperties / propertyNames).
 fn schema_object_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_schema_view("text-primary schema-object"),
-      ),
-    },
-    name="SchemaObject",
-    init=schema_node_init(),
-    compute=schema_node_compute(s => {
-      let n = s.items.length()
-      if n > 0 {
-        "{\{n}}"
-      } else {
-        ""
+  schema_object_component(
+    init={ ..SchemaObjectState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeLabel))
+        CountText =>
+          Some((s, _args) => {
+            let n = s.items.length()
+            Str(if n > 0 { "{\{n}}" } else { "" })
+          })
       }
-    }),
-    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    },
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
@@ -132,25 +270,30 @@ fn Inspector::schema_object_from(
 /// Array schema: a single `items` schema, or a positional `prefixItems`
 /// tuple, plus `contains` and array constraints (as badges).
 fn schema_array_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_schema_view("text-primary schema-array"),
-      ),
-    },
-    name="SchemaArray",
-    init=schema_node_init(),
-    compute=schema_node_compute(s => {
-      let n = s.items.length()
-      if n > 0 {
-        "[\{n}]"
-      } else {
-        ""
+  schema_array_component(
+    init={ ..SchemaArrayState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeLabel))
+        CountText =>
+          Some((s, _args) => {
+            let n = s.items.length()
+            Str(if n > 0 { "[\{n}]" } else { "" })
+          })
       }
-    }),
-    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    },
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
@@ -217,25 +360,30 @@ fn Inspector::schema_array_from(
 ///|
 /// Enumerated allowed values — each rendered with the value inspector.
 fn schema_enum_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_schema_view("text-info schema-enum", body=LIST_BODY),
-      ),
-    },
-    name="SchemaEnum",
-    init=schema_node_init(),
-    compute=schema_node_compute(s => {
-      let n = s.items.length()
-      if n > 0 {
-        "(\{n})"
-      } else {
-        ""
+  schema_enum_component(
+    init={ ..SchemaEnumState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeLabel))
+        CountText =>
+          Some((s, _args) => {
+            let n = s.items.length()
+            Str(if n > 0 { "(\{n})" } else { "" })
+          })
       }
-    }),
-    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    },
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
@@ -262,49 +410,36 @@ fn Inspector::schema_enum_from(
 ///|
 /// A single constant value — terminal, rendered inline.
 fn schema_const_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-const">
-          #|  <span class="text-info font-semibold">const</span>
-          #|  <span class="text-base-content/30">=</span>
-          #|  <x render=".value"></x>
-          #|</span>
-        ),
-      ),
-    },
-    name="SchemaConst",
-    init=ChildValueState::{ value: Null },
-  )
+  schema_const_component()
 }
 
 ///|
 /// Combinator: allOf / anyOf / oneOf, subschemas listed without keys.
 fn schema_combinator_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=make_schema_view(
-          "text-accent schema-combinator",
-          body=LIST_BODY,
-        ),
-      ),
-    },
-    name="SchemaCombinator",
-    init=schema_node_init(),
-    compute=schema_node_compute(s => {
-      let n = s.items.length()
-      if n > 0 {
-        "(\{n})"
-      } else {
-        ""
+  schema_combinator_component(
+    init={ ..SchemaCombinatorState::zero(), itemsPerPage: 10 },
+    update=(s, msg, _ctx) => composite_update(s, msg),
+    compute=m => {
+      match m {
+        ArrowText => Some(composite_arrow_text)
+        IsItemsEmpty => Some(composite_is_items_empty)
+        ShowPagination => Some(composite_show_pagination)
+        CannotPrevPage => Some(composite_cannot_prev_page)
+        CannotNextPage => Some(composite_cannot_next_page)
+        PageIndicatorText => Some(composite_page_indicator_text)
+        TypeText => Some((s, _args) => Str(s.typeLabel))
+        CountText =>
+          Some((s, _args) => {
+            let n = s.items.length()
+            Str(if n > 0 { "(\{n})" } else { "" })
+          })
       }
-    }),
-    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
-    loop_with=composite_loop_with(),
+    },
+    loop_with=l => {
+      match l {
+        GetPageRange => Some(composite_page_range)
+      }
+    },
   )
 }
 
@@ -338,55 +473,7 @@ fn Inspector::schema_combinator_from(
 ///|
 /// Conditional applicator: if / then / else as three labeled regions.
 fn schema_conditional_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight inline-block schema-conditional">
-          #|  <span class="inline-flex items-center gap-2 flex-wrap">
-          #|    <span class="text-accent font-semibold">conditional</span>
-          #|    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
-          #|  </span>
-          #|  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>
-          #|  <span @show="truthy? .description" class="block text-base-content/50" @text=".description"></span>
-          #|  <div class="ml-1 grid gap-x-2 gap-y-0.5 items-baseline border-l border-base-content/10 pl-2 mt-0.5" style="grid-template-columns: auto 1fr">
-          #|    <div @show="truthy? .ifNode" class="contents">
-          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-          #|        <span class="text-info">if</span>
-          #|        <span class="text-base-content/30">:</span>
-          #|      </span>
-          #|      <x render=".ifNode"></x>
-          #|    </div>
-          #|    <div @show="truthy? .thenNode" class="contents">
-          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-          #|        <span class="text-success">then</span>
-          #|        <span class="text-base-content/30">:</span>
-          #|      </span>
-          #|      <x render=".thenNode"></x>
-          #|    </div>
-          #|    <div @show="truthy? .elseNode" class="contents">
-          #|      <span class="font-mono text-sm flex items-center gap-1 leading-tight">
-          #|        <span class="text-warning">else</span>
-          #|        <span class="text-base-content/30">:</span>
-          #|      </span>
-          #|      <x render=".elseNode"></x>
-          #|    </div>
-          #|  </div>
-          #|</span>
-        ),
-      ),
-    },
-    name="SchemaConditional",
-    init=SchemaConditionalState::{
-      ifNode: Null,
-      thenNode: Null,
-      elseNode: Null,
-      title: "",
-      description: "",
-      deprecated: false,
-    },
-  )
+  schema_conditional_component()
 }
 
 ///|
@@ -412,106 +499,36 @@ fn Inspector::schema_conditional_from(
 ///|
 /// Negation: the value must NOT match the wrapped schema.
 fn schema_not_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight inline-flex items-center gap-2 schema-not">
-          #|  <span class="text-error font-semibold">not</span>
-          #|  <span class="text-base-content/30">:</span>
-          #|  <x render=".child"></x>
-          #|</span>
-        ),
-      ),
-    },
-    name="SchemaNot",
-    init=ChildOnlyState::{ child: Null },
-  )
+  schema_not_component()
 }
 
 ///|
 /// Boolean schemas: `true` accepts any value, `false` accepts none.
 fn schema_boolean_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span :class="$cssClass" @text="$text"></span>
-        ),
-      ),
-      "_margauiClasses": @anode.View::new(
-        "_margauiClasses",
-        raw_view=(
-          #|<p class="text-success text-error"></p>
-        ),
-      ),
-    },
-    name="SchemaBoolean",
-    init=SchemaBooleanState::{ value: true },
-    compute={
-      "text": (s : SchemaBooleanState, _args) => {
-        Str(
-          if s.value {
-            "any value (true)"
-          } else {
-            "no value allowed (false)"
-          },
-        )
-      },
-      "cssClass": (s : SchemaBooleanState, _args) => {
-        let color = if s.value { "text-success" } else { "text-error" }
-        Str("font-mono text-sm leading-tight italic schema-boolean \{color}")
-      },
-    },
-  )
+  schema_boolean_component(init={ value: true }, compute=m => {
+    match m {
+      Text =>
+        Some((s, _args) => {
+          Str(
+            if s.value {
+              "any value (true)"
+            } else {
+              "no value allowed (false)"
+            },
+          )
+        })
+      CssClass =>
+        Some((s, _args) => {
+          let color = if s.value { "text-success" } else { "text-error" }
+          Str("font-mono text-sm leading-tight italic schema-boolean \{color}")
+        })
+    }
+  })
 }
 
 ///|
 /// A `$ref`. Rendered as a label only — never resolved/followed, so recursive
 /// schemas (`{ "$ref": "#" }`) cannot loop.
 fn schema_ref_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<span class="font-mono text-sm leading-tight text-secondary schema-ref">→ <span @text=".target"></span></span>
-        ),
-      ),
-    },
-    name="SchemaRef",
-    init=SchemaRefState::{ target: "" },
-  )
+  schema_ref_component()
 }
-
-///|
-priv struct ChildValueState {
-  value : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
-priv struct ChildOnlyState {
-  child : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
-priv struct SchemaConditionalState {
-  ifNode : @tutuca.Value
-  thenNode : @tutuca.Value
-  elseNode : @tutuca.Value
-  title : String
-  description : String
-  deprecated : Bool
-} derive(ToJson, FromJson)
-
-///|
-priv struct SchemaBooleanState {
-  value : Bool
-} derive(ToJson, FromJson)
-
-///|
-priv struct SchemaRefState {
-  target : String
-} derive(ToJson, FromJson)

@@ -1,0 +1,133 @@
+<script type="tutuca/state">
+  interface json-null {
+    record state {}
+  }
+  interface json-boolean {
+    record state { value: bool }
+  }
+  interface json-number {
+    record state { value: f64 }
+  }
+  interface json-string {
+    record state { value: string }
+  }
+  interface value-fn {
+    record state {}
+  }
+  interface value-obj {
+    record state { text: string }
+  }
+  interface json-array {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+    }
+  }
+  interface json-object {
+    record state {
+      items: values,
+      is-expanded: bool,
+      items-per-page: s32,
+      current-page: s32,
+    }
+  }
+  interface json-property {
+    record state {
+      key: string,
+      child: any,
+    }
+  }
+  interface data-inspector {
+    record state { value: any }
+  }
+</script>
+
+<template id="JsonNull">
+  <span class="font-mono text-sm leading-tight text-warning italic json-null">null</span>
+</template>
+
+<template id="JsonBoolean">
+  <span :class="$cssClass" @text="$text"></span>
+</template>
+
+<template id="JsonBoolean:_margauiClasses">
+  <p class="text-success text-warning"></p>
+</template>
+
+<template id="JsonNumber">
+  <span class="font-mono text-sm leading-tight text-info json-number" @text="$text"></span>
+</template>
+
+<template id="JsonString">
+  <span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom json-string" :title=".value" @text="$text"></span>
+</template>
+
+<template id="ValueFn">
+  <span class="font-mono text-sm leading-tight text-base-content/40 value-fn">function () &#123; … &#125;</span>
+</template>
+
+<template id="ValueObj">
+  <span class="font-mono text-sm leading-tight inline-block max-w-xs truncate align-bottom text-info value-obj" :title=".text" @text=".text"></span>
+</template>
+
+<template id="JsonArray">
+  <span class="font-mono text-sm leading-tight inline-block">
+    <span class="inline-flex items-center gap-2">
+      <button
+        type="button"
+        class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+        :disabled="$isItemsEmpty"
+        @on.click="toggleIsExpanded">
+        <span @text="$arrowText"></span>
+        <span class="json-array" @text="$typeText"></span>
+        <span @text="$countText"></span>
+      </button>
+      <div @show="$showPagination" class="join">
+        <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+        <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+        <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+      </div>
+    </span>
+    <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5">
+      <x render-each=".items" @loop-with="getPageRange"></x>
+    </div>
+  </span>
+</template>
+
+<template id="JsonObject">
+  <span class="font-mono text-sm leading-tight inline-block">
+    <span class="inline-flex items-center gap-2">
+      <button
+        type="button"
+        class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
+        :disabled="$isItemsEmpty"
+        @on.click="toggleIsExpanded">
+        <span @text="$arrowText"></span>
+        <span class="json-object" @text="$typeText"></span>
+        <span @text="$countText"></span>
+      </button>
+      <div @show="$showPagination" class="join">
+        <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
+        <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
+        <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
+      </div>
+    </span>
+    <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l border-base-content/10 pl-2 mt-0.5">
+      <x render-each=".items" @loop-with="getPageRange"></x>
+    </div>
+  </span>
+</template>
+
+<template id="JsonProperty">
+  <div class="flex items-center gap-2 leading-tight json-property">
+    <span class="text-base-content/60 font-mono text-sm" @text=".key"></span>
+    <span class="text-base-content/30">:</span>
+    <x render=".child"></x>
+  </div>
+</template>
+
+<template id="DataInspector">
+  <span class="contents"><x render=".value"></x></span>
+</template>

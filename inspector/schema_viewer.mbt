@@ -2,49 +2,37 @@
 // Split from schema.mbt; same package.
 
 ///|
-priv struct SchemaViewerState {
-  value : @tutuca.Value
-  raw : @tutuca.Value
-  rawSchema : @tutuca.Value
-  showRaw : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// Holds the classified high-level tree in `value` and a DataInspector of the
 /// original schema in `raw`; `showRaw` toggles between them. `rawSchema`
 /// keeps the plain schema for inspection.
+///
+/// The state and the view live in schema_viewer.html; `SchemaViewerState` and
+/// `schema_viewer_component` are generated from it.
 fn schema_viewer_comp() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="inline-flex flex-col items-start gap-1 schema-viewer">
-          #|  <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="toggleShowRaw" @text="$toggleLabel"></button>
-          #|  <x render=".value" @hide=".showRaw"></x>
-          #|  <x render=".raw" @show=".showRaw"></x>
-          #|</div>
-        ),
-      ),
-    },
-    name="SchemaViewer",
+  schema_viewer_component(
     init=SchemaViewerState::{
       value: Null,
       raw: Null,
       rawSchema: Null,
       showRaw: false,
     },
-    update=(s : SchemaViewerState, msg, _ctx) => {
+    // A raw `match msg`: `toggleIsExpanded` is raised inside the rendered
+    // child, so no view of THIS component declares it and SchemaViewerMsg
+    // cannot type it.
+    update=(s, msg, _ctx) => {
       match msg {
         Input("toggleIsExpanded", _) =>
           Some({ ..s, value: toggle_wrapped(s.value) })
         _ => None
       }
     },
-    compute={
-      "toggleLabel": (s : SchemaViewerState, _args) => {
-        Str(if s.showRaw { "high-level view" } else { "raw schema" })
-      },
+    compute=m => {
+      match m {
+        ToggleLabel =>
+          Some((s, _args) => {
+            Str(if s.showRaw { "high-level view" } else { "raw schema" })
+          })
+      }
     },
   )
 }
