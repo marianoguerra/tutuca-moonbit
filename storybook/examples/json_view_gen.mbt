@@ -8,6 +8,51 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the JsonSelector component.
+///
+/// Declared as `interface json-selector` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonSelectorState {} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonSelectorState::zero(), label: "Counter" }
+fn JsonSelectorState::zero() -> JsonSelectorState {
+  JsonSelectorState::{  }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_selector_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonSelectorState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_selector_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_selector_schema_fingerprint : String = "823721696e1e4913"
+
+///|
 /// The views declared in json.html.
 pub(all) enum JsonSelectorView {
   Main
@@ -115,30 +160,49 @@ pub fn[S] json_selector_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_selector_fields : Array[String] = []
+/// The state of the JsonNull component.
+///
+/// Declared as `interface json-null` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonNullState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_selector_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_selector_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  json_selector_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonNullState::zero(), label: "Counter" }
+fn JsonNullState::zero() -> JsonNullState {
+  JsonNullState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_null_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonNullState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_null_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_null_schema_fingerprint : String = "28cebc724be3edcf"
 
 ///|
 /// The views declared in json.html.
@@ -162,29 +226,96 @@ pub let json_null_common_style : String = ""
 pub let json_null_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_null_fields : Array[String] = []
+/// The state of the JsonBool component.
+///
+/// Declared as `interface json-bool` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonBoolState {
+  value : Bool
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_null_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_null_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonBoolState::zero(), label: "Counter" }
+fn JsonBoolState::zero() -> JsonBoolState {
+  JsonBoolState::{ value: false }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_bool_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonBoolState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonBool state declares — typed field names for tests and inspectors.
+pub(all) enum JsonBoolField {
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonBoolField::name(self : JsonBoolField) -> String {
+  match self {
+    Value => "value"
   }
-  json_null_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonBoolField::kind(self : JsonBoolField) -> @component.FieldKind {
+  match self {
+    Value => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_bool_field_names : Array[String] = ["value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_bool_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_bool_schema_fingerprint : String = "d4b8a46eb24ceada"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_bool_encode(s : JsonBoolState) -> Map[String, @tutuca.Value] {
+  { "value": Bool(s.value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_bool_decode(f : Map[String, @tutuca.Value]) -> JsonBoolState? {
+  guard f.get("value") is Some(Bool(v_value)) else { return None }
+  Some(JsonBoolState::{ value: v_value })
 }
 
 ///|
@@ -276,29 +407,96 @@ pub fn[S] json_bool_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_bool_fields : Array[String] = ["value"]
+/// The state of the JsonString component.
+///
+/// Declared as `interface json-string` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonStringState {
+  value : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_bool_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_bool_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonStringState::zero(), label: "Counter" }
+fn JsonStringState::zero() -> JsonStringState {
+  JsonStringState::{ value: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_string_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonStringState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonString state declares — typed field names for tests and inspectors.
+pub(all) enum JsonStringField {
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonStringField::name(self : JsonStringField) -> String {
+  match self {
+    Value => "value"
   }
-  json_bool_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonStringField::kind(self : JsonStringField) -> @component.FieldKind {
+  match self {
+    Value => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_string_field_names : Array[String] = ["value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_string_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_string_schema_fingerprint : String = "56e6fad878f71b0c"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_string_encode(s : JsonStringState) -> Map[String, @tutuca.Value] {
+  { "value": Str(s.value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_string_decode(f : Map[String, @tutuca.Value]) -> JsonStringState? {
+  guard f.get("value") is Some(Str(v_value)) else { return None }
+  Some(JsonStringState::{ value: v_value })
 }
 
 ///|
@@ -390,29 +588,101 @@ pub fn[S] json_string_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_string_fields : Array[String] = ["value"]
+/// The state of the JsonNumber component.
+///
+/// Declared as `interface json-number` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonNumberState {
+  strValue : String
+  value : Double
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_string_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_string_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonNumberState::zero(), label: "Counter" }
+fn JsonNumberState::zero() -> JsonNumberState {
+  JsonNumberState::{ strValue: "", value: 0.0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_number_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonNumberState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonNumber state declares — typed field names for tests and inspectors.
+pub(all) enum JsonNumberField {
+  StrValue
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonNumberField::name(self : JsonNumberField) -> String {
+  match self {
+    StrValue => "strValue"
+    Value => "value"
   }
-  json_string_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonNumberField::kind(self : JsonNumberField) -> @component.FieldKind {
+  match self {
+    StrValue => @component.FText
+    Value => @component.FFloat
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_number_field_names : Array[String] = ["strValue", "value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_number_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_number_schema_fingerprint : String = "f0f29389d0ef3ee2"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_number_encode(s : JsonNumberState) -> Map[String, @tutuca.Value] {
+  { "strValue": Str(s.strValue), "value": Num(s.value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_number_decode(f : Map[String, @tutuca.Value]) -> JsonNumberState? {
+  guard f.get("strValue") is Some(Str(v_strValue)) else { return None }
+  guard f.get("value") is Some(Num(v_value)) else { return None }
+  Some(JsonNumberState::{ strValue: v_strValue, value: v_value })
 }
 
 ///|
@@ -504,29 +774,100 @@ pub fn[S] json_number_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_number_fields : Array[String] = ["strValue", "value"]
+/// The state of the JsonArray component.
+///
+/// Declared as `interface json-array` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonArrayState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_number_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_number_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonArrayState::zero(), label: "Counter" }
+fn JsonArrayState::zero() -> JsonArrayState {
+  JsonArrayState::{ items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_array_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonArrayState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonArray state declares — typed field names for tests and inspectors.
+pub(all) enum JsonArrayField {
+  Items
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonArrayField::name(self : JsonArrayField) -> String {
+  match self {
+    Items => "items"
   }
-  json_number_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonArrayField::kind(self : JsonArrayField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_array_field_names : Array[String] = ["items"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_array_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_array_schema_fingerprint : String = "52ac0f26bb122de2"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_array_encode(s : JsonArrayState) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_array_decode(f : Map[String, @tutuca.Value]) -> JsonArrayState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(JsonArrayState::{ items: v_items })
 }
 
 ///|
@@ -671,29 +1012,108 @@ pub fn[S] json_array_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_array_fields : Array[String] = ["items"]
+/// The state of the JsonObjectKeyVal component.
+///
+/// Declared as `interface json-object-key-val` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonObjectKeyValState {
+  key : String
+  value : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_array_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_array_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonObjectKeyValState::zero(), label: "Counter" }
+fn JsonObjectKeyValState::zero() -> JsonObjectKeyValState {
+  JsonObjectKeyValState::{ key: "", value: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_object_key_val_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(JsonObjectKeyValState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonObjectKeyVal state declares — typed field names for tests and inspectors.
+pub(all) enum JsonObjectKeyValField {
+  Key
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonObjectKeyValField::name(self : JsonObjectKeyValField) -> String {
+  match self {
+    Key => "key"
+    Value => "value"
   }
-  json_array_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonObjectKeyValField::kind(
+  self : JsonObjectKeyValField,
+) -> @component.FieldKind {
+  match self {
+    Key => @component.FText
+    Value => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_object_key_val_field_names : Array[String] = ["key", "value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_object_key_val_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_object_key_val_schema_fingerprint : String = "f20288305b90ddee"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_object_key_val_encode(
+  s : JsonObjectKeyValState,
+) -> Map[String, @tutuca.Value] {
+  { "key": Str(s.key), "value": s.value }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_object_key_val_decode(
+  f : Map[String, @tutuca.Value],
+) -> JsonObjectKeyValState? {
+  guard f.get("key") is Some(Str(v_key)) else { return None }
+  let v_value = f.get("value").unwrap_or(Null)
+  Some(JsonObjectKeyValState::{ key: v_key, value: v_value })
 }
 
 ///|
@@ -785,29 +1205,100 @@ pub fn[S] json_object_key_val_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_object_key_val_fields : Array[String] = ["key", "value"]
+/// The state of the JsonObject component.
+///
+/// Declared as `interface json-object` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct JsonObjectState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `json_object_key_val_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_object_key_val_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..JsonObjectState::zero(), label: "Counter" }
+fn JsonObjectState::zero() -> JsonObjectState {
+  JsonObjectState::{ items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn json_object_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(JsonObjectState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the JsonObject state declares — typed field names for tests and inspectors.
+pub(all) enum JsonObjectField {
+  Items
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn JsonObjectField::name(self : JsonObjectField) -> String {
+  match self {
+    Items => "items"
   }
-  json_object_key_val_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn JsonObjectField::kind(self : JsonObjectField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let json_object_field_names : Array[String] = ["items"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn json_object_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let json_object_schema_fingerprint : String = "25415f50b72a94c2"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_object_encode(s : JsonObjectState) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_object_decode(f : Map[String, @tutuca.Value]) -> JsonObjectState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(JsonObjectState::{ items: v_items })
 }
 
 ///|
@@ -949,30 +1440,4 @@ pub fn[S] json_object_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let json_object_fields : Array[String] = ["items"]
-
-///|
-/// The fields in `json_object_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] json_object_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  json_object_fields.filter(f => !present.contains(f))
 }

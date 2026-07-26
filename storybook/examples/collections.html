@@ -1,3 +1,23 @@
+<script type="tutuca/state">
+  interface render-with-scope {
+    record state {
+    text: string,
+    }
+  }
+  interface list-filter-enrich {
+    record state {
+    items: values,
+    query: string,
+    }
+  }
+  interface list-filter-enrich-with {
+    record state {
+    items: values,
+    query: string,
+    }
+  }
+</script>
+
 <template id="RenderWithScope">
   <section class="flex flex-col gap-3">
     <input class="input" :value=".text" @on.input="$setText value">

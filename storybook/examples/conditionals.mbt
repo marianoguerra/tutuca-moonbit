@@ -7,11 +7,6 @@
 let traffic_lights : Array[String] = ["red", "orange", "green"]
 
 ///|
-priv struct TrafficLightState {
-  lightIndex : Int
-} derive(ToJson, FromJson)
-
-///|
 /// The React traffic-light exercise. The colour is DERIVED from a single
 /// `lightIndex` field by the `light` method; per-colour visibility uses the
 /// built-in binary predicate `equals?` (written predicate-first) in place of
@@ -31,6 +26,9 @@ fn traffic_light_comp() -> @component.Component {
         lightIndex: (s.lightIndex + 1) % traffic_lights.length(),
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=traffic_light_encode,
+    decode=traffic_light_decode,
   )
 }
 
@@ -58,18 +56,18 @@ pub fn traffic_light_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct TabbedUiState {
-  tab : String
-} derive(ToJson, FromJson)
-
-///|
 /// A whole tabbed UI out of one string field: `equals?` in `@show` picks the
 /// visible panel, and the same predicate in `@if.class` highlights the active
 /// button. No per-tab flags, no component per tab.
 fn tabbed_ui_comp() -> @component.Component {
-  @component.component(views=tabbed_u_i_views(), name="TabbedUI", init=TabbedUiState::{
-    tab: "overview",
-  })
+  @component.component(
+    views=tabbed_u_i_views(),
+    name="TabbedUI",
+    init=TabbedUIState::{ tab: "overview" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=tabbed_u_i_encode,
+    decode=tabbed_u_i_decode,
+  )
 }
 
 ///|
@@ -84,12 +82,6 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
     },
   ])
 }
-
-///|
-priv struct ListAndFilterState {
-  items : Array[@tutuca.Value]
-  query : String
-} derive(ToJson, FromJson)
 
 ///|
 /// `@when="filterItem"` calls the `when.filterItem` predicate per entry;
@@ -111,6 +103,9 @@ fn list_and_filter_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=list_and_filter_encode,
+    decode=list_and_filter_decode,
   )
 }
 

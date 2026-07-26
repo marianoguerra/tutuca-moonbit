@@ -8,6 +8,105 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Status component.
+///
+/// Declared as `interface status` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct StatusState {
+  message : String
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..StatusState::zero(), label: "Counter" }
+fn StatusState::zero() -> StatusState {
+  StatusState::{ message: "", count: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn status_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(StatusState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Status state declares — typed field names for tests and inspectors.
+pub(all) enum StatusField {
+  Message
+  Count
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn StatusField::name(self : StatusField) -> String {
+  match self {
+    Message => "message"
+    Count => "count"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn StatusField::kind(self : StatusField) -> @component.FieldKind {
+  match self {
+    Message => @component.FText
+    Count => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let status_field_names : Array[String] = ["message", "count"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn status_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let status_schema_fingerprint : String = "818952001ae7566e"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn status_encode(s : StatusState) -> Map[String, @tutuca.Value] {
+  { "message": Str(s.message), "count": Num(s.count.to_double()) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn status_decode(f : Map[String, @tutuca.Value]) -> StatusState? {
+  guard f.get("message") is Some(Str(v_message)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  Some(StatusState::{ message: v_message, count: v_count })
+}
+
+///|
 /// The views declared in communication.html.
 pub(all) enum StatusView {
   Main
@@ -29,29 +128,99 @@ pub let status_common_style : String = ""
 pub let status_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let status_fields : Array[String] = ["count", "message"]
+/// The state of the SendReceive component.
+///
+/// Declared as `interface send-receive` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SendReceiveState {
+  draft : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `status_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] status_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SendReceiveState::zero(), label: "Counter" }
+fn SendReceiveState::zero() -> SendReceiveState {
+  SendReceiveState::{ draft: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn send_receive_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SendReceiveState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the SendReceive state declares — typed field names for tests and inspectors.
+pub(all) enum SendReceiveField {
+  Draft
+  Status
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SendReceiveField::name(self : SendReceiveField) -> String {
+  match self {
+    Draft => "draft"
+    Status => "status"
   }
-  status_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SendReceiveField::kind(self : SendReceiveField) -> @component.FieldKind {
+  match self {
+    Draft => @component.FText
+    Status => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let send_receive_field_names : Array[String] = ["draft", "status"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn send_receive_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let send_receive_schema_fingerprint : String = "af6010efd88e64f0"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn send_receive_encode(s : SendReceiveState) -> Map[String, @tutuca.Value] {
+  { "draft": Str(s.draft) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn send_receive_decode(f : Map[String, @tutuca.Value]) -> SendReceiveState? {
+  guard f.get("draft") is Some(Str(v_draft)) else { return None }
+  Some(SendReceiveState::{ draft: v_draft })
 }
 
 ///|
@@ -198,29 +367,130 @@ pub fn[S] send_receive_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let send_receive_fields : Array[String] = ["draft", "status"]
+/// The state of the TreeItem component.
+///
+/// Declared as `interface tree-item` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct TreeItemState {
+  type_ : String
+  label : String
+  isOpen : Bool
+  items : Array[@tutuca.Value]
+} derive (
+  ToJson(fields(type_(rename="type"))),
+  FromJson(fields(type_(rename="type"))),
+)
 
 ///|
-/// The fields in `send_receive_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] send_receive_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..TreeItemState::zero(), label: "Counter" }
+fn TreeItemState::zero() -> TreeItemState {
+  TreeItemState::{ type_: "", label: "", isOpen: false, items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn tree_item_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(TreeItemState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the TreeItem state declares — typed field names for tests and inspectors.
+pub(all) enum TreeItemField {
+  Type
+  Label
+  IsOpen
+  Items
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TreeItemField::name(self : TreeItemField) -> String {
+  match self {
+    Type => "type"
+    Label => "label"
+    IsOpen => "isOpen"
+    Items => "items"
   }
-  send_receive_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn TreeItemField::kind(self : TreeItemField) -> @component.FieldKind {
+  match self {
+    Type => @component.FText
+    Label => @component.FText
+    IsOpen => @component.FBool
+    Items => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let tree_item_field_names : Array[String] = [
+  "type", "label", "isOpen", "items",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn tree_item_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let tree_item_schema_fingerprint : String = "e6692133fe7c7e9a"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn tree_item_encode(s : TreeItemState) -> Map[String, @tutuca.Value] {
+  {
+    "type": Str(s.type_),
+    "label": Str(s.label),
+    "isOpen": Bool(s.isOpen),
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn tree_item_decode(f : Map[String, @tutuca.Value]) -> TreeItemState? {
+  guard f.get("type") is Some(Str(v_type_)) else { return None }
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(TreeItemState::{
+    type_: v_type_,
+    label: v_label,
+    isOpen: v_isOpen,
+    items: v_items,
+  })
 }
 
 ///|
@@ -359,29 +629,103 @@ pub fn[S] tree_item_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let tree_item_fields : Array[String] = ["isOpen", "items", "label", "type"]
+/// The state of the TreeRoot component.
+///
+/// Declared as `interface tree-root` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct TreeRootState {
+  log : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `tree_item_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] tree_item_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..TreeRootState::zero(), label: "Counter" }
+fn TreeRootState::zero() -> TreeRootState {
+  TreeRootState::{ log: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn tree_root_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(TreeRootState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the TreeRoot state declares — typed field names for tests and inspectors.
+pub(all) enum TreeRootField {
+  Log
+  Root
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TreeRootField::name(self : TreeRootField) -> String {
+  match self {
+    Log => "log"
+    Root => "root"
   }
-  tree_item_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn TreeRootField::kind(self : TreeRootField) -> @component.FieldKind {
+  match self {
+    Log => @component.FList
+    Root => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let tree_root_field_names : Array[String] = ["log", "root"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn tree_root_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let tree_root_schema_fingerprint : String = "956f1bda15ce4557"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn tree_root_encode(s : TreeRootState) -> Map[String, @tutuca.Value] {
+  { "log": (List(s.log.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn tree_root_decode(f : Map[String, @tutuca.Value]) -> TreeRootState? {
+  guard f.get("log") is Some(List(l_log)) else { return None }
+  let v_log : Array[@tutuca.Value] = []
+  for x in l_log {
+    v_log.push(x)
+  }
+  Some(TreeRootState::{ log: v_log })
 }
 
 ///|
@@ -404,29 +748,3 @@ pub let tree_root_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let tree_root_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let tree_root_fields : Array[String] = ["log", "root"]
-
-///|
-/// The fields in `tree_root_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] tree_root_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  tree_root_fields.filter(f => !present.contains(f))
-}

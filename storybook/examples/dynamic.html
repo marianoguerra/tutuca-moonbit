@@ -1,3 +1,44 @@
+<script type="tutuca/state">
+  interface selector-entry {
+    record state {
+    value: string,
+    label: string,
+    }
+  }
+  interface selector {
+    record state {
+    items: values,
+    selected-value: any,
+    }
+  }
+  interface entry-editor-and-selector {
+    record state {
+    items: values,
+    selector: component,
+    }
+  }
+  interface sheet {
+    record state {
+    title: string,
+    }
+  }
+  interface toolbar {
+    record state {
+    }
+  }
+  interface panel {
+    record state {
+      toolbar: component,
+    }
+  }
+  interface workspace {
+    record state {
+    sheet: any,
+    panel: component,
+    }
+  }
+</script>
+
 <template id="SelectorEntry">
   <div class="flex gap-3">
     <input class="input val" :value=".value" @on.input="$setValue value">

@@ -1,3 +1,27 @@
+<script type="tutuca/state">
+  interface minimum-viable-component {
+    record state {
+    }
+  }
+  interface static-view-component {
+    record state {
+    }
+  }
+  interface text-directive {
+    record state {
+    str: string,
+    num: s32,
+    %bool: bool,
+    not-set: any,
+    }
+  }
+  interface danger-set-inner-html {
+    record state {
+    content: string,
+    }
+  }
+</script>
+
 <template id="MinimumViableComponent"></template>
 <template id="StaticViewComponent">
   <p>Hello, world!</p>

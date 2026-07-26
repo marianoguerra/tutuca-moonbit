@@ -8,6 +8,113 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the SwatchPicker component.
+///
+/// Declared as `interface swatch-picker` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SwatchPickerState {
+  color : String
+  palette : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SwatchPickerState::zero(), label: "Counter" }
+fn SwatchPickerState::zero() -> SwatchPickerState {
+  SwatchPickerState::{ color: "", palette: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn swatch_picker_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SwatchPickerState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the SwatchPicker state declares — typed field names for tests and inspectors.
+pub(all) enum SwatchPickerField {
+  Color
+  Palette
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SwatchPickerField::name(self : SwatchPickerField) -> String {
+  match self {
+    Color => "color"
+    Palette => "palette"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SwatchPickerField::kind(
+  self : SwatchPickerField,
+) -> @component.FieldKind {
+  match self {
+    Color => @component.FText
+    Palette => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let swatch_picker_field_names : Array[String] = ["color", "palette"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn swatch_picker_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let swatch_picker_schema_fingerprint : String = "30457ae742655759"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn swatch_picker_encode(s : SwatchPickerState) -> Map[String, @tutuca.Value] {
+  {
+    "color": Str(s.color),
+    "palette": (List(s.palette.map(x => x)) : @tutuca.Value),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn swatch_picker_decode(f : Map[String, @tutuca.Value]) -> SwatchPickerState? {
+  guard f.get("color") is Some(Str(v_color)) else { return None }
+  guard f.get("palette") is Some(List(l_palette)) else { return None }
+  let v_palette : Array[@tutuca.Value] = []
+  for x in l_palette {
+    v_palette.push(x)
+  }
+  Some(SwatchPickerState::{ color: v_color, palette: v_palette })
+}
+
+///|
 /// The views declared in graphics.html.
 pub(all) enum SwatchPickerView {
   Main
@@ -96,29 +203,113 @@ pub fn[S] swatch_picker_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let swatch_picker_fields : Array[String] = ["color", "palette"]
+/// The state of the Quadratic component.
+///
+/// Declared as `interface quadratic` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct QuadraticState {
+  a : Int
+  b : Int
+  c : Int
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `swatch_picker_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] swatch_picker_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..QuadraticState::zero(), label: "Counter" }
+fn QuadraticState::zero() -> QuadraticState {
+  QuadraticState::{ a: 0, b: 0, c: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn quadratic_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(QuadraticState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Quadratic state declares — typed field names for tests and inspectors.
+pub(all) enum QuadraticField {
+  A
+  B
+  C
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn QuadraticField::name(self : QuadraticField) -> String {
+  match self {
+    A => "a"
+    B => "b"
+    C => "c"
   }
-  swatch_picker_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn QuadraticField::kind(self : QuadraticField) -> @component.FieldKind {
+  match self {
+    A => @component.FInt
+    B => @component.FInt
+    C => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let quadratic_field_names : Array[String] = ["a", "b", "c"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn quadratic_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let quadratic_schema_fingerprint : String = "bb32e2a1638d9036"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn quadratic_encode(s : QuadraticState) -> Map[String, @tutuca.Value] {
+  {
+    "a": Num(s.a.to_double()),
+    "b": Num(s.b.to_double()),
+    "c": Num(s.c.to_double()),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn quadratic_decode(f : Map[String, @tutuca.Value]) -> QuadraticState? {
+  guard f.get("a") is Some(Num(n_a)) else { return None }
+  let v_a = n_a.to_int()
+  guard f.get("b") is Some(Num(n_b)) else { return None }
+  let v_b = n_b.to_int()
+  guard f.get("c") is Some(Num(n_c)) else { return None }
+  let v_c = n_c.to_int()
+  Some(QuadraticState::{ a: v_a, b: v_b, c: v_c })
 }
 
 ///|
@@ -215,30 +406,4 @@ pub fn[S] quadratic_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let quadratic_fields : Array[String] = ["a", "b", "c"]
-
-///|
-/// The fields in `quadratic_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] quadratic_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  quadratic_fields.filter(f => !present.contains(f))
 }

@@ -8,6 +8,117 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the PushView component.
+///
+/// Declared as `interface push-view` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PushViewState {
+  items : Array[@tutuca.Value]
+  query : String
+  view : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PushViewState::zero(), label: "Counter" }
+fn PushViewState::zero() -> PushViewState {
+  PushViewState::{ items: [], query: "", view: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn push_view_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PushViewState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the PushView state declares — typed field names for tests and inspectors.
+pub(all) enum PushViewField {
+  Items
+  Query
+  View
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PushViewField::name(self : PushViewField) -> String {
+  match self {
+    Items => "items"
+    Query => "query"
+    View => "view"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PushViewField::kind(self : PushViewField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    Query => @component.FText
+    View => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let push_view_field_names : Array[String] = ["items", "query", "view"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn push_view_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let push_view_schema_fingerprint : String = "59de8df8ec76d36f"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn push_view_encode(s : PushViewState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "query": Str(s.query),
+    "view": Str(s.view),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn push_view_decode(f : Map[String, @tutuca.Value]) -> PushViewState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  guard f.get("query") is Some(Str(v_query)) else { return None }
+  guard f.get("view") is Some(Str(v_view)) else { return None }
+  Some(PushViewState::{ items: v_items, query: v_query, view: v_view })
+}
+
+///|
 /// The views declared in rendering.html.
 pub(all) enum PushViewView {
   Main
@@ -108,29 +219,147 @@ pub fn[S] push_view_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let push_view_fields : Array[String] = ["query", "view"]
+/// The state of the SeqItemAccess component.
+///
+/// Declared as `interface seq-item-access` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SeqItemAccessState {
+  byKey : Map[String, @tutuca.Value]
+  byIndex : Array[@tutuca.Value]
+  currentKey : @tutuca.Value
+  currentIndex : Int
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `push_view_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] push_view_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SeqItemAccessState::zero(), label: "Counter" }
+fn SeqItemAccessState::zero() -> SeqItemAccessState {
+  SeqItemAccessState::{
+    byKey: Map([]),
+    byIndex: [],
+    currentKey: Null,
+    currentIndex: 0,
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn seq_item_access_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SeqItemAccessState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  push_view_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// Every field the SeqItemAccess state declares — typed field names for tests and inspectors.
+pub(all) enum SeqItemAccessField {
+  ByKey
+  ByIndex
+  CurrentKey
+  CurrentIndex
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SeqItemAccessField::name(self : SeqItemAccessField) -> String {
+  match self {
+    ByKey => "byKey"
+    ByIndex => "byIndex"
+    CurrentKey => "currentKey"
+    CurrentIndex => "currentIndex"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SeqItemAccessField::kind(
+  self : SeqItemAccessField,
+) -> @component.FieldKind {
+  match self {
+    ByKey => @component.FOMap
+    ByIndex => @component.FList
+    CurrentKey => @component.FAny
+    CurrentIndex => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let seq_item_access_field_names : Array[String] = [
+  "byKey", "byIndex", "currentKey", "currentIndex",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn seq_item_access_specs() -> Map[String, @component.FieldSpec] {
+  { "byKey": @component.FieldSpec::omap() }
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let seq_item_access_schema_fingerprint : String = "3d8aff68ab0f9efc"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn seq_item_access_encode(s : SeqItemAccessState) -> Map[String, @tutuca.Value] {
+  {
+    "byKey": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, x in s.byKey {
+        m[k] = x
+      }
+      (Map(m) : @tutuca.Value)
+    },
+    "byIndex": (List(s.byIndex.map(x => x)) : @tutuca.Value),
+    "currentKey": s.currentKey,
+    "currentIndex": Num(s.currentIndex.to_double()),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn seq_item_access_decode(
+  f : Map[String, @tutuca.Value],
+) -> SeqItemAccessState? {
+  guard f.get("byKey") is Some(Map(m_byKey)) else { return None }
+  let v_byKey : Map[String, @tutuca.Value] = Map([])
+  for k, x in m_byKey {
+    v_byKey[k] = x
+  }
+  guard f.get("byIndex") is Some(List(l_byIndex)) else { return None }
+  let v_byIndex : Array[@tutuca.Value] = []
+  for x in l_byIndex {
+    v_byIndex.push(x)
+  }
+  let v_currentKey = f.get("currentKey").unwrap_or(Null)
+  guard f.get("currentIndex") is Some(Num(n_currentIndex)) else { return None }
+  let v_currentIndex = n_currentIndex.to_int()
+  Some(SeqItemAccessState::{
+    byKey: v_byKey,
+    byIndex: v_byIndex,
+    currentKey: v_currentKey,
+    currentIndex: v_currentIndex,
+  })
 }
 
 ///|
@@ -232,31 +461,116 @@ pub fn[S] seq_item_access_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let seq_item_access_fields : Array[String] = [
-  "byIndex", "byKey", "currentIndex", "currentKey",
-]
+/// The state of the Pagination component.
+///
+/// Declared as `interface pagination` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PaginationState {
+  items : Array[@tutuca.Value]
+  page : Int
+  pageSize : Int
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `seq_item_access_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] seq_item_access_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PaginationState::zero(), label: "Counter" }
+fn PaginationState::zero() -> PaginationState {
+  PaginationState::{ items: [], page: 0, pageSize: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn pagination_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PaginationState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Pagination state declares — typed field names for tests and inspectors.
+pub(all) enum PaginationField {
+  Items
+  Page
+  PageSize
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PaginationField::name(self : PaginationField) -> String {
+  match self {
+    Items => "items"
+    Page => "page"
+    PageSize => "pageSize"
   }
-  seq_item_access_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PaginationField::kind(self : PaginationField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    Page => @component.FInt
+    PageSize => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let pagination_field_names : Array[String] = ["items", "page", "pageSize"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn pagination_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let pagination_schema_fingerprint : String = "c2aa11aab6bf6478"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn pagination_encode(s : PaginationState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "page": Num(s.page.to_double()),
+    "pageSize": Num(s.pageSize.to_double()),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn pagination_decode(f : Map[String, @tutuca.Value]) -> PaginationState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  guard f.get("page") is Some(Num(n_page)) else { return None }
+  let v_page = n_page.to_int()
+  guard f.get("pageSize") is Some(Num(n_pageSize)) else { return None }
+  let v_pageSize = n_pageSize.to_int()
+  Some(PaginationState::{ items: v_items, page: v_page, pageSize: v_pageSize })
 }
 
 ///|
@@ -402,30 +716,4 @@ pub fn[S] pagination_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let pagination_fields : Array[String] = ["items"]
-
-///|
-/// The fields in `pagination_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] pagination_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  pagination_fields.filter(f => !present.contains(f))
 }

@@ -8,6 +8,54 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the MinimumViableComponent component.
+///
+/// Declared as `interface minimum-viable-component` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct MinimumViableComponentState {} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
+fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
+  MinimumViableComponentState::{  }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn minimum_viable_component_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(
+      ToJson::to_json(MinimumViableComponentState::zero()),
+    ) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn minimum_viable_component_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let minimum_viable_component_schema_fingerprint : String = "0f2138963e0265a7"
+
+///|
 /// The views declared in basics.html.
 pub(all) enum MinimumViableComponentView {
   Main
@@ -31,30 +79,50 @@ pub let minimum_viable_component_common_style : String = ""
 pub let minimum_viable_component_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let minimum_viable_component_fields : Array[String] = []
+/// The state of the StaticViewComponent component.
+///
+/// Declared as `interface static-view-component` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct StaticViewComponentState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `minimum_viable_component_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] minimum_viable_component_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  minimum_viable_component_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
+fn StaticViewComponentState::zero() -> StaticViewComponentState {
+  StaticViewComponentState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn static_view_component_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(StaticViewComponentState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn static_view_component_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let static_view_component_schema_fingerprint : String = "a2006cc55bf0a041"
 
 ///|
 /// The views declared in basics.html.
@@ -78,29 +146,126 @@ pub let static_view_component_common_style : String = ""
 pub let static_view_component_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let static_view_component_fields : Array[String] = []
+/// The state of the TextDirective component.
+///
+/// Declared as `interface text-directive` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct TextDirectiveState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `static_view_component_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] static_view_component_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..TextDirectiveState::zero(), label: "Counter" }
+fn TextDirectiveState::zero() -> TextDirectiveState {
+  TextDirectiveState::{ str: "", num: 0, bool: false, notSet: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn text_directive_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(TextDirectiveState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the TextDirective state declares — typed field names for tests and inspectors.
+pub(all) enum TextDirectiveField {
+  Str
+  Num
+  Bool
+  NotSet
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TextDirectiveField::name(self : TextDirectiveField) -> String {
+  match self {
+    Str => "str"
+    Num => "num"
+    Bool => "bool"
+    NotSet => "notSet"
   }
-  static_view_component_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn TextDirectiveField::kind(
+  self : TextDirectiveField,
+) -> @component.FieldKind {
+  match self {
+    Str => @component.FText
+    Num => @component.FInt
+    Bool => @component.FBool
+    NotSet => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let text_directive_field_names : Array[String] = [
+  "str", "num", "bool", "notSet",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn text_directive_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let text_directive_schema_fingerprint : String = "f6fb027d2388083c"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn text_directive_encode(s : TextDirectiveState) -> Map[String, @tutuca.Value] {
+  {
+    "str": Str(s.str),
+    "num": Num(s.num.to_double()),
+    "bool": Bool(s.bool),
+    "notSet": s.notSet,
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn text_directive_decode(f : Map[String, @tutuca.Value]) -> TextDirectiveState? {
+  guard f.get("str") is Some(Str(v_str)) else { return None }
+  guard f.get("num") is Some(Num(n_num)) else { return None }
+  let v_num = n_num.to_int()
+  guard f.get("bool") is Some(Bool(v_bool)) else { return None }
+  let v_notSet = f.get("notSet").unwrap_or(Null)
+  Some(TextDirectiveState::{
+    str: v_str,
+    num: v_num,
+    bool: v_bool,
+    notSet: v_notSet,
+  })
 }
 
 ///|
@@ -192,29 +357,103 @@ pub fn[S] text_directive_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let text_directive_fields : Array[String] = ["bool", "notSet", "num", "str"]
+/// The state of the DangerSetInnerHtml component.
+///
+/// Declared as `interface danger-set-inner-html` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct DangerSetInnerHtmlState {
+  content : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `text_directive_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] text_directive_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
+fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
+  DangerSetInnerHtmlState::{ content: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn danger_set_inner_html_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(DangerSetInnerHtmlState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the DangerSetInnerHtml state declares — typed field names for tests and inspectors.
+pub(all) enum DangerSetInnerHtmlField {
+  Content
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn DangerSetInnerHtmlField::name(self : DangerSetInnerHtmlField) -> String {
+  match self {
+    Content => "content"
   }
-  text_directive_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn DangerSetInnerHtmlField::kind(
+  self : DangerSetInnerHtmlField,
+) -> @component.FieldKind {
+  match self {
+    Content => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let danger_set_inner_html_field_names : Array[String] = ["content"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn danger_set_inner_html_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let danger_set_inner_html_schema_fingerprint : String = "20e28deaad6a8c77"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn danger_set_inner_html_encode(
+  s : DangerSetInnerHtmlState,
+) -> Map[String, @tutuca.Value] {
+  { "content": Str(s.content) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn danger_set_inner_html_decode(
+  f : Map[String, @tutuca.Value],
+) -> DangerSetInnerHtmlState? {
+  guard f.get("content") is Some(Str(v_content)) else { return None }
+  Some(DangerSetInnerHtmlState::{ content: v_content })
 }
 
 ///|
@@ -237,29 +476,3 @@ pub let danger_set_inner_html_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let danger_set_inner_html_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let danger_set_inner_html_fields : Array[String] = ["content"]
-
-///|
-/// The fields in `danger_set_inner_html_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] danger_set_inner_html_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  danger_set_inner_html_fields.filter(f => !present.contains(f))
-}

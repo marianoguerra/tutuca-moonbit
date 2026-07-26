@@ -108,7 +108,11 @@ Things to notice:
 - **The state struct is the fields.** `derive(ToJson, FromJson)` is the whole
   wiring: field names, defaults (from `init`) and kinds all come from the
   struct, and every handler body is compiler-checked — `s.cuont` is a compile
-  error, not a silently-Null render.
+  error, not a silently-Null render. Declare the struct in the view file's
+  `<script type="tutuca/state">` block and it is generated instead, which
+  extends the same check to the VIEWS: `.cuont` there becomes a generation
+  failure rather than a null, and the field kinds are declared rather than
+  guessed from whether the seed value happened to be integral.
 - **`update` is one pattern match** over every effectful dispatch:
   `Input(name, args)` for view events, plus `Receive`/`Bubble`/`Response`
   (below). It gets a `ctx` to send messages with; returning `None` means
@@ -729,9 +733,10 @@ moon test                        # behaviour, through the real event pipeline
 
 `gen-views` is the interesting one. It turns the view file into typed MoonBit:
 a `CounterMsg` enum with one variant per `@on` handler, a `CounterMethod` for
-the `$`-callables, and `counter_fields` for the fields the view reads. So a
-misspelled field or an `@on` handler nothing handles is a **build error** —
-not a finding you have to remember to go looking for. Adding a handler to the
+the `$`-callables, and — when the file carries a `<script type="tutuca/state">`
+schema — the state struct itself. So a misspelled field or an `@on` handler
+nothing handles is a **build error** — not a finding you have to remember to
+go looking for. Adding a handler to the
 `.html` and regenerating breaks the build until `update` handles it.
 
 While editing, `tutuca watch` keeps the generated modules current on every

@@ -8,6 +8,105 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the ListIteration component.
+///
+/// Declared as `interface list-iteration` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ListIterationState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ListIterationState::zero(), label: "Counter" }
+fn ListIterationState::zero() -> ListIterationState {
+  ListIterationState::{ items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn list_iteration_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ListIterationState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the ListIteration state declares — typed field names for tests and inspectors.
+pub(all) enum ListIterationField {
+  Items
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ListIterationField::name(self : ListIterationField) -> String {
+  match self {
+    Items => "items"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ListIterationField::kind(
+  self : ListIterationField,
+) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let list_iteration_field_names : Array[String] = ["items"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn list_iteration_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let list_iteration_schema_fingerprint : String = "4cb2b12ca13a0bfa"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn list_iteration_encode(s : ListIterationState) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn list_iteration_decode(f : Map[String, @tutuca.Value]) -> ListIterationState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(ListIterationState::{ items: v_items })
+}
+
+///|
 /// The views declared in list_iteration.html.
 pub(all) enum ListIterationView {
   Main
@@ -27,29 +126,3 @@ pub let list_iteration_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let list_iteration_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let list_iteration_fields : Array[String] = ["items"]
-
-///|
-/// The fields in `list_iteration_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] list_iteration_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  list_iteration_fields.filter(f => !present.contains(f))
-}

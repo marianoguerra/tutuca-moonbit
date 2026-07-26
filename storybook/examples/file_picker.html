@@ -1,3 +1,15 @@
+<script type="tutuca/state">
+  interface file-picker {
+    record state {
+    name: string,
+    size: f64,
+    %type: string,
+    last-modified: f64,
+    has-file: bool,
+    }
+  }
+</script>
+
 <template>
   <section class="flex flex-col gap-3">
     <label class="flex flex-col gap-1">

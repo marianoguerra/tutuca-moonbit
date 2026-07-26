@@ -11,14 +11,6 @@
 // the identity (it does not gate the handler).
 
 ///|
-priv struct AttributeBindingState {
-  str : String
-  num : Int
-  bool : Bool
-  notSet : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 /// `:attr=".field"` binds state into any attribute; `$'…{.field}…'` is a string
 /// template. Typing calls the GENERATED `setStr`; the number input goes through
 /// a hand-written `setRawNumber` that parses and validates first.
@@ -47,6 +39,9 @@ fn attribute_binding_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=attribute_binding_encode,
+    decode=attribute_binding_decode,
   )
 }
 
@@ -67,11 +62,6 @@ pub fn attribute_binding_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct ConditionalAttributesState {
-  isActive : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// `@if.class` tests a value, `@then`/`@else` supply the attribute. With a
 /// single @if the @then/@else infer the attribute name; with several, the extra
 /// ones must name it (`@then.title`) — HTML forbids duplicate attribute names.
@@ -80,6 +70,9 @@ fn conditional_attributes_comp() -> @component.Component {
     views=conditional_attributes_views(),
     name="ConditionalAttributes",
     init=ConditionalAttributesState::{ isActive: true },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=conditional_attributes_encode,
+    decode=conditional_attributes_decode,
   )
 }
 
@@ -106,12 +99,6 @@ pub fn conditional_attributes_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct EventModifiersState {
-  query : String
-  lastSentSearch : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 /// Modifiers filter events: `+send` fires only on Enter, `+cancel` only on
 /// Escape. `truthy?` is a built-in unary predicate, written predicate-first.
 fn event_modifiers_comp() -> @component.Component {
@@ -125,6 +112,9 @@ fn event_modifiers_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=event_modifiers_encode,
+    decode=event_modifiers_decode,
   )
 }
 
@@ -144,12 +134,6 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
     ],
   )
 }
-
-///|
-priv struct ShowHideState {
-  isOpen : Bool
-  count : Int
-} derive(ToJson, FromJson)
 
 ///|
 /// `@show` keeps the host element only when the value is truthy, `@hide` only
@@ -174,6 +158,9 @@ fn show_hide_comp() -> @component.Component {
     mutate={
       "incCount": (s : ShowHideState, _args) => { ..s, count: s.count + 1 },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=show_hide_encode,
+    decode=show_hide_decode,
   )
 }
 

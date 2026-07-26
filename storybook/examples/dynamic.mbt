@@ -8,24 +8,16 @@
 // doubles as the teleport path — a method or a constant is a lint error.
 
 ///|
-priv struct SelectorEntryState {
-  value : String
-  label : String
-} derive(ToJson, FromJson)
-
-///|
 fn selector_entry_comp() -> @component.Component {
-  @component.component(views=selector_entry_views(), name="SelectorEntry", init=SelectorEntryState::{
-    value: "entry-value",
-    label: "Entry Label",
-  })
+  @component.component(
+    views=selector_entry_views(),
+    name="SelectorEntry",
+    init=SelectorEntryState::{ value: "entry-value", label: "Entry Label" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=selector_entry_encode,
+    decode=selector_entry_decode,
+  )
 }
-
-///|
-priv struct SelectorState {
-  items : Array[@tutuca.Value]
-  selectedValue : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 /// The CONSUMER: it has no items of its own, it reads the producer's list as
@@ -42,13 +34,11 @@ fn selector_comp() -> @component.Component {
         default: Some(".items"),
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=selector_encode,
+    decode=selector_decode,
   )
 }
-
-///|
-priv struct EntryEditorState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 /// The PRODUCER: every `provide` is evaluated and pushed onto the stack when the
@@ -57,10 +47,10 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   @component.component(
     views=entry_editor_and_selector_views(),
     name="EntryEditorAndSelector",
-    init=EntryEditorState::{ items: [] },
+    init=EntryEditorAndSelectorState::{ items: [] },
     specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
-    update=(s : EntryEditorState, msg, _ctx) => {
+    update=(s : EntryEditorAndSelectorState, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
         Some(OnAddItem) => {
           let num = s.items.length() + 1
@@ -77,6 +67,9 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=entry_editor_and_selector_encode,
+    decode=entry_editor_and_selector_decode,
   )
 }
 
@@ -109,21 +102,18 @@ pub fn dynamic_bindings_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct SheetState {
-  title : String
-} derive(ToJson, FromJson)
-
-///|
 /// A dynamic var resolves to a VALUE, so it works anywhere a value is read —
 /// including as a component-render target: `<x render="*active">`.
 fn sheet_comp() -> @component.Component {
-  @component.component(views=sheet_views(), name="Sheet", init=SheetState::{
-    title: "untitled",
-  })
+  @component.component(
+    views=sheet_views(),
+    name="Sheet",
+    init=SheetState::{ title: "untitled" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=sheet_encode,
+    decode=sheet_decode,
+  )
 }
-
-///|
-priv struct ToolbarState {} derive(ToJson, FromJson)
 
 ///|
 /// The consumer, far from the producer: it renders a component it does not own.
@@ -139,9 +129,6 @@ fn toolbar_comp() -> @component.Component {
 }
 
 ///|
-priv struct PanelState {} derive(ToJson, FromJson)
-
-///|
 fn panel_comp() -> @component.Component {
   @component.component(
     views=panel_views(),
@@ -150,13 +137,6 @@ fn panel_comp() -> @component.Component {
     specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
   )
 }
-
-///|
-/// `sheet` is declared in the state (the compute below reads it) AND in
-/// `specs` as a comp slot — the spec entry keeps the scope-made default.
-priv struct WorkspaceState {
-  sheet : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 /// The producer. The Sheet rendered inside Toolbar physically lives HERE, at
@@ -182,6 +162,9 @@ fn workspace_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=workspace_encode,
+    decode=workspace_decode,
   )
 }
 

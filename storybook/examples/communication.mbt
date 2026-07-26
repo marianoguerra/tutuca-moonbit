@@ -20,12 +20,6 @@
 // nothing.
 
 ///|
-priv struct StatusState {
-  message : String
-  count : Int
-} derive(ToJson, FromJson)
-
-///|
 /// A sibling that owns its own state and knows nothing about who messages it —
 /// the path is the only coupling.
 fn status_comp() -> @component.Component {
@@ -41,13 +35,11 @@ fn status_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=status_encode,
+    decode=status_decode,
   )
 }
-
-///|
-priv struct SendReceiveState {
-  draft : String
-} derive(ToJson, FromJson)
 
 ///|
 /// `ctx.send_at_path(path, name, args)` addresses a specific component by path;
@@ -84,6 +76,9 @@ fn send_receive_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=send_receive_encode,
+    decode=send_receive_decode,
   )
 }
 
@@ -97,17 +92,6 @@ pub fn send_receive_module() -> @component.ModuleDef {
     ],
   )
 }
-
-///|
-priv struct TreeItemState {
-  type_ : String
-  label : String
-  isOpen : Bool
-  items : Array[@tutuca.Value]
-} derive (
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
 
 ///|
 /// A TreeItem renders its own children with `<x render-each=".items">` — the
@@ -153,13 +137,11 @@ fn tree_item_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=tree_item_encode,
+    decode=tree_item_decode,
   )
 }
-
-///|
-priv struct TreeRootState {
-  log : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 /// The root catches the bubbled event and records it — aggregate state kept
@@ -188,6 +170,9 @@ fn tree_root_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=tree_root_encode,
+    decode=tree_root_decode,
   )
 }
 

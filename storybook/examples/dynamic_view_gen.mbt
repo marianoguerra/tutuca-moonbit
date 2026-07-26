@@ -8,6 +8,106 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the SelectorEntry component.
+///
+/// Declared as `interface selector-entry` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SelectorEntryState {
+  value : String
+  label : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SelectorEntryState::zero(), label: "Counter" }
+fn SelectorEntryState::zero() -> SelectorEntryState {
+  SelectorEntryState::{ value: "", label: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn selector_entry_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SelectorEntryState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the SelectorEntry state declares — typed field names for tests and inspectors.
+pub(all) enum SelectorEntryField {
+  Value
+  Label
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SelectorEntryField::name(self : SelectorEntryField) -> String {
+  match self {
+    Value => "value"
+    Label => "label"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SelectorEntryField::kind(
+  self : SelectorEntryField,
+) -> @component.FieldKind {
+  match self {
+    Value => @component.FText
+    Label => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let selector_entry_field_names : Array[String] = ["value", "label"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn selector_entry_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let selector_entry_schema_fingerprint : String = "1324f37b25b27096"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn selector_entry_encode(s : SelectorEntryState) -> Map[String, @tutuca.Value] {
+  { "value": Str(s.value), "label": Str(s.label) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn selector_entry_decode(f : Map[String, @tutuca.Value]) -> SelectorEntryState? {
+  guard f.get("value") is Some(Str(v_value)) else { return None }
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(SelectorEntryState::{ value: v_value, label: v_label })
+}
+
+///|
 /// The views declared in dynamic.html.
 pub(all) enum SelectorEntryView {
   Main
@@ -98,29 +198,108 @@ pub fn[S] selector_entry_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let selector_entry_fields : Array[String] = ["label", "value"]
+/// The state of the Selector component.
+///
+/// Declared as `interface selector` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SelectorState {
+  items : Array[@tutuca.Value]
+  selectedValue : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `selector_entry_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] selector_entry_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SelectorState::zero(), label: "Counter" }
+fn SelectorState::zero() -> SelectorState {
+  SelectorState::{ items: [], selectedValue: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn selector_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SelectorState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Selector state declares — typed field names for tests and inspectors.
+pub(all) enum SelectorField {
+  Items
+  SelectedValue
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SelectorField::name(self : SelectorField) -> String {
+  match self {
+    Items => "items"
+    SelectedValue => "selectedValue"
   }
-  selector_entry_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SelectorField::kind(self : SelectorField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    SelectedValue => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let selector_field_names : Array[String] = ["items", "selectedValue"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn selector_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let selector_schema_fingerprint : String = "7d6e4c9774279bbb"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn selector_encode(s : SelectorState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "selectedValue": s.selectedValue,
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn selector_decode(f : Map[String, @tutuca.Value]) -> SelectorState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  let v_selectedValue = f.get("selectedValue").unwrap_or(Null)
+  Some(SelectorState::{ items: v_items, selectedValue: v_selectedValue })
 }
 
 ///|
@@ -212,29 +391,116 @@ pub fn[S] selector_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let selector_fields : Array[String] = ["selectedValue"]
+/// The state of the EntryEditorAndSelector component.
+///
+/// Declared as `interface entry-editor-and-selector` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct EntryEditorAndSelectorState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `selector_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] selector_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
+fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
+  EntryEditorAndSelectorState::{ items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn entry_editor_and_selector_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(
+      ToJson::to_json(EntryEditorAndSelectorState::zero()),
+    ) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the EntryEditorAndSelector state declares — typed field names for tests and inspectors.
+pub(all) enum EntryEditorAndSelectorField {
+  Items
+  Selector
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn EntryEditorAndSelectorField::name(
+  self : EntryEditorAndSelectorField,
+) -> String {
+  match self {
+    Items => "items"
+    Selector => "selector"
   }
-  selector_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn EntryEditorAndSelectorField::kind(
+  self : EntryEditorAndSelectorField,
+) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+    Selector => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let entry_editor_and_selector_field_names : Array[String] = [
+  "items", "selector",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn entry_editor_and_selector_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let entry_editor_and_selector_schema_fingerprint : String = "7114357b2636c359"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn entry_editor_and_selector_encode(
+  s : EntryEditorAndSelectorState,
+) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn entry_editor_and_selector_decode(
+  f : Map[String, @tutuca.Value],
+) -> EntryEditorAndSelectorState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(EntryEditorAndSelectorState::{ items: v_items })
 }
 
 ///|
@@ -383,29 +649,96 @@ pub fn[S] entry_editor_and_selector_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let entry_editor_and_selector_fields : Array[String] = ["items", "selector"]
+/// The state of the Sheet component.
+///
+/// Declared as `interface sheet` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SheetState {
+  title : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `entry_editor_and_selector_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] entry_editor_and_selector_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SheetState::zero(), label: "Counter" }
+fn SheetState::zero() -> SheetState {
+  SheetState::{ title: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn sheet_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SheetState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Sheet state declares — typed field names for tests and inspectors.
+pub(all) enum SheetField {
+  Title
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SheetField::name(self : SheetField) -> String {
+  match self {
+    Title => "title"
   }
-  entry_editor_and_selector_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SheetField::kind(self : SheetField) -> @component.FieldKind {
+  match self {
+    Title => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let sheet_field_names : Array[String] = ["title"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn sheet_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let sheet_schema_fingerprint : String = "5ee8832621359ec0"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn sheet_encode(s : SheetState) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn sheet_decode(f : Map[String, @tutuca.Value]) -> SheetState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  Some(SheetState::{ title: v_title })
 }
 
 ///|
@@ -497,30 +830,49 @@ pub fn[S] sheet_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let sheet_fields : Array[String] = ["title"]
+/// The state of the Toolbar component.
+///
+/// Declared as `interface toolbar` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ToolbarState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `sheet_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] sheet_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  sheet_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ToolbarState::zero(), label: "Counter" }
+fn ToolbarState::zero() -> ToolbarState {
+  ToolbarState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn toolbar_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ToolbarState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn toolbar_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let toolbar_schema_fingerprint : String = "56782604789d5a5e"
 
 ///|
 /// The views declared in dynamic.html.
@@ -544,30 +896,76 @@ pub let toolbar_common_style : String = ""
 pub let toolbar_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let toolbar_fields : Array[String] = []
+/// The state of the Panel component.
+///
+/// Declared as `interface panel` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PanelState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `toolbar_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] toolbar_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  toolbar_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PanelState::zero(), label: "Counter" }
+fn PanelState::zero() -> PanelState {
+  PanelState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn panel_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PanelState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Panel state declares — typed field names for tests and inspectors.
+pub(all) enum PanelField {
+  Toolbar
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PanelField::name(self : PanelField) -> String {
+  match self {
+    Toolbar => "toolbar"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PanelField::kind(self : PanelField) -> @component.FieldKind {
+  match self {
+    Toolbar => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let panel_field_names : Array[String] = ["toolbar"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn panel_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let panel_schema_fingerprint : String = "f64005029cb0440a"
 
 ///|
 /// The views declared in dynamic.html.
@@ -591,29 +989,99 @@ pub let panel_common_style : String = ""
 pub let panel_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let panel_fields : Array[String] = ["toolbar"]
+/// The state of the Workspace component.
+///
+/// Declared as `interface workspace` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct WorkspaceState {
+  sheet : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `panel_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] panel_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..WorkspaceState::zero(), label: "Counter" }
+fn WorkspaceState::zero() -> WorkspaceState {
+  WorkspaceState::{ sheet: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn workspace_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(WorkspaceState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Workspace state declares — typed field names for tests and inspectors.
+pub(all) enum WorkspaceField {
+  Sheet
+  Panel
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn WorkspaceField::name(self : WorkspaceField) -> String {
+  match self {
+    Sheet => "sheet"
+    Panel => "panel"
   }
-  panel_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn WorkspaceField::kind(self : WorkspaceField) -> @component.FieldKind {
+  match self {
+    Sheet => @component.FAny
+    Panel => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let workspace_field_names : Array[String] = ["sheet", "panel"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn workspace_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let workspace_schema_fingerprint : String = "de7864d15ebd3a60"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn workspace_encode(s : WorkspaceState) -> Map[String, @tutuca.Value] {
+  { "sheet": s.sheet }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn workspace_decode(f : Map[String, @tutuca.Value]) -> WorkspaceState? {
+  let v_sheet = f.get("sheet").unwrap_or(Null)
+  Some(WorkspaceState::{ sheet: v_sheet })
 }
 
 ///|
@@ -702,30 +1170,4 @@ pub fn[S] workspace_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let workspace_fields : Array[String] = ["panel"]
-
-///|
-/// The fields in `workspace_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] workspace_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  workspace_fields.filter(f => !present.contains(f))
 }

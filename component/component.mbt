@@ -125,8 +125,13 @@ pub fn[S : ToJson + @json.FromJson] component(
   specs? : Map[String, FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
+  encode? : (S) -> Map[String, @tutuca.Value],
+  decode? : (Map[String, @tutuca.Value]) -> S?,
 ) -> Component {
-  let init_fields = encode_state(init)
+  let init_fields = match encode {
+    Some(f) => f(init)
+    None => encode_state(init)
+  }
   let s_fields : Array[String] = []
   for k, _ in init_fields {
     s_fields.push(k)
@@ -156,6 +161,8 @@ pub fn[S : ToJson + @json.FromJson] component(
     enrich_scope,
     loop_with,
     generated: Map([]),
+    encode,
+    decode,
   }
   gen_mutators(all_specs, tspec.generated)
   let comp = new_component(
@@ -210,7 +217,11 @@ fn[S : ToJson + @json.FromJson] make_typed(
     }
     fields[name] = v
   }
-  let state : S = match decode_state(fields, tspec.s_fields) {
+  let state : S = match
+    (match tspec.decode {
+      Some(f) => f(fields)
+      None => decode_state(fields, tspec.s_fields)
+    }) {
     Some(s) => s
     None => tspec.init
   }

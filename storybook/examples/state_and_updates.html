@@ -1,3 +1,31 @@
+<script type="tutuca/state">
+  interface attribute-binding {
+    record state {
+    str: string,
+    num: s32,
+    %bool: bool,
+    not-set: any,
+    }
+  }
+  interface conditional-attributes {
+    record state {
+    is-active: bool,
+    }
+  }
+  interface event-modifiers {
+    record state {
+    query: string,
+    last-sent-search: any,
+    }
+  }
+  interface show-hide {
+    record state {
+    is-open: bool,
+    count: s32,
+    }
+  }
+</script>
+
 <template id="AttributeBinding">
   <section class="flex flex-col gap-3">
     <input class="input s" :value=".str" @on.input="$setStr value" :title="$'Content is {.str}'">

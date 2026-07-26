@@ -1,3 +1,20 @@
+<script type="tutuca/state">
+  interface person {
+    record state {
+    name: string,
+    email: string,
+    active: bool,
+    }
+  }
+  interface strategies {
+    record state {
+    naive: component,
+    shared: component,
+    coupled: component,
+    }
+  }
+</script>
+
 <template id="Person">
   <div class="person flex gap-2 items-center grow">
     <input class="input input-sm grow name" :value=".name" @on.input="$setName value" placeholder="name">

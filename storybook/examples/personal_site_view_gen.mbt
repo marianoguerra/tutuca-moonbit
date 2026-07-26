@@ -8,6 +8,104 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the AltUrl component.
+///
+/// Declared as `interface alt-url` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct AltUrlState {
+  label : String
+  url : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..AltUrlState::zero(), label: "Counter" }
+fn AltUrlState::zero() -> AltUrlState {
+  AltUrlState::{ label: "", url: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn alt_url_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(AltUrlState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the AltUrl state declares — typed field names for tests and inspectors.
+pub(all) enum AltUrlField {
+  Label
+  Url
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn AltUrlField::name(self : AltUrlField) -> String {
+  match self {
+    Label => "label"
+    Url => "url"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn AltUrlField::kind(self : AltUrlField) -> @component.FieldKind {
+  match self {
+    Label => @component.FText
+    Url => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let alt_url_field_names : Array[String] = ["label", "url"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn alt_url_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let alt_url_schema_fingerprint : String = "5894c82bae5b3921"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn alt_url_encode(s : AltUrlState) -> Map[String, @tutuca.Value] {
+  { "label": Str(s.label), "url": Str(s.url) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn alt_url_decode(f : Map[String, @tutuca.Value]) -> AltUrlState? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  guard f.get("url") is Some(Str(v_url)) else { return None }
+  Some(AltUrlState::{ label: v_label, url: v_url })
+}
+
+///|
 /// The views declared in personal_site.html.
 pub(all) enum AltUrlView {
   Main
@@ -29,29 +127,185 @@ pub let alt_url_common_style : String = ""
 pub let alt_url_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let alt_url_fields : Array[String] = ["label", "url"]
+/// The state of the PsEntry component.
+///
+/// Declared as `interface ps-entry` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PsEntryState {
+  title : String
+  description : String
+  lang : String
+  startYear : @tutuca.Value
+  endYear : @tutuca.Value
+  role : @tutuca.Value
+  featured : Bool
+  url : String
+  altUrls : Array[@tutuca.Value]
+  categories : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `alt_url_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] alt_url_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PsEntryState::zero(), label: "Counter" }
+fn PsEntryState::zero() -> PsEntryState {
+  PsEntryState::{
+    title: "",
+    description: "",
+    lang: "",
+    startYear: Null,
+    endYear: Null,
+    role: Null,
+    featured: false,
+    url: "",
+    altUrls: [],
+    categories: [],
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn ps_entry_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PsEntryState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  alt_url_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// Every field the PsEntry state declares — typed field names for tests and inspectors.
+pub(all) enum PsEntryField {
+  Title
+  Description
+  Lang
+  StartYear
+  EndYear
+  Role
+  Featured
+  Url
+  AltUrls
+  Categories
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PsEntryField::name(self : PsEntryField) -> String {
+  match self {
+    Title => "title"
+    Description => "description"
+    Lang => "lang"
+    StartYear => "startYear"
+    EndYear => "endYear"
+    Role => "role"
+    Featured => "featured"
+    Url => "url"
+    AltUrls => "altUrls"
+    Categories => "categories"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PsEntryField::kind(self : PsEntryField) -> @component.FieldKind {
+  match self {
+    Title => @component.FText
+    Description => @component.FText
+    Lang => @component.FText
+    StartYear => @component.FAny
+    EndYear => @component.FAny
+    Role => @component.FAny
+    Featured => @component.FBool
+    Url => @component.FText
+    AltUrls => @component.FList
+    Categories => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let ps_entry_field_names : Array[String] = [
+  "title", "description", "lang", "startYear", "endYear", "role", "featured", "url",
+  "altUrls", "categories",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn ps_entry_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let ps_entry_schema_fingerprint : String = "dbbed9cebaa1412f"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn ps_entry_encode(s : PsEntryState) -> Map[String, @tutuca.Value] {
+  {
+    "title": Str(s.title),
+    "description": Str(s.description),
+    "lang": Str(s.lang),
+    "startYear": s.startYear,
+    "endYear": s.endYear,
+    "role": s.role,
+    "featured": Bool(s.featured),
+    "url": Str(s.url),
+    "altUrls": (List(s.altUrls.map(x => x)) : @tutuca.Value),
+    "categories": (List(s.categories.map(x => x)) : @tutuca.Value),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn ps_entry_decode(f : Map[String, @tutuca.Value]) -> PsEntryState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("description") is Some(Str(v_description)) else { return None }
+  guard f.get("lang") is Some(Str(v_lang)) else { return None }
+  let v_startYear = f.get("startYear").unwrap_or(Null)
+  let v_endYear = f.get("endYear").unwrap_or(Null)
+  let v_role = f.get("role").unwrap_or(Null)
+  guard f.get("featured") is Some(Bool(v_featured)) else { return None }
+  guard f.get("url") is Some(Str(v_url)) else { return None }
+  guard f.get("altUrls") is Some(List(l_altUrls)) else { return None }
+  let v_altUrls : Array[@tutuca.Value] = []
+  for x in l_altUrls {
+    v_altUrls.push(x)
+  }
+  guard f.get("categories") is Some(List(l_categories)) else { return None }
+  let v_categories : Array[@tutuca.Value] = []
+  for x in l_categories {
+    v_categories.push(x)
+  }
+  Some(PsEntryState::{
+    title: v_title,
+    description: v_description,
+    lang: v_lang,
+    startYear: v_startYear,
+    endYear: v_endYear,
+    role: v_role,
+    featured: v_featured,
+    url: v_url,
+    altUrls: v_altUrls,
+    categories: v_categories,
+  })
 }
 
 ///|
@@ -147,32 +401,212 @@ pub fn[S] ps_entry_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let ps_entry_fields : Array[String] = [
-  "altUrls", "categories", "description", "featured", "role", "startYear", "title",
-  "url",
+/// The state of the Root component.
+///
+/// Declared as `interface root` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct RootState {
+  allEntries : Array[@tutuca.Value]
+  allCategories : Array[String]
+  allRoles : Array[String]
+  selectedCategories : Map[String, Bool]
+  selectedRoles : Map[String, Bool]
+  featuredFirst : Bool
+  sortByEnd : Bool
+  sortAsc : Bool
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..RootState::zero(), label: "Counter" }
+fn RootState::zero() -> RootState {
+  RootState::{
+    allEntries: [],
+    allCategories: [],
+    allRoles: [],
+    selectedCategories: Map([]),
+    selectedRoles: Map([]),
+    featuredFirst: false,
+    sortByEnd: false,
+    sortAsc: false,
+  }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn root_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(RootState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Root state declares — typed field names for tests and inspectors.
+pub(all) enum RootField {
+  AllEntries
+  AllCategories
+  AllRoles
+  SelectedCategories
+  SelectedRoles
+  FeaturedFirst
+  SortByEnd
+  SortAsc
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn RootField::name(self : RootField) -> String {
+  match self {
+    AllEntries => "allEntries"
+    AllCategories => "allCategories"
+    AllRoles => "allRoles"
+    SelectedCategories => "selectedCategories"
+    SelectedRoles => "selectedRoles"
+    FeaturedFirst => "featuredFirst"
+    SortByEnd => "sortByEnd"
+    SortAsc => "sortAsc"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn RootField::kind(self : RootField) -> @component.FieldKind {
+  match self {
+    AllEntries => @component.FList
+    AllCategories => @component.FList
+    AllRoles => @component.FList
+    SelectedCategories => @component.FSet
+    SelectedRoles => @component.FSet
+    FeaturedFirst => @component.FBool
+    SortByEnd => @component.FBool
+    SortAsc => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let root_field_names : Array[String] = [
+  "allEntries", "allCategories", "allRoles", "selectedCategories", "selectedRoles",
+  "featuredFirst", "sortByEnd", "sortAsc",
 ]
 
 ///|
-/// The fields in `ps_entry_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] ps_entry_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn root_specs() -> Map[String, @component.FieldSpec] {
+  {
+    "selectedCategories": @component.FieldSpec::set(),
+    "selectedRoles": @component.FieldSpec::set(),
+  }
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let root_schema_fingerprint : String = "b2600c9777dc4864"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn root_encode(s : RootState) -> Map[String, @tutuca.Value] {
+  {
+    "allEntries": (List(s.allEntries.map(x => x)) : @tutuca.Value),
+    "allCategories": (List(s.allCategories.map(x => Str(x))) : @tutuca.Value),
+    "allRoles": (List(s.allRoles.map(x => Str(x))) : @tutuca.Value),
+    "selectedCategories": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, b in s.selectedCategories {
+        m[k] = Bool(b)
+      }
+      (Map(m) : @tutuca.Value)
+    },
+    "selectedRoles": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, b in s.selectedRoles {
+        m[k] = Bool(b)
+      }
+      (Map(m) : @tutuca.Value)
+    },
+    "featuredFirst": Bool(s.featuredFirst),
+    "sortByEnd": Bool(s.sortByEnd),
+    "sortAsc": Bool(s.sortAsc),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn root_decode(f : Map[String, @tutuca.Value]) -> RootState? {
+  guard f.get("allEntries") is Some(List(l_allEntries)) else { return None }
+  let v_allEntries : Array[@tutuca.Value] = []
+  for x in l_allEntries {
+    v_allEntries.push(x)
+  }
+  guard f.get("allCategories") is Some(List(l_allCategories)) else {
+    return None
+  }
+  let v_allCategories : Array[String] = []
+  for x in l_allCategories {
+    if x is Str(s) {
+      v_allCategories.push(s)
+    } else {
+      return None
     }
   }
-  for k in extra {
-    present[k] = true
+  guard f.get("allRoles") is Some(List(l_allRoles)) else { return None }
+  let v_allRoles : Array[String] = []
+  for x in l_allRoles {
+    if x is Str(s) {
+      v_allRoles.push(s)
+    } else {
+      return None
+    }
   }
-  ps_entry_fields.filter(f => !present.contains(f))
+  guard f.get("selectedCategories") is Some(Map(m_selectedCategories)) else {
+    return None
+  }
+  let v_selectedCategories : Map[String, Bool] = Map([])
+  for k, x in m_selectedCategories {
+    v_selectedCategories[k] = x is Bool(true)
+  }
+  guard f.get("selectedRoles") is Some(Map(m_selectedRoles)) else {
+    return None
+  }
+  let v_selectedRoles : Map[String, Bool] = Map([])
+  for k, x in m_selectedRoles {
+    v_selectedRoles[k] = x is Bool(true)
+  }
+  guard f.get("featuredFirst") is Some(Bool(v_featuredFirst)) else {
+    return None
+  }
+  guard f.get("sortByEnd") is Some(Bool(v_sortByEnd)) else { return None }
+  guard f.get("sortAsc") is Some(Bool(v_sortAsc)) else { return None }
+  Some(RootState::{
+    allEntries: v_allEntries,
+    allCategories: v_allCategories,
+    allRoles: v_allRoles,
+    selectedCategories: v_selectedCategories,
+    selectedRoles: v_selectedRoles,
+    featuredFirst: v_featuredFirst,
+    sortByEnd: v_sortByEnd,
+    sortAsc: v_sortAsc,
+  })
 }
 
 ///|
@@ -334,32 +768,4 @@ pub fn[S] root_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let root_fields : Array[String] = [
-  "allCategories", "allEntries", "allRoles", "featuredFirst", "sortAsc", "sortByEnd",
-]
-
-///|
-/// The fields in `root_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] root_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  root_fields.filter(f => !present.contains(f))
 }

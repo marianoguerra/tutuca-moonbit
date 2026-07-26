@@ -95,7 +95,10 @@ pub(all) enum Outcome {
     target~ : String,
     name~ : String,
     dry_run~ : Bool,
-    ir~ : Bool
+    ir~ : Bool,
+    /// Also write the schema back out as a self-contained .wit document, for
+    /// a polyglot guest or any tool that speaks WIT.
+    wit~ : Bool
   )
   /// Regenerate view modules as their .html files change. The core decides
   /// what to watch; the shell owns the watcher and the filesystem.
@@ -150,6 +153,7 @@ declare pub fn gen_views(
   input~ : String,
   target~ : String,
   ir~ : Bool,
+  wit? : Bool,
 ) -> Result[GenPlan, ErrShape]
 
 ///|

@@ -8,6 +8,142 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the FilePicker component.
+///
+/// Declared as `interface file-picker` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct FilePickerState {
+  name : String
+  size : Double
+  type_ : String
+  lastModified : Double
+  hasFile : Bool
+} derive (
+  ToJson(fields(type_(rename="type"))),
+  FromJson(fields(type_(rename="type"))),
+)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..FilePickerState::zero(), label: "Counter" }
+fn FilePickerState::zero() -> FilePickerState {
+  FilePickerState::{
+    name: "",
+    size: 0.0,
+    type_: "",
+    lastModified: 0.0,
+    hasFile: false,
+  }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn file_picker_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(FilePickerState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the FilePicker state declares — typed field names for tests and inspectors.
+pub(all) enum FilePickerField {
+  Name
+  Size
+  Type
+  LastModified
+  HasFile
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn FilePickerField::name(self : FilePickerField) -> String {
+  match self {
+    Name => "name"
+    Size => "size"
+    Type => "type"
+    LastModified => "lastModified"
+    HasFile => "hasFile"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn FilePickerField::kind(self : FilePickerField) -> @component.FieldKind {
+  match self {
+    Name => @component.FText
+    Size => @component.FFloat
+    Type => @component.FText
+    LastModified => @component.FFloat
+    HasFile => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let file_picker_field_names : Array[String] = [
+  "name", "size", "type", "lastModified", "hasFile",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn file_picker_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let file_picker_schema_fingerprint : String = "9d3c25a65f5d9e0a"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn file_picker_encode(s : FilePickerState) -> Map[String, @tutuca.Value] {
+  {
+    "name": Str(s.name),
+    "size": Num(s.size),
+    "type": Str(s.type_),
+    "lastModified": Num(s.lastModified),
+    "hasFile": Bool(s.hasFile),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn file_picker_decode(f : Map[String, @tutuca.Value]) -> FilePickerState? {
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  guard f.get("size") is Some(Num(v_size)) else { return None }
+  guard f.get("type") is Some(Str(v_type_)) else { return None }
+  guard f.get("lastModified") is Some(Num(v_lastModified)) else { return None }
+  guard f.get("hasFile") is Some(Bool(v_hasFile)) else { return None }
+  Some(FilePickerState::{
+    name: v_name,
+    size: v_size,
+    type_: v_type_,
+    lastModified: v_lastModified,
+    hasFile: v_hasFile,
+  })
+}
+
+///|
 /// The views declared in file_picker.html.
 pub(all) enum FilePickerView {
   Main
@@ -144,30 +280,4 @@ pub fn[S] file_picker_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let file_picker_fields : Array[String] = ["hasFile", "name"]
-
-///|
-/// The fields in `file_picker_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] file_picker_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  file_picker_fields.filter(f => !present.contains(f))
 }

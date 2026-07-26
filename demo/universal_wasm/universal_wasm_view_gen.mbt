@@ -8,6 +8,104 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the UniversalWasm component.
+///
+/// Declared as `interface universal-wasm` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct UniversalWasmState {
+  status : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..UniversalWasmState::zero(), label: "Counter" }
+fn UniversalWasmState::zero() -> UniversalWasmState {
+  UniversalWasmState::{ status: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn universal_wasm_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(UniversalWasmState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the UniversalWasm state declares — typed field names for tests and inspectors.
+pub(all) enum UniversalWasmField {
+  Status
+  List
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn UniversalWasmField::name(self : UniversalWasmField) -> String {
+  match self {
+    Status => "status"
+    List => "list"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn UniversalWasmField::kind(
+  self : UniversalWasmField,
+) -> @component.FieldKind {
+  match self {
+    Status => @component.FText
+    List => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let universal_wasm_field_names : Array[String] = ["status", "list"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn universal_wasm_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let universal_wasm_schema_fingerprint : String = "027396975b37b745"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn universal_wasm_encode(s : UniversalWasmState) -> Map[String, @tutuca.Value] {
+  { "status": Str(s.status) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn universal_wasm_decode(f : Map[String, @tutuca.Value]) -> UniversalWasmState? {
+  guard f.get("status") is Some(Str(v_status)) else { return None }
+  Some(UniversalWasmState::{ status: v_status })
+}
+
+///|
 /// The views declared in universal_wasm.html.
 pub(all) enum UniversalWasmView {
   Main
@@ -29,29 +127,159 @@ pub let universal_wasm_common_style : String = ""
 pub let universal_wasm_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let universal_wasm_fields : Array[String] = ["list", "status"]
+/// The state of the ComponentList component.
+///
+/// Declared as `interface component-list` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ComponentListState {
+  entries : Array[@tutuca.Value]
+  showSettings : Bool
+  dir : String
+  justify : String
+  align : String
+  gap : Int
+  wrap : Bool
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `universal_wasm_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] universal_wasm_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ComponentListState::zero(), label: "Counter" }
+fn ComponentListState::zero() -> ComponentListState {
+  ComponentListState::{
+    entries: [],
+    showSettings: false,
+    dir: "",
+    justify: "",
+    align: "",
+    gap: 0,
+    wrap: false,
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn component_list_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ComponentListState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  universal_wasm_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// Every field the ComponentList state declares — typed field names for tests and inspectors.
+pub(all) enum ComponentListField {
+  Entries
+  ShowSettings
+  Dir
+  Justify
+  Align
+  Gap
+  Wrap
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ComponentListField::name(self : ComponentListField) -> String {
+  match self {
+    Entries => "entries"
+    ShowSettings => "showSettings"
+    Dir => "dir"
+    Justify => "justify"
+    Align => "align"
+    Gap => "gap"
+    Wrap => "wrap"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ComponentListField::kind(
+  self : ComponentListField,
+) -> @component.FieldKind {
+  match self {
+    Entries => @component.FList
+    ShowSettings => @component.FBool
+    Dir => @component.FText
+    Justify => @component.FText
+    Align => @component.FText
+    Gap => @component.FInt
+    Wrap => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let component_list_field_names : Array[String] = [
+  "entries", "showSettings", "dir", "justify", "align", "gap", "wrap",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn component_list_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let component_list_schema_fingerprint : String = "85aeb3d6986afb5a"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn component_list_encode(s : ComponentListState) -> Map[String, @tutuca.Value] {
+  {
+    "entries": (List(s.entries.map(x => x)) : @tutuca.Value),
+    "showSettings": Bool(s.showSettings),
+    "dir": Str(s.dir),
+    "justify": Str(s.justify),
+    "align": Str(s.align),
+    "gap": Num(s.gap.to_double()),
+    "wrap": Bool(s.wrap),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn component_list_decode(f : Map[String, @tutuca.Value]) -> ComponentListState? {
+  guard f.get("entries") is Some(List(l_entries)) else { return None }
+  let v_entries : Array[@tutuca.Value] = []
+  for x in l_entries {
+    v_entries.push(x)
+  }
+  guard f.get("showSettings") is Some(Bool(v_showSettings)) else { return None }
+  guard f.get("dir") is Some(Str(v_dir)) else { return None }
+  guard f.get("justify") is Some(Str(v_justify)) else { return None }
+  guard f.get("align") is Some(Str(v_align)) else { return None }
+  guard f.get("gap") is Some(Num(n_gap)) else { return None }
+  let v_gap = n_gap.to_int()
+  guard f.get("wrap") is Some(Bool(v_wrap)) else { return None }
+  Some(ComponentListState::{
+    entries: v_entries,
+    showSettings: v_showSettings,
+    dir: v_dir,
+    justify: v_justify,
+    align: v_align,
+    gap: v_gap,
+    wrap: v_wrap,
+  })
 }
 
 ///|
@@ -234,31 +462,127 @@ pub fn[S] component_list_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let component_list_fields : Array[String] = [
-  "align", "dir", "entries", "gap", "justify", "showSettings", "wrap",
+/// The state of the ComponentPicker component.
+///
+/// Declared as `interface component-picker` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ComponentPickerState {
+  filterText : String
+  items : Array[@tutuca.Value]
+  selected : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ComponentPickerState::zero(), label: "Counter" }
+fn ComponentPickerState::zero() -> ComponentPickerState {
+  ComponentPickerState::{ filterText: "", items: [], selected: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn component_picker_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(ComponentPickerState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the ComponentPicker state declares — typed field names for tests and inspectors.
+pub(all) enum ComponentPickerField {
+  FilterText
+  Items
+  Selected
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ComponentPickerField::name(self : ComponentPickerField) -> String {
+  match self {
+    FilterText => "filterText"
+    Items => "items"
+    Selected => "selected"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ComponentPickerField::kind(
+  self : ComponentPickerField,
+) -> @component.FieldKind {
+  match self {
+    FilterText => @component.FText
+    Items => @component.FList
+    Selected => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let component_picker_field_names : Array[String] = [
+  "filterText", "items", "selected",
 ]
 
 ///|
-/// The fields in `component_list_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] component_list_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn component_picker_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let component_picker_schema_fingerprint : String = "d38a8f3626c9ef02"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn component_picker_encode(
+  s : ComponentPickerState,
+) -> Map[String, @tutuca.Value] {
+  {
+    "filterText": Str(s.filterText),
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "selected": s.selected,
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn component_picker_decode(
+  f : Map[String, @tutuca.Value],
+) -> ComponentPickerState? {
+  guard f.get("filterText") is Some(Str(v_filterText)) else { return None }
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
   }
-  component_list_fields.filter(f => !present.contains(f))
+  let v_selected = f.get("selected").unwrap_or(Null)
+  Some(ComponentPickerState::{
+    filterText: v_filterText,
+    items: v_items,
+    selected: v_selected,
+  })
 }
 
 ///|
@@ -350,31 +674,117 @@ pub fn[S] component_picker_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let component_picker_fields : Array[String] = [
-  "filterText", "items", "selected",
+/// The state of the ComponentEntry component.
+///
+/// Declared as `interface component-entry` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ComponentEntryState {
+  module_ : String
+  name : String
+  label : String
+} derive (
+  ToJson(fields(module_(rename="module"))),
+  FromJson(fields(module_(rename="module"))),
+)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ComponentEntryState::zero(), label: "Counter" }
+fn ComponentEntryState::zero() -> ComponentEntryState {
+  ComponentEntryState::{ module_: "", name: "", label: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn component_entry_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ComponentEntryState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the ComponentEntry state declares — typed field names for tests and inspectors.
+pub(all) enum ComponentEntryField {
+  Module
+  Name
+  Label
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ComponentEntryField::name(self : ComponentEntryField) -> String {
+  match self {
+    Module => "module"
+    Name => "name"
+    Label => "label"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ComponentEntryField::kind(
+  self : ComponentEntryField,
+) -> @component.FieldKind {
+  match self {
+    Module => @component.FText
+    Name => @component.FText
+    Label => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let component_entry_field_names : Array[String] = [
+  "module", "name", "label",
 ]
 
 ///|
-/// The fields in `component_picker_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] component_picker_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  component_picker_fields.filter(f => !present.contains(f))
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn component_entry_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let component_entry_schema_fingerprint : String = "4f88e4ef86812754"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn component_entry_encode(
+  s : ComponentEntryState,
+) -> Map[String, @tutuca.Value] {
+  { "module": Str(s.module_), "name": Str(s.name), "label": Str(s.label) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn component_entry_decode(
+  f : Map[String, @tutuca.Value],
+) -> ComponentEntryState? {
+  guard f.get("module") is Some(Str(v_module_)) else { return None }
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(ComponentEntryState::{ module_: v_module_, name: v_name, label: v_label })
 }
 
 ///|
@@ -445,30 +855,4 @@ pub fn ComponentEntryMsg::from_dispatch(
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let component_entry_fields : Array[String] = ["label"]
-
-///|
-/// The fields in `component_entry_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] component_entry_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  component_entry_fields.filter(f => !present.contains(f))
 }

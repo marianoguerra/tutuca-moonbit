@@ -13,11 +13,6 @@
 //   enrich_scope (s) -> Map[String, Value]                   RETURN the binds (no @each)
 
 ///|
-priv struct RenderWithScopeState {
-  text : String
-} derive(ToJson, FromJson)
-
-///|
 /// `@enrich-with` on an element with no `@each` is the *scope* form: the
 /// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
 /// subtree. Derived values without putting them in component state.
@@ -32,6 +27,9 @@ fn render_with_scope_comp() -> @component.Component {
         "upper": Str(s.text.to_upper()),
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=render_with_scope_encode,
+    decode=render_with_scope_decode,
   )
 }
 
@@ -58,12 +56,6 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct ListFilterEnrichState {
-  items : Array[@tutuca.Value]
-  query : String
-} derive(ToJson, FromJson)
-
-///|
 /// `enrich` inside a loop MUTATES the binds map it is handed — the return
 /// value is Unit. Setting `binds["count"]` makes `@count` readable in the row.
 fn list_filter_enrich_comp() -> @component.Component {
@@ -87,6 +79,9 @@ fn list_filter_enrich_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=list_filter_enrich_encode,
+    decode=list_filter_enrich_decode,
   )
 }
 
@@ -115,9 +110,9 @@ fn list_filter_enrich_with_comp() -> @component.Component {
   @component.component(
     views=list_filter_enrich_with_views(),
     name="ListFilterEnrichWith",
-    init=ListFilterEnrichState::{ items: [], query: "" },
+    init=ListFilterEnrichWithState::{ items: [], query: "" },
     loop_with={
-      "getIterData": (s : ListFilterEnrichState, seq, _ctx) => {
+      "getIterData": (s : ListFilterEnrichWithState, seq, _ctx) => {
         let mut total = 0
         for item in seq.list() {
           match item {
@@ -134,7 +129,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
       },
     },
     when={
-      "filterItem": (_s : ListFilterEnrichState, _key, value, iter) => {
+      "filterItem": (_s : ListFilterEnrichWithState, _key, value, iter) => {
         match (value, iter) {
           (Str(item), Map(iter_data)) =>
             match iter_data.get("queryLower") {
@@ -146,7 +141,7 @@ fn list_filter_enrich_with_comp() -> @component.Component {
       },
     },
     enrich={
-      "enrichItem": (_s : ListFilterEnrichState, binds, _key, value, iter) => {
+      "enrichItem": (_s : ListFilterEnrichWithState, binds, _key, value, iter) => {
         match (value, iter) {
           (Str(item), Map(iter_data)) => {
             binds["count"] = Num(item.length().to_double())
@@ -156,6 +151,9 @@ fn list_filter_enrich_with_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=list_filter_enrich_with_encode,
+    decode=list_filter_enrich_with_decode,
   )
 }
 

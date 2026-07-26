@@ -19,12 +19,6 @@ let palette : Array[@tutuca.Value] = [
 ]
 
 ///|
-priv struct SwatchPickerState {
-  color : String
-  palette : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
-
-///|
 /// Clicking a `<circle>` sets `color`; the preview `<rect>` binds `:fill` to it,
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
@@ -55,6 +49,9 @@ fn swatch_picker_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=swatch_picker_encode,
+    decode=swatch_picker_decode,
   )
 }
 
@@ -74,13 +71,6 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
     ],
   )
 }
-
-///|
-priv struct QuadraticState {
-  a : Int
-  b : Int
-  c : Int
-} derive(ToJson, FromJson)
 
 ///|
 /// `@text` on an `<mn>` makes the displayed number reactive; the discriminant
@@ -106,6 +96,9 @@ fn quadratic_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=quadratic_encode,
+    decode=quadratic_decode,
   )
 }
 

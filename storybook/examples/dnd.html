@@ -1,3 +1,12 @@
+<script type="tutuca/state">
+  interface dn-d-example {
+    record state {
+    items: values,
+    query: string,
+    }
+  }
+</script>
+
 <template>
   <section class="flex flex-col gap-3">
     <input type="search" class="input" :value=".query"

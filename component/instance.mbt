@@ -26,6 +26,16 @@ priv struct TypedSpec[S] {
     String,
     (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value,
   ]
+  /// Direct state <-> fields conversion, when the component has a declared
+  /// schema to generate one from. None falls back to the JSON bridge below,
+  /// which is what an undeclared state still uses.
+  ///
+  /// Worth the second encoder: measured against the JSON path on the shape
+  /// the corpus actually has, encode is ~2x and decode ~5x (see
+  /// benchmarks/codec_bench_test.mbt). Decode gains most because the JSON
+  /// path rebuilds a whole `Json` object to hand to `from_json`.
+  encode : ((S) -> Map[String, @tutuca.Value])?
+  decode : ((Map[String, @tutuca.Value]) -> S?)?
 }
 
 ///|
@@ -213,7 +223,10 @@ fn[S : ToJson] TypedInstance::with_state(
   self : TypedInstance[S],
   s : S,
 ) -> TypedInstance[S] {
-  let encoded = encode_state(s)
+  let encoded = match self.spec.encode {
+    Some(f) => f(s)
+    None => encode_state(s)
+  }
   let fields : Map[String, @tutuca.Value] = Map([])
   let mut changed = false
   for name, v in encoded {
@@ -270,7 +283,11 @@ fn[S : @json.FromJson] TypedInstance::set(
   let fields = self.fields.copy()
   fields[name] = coerced
   if self.spec.s_fields.contains(name) {
-    match decode_state(fields, self.spec.s_fields) {
+    match
+      (match self.spec.decode {
+        Some(f) => f(fields)
+        None => decode_state(fields, self.spec.s_fields)
+      }) {
       Some(s) => TypedInstance::make(self.spec, s, fields)
       None => self
     }

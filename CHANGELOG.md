@@ -6,8 +6,63 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A component's state can be declared in the view file, in a subset of WIT,
+  and is then generated.** A `<script type="tutuca/state">` block holds one
+  `interface` per component and one `record state` in each; `gen-views` emits
+  the struct with its `ToJson`/`FromJson` derives, a `zero()`, a `Field` table
+  whose `kind()` is *declared*, and the `specs~` map. Sets, ordered maps and
+  child slots — the three kinds a struct could never express, and which had to
+  be threaded by hand through `specs~` and `missing_fields(extra~)` — are now
+  written in the schema and derived from it.
+
+  It rides in a `<script>` and not a `<template>` because script content is raw
+  text to an HTML parser while template content is markup: `list<s32>` inside a
+  template parses as an `<s32>` element.
+
+  Parsed with `mizchi/wit`. WIT rather than a bespoke DSL because tutuca
+  already speaks it at the dyncomp boundary and because its type lattice maps
+  almost exactly onto `FieldKind`. What WIT genuinely cannot spell — an open
+  type, an ordered map (WIT's own `map` is unordered by definition), a child
+  component — arrives as a marker name (`any`, `text-set`, `value-omap`, or a
+  sibling interface's name).
+- **Named initial states**, in a `<script type="tutuca/init">` block of their
+  own, because a default is a value and not a type. Each is checked against the
+  schema at generation time — a fixture setting a field the schema dropped, or
+  writing `2.5` into an `s32`, fails the build instead of being coerced away at
+  runtime — and becomes `State::fresh()` plus a public `<v>_init_args("fresh")`
+  for a `ModuleDef` example.
+- **Typed `Receive` / `Bubble` / `Response` buckets.** These names are raised
+  from MoonBit rather than written in a view, so the views could never type
+  them; the schema can. Each declared bucket gets an enum, a bucket-scoped
+  `from_dispatch`, and a `to_dispatch` plus sender, so a message name is
+  written once instead of twice as a matching pair of string literals. An
+  integer payload is integrality- and range-checked rather than truncated.
+- **Direct state <-> Value codecs, generated from the schema.** The runtime
+  bridged typed state to the Value world through `Json` — `S -> Json -> Value`
+  and back, once per state write, inside `with_value_stash` because `Obj` and
+  `Fn` cannot survive JSON at all. With the schema in hand the conversion is
+  written field by field, and a field that already holds a `Value` is passed
+  straight through instead of being rescued from a round trip it never needed
+  to take. `component()` takes them as `encode~`/`decode~`; a component with no
+  schema still uses the JSON bridge. Adopted only after measuring, because it
+  is a second encoder to keep in step with the derived one: **encode ~2x,
+  decode ~5x** in isolation (`benchmarks/codec_bench_test.mbt`), and an
+  interleaved A/B on the render path puts `patch counter` at 19.0/19.5 µs
+  against 20.3 µs — a few percent, which is what a bridge that is not the
+  bottleneck should look like.
+- **`gen-views --wit`** writes the schema back out as a self-contained `.wit`
+  document for `wit-bindgen`, with the markers lowered; `<v>_schema_fingerprint`
+  is its structural identity, over shape rather than over source text.
+
 ### Fixed
 
+- **`@push-view` and `@enrich-with` were treated as opening a new state
+  scope.** `@push-view` pushes a view NAME onto the render stack
+  (`render/render.mbt`, `push_view_name`) and `@enrich-with` pushes binds;
+  neither changes what `.field` addresses. Found by the new view checker while
+  migrating `storybook/examples/rendering`.
 - **The embedded Tailwind stylesheets were a minor version behind the compiler
   reading them.** `theme.css` / `preflight.css` came from margaui's `tw/`
   directory, which margaui's own README calls a manual mirror — at v0.5606.3 it
@@ -25,6 +80,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **Views are now type-checked against the state schema (breaking for any
+  component that adopts one).** An unknown `.field` is a generation failure
+  naming the near miss, where it used to render as `null` in the browser. The
+  check reaches **inside `@each` bodies** — with the element type in hand,
+  `@value.titel` in a loop is caught, where before it was not merely unchecked
+  but not even looked at. Also checked: `@each` over a non-collection, and
+  `<x render>` on something that is not a component. Unknown is never wrong — a
+  `$method` result, an `any` field and a child component's fields all open an
+  opaque scope that silences the checks inside it.
+- **`<v>_fields` / `<v>_missing_fields` are no longer emitted for a
+  schema-backed component.** They existed because the generator could not check
+  a read: they listed the names and left you to assert, in a test you had to
+  remember to write, that the state carried them — and they only ever covered a
+  view's root scope. A component with no schema block still gets them, and
+  generates exactly what it generated before.
+- **Every example with a view file now declares its schema**: all 26 view files
+  across `demo/` and `storybook/examples`, 70 components in total. The five
+  example files that build their views at runtime (`macros`, `visual_wasm`,
+  `lint_errors`, `svg_more`, `todo_macros`) have no view file to hold a block
+  and keep their hand-written structs — the schema lives in the view file, so a
+  component without one has no schema.
 - **margaui bumped to v0.5704.0** (from v0.5606.3). `MARGAUI_REF` in
   `scripts/fetch-margaui.mjs` moves and `css/margaui_bundle_gen.mbt` +
   `css/assets/margaui.bundle.json` are regenerated from that tag — same 80

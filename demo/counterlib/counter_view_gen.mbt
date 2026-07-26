@@ -8,6 +8,215 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Counter component.
+///
+/// Declared as `interface counter` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct CounterState {
+  label : String
+  count : Int
+  history : Array[Int]
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..CounterState::zero(), label: "Counter" }
+fn CounterState::zero() -> CounterState {
+  CounterState::{ label: "", count: 0, history: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(CounterState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Counter state declares — typed field names for tests and inspectors.
+pub(all) enum CounterField {
+  Label
+  Count
+  History
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CounterField::name(self : CounterField) -> String {
+  match self {
+    Label => "label"
+    Count => "count"
+    History => "history"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
+  match self {
+    Label => @component.FText
+    Count => @component.FInt
+    History => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let counter_field_names : Array[String] = ["label", "count", "history"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn counter_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let counter_schema_fingerprint : String = "3d30a5c1ebb6ea6f"
+
+///|
+/// The `fresh` initial state, from the init block. Checked against
+/// the schema at generation time, so a field the schema dropped fails
+/// the build instead of being coerced away at runtime.
+fn CounterState::fresh() -> CounterState {
+  { ..CounterState::zero(), label: "Counter" }
+}
+
+///|
+/// The `with-history` initial state, from the init block. Checked against
+/// the schema at generation time, so a field the schema dropped fails
+/// the build instead of being coerced away at runtime.
+fn CounterState::withHistory() -> CounterState {
+  CounterState::{ label: "Demo", count: 3, history: [1, 2, 3] }
+}
+
+///|
+/// Every named initial state, in the order the init block declares them.
+pub let counter_init_names : Array[String] = ["fresh", "with-history"]
+
+///|
+/// A named initial state as component arguments — what a ModuleDef
+/// example takes. None when no fixture has that name.
+///
+/// This is the public face of the fixtures: they return the private state
+/// type, so they cannot be public themselves, and a storybook needs the
+/// encoded form anyway.
+pub fn counter_init_args(name : String) -> Map[String, @tutuca.Value]? {
+  let j = match name {
+    "fresh" => ToJson::to_json(CounterState::fresh())
+    "with-history" => ToJson::to_json(CounterState::withHistory())
+    _ => return None
+  }
+  match @tutuca.Value::from_json(j) {
+    Map(m) => Some(m)
+    _ => None
+  }
+}
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+  {
+    "label": Str(s.label),
+    "count": Num(s.count.to_double()),
+    "history": (List(s.history.map(x => Num(x.to_double()))) : @tutuca.Value),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  guard f.get("history") is Some(List(l_history)) else { return None }
+  let v_history : Array[Int] = []
+  for x in l_history {
+    if x is Num(n) {
+      v_history.push(n.to_int())
+    } else {
+      return None
+    }
+  }
+  Some(CounterState::{ label: v_label, count: v_count, history: v_history })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum CounterReceive {
+  ResetTo(Int)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn CounterReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> CounterReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetTo", [Num(a0)]) if a0.to_int().to_double() == a0 &&
+        a0 >= -2147483648.0 &&
+        a0 <= 2147483647.0 => ResetTo(a0.to_int())
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn CounterReceive::to_dispatch(
+  self : CounterReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ResetTo(a0) => ("resetTo", [Num(a0.to_double())])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn CounterReceive::send(self : CounterReceive, ctx : &@tutuca.Ctx) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The views declared in counter.html.
 pub(all) enum CounterView {
   Main
@@ -85,32 +294,6 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let counter_fields : Array[String] = ["count", "history", "label"]
-
-///|
-/// The fields in `counter_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] counter_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  counter_fields.filter(f => !present.contains(f))
 }
 
 ///|

@@ -1,3 +1,26 @@
+<script type="tutuca/state">
+  interface counter {
+    record state {
+      label: string,
+      count: s32,
+      history: list<s32>,
+    }
+
+    /// Messages this counter raises at itself. The views never write these
+    /// names, so the schema is the only place they can be declared.
+    variant receive {
+      reset-to(s32),
+    }
+  }
+</script>
+
+<script type="tutuca/init">
+{
+  "fresh":        { "label": "Counter" },
+  "with-history": { "label": "Demo", "count": 3, "history": [1, 2, 3] }
+}
+</script>
+
 <template>
   <style>font-family: sans-serif</style>
   <div class="counter">

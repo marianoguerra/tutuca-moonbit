@@ -25,13 +25,6 @@ fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
 }
 
 ///|
-priv struct PushViewState {
-  items : Array[@tutuca.Value]
-  query : String
-  view : String
-} derive(ToJson, FromJson)
-
-///|
 /// `@push-view=".view"` pushes a view name onto the render stack: every
 /// component rendered underneath (not just direct children) looks for that view
 /// first and falls back to "main". Toggling one field flips every Entry between
@@ -66,6 +59,9 @@ fn push_view_comp() -> @component.Component {
         contains_text_filter(s.query, item)
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=push_view_encode,
+    decode=push_view_decode,
   )
 }
 
@@ -93,14 +89,6 @@ pub fn push_view_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct SeqItemAccessState {
-  byKey : Map[String, @tutuca.Value]
-  byIndex : Array[@tutuca.Value]
-  currentKey : @tutuca.Value
-  currentIndex : Int
-} derive(ToJson, FromJson)
-
-///|
 /// `<x render=".byIndex[.currentIndex]">` resolves the inner expression as a key
 /// into the outer collection — by index for a List, by string key for a Map.
 /// `@text="@value.title"` is the one-level bind-member access.
@@ -119,6 +107,9 @@ fn seq_item_access_comp() -> @component.Component {
         Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=seq_item_access_encode,
+    decode=seq_item_access_decode,
   )
 }
 
@@ -147,13 +138,6 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
     ],
   )
 }
-
-///|
-priv struct PaginationState {
-  items : Array[@tutuca.Value]
-  page : Int
-  pageSize : Int
-} derive(ToJson, FromJson)
 
 ///|
 /// `@loop-with="paginate"` runs once per render and returns a `start`/`end`
@@ -199,6 +183,9 @@ fn pagination_comp() -> @component.Component {
         )
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=pagination_encode,
+    decode=pagination_decode,
   )
 }
 

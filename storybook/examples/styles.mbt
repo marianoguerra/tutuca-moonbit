@@ -13,16 +13,13 @@
 // it on the view itself — each @anode.View in `views` carries its own style.
 
 ///|
-priv struct StylesNoState {} derive(ToJson, FromJson)
-
-///|
 fn styles_example_comp() -> @component.Component {
   @component.component(
     views=styles_example_views(),
     name="StylesExample",
     common_style=styles_example_common_style,
     global_style=styles_example_global_style,
-    init=StylesNoState::{  },
+    init=StylesExampleState::{  },
   )
 }
 
@@ -31,7 +28,7 @@ fn styles_example_root_comp() -> @component.Component {
   @component.component(
     views=styles_example_root_views(),
     name="StylesExampleRoot",
-    init=StylesNoState::{  },
+    init=StylesExampleRootState::{  },
     specs={ "value": @component.FieldSpec::comp("StylesExample") },
   )
 }

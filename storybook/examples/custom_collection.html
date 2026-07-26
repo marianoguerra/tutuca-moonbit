@@ -1,3 +1,16 @@
+<script type="tutuca/state">
+  interface song {
+    record state {
+    title: string,
+    }
+  }
+  interface playlist {
+    record state {
+    songs: any,
+    }
+  }
+</script>
+
 <template id="Playlist">
   <ul class="flex flex-col gap-1">
     <li @each=".songs" class="flex gap-2 items-center">

@@ -18,15 +18,6 @@
 // test — which is exactly what the tests here do.
 
 ///|
-priv struct RequestExampleState {
-  items : Array[@tutuca.Value]
-  query : String
-  view : String
-  isLoading : Bool
-  error : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   @component.component(
     views=request_example_views(),
@@ -88,6 +79,9 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
         contains_text_filter(s.query, item)
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=request_example_encode,
+    decode=request_example_decode,
   )
 }
 

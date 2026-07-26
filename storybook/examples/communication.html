@@ -1,3 +1,32 @@
+<script type="tutuca/state">
+  interface status {
+    record state {
+    message: string,
+    count: s32,
+    }
+  }
+  interface send-receive {
+    record state {
+    draft: string,
+    status: component,
+    }
+  }
+  interface tree-item {
+    record state {
+    %type: string,
+    label: string,
+    is-open: bool,
+    items: values,
+    }
+  }
+  interface tree-root {
+    record state {
+    log: values,
+    root: component,
+    }
+  }
+</script>
+
 <template id="Status">
   <div class="alert alert-info" @show="truthy? .message">
     <span class="msg" @text=".message"></span>

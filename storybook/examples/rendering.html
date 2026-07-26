@@ -1,3 +1,28 @@
+<script type="tutuca/state">
+  interface push-view {
+    record state {
+    items: values,
+    query: string,
+    view: string,
+    }
+  }
+  interface seq-item-access {
+    record state {
+    by-key: value-omap,
+    by-index: values,
+    current-key: any,
+    current-index: s32,
+    }
+  }
+  interface pagination {
+    record state {
+    items: values,
+    page: s32,
+    page-size: s32,
+    }
+  }
+</script>
+
 <template id="PushView">
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">

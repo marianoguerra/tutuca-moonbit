@@ -8,6 +8,100 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Counter component.
+///
+/// Declared as `interface counter` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct CounterState {
+  count : Int
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..CounterState::zero(), label: "Counter" }
+fn CounterState::zero() -> CounterState {
+  CounterState::{ count: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(CounterState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Counter state declares — typed field names for tests and inspectors.
+pub(all) enum CounterField {
+  Count
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CounterField::name(self : CounterField) -> String {
+  match self {
+    Count => "count"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
+  match self {
+    Count => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let counter_field_names : Array[String] = ["count"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn counter_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let counter_schema_fingerprint : String = "a0fd8e55e2e67751"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+  { "count": Num(s.count.to_double()) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  Some(CounterState::{ count: v_count })
+}
+
+///|
 /// The views declared in counter.html.
 pub(all) enum CounterView {
   Main
@@ -140,30 +234,4 @@ pub fn[S] counter_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let counter_fields : Array[String] = ["count"]
-
-///|
-/// The fields in `counter_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] counter_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  counter_fields.filter(f => !present.contains(f))
 }

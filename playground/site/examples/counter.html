@@ -1,3 +1,11 @@
+<script type="tutuca/state">
+  interface counter {
+    record state {
+      count: s32,
+    }
+  }
+</script>
+
 <template id="Counter">
   <div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
     <button @on.click="dec">-</button>

@@ -182,6 +182,8 @@ fn emit_component(
   source_file : String,
   views : ViewSet,
   surface : Surface,
+  state : @statedef.StateDef?,
+  inits : Array[@statedef.InitState],
   debug_derive : Bool,
   out : StringBuilder,
 ) -> Unit raise GenError {
@@ -190,6 +192,12 @@ fn emit_component(
   // The playground compiles the generated module inside a package with no
   // moon.pkg to import moonbitlang/core/debug from, so it asks for Eq alone.
   let derives = if debug_derive { "Eq, @debug.Debug" } else { "Eq" }
+
+  // -- state ---------------------------------------------------------------
+  // First, because everything below may refer to its types.
+  if state is Some(def) {
+    emit_state(t, v, def, inits, derives, out)
+  }
 
   // -- views ---------------------------------------------------------------
   let view_variants = variants_for(views.views.map(view => view.name))
@@ -314,6 +322,17 @@ fn emit_component(
   }
 
   // -- fields --------------------------------------------------------------
+  // Superseded by the schema. `<v>_fields` and `<v>_missing_fields` existed
+  // because the generator could not check a field read: it listed the names
+  // and left you to assert, in a test you had to remember to write, that the
+  // state carried them. A schema-backed component checks every read at
+  // generation time — under a loop as well as at the root, which the list
+  // never covered — so emitting a weaker second check would only invite
+  // someone to rely on it.
+  if state is Some(_) {
+    emit_ids(t, surface, derives, out)
+    return
+  }
   out.write_string(
     "///|\n" +
     "/// State fields the views read at a view's ROOT scope. Reads under an\n" +
@@ -345,7 +364,17 @@ fn emit_component(
     "}\n\n",
   )
 
-  // -- element ids ---------------------------------------------------------
+  emit_ids(t, surface, derives, out)
+}
+
+///|
+/// Constant `id` attributes as typed selectors, for tests.
+fn emit_ids(
+  t : String,
+  surface : Surface,
+  derives : String,
+  out : StringBuilder,
+) -> Unit raise GenError {
   if !surface.ids.is_empty() {
     let id_variants = variants_for(surface.ids)
     emit_name_enum(
@@ -387,12 +416,45 @@ pub fn emit_module(
     (if debug_derive { ",\n//   \"moonbitlang/core/debug\"\n" } else { "\n" }) +
     "\n",
   )
+  // A schema entry is matched to the component of the same name. An entry
+  // that matches nothing is a spelling difference between the block and the
+  // templates, and silently generating no state for it would look exactly
+  // like the schema not working.
+  let declared : Array[String] = []
+  for comp in file.components {
+    declared.push(comp.component_name(name))
+  }
+  for def in file.state {
+    if !declared.contains(def.component) {
+      raise StateForUnknownComponent(comp=def.component, known=declared)
+    }
+  }
   for comp in file.components {
     let cname = comp.component_name(name)
     let surface = view_surface(comp.views, macros=file.macros)
-    emit_component(cname, source_file, comp, surface, debug_derive, out)
+    let state = state_for(file, cname)
+    let inits = file.init.filter(p => p.0 == cname).map(p => p.1)
+    // Checked before emitting: a view that reads a field the schema does not
+    // declare would otherwise emit a module that compiles and renders null.
+    if state is Some(def) {
+      check_views(comp.views, file.macros, def)
+    }
+    emit_component(
+      cname, source_file, comp, surface, state, inits, debug_derive, out,
+    )
   }
   out.to_string()
+}
+
+///|
+/// The schema entry for a component, or None when the file declares none.
+fn state_for(file : ViewFile, comp : String) -> @statedef.StateDef? {
+  for def in file.state {
+    if def.component == comp {
+      return Some(def)
+    }
+  }
+  None
 }
 
 ///|

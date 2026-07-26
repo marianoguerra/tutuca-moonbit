@@ -69,6 +69,8 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
         },
       ],
       macros: [],
+      state: [],
+      init: [],
     }
     if !@viewgen.ir_supported(set) {
       // Only macro-using views may opt out; anything else would be a hole.

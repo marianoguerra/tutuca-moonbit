@@ -87,7 +87,7 @@ fn ps_sort(
 }
 
 ///|
-fn ps_resort(s : PsRootState) -> PsRootState {
+fn ps_resort(s : RootState) -> RootState {
   {
     ..s,
     allEntries: ps_sort(s.allEntries, s.sortByEnd, s.sortAsc, s.featuredFirst),
@@ -166,32 +166,16 @@ fn ps_category_decoy_classes() -> String {
 }
 
 ///|
-priv struct AltUrlState {
-  label : String
-  url : String
-} derive(ToJson, FromJson)
-
-///|
 fn alt_url_comp() -> @component.Component {
-  @component.component(views=alt_url_views(), name="AltUrl", init=AltUrlState::{
-    label: "",
-    url: "#",
-  })
+  @component.component(
+    views=alt_url_views(),
+    name="AltUrl",
+    init=AltUrlState::{ label: "", url: "#" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=alt_url_encode,
+    decode=alt_url_decode,
+  )
 }
-
-///|
-priv struct PsEntryState {
-  title : String
-  description : String
-  lang : String
-  startYear : @tutuca.Value
-  endYear : @tutuca.Value
-  role : @tutuca.Value
-  featured : Bool
-  url : String
-  altUrls : Array[@tutuca.Value]
-  categories : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 fn ps_entry_comp() -> @component.Component {
@@ -243,6 +227,9 @@ fn ps_entry_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=ps_entry_encode,
+    decode=ps_entry_decode,
   )
 }
 
@@ -281,18 +268,6 @@ fn entry_from_data(
 }
 
 ///|
-priv struct PsRootState {
-  allEntries : Array[@tutuca.Value]
-  allCategories : Array[String]
-  allRoles : Array[String]
-  selectedCategories : Map[String, Bool]
-  selectedRoles : Map[String, Bool]
-  featuredFirst : Bool
-  sortByEnd : Bool
-  sortAsc : Bool
-} derive(ToJson, FromJson)
-
-///|
 /// Root's generated views plus the one view that cannot be generated: the
 /// margaui decoy interpolates `ps_category_decoy_classes()` — a MoonBit value
 /// — into its class list, so it has to be built at runtime.
@@ -310,7 +285,12 @@ fn root_comp() -> @component.Component {
   @component.component(
     views=root_views_with_decoy(),
     name="Root",
-    init=PsRootState::{
+    // The schema-generated direct codec, in place of the JSON bridge. Wired
+    // by hand because this component wraps its generated views rather than
+    // passing them straight through.
+    encode=root_encode,
+    decode=root_decode,
+    init=RootState::{
       allEntries: [],
       allCategories: [],
       allRoles: [],
@@ -321,14 +301,14 @@ fn root_comp() -> @component.Component {
       sortAsc: false,
     },
     mutate={
-      "clearFilters": (s : PsRootState, _args) => {
+      "clearFilters": (s : RootState, _args) => {
         ..s,
         selectedCategories: ps_set_of(s.allCategories),
         selectedRoles: ps_set_of(s.allRoles),
       },
     },
     compute={
-      "hasActiveFilters": (s : PsRootState, _args) => {
+      "hasActiveFilters": (s : RootState, _args) => {
         Bool(
           s.selectedCategories.length() != s.allCategories.length() ||
           s.selectedRoles.length() != s.allRoles.length(),
@@ -336,12 +316,12 @@ fn root_comp() -> @component.Component {
       },
     },
     when={
-      "filterEntry": (s : PsRootState, _key, e, _iter) => ps_filter_entry(s, e),
+      "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(s, e),
     },
     enrich={
       // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
       // the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s : PsRootState, binds, _key, value, _iter) => {
+      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => {
         match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
@@ -357,7 +337,7 @@ fn root_comp() -> @component.Component {
       // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
       // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
       // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s : PsRootState, binds, _key, value, _iter) => {
+      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => {
         match value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
@@ -373,7 +353,7 @@ fn root_comp() -> @component.Component {
         }
       },
     },
-    update=(s : PsRootState, msg, ctx) => {
+    update=(s : RootState, msg, ctx) => {
       match msg {
         Input("onCategoryToggle", args) =>
           Some({
@@ -454,7 +434,7 @@ fn root_comp() -> @component.Component {
 ///|
 /// The `filterEntry` @when: keep an entry when its role and at least one of
 /// its categories are selected.
-fn ps_filter_entry(s : PsRootState, entry : @tutuca.Value) -> Bool {
+fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
   if s.selectedRoles.length() > 0 {
     let r = obj_str(entry, "role")
     if !s.selectedRoles.contains(r) {

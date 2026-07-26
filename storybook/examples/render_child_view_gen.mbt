@@ -8,6 +8,99 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Greeting component.
+///
+/// Declared as `interface greeting` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct GreetingState {
+  name : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..GreetingState::zero(), label: "Counter" }
+fn GreetingState::zero() -> GreetingState {
+  GreetingState::{ name: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn greeting_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(GreetingState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Greeting state declares — typed field names for tests and inspectors.
+pub(all) enum GreetingField {
+  Name
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn GreetingField::name(self : GreetingField) -> String {
+  match self {
+    Name => "name"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn GreetingField::kind(self : GreetingField) -> @component.FieldKind {
+  match self {
+    Name => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let greeting_field_names : Array[String] = ["name"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn greeting_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let greeting_schema_fingerprint : String = "291131f40d1ed859"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn greeting_encode(s : GreetingState) -> Map[String, @tutuca.Value] {
+  { "name": Str(s.name) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn greeting_decode(f : Map[String, @tutuca.Value]) -> GreetingState? {
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  Some(GreetingState::{ name: v_name })
+}
+
+///|
 /// The views declared in render_child.html.
 pub(all) enum GreetingView {
   Main
@@ -29,30 +122,76 @@ pub let greeting_common_style : String = ""
 pub let greeting_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let greeting_fields : Array[String] = ["name"]
+/// The state of the Page component.
+///
+/// Declared as `interface page` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PageState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `greeting_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] greeting_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  greeting_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PageState::zero(), label: "Counter" }
+fn PageState::zero() -> PageState {
+  PageState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn page_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PageState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Page state declares — typed field names for tests and inspectors.
+pub(all) enum PageField {
+  Greeting
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PageField::name(self : PageField) -> String {
+  match self {
+    Greeting => "greeting"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PageField::kind(self : PageField) -> @component.FieldKind {
+  match self {
+    Greeting => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let page_field_names : Array[String] = ["greeting"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn page_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let page_schema_fingerprint : String = "db02b6e5e92c5199"
 
 ///|
 /// The views declared in render_child.html.
@@ -76,29 +215,101 @@ pub let page_common_style : String = ""
 pub let page_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let page_fields : Array[String] = ["greeting"]
+/// The state of the Entry component.
+///
+/// Declared as `interface entry` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct EntryState {
+  title : String
+  description : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `page_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] page_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..EntryState::zero(), label: "Counter" }
+fn EntryState::zero() -> EntryState {
+  EntryState::{ title: "", description: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn entry_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(EntryState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Entry state declares — typed field names for tests and inspectors.
+pub(all) enum EntryField {
+  Title
+  Description
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn EntryField::name(self : EntryField) -> String {
+  match self {
+    Title => "title"
+    Description => "description"
   }
-  page_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn EntryField::kind(self : EntryField) -> @component.FieldKind {
+  match self {
+    Title => @component.FText
+    Description => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let entry_field_names : Array[String] = ["title", "description"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn entry_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let entry_schema_fingerprint : String = "e63d2a9edab89eef"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn entry_encode(s : EntryState) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title), "description": Str(s.description) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn entry_decode(f : Map[String, @tutuca.Value]) -> EntryState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("description") is Some(Str(v_description)) else { return None }
+  Some(EntryState::{ title: v_title, description: v_description })
 }
 
 ///|
@@ -194,30 +405,78 @@ pub fn[S] entry_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let entry_fields : Array[String] = ["description", "title"]
+/// The state of the MultipleViews component.
+///
+/// Declared as `interface multiple-views` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct MultipleViewsState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `entry_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] entry_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  entry_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..MultipleViewsState::zero(), label: "Counter" }
+fn MultipleViewsState::zero() -> MultipleViewsState {
+  MultipleViewsState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn multiple_views_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(MultipleViewsState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the MultipleViews state declares — typed field names for tests and inspectors.
+pub(all) enum MultipleViewsField {
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn MultipleViewsField::name(self : MultipleViewsField) -> String {
+  match self {
+    Value => "value"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn MultipleViewsField::kind(
+  self : MultipleViewsField,
+) -> @component.FieldKind {
+  match self {
+    Value => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let multiple_views_field_names : Array[String] = ["value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn multiple_views_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let multiple_views_schema_fingerprint : String = "74788bd77ca3a59f"
 
 ///|
 /// The views declared in render_child.html.
@@ -239,29 +498,3 @@ pub let multiple_views_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let multiple_views_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let multiple_views_fields : Array[String] = ["value"]
-
-///|
-/// The fields in `multiple_views_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] multiple_views_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  multiple_views_fields.filter(f => !present.contains(f))
-}

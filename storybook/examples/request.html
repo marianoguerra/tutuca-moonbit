@@ -1,3 +1,15 @@
+<script type="tutuca/state">
+  interface request-example {
+    record state {
+    items: values,
+    query: string,
+    view: string,
+    is-loading: bool,
+    error: any,
+    }
+  }
+</script>
+
 <template>
   <section class="flex flex-col gap-3">
     <div class="alert alert-info alert-outline loading" @show=".isLoading">Loading</div>

@@ -21,11 +21,6 @@ fn example_args(
 }
 
 ///|
-priv struct ComposabilityState {
-  activeSection : String
-} derive(ToJson, FromJson)
-
-///|
 fn composability_comp(
   json_args : Map[String, @tutuca.Value],
   dnd_args : Map[String, @tutuca.Value],
@@ -57,6 +52,9 @@ fn composability_comp(
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=composability_encode,
+    decode=composability_decode,
   )
 }
 

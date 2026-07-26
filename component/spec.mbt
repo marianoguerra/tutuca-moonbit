@@ -265,6 +265,12 @@ declare pub fn[S : ToJson + @json.FromJson] component(
   specs? : Map[String, FieldSpec],
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
+  /// Direct state <-> fields conversion, generated from a declared schema.
+  /// Omitted, the JSON bridge is used, which is what an undeclared state
+  /// still needs. Measured at ~2x on encode and ~5x on decode
+  /// (benchmarks/codec_bench_test.mbt).
+  encode? : (S) -> Map[String, @tutuca.Value],
+  decode? : (Map[String, @tutuca.Value]) -> S?,
 ) -> Component
 
 ///|

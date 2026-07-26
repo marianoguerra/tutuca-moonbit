@@ -7,12 +7,6 @@
 // reads `.unicode` off it like the JS handler read `detail.unicode`.
 
 ///|
-priv struct EmojiPickerState {
-  current : @tutuca.Value
-  isPickerVisible : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn emoji_picker_comp() -> @component.Component {
   @component.component(
     views=emoji_picker_views(),
@@ -25,6 +19,9 @@ fn emoji_picker_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=emoji_picker_encode,
+    decode=emoji_picker_decode,
   )
 }
 

@@ -29,22 +29,12 @@ fn main {
 // --- ComponentEntry: one selectable row ---------------------------------
 
 ///|
-priv struct EntryState {
-  module_ : String
-  name : String
-  label : String
-} derive (
-  ToJson(fields(module_(rename="module"))),
-  FromJson(fields(module_(rename="module"))),
-)
-
-///|
 fn component_entry_comp() -> @component.Component {
   @component.component(
     views=component_entry_views(),
     name="ComponentEntry",
-    init=EntryState::{ module_: "", name: "", label: "" },
-    update=(s : EntryState, msg, ctx) => {
+    init=ComponentEntryState::{ module_: "", name: "", label: "" },
+    update=(s : ComponentEntryState, msg, ctx) => {
       match ComponentEntryMsg::from_dispatch(msg) {
         Some(OnSelect) => {
           ctx.bubble("componentSelected", [Str(s.module_), Str(s.name)])
@@ -56,24 +46,20 @@ fn component_entry_comp() -> @component.Component {
     // used by the picker's @when filter (called with the search text after the
     // dropped this-slot arg, like the parent app's matchesFilter)
     compute={
-      "containsText": (s : EntryState, args) => {
+      "containsText": (s : ComponentEntryState, args) => {
         match args {
           [Str(q), ..] => Bool(s.label.contains(q))
           _ => Bool(false)
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=component_entry_encode,
+    decode=component_entry_decode,
   )
 }
 
 // --- ComponentPicker: selector that replaces itself with the pick --------
-
-///|
-priv struct PickerState {
-  filterText : String
-  items : Array[@tutuca.Value]
-  selected : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 fn component_picker_comp(entry : @component.Component) -> @component.Component {
@@ -82,8 +68,8 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
     // component renders — the picker "replaces itself"
     views=component_picker_views(),
     name="ComponentPicker",
-    init=PickerState::{ filterText: "", items: [], selected: Null },
-    update=(s : PickerState, msg, ctx) => {
+    init=ComponentPickerState::{ filterText: "", items: [], selected: Null },
+    update=(s : ComponentPickerState, msg, ctx) => {
       match msg {
         // fetch the list of registered components on init (forwarded here when
         // the picker is added to a list)
@@ -123,7 +109,7 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
     // @when predicate for render-each; keep rows whose entry's containsText
     // method matches the filter text
     when={
-      "matchesFilter": (s : PickerState, _key, item, _iter) => {
+      "matchesFilter": (s : ComponentPickerState, _key, item, _iter) => {
         if s.filterText == "" {
           true
         } else {
@@ -134,6 +120,9 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=component_picker_encode,
+    decode=component_picker_decode,
   )
 }
 
@@ -164,17 +153,6 @@ fn entries_from_list(
 // --- ComponentList: the builtin flexbox canvas ---------------------------
 
 ///|
-priv struct ListState {
-  entries : Array[@tutuca.Value]
-  showSettings : Bool
-  dir : String
-  justify : String
-  align : String
-  gap : Int
-  wrap : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn component_list_comp() -> @component.Component {
   @component.component(
     // the gear (layout) and + (add) are subtle ghost icon buttons pinned to the
@@ -182,7 +160,7 @@ fn component_list_comp() -> @component.Component {
     // indicator's normal child
     views=component_list_views(),
     name="ComponentList",
-    init=ListState::{
+    init=ComponentListState::{
       entries: [],
       showSettings: false,
       dir: "row",
@@ -191,7 +169,7 @@ fn component_list_comp() -> @component.Component {
       gap: 12,
       wrap: true,
     },
-    update=(s : ListState, msg, ctx) => {
+    update=(s : ComponentListState, msg, ctx) => {
       match msg {
         // append a fresh picker: request one, seed + init it in the response
         Input("onAdd", _) => {
@@ -226,33 +204,31 @@ fn component_list_comp() -> @component.Component {
     compute={
       // per-instance flexbox style from the settings fields (see visual_wasm
       // getInputWidth precedent for a compute returning a CSS string)
-      "flexStyle": (s : ListState, _args) => {
+      "flexStyle": (s : ComponentListState, _args) => {
         let wrap = if s.wrap { "wrap" } else { "nowrap" }
         Str(
           "display:flex;flex-direction:\{s.dir};gap:\{s.gap}px;justify-content:\{s.justify};align-items:\{s.align};flex-wrap:\{wrap}",
         )
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=component_list_encode,
+    decode=component_list_decode,
   )
 }
 
 // --- root shell ----------------------------------------------------------
 
 ///|
-priv struct ShellState {
-  status : String
-} derive(ToJson, FromJson)
-
-///|
 fn universal_shell_comp() -> @component.Component {
   @component.component(
     views=universal_wasm_views(),
     name="UniversalWasm",
-    init=ShellState::{
+    init=UniversalWasmState::{
       status: "drop a .tutuca.tar.gz bundle, then “+ Add component” to place it",
     },
     specs={ "list": @component.FieldSpec::comp("ComponentList") },
-    update=(_s : ShellState, msg, ctx) => {
+    update=(_s : UniversalWasmState, msg, ctx) => {
       match msg {
         Receive("dyncompLoaded", args) => {
           let module_name = match args {
@@ -274,6 +250,9 @@ fn universal_shell_comp() -> @component.Component {
         _ => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=universal_wasm_encode,
+    decode=universal_wasm_decode,
   )
 }
 
@@ -308,7 +287,7 @@ fn universal_module() -> @component.ModuleDef {
     "componentPicker": RequestFn((_args, respond) => {
       respond(Ok(picker.make(Map([]))))
     }),
-    // create a component instance by (module, name): builtins natively, guest
+    // create a component instance by (module_, name): builtins natively, guest
     // components through the dyncomp bridge
     "makeComponent": RequestFn((args, respond) => {
       match args {
@@ -324,7 +303,7 @@ fn universal_module() -> @component.ModuleDef {
               None => respond(Err(Str("could not make \{m}/\{n}")))
             }
           }
-        _ => respond(Err(Str("makeComponent: expected [module, name]")))
+        _ => respond(Err(Str("makeComponent: expected [module_, name]")))
       }
     }),
   }
@@ -374,7 +353,7 @@ pub fn mount() -> Unit {
   }
   app_ref.val = Some(app)
   // host-provided request services a dropped guest may call (e.g. "double",
-  // used by the sample counter). The picker/list requests are in the module.
+  // used by the sample counter). The picker/list requests are in the module_.
   app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @dhw.set_app(app, @wglue.document())
   apply_margaui()

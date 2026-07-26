@@ -10,21 +10,16 @@
 // lists update in lock-step.
 
 ///|
-priv struct DseEntryState {
-  name : String
-} derive(ToJson, FromJson)
-
-///|
 fn dse_entry_comp() -> @component.Component {
-  @component.component(views=dse_entry_views(), name="Entry", init=DseEntryState::{
-    name: "",
-  })
+  @component.component(
+    views=dse_entry_views(),
+    name="Entry",
+    init=DseEntryState::{ name: "" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=dse_entry_encode,
+    decode=dse_entry_decode,
+  )
 }
-
-///|
-priv struct DseEditorState {
-  missing : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 fn dse_editor_comp() -> @component.Component {
@@ -37,14 +32,11 @@ fn dse_editor_comp() -> @component.Component {
       "items": { source: "Root.items", default: Some(".missing") },
       "selected": { source: "Root.selected", default: Some(".missing") },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=dse_editor_encode,
+    decode=dse_editor_decode,
   )
 }
-
-///|
-priv struct DseRootState {
-  items : Map[String, @tutuca.Value]
-  selectedKey : String
-} derive(ToJson, FromJson)
 
 ///|
 fn dse_root_comp() -> @component.Component {
@@ -61,6 +53,9 @@ fn dse_root_comp() -> @component.Component {
         Some(SelectItem(_)) | Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=dse_root_encode,
+    decode=dse_root_decode,
   )
 }
 

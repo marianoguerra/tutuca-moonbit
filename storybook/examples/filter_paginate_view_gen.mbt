@@ -8,6 +8,109 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Person component.
+///
+/// Declared as `interface person` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PersonState {
+  name : String
+  email : String
+  active : Bool
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PersonState::zero(), label: "Counter" }
+fn PersonState::zero() -> PersonState {
+  PersonState::{ name: "", email: "", active: false }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn person_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PersonState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Person state declares — typed field names for tests and inspectors.
+pub(all) enum PersonField {
+  Name
+  Email
+  Active
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PersonField::name(self : PersonField) -> String {
+  match self {
+    Name => "name"
+    Email => "email"
+    Active => "active"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PersonField::kind(self : PersonField) -> @component.FieldKind {
+  match self {
+    Name => @component.FText
+    Email => @component.FText
+    Active => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let person_field_names : Array[String] = ["name", "email", "active"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn person_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let person_schema_fingerprint : String = "e2e8301a252a8190"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn person_encode(s : PersonState) -> Map[String, @tutuca.Value] {
+  { "name": Str(s.name), "email": Str(s.email), "active": Bool(s.active) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn person_decode(f : Map[String, @tutuca.Value]) -> PersonState? {
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  guard f.get("email") is Some(Str(v_email)) else { return None }
+  guard f.get("active") is Some(Bool(v_active)) else { return None }
+  Some(PersonState::{ name: v_name, email: v_email, active: v_active })
+}
+
+///|
 /// The views declared in filter_paginate.html.
 pub(all) enum PersonView {
   Main
@@ -100,30 +203,82 @@ pub fn[S] person_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let person_fields : Array[String] = ["active", "email", "name"]
+/// The state of the Strategies component.
+///
+/// Declared as `interface strategies` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct StrategiesState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `person_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] person_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  person_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..StrategiesState::zero(), label: "Counter" }
+fn StrategiesState::zero() -> StrategiesState {
+  StrategiesState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn strategies_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(StrategiesState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Strategies state declares — typed field names for tests and inspectors.
+pub(all) enum StrategiesField {
+  Naive
+  Shared
+  Coupled
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn StrategiesField::name(self : StrategiesField) -> String {
+  match self {
+    Naive => "naive"
+    Shared => "shared"
+    Coupled => "coupled"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn StrategiesField::kind(self : StrategiesField) -> @component.FieldKind {
+  match self {
+    Naive => @component.FComp(comp="", args=Map([]))
+    Shared => @component.FComp(comp="", args=Map([]))
+    Coupled => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let strategies_field_names : Array[String] = ["naive", "shared", "coupled"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn strategies_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let strategies_schema_fingerprint : String = "6bace7a4dde1b354"
 
 ///|
 /// The views declared in filter_paginate.html.
@@ -145,29 +300,3 @@ pub let strategies_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let strategies_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let strategies_fields : Array[String] = ["coupled", "naive", "shared"]
-
-///|
-/// The fields in `strategies_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] strategies_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  strategies_fields.filter(f => !present.contains(f))
-}

@@ -20,4 +20,7 @@ import {
 
 import {
   "moonbitlang/core/bench",
+  // The codec bench weighs the derived-JSON bridge against a direct one, so
+  // it needs the same json package component/instance.mbt goes through.
+  "moonbitlang/core/json",
 } for "test"

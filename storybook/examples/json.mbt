@@ -45,44 +45,35 @@ fn json_make_selector(reg : JsonReg) -> @tutuca.Value {
 }
 
 ///|
-priv struct JsonEmptyState {} derive(ToJson, FromJson)
-
-///|
 fn json_null_comp() -> @component.Component {
-  @component.component(views=json_null_views(), name="JsonNull", init=JsonEmptyState::{
+  @component.component(views=json_null_views(), name="JsonNull", init=JsonNullState::{
 
   })
 }
-
-///|
-priv struct JsonBoolState {
-  value : Bool
-} derive(ToJson, FromJson)
 
 ///|
 fn json_bool_comp() -> @component.Component {
-  @component.component(views=json_bool_views(), name="JsonBool", init=JsonBoolState::{
-    value: true,
-  })
+  @component.component(
+    views=json_bool_views(),
+    name="JsonBool",
+    init=JsonBoolState::{ value: true },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_bool_encode,
+    decode=json_bool_decode,
+  )
 }
-
-///|
-priv struct JsonStringState {
-  value : String
-} derive(ToJson, FromJson)
 
 ///|
 fn json_string_comp() -> @component.Component {
-  @component.component(views=json_string_views(), name="JsonString", init=JsonStringState::{
-    value: "hello",
-  })
+  @component.component(
+    views=json_string_views(),
+    name="JsonString",
+    init=JsonStringState::{ value: "hello" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_string_encode,
+    decode=json_string_decode,
+  )
 }
-
-///|
-priv struct JsonNumberState {
-  strValue : String
-  value : Double
-} derive(ToJson, FromJson)
 
 ///|
 fn json_number_comp() -> @component.Component {
@@ -106,6 +97,9 @@ fn json_number_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_number_encode,
+    decode=json_number_decode,
   )
 }
 
@@ -119,25 +113,25 @@ fn json_selector_comp(reg : JsonReg) -> @component.Component {
   @component.component(
     views=json_selector_views(),
     name="JsonSelector",
-    init=JsonEmptyState::{  },
+    init=JsonSelectorState::{  },
     swap={
-      "setToNull": (_s : JsonEmptyState, _args, _ctx) => {
+      "setToNull": (_s : JsonSelectorState, _args, _ctx) => {
         Some(reg.make_("JsonNull"))
       },
-      "setToBool": (_s : JsonEmptyState, args, _ctx) => {
+      "setToBool": (_s : JsonSelectorState, args, _ctx) => {
         let is_ctrl = args.get(0) is Some(Bool(true))
         Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
       },
-      "setToNumber": (_s : JsonEmptyState, _args, _ctx) => {
+      "setToNumber": (_s : JsonSelectorState, _args, _ctx) => {
         Some(reg.make_("JsonNumber"))
       },
-      "setToString": (_s : JsonEmptyState, _args, _ctx) => {
+      "setToString": (_s : JsonSelectorState, _args, _ctx) => {
         Some(reg.make_("JsonString"))
       },
-      "setToArray": (_s : JsonEmptyState, _args, _ctx) => {
+      "setToArray": (_s : JsonSelectorState, _args, _ctx) => {
         Some(reg.make_("JsonArray"))
       },
-      "setToObject": (_s : JsonEmptyState, _args, _ctx) => {
+      "setToObject": (_s : JsonSelectorState, _args, _ctx) => {
         Some(reg.make_("JsonObject"))
       },
     },
@@ -190,18 +184,12 @@ fn json_dropped_items(
 }
 
 ///|
-/// The state shared by JsonArray and JsonObject: just the item list.
-priv struct JsonItemsState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
-
-///|
 fn json_array_comp(reg : JsonReg) -> @component.Component {
   @component.component(
     views=json_array_views(),
     name="JsonArray",
-    init=JsonItemsState::{ items: [] },
-    update=(s : JsonItemsState, msg, _ctx) => {
+    init=JsonArrayState::{ items: [] },
+    update=(s : JsonArrayState, msg, _ctx) => {
       match JsonArrayMsg::from_dispatch(msg) {
         // add a fresh JsonSelector so the user can pick the new element's type
         Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
@@ -213,21 +201,21 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_array_encode,
+    decode=json_array_decode,
   )
 }
-
-///|
-priv struct JsonKvState {
-  key : String
-  value : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 fn json_object_kv_comp() -> @component.Component {
   @component.component(
     views=json_object_key_val_views(),
     name="JsonObjectKeyVal",
-    init=JsonKvState::{ key: "k", value: Null },
+    init=JsonObjectKeyValState::{ key: "k", value: Null },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_object_key_val_encode,
+    decode=json_object_key_val_decode,
   )
 }
 
@@ -236,8 +224,8 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
   @component.component(
     views=json_object_views(),
     name="JsonObject",
-    init=JsonItemsState::{ items: [] },
-    update=(s : JsonItemsState, msg, _ctx) => {
+    init=JsonObjectState::{ items: [] },
+    update=(s : JsonObjectState, msg, _ctx) => {
       match JsonObjectMsg::from_dispatch(msg) {
         // a key/value row whose value is a fresh selector
         Some(AddItem) => {
@@ -255,6 +243,9 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=json_object_encode,
+    decode=json_object_decode,
   )
 }
 

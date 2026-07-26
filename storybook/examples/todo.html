@@ -1,3 +1,17 @@
+<script type="tutuca/state">
+  interface item {
+    record state {
+    completed: bool,
+    text: string,
+    }
+  }
+  interface items {
+    record state {
+    items: values,
+    }
+  }
+</script>
+
 <template id="Item">
   <div class="flex gap-3 items-center">
     <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value">

@@ -7,19 +7,16 @@
 // namespace — the parent's @-bindings do not cross into it.
 
 ///|
-priv struct GreetingState {
-  name : String
-} derive(ToJson, FromJson)
-
-///|
 fn greeting_comp() -> @component.Component {
-  @component.component(views=greeting_views(), name="Greeting", init=GreetingState::{
-    name: "world",
-  })
+  @component.component(
+    views=greeting_views(),
+    name="Greeting",
+    init=GreetingState::{ name: "world" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=greeting_encode,
+    decode=greeting_decode,
+  )
 }
-
-///|
-priv struct RenderChildNoState {} derive(ToJson, FromJson)
 
 ///|
 /// MoonBit divergence from JS: the child default is `FieldSpec::comp("Greeting",
@@ -27,16 +24,11 @@ priv struct RenderChildNoState {} derive(ToJson, FromJson)
 /// rather than JS's eagerly-built `Greeting.make({...})`. Same result, and it
 /// keeps the component definitions order-independent.
 fn page_comp() -> @component.Component {
-  @component.component(
-    views=page_views(),
-    name="Page",
-    init=RenderChildNoState::{  },
-    specs={
-      "greeting": @component.FieldSpec::comp("Greeting", args={
-        "name": Str("tutorial reader"),
-      }),
-    },
-  )
+  @component.component(views=page_views(), name="Page", init=PageState::{  }, specs={
+    "greeting": @component.FieldSpec::comp("Greeting", args={
+      "name": Str("tutorial reader"),
+    }),
+  })
 }
 
 ///|
@@ -49,12 +41,6 @@ pub fn render_child_module() -> @component.ModuleDef {
     ],
   )
 }
-
-///|
-priv struct EntryState {
-  title : String
-  description : String
-} derive(ToJson, FromJson)
 
 ///|
 /// The `Entry` building block (docs/examples/entry.js): a card with a read-only
@@ -73,6 +59,9 @@ fn entry_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=entry_encode,
+    decode=entry_decode,
   )
 }
 
@@ -100,7 +89,7 @@ fn multiple_views_comp() -> @component.Component {
   @component.component(
     views=multiple_views_views(),
     name="MultipleViews",
-    init=RenderChildNoState::{  },
+    init=MultipleViewsState::{  },
     specs={ "value": @component.FieldSpec::comp("Entry") },
   )
 }

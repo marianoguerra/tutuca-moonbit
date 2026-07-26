@@ -27,7 +27,7 @@ and formal `spec.mbt`. From the bottom up:
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain `derive(ToJson, FromJson)` struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
-| **Tooling** | `lint/`, `inspector/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the ahead-of-time view compiler, and the native `tutuca` CLI. |
+| **Tooling** | `lint/`, `inspector/`, `statedef/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the WIT-subset state schema, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Demos & docs** | `demo/`, `playground/`, `storybook/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
 
@@ -77,10 +77,31 @@ For a component named `Counter` the generated module declares
 inferred from the argument shapes at the call sites, plus
 `CounterMsg::from_dispatch`), `CounterMethod` with `counter_mutate` /
 `counter_compute` / `counter_swap` (the `$`-callables, as exhaustive matches),
-`CounterView` / `CounterId`, and `counter_fields` /
-`counter_missing_fields`. The package it lands in must import
+`CounterView` / `CounterId`. The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
 `"moonbitlang/core/debug"`.
+
+A view file may also declare its component's data contract, in a small
+subset of WIT, next to the templates that read it:
+
+```html
+<script type="tutuca/state">
+  interface counter {
+    record state { label: string, count: s32, history: list<s32> }
+    variant receive { reset-to(s32) }
+  }
+</script>
+```
+
+Then `CounterState` itself is generated — with its `ToJson`/`FromJson`
+derives, a `zero()`, a `CounterField` table whose `kind()` is declared rather
+than guessed from the seed value, and `counter_specs()` in place of a
+hand-written `specs~` — and every `.field` a view reads is checked against
+it, inside an `@each` body as well as at the root. A misspelt field is a
+generation failure naming the near miss, where before it rendered as null.
+The `receive` / `bubble` / `response` buckets get typed enums too: those
+names are raised from MoonBit rather than written in a view, so the schema is
+the only place they can be declared.
 
 The payoff is in `update` (see `demo/counterlib/` for the worked example):
 

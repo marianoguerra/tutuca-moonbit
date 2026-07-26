@@ -1,3 +1,27 @@
+<script type="tutuca/state">
+  interface greeting {
+    record state {
+    name: string,
+    }
+  }
+  interface page {
+    record state {
+    greeting: component,
+    }
+  }
+  interface entry {
+    record state {
+    title: string,
+    description: string,
+    }
+  }
+  interface multiple-views {
+    record state {
+      value: component,
+    }
+  }
+</script>
+
 <template id="Greeting">
   <p class="p-2 border rounded">
     Hello, <strong @text=".name"></strong>!

@@ -1,3 +1,38 @@
+<script type="tutuca/state">
+  interface component-entry {
+    record state {
+      module: string,
+      name: string,
+      label: string,
+    }
+  }
+  interface component-picker {
+    record state {
+      filter-text: string,
+      items: values,
+      selected: any,
+    }
+  }
+  interface component-list {
+    record state {
+      entries: values,
+      show-settings: bool,
+      dir: string,
+      justify: string,
+      align: string,
+      gap: s32,
+      wrap: bool,
+    }
+  }
+  interface universal-wasm {
+    record state {
+      status: string,
+      %list: component,
+    }
+  }
+</script>
+
+
 <template id="UniversalWasm">
   <div class="min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3">
     <div class="rounded-box border-2 border-dashed border-base-300 bg-base-100 p-4 text-center opacity-70" data-droptarget="tutuca-wasm-component">

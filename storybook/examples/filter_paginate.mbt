@@ -121,19 +121,15 @@ fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {
 }
 
 ///|
-priv struct PersonState {
-  name : String
-  email : String
-  active : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn person_comp() -> @component.Component {
-  @component.component(views=person_views(), name="Person", init=PersonState::{
-    name: "",
-    email: "",
-    active: false,
-  })
+  @component.component(
+    views=person_views(),
+    name="Person",
+    init=PersonState::{ name: "", email: "", active: false },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=person_encode,
+    decode=person_decode,
+  )
 }
 
 ///|
@@ -313,9 +309,6 @@ fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
   }
   out
 }
-
-///|
-priv struct StrategiesState {} derive(ToJson, FromJson)
 
 ///|
 fn strategies_comp() -> @component.Component {

@@ -7,9 +7,6 @@
 //   docs/examples/danger-set-inner-html.js    — the raw-HTML escape hatch
 
 ///|
-priv struct BasicsNoState {} derive(ToJson, FromJson)
-
-///|
 /// The smallest component there is: no fields, no view, no logic. It renders
 /// nothing visible — the point is that it is legal.
 ///
@@ -19,7 +16,7 @@ fn minimum_viable_comp() -> @component.Component {
   @component.component(
     views=minimum_viable_component_views(),
     name="MinimumViableComponent",
-    init=BasicsNoState::{  },
+    init=MinimumViableComponentState::{  },
   )
 }
 
@@ -46,7 +43,7 @@ fn static_view_comp() -> @component.Component {
   @component.component(
     views=static_view_component_views(),
     name="StaticViewComponent",
-    init=BasicsNoState::{  },
+    init=StaticViewComponentState::{  },
   )
 }
 
@@ -67,14 +64,6 @@ pub fn static_view_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct TextDirectiveState {
-  str : String
-  num : Int
-  bool : Bool
-  notSet : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 /// `@text` on an element PREPENDS text into it (keeping its other children);
 /// `<x text=...>` is a standalone text node that adds no element. The value can
 /// be a field (`.str`) or a method call (`$getStrUpper`), and every value type
@@ -87,6 +76,9 @@ fn text_directive_comp() -> @component.Component {
     compute={
       "getStrUpper": (s : TextDirectiveState, _args) => Str(s.str.to_upper()),
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=text_directive_encode,
+    decode=text_directive_decode,
   )
 }
 
@@ -113,11 +105,6 @@ pub fn text_directive_module() -> @component.ModuleDef {
 }
 
 ///|
-priv struct DangerSetInnerHtmlState {
-  content : String
-} derive(ToJson, FromJson)
-
-///|
 /// The escape hatch: `@dangerouslysetinnerhtml` sets the element's innerHTML
 /// from a field instead of building children.
 fn danger_set_inner_html_comp() -> @component.Component {
@@ -127,6 +114,9 @@ fn danger_set_inner_html_comp() -> @component.Component {
     init=DangerSetInnerHtmlState::{
       content: "<strong><em>Raw HTML!</em></strong>",
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=danger_set_inner_html_encode,
+    decode=danger_set_inner_html_decode,
   )
 }
 

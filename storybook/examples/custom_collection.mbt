@@ -36,23 +36,16 @@ impl @tutuca.Obj for KeyedList with fn obj_item(self, key) {
 }
 
 ///|
-priv struct SongState {
-  title : String
-} derive(ToJson, FromJson)
-
-///|
 fn song_comp() -> @component.Component {
-  @component.component(views=song_views(), name="Song", init=SongState::{
-    title: "",
-  })
+  @component.component(
+    views=song_views(),
+    name="Song",
+    init=SongState::{ title: "" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=song_encode,
+    decode=song_decode,
+  )
 }
-
-///|
-/// The `songs` field holds the custom KeyedList as an opaque Obj — declared
-/// `@tutuca.Value` in the state, it round-trips updates losslessly.
-priv struct PlaylistState {
-  songs : @tutuca.Value
-} derive(ToJson, FromJson)
 
 ///|
 fn playlist_comp() -> @component.Component {
@@ -86,6 +79,9 @@ fn playlist_comp() -> @component.Component {
         }
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=playlist_encode,
+    decode=playlist_decode,
   )
 }
 

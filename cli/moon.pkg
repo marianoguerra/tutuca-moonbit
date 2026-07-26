@@ -9,6 +9,7 @@
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/lint",
+  "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/viewgen",
   "moonbitlang/core/string",
 }

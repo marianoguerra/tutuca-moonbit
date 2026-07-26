@@ -37,26 +37,20 @@ fn move_index_to_index(
 }
 
 ///|
-priv struct DnDState {
-  items : Array[@tutuca.Value]
-  query : String
-} derive(ToJson, FromJson)
-
-///|
 fn dnd_comp() -> @component.Component {
   @component.component(
     views=dn_d_example_views(),
     name="DnDExample",
-    init=DnDState::{ items: [], query: "" },
+    init=DnDExampleState::{ items: [], query: "" },
     when={
-      "filterItem": (s : DnDState, _key, value, _iter) => {
+      "filterItem": (s : DnDExampleState, _key, value, _iter) => {
         match value {
           Str(item) => item.contains(s.query)
           _ => true
         }
       },
     },
-    update=(s : DnDState, msg, _ctx) => {
+    update=(s : DnDExampleState, msg, _ctx) => {
       match DnDExampleMsg::from_dispatch(msg) {
         // args: [@key (the TARGET row's key), dragInfo]
         Some(OnDropOnItem(Num(t), Obj(di))) => {
@@ -75,6 +69,9 @@ fn dnd_comp() -> @component.Component {
         Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=dn_d_example_encode,
+    decode=dn_d_example_decode,
   )
 }
 

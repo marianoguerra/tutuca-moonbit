@@ -53,6 +53,13 @@ pub(all) struct ViewSet {
 pub(all) struct ViewFile {
   components : Array[ViewSet]
   macros : Array[MacroDef]
+  /// The `<script type="tutuca/state">` schema, one entry per component it
+  /// declares. Empty when the file has no block — which is what keeps every
+  /// unmigrated view file generating exactly what it generated before.
+  state : Array[@statedef.StateDef]
+  /// The `<script type="tutuca/init">` fixtures, each paired with the
+  /// component whose schema it was checked against.
+  init : Array[(String, @statedef.InitState)]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -118,6 +125,29 @@ pub suberror GenError {
   NameCollision(variant~ : String, first~ : String, second~ : String)
   /// `--name` is not usable as a MoonBit type prefix.
   BadComponentName(String)
+  /// The state block does not describe component state. `line` is the line
+  /// in the HTML file, not in the block, because that is the file the author
+  /// has open.
+  BadStateBlock(line~ : Int, message~ : String)
+  /// Two `<script type="tutuca/state">` blocks in one file.
+  DuplicateStateBlock
+  /// The schema declares an interface that no `<template>` in the file
+  /// gives views — almost always a spelling difference between the two.
+  StateForUnknownComponent(comp~ : String, known~ : Array[String])
+  /// The init block does not fit the schema.
+  BadInitBlock(line~ : Int, message~ : String)
+  /// A view reads a name the schema does not declare. THE headline check:
+  /// this used to render as null in the browser.
+  UnknownStateField(
+    view~ : String,
+    name~ : String,
+    scope~ : String,
+    suggestion~ : String?
+  )
+  /// `@each` over something that is not a collection.
+  NotIterable(view~ : String, expr~ : String, ty~ : String)
+  /// `<x render>` on something that is not a component slot.
+  NotRenderable(view~ : String, expr~ : String, ty~ : String)
 }
 
 ///|

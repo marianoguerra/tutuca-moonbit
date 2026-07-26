@@ -12,7 +12,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
-| does this view reference a field that exists? | `gen-views` — it generates `counter_fields`, and an unknown `.field` fails generation |
+| does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/state">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root |
 | is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
 | does the component behave? | `moon test` over `@harness` — mount it, fire real events, read the DOM back → [testing.md](./testing.md) |
@@ -78,8 +78,13 @@ For `--name Counter` the module declares `counter_views()` /
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
 -> `@tutuca.Value`), `CounterMethod` + `counter_mutate`/`_compute`/`_swap`
-(the `$`-callables, built from an exhaustive match), `CounterView`,
-`CounterId`, and `counter_fields` / `counter_missing_fields`.
+(the `$`-callables, built from an exhaustive match), `CounterView` and
+`CounterId`. A file that also carries a `<script type="tutuca/state">` block
+gets the state half: `CounterState` itself with its `ToJson`/`FromJson`
+derives, `CounterState::zero()`, `CounterField` with a declared `kind()`,
+`counter_specs()` for the `specs~` map, `counter_schema_fingerprint`, and a
+typed `CounterReceive`/`CounterBubble`/`CounterResponse` for each message
+bucket the schema declares.
 
 `update` then pattern-matches typed messages, so adding an `@on` handler to
 the `.html` and regenerating breaks the build until it is handled, instead of
@@ -88,11 +93,83 @@ field mutators return `None` and fall through to them, as before. The
 generated package must import `"marianoguerra/tutuca/core" @tutuca`,
 `"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"`.
 
-Caveat on `counter_fields`: it lists only fields read at a view's ROOT scope.
-A `.field` under an `@each`, `@enrich-with`, push-view or `<x render>`
-addresses the loop item or the child component, so it is not listed. Use it in
-a test (`assert_eq(counter_missing_fields(init), [])`), not as a startup
-check; fields declared through `specs~` go in `extra~`.
+The schema goes in a `<script>` and not a `<template>`, because script
+content is raw text to an HTML parser and template content is markup — a
+`list<s32>` inside a template would be read as an `<s32>` element.
+
+A component with no schema block generates exactly what it did before,
+including the older `counter_fields` / `counter_missing_fields` pair. Those
+existed because the generator could not check a read: they listed the names
+and left you to assert in a test that the state carried them, and they only
+ever covered a view's ROOT scope — a `.field` under an `@each`,
+`@enrich-with`, push-view or `<x render>` was not listed and not checked.
+A schema-backed component checks every read at generation time, loop bodies
+included, so the pair is not emitted for it.
+
+## The state schema
+
+A view file may declare its component's data contract in a small subset of
+WIT, alongside the templates that read it:
+
+```html
+<script type="tutuca/state">
+  interface counter {
+    record state {
+      label: string,
+      count: s32,
+      history: list<s32>,
+    }
+    variant receive { reset-to(s32) }
+  }
+</script>
+```
+
+One `interface` per component, named after the template id it gives views to
+(`id="Counter"` -> `interface counter`), and exactly one `record state` in
+each. No `package` line: the module supplies it.
+
+| you mean | you write |
+| -------- | --------- |
+| bool | `bool` |
+| int | `s8`..`s32`, `u8`..`u32` (each range-checked on decode) |
+| float | `f32` / `f64` |
+| text | `string`, `char`, or an `enum` |
+| list | `list<T>`, `tuple<A, B>` |
+| nullable | `option<T>` |
+| record / variant | `record R`, `variant V` |
+| set, closed members | `flags F` |
+| set, open members | `text-set` |
+| ordered map | `value-omap`, `text-omap` |
+| a child component | the sibling interface's name, or `component` |
+| anything at all | `any`, `values` |
+
+The last four rows are marker names rather than WIT constructs: WIT has no
+open type and no user generics, so a set with open membership, an ORDERED map
+(WIT's own `map` is unordered by definition) and a child-component slot have
+no structural spelling. A slot declared here is checked in the views and
+generates its `specs~` entry, but does NOT become a struct field — the
+runtime still creates it through the registration scope.
+
+Out of the subset, each with its own message: `s64`/`u64` (state travels as
+JSON, where integers past 2^53 lose precision), `result`, `future`, `stream`,
+`world`s and freestanding `func`s. `map<K, V>` is real WIT but the parser
+does not carry it yet.
+
+Named initial states go in a block of their own, because a default is a value
+and not a type:
+
+```html
+<script type="tutuca/init">
+{ "fresh": { "label": "Counter" },
+  "with-history": { "count": 3, "history": [1, 2, 3] } }
+</script>
+```
+
+Each is checked against the schema — a fixture setting a field the schema
+dropped fails the build — and becomes `CounterState::fresh()` plus a public
+`counter_init_args("fresh")` for a ModuleDef example. `--wit` additionally
+writes the schema back out as a self-contained `.wit` document for
+`wit-bindgen`, with the markers lowered.
 
 **Not in this port:**
 

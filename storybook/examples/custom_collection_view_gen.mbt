@@ -8,6 +8,99 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Playlist component.
+///
+/// Declared as `interface playlist` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PlaylistState {
+  songs : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PlaylistState::zero(), label: "Counter" }
+fn PlaylistState::zero() -> PlaylistState {
+  PlaylistState::{ songs: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn playlist_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PlaylistState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Playlist state declares — typed field names for tests and inspectors.
+pub(all) enum PlaylistField {
+  Songs
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PlaylistField::name(self : PlaylistField) -> String {
+  match self {
+    Songs => "songs"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PlaylistField::kind(self : PlaylistField) -> @component.FieldKind {
+  match self {
+    Songs => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let playlist_field_names : Array[String] = ["songs"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn playlist_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let playlist_schema_fingerprint : String = "cc5dc1cd9f4badee"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn playlist_encode(s : PlaylistState) -> Map[String, @tutuca.Value] {
+  { "songs": s.songs }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn playlist_decode(f : Map[String, @tutuca.Value]) -> PlaylistState? {
+  let v_songs = f.get("songs").unwrap_or(Null)
+  Some(PlaylistState::{ songs: v_songs })
+}
+
+///|
 /// The views declared in custom_collection.html.
 pub(all) enum PlaylistView {
   Main
@@ -96,29 +189,96 @@ pub fn[S] playlist_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let playlist_fields : Array[String] = ["songs"]
+/// The state of the Song component.
+///
+/// Declared as `interface song` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SongState {
+  title : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `playlist_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] playlist_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SongState::zero(), label: "Counter" }
+fn SongState::zero() -> SongState {
+  SongState::{ title: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn song_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SongState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Song state declares — typed field names for tests and inspectors.
+pub(all) enum SongField {
+  Title
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SongField::name(self : SongField) -> String {
+  match self {
+    Title => "title"
   }
-  playlist_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SongField::kind(self : SongField) -> @component.FieldKind {
+  match self {
+    Title => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let song_field_names : Array[String] = ["title"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn song_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let song_schema_fingerprint : String = "5d3ec9756ba331ba"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn song_encode(s : SongState) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn song_decode(f : Map[String, @tutuca.Value]) -> SongState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  Some(SongState::{ title: v_title })
 }
 
 ///|
@@ -141,29 +301,3 @@ pub let song_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let song_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let song_fields : Array[String] = ["title"]
-
-///|
-/// The fields in `song_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] song_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  song_fields.filter(f => !present.contains(f))
-}

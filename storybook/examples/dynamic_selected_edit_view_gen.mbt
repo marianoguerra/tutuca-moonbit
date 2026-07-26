@@ -8,6 +8,122 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the DseRoot component.
+///
+/// Declared as `interface dse-root` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct DseRootState {
+  items : Map[String, @tutuca.Value]
+  selectedKey : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..DseRootState::zero(), label: "Counter" }
+fn DseRootState::zero() -> DseRootState {
+  DseRootState::{ items: Map([]), selectedKey: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn dse_root_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(DseRootState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the DseRoot state declares — typed field names for tests and inspectors.
+pub(all) enum DseRootField {
+  Items
+  SelectedKey
+  Editor
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn DseRootField::name(self : DseRootField) -> String {
+  match self {
+    Items => "items"
+    SelectedKey => "selectedKey"
+    Editor => "editor"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn DseRootField::kind(self : DseRootField) -> @component.FieldKind {
+  match self {
+    Items => @component.FOMap
+    SelectedKey => @component.FText
+    Editor => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let dse_root_field_names : Array[String] = [
+  "items", "selectedKey", "editor",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn dse_root_specs() -> Map[String, @component.FieldSpec] {
+  { "items": @component.FieldSpec::omap() }
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let dse_root_schema_fingerprint : String = "1e0db39e41167c58"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn dse_root_encode(s : DseRootState) -> Map[String, @tutuca.Value] {
+  {
+    "items": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, x in s.items {
+        m[k] = x
+      }
+      (Map(m) : @tutuca.Value)
+    },
+    "selectedKey": Str(s.selectedKey),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn dse_root_decode(f : Map[String, @tutuca.Value]) -> DseRootState? {
+  guard f.get("items") is Some(Map(m_items)) else { return None }
+  let v_items : Map[String, @tutuca.Value] = Map([])
+  for k, x in m_items {
+    v_items[k] = x
+  }
+  guard f.get("selectedKey") is Some(Str(v_selectedKey)) else { return None }
+  Some(DseRootState::{ items: v_items, selectedKey: v_selectedKey })
+}
+
+///|
 /// The views declared in dynamic_selected_edit.html.
 pub(all) enum DseRootView {
   Main
@@ -76,29 +192,96 @@ pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let dse_root_fields : Array[String] = ["editor", "selectedKey"]
+/// The state of the DseEditor component.
+///
+/// Declared as `interface dse-editor` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct DseEditorState {
+  missing : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `dse_root_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] dse_root_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..DseEditorState::zero(), label: "Counter" }
+fn DseEditorState::zero() -> DseEditorState {
+  DseEditorState::{ missing: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn dse_editor_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(DseEditorState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the DseEditor state declares — typed field names for tests and inspectors.
+pub(all) enum DseEditorField {
+  Missing
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn DseEditorField::name(self : DseEditorField) -> String {
+  match self {
+    Missing => "missing"
   }
-  dse_root_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn DseEditorField::kind(self : DseEditorField) -> @component.FieldKind {
+  match self {
+    Missing => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let dse_editor_field_names : Array[String] = ["missing"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn dse_editor_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let dse_editor_schema_fingerprint : String = "6d6412be74f3d0b4"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn dse_editor_encode(s : DseEditorState) -> Map[String, @tutuca.Value] {
+  { "missing": s.missing }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn dse_editor_decode(f : Map[String, @tutuca.Value]) -> DseEditorState? {
+  let v_missing = f.get("missing").unwrap_or(Null)
+  Some(DseEditorState::{ missing: v_missing })
 }
 
 ///|
@@ -123,29 +306,96 @@ pub let dse_editor_common_style : String = ""
 pub let dse_editor_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let dse_editor_fields : Array[String] = []
+/// The state of the DseEntry component.
+///
+/// Declared as `interface dse-entry` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct DseEntryState {
+  name : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `dse_editor_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] dse_editor_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..DseEntryState::zero(), label: "Counter" }
+fn DseEntryState::zero() -> DseEntryState {
+  DseEntryState::{ name: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn dse_entry_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(DseEntryState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the DseEntry state declares — typed field names for tests and inspectors.
+pub(all) enum DseEntryField {
+  Name
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn DseEntryField::name(self : DseEntryField) -> String {
+  match self {
+    Name => "name"
   }
-  dse_editor_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn DseEntryField::kind(self : DseEntryField) -> @component.FieldKind {
+  match self {
+    Name => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let dse_entry_field_names : Array[String] = ["name"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn dse_entry_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let dse_entry_schema_fingerprint : String = "2184b70b210b0dff"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn dse_entry_encode(s : DseEntryState) -> Map[String, @tutuca.Value] {
+  { "name": Str(s.name) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn dse_entry_decode(f : Map[String, @tutuca.Value]) -> DseEntryState? {
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  Some(DseEntryState::{ name: v_name })
 }
 
 ///|
@@ -236,30 +486,4 @@ pub fn[S] dse_entry_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let dse_entry_fields : Array[String] = ["name"]
-
-///|
-/// The fields in `dse_entry_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] dse_entry_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  dse_entry_fields.filter(f => !present.contains(f))
 }

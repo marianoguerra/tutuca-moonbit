@@ -5,15 +5,15 @@
 // bindings, read with the `@` prefix.
 
 ///|
-priv struct ListIterationState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
-
-///|
 fn list_iteration_comp() -> @component.Component {
-  @component.component(views=list_iteration_views(), name="ListIteration", init=ListIterationState::{
-    items: [],
-  })
+  @component.component(
+    views=list_iteration_views(),
+    name="ListIteration",
+    init=ListIterationState::{ items: [] },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=list_iteration_encode,
+    decode=list_iteration_decode,
+  )
 }
 
 ///|

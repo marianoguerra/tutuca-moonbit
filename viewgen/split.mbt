@@ -17,6 +17,23 @@
 const MACRO_PREFIX = "macro:"
 
 ///|
+/// The `type=` that marks a `<script>` as the file's state schema.
+///
+/// A `<script>` and not a `<template>`: script content is RAW TEXT to an HTML
+/// parser, template content is markup — and the schema is full of `<` and
+/// `>`, so `list<s32>` inside a template would be read as an `<s32>` element.
+const STATE_TYPE = "tutuca/state"
+
+///|
+/// The `type=` that marks a `<script>` as the file's named initial states.
+///
+/// Separate from the schema because a default is a value, not a type: WIT
+/// has no defaults, and smuggling them into it through a comment convention
+/// would make the schema mean two things. Keeping them apart is also what
+/// lets several fixtures share one state type.
+const INIT_TYPE = "tutuca/init"
+
+///|
 /// A `<style>` element's span in the source, plus its extracted text.
 priv struct StyleRegion {
   start : Int // offset of '<'
@@ -145,10 +162,11 @@ fn styles_within(
 }
 
 ///|
-/// Read a `<style>` element's text. The bare tokenizer does not enter RAWTEXT
-/// on its own (the tree builder normally drives that), so we switch it
-/// ourselves, which keeps a `<` inside CSS from being read as a tag.
-fn read_style(tok : @html5.Tokenizer) -> (String, Int) {
+/// Read a raw-text element's content up to its end tag. The bare tokenizer
+/// does not enter RAWTEXT on its own (the tree builder normally drives that),
+/// so we switch it ourselves — which is what keeps a `<` inside CSS, or
+/// inside a `list<s32>`, from being read as a tag.
+fn read_raw(tok : @html5.Tokenizer, tag : String) -> (String, Int) {
   tok.switch_to_rawtext()
   let sb = StringBuilder::new()
   let mut end_ = tok.get_position().offset
@@ -158,7 +176,7 @@ fn read_style(tok : @html5.Tokenizer) -> (String, Int) {
     match tok.next_token() {
       Character(c) => sb.write_char(c)
       EndTag(name~) =>
-        if name == "style" {
+        if name == tag {
           end_ = tok.get_position().offset
           done = true
         }
@@ -173,6 +191,20 @@ fn read_style(tok : @html5.Tokenizer) -> (String, Int) {
 }
 
 ///|
+/// The 1-based line `offset` falls on, for a diagnostic that points at the
+/// file the author edits rather than at the block we sliced out of it.
+fn line_at(chars : Array[Char], offset : Int) -> Int {
+  let mut line = 1
+  let n = if offset < chars.length() { offset } else { chars.length() }
+  for i in 0..<n {
+    if chars[i] == '\n' {
+      line = line + 1
+    }
+  }
+  line
+}
+
+///|
 pub fn split_file(source : String) -> ViewFile raise GenError {
   let chars = source.to_array()
   let tok = @html5.Tokenizer::new(source)
@@ -184,6 +216,8 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   let mut open_attrs : Array[@html5.Attribute] = []
   let mut open_at = ""
   let mut stray : Char? = None
+  let mut state_src : (String, Int)? = None
+  let mut init_src : (String, Int)? = None
   let mut at_eof = false
   while !at_eof {
     let before = tok.get_position().offset
@@ -206,8 +240,24 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
               }
               depth = depth + 1
             }
+          // The state schema. Consumed here rather than left to the
+          // Character arm below, so its `<` and `>` never reach the
+          // tokenizer as markup and its text never counts as stray.
+          "script" if attr_of(attrs, "type") is Some(STATE_TYPE) => {
+            let content_at = after
+            let (text, _) = read_raw(tok, "script")
+            if state_src is Some(_) {
+              raise DuplicateStateBlock
+            }
+            state_src = Some((text, content_at))
+          }
+          "script" if attr_of(attrs, "type") is Some(INIT_TYPE) => {
+            let content_at = after
+            let (text, _) = read_raw(tok, "script")
+            init_src = Some((text, content_at))
+          }
           "style" => {
-            let (text, end_) = read_style(tok)
+            let (text, end_) = read_raw(tok, "style")
             // Inside a template: that view's style. At file level:
             // data-global picks the global style, otherwise the common one.
             let kind = if depth > 0 {
@@ -245,6 +295,8 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   }
   let common_style = collect_style(styles, SCommon)
   let global_style = collect_style(styles, SGlobal)
+  let state = parse_state_block(chars, state_src)
+  let init = parse_init_block(chars, init_src, state)
   // No templates at all: the file IS one unnamed component's main view.
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
@@ -264,6 +316,8 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
         },
       ],
       macros: [],
+      state,
+      init,
     }
   }
   if stray is Some(c) {
@@ -366,7 +420,109 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
       },
     })
   }
-  { components, macros }
+  { components, macros, state, init }
+}
+
+///|
+/// Parse the state block, mapping a schema error onto the line of the HTML
+/// file the author edits.
+///
+/// The block's own offsets are exact (statedef prepends nothing), so the
+/// file line is the block's start line plus the newlines before the error.
+fn parse_state_block(
+  chars : Array[Char],
+  src : (String, Int)?,
+) -> Array[@statedef.StateDef] raise GenError {
+  guard src is Some((text, at)) else { return [] }
+  @statedef.parse_state(text) catch {
+    e => {
+      let block = text.to_array()
+      // A syntax error knows its own offset. A semantic one does not — the
+      // AST carries no spans — so it names an identifier instead and we scan
+      // for it, which lands on the right line even though not the right
+      // column.
+      let within = match e {
+        WitSyntax(offset~, ..) => line_at(block, offset) - 1
+        _ =>
+          match e.locus() {
+            Some(name) =>
+              match find_word(block, name) {
+                Some(off) => line_at(block, off) - 1
+                None => 0
+              }
+            None => 0
+          }
+      }
+      raise BadStateBlock(line=line_at(chars, at) + within, message=e.message())
+    }
+  }
+}
+
+///|
+/// Parse the init block against the schema, mapping an error onto the line
+/// of the HTML file.
+fn parse_init_block(
+  chars : Array[Char],
+  src : (String, Int)?,
+  state : Array[@statedef.StateDef],
+) -> Array[(String, @statedef.InitState)] raise GenError {
+  guard src is Some((text, at)) else { return [] }
+  guard !state.is_empty() else {
+    raise BadInitBlock(
+      line=line_at(chars, at),
+      message="an init block needs a <script type=\"tutuca/state\"> schema to check against",
+    )
+  }
+  // One schema per component, so a fixture belongs to whichever component
+  // its fields fit. With a single component — the common case — that is the
+  // only one there is.
+  let out : Array[(String, @statedef.InitState)] = []
+  for def in state {
+    let states = @statedef.parse_init(text, def) catch {
+      e => raise BadInitBlock(line=line_at(chars, at), message=e.message())
+    }
+    for st in states {
+      out.push((def.component, st))
+    }
+  }
+  out
+}
+
+///|
+/// The offset of `name` in `chars` as a whole word, or None.
+///
+/// Whole-word so that looking for `n` does not stop at the `n` inside
+/// `count`; WIT identifiers are letters, digits, `-` and `_`.
+fn find_word(chars : Array[Char], name : String) -> Int? {
+  let needle = name.to_array()
+  if needle.is_empty() {
+    return None
+  }
+  let n = needle.length()
+  for i in 0..<(chars.length() - n + 1) {
+    let mut hit = true
+    for j in 0..<n {
+      if chars[i + j] != needle[j] {
+        hit = false
+        break
+      }
+    }
+    if hit &&
+      (i == 0 || !is_word_char(chars[i - 1])) &&
+      (i + n >= chars.length() || !is_word_char(chars[i + n])) {
+      return Some(i)
+    }
+  }
+  None
+}
+
+///|
+fn is_word_char(c : Char) -> Bool {
+  (c >= 'a' && c <= 'z') ||
+  (c >= 'A' && c <= 'Z') ||
+  (c >= '0' && c <= '9') ||
+  c == '-' ||
+  c == '_'
 }
 
 ///|

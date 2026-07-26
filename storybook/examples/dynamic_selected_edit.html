@@ -1,3 +1,23 @@
+<script type="tutuca/state">
+  interface dse-entry {
+    record state {
+    name: string,
+    }
+  }
+  interface dse-editor {
+    record state {
+    missing: any,
+    }
+  }
+  interface dse-root {
+    record state {
+    items: value-omap,
+    selected-key: string,
+    editor: component,
+    }
+  }
+</script>
+
 <template id="DseRoot">
   <div class="flex flex-col gap-3 p-3">
     <div class="alert">

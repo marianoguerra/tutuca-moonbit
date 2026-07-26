@@ -8,6 +8,134 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the AttributeBinding component.
+///
+/// Declared as `interface attribute-binding` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct AttributeBindingState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @tutuca.Value
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..AttributeBindingState::zero(), label: "Counter" }
+fn AttributeBindingState::zero() -> AttributeBindingState {
+  AttributeBindingState::{ str: "", num: 0, bool: false, notSet: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn attribute_binding_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(AttributeBindingState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the AttributeBinding state declares — typed field names for tests and inspectors.
+pub(all) enum AttributeBindingField {
+  Str
+  Num
+  Bool
+  NotSet
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn AttributeBindingField::name(self : AttributeBindingField) -> String {
+  match self {
+    Str => "str"
+    Num => "num"
+    Bool => "bool"
+    NotSet => "notSet"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn AttributeBindingField::kind(
+  self : AttributeBindingField,
+) -> @component.FieldKind {
+  match self {
+    Str => @component.FText
+    Num => @component.FInt
+    Bool => @component.FBool
+    NotSet => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let attribute_binding_field_names : Array[String] = [
+  "str", "num", "bool", "notSet",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn attribute_binding_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let attribute_binding_schema_fingerprint : String = "8ea3de0f9d1d7877"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn attribute_binding_encode(
+  s : AttributeBindingState,
+) -> Map[String, @tutuca.Value] {
+  {
+    "str": Str(s.str),
+    "num": Num(s.num.to_double()),
+    "bool": Bool(s.bool),
+    "notSet": s.notSet,
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn attribute_binding_decode(
+  f : Map[String, @tutuca.Value],
+) -> AttributeBindingState? {
+  guard f.get("str") is Some(Str(v_str)) else { return None }
+  guard f.get("num") is Some(Num(n_num)) else { return None }
+  let v_num = n_num.to_int()
+  guard f.get("bool") is Some(Bool(v_bool)) else { return None }
+  let v_notSet = f.get("notSet").unwrap_or(Null)
+  Some(AttributeBindingState::{
+    str: v_str,
+    num: v_num,
+    bool: v_bool,
+    notSet: v_notSet,
+  })
+}
+
+///|
 /// The views declared in state_and_updates.html.
 pub(all) enum AttributeBindingView {
   Main
@@ -100,29 +228,107 @@ pub fn[S] attribute_binding_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let attribute_binding_fields : Array[String] = ["bool", "num", "str"]
+/// The state of the ConditionalAttributes component.
+///
+/// Declared as `interface conditional-attributes` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ConditionalAttributesState {
+  isActive : Bool
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `attribute_binding_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] attribute_binding_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ConditionalAttributesState::zero(), label: "Counter" }
+fn ConditionalAttributesState::zero() -> ConditionalAttributesState {
+  ConditionalAttributesState::{ isActive: false }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn conditional_attributes_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(
+      ToJson::to_json(ConditionalAttributesState::zero()),
+    ) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the ConditionalAttributes state declares — typed field names for tests and inspectors.
+pub(all) enum ConditionalAttributesField {
+  IsActive
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ConditionalAttributesField::name(
+  self : ConditionalAttributesField,
+) -> String {
+  match self {
+    IsActive => "isActive"
   }
-  attribute_binding_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ConditionalAttributesField::kind(
+  self : ConditionalAttributesField,
+) -> @component.FieldKind {
+  match self {
+    IsActive => @component.FBool
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let conditional_attributes_field_names : Array[String] = ["isActive"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn conditional_attributes_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let conditional_attributes_schema_fingerprint : String = "910117f2f10fc51d"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn conditional_attributes_encode(
+  s : ConditionalAttributesState,
+) -> Map[String, @tutuca.Value] {
+  { "isActive": Bool(s.isActive) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn conditional_attributes_decode(
+  f : Map[String, @tutuca.Value],
+) -> ConditionalAttributesState? {
+  guard f.get("isActive") is Some(Bool(v_isActive)) else { return None }
+  Some(ConditionalAttributesState::{ isActive: v_isActive })
 }
 
 ///|
@@ -218,29 +424,109 @@ pub fn[S] conditional_attributes_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let conditional_attributes_fields : Array[String] = ["isActive"]
+/// The state of the EventModifiers component.
+///
+/// Declared as `interface event-modifiers` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct EventModifiersState {
+  query : String
+  lastSentSearch : @tutuca.Value
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `conditional_attributes_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] conditional_attributes_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..EventModifiersState::zero(), label: "Counter" }
+fn EventModifiersState::zero() -> EventModifiersState {
+  EventModifiersState::{ query: "", lastSentSearch: Null }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn event_modifiers_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(EventModifiersState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the EventModifiers state declares — typed field names for tests and inspectors.
+pub(all) enum EventModifiersField {
+  Query
+  LastSentSearch
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn EventModifiersField::name(self : EventModifiersField) -> String {
+  match self {
+    Query => "query"
+    LastSentSearch => "lastSentSearch"
   }
-  conditional_attributes_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn EventModifiersField::kind(
+  self : EventModifiersField,
+) -> @component.FieldKind {
+  match self {
+    Query => @component.FText
+    LastSentSearch => @component.FAny
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let event_modifiers_field_names : Array[String] = [
+  "query", "lastSentSearch",
+]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn event_modifiers_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let event_modifiers_schema_fingerprint : String = "d6a42b598e90df83"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn event_modifiers_encode(
+  s : EventModifiersState,
+) -> Map[String, @tutuca.Value] {
+  { "query": Str(s.query), "lastSentSearch": s.lastSentSearch }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn event_modifiers_decode(
+  f : Map[String, @tutuca.Value],
+) -> EventModifiersState? {
+  guard f.get("query") is Some(Str(v_query)) else { return None }
+  let v_lastSentSearch = f.get("lastSentSearch").unwrap_or(Null)
+  Some(EventModifiersState::{ query: v_query, lastSentSearch: v_lastSentSearch })
 }
 
 ///|
@@ -383,29 +669,102 @@ pub fn[S] event_modifiers_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let event_modifiers_fields : Array[String] = ["lastSentSearch", "query"]
+/// The state of the ShowHide component.
+///
+/// Declared as `interface show-hide` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ShowHideState {
+  isOpen : Bool
+  count : Int
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `event_modifiers_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] event_modifiers_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ShowHideState::zero(), label: "Counter" }
+fn ShowHideState::zero() -> ShowHideState {
+  ShowHideState::{ isOpen: false, count: 0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn show_hide_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ShowHideState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the ShowHide state declares — typed field names for tests and inspectors.
+pub(all) enum ShowHideField {
+  IsOpen
+  Count
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ShowHideField::name(self : ShowHideField) -> String {
+  match self {
+    IsOpen => "isOpen"
+    Count => "count"
   }
-  event_modifiers_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ShowHideField::kind(self : ShowHideField) -> @component.FieldKind {
+  match self {
+    IsOpen => @component.FBool
+    Count => @component.FInt
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let show_hide_field_names : Array[String] = ["isOpen", "count"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn show_hide_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let show_hide_schema_fingerprint : String = "3f79c6cc46a1f1b3"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn show_hide_encode(s : ShowHideState) -> Map[String, @tutuca.Value] {
+  { "isOpen": Bool(s.isOpen), "count": Num(s.count.to_double()) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn show_hide_decode(f : Map[String, @tutuca.Value]) -> ShowHideState? {
+  guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  Some(ShowHideState::{ isOpen: v_isOpen, count: v_count })
 }
 
 ///|
@@ -498,30 +857,4 @@ pub fn[S] show_hide_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let show_hide_fields : Array[String] = ["count", "isOpen"]
-
-///|
-/// The fields in `show_hide_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] show_hide_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  show_hide_fields.filter(f => !present.contains(f))
 }

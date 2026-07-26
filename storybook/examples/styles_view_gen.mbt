@@ -8,6 +8,51 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the StylesExample component.
+///
+/// Declared as `interface styles-example` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct StylesExampleState {} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..StylesExampleState::zero(), label: "Counter" }
+fn StylesExampleState::zero() -> StylesExampleState {
+  StylesExampleState::{  }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn styles_example_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(StylesExampleState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn styles_example_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let styles_example_schema_fingerprint : String = "5c435ae5582bab80"
+
+///|
 /// The views declared in styles.html.
 pub(all) enum StylesExampleView {
   Main
@@ -37,30 +82,79 @@ pub let styles_example_common_style : String =
 pub let styles_example_global_style : String = ".styles-example-global-class { color: green; }"
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let styles_example_fields : Array[String] = []
+/// The state of the StylesExampleRoot component.
+///
+/// Declared as `interface styles-example-root` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct StylesExampleRootState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `styles_example_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] styles_example_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  styles_example_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
+fn StylesExampleRootState::zero() -> StylesExampleRootState {
+  StylesExampleRootState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn styles_example_root_zero_args() -> Map[String, @tutuca.Value] {
+  match
+    @tutuca.Value::from_json(ToJson::to_json(StylesExampleRootState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the StylesExampleRoot state declares — typed field names for tests and inspectors.
+pub(all) enum StylesExampleRootField {
+  Value
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn StylesExampleRootField::name(self : StylesExampleRootField) -> String {
+  match self {
+    Value => "value"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn StylesExampleRootField::kind(
+  self : StylesExampleRootField,
+) -> @component.FieldKind {
+  match self {
+    Value => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let styles_example_root_field_names : Array[String] = ["value"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn styles_example_root_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let styles_example_root_schema_fingerprint : String = "5407ac5b07426d2a"
 
 ///|
 /// The views declared in styles.html.
@@ -82,29 +176,3 @@ pub let styles_example_root_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let styles_example_root_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let styles_example_root_fields : Array[String] = ["value"]
-
-///|
-/// The fields in `styles_example_root_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] styles_example_root_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  styles_example_root_fields.filter(f => !present.contains(f))
-}

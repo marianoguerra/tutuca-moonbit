@@ -8,6 +8,110 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the TableRow component.
+///
+/// Declared as `interface table-row` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct TableRowState {
+  name : String
+  qty : Int
+  price : Double
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..TableRowState::zero(), label: "Counter" }
+fn TableRowState::zero() -> TableRowState {
+  TableRowState::{ name: "", qty: 0, price: 0.0 }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn table_row_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(TableRowState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the TableRow state declares — typed field names for tests and inspectors.
+pub(all) enum TableRowField {
+  Name
+  Qty
+  Price
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TableRowField::name(self : TableRowField) -> String {
+  match self {
+    Name => "name"
+    Qty => "qty"
+    Price => "price"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn TableRowField::kind(self : TableRowField) -> @component.FieldKind {
+  match self {
+    Name => @component.FText
+    Qty => @component.FInt
+    Price => @component.FFloat
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let table_row_field_names : Array[String] = ["name", "qty", "price"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn table_row_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let table_row_schema_fingerprint : String = "78cde2ca3599de8c"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn table_row_encode(s : TableRowState) -> Map[String, @tutuca.Value] {
+  { "name": Str(s.name), "qty": Num(s.qty.to_double()), "price": Num(s.price) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn table_row_decode(f : Map[String, @tutuca.Value]) -> TableRowState? {
+  guard f.get("name") is Some(Str(v_name)) else { return None }
+  guard f.get("qty") is Some(Num(n_qty)) else { return None }
+  let v_qty = n_qty.to_int()
+  guard f.get("price") is Some(Num(v_price)) else { return None }
+  Some(TableRowState::{ name: v_name, qty: v_qty, price: v_price })
+}
+
+///|
 /// The views declared in pseudo_x.html.
 pub(all) enum TableRowView {
   Main
@@ -29,29 +133,100 @@ pub let table_row_common_style : String = ""
 pub let table_row_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let table_row_fields : Array[String] = ["name", "price", "qty"]
+/// The state of the ItemTable component.
+///
+/// Declared as `interface item-table` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ItemTableState {
+  rows : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `table_row_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] table_row_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ItemTableState::zero(), label: "Counter" }
+fn ItemTableState::zero() -> ItemTableState {
+  ItemTableState::{ rows: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn item_table_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ItemTableState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the ItemTable state declares — typed field names for tests and inspectors.
+pub(all) enum ItemTableField {
+  Rows
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ItemTableField::name(self : ItemTableField) -> String {
+  match self {
+    Rows => "rows"
   }
-  table_row_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ItemTableField::kind(self : ItemTableField) -> @component.FieldKind {
+  match self {
+    Rows => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let item_table_field_names : Array[String] = ["rows"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn item_table_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let item_table_schema_fingerprint : String = "413b1cfe818d4bc7"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn item_table_encode(s : ItemTableState) -> Map[String, @tutuca.Value] {
+  { "rows": (List(s.rows.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn item_table_decode(f : Map[String, @tutuca.Value]) -> ItemTableState? {
+  guard f.get("rows") is Some(List(l_rows)) else { return None }
+  let v_rows : Array[@tutuca.Value] = []
+  for x in l_rows {
+    v_rows.push(x)
+  }
+  Some(ItemTableState::{ rows: v_rows })
 }
 
 ///|
@@ -76,29 +251,103 @@ pub let item_table_common_style : String = ""
 pub let item_table_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let item_table_fields : Array[String] = ["rows"]
+/// The state of the SelectOption component.
+///
+/// Declared as `interface select-option` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct SelectOptionState {
+  value : String
+  label : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `item_table_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] item_table_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SelectOptionState::zero(), label: "Counter" }
+fn SelectOptionState::zero() -> SelectOptionState {
+  SelectOptionState::{ value: "", label: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn select_option_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(SelectOptionState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the SelectOption state declares — typed field names for tests and inspectors.
+pub(all) enum SelectOptionField {
+  Value
+  Label
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SelectOptionField::name(self : SelectOptionField) -> String {
+  match self {
+    Value => "value"
+    Label => "label"
   }
-  item_table_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn SelectOptionField::kind(
+  self : SelectOptionField,
+) -> @component.FieldKind {
+  match self {
+    Value => @component.FText
+    Label => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let select_option_field_names : Array[String] = ["value", "label"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn select_option_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let select_option_schema_fingerprint : String = "07ec6c7cf74c56fc"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn select_option_encode(s : SelectOptionState) -> Map[String, @tutuca.Value] {
+  { "value": Str(s.value), "label": Str(s.label) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn select_option_decode(f : Map[String, @tutuca.Value]) -> SelectOptionState? {
+  guard f.get("value") is Some(Str(v_value)) else { return None }
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(SelectOptionState::{ value: v_value, label: v_label })
 }
 
 ///|
@@ -123,29 +372,108 @@ pub let select_option_common_style : String = ""
 pub let select_option_global_style : String = ""
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let select_option_fields : Array[String] = ["label", "value"]
+/// The state of the ItemSelect component.
+///
+/// Declared as `interface item-select` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ItemSelectState {
+  options : Array[@tutuca.Value]
+  current : String
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `select_option_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] select_option_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ItemSelectState::zero(), label: "Counter" }
+fn ItemSelectState::zero() -> ItemSelectState {
+  ItemSelectState::{ options: [], current: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn item_select_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ItemSelectState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the ItemSelect state declares — typed field names for tests and inspectors.
+pub(all) enum ItemSelectField {
+  Options
+  Current
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ItemSelectField::name(self : ItemSelectField) -> String {
+  match self {
+    Options => "options"
+    Current => "current"
   }
-  select_option_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ItemSelectField::kind(self : ItemSelectField) -> @component.FieldKind {
+  match self {
+    Options => @component.FList
+    Current => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let item_select_field_names : Array[String] = ["options", "current"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn item_select_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let item_select_schema_fingerprint : String = "c0c9027a3ae072e5"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn item_select_encode(s : ItemSelectState) -> Map[String, @tutuca.Value] {
+  {
+    "options": (List(s.options.map(x => x)) : @tutuca.Value),
+    "current": Str(s.current),
+  }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn item_select_decode(f : Map[String, @tutuca.Value]) -> ItemSelectState? {
+  guard f.get("options") is Some(List(l_options)) else { return None }
+  let v_options : Array[@tutuca.Value] = []
+  for x in l_options {
+    v_options.push(x)
+  }
+  guard f.get("current") is Some(Str(v_current)) else { return None }
+  Some(ItemSelectState::{ options: v_options, current: v_current })
 }
 
 ///|
@@ -237,30 +565,79 @@ pub fn[S] item_select_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let item_select_fields : Array[String] = ["current", "options"]
+/// The state of the PseudoXDemo component.
+///
+/// Declared as `interface pseudo-x-demo` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct PseudoXDemoState {} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `item_select_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] item_select_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  item_select_fields.filter(f => !present.contains(f))
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
+fn PseudoXDemoState::zero() -> PseudoXDemoState {
+  PseudoXDemoState::{  }
 }
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn pseudo_x_demo_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(PseudoXDemoState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the PseudoXDemo state declares — typed field names for tests and inspectors.
+pub(all) enum PseudoXDemoField {
+  Table
+  Select
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PseudoXDemoField::name(self : PseudoXDemoField) -> String {
+  match self {
+    Table => "table"
+    Select => "select"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn PseudoXDemoField::kind(self : PseudoXDemoField) -> @component.FieldKind {
+  match self {
+    Table => @component.FComp(comp="", args=Map([]))
+    Select => @component.FComp(comp="", args=Map([]))
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let pseudo_x_demo_field_names : Array[String] = ["table", "select"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn pseudo_x_demo_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let pseudo_x_demo_schema_fingerprint : String = "e785760a33d1bedc"
 
 ///|
 /// The views declared in pseudo_x.html.
@@ -282,29 +659,3 @@ pub let pseudo_x_demo_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let pseudo_x_demo_global_style : String = ""
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let pseudo_x_demo_fields : Array[String] = ["select", "table"]
-
-///|
-/// The fields in `pseudo_x_demo_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] pseudo_x_demo_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  pseudo_x_demo_fields.filter(f => !present.contains(f))
-}

@@ -54,18 +54,6 @@ fn format_epoch_ms(ms : Double) -> String {
 }
 
 ///|
-priv struct FilePickerState {
-  name : String
-  size : Double
-  type_ : String
-  lastModified : Double
-  hasFile : Bool
-} derive (
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
-
-///|
 /// Copy the picked file's metadata Map into the flattened fields; anything
 /// that is not a metadata Map clears the selection (JS withFile(undefined)).
 fn with_file(s : FilePickerState, file : @tutuca.Value) -> FilePickerState {
@@ -115,6 +103,9 @@ fn file_picker_comp() -> @component.Component {
         Str(format_epoch_ms(s.lastModified))
       },
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=file_picker_encode,
+    decode=file_picker_decode,
   )
 }
 

@@ -1,0 +1,23 @@
+// The state schema: a small subset of WIT describing a component's state
+// record and its message buckets.
+//
+// Pure and target-agnostic like viewgen/ and cli/: source text in -> a typed
+// StateDef out, never touching the filesystem. viewgen/ threads the result
+// through view generation; cmd/main does the I/O.
+//
+// Names resolve against the WIT *AST* (@wit.parse), not the resolver
+// (@wit.resolve): tutuca's marker types (`any`, `text-set`, a sibling
+// component) have no WIT declaration to resolve against, and doing the
+// lookup here keeps the user's byte offsets exact — nothing is prepended to
+// their source, so a parse error still points where they wrote it.
+import {
+  "mizchi/wit",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/json",
+}
+
+// The emitted WIT is checked by feeding it BACK through the parser: a
+// document wit-bindgen would reject is worse than none.
+import {
+  "mizchi/wit",
+} for "test"

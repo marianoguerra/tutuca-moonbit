@@ -8,6 +8,104 @@
 //   "moonbitlang/core/debug"
 
 ///|
+/// The state of the Item component.
+///
+/// Declared as `interface item` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ItemState {
+  completed : Bool
+  text : String
+} derive(ToJson, FromJson)
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ItemState::zero(), label: "Counter" }
+fn ItemState::zero() -> ItemState {
+  ItemState::{ completed: false, text: "" }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn item_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ItemState::zero())) {
+    Map(m) => m
+    _ => Map([])
+  }
+}
+
+///|
+/// Every field the Item state declares — typed field names for tests and inspectors.
+pub(all) enum ItemField {
+  Completed
+  Text
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ItemField::name(self : ItemField) -> String {
+  match self {
+    Completed => "completed"
+    Text => "text"
+  }
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ItemField::kind(self : ItemField) -> @component.FieldKind {
+  match self {
+    Completed => @component.FBool
+    Text => @component.FText
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let item_field_names : Array[String] = ["completed", "text"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn item_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let item_schema_fingerprint : String = "1e66ddad592bcfff"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn item_encode(s : ItemState) -> Map[String, @tutuca.Value] {
+  { "completed": Bool(s.completed), "text": Str(s.text) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn item_decode(f : Map[String, @tutuca.Value]) -> ItemState? {
+  guard f.get("completed") is Some(Bool(v_completed)) else { return None }
+  guard f.get("text") is Some(Str(v_text)) else { return None }
+  Some(ItemState::{ completed: v_completed, text: v_text })
+}
+
+///|
 /// The views declared in todo.html.
 pub(all) enum ItemView {
   Main
@@ -98,29 +196,100 @@ pub fn[S] item_swap(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let item_fields : Array[String] = ["completed", "text"]
+/// The state of the Items component.
+///
+/// Declared as `interface items` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+priv struct ItemsState {
+  items : Array[@tutuca.Value]
+} derive(ToJson, FromJson)
 
 ///|
-/// The fields in `item_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] item_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..ItemsState::zero(), label: "Counter" }
+fn ItemsState::zero() -> ItemsState {
+  ItemsState::{ items: [] }
+}
+
+///|
+/// The zero state as component arguments — the default a ModuleDef
+/// example takes when it sets nothing of its own.
+pub fn items_zero_args() -> Map[String, @tutuca.Value] {
+  match @tutuca.Value::from_json(ToJson::to_json(ItemsState::zero())) {
+    Map(m) => m
+    _ => Map([])
   }
-  for k in extra {
-    present[k] = true
+}
+
+///|
+/// Every field the Items state declares — typed field names for tests and inspectors.
+pub(all) enum ItemsField {
+  Items
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ItemsField::name(self : ItemsField) -> String {
+  match self {
+    Items => "items"
   }
-  item_fields.filter(f => !present.contains(f))
+}
+
+///|
+/// The runtime kind this field carries. Declared, not inferred: the old
+/// `FieldSpec::of_default` had to guess FInt from whether the seed value
+/// happened to be integral.
+pub fn ItemsField::kind(self : ItemsField) -> @component.FieldKind {
+  match self {
+    Items => @component.FList
+  }
+}
+
+///|
+/// Every field, in declaration order.
+pub let items_field_names : Array[String] = ["items"]
+
+///|
+/// The `specs~` map for this component, derived from the schema.
+///
+/// Sets, ordered maps and child slots all encode to a plain Map or Null,
+/// so the runtime cannot tell them apart from the init value alone. Every
+/// other field's kind it infers correctly and is left to it.
+pub fn items_specs() -> Map[String, @component.FieldSpec] {
+  Map([])
+}
+
+///|
+/// The structural fingerprint of this component's schema. Changes when
+/// the SHAPE changes — a renamed or retyped field, a new message case —
+/// and not when the block is merely reformatted.
+pub let items_schema_fingerprint : String = "a499a33b72d011a0"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn items_encode(s : ItemsState) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn items_decode(f : Map[String, @tutuca.Value]) -> ItemsState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[@tutuca.Value] = []
+  for x in l_items {
+    v_items.push(x)
+  }
+  Some(ItemsState::{ items: v_items })
 }
 
 ///|
@@ -256,30 +425,4 @@ pub fn[S] items_swap(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let items_fields : Array[String] = ["items"]
-
-///|
-/// The fields in `items_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] items_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  items_fields.filter(f => !present.contains(f))
 }

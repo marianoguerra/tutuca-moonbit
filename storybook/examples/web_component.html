@@ -1,3 +1,12 @@
+<script type="tutuca/state">
+  interface emoji-picker {
+    record state {
+    current: any,
+    is-picker-visible: bool,
+    }
+  }
+</script>
+
 <template>
   <section @on.emoji-click="onEmojiClick value" class="join join-vertical gap-3 items-center">
     <p class="hint" @hide="truthy? .current">

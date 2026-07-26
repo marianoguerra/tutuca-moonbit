@@ -7,23 +7,16 @@
 // `@on.click="onAddItem"`. Same result, one less thing in the value language.
 
 ///|
-priv struct TodoItemState {
-  completed : Bool
-  text : String
-} derive(ToJson, FromJson)
-
-///|
 fn todo_item_comp() -> @component.Component {
-  @component.component(views=item_views(), name="Item", init=TodoItemState::{
-    completed: false,
-    text: "do the thing",
-  })
+  @component.component(
+    views=item_views(),
+    name="Item",
+    init=ItemState::{ completed: false, text: "do the thing" },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=item_encode,
+    decode=item_decode,
+  )
 }
-
-///|
-priv struct TodoItemsState {
-  items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
 
 ///|
 /// `<x render-it>` inside an `@each` renders whatever component instance the
@@ -33,13 +26,16 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
   @component.component(
     views=items_views(),
     name="Items",
-    init=TodoItemsState::{ items: [] },
-    update=(s : TodoItemsState, msg, _ctx) => {
+    init=ItemsState::{ items: [] },
+    update=(s : ItemsState, msg, _ctx) => {
       match ItemsMsg::from_dispatch(msg) {
         Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=items_encode,
+    decode=items_decode,
   )
 }
 

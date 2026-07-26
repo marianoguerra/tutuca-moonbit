@@ -6,29 +6,27 @@
 // handler writes a setter by hand.
 
 ///|
-priv struct ExampleCounterState {
-  count : Int
-} derive(ToJson, FromJson)
-
-///|
 fn counter_comp() -> @component.Component {
   @component.component(
     views=counter_views(),
     name="Counter",
-    init=ExampleCounterState::{ count: 0 },
+    init=CounterState::{ count: 0 },
     // views call mutate handlers with a `$` prefix: @on.click="$inc"
     mutate=counter_mutate(m => {
       match m {
-        Inc => Some((s : ExampleCounterState, _args) => { count: s.count + 1 })
+        Inc => Some((s : CounterState, _args) => { count: s.count + 1 })
       }
     }),
-    update=(s : ExampleCounterState, msg, _ctx) => {
+    update=(s : CounterState, msg, _ctx) => {
       match CounterMsg::from_dispatch(msg) {
         // views call input handlers by bare name: @on.click="dec"
         Some(Dec) => Some({ count: s.count - 1 })
         Some(Unknown(_, _)) | None => None
       }
     },
+    // The schema-generated direct codec, in place of the JSON bridge.
+    encode=counter_encode,
+    decode=counter_decode,
   )
 }
 
