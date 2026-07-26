@@ -5,6 +5,10 @@
       name: string,
       label: string,
     }
+    // Asked by the picker's `@when` filter, which holds entries and knows
+    // nothing of their fields. No view of ComponentEntry calls it, so this
+    // declaration is what puts it in ComponentEntryMethod.
+    contains-text: func(q: string) -> bool;
   }
   interface component-picker {
     record state {

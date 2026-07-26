@@ -102,34 +102,18 @@ fn swatch_picker_component(
   common_style? : String = swatch_picker_common_style,
   global_style? : String = swatch_picker_global_style,
   update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> SwatchPickerState?,
-  compute? : Map[
-    String,
-    (SwatchPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (SwatchPickerState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (SwatchPickerState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      SwatchPickerState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (SwatchPickerState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (SwatchPickerState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (SwatchPickerInput) -> ((
+    SwatchPickerState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  enrich? : (SwatchPickerEnrich) -> ((
+    SwatchPickerState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -141,12 +125,14 @@ fn swatch_picker_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => swatch_picker_swap(f)
+      None => Map([])
+    },
+    enrich=match enrich {
+      Some(f) => swatch_picker_enrich(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -314,34 +300,12 @@ fn quadratic_component(
   common_style? : String = quadratic_common_style,
   global_style? : String = quadratic_global_style,
   update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> QuadraticState?,
-  compute? : Map[
-    String,
-    (QuadraticState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (QuadraticState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (QuadraticState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      QuadraticState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (QuadraticState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (QuadraticState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (QuadraticMethod) -> ((QuadraticState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (QuadraticInput) -> ((
+    QuadraticState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -353,12 +317,14 @@ fn quadratic_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => quadratic_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => quadratic_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

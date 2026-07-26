@@ -82,31 +82,7 @@ fn item_component(
   common_style? : String = item_common_style,
   global_style? : String = item_global_style,
   update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> ItemState?,
-  compute? : Map[String, (ItemState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (ItemState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ItemState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ItemState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (ItemState) -> Map[String, @tutuca.Value]] = Map([]),
-  loop_with? : Map[
-    String,
-    (ItemState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ItemInput) -> ((ItemState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -118,12 +94,10 @@ fn item_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => item_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -207,32 +181,7 @@ fn items_component(
   common_style? : String = items_common_style,
   global_style? : String = items_global_style,
   update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> ItemsState?,
-  compute? : Map[String, (ItemsState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (ItemsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ItemsState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ItemsState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (ItemsState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (ItemsState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ItemsInput) -> ((ItemsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -244,12 +193,10 @@ fn items_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => items_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

@@ -58,10 +58,9 @@ fn cx_tree_item_comp() -> @component.Component {
       isOpen: true,
       items: [],
     },
-    compute={
-      "areChildsVisible": (s, _args) => Bool(
-        s.isOpen && s.items.length() > 0,
-      ),
+    compute=m => match m {
+      AreChildsVisible =>
+        Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
     },
     // a raw `match msg`: Bubble is raised by component code, so the views
     // cannot declare it and TreeItemMsg cannot type it

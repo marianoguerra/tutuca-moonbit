@@ -132,14 +132,17 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 fn show_hide_comp() -> @component.Component {
   show_hide_component(
     init={ isOpen: false, count: 0 },
-    compute={
-      "label": (s, _args) => {
-        if s.isOpen {
-          Str("Hide details")
-        } else {
-          Str("Show details")
-        }
-      },
+    compute=m => {
+      match m {
+        Label =>
+          Some((s, _args) => {
+            if s.isOpen {
+              Str("Hide details")
+            } else {
+              Str("Show details")
+            }
+          })
+      }
     },
     update=(s, msg, _ctx) => {
       match ShowHideMsg::from_dispatch(msg) {

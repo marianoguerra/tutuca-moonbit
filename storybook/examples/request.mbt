@@ -58,8 +58,11 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
         _ => None
       }
     },
-    when={
-      "filterItem": (s, _k, item, _iter) => contains_text_filter(s.query, item),
+    when=w => {
+      match w {
+        FilterItem =>
+          Some((s, _k, item, _iter) => contains_text_filter(s.query, item))
+      }
     },
   )
 }

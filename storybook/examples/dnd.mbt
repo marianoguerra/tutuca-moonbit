@@ -40,13 +40,16 @@ fn move_index_to_index(
 fn dnd_comp() -> @component.Component {
   dn_d_example_component(
     init={ items: [], query: "" },
-    when={
-      "filterItem": (s, _key, value, _iter) => {
-        match value {
-          Str(item) => item.contains(s.query)
-          _ => true
-        }
-      },
+    when=w => {
+      match w {
+        FilterItem =>
+          Some((s, _key, value, _iter) => {
+            match value {
+              Str(item) => item.contains(s.query)
+              _ => true
+            }
+          })
+      }
     },
     update=(s, msg, _ctx) => {
       match DnDExampleMsg::from_dispatch(msg) {

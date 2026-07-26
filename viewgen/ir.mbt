@@ -38,8 +38,18 @@ let q : String = "@anode."
 pub fn ir_supported(file : ViewFile) -> Bool {
   let scope = FileMacros::of(file.macros)
   for comp in file.components {
+    // The surface walk is part of the answer, not just the tree: the wrapper's
+    // handler buckets are the names the views use, so a file whose surface
+    // cannot be extracted cannot be emitted either. Walking the trees this
+    // loop already compiled keeps that free — it is the same work
+    // `emit_ir_component` does, in the same order.
+    let c = Collect::new()
+    let inputs : Map[String, InputSig] = Map([])
     for view in comp.views {
-      try compiled_tree(view, scope) |> ignore catch {
+      try {
+        let (root, events) = compiled_tree(view, scope)
+        walk_view(view.name, root, events, c, inputs)
+      } catch {
         _ => return false
       }
     }
@@ -504,8 +514,15 @@ fn emit_ir_component(
 ) -> Unit raise GenError {
   let t = type_prefix(name)
   let v = value_prefix(name)
+  // The wrapper's handler buckets are the ones the views name, so the surface
+  // is needed here — collected from the trees this loop compiles rather than
+  // by parsing them again, which is the third parse per view that
+  // benchmarks/OPTIMIZATIONS.md #1 removed.
+  let c = Collect::new()
+  let inputs : Map[String, InputSig] = Map([])
   for view in views.views {
     let (root, events) = compiled_tree(view, scope)
+    walk_view(view.name, root, events, c, inputs)
     let fname = "\{v}_\{value_prefix(view.name)}_view_ir"
     let style = if view.style == "" {
       ""
@@ -545,7 +562,7 @@ fn emit_ir_component(
   // together. A component with no schema has no state type to make its
   // parameters out of, and keeps calling `component()` directly.
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, out)
+    emit_wrapper(name, t, v, def, finish_surface(c, inputs), out)
   }
 }
 

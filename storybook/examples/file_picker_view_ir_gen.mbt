@@ -108,34 +108,12 @@ fn file_picker_component(
   common_style? : String = file_picker_common_style,
   global_style? : String = file_picker_global_style,
   update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> FilePickerState?,
-  compute? : Map[
-    String,
-    (FilePickerState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (FilePickerState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (FilePickerState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      FilePickerState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (FilePickerState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (FilePickerState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (FilePickerMethod) -> ((FilePickerState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (FilePickerInput) -> ((
+    FilePickerState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -147,12 +125,14 @@ fn file_picker_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => file_picker_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => file_picker_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

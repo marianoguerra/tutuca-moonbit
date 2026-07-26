@@ -403,7 +403,7 @@ fn emit_schema(
     "    receives: \{strs(def.receive.map(m => m.name))},\n" +
     "    bubbles: \{strs(def.bubble.map(m => m.name))},\n" +
     "    responses: \{strs(def.response.map(m => m.name))},\n" +
-    "    methods: \{strs(surface.methods)},\n" +
+    "    methods: \{strs(declared_methods(surface, Some(def)))},\n" +
     "    ids: \{strs(surface.ids)},\n" +
     "    view_names: \{strs(views.views.map(vw => vw.name))},\n" +
     "    init_names: \{strs(inits.map(st => st.name))},\n" +

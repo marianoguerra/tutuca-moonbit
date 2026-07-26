@@ -22,28 +22,25 @@ let palette : Array[@tutuca.Value] = [
 /// Clicking a `<circle>` sets `color`; the preview `<rect>` binds `:fill` to it,
 /// and the enricher marks the selected swatch with a ring.
 fn swatch_picker_comp() -> @component.Component {
-  swatch_picker_component(init={ color: "#ef4444", palette }, enrich={
-    "swatch": (
+  swatch_picker_component(init={ color: "#ef4444", palette }, enrich=e => {
+    match e {
       // lay each swatch out along a row and ring the selected one; the typed
       // state's current `color` field decides which ring shows
-      s : SwatchPickerState,
-      binds,
-      key,
-      value,
-      _iter,
-    ) => {
-      match key {
-        Num(k) => {
-          binds["cx"] = Num(32.0 + k * 46.0)
-          binds["ring"] = if value == Str(s.color) {
-            Str("#0f172a")
-          } else {
-            Str("transparent")
+      Swatch =>
+        Some((s, binds, key, value, _iter) => {
+          match key {
+            Num(k) => {
+              binds["cx"] = Num(32.0 + k * 46.0)
+              binds["ring"] = if value == Str(s.color) {
+                Str("#0f172a")
+              } else {
+                Str("transparent")
+              }
+            }
+            _ => ()
           }
-        }
-        _ => ()
-      }
-    },
+        })
+    }
   })
 }
 
@@ -68,19 +65,22 @@ pub fn svg_interactive_module() -> @component.ModuleDef {
 /// `@text` on an `<mn>` makes the displayed number reactive; the discriminant
 /// classifies the equation as the coefficients change.
 fn quadratic_comp() -> @component.Component {
-  quadratic_component(init={ a: 1, b: -3, c: 2 }, compute={
-    // b² − 4ac decides how many real roots the equation has
-    "discriminant": (s, _args) => Num(discriminant_of(s).to_double()),
-    "classify": (s, _args) => {
-      let d = discriminant_of(s)
-      if d > 0 {
-        Str("two distinct real roots")
-      } else if d == 0 {
-        Str("one repeated real root")
-      } else {
-        Str("no real roots")
-      }
-    },
+  quadratic_component(init={ a: 1, b: -3, c: 2 }, compute=m => {
+    match m {
+      // b² − 4ac decides how many real roots the equation has
+      Discriminant => Some((s, _args) => Num(discriminant_of(s).to_double()))
+      Classify =>
+        Some((s, _args) => {
+          let d = discriminant_of(s)
+          if d > 0 {
+            Str("two distinct real roots")
+          } else if d == 0 {
+            Str("one repeated real root")
+          } else {
+            Str("no real roots")
+          }
+        })
+    }
   })
 }
 

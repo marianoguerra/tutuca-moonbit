@@ -96,34 +96,11 @@ fn emoji_picker_component(
   common_style? : String = emoji_picker_common_style,
   global_style? : String = emoji_picker_global_style,
   update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> EmojiPickerState?,
-  compute? : Map[
-    String,
-    (EmojiPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (EmojiPickerState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (EmojiPickerState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      EmojiPickerState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (EmojiPickerState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (EmojiPickerState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (EmojiPickerInput) -> ((
+    EmojiPickerState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -135,12 +112,10 @@ fn emoji_picker_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => emoji_picker_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

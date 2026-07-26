@@ -184,17 +184,17 @@ fn alt_url_comp() -> @component.Component {
 fn ps_entry_comp() -> @component.Component {
   p_s_entry_component(
     name="PSEntry",
-    enrich={
+    enrich=e => match e {
       // JS `enrichCategoryBadge`: entry category badges always use the
       // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_s, binds, _key, value, _iter) => match
-        value {
-        Str(cat) =>
-          binds["badgeClass"] = Str(
-            "badge badge-sm \{ps_category_color(cat, true)} cat",
-          )
-        _ => ()
-      },
+      EnrichCategoryBadge =>
+        Some((_s, binds, _key, value, _iter) => match value {
+          Str(cat) =>
+            binds["badgeClass"] = Str(
+              "badge badge-sm \{ps_category_color(cat, true)} cat",
+            )
+          _ => ()
+        })
     },
     init=PSEntryState::{
       title: "?",
@@ -208,21 +208,23 @@ fn ps_entry_comp() -> @component.Component {
       altUrls: [],
       categories: [],
     },
-    compute={
-      "langFlag": (s, _args) => if s.lang == "es" {
-        Str("🇪🇸")
-      } else {
-        Str("🇬🇧")
-      },
-      "isSpanish": (s, _args) => Bool(s.lang == "es"),
-      "yearDisplay": (s, _args) => match s.startYear {
-        Num(start) =>
-          match s.endYear {
-            Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
-            _ => Str("\{start.to_int()}")
-          }
-        _ => Str("")
-      },
+    compute=m => match m {
+      LangFlag =>
+        Some((s, _args) => if s.lang == "es" {
+          Str("🇪🇸")
+        } else {
+          Str("🇬🇧")
+        })
+      IsSpanish => Some((s, _args) => Bool(s.lang == "es"))
+      YearDisplay =>
+        Some((s, _args) => match s.startYear {
+          Num(start) =>
+            match s.endYear {
+              Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
+              _ => Str("\{start.to_int()}")
+            }
+          _ => Str("")
+        })
     },
   )
 }
@@ -294,19 +296,18 @@ fn root_comp() -> @component.Component {
         sortAsc: false,
       },
     compute={
-        "hasActiveFilters": (s : RootState, _args) => Bool(
-          s.selectedCategories.length() != s.allCategories.length() ||
-          s.selectedRoles.length() != s.allRoles.length(),
-        ),
-      },
-    when={ "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(
-        s, e,
-      ) },
+      "hasActiveFilters": (s : RootState, _args) => Bool(
+        s.selectedCategories.length() != s.allCategories.length() ||
+        s.selectedRoles.length() != s.allRoles.length(),
+      ),
+    },
+    when={
+      "filterEntry": (s : RootState, _key, e, _iter) => ps_filter_entry(s, e),
+    },
     enrich={
-        // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
-        // the trailing `cat-btn on|off` tokens are the MB test hooks.
-        "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => match
-          value {
+      // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
+      // the trailing `cat-btn on|off` tokens are the MB test hooks.
+      "enrichCategoryBindings": (s : RootState, binds, _key, value, _iter) => match value {
           Str(cat) => {
             let selected = s.selectedCategories.contains(cat)
             binds["isSelected"] = Bool(selected)
@@ -317,11 +318,10 @@ fn root_comp() -> @component.Component {
           }
           _ => ()
         },
-        // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
-        // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
-        // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-        "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => match
-          value {
+      // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
+      // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
+      // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
+      "enrichRoleBindings": (s : RootState, binds, _key, value, _iter) => match value {
           Str(role) => {
             let selected = s.selectedRoles.contains(role)
             binds["btnClass"] = Str(
@@ -334,7 +334,7 @@ fn root_comp() -> @component.Component {
           }
           _ => ()
         },
-      },
+    },
     update=(s : RootState, msg, ctx) => match msg {
         Input("clearFilters", _) =>
           Some({

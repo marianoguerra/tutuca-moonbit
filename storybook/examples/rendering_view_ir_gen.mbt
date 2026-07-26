@@ -103,32 +103,18 @@ fn push_view_component(
   common_style? : String = push_view_common_style,
   global_style? : String = push_view_global_style,
   update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> PushViewState?,
-  compute? : Map[String, (PushViewState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (PushViewState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (PushViewState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      PushViewState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (PushViewState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (PushViewState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (PushViewMethod) -> ((PushViewState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (PushViewInput) -> ((
+    PushViewState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (PushViewWhen) -> ((
+    PushViewState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -140,12 +126,18 @@ fn push_view_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => push_view_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => push_view_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => push_view_when(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -232,36 +224,15 @@ fn seq_item_access_component(
   common_style? : String = seq_item_access_common_style,
   global_style? : String = seq_item_access_global_style,
   update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> SeqItemAccessState?,
-  compute? : Map[
-    String,
-    (SeqItemAccessState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (SeqItemAccessState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (SeqItemAccessState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      SeqItemAccessState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (SeqItemAccessState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (SeqItemAccessState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (SeqItemAccessMethod) -> ((
+    SeqItemAccessState,
+    Array[@tutuca.Value],
+  ) -> @tutuca.Value)?,
+  swap? : (SeqItemAccessInput) -> ((
+    SeqItemAccessState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -273,12 +244,14 @@ fn seq_item_access_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => seq_item_access_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => seq_item_access_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -365,34 +338,17 @@ fn pagination_component(
   common_style? : String = pagination_common_style,
   global_style? : String = pagination_global_style,
   update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> PaginationState?,
-  compute? : Map[
-    String,
-    (PaginationState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (PaginationState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (PaginationState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      PaginationState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (PaginationState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (PaginationState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (PaginationMethod) -> ((PaginationState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (PaginationInput) -> ((
+    PaginationState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  loop_with? : (PaginationLoopWith) -> ((
+    PaginationState,
+    @tutuca.Value,
+    @component.LoopCtx,
+  ) -> @component.LoopWith)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -404,12 +360,18 @@ fn pagination_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => pagination_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => pagination_swap(f)
+      None => Map([])
+    },
+    loop_with=match loop_with {
+      Some(f) => pagination_loop_with(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

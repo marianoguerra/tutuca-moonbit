@@ -159,6 +159,26 @@ pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] playlist_swap(
+  f : (PlaylistInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([RemoveSong] : Array[PlaylistInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field

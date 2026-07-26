@@ -54,15 +54,12 @@ fn fp_match_count(s : PeopleState) -> Int {
 }
 
 ///|
-/// The buckets every strategy shares — the count as a `compute` entry (so
-/// views could read it), the search/prev/next Input arms as one shared
+/// The buckets every strategy shares: the search/prev/next Input arms as one
 /// `update` fn, and the `onlyMatches` @when predicate.
-fn fp_base_compute() -> Map[
-  String,
-  (PeopleState, Array[@tutuca.Value]) -> @tutuca.Value,
-] {
-  { "matchCount": (s, _args) => Num(fp_match_count(s).to_double()) }
-}
+///
+/// There used to be a `matchCount` compute here too, "so views could read it".
+/// None did — and a bucket keyed by an enum of the names the views actually
+/// use has no case to put it in, which is how it came to light.
 
 ///|
 fn fp_update() -> (PeopleState, @component.Dispatch, &@tutuca.Ctx) -> PeopleState? {
@@ -168,7 +165,6 @@ fn naive_people_comp() -> @component.Component {
     },
     name="NaivePeople",
     init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
@@ -204,7 +200,6 @@ fn shared_people_comp() -> @component.Component {
     },
     name="SharedPeople",
     init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
@@ -250,7 +245,6 @@ fn coupled_people_comp() -> @component.Component {
     },
     name="CoupledPeople",
     init=PeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
     enrich_scope={
       "pagerInfo": (s : PeopleState) => {

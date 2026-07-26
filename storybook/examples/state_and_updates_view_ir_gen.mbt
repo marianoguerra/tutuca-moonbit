@@ -120,36 +120,11 @@ fn attribute_binding_component(
   common_style? : String = attribute_binding_common_style,
   global_style? : String = attribute_binding_global_style,
   update? : (AttributeBindingState, @component.Dispatch, &@tutuca.Ctx) -> AttributeBindingState?,
-  compute? : Map[
-    String,
-    (AttributeBindingState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (AttributeBindingState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (AttributeBindingState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      AttributeBindingState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (AttributeBindingState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (AttributeBindingState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (AttributeBindingInput) -> ((
+    AttributeBindingState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -161,12 +136,10 @@ fn attribute_binding_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => attribute_binding_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -242,36 +215,11 @@ fn conditional_attributes_component(
   common_style? : String = conditional_attributes_common_style,
   global_style? : String = conditional_attributes_global_style,
   update? : (ConditionalAttributesState, @component.Dispatch, &@tutuca.Ctx) -> ConditionalAttributesState?,
-  compute? : Map[
-    String,
-    (ConditionalAttributesState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ConditionalAttributesState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ConditionalAttributesState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ConditionalAttributesState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ConditionalAttributesState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ConditionalAttributesState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ConditionalAttributesInput) -> ((
+    ConditionalAttributesState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -283,12 +231,10 @@ fn conditional_attributes_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => conditional_attributes_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -370,36 +316,11 @@ fn event_modifiers_component(
   common_style? : String = event_modifiers_common_style,
   global_style? : String = event_modifiers_global_style,
   update? : (EventModifiersState, @component.Dispatch, &@tutuca.Ctx) -> EventModifiersState?,
-  compute? : Map[
-    String,
-    (EventModifiersState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (EventModifiersState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (EventModifiersState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      EventModifiersState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (EventModifiersState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (EventModifiersState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (EventModifiersInput) -> ((
+    EventModifiersState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -411,12 +332,10 @@ fn event_modifiers_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => event_modifiers_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -506,32 +425,12 @@ fn show_hide_component(
   common_style? : String = show_hide_common_style,
   global_style? : String = show_hide_global_style,
   update? : (ShowHideState, @component.Dispatch, &@tutuca.Ctx) -> ShowHideState?,
-  compute? : Map[String, (ShowHideState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (ShowHideState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ShowHideState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ShowHideState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (ShowHideState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (ShowHideState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (ShowHideMethod) -> ((ShowHideState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (ShowHideInput) -> ((
+    ShowHideState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -543,12 +442,14 @@ fn show_hide_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => show_hide_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => show_hide_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

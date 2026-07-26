@@ -95,6 +95,23 @@ test "the generated counter module" {
       #|}
       #|
       #|///|
+      #|/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+      #|/// Return None for a name another bucket serves, or one of the mutators
+      #|/// generated from the state's fields.
+      #|pub fn[S] counter_swap(
+      #|  f : (CounterInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+      #|) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+      #|  let out : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([])
+      #|  for m in ([Add, ResetCount, SetLabel] : Array[CounterInput]) {
+      #|    match f(m) {
+      #|      Some(h) => out[m.name()] = h
+      #|      None => ()
+      #|    }
+      #|  }
+      #|  out
+      #|}
+      #|
+      #|///|
       #|/// State fields the views read at a view's ROOT scope. Reads under an
       #|/// @each, an @enrich-with, a push-view or an <x render> address the loop
       #|/// item or the child component, not this state, so they are not listed.
@@ -339,6 +356,23 @@ test "a view with a $method, several views and styles" {
       #|}
       #|
       #|///|
+      #|/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+      #|/// Return None for a name another bucket serves, or one of the mutators
+      #|/// generated from the state's fields.
+      #|pub fn[S] todo_list_swap(
+      #|  f : (TodoListInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+      #|) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+      #|  let out : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([])
+      #|  for m in ([ClearDone] : Array[TodoListInput]) {
+      #|    match f(m) {
+      #|      Some(h) => out[m.name()] = h
+      #|      None => ()
+      #|    }
+      #|  }
+      #|  out
+      #|}
+      #|
+      #|///|
       #|/// Every `$name` the views call.
       #|pub(all) enum TodoListMethod {
       #|  DoneLabel
@@ -359,23 +393,6 @@ test "a view with a $method, several views and styles" {
       #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
       #|) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
       #|  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-      #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
-      #|    match f(m) {
-      #|      Some(h) => out[m.name()] = h
-      #|      None => ()
-      #|    }
-      #|  }
-      #|  out
-      #|}
-      #|
-      #|///|
-      #|/// Build `swap~` from an exhaustive match over the names the views call.
-      #|/// Return None for a name another bucket serves, or one of the mutators
-      #|/// generated from the state's fields.
-      #|pub fn[S] todo_list_swap(
-      #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-      #|) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-      #|  let out : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([])
       #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
       #|    match f(m) {
       #|      Some(h) => out[m.name()] = h

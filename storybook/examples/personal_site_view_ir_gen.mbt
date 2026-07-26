@@ -62,32 +62,6 @@ fn alt_url_component(
   common_style? : String = alt_url_common_style,
   global_style? : String = alt_url_global_style,
   update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> AltUrlState?,
-  compute? : Map[String, (AltUrlState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (AltUrlState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (AltUrlState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      AltUrlState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (AltUrlState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (AltUrlState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -99,12 +73,6 @@ fn alt_url_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
     specs~,
     provide~,
     lookup~,
@@ -245,32 +213,14 @@ fn ps_entry_component(
   common_style? : String = ps_entry_common_style,
   global_style? : String = ps_entry_global_style,
   update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> PsEntryState?,
-  compute? : Map[String, (PsEntryState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (PsEntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (PsEntryState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      PsEntryState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (PsEntryState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (PsEntryState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (PsEntryMethod) -> ((PsEntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  enrich? : (PsEntryEnrich) -> ((
+    PsEntryState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -282,12 +232,14 @@ fn ps_entry_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => ps_entry_compute(f)
+      None => Map([])
+    },
+    enrich=match enrich {
+      Some(f) => ps_entry_enrich(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -539,31 +491,21 @@ fn root_component(
   common_style? : String = root_common_style,
   global_style? : String = root_global_style,
   update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> RootState?,
-  compute? : Map[String, (RootState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (RootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (RootState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      RootState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (RootState) -> Map[String, @tutuca.Value]] = Map([]),
-  loop_with? : Map[
-    String,
-    (RootState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (RootInput) -> ((RootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+  when? : (RootWhen) -> ((
+    RootState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
+  enrich? : (RootEnrich) -> ((
+    RootState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -575,12 +517,22 @@ fn root_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => root_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => root_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => root_when(f)
+      None => Map([])
+    },
+    enrich=match enrich {
+      Some(f) => root_enrich(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

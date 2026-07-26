@@ -286,6 +286,26 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] counter_swap(
+  f : (CounterInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([Add, ResetCount, SetLabel] : Array[CounterInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// Constant `id` attributes in the views — typed selectors for tests.
 pub(all) enum CounterId {
   Count

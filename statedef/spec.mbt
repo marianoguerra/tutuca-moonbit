@@ -73,6 +73,26 @@ pub(all) struct MsgDef {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// A `$`-callable the component answers, declared as a WIT `func`.
+///
+/// Views declare most methods just by calling them (`$label`), and the
+/// generator reads them off the view. This is for the ones no view of THIS
+/// component names: a method a PARENT calls on it — `contains-text` on a list
+/// item, say, which the list's `@when` asks every child regardless of the
+/// child's own shape. Undeclared, such a method is a string only MoonBit knows,
+/// and the enum a handler match is written over cannot contain it.
+pub(all) struct MethodDef {
+  wit_name : String
+  /// The runtime name a `$name` call and a `Value::field` read both use.
+  name : String
+  params : Array[StateTy]
+  /// None for a `func` with no result — the value world has no Unit, so this
+  /// is what tells `to_wit` to write the arrow back the way it found it.
+  result : StateTy?
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+///|
 /// A named type the state or its messages mention.
 pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
@@ -102,6 +122,8 @@ pub(all) struct StateDef {
   receive : Array[MsgDef]
   bubble : Array[MsgDef]
   response : Array[MsgDef]
+  /// `func` declarations: the `$`-callables no view of this component names.
+  methods : Array[MethodDef]
   types : Array[UserTy]
   doc : String?
 } derive(Eq, @debug.Debug)

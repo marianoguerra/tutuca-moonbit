@@ -118,34 +118,11 @@ fn json_selector_component(
   common_style? : String = json_selector_common_style,
   global_style? : String = json_selector_global_style,
   update? : (JsonSelectorState, @component.Dispatch, &@tutuca.Ctx) -> JsonSelectorState?,
-  compute? : Map[
-    String,
-    (JsonSelectorState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonSelectorState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonSelectorState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonSelectorState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonSelectorState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonSelectorState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonSelectorInput) -> ((
+    JsonSelectorState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -157,12 +134,10 @@ fn json_selector_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_selector_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -208,32 +183,6 @@ fn json_null_component(
   common_style? : String = json_null_common_style,
   global_style? : String = json_null_global_style,
   update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
-  compute? : Map[String, (JsonNullState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (JsonNullState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonNullState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonNullState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonNullState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonNullState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -245,12 +194,6 @@ fn json_null_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
     specs~,
     provide~,
     lookup~,
@@ -316,32 +259,11 @@ fn json_bool_component(
   common_style? : String = json_bool_common_style,
   global_style? : String = json_bool_global_style,
   update? : (JsonBoolState, @component.Dispatch, &@tutuca.Ctx) -> JsonBoolState?,
-  compute? : Map[String, (JsonBoolState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (JsonBoolState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonBoolState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonBoolState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonBoolState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonBoolState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonBoolInput) -> ((
+    JsonBoolState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -353,12 +275,10 @@ fn json_bool_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_bool_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -416,34 +336,11 @@ fn json_string_component(
   common_style? : String = json_string_common_style,
   global_style? : String = json_string_global_style,
   update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> JsonStringState?,
-  compute? : Map[
-    String,
-    (JsonStringState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonStringState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonStringState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonStringState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonStringState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonStringState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonStringInput) -> ((
+    JsonStringState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -455,12 +352,10 @@ fn json_string_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_string_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -520,34 +415,11 @@ fn json_number_component(
   common_style? : String = json_number_common_style,
   global_style? : String = json_number_global_style,
   update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> JsonNumberState?,
-  compute? : Map[
-    String,
-    (JsonNumberState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonNumberState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonNumberState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonNumberState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonNumberState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonNumberState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonNumberInput) -> ((
+    JsonNumberState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -559,12 +431,10 @@ fn json_number_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_number_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -670,34 +540,11 @@ fn json_array_component(
   common_style? : String = json_array_common_style,
   global_style? : String = json_array_global_style,
   update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> JsonArrayState?,
-  compute? : Map[
-    String,
-    (JsonArrayState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonArrayState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonArrayState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonArrayState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonArrayState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonArrayState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonArrayInput) -> ((
+    JsonArrayState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -709,12 +556,10 @@ fn json_array_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_array_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -786,36 +631,11 @@ fn json_object_key_val_component(
   common_style? : String = json_object_key_val_common_style,
   global_style? : String = json_object_key_val_global_style,
   update? : (JsonObjectKeyValState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectKeyValState?,
-  compute? : Map[
-    String,
-    (JsonObjectKeyValState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonObjectKeyValState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonObjectKeyValState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonObjectKeyValState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (JsonObjectKeyValState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (JsonObjectKeyValState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonObjectKeyValInput) -> ((
+    JsonObjectKeyValState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -827,12 +647,10 @@ fn json_object_key_val_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_object_key_val_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -940,34 +758,11 @@ fn json_object_component(
   common_style? : String = json_object_common_style,
   global_style? : String = json_object_global_style,
   update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectState?,
-  compute? : Map[
-    String,
-    (JsonObjectState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (JsonObjectState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (JsonObjectState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      JsonObjectState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (JsonObjectState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (JsonObjectState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (JsonObjectInput) -> ((
+    JsonObjectState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -979,12 +774,10 @@ fn json_object_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => json_object_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

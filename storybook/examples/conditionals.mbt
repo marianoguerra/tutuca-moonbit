@@ -14,10 +14,13 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 fn traffic_light_comp() -> @component.Component {
   traffic_light_component(
     init={ lightIndex: 0 },
-    compute={
-      "light": (s, _args) => {
-        Str(traffic_lights[s.lightIndex % traffic_lights.length()])
-      },
+    compute=m => {
+      match m {
+        Light =>
+          Some((s, _args) => {
+            Str(traffic_lights[s.lightIndex % traffic_lights.length()])
+          })
+      }
     },
     update=(s, msg, _ctx) => {
       match TrafficLightMsg::from_dispatch(msg) {
@@ -81,13 +84,16 @@ pub fn tabbed_ui_module() -> @component.ModuleDef {
 /// Call convention (the renderer, render/render.mbt): a @when handler gets
 /// (key, value, iterData).
 fn list_and_filter_comp() -> @component.Component {
-  list_and_filter_component(init={ items: [], query: "" }, when={
-    "filterItem": (s, _key, value, _iter) => {
-      match value {
-        Str(item) => item.to_lower().contains(s.query.to_lower())
-        _ => true
-      }
-    },
+  list_and_filter_component(init={ items: [], query: "" }, when=w => {
+    match w {
+      FilterItem =>
+        Some((s, _key, value, _iter) => {
+          match value {
+            Str(item) => item.to_lower().contains(s.query.to_lower())
+            _ => true
+          }
+        })
+    }
   })
 }
 

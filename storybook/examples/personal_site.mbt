@@ -173,18 +173,21 @@ fn alt_url_comp() -> @component.Component {
 ///|
 fn ps_entry_comp() -> @component.Component {
   ps_entry_component(
-    enrich={
-      // JS `enrichCategoryBadge`: entry category badges always use the
-      // SELECTED color variant. The `cat` token is the MB test hook.
-      "enrichCategoryBadge": (_s, binds, _key, value, _iter) => {
-        match value {
-          Str(cat) =>
-            binds["badgeClass"] = Str(
-              "badge badge-sm \{ps_category_color(cat, true)} cat",
-            )
-          _ => ()
-        }
-      },
+    enrich=e => {
+      match e {
+        // JS `enrichCategoryBadge`: entry category badges always use the
+        // SELECTED color variant. The `cat` token is the MB test hook.
+        EnrichCategoryBadge =>
+          Some((_s, binds, _key, value, _iter) => {
+            match value {
+              Str(cat) =>
+                binds["badgeClass"] = Str(
+                  "badge badge-sm \{ps_category_color(cat, true)} cat",
+                )
+              _ => ()
+            }
+          })
+      }
     },
     init={
       title: "?",
@@ -198,25 +201,29 @@ fn ps_entry_comp() -> @component.Component {
       altUrls: [],
       categories: [],
     },
-    compute={
-      "langFlag": (s, _args) => {
-        if s.lang == "es" {
-          Str("🇪🇸")
-        } else {
-          Str("🇬🇧")
-        }
-      },
-      "isSpanish": (s, _args) => Bool(s.lang == "es"),
-      "yearDisplay": (s, _args) => {
-        match s.startYear {
-          Num(start) =>
-            match s.endYear {
-              Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
-              _ => Str("\{start.to_int()}")
+    compute=m => {
+      match m {
+        LangFlag =>
+          Some((s, _args) => {
+            if s.lang == "es" {
+              Str("🇪🇸")
+            } else {
+              Str("🇬🇧")
             }
-          _ => Str("")
-        }
-      },
+          })
+        IsSpanish => Some((s, _args) => Bool(s.lang == "es"))
+        YearDisplay =>
+          Some((s, _args) => {
+            match s.startYear {
+              Num(start) =>
+                match s.endYear {
+                  Num(e) => Str("\{start.to_int()}-\{e.to_int()}")
+                  _ => Str("\{start.to_int()}")
+                }
+              _ => Str("")
+            }
+          })
+      }
     },
   )
 }
@@ -284,49 +291,60 @@ fn root_comp() -> @component.Component {
       sortByEnd: false,
       sortAsc: false,
     },
-    compute={
-      "hasActiveFilters": (s, _args) => {
-        Bool(
-          s.selectedCategories.length() != s.allCategories.length() ||
-          s.selectedRoles.length() != s.allRoles.length(),
-        )
-      },
+    compute=m => {
+      match m {
+        HasActiveFilters =>
+          Some((s, _args) => {
+            Bool(
+              s.selectedCategories.length() != s.allCategories.length() ||
+              s.selectedRoles.length() != s.allRoles.length(),
+            )
+          })
+      }
     },
-    when={ "filterEntry": (s, _key, e, _iter) => ps_filter_entry(s, e) },
-    enrich={
-      // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
-      // the trailing `cat-btn on|off` tokens are the MB test hooks.
-      "enrichCategoryBindings": (s, binds, _key, value, _iter) => {
-        match value {
-          Str(cat) => {
-            let selected = s.selectedCategories.contains(cat)
-            binds["isSelected"] = Bool(selected)
-            let state = if selected { "on" } else { "off" }
-            binds["btnClass"] = Str(
-              "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
-            )
-          }
-          _ => ()
-        }
-      },
-      // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
-      // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
-      // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
-      "enrichRoleBindings": (s, binds, _key, value, _iter) => {
-        match value {
-          Str(role) => {
-            let selected = s.selectedRoles.contains(role)
-            binds["btnClass"] = Str(
-              if selected {
-                "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
-              } else {
-                "btn btn-xs btn-ghost font-bold opacity-40 role-btn off"
-              },
-            )
-          }
-          _ => ()
-        }
-      },
+    when=w => {
+      match w {
+        FilterEntry => Some((s, _key, e, _iter) => ps_filter_entry(s, e))
+      }
+    },
+    enrich=e => {
+      match e {
+        // JS composes `btn btn-xs border-0 ${getCategoryColor(cat, isSelected)}`;
+        // the trailing `cat-btn on|off` tokens are the MB test hooks.
+        EnrichCategoryBindings =>
+          Some((s, binds, _key, value, _iter) => {
+            match value {
+              Str(cat) => {
+                let selected = s.selectedCategories.contains(cat)
+                binds["isSelected"] = Bool(selected)
+                let state = if selected { "on" } else { "off" }
+                binds["btnClass"] = Str(
+                  "btn btn-xs border-0 \{ps_category_color(cat, selected)} cat-btn \{state}",
+                )
+              }
+              _ => ()
+            }
+          })
+        // JS: selected -> `btn btn-xs btn-neutral font-bold ring-1
+        // ring-neutral-content/30`, else `btn btn-xs btn-ghost font-bold
+        // opacity-40`; the trailing `role-btn on|off` tokens are the MB hooks.
+        EnrichRoleBindings =>
+          Some((s, binds, _key, value, _iter) => {
+            match value {
+              Str(role) => {
+                let selected = s.selectedRoles.contains(role)
+                binds["btnClass"] = Str(
+                  if selected {
+                    "btn btn-xs btn-neutral font-bold ring-1 ring-neutral-content/30 role-btn on"
+                  } else {
+                    "btn btn-xs btn-ghost font-bold opacity-40 role-btn off"
+                  },
+                )
+              }
+              _ => ()
+            }
+          })
+      }
     },
     update=(s, msg, ctx) => {
       match msg {

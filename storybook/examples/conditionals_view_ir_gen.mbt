@@ -83,34 +83,12 @@ fn traffic_light_component(
   common_style? : String = traffic_light_common_style,
   global_style? : String = traffic_light_global_style,
   update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> TrafficLightState?,
-  compute? : Map[
-    String,
-    (TrafficLightState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (TrafficLightState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (TrafficLightState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      TrafficLightState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (TrafficLightState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (TrafficLightState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (TrafficLightMethod) -> ((TrafficLightState, Array[@tutuca.Value]) -> @tutuca.Value)?,
+  swap? : (TrafficLightInput) -> ((
+    TrafficLightState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -122,12 +100,14 @@ fn traffic_light_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => traffic_light_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => traffic_light_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -279,32 +259,11 @@ fn tabbed_u_i_component(
   common_style? : String = tabbed_u_i_common_style,
   global_style? : String = tabbed_u_i_global_style,
   update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> TabbedUIState?,
-  compute? : Map[String, (TabbedUIState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
-  ),
-  swap? : Map[
-    String,
-    (TabbedUIState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (TabbedUIState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      TabbedUIState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (TabbedUIState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (TabbedUIState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (TabbedUIInput) -> ((
+    TabbedUIState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -316,12 +275,10 @@ fn tabbed_u_i_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => tabbed_u_i_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -397,36 +354,17 @@ fn list_and_filter_component(
   common_style? : String = list_and_filter_common_style,
   global_style? : String = list_and_filter_global_style,
   update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> ListAndFilterState?,
-  compute? : Map[
-    String,
-    (ListAndFilterState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ListAndFilterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ListAndFilterState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ListAndFilterState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ListAndFilterState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ListAndFilterState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ListAndFilterInput) -> ((
+    ListAndFilterState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (ListAndFilterWhen) -> ((
+    ListAndFilterState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -438,12 +376,14 @@ fn list_and_filter_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => list_and_filter_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => list_and_filter_when(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

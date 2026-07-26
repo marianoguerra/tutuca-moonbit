@@ -119,13 +119,16 @@ fn workspace_comp() -> @component.Component {
       "panel": @component.FieldSpec::comp("Panel"),
     },
     provide={ "active": ".sheet" },
-    compute={
-      "sheetTitle": (s, _args) => {
-        match s.sheet {
-          Obj(o) => o.obj_field("title").unwrap_or(Str(""))
-          _ => Str("")
-        }
-      },
+    compute=m => {
+      match m {
+        SheetTitle =>
+          Some((s, _args) => {
+            match s.sheet {
+              Obj(o) => o.obj_field("title").unwrap_or(Str(""))
+              _ => Str("")
+            }
+          })
+      }
     },
   )
 }

@@ -59,17 +59,6 @@ fn fp_match_count(s : NaivePeopleState) -> Int {
 }
 
 ///|
-/// The buckets every strategy shares — the count as a `compute` entry (so
-/// views could read it), the search/prev/next Input arms as one shared
-/// `update` fn, and the `onlyMatches` @when predicate.
-fn fp_base_compute() -> Map[
-  String,
-  (NaivePeopleState, Array[@tutuca.Value]) -> @tutuca.Value,
-] {
-  { "matchCount": (s, _args) => Num(fp_match_count(s).to_double()) }
-}
-
-///|
 /// A raw `match msg`: the three strategies each get their OWN generated
 /// message enum (NaivePeopleMsg, SharedPeopleMsg, …), so one shared handler
 /// can only speak the untyped dispatch they have in common.
@@ -145,22 +134,27 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
-    when=fp_only_matches(),
-    enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
-    loop_with={
-      "tablePage": (s, seq, ctx) => {
-        let all : Array[Int] = []
-        for i, v in seq.list() {
-          if (ctx.filter)(Num(i.to_double()), v, Null) {
-            all.push(i)
+    when=w => match w {
+      OnlyMatches =>
+        Some((s, _key, person, _iter) => fp_matches(person, s.query))
+    },
+    enrich_scope=e => match e {
+      PagerInfo => Some(s => fp_pager_info(s))
+    },
+    loop_with=l => match l {
+      TablePage =>
+        Some((s, seq, ctx) => {
+          let all : Array[Int] = []
+          for i, v in seq.list() {
+            if (ctx.filter)(Num(i.to_double()), v, Null) {
+              all.push(i)
+            }
           }
-        }
-        let (_, current) = fp_clamp(s.page, all.length(), s.pageSize)
-        let start = current * s.pageSize
-        fp_num_keys(page_slice(all, start, s.pageSize))
-      },
+          let (_, current) = fp_clamp(s.page, all.length(), s.pageSize)
+          let start = current * s.pageSize
+          fp_num_keys(page_slice(all, start, s.pageSize))
+        })
     },
   )
 }
@@ -180,7 +174,6 @@ fn shared_people_comp() -> @component.Component {
     encode=naive_people_encode,
     decode=naive_people_decode,
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
     when=fp_only_matches(),
     enrich_scope={ "pagerInfo": s => fp_pager_info(s) },
@@ -222,7 +215,6 @@ fn coupled_people_comp() -> @component.Component {
     encode=naive_people_encode,
     decode=naive_people_decode,
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
-    compute=fp_base_compute(),
     update=fp_update(),
     enrich_scope={
       "pagerInfo": (s) => {

@@ -135,36 +135,17 @@ fn request_example_component(
   common_style? : String = request_example_common_style,
   global_style? : String = request_example_global_style,
   update? : (RequestExampleState, @component.Dispatch, &@tutuca.Ctx) -> RequestExampleState?,
-  compute? : Map[
-    String,
-    (RequestExampleState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (RequestExampleState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (RequestExampleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      RequestExampleState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (RequestExampleState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (RequestExampleState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (RequestExampleInput) -> ((
+    RequestExampleState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (RequestExampleWhen) -> ((
+    RequestExampleState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -176,12 +157,14 @@ fn request_example_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => request_example_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => request_example_when(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

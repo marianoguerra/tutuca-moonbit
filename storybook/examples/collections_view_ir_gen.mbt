@@ -90,36 +90,15 @@ fn render_with_scope_component(
   common_style? : String = render_with_scope_common_style,
   global_style? : String = render_with_scope_global_style,
   update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> RenderWithScopeState?,
-  compute? : Map[
+  swap? : (RenderWithScopeInput) -> ((
+    RenderWithScopeState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  enrich_scope? : (RenderWithScopeEnrichScope) -> ((RenderWithScopeState) -> Map[
     String,
-    (RenderWithScopeState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (RenderWithScopeState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (RenderWithScopeState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      RenderWithScopeState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (RenderWithScopeState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (RenderWithScopeState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+    @tutuca.Value,
+  ])?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -131,12 +110,14 @@ fn render_with_scope_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => render_with_scope_swap(f)
+      None => Map([])
+    },
+    enrich_scope=match enrich_scope {
+      Some(f) => render_with_scope_enrich_scope(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -216,36 +197,24 @@ fn list_filter_enrich_component(
   common_style? : String = list_filter_enrich_common_style,
   global_style? : String = list_filter_enrich_global_style,
   update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> ListFilterEnrichState?,
-  compute? : Map[
-    String,
-    (ListFilterEnrichState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ListFilterEnrichState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ListFilterEnrichState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ListFilterEnrichState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ListFilterEnrichState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ListFilterEnrichState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ListFilterEnrichInput) -> ((
+    ListFilterEnrichState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (ListFilterEnrichWhen) -> ((
+    ListFilterEnrichState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
+  enrich? : (ListFilterEnrichEnrich) -> ((
+    ListFilterEnrichState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -257,12 +226,18 @@ fn list_filter_enrich_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => list_filter_enrich_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => list_filter_enrich_when(f)
+      None => Map([])
+    },
+    enrich=match enrich {
+      Some(f) => list_filter_enrich_enrich(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -345,36 +320,29 @@ fn list_filter_enrich_with_component(
   common_style? : String = list_filter_enrich_with_common_style,
   global_style? : String = list_filter_enrich_with_global_style,
   update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> ListFilterEnrichWithState?,
-  compute? : Map[
-    String,
-    (ListFilterEnrichWithState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ListFilterEnrichWithState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ListFilterEnrichWithState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ListFilterEnrichWithState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ListFilterEnrichWithState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ListFilterEnrichWithState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ListFilterEnrichWithInput) -> ((
+    ListFilterEnrichWithState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (ListFilterEnrichWithWhen) -> ((
+    ListFilterEnrichWithState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
+  enrich? : (ListFilterEnrichWithEnrich) -> ((
+    ListFilterEnrichWithState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
+  loop_with? : (ListFilterEnrichWithLoopWith) -> ((
+    ListFilterEnrichWithState,
+    @tutuca.Value,
+    @component.LoopCtx,
+  ) -> @component.LoopWith)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -386,12 +354,22 @@ fn list_filter_enrich_with_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => list_filter_enrich_with_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => list_filter_enrich_with_when(f)
+      None => Map([])
+    },
+    enrich=match enrich {
+      Some(f) => list_filter_enrich_with_enrich(f)
+      None => Map([])
+    },
+    loop_with=match loop_with {
+      Some(f) => list_filter_enrich_with_loop_with(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

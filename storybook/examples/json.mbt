@@ -92,16 +92,19 @@ fn json_number_comp() -> @component.Component {
 /// bool button chooses the initial boolean — the event field reaches the
 /// handler as an argument.
 fn json_selector_comp(reg : JsonReg) -> @component.Component {
-  json_selector_component(swap={
-    "setToNull": (_s, _args, _ctx) => Some(reg.make_("JsonNull")),
-    "setToBool": (_s, args, _ctx) => {
-      let is_ctrl = args.get(0) is Some(Bool(true))
-      Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
-    },
-    "setToNumber": (_s, _args, _ctx) => Some(reg.make_("JsonNumber")),
-    "setToString": (_s, _args, _ctx) => Some(reg.make_("JsonString")),
-    "setToArray": (_s, _args, _ctx) => Some(reg.make_("JsonArray")),
-    "setToObject": (_s, _args, _ctx) => Some(reg.make_("JsonObject")),
+  json_selector_component(swap=m => {
+    match m {
+      SetToNull => Some((_s, _args, _ctx) => Some(reg.make_("JsonNull")))
+      SetToBool =>
+        Some((_s, args, _ctx) => {
+          let is_ctrl = args.get(0) is Some(Bool(true))
+          Some(reg.make_("JsonBool", args={ "value": Bool(!is_ctrl) }))
+        })
+      SetToNumber => Some((_s, _args, _ctx) => Some(reg.make_("JsonNumber")))
+      SetToString => Some((_s, _args, _ctx) => Some(reg.make_("JsonString")))
+      SetToArray => Some((_s, _args, _ctx) => Some(reg.make_("JsonArray")))
+      SetToObject => Some((_s, _args, _ctx) => Some(reg.make_("JsonObject")))
+    }
   })
 }
 

@@ -17,11 +17,14 @@
 /// `enrich_scope` handler returns a map whose keys become `@`-bindings for the
 /// subtree. Derived values without putting them in component state.
 fn render_with_scope_comp() -> @component.Component {
-  render_with_scope_component(init={ text: "Hello" }, enrich_scope={
-    "enrichScope": s => {
-      "len": Num(s.text.length().to_double()),
-      "upper": Str(s.text.to_upper()),
-    },
+  render_with_scope_component(init={ text: "Hello" }, enrich_scope=e => {
+    match e {
+      EnrichScope =>
+        Some(s => {
+          "len": Num(s.text.length().to_double()),
+          "upper": Str(s.text.to_upper()),
+        })
+    }
   })
 }
 
@@ -53,21 +56,27 @@ pub fn render_with_scope_module() -> @component.ModuleDef {
 fn list_filter_enrich_comp() -> @component.Component {
   list_filter_enrich_component(
     init={ items: [], query: "" },
-    when={
-      "filterItem": (s, _key, value, _iter) => {
-        match value {
-          Str(item) => item.to_lower().contains(s.query.to_lower())
-          _ => true
-        }
-      },
+    when=w => {
+      match w {
+        FilterItem =>
+          Some((s, _key, value, _iter) => {
+            match value {
+              Str(item) => item.to_lower().contains(s.query.to_lower())
+              _ => true
+            }
+          })
+      }
     },
-    enrich={
-      "enrichItem": (_s, binds, _key, value, _iter) => {
-        match value {
-          Str(item) => binds["count"] = Num(item.length().to_double())
-          _ => ()
-        }
-      },
+    enrich=e => {
+      match e {
+        EnrichItem =>
+          Some((_s, binds, _key, value, _iter) => {
+            match value {
+              Str(item) => binds["count"] = Num(item.length().to_double())
+              _ => ()
+            }
+          })
+      }
     },
   )
 }
@@ -96,45 +105,54 @@ pub fn list_filter_enrich_module() -> @component.ModuleDef {
 fn list_filter_enrich_with_comp() -> @component.Component {
   list_filter_enrich_with_component(
     init={ items: [], query: "" },
-    loop_with={
-      "getIterData": (s, seq, _ctx) => {
-        let mut total = 0
-        for item in seq.list() {
-          match item {
-            Str(v) => total += v.length()
-            _ => ()
-          }
-        }
-        @component.LoopWith::new(
-          iter_data=Map({
-            "totalChars": Num(total.to_double()),
-            "queryLower": Str(s.query.to_lower()),
-          }),
-        )
-      },
+    loop_with=l => {
+      match l {
+        GetIterData =>
+          Some((s, seq, _ctx) => {
+            let mut total = 0
+            for item in seq.list() {
+              match item {
+                Str(v) => total += v.length()
+                _ => ()
+              }
+            }
+            @component.LoopWith::new(
+              iter_data=Map({
+                "totalChars": Num(total.to_double()),
+                "queryLower": Str(s.query.to_lower()),
+              }),
+            )
+          })
+      }
     },
-    when={
-      "filterItem": (_s, _key, value, iter) => {
-        match (value, iter) {
-          (Str(item), Map(iter_data)) =>
-            match iter_data.get("queryLower") {
-              Some(Str(q)) => item.to_lower().contains(q)
+    when=w => {
+      match w {
+        FilterItem =>
+          Some((_s, _key, value, iter) => {
+            match (value, iter) {
+              (Str(item), Map(iter_data)) =>
+                match iter_data.get("queryLower") {
+                  Some(Str(q)) => item.to_lower().contains(q)
+                  _ => true
+                }
               _ => true
             }
-          _ => true
-        }
-      },
+          })
+      }
     },
-    enrich={
-      "enrichItem": (_s, binds, _key, value, iter) => {
-        match (value, iter) {
-          (Str(item), Map(iter_data)) => {
-            binds["count"] = Num(item.length().to_double())
-            binds["total"] = iter_data.get("totalChars").unwrap_or(Null)
-          }
-          _ => ()
-        }
-      },
+    enrich=e => {
+      match e {
+        EnrichItem =>
+          Some((_s, binds, _key, value, iter) => {
+            match (value, iter) {
+              (Str(item), Map(iter_data)) => {
+                binds["count"] = Num(item.length().to_double())
+                binds["total"] = iter_data.get("totalChars").unwrap_or(Null)
+              }
+              _ => ()
+            }
+          })
+      }
     },
   )
 }

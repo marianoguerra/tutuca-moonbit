@@ -47,11 +47,19 @@ test "a schema-backed component gets a wrapper over component()" {
       "  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,",
     ),
   )
+  // Keyed by a generated enum, not by a string: the author writes a match the
+  // compiler checks, so a name added to the view breaks the build rather than
+  // leaving a handler that is never called. `swap` answers Input dispatches,
+  // so its key is the input enum.
   assert_true(
     ir.contains(
-      "  compute? : Map[String, (CounterState, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),",
+      "  swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,",
     ),
   )
+  // A bucket the views never use is not a PARAMETER at all, so it cannot be
+  // answered by mistake. This view calls no `$name` and names no `@when`.
+  assert_false(ir.contains("  compute? :"))
+  assert_false(ir.contains("  when? :"))
   // An absent update stays absent: component() takes it as an Option and the
   // wrapper forwards one rather than inventing a no-op.
   assert_true(ir.contains("    update?=update,"))

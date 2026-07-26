@@ -435,6 +435,56 @@ pub fn EntryMsg::from_dispatch(d : @component.Dispatch) -> EntryMsg? {
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] entry_swap(
+  f : (EntryInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetDescription, SetTitle] : Array[EntryInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `$name` the views call.
+pub(all) enum EntryMethod {
+  ContainsText
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn EntryMethod::name(self : EntryMethod) -> String {
+  match self {
+    ContainsText => "containsText"
+  }
+}
+
+///|
+/// Build `compute~` from an exhaustive match over the names the views call.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] entry_compute(
+  f : (EntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
+) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
+  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
+  for m in ([ContainsText] : Array[EntryMethod]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -464,7 +514,7 @@ pub fn entry_schema() -> @component.SchemaInfo {
     receives: [],
     bubbles: [],
     responses: [],
-    methods: [],
+    methods: ["containsText"],
     ids: [],
     view_names: ["main", "edit"],
     init_names: [],

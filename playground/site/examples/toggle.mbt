@@ -6,10 +6,11 @@
 fn build() -> @component.ModuleDef {
   let panel = panel_component(
     init=PanelState::{ open: false },
-    compute={
-      "label": (s, _a) => Str(
-        if s.open { "Hide details" } else { "Show details" },
-      ),
+    compute=m => match m {
+      Label =>
+        Some((s, _a) => Str(
+          if s.open { "Hide details" } else { "Show details" },
+        ))
     },
   )
   @component.ModuleDef::new(

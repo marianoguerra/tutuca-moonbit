@@ -176,6 +176,68 @@ fn emit_bucket(
 }
 
 ///|
+/// Every `$`-callable this component answers: the ones its views call, and the
+/// ones its state block declares as `func`. Sorted and de-duplicated, so a
+/// method that is both called and declared is one enum case.
+fn declared_methods(
+  surface : Surface,
+  state : @statedef.StateDef?,
+) -> Array[String] {
+  let seen : Map[String, Unit] = Map([])
+  let out : Array[String] = []
+  let add = (n : String) => {
+    if !seen.contains(n) {
+      seen[n] = ()
+      out.push(n)
+    }
+  }
+  for m in surface.methods {
+    add(m)
+  }
+  match state {
+    Some(def) =>
+      for m in def.methods {
+        add(m.name)
+      }
+    None => ()
+  }
+  out.sort_by((a, b) => a.lexical_compare(b))
+  out
+}
+
+///|
+/// One render-time directive bucket: its name enum and its builder.
+///
+/// Nothing is emitted when the views name no handler for it, on the same rule
+/// the `Method` enum follows — an empty enum is not a MoonBit type, and a
+/// bucket with no names has nothing for an author to answer.
+fn emit_alter_bucket(
+  out : StringBuilder,
+  t : String,
+  v : String,
+  names : Array[String],
+  suffix : String,
+  bucket : String,
+  doc : String,
+  handler_type : String,
+  derives : String,
+) -> Unit raise GenError {
+  if names.is_empty() {
+    return
+  }
+  let vs = variants_for(names)
+  emit_name_enum(out, doc, "\{t}\{suffix}", "name", vs, derives)
+  emit_bucket(
+    out,
+    "\{t}\{suffix}",
+    "\{v}_\{bucket}",
+    handler_type,
+    "Build `\{bucket}~` from an exhaustive match over the names the views use.",
+    vs,
+  )
+}
+
+///|
 /// One component's section of the generated types module.
 fn emit_component(
   name : String,
@@ -282,11 +344,27 @@ fn emit_component(
       emit_msg_arm(out, sig, input_variants[i].1)
     }
     out.write_string("      _ => Unknown(name, args)\n    },\n  )\n}\n\n")
+    // `swap` is keyed by the INPUT names, not by `$name`: it answers an Input
+    // dispatch ahead of `update`, and is what lets a handler replace this node
+    // with another component's instance.
+    emit_bucket(
+      out,
+      "\{t}Input",
+      "\{v}_swap",
+      "(S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
+      "Build `swap~` from an exhaustive match over the `@on` names the views raise.",
+      input_variants,
+    )
   }
 
   // -- $-callables ---------------------------------------------------------
-  if !surface.methods.is_empty() {
-    let method_variants = variants_for(surface.methods)
+  // The views' `$name` calls PLUS the `func` declarations in the state block.
+  // A method a parent calls on this component appears in neither its views nor
+  // its update, so the schema is the only place it can be named — and without a
+  // case for it, the match the author writes could not answer it.
+  let all_methods = declared_methods(surface, state)
+  if !all_methods.is_empty() {
+    let method_variants = variants_for(all_methods)
     emit_name_enum(
       out,
       "Every `$name` the views call.",
@@ -306,15 +384,55 @@ fn emit_component(
       "Build `compute~` from an exhaustive match over the names the views call.",
       method_variants,
     )
-    emit_bucket(
-      out,
-      "\{t}Method",
-      "\{v}_swap",
-      "(S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
-      "Build `swap~` from an exhaustive match over the names the views call.",
-      method_variants,
-    )
   }
+
+  // -- the render-time directives ------------------------------------------
+  // One enum per bucket, not one for all four: each has its own handler
+  // signature, so a single `Alter` type could not type any of them.
+  emit_alter_bucket(
+    out,
+    t,
+    v,
+    surface.whens,
+    "When",
+    "when",
+    "Every `@when` handler the views name.",
+    "(S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
+    derives,
+  )
+  emit_alter_bucket(
+    out,
+    t,
+    v,
+    surface.enriches,
+    "Enrich",
+    "enrich",
+    "Every `@enrich-with` handler named INSIDE an `@each`.",
+    "(S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
+    derives,
+  )
+  emit_alter_bucket(
+    out,
+    t,
+    v,
+    surface.enrich_scopes,
+    "EnrichScope",
+    "enrich_scope",
+    "Every `@enrich-with` handler named with no `@each` around it.",
+    "(S) -> Map[String, @tutuca.Value]",
+    derives,
+  )
+  emit_alter_bucket(
+    out,
+    t,
+    v,
+    surface.loop_withs,
+    "LoopWith",
+    "loop_with",
+    "Every `@loop-with` handler the views name.",
+    "(S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith",
+    derives,
+  )
 
   // -- fields --------------------------------------------------------------
   // Superseded by the schema. `<v>_fields` and `<v>_missing_fields` existed

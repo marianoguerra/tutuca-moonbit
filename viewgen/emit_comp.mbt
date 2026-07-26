@@ -36,8 +36,10 @@ fn emit_wrapper(
   t : String,
   v : String,
   def : @statedef.StateDef,
+  surface : Surface,
   out : StringBuilder,
 ) -> Unit {
+  let methods = declared_methods(surface, Some(def))
   let s = "\{t}State"
   let filled = if has_direct_codec(def) {
     "/// states filled in — its name, its compiled views, its styles, its schema\n" +
@@ -68,8 +70,11 @@ fn emit_wrapper(
   out.write_string(
     "  update? : (\{s}, @component.Dispatch, &@tutuca.Ctx) -> \{s}?,\n",
   )
-  for b in wrapper_buckets(s) {
-    out.write_string(wrapper_opt(b.0, b.1, "Map([])"))
+  for b in wrapper_buckets(t, v, s, surface, methods) {
+    // No default: an absent bucket is `None`, and the call below turns that
+    // into the empty map. Giving it `_ => None` instead would read as "answer
+    // nothing", which is a different statement from "there is nothing here".
+    out.write_string("  \{b.param}? : (\{b.enum_}) -> (\{b.handler})?,\n")
   }
   out.write_string(
     wrapper_opt("specs", "Map[String, @component.FieldSpec]", "Map([])"),
@@ -88,8 +93,10 @@ fn emit_wrapper(
     "    global_style~,\n" +
     "    update?=update,\n",
   )
-  for b in wrapper_buckets(s) {
-    out.write_string("    \{b.0}~,\n")
+  for b in wrapper_buckets(t, v, s, surface, methods) {
+    out.write_string(
+      "    \{b.param}=match \{b.param} { Some(f) => \{b.builder}(f); None => Map([]) },\n",
+    )
   }
   out.write_string("    specs~,\n    provide~,\n    lookup~,\n")
   // The codec is skipped for a state the generator cannot convert field by
@@ -103,31 +110,89 @@ fn emit_wrapper(
 }
 
 ///|
-/// The handler buckets, in `component()`'s own order: (parameter, type).
+/// One handler bucket on the wrapper: the parameter, the enum that keys it,
+/// the handler it answers with, and the builder that turns the two into the
+/// map `component()` still takes.
+priv struct WrapperBucket {
+  param : String
+  enum_ : String
+  handler : String
+  builder : String
+}
+
+///|
+/// The handler buckets, in `component()`'s own order — TRIMMED to the ones the
+/// views actually name.
 ///
-/// Emitted whole rather than trimmed to what the views use — `Surface`
-/// carries no @when/@enrich-with/@loop-with names, so trimming could only
-/// ever be partial, and a signature that wobbles as the views change buys
-/// nothing.
-fn wrapper_buckets(s : String) -> Array[(String, String)] {
-  [
-    ("compute", "Map[String, (\{s}, Array[@tutuca.Value]) -> @tutuca.Value]"),
-    (
-      "swap",
-      "Map[String, (\{s}, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?]",
-    ),
-    (
-      "when",
-      "Map[String, (\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool]",
-    ),
-    (
-      "enrich",
-      "Map[String, (\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit]",
-    ),
-    ("enrich_scope", "Map[String, (\{s}) -> Map[String, @tutuca.Value]]"),
-    (
-      "loop_with",
-      "Map[String, (\{s}, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith]",
-    ),
-  ]
+/// It used to emit all six as `Map[String, …]`, on the reasoning that
+/// `Surface` carried no @when/@enrich-with/@loop-with names so trimming could
+/// only ever be partial. It carries them now, and both halves of that change
+/// matter. A bucket the views never use is not a parameter at all, so it
+/// cannot be answered by mistake; and the ones that remain are keyed by a
+/// generated enum rather than by a string, so the author writes a match the
+/// compiler checks — which is what makes a `$name` or an `@when` added to a
+/// view a build error instead of a handler silently never called.
+fn wrapper_buckets(
+  t : String,
+  v : String,
+  s : String,
+  surface : Surface,
+  methods : Array[String],
+) -> Array[WrapperBucket] {
+  let out : Array[WrapperBucket] = []
+  // `compute` answers `$name` in a VALUE position, so it is keyed by Method.
+  if !methods.is_empty() {
+    out.push({
+      param: "compute",
+      enum_: "\{t}Method",
+      handler: "(\{s}, Array[@tutuca.Value]) -> @tutuca.Value",
+      builder: "\{v}_compute",
+    })
+  }
+  // `swap` does NOT share that enum, though it reads like it should. A swap
+  // handler answers an Input dispatch — component/instance.mbt checks the swap
+  // bucket before `update` for exactly the names `@on` raises — so its keys are
+  // the input names, and it is `update`'s alternative rather than `compute`'s:
+  // the one that may replace this node with a different component's instance.
+  if !surface.inputs.is_empty() {
+    out.push({
+      param: "swap",
+      enum_: "\{t}Input",
+      handler: "(\{s}, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
+      builder: "\{v}_swap",
+    })
+  }
+  if !surface.whens.is_empty() {
+    out.push({
+      param: "when",
+      enum_: "\{t}When",
+      handler: "(\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
+      builder: "\{v}_when",
+    })
+  }
+  if !surface.enriches.is_empty() {
+    out.push({
+      param: "enrich",
+      enum_: "\{t}Enrich",
+      handler: "(\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
+      builder: "\{v}_enrich",
+    })
+  }
+  if !surface.enrich_scopes.is_empty() {
+    out.push({
+      param: "enrich_scope",
+      enum_: "\{t}EnrichScope",
+      handler: "(\{s}) -> Map[String, @tutuca.Value]",
+      builder: "\{v}_enrich_scope",
+    })
+  }
+  if !surface.loop_withs.is_empty() {
+    out.push({
+      param: "loop_with",
+      enum_: "\{t}LoopWith",
+      handler: "(\{s}, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith",
+      builder: "\{v}_loop_with",
+    })
+  }
+  out
 }

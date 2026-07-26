@@ -174,6 +174,26 @@ pub fn SelectorEntryMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] selector_entry_swap(
+  f : (SelectorEntryInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetLabel, SetValue] : Array[SelectorEntryInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -373,6 +393,26 @@ pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] selector_swap(
+  f : (SelectorInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetSelectedValue] : Array[SelectorInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
 }
 
 ///|
@@ -600,6 +640,26 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] entry_editor_and_selector_swap(
+  f : (EntryEditorAndSelectorInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([OnAddItem, RemoveInItemsAt] : Array[EntryEditorAndSelectorInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -785,6 +845,26 @@ pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] sheet_swap(
+  f : (SheetInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetTitle] : Array[SheetInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
 }
 
 ///|
@@ -1168,26 +1248,6 @@ pub fn[S] workspace_compute(
   f : (WorkspaceMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SheetTitle] : Array[WorkspaceMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] workspace_swap(
-  f : (WorkspaceMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
   for m in ([SheetTitle] : Array[WorkspaceMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h

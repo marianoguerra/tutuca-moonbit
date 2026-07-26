@@ -302,6 +302,26 @@ pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] person_swap(
+  f : (PersonInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetActive, SetEmail, SetName] : Array[PersonInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field

@@ -79,36 +79,6 @@ fn universal_wasm_component(
   common_style? : String = universal_wasm_common_style,
   global_style? : String = universal_wasm_global_style,
   update? : (UniversalWasmState, @component.Dispatch, &@tutuca.Ctx) -> UniversalWasmState?,
-  compute? : Map[
-    String,
-    (UniversalWasmState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (UniversalWasmState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (UniversalWasmState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      UniversalWasmState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (UniversalWasmState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (UniversalWasmState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -120,12 +90,6 @@ fn universal_wasm_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
     specs~,
     provide~,
     lookup~,
@@ -530,36 +494,15 @@ fn component_list_component(
   common_style? : String = component_list_common_style,
   global_style? : String = component_list_global_style,
   update? : (ComponentListState, @component.Dispatch, &@tutuca.Ctx) -> ComponentListState?,
-  compute? : Map[
-    String,
-    (ComponentListState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ComponentListState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ComponentListState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ComponentListState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ComponentListState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ComponentListState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (ComponentListMethod) -> ((
+    ComponentListState,
+    Array[@tutuca.Value],
+  ) -> @tutuca.Value)?,
+  swap? : (ComponentListInput) -> ((
+    ComponentListState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -571,12 +514,14 @@ fn component_list_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => component_list_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => component_list_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -691,36 +636,17 @@ fn component_picker_component(
   common_style? : String = component_picker_common_style,
   global_style? : String = component_picker_global_style,
   update? : (ComponentPickerState, @component.Dispatch, &@tutuca.Ctx) -> ComponentPickerState?,
-  compute? : Map[
-    String,
-    (ComponentPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ComponentPickerState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ComponentPickerState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ComponentPickerState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ComponentPickerState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ComponentPickerState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (ComponentPickerInput) -> ((
+    ComponentPickerState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (ComponentPickerWhen) -> ((
+    ComponentPickerState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -732,12 +658,14 @@ fn component_picker_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => component_picker_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => component_picker_when(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,
@@ -796,36 +724,15 @@ fn component_entry_component(
   common_style? : String = component_entry_common_style,
   global_style? : String = component_entry_global_style,
   update? : (ComponentEntryState, @component.Dispatch, &@tutuca.Ctx) -> ComponentEntryState?,
-  compute? : Map[
-    String,
-    (ComponentEntryState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (ComponentEntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (ComponentEntryState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      ComponentEntryState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[
-    String,
-    (ComponentEntryState) -> Map[String, @tutuca.Value],
-  ] = Map([]),
-  loop_with? : Map[
-    String,
-    (ComponentEntryState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  compute? : (ComponentEntryMethod) -> ((
+    ComponentEntryState,
+    Array[@tutuca.Value],
+  ) -> @tutuca.Value)?,
+  swap? : (ComponentEntryInput) -> ((
+    ComponentEntryState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -837,12 +744,14 @@ fn component_entry_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    compute=match compute {
+      Some(f) => component_entry_compute(f)
+      None => Map([])
+    },
+    swap=match swap {
+      Some(f) => component_entry_swap(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

@@ -91,8 +91,11 @@ pub fn send_receive_module() -> @component.ModuleDef {
 fn tree_item_comp() -> @component.Component {
   tree_item_component(
     init={ type_: "dir", label: "A Tree Item", isOpen: true, items: [] },
-    compute={
-      "areChildsVisible": (s, _args) => Bool(s.isOpen && s.items.length() > 0),
+    compute=m => {
+      match m {
+        AreChildsVisible =>
+          Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
+      }
     },
     update=(s, msg, ctx) => {
       match msg {

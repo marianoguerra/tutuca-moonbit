@@ -73,7 +73,9 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       init: [],
     }
     if !@viewgen.ir_supported(set) {
-      // Only macro-using views may opt out; anything else would be a hole.
+      // Two things opt a view out, and both are things `gen-views` would
+      // refuse anyway: a macro it cannot expand, and a `$name` in an `@on`
+      // position (MethodInEventPosition). Anything else would be a hole.
       unsupported = unsupported + 1
       continue
     }
@@ -115,9 +117,9 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   assert_true(emitted > unsupported * 3)
   assert_true(emitted >= 25)
   inspect(
-    "\{emitted} views compiled to a tree, \{unsupported} use macros",
+    "\{emitted} views compiled to a tree, \{unsupported} cannot be generated",
     content=(
-      #|206 views compiled to a tree, 18 use macros
+      #|201 views compiled to a tree, 23 cannot be generated
     ),
   )
 }

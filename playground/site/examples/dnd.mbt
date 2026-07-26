@@ -10,11 +10,12 @@
 fn build() -> @component.ModuleDef {
   let dnd = dn_d_example_component(
     init=DnDExampleState::{ items: [], query: "" },
-    when={
-      "filterItem": (s, _key, item, _iter) => match item {
-        Str(text) => text.contains(s.query)
-        _ => true
-      },
+    when=w => match w {
+      FilterItem =>
+        Some((s, _key, item, _iter) => match item {
+          Str(text) => text.contains(s.query)
+          _ => true
+        })
     },
     update=(s, msg, _ctx) => match DnDExampleMsg::from_dispatch(msg) {
       // args: [@key (the TARGET row's key), dragInfo]

@@ -323,6 +323,26 @@ pub fn SendReceiveMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] send_receive_swap(
+  f : (SendReceiveInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([ClearStatus, SetDraft, Submit] : Array[SendReceiveInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -547,6 +567,26 @@ pub fn TreeItemMsg::from_dispatch(d : @component.Dispatch) -> TreeItemMsg? {
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] tree_item_swap(
+  f : (TreeItemInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([OnItemClick] : Array[TreeItemInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum TreeItemMethod {
   AreChildsVisible
@@ -567,26 +607,6 @@ pub fn[S] tree_item_compute(
   f : (TreeItemMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([AreChildsVisible] : Array[TreeItemMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tree_item_swap(
-  f : (TreeItemMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
   for m in ([AreChildsVisible] : Array[TreeItemMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h

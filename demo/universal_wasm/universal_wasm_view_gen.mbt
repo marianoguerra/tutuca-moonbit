@@ -408,6 +408,36 @@ pub fn ComponentListMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] component_list_swap(
+  f : (ComponentListInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for
+    m in (
+      [
+        OnAdd,
+        SetAlign,
+        SetDir,
+        SetGap,
+        SetJustify,
+        ToggleShowSettings,
+        ToggleWrap,
+      ] : Array[ComponentListInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum ComponentListMethod {
   FlexStyle
@@ -428,26 +458,6 @@ pub fn[S] component_list_compute(
   f : (ComponentListMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([FlexStyle] : Array[ComponentListMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] component_list_swap(
-  f : (ComponentListMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
   for m in ([FlexStyle] : Array[ComponentListMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
@@ -724,6 +734,59 @@ pub fn ComponentPickerMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] component_picker_swap(
+  f : (ComponentPickerInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([SetFilterText] : Array[ComponentPickerInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `@when` handler the views name.
+pub(all) enum ComponentPickerWhen {
+  MatchesFilter
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ComponentPickerWhen::name(self : ComponentPickerWhen) -> String {
+  match self {
+    MatchesFilter => "matchesFilter"
+  }
+}
+
+///|
+/// Build `when~` from an exhaustive match over the names the views use.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] component_picker_when(
+  f : (ComponentPickerWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
+) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
+  let out : Map[
+    String,
+    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
+  ] = Map([])
+  for m in ([MatchesFilter] : Array[ComponentPickerWhen]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -943,6 +1006,56 @@ pub fn ComponentEntryMsg::from_dispatch(
 }
 
 ///|
+/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] component_entry_swap(
+  f : (ComponentEntryInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
+  let out : Map[
+    String,
+    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
+  ] = Map([])
+  for m in ([OnSelect] : Array[ComponentEntryInput]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
+/// Every `$name` the views call.
+pub(all) enum ComponentEntryMethod {
+  ContainsText
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ComponentEntryMethod::name(self : ComponentEntryMethod) -> String {
+  match self {
+    ContainsText => "containsText"
+  }
+}
+
+///|
+/// Build `compute~` from an exhaustive match over the names the views call.
+/// Return None for a name another bucket serves, or one of the mutators
+/// generated from the state's fields.
+pub fn[S] component_entry_compute(
+  f : (ComponentEntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
+) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
+  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
+  for m in ([ContainsText] : Array[ComponentEntryMethod]) {
+    match f(m) {
+      Some(h) => out[m.name()] = h
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// Passing it to `component` also stops the runtime inferring field
@@ -980,7 +1093,7 @@ pub fn component_entry_schema() -> @component.SchemaInfo {
     receives: [],
     bubbles: [],
     responses: [],
-    methods: [],
+    methods: ["containsText"],
     ids: [],
     view_names: ["main"],
     init_names: [],

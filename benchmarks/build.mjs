@@ -39,6 +39,7 @@ const VIEWS = [
   ["storybook/examples/graphics.html", "SbGraphics"],
   ["storybook/examples/json.html", "SbJson"],
   ["storybook/examples/list_iteration.html", "SbListIteration"],
+  ["storybook/examples/nested_state.html", "SbNestedState"],
   ["storybook/examples/personal_site.html", "SbPersonalSite"],
   ["storybook/examples/pseudo_x.html", "SbPseudoX"],
   ["storybook/examples/render_child.html", "SbRenderChild"],

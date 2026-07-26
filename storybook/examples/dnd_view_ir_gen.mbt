@@ -102,34 +102,17 @@ fn dn_d_example_component(
   common_style? : String = dn_d_example_common_style,
   global_style? : String = dn_d_example_global_style,
   update? : (DnDExampleState, @component.Dispatch, &@tutuca.Ctx) -> DnDExampleState?,
-  compute? : Map[
-    String,
-    (DnDExampleState, Array[@tutuca.Value]) -> @tutuca.Value,
-  ] = Map([]),
-  swap? : Map[
-    String,
-    (DnDExampleState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([]),
-  when? : Map[
-    String,
-    (DnDExampleState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([]),
-  enrich? : Map[
-    String,
-    (
-      DnDExampleState,
-      Map[String, @tutuca.Value],
-      @tutuca.Value,
-      @tutuca.Value,
-      @tutuca.Value,
-    ) -> Unit,
-  ] = Map([]),
-  enrich_scope? : Map[String, (DnDExampleState) -> Map[String, @tutuca.Value]] = Map([],
-  ),
-  loop_with? : Map[
-    String,
-    (DnDExampleState, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([]),
+  swap? : (DnDExampleInput) -> ((
+    DnDExampleState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
+  when? : (DnDExampleWhen) -> ((
+    DnDExampleState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
   specs? : Map[String, @component.FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
@@ -141,12 +124,14 @@ fn dn_d_example_component(
     common_style~,
     global_style~,
     update?,
-    compute~,
-    swap~,
-    when~,
-    enrich~,
-    enrich_scope~,
-    loop_with~,
+    swap=match swap {
+      Some(f) => dn_d_example_swap(f)
+      None => Map([])
+    },
+    when=match when {
+      Some(f) => dn_d_example_when(f)
+      None => Map([])
+    },
     specs~,
     provide~,
     lookup~,

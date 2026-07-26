@@ -14,10 +14,9 @@ fn tree_item_comp() -> @component.Component {
       isOpen: true,
       items: [],
     },
-    compute={
-      "areChildsVisible": (s, _args) => Bool(
-        s.isOpen && s.items.length() > 0,
-      ),
+    compute=m => match m {
+      AreChildsVisible =>
+        Some((s, _args) => Bool(s.isOpen && s.items.length() > 0))
     },
     // A raw `match msg`: this component handles a Bubble, which the views
     // cannot declare, so `TreeItemMsg::from_dispatch` cannot type it.

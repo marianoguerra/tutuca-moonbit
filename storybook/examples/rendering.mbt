@@ -41,18 +41,24 @@ fn push_view_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    compute={
-      "getToggleLabel": (s, _args) => {
-        if s.view == "main" {
-          Str("Set Edit Mode")
-        } else {
-          Str("Set Read Only")
-        }
-      },
+    compute=m => {
+      match m {
+        GetToggleLabel =>
+          Some((s, _args) => {
+            if s.view == "main" {
+              Str("Set Edit Mode")
+            } else {
+              Str("Set Read Only")
+            }
+          })
+      }
     },
-    when={
-      // the item is an Entry INSTANCE, so the filter calls its own method
-      "filterItem": (s, _k, item, _iter) => contains_text_filter(s.query, item),
+    when=w => {
+      match w {
+        // the item is an Entry INSTANCE, so the filter calls its own method
+        FilterItem =>
+          Some((s, _k, item, _iter) => contains_text_filter(s.query, item))
+      }
     },
   )
 }
@@ -87,10 +93,13 @@ pub fn push_view_module() -> @component.ModuleDef {
 fn seq_item_access_comp() -> @component.Component {
   seq_item_access_component(
     init={ byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0 },
-    compute={
-      "getMaxIndex": (s, _args) => {
-        Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
-      },
+    compute=m => {
+      match m {
+        GetMaxIndex =>
+          Some((s, _args) => {
+            Num(@cmp.maximum(0, s.byIndex.length() - 1).to_double())
+          })
+      }
     },
   )
 }
@@ -128,11 +137,15 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 fn pagination_comp() -> @component.Component {
   pagination_component(
     init={ items: [], page: 0, pageSize: 5 },
-    compute={
-      "pageCount": (s, _args) => Num(page_count(s).to_double()),
-      "pageLabel": (s, _args) => Str("Page \{s.page + 1} of \{page_count(s)}"),
-      "isFirstPage": (s, _args) => Bool(s.page <= 0),
-      "isLastPage": (s, _args) => Bool(s.page >= page_count(s) - 1),
+    compute=m => {
+      match m {
+        // No `PageCount`: nothing called `$pageCount`, in a view or out of one.
+        // The string-keyed bucket had no way to say so.
+        PageLabel =>
+          Some((s, _args) => Str("Page \{s.page + 1} of \{page_count(s)}"))
+        IsFirstPage => Some((s, _args) => Bool(s.page <= 0))
+        IsLastPage => Some((s, _args) => Bool(s.page >= page_count(s) - 1))
+      }
     },
     update=(s, msg, _ctx) => {
       match PaginationMsg::from_dispatch(msg) {
@@ -142,20 +155,23 @@ fn pagination_comp() -> @component.Component {
         Some(Unknown(_, _)) | None => None
       }
     },
-    loop_with={
-      // once per render: turn the current page into a slice range
-      "paginate": (s, seq, _ctx) => {
-        let total = match seq {
-          List(a) => a.length()
-          _ => 0
-        }
-        let start = s.page * s.pageSize
-        @component.LoopWith::new(
-          iter_data=Map({ "total": Num(total.to_double()) }),
-          start~,
-          end=start + s.pageSize,
-        )
-      },
+    loop_with=l => {
+      match l {
+        // once per render: turn the current page into a slice range
+        Paginate =>
+          Some((s, seq, _ctx) => {
+            let total = match seq {
+              List(a) => a.length()
+              _ => 0
+            }
+            let start = s.page * s.pageSize
+            @component.LoopWith::new(
+              iter_data=Map({ "total": Num(total.to_double()) }),
+              start~,
+              end=start + s.pageSize,
+            )
+          })
+      }
     },
   )
 }

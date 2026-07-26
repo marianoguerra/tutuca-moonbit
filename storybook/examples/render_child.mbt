@@ -42,13 +42,16 @@ pub fn render_child_module() -> @component.ModuleDef {
 fn entry_comp() -> @component.Component {
   entry_component(
     init={ title: "Entry Title", description: "Entry Description" },
-    compute={
-      "containsText": (s, args) => {
-        match args {
-          [Str(v)] => Bool(s.title.contains(v) || s.description.contains(v))
-          _ => Bool(false)
-        }
-      },
+    compute=m => {
+      match m {
+        ContainsText =>
+          Some((s, args) => {
+            match args {
+              [Str(v)] => Bool(s.title.contains(v) || s.description.contains(v))
+              _ => Bool(false)
+            }
+          })
+      }
     },
   )
 }

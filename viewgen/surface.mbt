@@ -93,64 +93,95 @@ fn issue_message(issue : @anode.ParseIssue) -> String {
 // Value walking
 
 ///|
+/// What a tree walk accumulates.
+///
+/// A struct rather than the six positional accumulators the walkers used to
+/// thread: the alter buckets pushed it past the point where the argument list
+/// was still readable, and every walker takes all of them anyway.
+///
+/// The alter names are split by BUCKET, not gathered into one set, because
+/// each bucket has its own handler signature — `@when` answers Bool, an
+/// in-loop `@enrich-with` mutates the binds map while a loop-less one returns
+/// it, and `@loop-with` returns a slice plan. A name is only typeable once you
+/// know which of those it is.
+priv struct Collect {
+  methods : @set.Set[String]
+  fields : @set.Set[String]
+  ids : @set.Set[String]
+  whens : @set.Set[String]
+  enriches : @set.Set[String]
+  enrich_scopes : @set.Set[String]
+  loop_withs : @set.Set[String]
+}
+
+///|
+fn Collect::new() -> Collect {
+  {
+    methods: @set.Set::Set([], capacity=8),
+    fields: @set.Set::Set([], capacity=8),
+    ids: @set.Set::Set([], capacity=8),
+    whens: @set.Set::Set([], capacity=4),
+    enriches: @set.Set::Set([], capacity=4),
+    enrich_scopes: @set.Set::Set([], capacity=4),
+    loop_withs: @set.Set::Set([], capacity=4),
+  }
+}
+
+///|
+/// The handler an alter directive names, into `into`.
+///
+/// A `$name` there is a method like any other and is already collected by
+/// `walk_val`; only the bare `HandlerName` form is a bucket entry.
+fn walk_alter(val : @tutuca.Val?, into : @set.Set[String]) -> Unit {
+  match val {
+    Some(HandlerName(name~, ns=Alter)) => into.add(name)
+    _ => ()
+  }
+}
+
+///|
 /// Every `$name` a value reaches, and — when `root_scope` — every state field
 /// it reads.
-fn walk_val(
-  val : @tutuca.Val,
-  methods : @set.Set[String],
-  fields : @set.Set[String],
-  root_scope : Bool,
-) -> Unit {
+fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
   match val {
-    Method(name) => methods.add(name)
-    Field(name) => if root_scope { fields.add(name) }
+    Method(name) => c.methods.add(name)
+    Field(name) => if root_scope { c.fields.add(name) }
     SeqAccess(seq~, key~) =>
       if root_scope {
-        fields.add(seq)
-        fields.add(key)
+        c.fields.add(seq)
+        c.fields.add(key)
       }
     StrTpl(parts) =>
       for p in parts {
         match p {
-          Some(v) => walk_val(v, methods, fields, root_scope)
+          Some(v) => walk_val(v, c, root_scope)
           None => ()
         }
       }
     Predicate(args~, ..) =>
       for a in args {
-        walk_val(a, methods, fields, root_scope)
+        walk_val(a, c, root_scope)
       }
     _ => ()
   }
 }
 
 ///|
-fn walk_val_opt(
-  val : @tutuca.Val?,
-  methods : @set.Set[String],
-  fields : @set.Set[String],
-  root_scope : Bool,
-) -> Unit {
+fn walk_val_opt(val : @tutuca.Val?, c : Collect, root_scope : Bool) -> Unit {
   match val {
-    Some(v) => walk_val(v, methods, fields, root_scope)
+    Some(v) => walk_val(v, c, root_scope)
     None => ()
   }
 }
 
 ///|
 /// Attribute values, plus the constant `id` this element declares.
-fn walk_attrs(
-  attrs : @anode.Attrs,
-  methods : @set.Set[String],
-  fields : @set.Set[String],
-  ids : @set.Set[String],
-  root_scope : Bool,
-) -> Unit {
+fn walk_attrs(attrs : @anode.Attrs, c : Collect, root_scope : Bool) -> Unit {
   match attrs {
     ConstAttrs(m) =>
       for k, lit in m {
         if k == "id" && lit is LStr(v) {
-          ids.add(v)
+          c.ids.add(v)
         }
       }
     DynAttrs(items) =>
@@ -158,15 +189,15 @@ fn walk_attrs(
         match item {
           Plain(name~, val~) | ConstA(name~, val~) => {
             if name == "id" && val is Const(lit=LStr(v), ..) {
-              ids.add(v)
+              c.ids.add(v)
             }
-            walk_val(val, methods, fields, root_scope)
+            walk_val(val, c, root_scope)
           }
-          RawHtml(val~) => walk_val_opt(val, methods, fields, root_scope)
+          RawHtml(val~) => walk_val_opt(val, c, root_scope)
           If(a) => {
-            walk_val(a.cond_val, methods, fields, root_scope)
-            walk_val_opt(a.then_val, methods, fields, root_scope)
-            walk_val_opt(a.else_val, methods, fields, root_scope)
+            walk_val(a.cond_val, c, root_scope)
+            walk_val_opt(a.then_val, c, root_scope)
+            walk_val_opt(a.else_val, c, root_scope)
           }
         }
       }
@@ -178,56 +209,61 @@ fn walk_attrs(
 /// a new stack frame (@each, @enrich-with, push-view, <x render>): a `.field`
 /// down there addresses the item or the child component, not this component's
 /// state. `$name` and `id` are collected everywhere.
-fn walk_node(
-  node : @anode.ANode,
-  methods : @set.Set[String],
-  fields : @set.Set[String],
-  ids : @set.Set[String],
-  root_scope : Bool,
-) -> Unit {
+fn walk_node(node : @anode.ANode, c : Collect, root_scope : Bool) -> Unit {
   match node {
     Text(_) | Comment(_) => ()
     Dom(d) => {
-      walk_attrs(d.attrs, methods, fields, ids, root_scope)
-      for c in d.childs {
-        walk_node(c, methods, fields, ids, root_scope)
+      walk_attrs(d.attrs, c, root_scope)
+      for child in d.childs {
+        walk_node(child, c, root_scope)
       }
     }
     Fragment(d) =>
-      for c in d.childs {
-        walk_node(c, methods, fields, ids, root_scope)
+      for child in d.childs {
+        walk_node(child, c, root_scope)
       }
-    RenderText(d) => walk_val(d.val, methods, fields, root_scope)
+    RenderText(d) => walk_val(d.val, c, root_scope)
     Render(d) => {
       // The value naming the child IS read in this scope; what the child
       // then renders is not.
-      walk_val(d.val, methods, fields, root_scope)
-      walk_val_opt(d.view_val, methods, fields, root_scope)
+      walk_val(d.val, c, root_scope)
+      walk_val_opt(d.view_val, c, root_scope)
     }
-    RenderIt(d) => walk_val_opt(d.view_val, methods, fields, root_scope)
+    RenderIt(d) => walk_val_opt(d.view_val, c, root_scope)
     Show(d) | Hide(d) => {
-      walk_val(d.val, methods, fields, root_scope)
-      walk_node(d.node, methods, fields, ids, root_scope)
+      walk_val(d.val, c, root_scope)
+      walk_node(d.node, c, root_scope)
     }
-    PushView(d) | Scope(d) => {
-      walk_val(d.val, methods, fields, root_scope)
-      walk_node(d.node, methods, fields, ids, false)
+    PushView(d) => {
+      walk_val(d.val, c, root_scope)
+      walk_node(d.node, c, false)
     }
-    Slot(d) => walk_node(d.node, methods, fields, ids, root_scope)
+    // A Scope node IS an `@enrich-with` with no `@each` around it: its handler
+    // returns the binds rather than mutating a map, which is the whole reason
+    // `enrich` and `enrich_scope` are two buckets.
+    Scope(d) => {
+      walk_alter(Some(d.val), c.enrich_scopes)
+      walk_val(d.val, c, root_scope)
+      walk_node(d.node, c, false)
+    }
+    Slot(d) => walk_node(d.node, c, root_scope)
     Each(d) => {
       // The iterated value is read here; the body runs per item.
-      walk_val(d.iter_info.val, methods, fields, root_scope)
-      walk_val_opt(d.iter_info.when_val, methods, fields, root_scope)
-      walk_val_opt(d.iter_info.loop_with_val, methods, fields, root_scope)
-      walk_val_opt(d.iter_info.enrich_with_val, methods, fields, root_scope)
-      walk_node(d.node, methods, fields, ids, false)
+      walk_val(d.iter_info.val, c, root_scope)
+      walk_alter(d.iter_info.when_val, c.whens)
+      walk_alter(d.iter_info.loop_with_val, c.loop_withs)
+      walk_alter(d.iter_info.enrich_with_val, c.enriches)
+      walk_val_opt(d.iter_info.when_val, c, root_scope)
+      walk_val_opt(d.iter_info.loop_with_val, c, root_scope)
+      walk_val_opt(d.iter_info.enrich_with_val, c, root_scope)
+      walk_node(d.node, c, false)
     }
     MacroCall(d) =>
       match d.node {
-        Some(n) => walk_node(n, methods, fields, ids, root_scope)
+        Some(n) => walk_node(n, c, root_scope)
         None => ()
       }
-    RenderOnce(d) => walk_node(d.node, methods, fields, ids, root_scope)
+    RenderOnce(d) => walk_node(d.node, c, root_scope)
   }
 }
 
@@ -283,9 +319,7 @@ pub fn view_surface(
   macros? : Array[MacroDef] = [],
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
-  let methods = @set.Set::Set([], capacity=8)
-  let fields = @set.Set::Set([], capacity=8)
-  let ids = @set.Set::Set([], capacity=8)
+  let c = Collect::new()
   // Insertion-ordered so the emitted variants follow first use, and the
   // signature of a name seen in two views is the join of both.
   let inputs : Map[String, InputSig] = Map([])
@@ -302,51 +336,78 @@ pub fn view_surface(
       raise ViewParseIssue(view=view.name, issue=collector.issues[0])
     }
     guard v.anode is Some(root) else { raise EmptyView(view.name) }
-    walk_node(root, methods, fields, ids, true)
-    for ev in px.events {
-      for h in ev.handlers {
-        let site = "@on." + h.name
-        match h.handler.handler {
-          // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
-          // Method into one string and hands both to `push_input`, so the two
-          // spellings are the same dispatch — including for the generated
-          // mutators, which answer to either. The sigil therefore claims a
-          // distinction that does not exist, and readers reasonably infer one.
-          // `$` keeps its meaning where it has one: a value position, where
-          // there is no event and no ctx and an input handler cannot go.
-          Method(name) =>
-            raise MethodInEventPosition(view=view.name, name~, site~)
-          HandlerName(name~, ..) => {
-            let shape = h.handler.args.map(arg_type_of)
-            for a in h.handler.args {
-              walk_val(a, methods, fields, false)
-            }
-            match inputs.get(name) {
-              None => inputs[name] = { name, args: Some(shape), sites: [site] }
-              Some(prev) => {
-                let args = match prev.args {
-                  Some(p) if p.length() == shape.length() =>
-                    Some(p.mapi((i, t) => join_arg(t, shape[i])))
-                  // Arity disagrees: the variant carries the raw args.
-                  _ => None
-                }
-                if !prev.sites.contains(site) {
-                  prev.sites.push(site)
-                }
-                inputs[name] = { ..prev, args, }
+    walk_view(view.name, root, px.events, c, inputs)
+  }
+  finish_surface(c, inputs)
+}
+
+///|
+/// The walk half of `view_surface`, over ONE already-compiled view.
+///
+/// Split out because the IR emitter has the trees already: it compiles every
+/// view to emit its builders, and re-parsing them here to answer which buckets
+/// the wrapper needs would put the third parse per view back that
+/// benchmarks/OPTIMIZATIONS.md #1 took out.
+fn walk_view(
+  view_name : String,
+  root : @anode.ANode,
+  events : Array[@anode.NodeEvents],
+  c : Collect,
+  inputs : Map[String, InputSig],
+) -> Unit raise GenError {
+  walk_node(root, c, true)
+  for ev in events {
+    for h in ev.handlers {
+      let site = "@on." + h.name
+      match h.handler.handler {
+        // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
+        // Method into one string and hands both to `push_input`, so the two
+        // spellings are the same dispatch — including for the generated
+        // mutators, which answer to either. The sigil therefore claims a
+        // distinction that does not exist, and readers reasonably infer one.
+        // `$` keeps its meaning where it has one: a value position, where
+        // there is no event and no ctx and an input handler cannot go.
+        Method(name) =>
+          raise MethodInEventPosition(view=view_name, name~, site~)
+        HandlerName(name~, ..) => {
+          let shape = h.handler.args.map(arg_type_of)
+          for a in h.handler.args {
+            walk_val(a, c, false)
+          }
+          match inputs.get(name) {
+            None => inputs[name] = { name, args: Some(shape), sites: [site] }
+            Some(prev) => {
+              let args = match prev.args {
+                Some(p) if p.length() == shape.length() =>
+                  Some(p.mapi((i, t) => join_arg(t, shape[i])))
+                // Arity disagrees: the variant carries the raw args.
+                _ => None
               }
+              if !prev.sites.contains(site) {
+                prev.sites.push(site)
+              }
+              inputs[name] = { ..prev, args, }
             }
           }
-          _ => ()
         }
+        _ => ()
       }
     }
   }
+}
+
+///|
+/// The collected sets as a `Surface`, sorted.
+fn finish_surface(c : Collect, inputs : Map[String, InputSig]) -> Surface {
   {
     inputs: sorted_by_name(inputs),
-    methods: sorted(methods),
-    fields: sorted(fields),
-    ids: sorted(ids),
+    methods: sorted(c.methods),
+    fields: sorted(c.fields),
+    ids: sorted(c.ids),
+    whens: sorted(c.whens),
+    enriches: sorted(c.enriches),
+    enrich_scopes: sorted(c.enrich_scopes),
+    loop_withs: sorted(c.loop_withs),
   }
 }
 

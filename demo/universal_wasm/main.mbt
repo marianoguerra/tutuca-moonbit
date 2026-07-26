@@ -43,13 +43,16 @@ fn component_entry_comp() -> @component.Component {
     },
     // used by the picker's @when filter (called with the search text after the
     // dropped this-slot arg, like the parent app's matchesFilter)
-    compute={
-      "containsText": (s, args) => {
-        match args {
-          [Str(q), ..] => Bool(s.label.contains(q))
-          _ => Bool(false)
-        }
-      },
+    compute=m => {
+      match m {
+        ContainsText =>
+          Some((s, args) => {
+            match args {
+              [Str(q), ..] => Bool(s.label.contains(q))
+              _ => Bool(false)
+            }
+          })
+      }
     },
   )
 }
@@ -102,17 +105,20 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
     },
     // @when predicate for render-each; keep rows whose entry's containsText
     // method matches the filter text
-    when={
-      "matchesFilter": (s, _key, item, _iter) => {
-        if s.filterText == "" {
-          true
-        } else {
-          match item.field("containsText") {
-            Fn(f) => f([Null, Str(s.filterText)]).is_truthy()
-            _ => true
-          }
-        }
-      },
+    when=w => {
+      match w {
+        MatchesFilter =>
+          Some((s, _key, item, _iter) => {
+            if s.filterText == "" {
+              true
+            } else {
+              match item.field("containsText") {
+                Fn(f) => f([Null, Str(s.filterText)]).is_truthy()
+                _ => true
+              }
+            }
+          })
+      }
     },
   )
 }
@@ -190,15 +196,18 @@ fn component_list_comp() -> @component.Component {
         _ => None
       }
     },
-    compute={
-      // per-instance flexbox style from the settings fields (see visual_wasm
-      // getInputWidth precedent for a compute returning a CSS string)
-      "flexStyle": (s, _args) => {
-        let wrap = if s.wrap { "wrap" } else { "nowrap" }
-        Str(
-          "display:flex;flex-direction:\{s.dir};gap:\{s.gap}px;justify-content:\{s.justify};align-items:\{s.align};flex-wrap:\{wrap}",
-        )
-      },
+    compute=m => {
+      match m {
+        // per-instance flexbox style from the settings fields (see visual_wasm
+        // getInputWidth precedent for a compute returning a CSS string)
+        FlexStyle =>
+          Some((s, _args) => {
+            let wrap = if s.wrap { "wrap" } else { "nowrap" }
+            Str(
+              "display:flex;flex-direction:\{s.dir};gap:\{s.gap}px;justify-content:\{s.justify};align-items:\{s.align};flex-wrap:\{wrap}",
+            )
+          })
+      }
     },
   )
 }

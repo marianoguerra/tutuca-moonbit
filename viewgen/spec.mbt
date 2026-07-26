@@ -95,6 +95,16 @@ pub(all) struct Surface {
   fields : Array[String]
   /// Constant `id` attributes, sorted.
   ids : Array[String]
+  /// `@when` handler names on an `@each`, sorted. Split from the other alter
+  /// directives rather than pooled with them because each bucket has its own
+  /// handler signature — this one answers Bool.
+  whens : Array[String]
+  /// `@enrich-with` names INSIDE an `@each`: they mutate the binds map.
+  enriches : Array[String]
+  /// `@enrich-with` names with no `@each` around them: they RETURN the binds.
+  enrich_scopes : Array[String]
+  /// `@loop-with` names, sorted. They return a slice/order plan.
+  loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
 
 ///|

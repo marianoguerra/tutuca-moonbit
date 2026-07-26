@@ -267,10 +267,12 @@ test "out-of-subset WIT is rejected, and the message says why" {
     err_of("interface c { record state { s: stream<s32> } }").contains("stream"),
     true,
   )
+  // A plain `func` is IN the subset now — it declares a `$`-callable. A
+  // method on a resource is not: there is no resource to hang it on.
   assert_eq(
-    err_of(
-      "interface c { greet: func(n: string) -> string; record state { n: s32 } }",
-    ).contains("behaviour lives in the MoonBit update"),
+    err_of("interface c { resource r { m: func(); } record state { n: s32 } }").contains(
+      "resource",
+    ),
     true,
   )
   assert_eq(
@@ -359,4 +361,41 @@ test "a syntax error's offset indexes the block, not the prepended header" {
   } noraise {
     _ => fail("expected a syntax error")
   }
+}
+
+///|
+/// A `func` declares a `$`-callable: the method a PARENT calls on this
+/// component, which no view of the component itself names and which therefore
+/// has nowhere else to be declared.
+test "a func declares a method, with its signature resolved" {
+  let defs = @statedef.parse_state(
+    (
+      #|interface entry {
+      #|  record state { title: string }
+      #|  contains-text: func(q: string) -> bool;
+      #|  summary: func();
+      #|}
+    ),
+  )
+  assert_eq(defs.length(), 1)
+  let ms = defs[0].methods
+  assert_eq(ms.map(m => m.name), ["containsText", "summary"])
+  assert_eq(ms[0].wit_name, "contains-text")
+  assert_eq(ms[0].params, [TText])
+  assert_eq(ms[0].result, Some(TBool))
+  // no result and no params is the other end of the shape
+  assert_eq(ms[1].params, [])
+  assert_eq(ms[1].result, None)
+}
+
+///|
+/// The params and result go through the same type gate as a state field, so a
+/// `func` cannot smuggle in a shape the value world has no reading of.
+test "a func signature is held to the state type subset" {
+  assert_eq(
+    err_of("interface c { f: func(n: s64); record state { n: s32 } }").contains(
+      "s64/u64",
+    ),
+    true,
+  )
 }

@@ -482,6 +482,20 @@
       <li @each=".items"><span class="k" @text="@key"></span>: <x text="@value"></x></li>
     </ul>
   </section>
+  <!-- storybook/examples/nested_state.html -->
+  <div class="card bg-base-200 p-4">
+    <h3 class="card-title" @text=".title"></h3>
+    <ul class="menu">
+      <li @each=".labels">
+        <button class="btn btn-xs" @on.click="toggleLabel @key">
+          <span @text="@value.text"></span>
+        </button>
+      </li>
+    </ul>
+    <button class="btn btn-sm btn-primary" @on.click="bumpPriority">
+      bump priority
+    </button>
+  </div>
   <!-- storybook/examples/personal_site.html -->
   <a class="badge badge-ghost badge-sm cursor-pointer gap-1 no-underline hover:bg-base-200 alt-url" :href=".url" target="_blank">🔗 <span @text=".label"></span></a>
   <!-- storybook/examples/personal_site.html -->

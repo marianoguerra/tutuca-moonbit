@@ -110,6 +110,7 @@ fn one_interface(
 ) -> StateDef raise DefError {
   let comp = comps.get(iface.name).unwrap()
   let defs : Map[String, @wit.TypeDef] = Map([])
+  let funcs : Array[@wit.Function] = []
   for item in iface.items {
     match item {
       TypeDef(td) => {
@@ -118,12 +119,20 @@ fn one_interface(
         }
         defs[td.name] = td
       }
+      // A plain `foo: func(...)` DECLARES a `$`-callable. State is still
+      // data — this does not put behaviour in the block, it names the method
+      // the MoonBit `compute` bucket has to answer, which is the only way a
+      // method no view of this component calls can be typed at all.
       Function(f) =>
-        raise UnsupportedItem(
-          iface=iface.name,
-          item=f.name + ": func(...)",
-          why="component state is data; behaviour lives in the MoonBit update",
-        )
+        if f.kind is Freestanding {
+          funcs.push(f)
+        } else {
+          raise UnsupportedItem(
+            iface=iface.name,
+            item=f.name + ": func(...)",
+            why="a method is declared on the component, not on a resource",
+          )
+        }
       Use(u) =>
         raise UnsupportedItem(
           iface=iface.name,
@@ -159,6 +168,7 @@ fn one_interface(
     receive: bucket(d, "receive"),
     bubble: bucket(d, "bubble"),
     response: bucket(d, "response"),
+    methods: funcs.map(f => method_def(d, f)),
     types: sorted,
     doc: iface.docs,
   }
@@ -215,6 +225,30 @@ fn variant_cases(
     })
   }
   out
+}
+
+///|
+/// One `foo: func(a: string) -> bool` declaration.
+///
+/// The params and result are resolved through the same type gate as a state
+/// field, so a `func` cannot smuggle in a shape the value world has no reading
+/// of — and so the inspector can show the signature the author wrote.
+fn method_def(d : Decls, f : @wit.Function) -> MethodDef raise DefError {
+  let where_ = "\{d.iface}.\{f.name}"
+  let params : Array[StateTy] = []
+  for p in f.params {
+    params.push(type_of(d, p.ty, "\{where_}.\{p.name}"))
+  }
+  {
+    wit_name: f.name,
+    name: camel_name(f.name),
+    params,
+    result: match f.result {
+      Some(t) => Some(type_of(d, t, "\{where_}.result"))
+      None => None
+    },
+    doc: f.docs,
+  }
 }
 
 ///|

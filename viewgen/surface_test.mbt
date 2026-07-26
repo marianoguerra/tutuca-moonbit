@@ -115,3 +115,49 @@ test "a view that would warn at runtime fails generation" {
     ),
   )
 }
+
+///|
+/// The alter directives, each into its own bucket.
+///
+/// Split by bucket rather than pooled: `@when` answers Bool, `@loop-with`
+/// returns a slice plan, and `@enrich-with` means two different signatures
+/// depending on whether an `@each` is around it — so the bucket is what makes
+/// a name typeable at all.
+test "the alter handler names, by bucket" {
+  let s = surface_of(
+    (
+      #|<template>
+      #|  <ul>
+      #|    <li @each=".items" @when="keepItem" @loop-with="firstPage"
+      #|        @enrich-with="enrichItem"><x text="@value"></x></li>
+      #|  </ul>
+      #|  <div @enrich-with="pagerInfo"><x text="@total"></x></div>
+      #|</template>
+    ),
+  )
+  assert_eq(s.whens, ["keepItem"])
+  assert_eq(s.loop_withs, ["firstPage"])
+  // inside an @each: mutates the binds map
+  assert_eq(s.enriches, ["enrichItem"])
+  // no @each around it: returns the binds
+  assert_eq(s.enrich_scopes, ["pagerInfo"])
+  // none of them is a `$name`, so none lands in `methods`
+  assert_eq(s.methods, [])
+}
+
+///|
+/// A `$name` in an alter position is a method like any other — it resolves
+/// through the compute bucket at render time — so it belongs in `methods` and
+/// NOT in the alter bucket, which would otherwise declare a handler the
+/// author never has to write.
+test "a $name in an alter position is a method, not a bucket entry" {
+  let s = surface_of(
+    (
+      #|<template>
+      #|  <ul><li @each=".items" @when="$visible"><x text="@value"></x></li></ul>
+      #|</template>
+    ),
+  )
+  assert_eq(s.methods, ["visible"])
+  assert_eq(s.whens, [])
+}

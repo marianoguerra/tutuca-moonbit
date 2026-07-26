@@ -14,6 +14,10 @@
     title: string,
     description: string,
     }
+    /// Asked by a parent's `@when` filter, which holds Entry instances and
+    /// knows nothing of their fields. No view of Entry calls it, so the
+    /// declaration here is what puts it in EntryMethod.
+    contains-text: func(q: string) -> bool;
   }
   interface multiple-views {
     record state {
