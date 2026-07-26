@@ -193,6 +193,10 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
           Some(items) => Some({ items, })
           None => None
         }
+      // Served by a generated mutator or another bucket: the view
+      // spells these bare now, so they arrive as Inputs, and
+      // returning None falls through to whatever answers them.
+      Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
     encode=json_array_encode,
@@ -234,6 +238,10 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
           Some(items) => Some({ items, })
           None => None
         }
+      // Served by a generated mutator or another bucket: the view
+      // spells these bare now, so they arrive as Inputs, and
+      // returning None falls through to whatever answers them.
+      Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
     encode=json_object_encode,

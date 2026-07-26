@@ -63,9 +63,21 @@ fn person_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("input", Method("setName"), args=[Name("value")])],
-      [@anode.on("input", Method("setEmail"), args=[Name("value")])],
-      [@anode.on("input", Method("setActive"), args=[Name("value")])],
+      [
+        @anode.on("input", HandlerName(name="setName", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setEmail", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setActive", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
     ],
   )
 }

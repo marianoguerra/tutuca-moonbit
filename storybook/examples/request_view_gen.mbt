@@ -175,12 +175,18 @@ pub let request_example_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum RequestExampleInput {
   LoadAnotherWay
+  ResetQuery
+  SetQuery
+  ToggleView
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn RequestExampleInput::name(self : RequestExampleInput) -> String {
   match self {
     LoadAnotherWay => "loadAnotherWay"
+    ResetQuery => "resetQuery"
+    SetQuery => "setQuery"
+    ToggleView => "toggleView"
   }
 }
 
@@ -188,6 +194,9 @@ pub fn RequestExampleInput::name(self : RequestExampleInput) -> String {
 pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
   match s {
     "loadAnotherWay" => Some(LoadAnotherWay)
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
+    "toggleView" => Some(ToggleView)
     _ => None
   }
 }
@@ -200,6 +209,12 @@ pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
 pub(all) enum RequestExampleMsg {
   /// `@on.click="loadAnotherWay …"`
   LoadAnotherWay
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
+  /// `@on.click="toggleView …"`
+  ToggleView
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -215,78 +230,10 @@ pub fn RequestExampleMsg::from_dispatch(
   Some(
     match (name, args) {
       ("loadAnotherWay", []) => LoadAnotherWay
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum RequestExampleMethod {
-  ResetQuery
-  SetQuery
-  ToggleView
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RequestExampleMethod::name(self : RequestExampleMethod) -> String {
-  match self {
-    ResetQuery => "resetQuery"
-    SetQuery => "setQuery"
-    ToggleView => "toggleView"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] request_example_mutate(
-  f : (RequestExampleMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetQuery, ToggleView] : Array[RequestExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] request_example_compute(
-  f : (RequestExampleMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetQuery, ToggleView] : Array[RequestExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] request_example_swap(
-  f : (RequestExampleMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery, ToggleView] : Array[RequestExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

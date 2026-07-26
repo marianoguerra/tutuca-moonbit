@@ -52,6 +52,10 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
     provide={ "entries": ".items" },
     update=(s : EntryEditorAndSelectorState, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
+        // Served by the mutators generated from the state's fields: the
+        // view spells them bare now, so they arrive as Inputs, and
+        // returning None falls through to them.
+        Some(RemoveInItemsAt(_)) => None
         Some(OnAddItem) => {
           let num = s.items.length() + 1
           Some({

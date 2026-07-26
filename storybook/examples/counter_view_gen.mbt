@@ -126,12 +126,14 @@ pub let counter_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum CounterInput {
   Dec
+  Inc
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn CounterInput::name(self : CounterInput) -> String {
   match self {
     Dec => "dec"
+    Inc => "inc"
   }
 }
 
@@ -139,6 +141,7 @@ pub fn CounterInput::name(self : CounterInput) -> String {
 pub fn CounterInput::parse(s : String) -> CounterInput? {
   match s {
     "dec" => Some(Dec)
+    "inc" => Some(Inc)
     _ => None
   }
 }
@@ -151,6 +154,8 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 pub(all) enum CounterMsg {
   /// `@on.click="dec …"`
   Dec
+  /// `@on.click="inc …"`
+  Inc
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -164,74 +169,8 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   Some(
     match (name, args) {
       ("dec", []) => Dec
+      ("inc", []) => Inc
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum CounterMethod {
-  Inc
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterMethod::name(self : CounterMethod) -> String {
-  match self {
-    Inc => "inc"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] counter_mutate(
-  f : (CounterMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([Inc] : Array[CounterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] counter_compute(
-  f : (CounterMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Inc] : Array[CounterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] counter_swap(
-  f : (CounterMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Inc] : Array[CounterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

@@ -46,7 +46,7 @@ fn counter_main_view_ir() -> @anode.View {
     ]),
     [
       [@anode.on("click", HandlerName(name="dec", ns=Input))],
-      [@anode.on("click", Method("inc"))],
+      [@anode.on("click", HandlerName(name="inc", ns=Input))],
     ],
   )
 }

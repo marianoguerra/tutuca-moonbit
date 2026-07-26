@@ -147,7 +147,13 @@ fn dse_entry_edit_view_ir() -> @anode.View {
       ],
       [],
     ),
-    [[@anode.on("input", Method("setName"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setName", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 

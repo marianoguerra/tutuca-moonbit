@@ -19,6 +19,10 @@ fn cx_counter_comp() -> @component.Component {
     mutate={ "inc": (s : CounterState, _a) => { count: s.count + 1 } },
     update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
+      // Served by a generated mutator or another bucket: the view
+      // spells these bare now, so they arrive as Inputs, and
+      // returning None falls through to whatever answers them.
+      Some(Inc) => None
       Some(Unknown(_, _)) | None => None
     },
     encode=counter_encode,
@@ -48,6 +52,10 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
     init=ItemsState::{ items: [] },
     update=(s : ItemsState, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
+      // Served by a generated mutator or another bucket: the view
+      // spells these bare now, so they arrive as Inputs, and
+      // returning None falls through to whatever answers them.
+      Some(RemoveInItemsAt(_)) => None
       Some(Unknown(_, _)) | None => None
     },
     encode=items_encode,

@@ -248,6 +248,7 @@ pub let send_receive_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum SendReceiveInput {
   ClearStatus
+  SetDraft
   Submit
 } derive(Eq, @debug.Debug)
 
@@ -255,6 +256,7 @@ pub(all) enum SendReceiveInput {
 pub fn SendReceiveInput::name(self : SendReceiveInput) -> String {
   match self {
     ClearStatus => "clearStatus"
+    SetDraft => "setDraft"
     Submit => "submit"
   }
 }
@@ -263,6 +265,7 @@ pub fn SendReceiveInput::name(self : SendReceiveInput) -> String {
 pub fn SendReceiveInput::parse(s : String) -> SendReceiveInput? {
   match s {
     "clearStatus" => Some(ClearStatus)
+    "setDraft" => Some(SetDraft)
     "submit" => Some(Submit)
     _ => None
   }
@@ -276,6 +279,8 @@ pub fn SendReceiveInput::parse(s : String) -> SendReceiveInput? {
 pub(all) enum SendReceiveMsg {
   /// `@on.click="clearStatus …"`
   ClearStatus
+  /// `@on.input="setDraft …"`
+  SetDraft(String)
   /// `@on.keydown, @on.click="submit …"`
   Submit
   /// An Input dispatch the views do not declare, or a declared name
@@ -293,77 +298,11 @@ pub fn SendReceiveMsg::from_dispatch(
   Some(
     match (name, args) {
       ("clearStatus", []) => ClearStatus
+      ("setDraft", [Str(a0)]) => SetDraft(a0)
       ("submit", []) => Submit
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum SendReceiveMethod {
-  SetDraft
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SendReceiveMethod::name(self : SendReceiveMethod) -> String {
-  match self {
-    SetDraft => "setDraft"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] send_receive_mutate(
-  f : (SendReceiveMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetDraft] : Array[SendReceiveMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] send_receive_compute(
-  f : (SendReceiveMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetDraft] : Array[SendReceiveMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] send_receive_swap(
-  f : (SendReceiveMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetDraft] : Array[SendReceiveMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

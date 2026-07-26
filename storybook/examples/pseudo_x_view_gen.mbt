@@ -498,70 +498,50 @@ pub let item_select_common_style : String = ""
 pub let item_select_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ItemSelectMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ItemSelectInput {
   SetCurrent
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ItemSelectMethod::name(self : ItemSelectMethod) -> String {
+pub fn ItemSelectInput::name(self : ItemSelectInput) -> String {
   match self {
     SetCurrent => "setCurrent"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_select_mutate(
-  f : (ItemSelectMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetCurrent] : Array[ItemSelectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ItemSelectInput::parse(s : String) -> ItemSelectInput? {
+  match s {
+    "setCurrent" => Some(SetCurrent)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_select_compute(
-  f : (ItemSelectMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetCurrent] : Array[ItemSelectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to pseudo_x.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ItemSelectMsg {
+  /// `@on.input="setCurrent …"`
+  SetCurrent(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_select_swap(
-  f : (ItemSelectMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetCurrent] : Array[ItemSelectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ItemSelectMsg::from_dispatch(d : @component.Dispatch) -> ItemSelectMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setCurrent", [Str(a0)]) => SetCurrent(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

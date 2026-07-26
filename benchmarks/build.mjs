@@ -103,6 +103,15 @@ function prefixTemplates(source, prefix, path) {
   return out + source.slice(at);
 }
 
+// A view file's `tutuca/state` and `tutuca/init` blocks, removed. See the
+// call site for why the concatenated corpus cannot keep them.
+function stripStateBlocks(source) {
+  return source.replace(
+    /<script type="tutuca\/(?:state|init)">[\s\S]*?<\/script>\n?/g,
+    "",
+  );
+}
+
 // Each top-level `<template>`'s inner source, which is what the one-big-view
 // corpus concatenates. No view file nests templates, so the first `</template>`
 // after an opening tag closes it.
@@ -137,7 +146,11 @@ const bodyParts = [
 ];
 let bodyCount = 0;
 for (const [path, prefix] of VIEWS) {
-  const source = readFileSync(join(root, path), "utf8");
+  // Stripped BEFORE anything scans for tags. A schema block is WIT, not
+  // markup, and its prose may say `<template>` — as filter_paginate's does,
+  // explaining why its strategies have none — which the tag scan below would
+  // otherwise take for an opening tag and slice a "body" from.
+  const source = stripStateBlocks(readFileSync(join(root, path), "utf8"));
   manyParts.push(`<!-- ${path} (${prefix}) -->`);
   manyParts.push(prefixTemplates(source, prefix, path).trimEnd());
   for (const body of templateBodies(source)) {

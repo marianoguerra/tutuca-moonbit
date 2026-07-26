@@ -157,15 +157,15 @@ pub let attribute_binding_common_style : String = ""
 pub let attribute_binding_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum AttributeBindingMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum AttributeBindingInput {
   SetBool
   SetRawNumber
   SetStr
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn AttributeBindingMethod::name(self : AttributeBindingMethod) -> String {
+pub fn AttributeBindingInput::name(self : AttributeBindingInput) -> String {
   match self {
     SetBool => "setBool"
     SetRawNumber => "setRawNumber"
@@ -174,57 +174,47 @@ pub fn AttributeBindingMethod::name(self : AttributeBindingMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] attribute_binding_mutate(
-  f : (AttributeBindingMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetBool, SetRawNumber, SetStr] : Array[AttributeBindingMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn AttributeBindingInput::parse(s : String) -> AttributeBindingInput? {
+  match s {
+    "setBool" => Some(SetBool)
+    "setRawNumber" => Some(SetRawNumber)
+    "setStr" => Some(SetStr)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] attribute_binding_compute(
-  f : (AttributeBindingMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetBool, SetRawNumber, SetStr] : Array[AttributeBindingMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to state_and_updates.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum AttributeBindingMsg {
+  /// `@on.input="setBool …"`
+  SetBool(String)
+  /// `@on.input="setRawNumber …"`
+  SetRawNumber(String)
+  /// `@on.input="setStr …"`
+  SetStr(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] attribute_binding_swap(
-  f : (AttributeBindingMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetBool, SetRawNumber, SetStr] : Array[AttributeBindingMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn AttributeBindingMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> AttributeBindingMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setBool", [Str(a0)]) => SetBool(a0)
+      ("setRawNumber", [Str(a0)]) => SetRawNumber(a0)
+      ("setStr", [Str(a0)]) => SetStr(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -355,14 +345,14 @@ pub let conditional_attributes_common_style : String = ""
 pub let conditional_attributes_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ConditionalAttributesMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ConditionalAttributesInput {
   ToggleIsActive
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ConditionalAttributesMethod::name(
-  self : ConditionalAttributesMethod,
+pub fn ConditionalAttributesInput::name(
+  self : ConditionalAttributesInput,
 ) -> String {
   match self {
     ToggleIsActive => "toggleIsActive"
@@ -370,57 +360,41 @@ pub fn ConditionalAttributesMethod::name(
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] conditional_attributes_mutate(
-  f : (ConditionalAttributesMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ToggleIsActive] : Array[ConditionalAttributesMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ConditionalAttributesInput::parse(
+  s : String,
+) -> ConditionalAttributesInput? {
+  match s {
+    "toggleIsActive" => Some(ToggleIsActive)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] conditional_attributes_compute(
-  f : (ConditionalAttributesMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ToggleIsActive] : Array[ConditionalAttributesMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to state_and_updates.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ConditionalAttributesMsg {
+  /// `@on.click="toggleIsActive …"`
+  ToggleIsActive
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] conditional_attributes_swap(
-  f : (ConditionalAttributesMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleIsActive] : Array[ConditionalAttributesMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ConditionalAttributesMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ConditionalAttributesMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("toggleIsActive", []) => ToggleIsActive
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -554,12 +528,16 @@ pub let event_modifiers_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EventModifiersInput {
   OnInput
+  ResetQuery
+  SetLastSentSearch
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn EventModifiersInput::name(self : EventModifiersInput) -> String {
   match self {
     OnInput => "onInput"
+    ResetQuery => "resetQuery"
+    SetLastSentSearch => "setLastSentSearch"
   }
 }
 
@@ -567,6 +545,8 @@ pub fn EventModifiersInput::name(self : EventModifiersInput) -> String {
 pub fn EventModifiersInput::parse(s : String) -> EventModifiersInput? {
   match s {
     "onInput" => Some(OnInput)
+    "resetQuery" => Some(ResetQuery)
+    "setLastSentSearch" => Some(SetLastSentSearch)
     _ => None
   }
 }
@@ -579,6 +559,10 @@ pub fn EventModifiersInput::parse(s : String) -> EventModifiersInput? {
 pub(all) enum EventModifiersMsg {
   /// `@on.input="onInput …"`
   OnInput(String)
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.keydown="setLastSentSearch …"`
+  SetLastSentSearch(String)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -594,78 +578,11 @@ pub fn EventModifiersMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onInput", [Str(a0)]) => OnInput(a0)
+      ("resetQuery", []) => ResetQuery
+      ("setLastSentSearch", [Str(a0)]) => SetLastSentSearch(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum EventModifiersMethod {
-  ResetQuery
-  SetLastSentSearch
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EventModifiersMethod::name(self : EventModifiersMethod) -> String {
-  match self {
-    ResetQuery => "resetQuery"
-    SetLastSentSearch => "setLastSentSearch"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] event_modifiers_mutate(
-  f : (EventModifiersMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetLastSentSearch] : Array[EventModifiersMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] event_modifiers_compute(
-  f : (EventModifiersMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetLastSentSearch] : Array[EventModifiersMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] event_modifiers_swap(
-  f : (EventModifiersMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetLastSentSearch] : Array[EventModifiersMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -789,19 +706,68 @@ pub let show_hide_common_style : String = ""
 pub let show_hide_global_style : String = ""
 
 ///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ShowHideInput {
+  IncCount
+  ToggleIsOpen
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn ShowHideInput::name(self : ShowHideInput) -> String {
+  match self {
+    IncCount => "incCount"
+    ToggleIsOpen => "toggleIsOpen"
+  }
+}
+
+///|
+pub fn ShowHideInput::parse(s : String) -> ShowHideInput? {
+  match s {
+    "incCount" => Some(IncCount)
+    "toggleIsOpen" => Some(ToggleIsOpen)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to state_and_updates.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ShowHideMsg {
+  /// `@on.click="incCount …"`
+  IncCount
+  /// `@on.click="toggleIsOpen …"`
+  ToggleIsOpen
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ShowHideMsg::from_dispatch(d : @component.Dispatch) -> ShowHideMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("incCount", []) => IncCount
+      ("toggleIsOpen", []) => ToggleIsOpen
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum ShowHideMethod {
-  IncCount
   Label
-  ToggleIsOpen
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ShowHideMethod::name(self : ShowHideMethod) -> String {
   match self {
-    IncCount => "incCount"
     Label => "label"
-    ToggleIsOpen => "toggleIsOpen"
   }
 }
 
@@ -813,7 +779,7 @@ pub fn[S] show_hide_mutate(
   f : (ShowHideMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([IncCount, Label, ToggleIsOpen] : Array[ShowHideMethod]) {
+  for m in ([Label] : Array[ShowHideMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -830,7 +796,7 @@ pub fn[S] show_hide_compute(
   f : (ShowHideMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([IncCount, Label, ToggleIsOpen] : Array[ShowHideMethod]) {
+  for m in ([Label] : Array[ShowHideMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -850,7 +816,7 @@ pub fn[S] show_hide_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for m in ([IncCount, Label, ToggleIsOpen] : Array[ShowHideMethod]) {
+  for m in ([Label] : Array[ShowHideMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()

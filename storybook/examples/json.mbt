@@ -191,6 +191,10 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
     init=JsonArrayState::{ items: [] },
     update=(s : JsonArrayState, msg, _ctx) => {
       match JsonArrayMsg::from_dispatch(msg) {
+        // Served by the mutators generated from the state's fields: the
+        // view spells them bare now, so they arrive as Inputs, and
+        // returning None falls through to them.
+        Some(RemoveInItemsAt(_)) => None
         // add a fresh JsonSelector so the user can pick the new element's type
         Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
         Some(OnDropOnItem(a0, a1)) =>
@@ -227,6 +231,10 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
     init=JsonObjectState::{ items: [] },
     update=(s : JsonObjectState, msg, _ctx) => {
       match JsonObjectMsg::from_dispatch(msg) {
+        // Served by the mutators generated from the state's fields: the
+        // view spells them bare now, so they arrive as Inputs, and
+        // returning None falls through to them.
+        Some(RemoveInItemsAt(_)) => None
         // a key/value row whose value is a fresh selector
         Some(AddItem) => {
           let row = match reg.comps.get("JsonObjectKeyVal") {

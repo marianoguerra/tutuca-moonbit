@@ -33,7 +33,12 @@ fn build() -> @component.ModuleDef {
         Some({ ..s, items: move_index_to_index(s.items, source, target) })
       }
       Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
-    },
+    
+  // Served by a generated mutator or another bucket: the view
+  // spells these bare now, so they arrive as Inputs, and
+  // returning None falls through to whatever answers them.
+  Some(ResetQuery) => None
+  Some(SetQuery(_)) => None},
     encode=dn_d_example_encode,
     decode=dn_d_example_decode,
   

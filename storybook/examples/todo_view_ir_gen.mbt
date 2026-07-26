@@ -41,8 +41,16 @@ fn item_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("input", Method("setCompleted"), args=[Name("value")])],
-      [@anode.on("input", Method("setText"), args=[Name("value")])],
+      [
+        @anode.on("input", HandlerName(name="setCompleted", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setText", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
     ],
   )
 }
@@ -97,7 +105,11 @@ fn items_main_view_ir() -> @anode.View {
     ]),
     [
       [@anode.on("click", HandlerName(name="onAddItem", ns=Input))],
-      [@anode.on("click", Method("removeInItemsAt"), args=[Bind("key")])],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
     ],
   )
 }

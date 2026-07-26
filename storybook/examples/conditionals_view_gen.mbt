@@ -125,17 +125,64 @@ pub let traffic_light_common_style : String = ""
 pub let traffic_light_global_style : String = ""
 
 ///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum TrafficLightInput {
+  NextLight
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TrafficLightInput::name(self : TrafficLightInput) -> String {
+  match self {
+    NextLight => "nextLight"
+  }
+}
+
+///|
+pub fn TrafficLightInput::parse(s : String) -> TrafficLightInput? {
+  match s {
+    "nextLight" => Some(NextLight)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to conditionals.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum TrafficLightMsg {
+  /// `@on.click="nextLight …"`
+  NextLight
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn TrafficLightMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> TrafficLightMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("nextLight", []) => NextLight
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum TrafficLightMethod {
   Light
-  NextLight
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn TrafficLightMethod::name(self : TrafficLightMethod) -> String {
   match self {
     Light => "light"
-    NextLight => "nextLight"
   }
 }
 
@@ -147,7 +194,7 @@ pub fn[S] traffic_light_mutate(
   f : (TrafficLightMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([Light, NextLight] : Array[TrafficLightMethod]) {
+  for m in ([Light] : Array[TrafficLightMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -164,7 +211,7 @@ pub fn[S] traffic_light_compute(
   f : (TrafficLightMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Light, NextLight] : Array[TrafficLightMethod]) {
+  for m in ([Light] : Array[TrafficLightMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -184,7 +231,7 @@ pub fn[S] traffic_light_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for m in ([Light, NextLight] : Array[TrafficLightMethod]) {
+  for m in ([Light] : Array[TrafficLightMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -308,70 +355,50 @@ pub let tabbed_u_i_common_style : String = ""
 pub let tabbed_u_i_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum TabbedUIMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum TabbedUIInput {
   SetTab
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn TabbedUIMethod::name(self : TabbedUIMethod) -> String {
+pub fn TabbedUIInput::name(self : TabbedUIInput) -> String {
   match self {
     SetTab => "setTab"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tabbed_u_i_mutate(
-  f : (TabbedUIMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetTab] : Array[TabbedUIMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn TabbedUIInput::parse(s : String) -> TabbedUIInput? {
+  match s {
+    "setTab" => Some(SetTab)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tabbed_u_i_compute(
-  f : (TabbedUIMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetTab] : Array[TabbedUIMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to conditionals.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum TabbedUIMsg {
+  /// `@on.click="setTab …"`
+  SetTab(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tabbed_u_i_swap(
-  f : (TabbedUIMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetTab] : Array[TabbedUIMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn TabbedUIMsg::from_dispatch(d : @component.Dispatch) -> TabbedUIMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setTab", [Str(a0)]) => SetTab(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -528,14 +555,14 @@ pub let list_and_filter_common_style : String = ""
 pub let list_and_filter_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ListAndFilterMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ListAndFilterInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ListAndFilterMethod::name(self : ListAndFilterMethod) -> String {
+pub fn ListAndFilterInput::name(self : ListAndFilterInput) -> String {
   match self {
     ResetQuery => "resetQuery"
     SetQuery => "setQuery"
@@ -543,55 +570,41 @@ pub fn ListAndFilterMethod::name(self : ListAndFilterMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_and_filter_mutate(
-  f : (ListAndFilterMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListAndFilterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ListAndFilterInput::parse(s : String) -> ListAndFilterInput? {
+  match s {
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_and_filter_compute(
-  f : (ListAndFilterMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListAndFilterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to conditionals.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ListAndFilterMsg {
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_and_filter_swap(
-  f : (ListAndFilterMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListAndFilterMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ListAndFilterMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ListAndFilterMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }

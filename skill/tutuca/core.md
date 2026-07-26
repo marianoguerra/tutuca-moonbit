@@ -70,17 +70,20 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 
 ## Common pitfalls
 
-- **`.name` reads a field, `$name` calls a `$`-handler.** The two are
-  distinct prefixes: `.count` reads field `count`, `$inc` calls the
-  `mutate`/`compute` entry (or generated mutator) `inc`. Using the wrong
-  one is a lint error that tells you to swap the prefix.
+- **`.name` reads a field, `$name` calls a handler IN A VALUE POSITION.**
+  `.count` reads field `count`; `$label` in `@text="$label"` or
+  `@show="$canSubmit"` calls the `compute` entry (or generated mutator)
+  by that name. In an EVENT position (`@on.click`) the `$` is refused:
+  a `$name` and a bare name are the same dispatch there — app/app.mbt
+  hands both to `push_input` — so the sigil would claim a distinction
+  that does not exist.
 - **Handlers that need `ctx` go in `update`, not `mutate`/`compute`.**
   A `mutate` entry is pure — `(s, args) => S` — and a `compute` entry is
   pure — `(s, args) => Value` — because `$`-callables are also evaluated
   in value positions (`@text="$label"`), where no event exists. The
   `update` fn — `(s, msg, ctx) => S?` — gets the `&Ctx` and can
-  `ctx.send` / `ctx.request`. The template syntax is unchanged (`$name`
-  for `$`-handlers, bare `name` for update-dispatched events).
+  `ctx.send` / `ctx.request`. Every `@on` handler is written bare,
+  whichever bucket serves it; `$` is for value positions only.
 - **`update` returns `S?`; `None` means "no change".** Returning `None`
   leaves the root untouched (a cheap no-op); return `Some(new_state)` to
   commit. The match must be total — always end with `_ => None`.

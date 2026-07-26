@@ -51,8 +51,43 @@ test "bench one-big-view gen" (it : @bench.T) {
 /// generating the same output; these pin size and output for both corpora
 /// (scaling_bench_test.mbt pins the same for the giant view it shares).
 test "workload shape" {
-  inspect(@benchmarks.all_views.length(), content="58476")
+  inspect(
+    @benchmarks.all_views.length(),
+    content=(
+      #|58402
+    ),
+  )
   inspect(@benchmarks.build(@benchmarks.all_views), content="107")
-  inspect(@benchmarks.gen(@benchmarks.all_views), content="497695")
-  inspect(@benchmarks.gen(giant_1x), content="140912")
+  inspect(
+    @benchmarks.gen(@benchmarks.all_views),
+    content=(
+      #|448245
+    ),
+  )
+  inspect(
+    @benchmarks.gen(giant_1x),
+    content=(
+      #|148214
+    ),
+  )
+}
+
+///|
+/// The corpora must PARSE, checked by a plain test rather than only by the
+/// benches above.
+///
+/// `moon test` does not execute a `bench` body, so a corpus that no longer
+/// splits fails only under `moon bench` — which is not what CI runs. Both
+/// corpora were silently unusable for exactly that reason once view files
+/// started carrying schema blocks: `all_views` concatenates every view file,
+/// and 36 schemas in one file is not a view file, while a `<template>`
+/// written inside a schema COMMENT was taken for an opening tag.
+test "both corpora still split" {
+  let many = @viewgen.split_file(@benchmarks.all_views)
+  assert_true(many.components.length() > 50)
+  // A schema block is WIT, not markup: the corpus builder strips it, so no
+  // schema survives the concatenation to be parsed as a second one.
+  assert_eq(many.state.length(), 0)
+  let giant = @viewgen.split_file(@benchmarks.giant_view(1))
+  assert_eq(giant.components.length(), 1)
 }

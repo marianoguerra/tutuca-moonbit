@@ -53,7 +53,7 @@
 &lt;/script&gt;
 
 &lt;template id="Counter"&gt;
-  &lt;button @on.click="$inc" @text=".count"&gt;&lt;/button&gt;
+  &lt;button @on.click="inc" @text=".count"&gt;&lt;/button&gt;
 &lt;/template&gt;
 
 // counter.mbt — `tutuca gen-views` generated CounterState from
@@ -124,7 +124,7 @@ let counter = @component.component(
 
         <h4>Two-way Text Binding</h4>
         <p>
-          <code>:value</code> reads a field; <code>@on.input="$setName value"</code>
+          <code>:value</code> reads a field; <code>@on.input="setName value"</code>
           writes it via the generated mutator; <code>@text</code> mirrors it live.
         </p>
         <mb-playground

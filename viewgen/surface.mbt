@@ -307,10 +307,15 @@ pub fn view_surface(
       for h in ev.handlers {
         let site = "@on." + h.name
         match h.handler.handler {
-          // A `$name` in event position dispatches through the same bucket
-          // as a mutate/compute/swap call (component/instance.mbt), so it is
-          // a method reference, not an input.
-          Method(name) => methods.add(name)
+          // A `$name` here is REFUSED. app/app.mbt collapses HandlerName and
+          // Method into one string and hands both to `push_input`, so the two
+          // spellings are the same dispatch — including for the generated
+          // mutators, which answer to either. The sigil therefore claims a
+          // distinction that does not exist, and readers reasonably infer one.
+          // `$` keeps its meaning where it has one: a value position, where
+          // there is no event and no ctx and an input handler cannot go.
+          Method(name) =>
+            raise MethodInEventPosition(view=view.name, name~, site~)
           HandlerName(name~, ..) => {
             let shape = h.handler.args.map(arg_type_of)
             for a in h.handler.args {

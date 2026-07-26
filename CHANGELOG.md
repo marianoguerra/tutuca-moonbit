@@ -65,6 +65,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **The benchmark view corpora had become unparseable, and nothing noticed.**
+  `moon test` does not execute a `bench` body, so a corpus that no longer
+  splits fails only under `moon bench`. Once view files started carrying
+  schema blocks, `all_views` — every view file concatenated into one —
+  collected 36 of them, which `split_file` rightly refuses; and a
+  `<template>` written inside a schema *comment* was taken for an opening
+  tag, unbalancing `one_big_view`. The corpus builder now strips schema
+  blocks before anything scans for tags, and a plain test asserts both
+  corpora split.
+
 - **`@push-view` and `@enrich-with` were treated as opening a new state
   scope.** `@push-view` pushes a view NAME onto the render stack
   (`render/render.mbt`, `push_view_name`) and `@enrich-with` pushes binds;
@@ -86,6 +96,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   palettes and a different default `--font-sans` stack.
 
 ### Changed
+
+- **A `$name` in an `@on` handler position is now a generation error.** It
+  was never a second mechanism: `app/app.mbt` collapses `HandlerName` and
+  `Method` into one string and hands both to `push_input`, so `@on.click="$inc"`
+  and `@on.click="inc"` are the *same dispatch* — verified for user buckets
+  and for the generated mutators, which answer to either spelling. The sigil
+  therefore claimed a distinction that does not exist, and readers reasonably
+  inferred one. `$` keeps its meaning where it has one: a value position
+  (`@text="$label"`, `@show="$canSubmit"`), where there is no event and no
+  `ctx` and an input handler cannot go.
+
+  All 338 call sites across 33 view files are rewritten to bare names. A name
+  that moves from `$` to bare moves from `<C>Method` into `<C>Msg`, so six
+  `update` matches gained a fall-through arm returning `None` — which is how
+  a handler served by a generated mutator was always meant to read.
 
 - **Views are now type-checked against the state schema (breaking for any
   component that adopts one).** An unknown `.field` is a generation failure

@@ -336,14 +336,14 @@ pub let entry_common_style : String = ""
 pub let entry_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum EntryMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum EntryInput {
   SetDescription
   SetTitle
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn EntryMethod::name(self : EntryMethod) -> String {
+pub fn EntryInput::name(self : EntryInput) -> String {
   match self {
     SetDescription => "setDescription"
     SetTitle => "setTitle"
@@ -351,57 +351,41 @@ pub fn EntryMethod::name(self : EntryMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_mutate(
-  f : (EntryMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetDescription, SetTitle] : Array[EntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn EntryInput::parse(s : String) -> EntryInput? {
+  match s {
+    "setDescription" => Some(SetDescription)
+    "setTitle" => Some(SetTitle)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_compute(
-  f : (EntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetDescription, SetTitle] : Array[EntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to render_child.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum EntryMsg {
+  /// `@on.input="setDescription …"`
+  SetDescription(String)
+  /// `@on.input="setTitle …"`
+  SetTitle(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_swap(
-  f : (EntryMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetDescription, SetTitle] : Array[EntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn EntryMsg::from_dispatch(d : @component.Dispatch) -> EntryMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setDescription", [Str(a0)]) => SetDescription(a0)
+      ("setTitle", [Str(a0)]) => SetTitle(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

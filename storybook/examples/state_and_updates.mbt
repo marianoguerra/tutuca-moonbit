@@ -108,6 +108,10 @@ fn event_modifiers_comp() -> @component.Component {
     init=EventModifiersState::{ query: "", lastSentSearch: Null },
     update=(s : EventModifiersState, msg, _ctx) => {
       match EventModifiersMsg::from_dispatch(msg) {
+        // Served by the mutators generated from the state's fields: the
+        // view spells them bare now, so they arrive as Inputs, and
+        // returning None falls through to them.
+        Some(ResetQuery | SetLastSentSearch(_)) => None
         Some(OnInput(v)) => Some({ ..s, query: v })
         Some(Unknown(_, _)) | None => None
       }

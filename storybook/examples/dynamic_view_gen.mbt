@@ -129,14 +129,14 @@ pub let selector_entry_common_style : String = ""
 pub let selector_entry_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SelectorEntryMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SelectorEntryInput {
   SetLabel
   SetValue
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SelectorEntryMethod::name(self : SelectorEntryMethod) -> String {
+pub fn SelectorEntryInput::name(self : SelectorEntryInput) -> String {
   match self {
     SetLabel => "setLabel"
     SetValue => "setValue"
@@ -144,57 +144,43 @@ pub fn SelectorEntryMethod::name(self : SelectorEntryMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_entry_mutate(
-  f : (SelectorEntryMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetLabel, SetValue] : Array[SelectorEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn SelectorEntryInput::parse(s : String) -> SelectorEntryInput? {
+  match s {
+    "setLabel" => Some(SetLabel)
+    "setValue" => Some(SetValue)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_entry_compute(
-  f : (SelectorEntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetLabel, SetValue] : Array[SelectorEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to dynamic.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SelectorEntryMsg {
+  /// `@on.input="setLabel …"`
+  SetLabel(String)
+  /// `@on.input="setValue …"`
+  SetValue(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_entry_swap(
-  f : (SelectorEntryMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetLabel, SetValue] : Array[SelectorEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SelectorEntryMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> SelectorEntryMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setLabel", [Str(a0)]) => SetLabel(a0)
+      ("setValue", [Str(a0)]) => SetValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -324,70 +310,50 @@ pub let selector_common_style : String = ""
 pub let selector_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SelectorMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SelectorInput {
   SetSelectedValue
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SelectorMethod::name(self : SelectorMethod) -> String {
+pub fn SelectorInput::name(self : SelectorInput) -> String {
   match self {
     SetSelectedValue => "setSelectedValue"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_mutate(
-  f : (SelectorMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetSelectedValue] : Array[SelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn SelectorInput::parse(s : String) -> SelectorInput? {
+  match s {
+    "setSelectedValue" => Some(SetSelectedValue)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_compute(
-  f : (SelectorMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetSelectedValue] : Array[SelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to dynamic.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SelectorMsg {
+  /// `@on.input="setSelectedValue …"`
+  SetSelectedValue(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] selector_swap(
-  f : (SelectorMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetSelectedValue] : Array[SelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setSelectedValue", [Str(a0)]) => SetSelectedValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -530,6 +496,7 @@ pub let entry_editor_and_selector_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EntryEditorAndSelectorInput {
   OnAddItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -538,6 +505,7 @@ pub fn EntryEditorAndSelectorInput::name(
 ) -> String {
   match self {
     OnAddItem => "onAddItem"
+    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -547,6 +515,7 @@ pub fn EntryEditorAndSelectorInput::parse(
 ) -> EntryEditorAndSelectorInput? {
   match s {
     "onAddItem" => Some(OnAddItem)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -559,6 +528,8 @@ pub fn EntryEditorAndSelectorInput::parse(
 pub(all) enum EntryEditorAndSelectorMsg {
   /// `@on.click="onAddItem …"`
   OnAddItem
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -574,78 +545,10 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum EntryEditorAndSelectorMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EntryEditorAndSelectorMethod::name(
-  self : EntryEditorAndSelectorMethod,
-) -> String {
-  match self {
-    RemoveInItemsAt => "removeInItemsAt"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_editor_and_selector_mutate(
-  f : (EntryEditorAndSelectorMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([RemoveInItemsAt] : Array[EntryEditorAndSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_editor_and_selector_compute(
-  f : (EntryEditorAndSelectorMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([RemoveInItemsAt] : Array[EntryEditorAndSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] entry_editor_and_selector_swap(
-  f : (EntryEditorAndSelectorMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([RemoveInItemsAt] : Array[EntryEditorAndSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -763,70 +666,50 @@ pub let sheet_common_style : String = ""
 pub let sheet_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SheetMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SheetInput {
   SetTitle
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SheetMethod::name(self : SheetMethod) -> String {
+pub fn SheetInput::name(self : SheetInput) -> String {
   match self {
     SetTitle => "setTitle"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] sheet_mutate(
-  f : (SheetMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetTitle] : Array[SheetMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn SheetInput::parse(s : String) -> SheetInput? {
+  match s {
+    "setTitle" => Some(SetTitle)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] sheet_compute(
-  f : (SheetMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetTitle] : Array[SheetMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to dynamic.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SheetMsg {
+  /// `@on.input="setTitle …"`
+  SetTitle(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] sheet_swap(
-  f : (SheetMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetTitle] : Array[SheetMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setTitle", [Str(a0)]) => SetTitle(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

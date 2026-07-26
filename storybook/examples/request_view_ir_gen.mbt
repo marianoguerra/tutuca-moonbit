@@ -95,11 +95,15 @@ fn request_example_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", Method("setQuery"), args=[Name("value")]),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
       [@anode.on("click", HandlerName(name="loadAnotherWay", ns=Input))],
-      [@anode.on("click", Method("toggleView"))],
+      [@anode.on("click", HandlerName(name="toggleView", ns=Input))],
     ],
   )
 }

@@ -50,7 +50,7 @@
   <option :value=".value" @text=".label"></option>
 </template>
 <template id="ItemSelect">
-  <select class="select" :value=".current" @on.input="$setCurrent value">
+  <select class="select" :value=".current" @on.input="setCurrent value">
     <option @x render-each=".options"></option>
   </select>
 </template>

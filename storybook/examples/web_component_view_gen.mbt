@@ -137,12 +137,14 @@ pub let emoji_picker_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum EmojiPickerInput {
   OnEmojiClick
+  ToggleIsPickerVisible
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn EmojiPickerInput::name(self : EmojiPickerInput) -> String {
   match self {
     OnEmojiClick => "onEmojiClick"
+    ToggleIsPickerVisible => "toggleIsPickerVisible"
   }
 }
 
@@ -150,6 +152,7 @@ pub fn EmojiPickerInput::name(self : EmojiPickerInput) -> String {
 pub fn EmojiPickerInput::parse(s : String) -> EmojiPickerInput? {
   match s {
     "onEmojiClick" => Some(OnEmojiClick)
+    "toggleIsPickerVisible" => Some(ToggleIsPickerVisible)
     _ => None
   }
 }
@@ -162,6 +165,8 @@ pub fn EmojiPickerInput::parse(s : String) -> EmojiPickerInput? {
 pub(all) enum EmojiPickerMsg {
   /// `@on.emoji-click="onEmojiClick …"`
   OnEmojiClick(String)
+  /// `@on.click="toggleIsPickerVisible …"`
+  ToggleIsPickerVisible
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -177,74 +182,8 @@ pub fn EmojiPickerMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onEmojiClick", [Str(a0)]) => OnEmojiClick(a0)
+      ("toggleIsPickerVisible", []) => ToggleIsPickerVisible
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum EmojiPickerMethod {
-  ToggleIsPickerVisible
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EmojiPickerMethod::name(self : EmojiPickerMethod) -> String {
-  match self {
-    ToggleIsPickerVisible => "toggleIsPickerVisible"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] emoji_picker_mutate(
-  f : (EmojiPickerMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ToggleIsPickerVisible] : Array[EmojiPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] emoji_picker_compute(
-  f : (EmojiPickerMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ToggleIsPickerVisible] : Array[EmojiPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] emoji_picker_swap(
-  f : (EmojiPickerMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleIsPickerVisible] : Array[EmojiPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

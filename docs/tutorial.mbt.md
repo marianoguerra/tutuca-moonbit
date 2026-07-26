@@ -90,7 +90,9 @@ fn counter() -> @component.Component {
         _ => None
       }
     },
-    // views call mutate with a `$` prefix: @on.click="$inc"
+    // Reached by a bare name like any handler: @on.click="inc". The bucket
+    // is about what the handler needs (this one is pure), not about how the
+    // template spells it.
     mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
   )
 }
@@ -159,7 +161,8 @@ storybook uses to show one component in several states.
 ## Fields and generated mutators
 
 Every state field generates mutators, so you rarely write setters at all.
-Views call them like any `$`-handler (`$setCount`, `$toggleIsOpen`):
+Views call them by bare name in an event position (`@on.click="resetCount"`,
+`@on.input="setName value"`) and with `$` in a value one (`@text="$xLen"`):
 
 | Field kind | Generated (on top of `setX` / `updateX` / `resetX` / `xLen`) |
 |---|---|

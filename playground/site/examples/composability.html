@@ -45,14 +45,14 @@
   <div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
     <button @on.click="dec">-</button>
     <b @text=".count"></b>
-    <button @on.click="$inc">+</button>
+    <button @on.click="inc">+</button>
   </div>
 </template>
 
 <template id="Item">
   <div class="flex gap-3 items-center">
-    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="$setCompleted value">
-    <input class="input" :value=".text" @on.input="$setText value" :disabled=".completed">
+    <input type="checkbox" class="checkbox" :checked=".completed" @on.input="setCompleted value">
+    <input class="input" :value=".text" @on.input="setText value" :disabled=".completed">
   </div>
 </template>
 
@@ -62,7 +62,7 @@
     <div class="flex flex-col gap-3 w-full">
       <div @each=".items" class="flex gap-3 justify-center items-center w-full row">
         <x render-it></x>
-        <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="$removeInItemsAt @key">x</button>
+        <button class="btn btn-soft btn-sm btn-error btn-circle font-mono rm" @on.click="removeInItemsAt @key">x</button>
       </div>
     </div>
   </div>
@@ -101,13 +101,13 @@
     <div role="tablist" class="tabs tabs-border">
       <button role="tab" id="tab-counter"
         @if.class="equals? .activeSection 'counter'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="$setActiveSection 'counter'">Counter</button>
+        @on.click="setActiveSection 'counter'">Counter</button>
       <button role="tab" id="tab-todo"
         @if.class="equals? .activeSection 'todo'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="$setActiveSection 'todo'">To-Do</button>
+        @on.click="setActiveSection 'todo'">To-Do</button>
       <button role="tab" id="tab-tree"
         @if.class="equals? .activeSection 'tree'" @then="'tab tab-active'" @else="'tab'"
-        @on.click="$setActiveSection 'tree'">Tree</button>
+        @on.click="setActiveSection 'tree'">Tree</button>
     </div>
     <div class="pane-counter" @show="equals? .activeSection 'counter'"><x render=".counter"></x></div>
     <div class="pane-todo" @show="equals? .activeSection 'todo'"><x render=".todo"></x></div>

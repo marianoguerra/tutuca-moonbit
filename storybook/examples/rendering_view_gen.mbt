@@ -140,21 +140,74 @@ pub let push_view_common_style : String = ""
 pub let push_view_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum PushViewMethod {
-  GetToggleLabel
+/// Every bare `@on` handler name the views reference.
+pub(all) enum PushViewInput {
   ResetQuery
   SetQuery
   ToggleView
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PushViewMethod::name(self : PushViewMethod) -> String {
+pub fn PushViewInput::name(self : PushViewInput) -> String {
   match self {
-    GetToggleLabel => "getToggleLabel"
     ResetQuery => "resetQuery"
     SetQuery => "setQuery"
     ToggleView => "toggleView"
+  }
+}
+
+///|
+pub fn PushViewInput::parse(s : String) -> PushViewInput? {
+  match s {
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
+    "toggleView" => Some(ToggleView)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to rendering.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum PushViewMsg {
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
+  /// `@on.click="toggleView …"`
+  ToggleView
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      ("toggleView", []) => ToggleView
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// Every `$name` the views call.
+pub(all) enum PushViewMethod {
+  GetToggleLabel
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn PushViewMethod::name(self : PushViewMethod) -> String {
+  match self {
+    GetToggleLabel => "getToggleLabel"
   }
 }
 
@@ -166,9 +219,7 @@ pub fn[S] push_view_mutate(
   f : (PushViewMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for
-    m in (
-      [GetToggleLabel, ResetQuery, SetQuery, ToggleView] : Array[PushViewMethod]) {
+  for m in ([GetToggleLabel] : Array[PushViewMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -185,9 +236,7 @@ pub fn[S] push_view_compute(
   f : (PushViewMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [GetToggleLabel, ResetQuery, SetQuery, ToggleView] : Array[PushViewMethod]) {
+  for m in ([GetToggleLabel] : Array[PushViewMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -207,9 +256,7 @@ pub fn[S] push_view_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for
-    m in (
-      [GetToggleLabel, ResetQuery, SetQuery, ToggleView] : Array[PushViewMethod]) {
+  for m in ([GetToggleLabel] : Array[PushViewMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -384,19 +431,70 @@ pub let seq_item_access_common_style : String = ""
 pub let seq_item_access_global_style : String = ""
 
 ///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SeqItemAccessInput {
+  SetCurrentIndex
+  SetCurrentKey
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn SeqItemAccessInput::name(self : SeqItemAccessInput) -> String {
+  match self {
+    SetCurrentIndex => "setCurrentIndex"
+    SetCurrentKey => "setCurrentKey"
+  }
+}
+
+///|
+pub fn SeqItemAccessInput::parse(s : String) -> SeqItemAccessInput? {
+  match s {
+    "setCurrentIndex" => Some(SetCurrentIndex)
+    "setCurrentKey" => Some(SetCurrentKey)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to rendering.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SeqItemAccessMsg {
+  /// `@on.input="setCurrentIndex …"`
+  SetCurrentIndex(Double)
+  /// `@on.input="setCurrentKey …"`
+  SetCurrentKey(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SeqItemAccessMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> SeqItemAccessMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setCurrentIndex", [Num(a0)]) => SetCurrentIndex(a0)
+      ("setCurrentKey", [Str(a0)]) => SetCurrentKey(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum SeqItemAccessMethod {
   GetMaxIndex
-  SetCurrentIndex
-  SetCurrentKey
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
   match self {
     GetMaxIndex => "getMaxIndex"
-    SetCurrentIndex => "setCurrentIndex"
-    SetCurrentKey => "setCurrentKey"
   }
 }
 
@@ -408,9 +506,7 @@ pub fn[S] seq_item_access_mutate(
   f : (SeqItemAccessMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for
-    m in (
-      [GetMaxIndex, SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessMethod]) {
+  for m in ([GetMaxIndex] : Array[SeqItemAccessMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -427,9 +523,7 @@ pub fn[S] seq_item_access_compute(
   f : (SeqItemAccessMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [GetMaxIndex, SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessMethod]) {
+  for m in ([GetMaxIndex] : Array[SeqItemAccessMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -449,9 +543,7 @@ pub fn[S] seq_item_access_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for
-    m in (
-      [GetMaxIndex, SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessMethod]) {
+  for m in ([GetMaxIndex] : Array[SeqItemAccessMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()

@@ -133,6 +133,10 @@ pub suberror GenError {
   DuplicateStateBlock
   /// A schema-only file has no views to compile into a tree.
   NoViewsToCompile
+  /// A `$name` in an `@on` handler position. It dispatches identically to
+  /// the bare name (app/app.mbt collapses both into `push_input`), so the
+  /// sigil suggests a second mechanism that does not exist.
+  MethodInEventPosition(view~ : String, name~ : String, site~ : String)
   /// The init block does not fit the schema.
   BadInitBlock(line~ : Int, message~ : String)
   /// A view reads a name the schema does not declare. THE headline check:

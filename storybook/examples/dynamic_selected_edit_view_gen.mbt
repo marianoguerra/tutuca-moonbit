@@ -422,68 +422,48 @@ pub let dse_entry_common_style : String = ""
 pub let dse_entry_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum DseEntryMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum DseEntryInput {
   SetName
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn DseEntryMethod::name(self : DseEntryMethod) -> String {
+pub fn DseEntryInput::name(self : DseEntryInput) -> String {
   match self {
     SetName => "setName"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dse_entry_mutate(
-  f : (DseEntryMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetName] : Array[DseEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn DseEntryInput::parse(s : String) -> DseEntryInput? {
+  match s {
+    "setName" => Some(SetName)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dse_entry_compute(
-  f : (DseEntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetName] : Array[DseEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to dynamic_selected_edit.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum DseEntryMsg {
+  /// `@on.input="setName …"`
+  SetName(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dse_entry_swap(
-  f : (DseEntryMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetName] : Array[DseEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn DseEntryMsg::from_dispatch(d : @component.Dispatch) -> DseEntryMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setName", [Str(a0)]) => SetName(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }

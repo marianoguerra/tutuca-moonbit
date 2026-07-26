@@ -112,7 +112,13 @@ fn item_select_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("input", Method("setCurrent"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setCurrent", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 

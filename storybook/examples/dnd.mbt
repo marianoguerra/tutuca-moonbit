@@ -52,6 +52,10 @@ fn dnd_comp() -> @component.Component {
     },
     update=(s : DnDExampleState, msg, _ctx) => {
       match DnDExampleMsg::from_dispatch(msg) {
+        // Served by the mutators generated from the state's fields: the
+        // view spells them bare now, so they arrive as Inputs, and
+        // returning None falls through to them.
+        Some(ResetQuery | SetQuery(_)) => None
         // args: [@key (the TARGET row's key), dragInfo]
         Some(OnDropOnItem(Num(t), Obj(di))) => {
           let target = t.to_int()

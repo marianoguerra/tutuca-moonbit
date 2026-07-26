@@ -65,7 +65,13 @@ fn swatch_picker_main_view_ir() -> @anode.View {
         @anode.dyn_text(Field("color"), id=1),
       ]),
     ]),
-    [[@anode.on("click", Method("setColor"), args=[Bind("value")])]],
+    [
+      [
+        @anode.on("click", HandlerName(name="setColor", ns=Input), args=[
+          Bind("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -193,9 +199,21 @@ fn quadratic_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("input", Method("setA"), args=[Name("valueAsInt")])],
-      [@anode.on("input", Method("setB"), args=[Name("valueAsInt")])],
-      [@anode.on("input", Method("setC"), args=[Name("valueAsInt")])],
+      [
+        @anode.on("input", HandlerName(name="setA", ns=Input), args=[
+          Name("valueAsInt"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setB", ns=Input), args=[
+          Name("valueAsInt"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setC", ns=Input), args=[
+          Name("valueAsInt"),
+        ]),
+      ],
     ],
   )
 }

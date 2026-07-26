@@ -74,9 +74,21 @@ fn attribute_binding_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("input", Method("setStr"), args=[Name("value")])],
-      [@anode.on("input", Method("setRawNumber"), args=[Name("value")])],
-      [@anode.on("input", Method("setBool"), args=[Name("value")])],
+      [
+        @anode.on("input", HandlerName(name="setStr", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setRawNumber", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setBool", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
     ],
   )
 }
@@ -128,7 +140,7 @@ fn conditional_attributes_main_view_ir() -> @anode.View {
         ],
       ),
     ]),
-    [[@anode.on("click", Method("toggleIsActive"))]],
+    [[@anode.on("click", HandlerName(name="toggleIsActive", ns=Input))]],
   )
 }
 
@@ -177,11 +189,13 @@ fn event_modifiers_main_view_ir() -> @anode.View {
         ]),
         @anode.on(
           "keydown",
-          Method("setLastSentSearch"),
+          HandlerName(name="setLastSentSearch", ns=Input),
           args=[Name("value")],
           modifiers=["send"],
         ),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )
@@ -246,8 +260,8 @@ fn show_hide_main_view_ir() -> @anode.View {
       ]),
     ]),
     [
-      [@anode.on("click", Method("toggleIsOpen"))],
-      [@anode.on("click", Method("incCount"))],
+      [@anode.on("click", HandlerName(name="toggleIsOpen", ns=Input))],
+      [@anode.on("click", HandlerName(name="incCount", ns=Input))],
     ],
   )
 }

@@ -127,14 +127,14 @@ pub let item_common_style : String = ""
 pub let item_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ItemMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ItemInput {
   SetCompleted
   SetText
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ItemMethod::name(self : ItemMethod) -> String {
+pub fn ItemInput::name(self : ItemInput) -> String {
   match self {
     SetCompleted => "setCompleted"
     SetText => "setText"
@@ -142,57 +142,41 @@ pub fn ItemMethod::name(self : ItemMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_mutate(
-  f : (ItemMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetCompleted, SetText] : Array[ItemMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ItemInput::parse(s : String) -> ItemInput? {
+  match s {
+    "setCompleted" => Some(SetCompleted)
+    "setText" => Some(SetText)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_compute(
-  f : (ItemMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetCompleted, SetText] : Array[ItemMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to todo.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ItemMsg {
+  /// `@on.input="setCompleted …"`
+  SetCompleted(String)
+  /// `@on.input="setText …"`
+  SetText(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_swap(
-  f : (ItemMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetCompleted, SetText] : Array[ItemMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ItemMsg::from_dispatch(d : @component.Dispatch) -> ItemMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setCompleted", [Str(a0)]) => SetCompleted(a0)
+      ("setText", [Str(a0)]) => SetText(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -317,12 +301,14 @@ pub let items_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum ItemsInput {
   OnAddItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ItemsInput::name(self : ItemsInput) -> String {
   match self {
     OnAddItem => "onAddItem"
+    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -330,6 +316,7 @@ pub fn ItemsInput::name(self : ItemsInput) -> String {
 pub fn ItemsInput::parse(s : String) -> ItemsInput? {
   match s {
     "onAddItem" => Some(OnAddItem)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -342,6 +329,8 @@ pub fn ItemsInput::parse(s : String) -> ItemsInput? {
 pub(all) enum ItemsMsg {
   /// `@on.click="onAddItem …"`
   OnAddItem
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -355,74 +344,8 @@ pub fn ItemsMsg::from_dispatch(d : @component.Dispatch) -> ItemsMsg? {
   Some(
     match (name, args) {
       ("onAddItem", []) => OnAddItem
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum ItemsMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemsMethod::name(self : ItemsMethod) -> String {
-  match self {
-    RemoveInItemsAt => "removeInItemsAt"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] items_mutate(
-  f : (ItemsMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([RemoveInItemsAt] : Array[ItemsMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] items_compute(
-  f : (ItemsMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([RemoveInItemsAt] : Array[ItemsMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] items_swap(
-  f : (ItemsMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([RemoveInItemsAt] : Array[ItemsMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

@@ -307,12 +307,24 @@ pub let component_list_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum ComponentListInput {
   OnAdd
+  SetAlign
+  SetDir
+  SetGap
+  SetJustify
+  ToggleShowSettings
+  ToggleWrap
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ComponentListInput::name(self : ComponentListInput) -> String {
   match self {
     OnAdd => "onAdd"
+    SetAlign => "setAlign"
+    SetDir => "setDir"
+    SetGap => "setGap"
+    SetJustify => "setJustify"
+    ToggleShowSettings => "toggleShowSettings"
+    ToggleWrap => "toggleWrap"
   }
 }
 
@@ -320,6 +332,12 @@ pub fn ComponentListInput::name(self : ComponentListInput) -> String {
 pub fn ComponentListInput::parse(s : String) -> ComponentListInput? {
   match s {
     "onAdd" => Some(OnAdd)
+    "setAlign" => Some(SetAlign)
+    "setDir" => Some(SetDir)
+    "setGap" => Some(SetGap)
+    "setJustify" => Some(SetJustify)
+    "toggleShowSettings" => Some(ToggleShowSettings)
+    "toggleWrap" => Some(ToggleWrap)
     _ => None
   }
 }
@@ -332,6 +350,18 @@ pub fn ComponentListInput::parse(s : String) -> ComponentListInput? {
 pub(all) enum ComponentListMsg {
   /// `@on.click="onAdd …"`
   OnAdd
+  /// `@on.input="setAlign …"`
+  SetAlign(String)
+  /// `@on.input="setDir …"`
+  SetDir(String)
+  /// `@on.input="setGap …"`
+  SetGap(Double)
+  /// `@on.input="setJustify …"`
+  SetJustify(String)
+  /// `@on.click="toggleShowSettings …"`
+  ToggleShowSettings
+  /// `@on.input="toggleWrap …"`
+  ToggleWrap
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -347,6 +377,12 @@ pub fn ComponentListMsg::from_dispatch(
   Some(
     match (name, args) {
       ("onAdd", []) => OnAdd
+      ("setAlign", [Str(a0)]) => SetAlign(a0)
+      ("setDir", [Str(a0)]) => SetDir(a0)
+      ("setGap", [Num(a0)]) => SetGap(a0)
+      ("setJustify", [Str(a0)]) => SetJustify(a0)
+      ("toggleShowSettings", []) => ToggleShowSettings
+      ("toggleWrap", []) => ToggleWrap
       _ => Unknown(name, args)
     },
   )
@@ -356,24 +392,12 @@ pub fn ComponentListMsg::from_dispatch(
 /// Every `$name` the views call.
 pub(all) enum ComponentListMethod {
   FlexStyle
-  SetAlign
-  SetDir
-  SetGap
-  SetJustify
-  ToggleShowSettings
-  ToggleWrap
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn ComponentListMethod::name(self : ComponentListMethod) -> String {
   match self {
     FlexStyle => "flexStyle"
-    SetAlign => "setAlign"
-    SetDir => "setDir"
-    SetGap => "setGap"
-    SetJustify => "setJustify"
-    ToggleShowSettings => "toggleShowSettings"
-    ToggleWrap => "toggleWrap"
   }
 }
 
@@ -385,17 +409,7 @@ pub fn[S] component_list_mutate(
   f : (ComponentListMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for
-    m in (
-      [
-        FlexStyle,
-        SetAlign,
-        SetDir,
-        SetGap,
-        SetJustify,
-        ToggleShowSettings,
-        ToggleWrap,
-      ] : Array[ComponentListMethod]) {
+  for m in ([FlexStyle] : Array[ComponentListMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -412,17 +426,7 @@ pub fn[S] component_list_compute(
   f : (ComponentListMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        FlexStyle,
-        SetAlign,
-        SetDir,
-        SetGap,
-        SetJustify,
-        ToggleShowSettings,
-        ToggleWrap,
-      ] : Array[ComponentListMethod]) {
+  for m in ([FlexStyle] : Array[ComponentListMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -442,17 +446,7 @@ pub fn[S] component_list_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for
-    m in (
-      [
-        FlexStyle,
-        SetAlign,
-        SetDir,
-        SetGap,
-        SetJustify,
-        ToggleShowSettings,
-        ToggleWrap,
-      ] : Array[ComponentListMethod]) {
+  for m in ([FlexStyle] : Array[ComponentListMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -607,70 +601,52 @@ pub let component_picker_common_style : String = ""
 pub let component_picker_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ComponentPickerMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ComponentPickerInput {
   SetFilterText
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ComponentPickerMethod::name(self : ComponentPickerMethod) -> String {
+pub fn ComponentPickerInput::name(self : ComponentPickerInput) -> String {
   match self {
     SetFilterText => "setFilterText"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] component_picker_mutate(
-  f : (ComponentPickerMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetFilterText] : Array[ComponentPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ComponentPickerInput::parse(s : String) -> ComponentPickerInput? {
+  match s {
+    "setFilterText" => Some(SetFilterText)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] component_picker_compute(
-  f : (ComponentPickerMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetFilterText] : Array[ComponentPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to universal_wasm.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ComponentPickerMsg {
+  /// `@on.input="setFilterText …"`
+  SetFilterText(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] component_picker_swap(
-  f : (ComponentPickerMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetFilterText] : Array[ComponentPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ComponentPickerMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentPickerMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setFilterText", [Str(a0)]) => SetFilterText(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

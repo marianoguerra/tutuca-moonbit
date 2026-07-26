@@ -23,6 +23,8 @@ pub fn GenError::message(self : GenError) -> String {
       "\"\{name}\" is not usable as a component name: expected a name starting with a letter and made of letters, digits and underscores"
     BadStateBlock(line~, message~) | BadInitBlock(line~, message~) =>
       "line \{line}: \{message}"
+    MethodInEventPosition(view~, name~, site~) =>
+      "view \"\{view}\": `\{site}=\"$\{name}\"` — drop the `$`. In an event position a `$name` and a bare name are the SAME dispatch, so the sigil claims a distinction that is not there; `$` belongs in value positions (@text, @show, an attribute)"
     NoViewsToCompile =>
       "this file declares a schema and no <template>, so it has no views to compile"
     DuplicateStateBlock =>

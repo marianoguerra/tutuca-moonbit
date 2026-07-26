@@ -53,7 +53,13 @@ fn render_with_scope_main_view_ir() -> @anode.View {
         ]),
       ),
     ]),
-    [[@anode.on("input", Method("setText"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setText", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -101,8 +107,12 @@ fn list_filter_enrich_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", Method("setQuery"), args=[Name("value")]),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )
@@ -155,8 +165,12 @@ fn list_filter_enrich_with_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", Method("setQuery"), args=[Name("value")]),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )

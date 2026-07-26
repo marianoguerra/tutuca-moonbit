@@ -32,7 +32,13 @@ fn playlist_main_view_ir() -> @anode.View {
         ]),
       ),
     ]),
-    [[@anode.on("click", Method("removeSong"), args=[Bind("key")])]],
+    [
+      [
+        @anode.on("click", HandlerName(name="removeSong", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
+    ],
   )
 }
 

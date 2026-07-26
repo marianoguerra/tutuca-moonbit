@@ -27,9 +27,9 @@
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">
       <input type="search" class="input" :value=".query"
-        @on.input="$setQuery value" @on.keydown+cancel="$resetQuery"
+        @on.input="setQuery value" @on.keydown+cancel="resetQuery"
         placeholder="Filter entries">
-      <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="$toggleView"></button>
+      <button class="btn bnt-sm btn-primary toggle-btn" @text="$getToggleLabel" @on.click="toggleView"></button>
     </div>
     <div class="flex flex-col gap-3 max-h-[40vh] overflow-y-auto pr-3 rows" @push-view=".view">
       <x render-each=".items" @when="filterItem"></x>
@@ -39,9 +39,9 @@
 <template id="SeqItemAccess">
   <section class="flex flex-col gap-3">
     <input type="range" min="0" :max="$getMaxIndex" :value=".currentIndex"
-      @on.input="$setCurrentIndex valueAsInt">
+      @on.input="setCurrentIndex valueAsInt">
     <x render=".byIndex[.currentIndex]"></x>
-    <select class="select" :value=".currentKey" @on.input="$setCurrentKey value">
+    <select class="select" :value=".currentKey" @on.input="setCurrentKey value">
       <option @each=".byKey" :value="@key" @text="@value.title"></option>
     </select>
     <x render=".byKey[.currentKey]"></x>

@@ -122,70 +122,50 @@ pub let playlist_common_style : String = ""
 pub let playlist_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum PlaylistMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum PlaylistInput {
   RemoveSong
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PlaylistMethod::name(self : PlaylistMethod) -> String {
+pub fn PlaylistInput::name(self : PlaylistInput) -> String {
   match self {
     RemoveSong => "removeSong"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] playlist_mutate(
-  f : (PlaylistMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([RemoveSong] : Array[PlaylistMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn PlaylistInput::parse(s : String) -> PlaylistInput? {
+  match s {
+    "removeSong" => Some(RemoveSong)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] playlist_compute(
-  f : (PlaylistMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([RemoveSong] : Array[PlaylistMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to custom_collection.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum PlaylistMsg {
+  /// `@on.click="removeSong …"`
+  RemoveSong(@tutuca.Value)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] playlist_swap(
-  f : (PlaylistMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([RemoveSong] : Array[PlaylistMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("removeSong", [a0]) => RemoveSong(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

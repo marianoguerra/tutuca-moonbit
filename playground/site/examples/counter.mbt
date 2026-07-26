@@ -15,6 +15,10 @@ fn build() -> @component.ModuleDef {
     init=CounterState::{ count: 0 },
     update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Dec) => Some({ count: s.count - 1 })
+      // Served by a generated mutator or another bucket: the view
+      // spells these bare now, so they arrive as Inputs, and
+      // returning None falls through to whatever answers them.
+      Some(Inc) => None
       Some(Unknown(_, _)) | None => None
     },
     mutate={ "inc": (s : CounterState, _a) => { count: s.count + 1 } },

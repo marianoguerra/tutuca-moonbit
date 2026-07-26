@@ -261,15 +261,15 @@ pub let person_common_style : String = ""
 pub let person_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum PersonMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum PersonInput {
   SetActive
   SetEmail
   SetName
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn PersonMethod::name(self : PersonMethod) -> String {
+pub fn PersonInput::name(self : PersonInput) -> String {
   match self {
     SetActive => "setActive"
     SetEmail => "setEmail"
@@ -278,57 +278,45 @@ pub fn PersonMethod::name(self : PersonMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] person_mutate(
-  f : (PersonMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetActive, SetEmail, SetName] : Array[PersonMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn PersonInput::parse(s : String) -> PersonInput? {
+  match s {
+    "setActive" => Some(SetActive)
+    "setEmail" => Some(SetEmail)
+    "setName" => Some(SetName)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] person_compute(
-  f : (PersonMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetActive, SetEmail, SetName] : Array[PersonMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to filter_paginate.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum PersonMsg {
+  /// `@on.input="setActive …"`
+  SetActive(String)
+  /// `@on.input="setEmail …"`
+  SetEmail(String)
+  /// `@on.input="setName …"`
+  SetName(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] person_swap(
-  f : (PersonMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetActive, SetEmail, SetName] : Array[PersonMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setActive", [Str(a0)]) => SetActive(a0)
+      ("setEmail", [Str(a0)]) => SetEmail(a0)
+      ("setName", [Str(a0)]) => SetName(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

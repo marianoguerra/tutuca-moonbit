@@ -52,7 +52,7 @@ fn traffic_light_main_view_ir() -> @anode.View {
         ),
       ]),
     ]),
-    [[@anode.on("click", Method("nextLight"))]],
+    [[@anode.on("click", HandlerName(name="nextLight", ns=Input))]],
   )
 }
 
@@ -165,12 +165,20 @@ fn tabbed_u_i_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("click", Method("setTab"), args=[@anode.const_str("overview")]),
+        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+          @anode.const_str("overview"),
+        ]),
       ],
       [
-        @anode.on("click", Method("setTab"), args=[@anode.const_str("features")]),
+        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+          @anode.const_str("features"),
+        ]),
       ],
-      [@anode.on("click", Method("setTab"), args=[@anode.const_str("pricing")])],
+      [
+        @anode.on("click", HandlerName(name="setTab", ns=Input), args=[
+          @anode.const_str("pricing"),
+        ]),
+      ],
     ],
   )
 }
@@ -215,8 +223,12 @@ fn list_and_filter_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", Method("setQuery"), args=[Name("value")]),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
     ],
   )

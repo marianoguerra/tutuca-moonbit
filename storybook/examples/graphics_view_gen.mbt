@@ -136,70 +136,52 @@ pub let swatch_picker_common_style : String = ""
 pub let swatch_picker_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum SwatchPickerMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum SwatchPickerInput {
   SetColor
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn SwatchPickerMethod::name(self : SwatchPickerMethod) -> String {
+pub fn SwatchPickerInput::name(self : SwatchPickerInput) -> String {
   match self {
     SetColor => "setColor"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] swatch_picker_mutate(
-  f : (SwatchPickerMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetColor] : Array[SwatchPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn SwatchPickerInput::parse(s : String) -> SwatchPickerInput? {
+  match s {
+    "setColor" => Some(SetColor)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] swatch_picker_compute(
-  f : (SwatchPickerMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetColor] : Array[SwatchPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to graphics.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum SwatchPickerMsg {
+  /// `@on.click="setColor …"`
+  SetColor(@tutuca.Value)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] swatch_picker_swap(
-  f : (SwatchPickerMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetColor] : Array[SwatchPickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn SwatchPickerMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> SwatchPickerMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setColor", [a0]) => SetColor(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -334,13 +316,69 @@ pub let quadratic_common_style : String = ""
 pub let quadratic_global_style : String = ""
 
 ///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum QuadraticInput {
+  SetA
+  SetB
+  SetC
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn QuadraticInput::name(self : QuadraticInput) -> String {
+  match self {
+    SetA => "setA"
+    SetB => "setB"
+    SetC => "setC"
+  }
+}
+
+///|
+pub fn QuadraticInput::parse(s : String) -> QuadraticInput? {
+  match s {
+    "setA" => Some(SetA)
+    "setB" => Some(SetB)
+    "setC" => Some(SetC)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to graphics.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum QuadraticMsg {
+  /// `@on.input="setA …"`
+  SetA(Double)
+  /// `@on.input="setB …"`
+  SetB(Double)
+  /// `@on.input="setC …"`
+  SetC(Double)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn QuadraticMsg::from_dispatch(d : @component.Dispatch) -> QuadraticMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setA", [Num(a0)]) => SetA(a0)
+      ("setB", [Num(a0)]) => SetB(a0)
+      ("setC", [Num(a0)]) => SetC(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
 /// Every `$name` the views call.
 pub(all) enum QuadraticMethod {
   Classify
   Discriminant
-  SetA
-  SetB
-  SetC
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -348,9 +386,6 @@ pub fn QuadraticMethod::name(self : QuadraticMethod) -> String {
   match self {
     Classify => "classify"
     Discriminant => "discriminant"
-    SetA => "setA"
-    SetB => "setB"
-    SetC => "setC"
   }
 }
 
@@ -362,7 +397,7 @@ pub fn[S] quadratic_mutate(
   f : (QuadraticMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([Classify, Discriminant, SetA, SetB, SetC] : Array[QuadraticMethod]) {
+  for m in ([Classify, Discriminant] : Array[QuadraticMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -379,7 +414,7 @@ pub fn[S] quadratic_compute(
   f : (QuadraticMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Classify, Discriminant, SetA, SetB, SetC] : Array[QuadraticMethod]) {
+  for m in ([Classify, Discriminant] : Array[QuadraticMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -399,7 +434,7 @@ pub fn[S] quadratic_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for m in ([Classify, Discriminant, SetA, SetB, SetC] : Array[QuadraticMethod]) {
+  for m in ([Classify, Discriminant] : Array[QuadraticMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()

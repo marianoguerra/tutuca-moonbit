@@ -64,10 +64,14 @@ fn push_view_main_view_ir() -> @anode.View {
     ]),
     [
       [
-        @anode.on("input", Method("setQuery"), args=[Name("value")]),
-        @anode.on("keydown", Method("resetQuery"), modifiers=["cancel"]),
+        @anode.on("input", HandlerName(name="setQuery", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="resetQuery", ns=Input), modifiers=[
+          "cancel",
+        ]),
       ],
-      [@anode.on("click", Method("toggleView"))],
+      [@anode.on("click", HandlerName(name="toggleView", ns=Input))],
     ],
   )
 }
@@ -120,8 +124,16 @@ fn seq_item_access_main_view_ir() -> @anode.View {
       @anode.render(2, SeqAccess(seq="byKey", key="currentKey")),
     ]),
     [
-      [@anode.on("input", Method("setCurrentIndex"), args=[Name("valueAsInt")])],
-      [@anode.on("input", Method("setCurrentKey"), args=[Name("value")])],
+      [
+        @anode.on("input", HandlerName(name="setCurrentIndex", ns=Input), args=[
+          Name("valueAsInt"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setCurrentKey", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
     ],
   )
 }

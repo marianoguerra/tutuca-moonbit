@@ -18,9 +18,24 @@ let giant_4x : String = @benchmarks.giant_view(4)
 
 ///|
 test "scaling corpus shape" {
-  inspect(giant_1x.length(), content="55497")
-  inspect(giant_2x.length(), content="110957")
-  inspect(giant_4x.length(), content="221877")
+  inspect(
+    giant_1x.length(),
+    content=(
+      #|55385
+    ),
+  )
+  inspect(
+    giant_2x.length(),
+    content=(
+      #|110733
+    ),
+  )
+  inspect(
+    giant_4x.length(),
+    content=(
+      #|221429
+    ),
+  )
   // One view however big, and it stays compilable at every size.
   inspect(@benchmarks.build(giant_1x), content="1")
   inspect(@benchmarks.build(giant_4x), content="1")

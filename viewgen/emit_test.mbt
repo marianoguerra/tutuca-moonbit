@@ -239,14 +239,14 @@ test "the generated counter tree" {
 }
 
 ///|
-test "a view with $methods, several views and styles" {
+test "a view with a $method, several views and styles" {
   inspect(
     @viewgen.generate(
       (
         #|<style>.todo { display: grid }</style>
         #|<template>
         #|  <ul><li @each=".items"><x render-it as="row"></x></li></ul>
-        #|  <button @on.click="$clearDone">clear</button>
+        #|  <button @on.click="clearDone" :title="$doneLabel">clear</button>
         #|</template>
         #|<template id="row"><style>li { margin: 0 }</style><li><x text="@value"></x></li></template>
       ),
@@ -287,15 +287,62 @@ test "a view with $methods, several views and styles" {
       #|pub let todo_list_global_style : String = ""
       #|
       #|///|
+      #|/// Every bare `@on` handler name the views reference.
+      #|pub(all) enum TodoListInput {
+      #|  ClearDone
+      #|} derive(Eq, @debug.Debug)
+      #|
+      #|///|
+      #|pub fn TodoListInput::name(self : TodoListInput) -> String {
+      #|  match self {
+      #|    ClearDone => "clearDone"
+      #|  }
+      #|}
+      #|
+      #|///|
+      #|pub fn TodoListInput::parse(s : String) -> TodoListInput? {
+      #|  match s {
+      #|    "clearDone" => Some(ClearDone)
+      #|    _ => None
+      #|  }
+      #|}
+      #|
+      #|///|
+      #|/// The Input arm of @component.Dispatch, decoded. Payload types are
+      #|/// inferred from the argument shapes written at the call sites, so a
+      #|/// handler added to todo.html breaks every `match` over this type
+      #|/// until it is handled.
+      #|pub(all) enum TodoListMsg {
+      #|  /// `@on.click="clearDone …"`
+      #|  ClearDone
+      #|  /// An Input dispatch the views do not declare, or a declared name
+      #|  /// whose runtime arguments did not match the inferred shape.
+      #|  Unknown(String, Array[@tutuca.Value])
+      #|}
+      #|
+      #|///|
+      #|/// None for Receive / Bubble / Response — those names are raised by
+      #|/// component code, never written in a view, so the views cannot type them.
+      #|pub fn TodoListMsg::from_dispatch(d : @component.Dispatch) -> TodoListMsg? {
+      #|  guard d is Input(name, args) else { return None }
+      #|  Some(
+      #|    match (name, args) {
+      #|      ("clearDone", []) => ClearDone
+      #|      _ => Unknown(name, args)
+      #|    },
+      #|  )
+      #|}
+      #|
+      #|///|
       #|/// Every `$name` the views call.
       #|pub(all) enum TodoListMethod {
-      #|  ClearDone
+      #|  DoneLabel
       #|} derive(Eq, @debug.Debug)
       #|
       #|///|
       #|pub fn TodoListMethod::name(self : TodoListMethod) -> String {
       #|  match self {
-      #|    ClearDone => "clearDone"
+      #|    DoneLabel => "doneLabel"
       #|  }
       #|}
       #|
@@ -307,7 +354,7 @@ test "a view with $methods, several views and styles" {
       #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
       #|) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
       #|  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-      #|  for m in ([ClearDone] : Array[TodoListMethod]) {
+      #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
       #|    match f(m) {
       #|      Some(h) => out[m.name()] = h
       #|      None => ()
@@ -324,7 +371,7 @@ test "a view with $methods, several views and styles" {
       #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
       #|) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
       #|  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-      #|  for m in ([ClearDone] : Array[TodoListMethod]) {
+      #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
       #|    match f(m) {
       #|      Some(h) => out[m.name()] = h
       #|      None => ()
@@ -341,7 +388,7 @@ test "a view with $methods, several views and styles" {
       #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
       #|) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
       #|  let out : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([])
-      #|  for m in ([ClearDone] : Array[TodoListMethod]) {
+      #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
       #|    match f(m) {
       #|      Some(h) => out[m.name()] = h
       #|      None => ()

@@ -39,8 +39,16 @@ fn selector_entry_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("input", Method("setValue"), args=[Name("value")])],
-      [@anode.on("input", Method("setLabel"), args=[Name("value")])],
+      [
+        @anode.on("input", HandlerName(name="setValue", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
     ],
   )
 }
@@ -76,7 +84,13 @@ fn selector_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("input", Method("setSelectedValue"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setSelectedValue", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -134,7 +148,11 @@ fn entry_editor_and_selector_main_view_ir() -> @anode.View {
     ]),
     [
       [@anode.on("click", HandlerName(name="onAddItem", ns=Input))],
-      [@anode.on("click", Method("removeInItemsAt"), args=[Bind("key")])],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
     ],
   )
 }
@@ -170,7 +188,13 @@ fn sheet_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("input", Method("setTitle"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setTitle", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 

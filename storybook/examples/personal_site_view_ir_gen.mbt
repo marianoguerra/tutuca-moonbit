@@ -373,7 +373,7 @@ fn root_main_view_ir() -> @anode.View {
       [@anode.on("change", HandlerName(name="onToggleSortByEnd", ns=Input))],
       [@anode.on("change", HandlerName(name="onToggleSortAsc", ns=Input))],
       [@anode.on("change", HandlerName(name="onToggleFeaturedFirst", ns=Input))],
-      [@anode.on("click", Method("clearFilters"))],
+      [@anode.on("click", HandlerName(name="clearFilters", ns=Input))],
     ],
   )
 }

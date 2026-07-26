@@ -74,8 +74,8 @@ pub let json_selector_common_style : String = ""
 pub let json_selector_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonSelectorMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum JsonSelectorInput {
   SetToArray
   SetToBool
   SetToNull
@@ -85,7 +85,7 @@ pub(all) enum JsonSelectorMethod {
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonSelectorMethod::name(self : JsonSelectorMethod) -> String {
+pub fn JsonSelectorInput::name(self : JsonSelectorInput) -> String {
   match self {
     SetToArray => "setToArray"
     SetToBool => "setToBool"
@@ -97,66 +97,59 @@ pub fn JsonSelectorMethod::name(self : JsonSelectorMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_selector_mutate(
-  f : (JsonSelectorMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for
-    m in (
-      [SetToArray, SetToBool, SetToNull, SetToNumber, SetToObject, SetToString] :
-      Array[JsonSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn JsonSelectorInput::parse(s : String) -> JsonSelectorInput? {
+  match s {
+    "setToArray" => Some(SetToArray)
+    "setToBool" => Some(SetToBool)
+    "setToNull" => Some(SetToNull)
+    "setToNumber" => Some(SetToNumber)
+    "setToObject" => Some(SetToObject)
+    "setToString" => Some(SetToString)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_selector_compute(
-  f : (JsonSelectorMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [SetToArray, SetToBool, SetToNull, SetToNumber, SetToObject, SetToString] :
-      Array[JsonSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to json.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum JsonSelectorMsg {
+  /// `@on.click="setToArray …"`
+  SetToArray
+  /// `@on.click="setToBool …"`
+  SetToBool(Bool)
+  /// `@on.click="setToNull …"`
+  SetToNull
+  /// `@on.click="setToNumber …"`
+  SetToNumber
+  /// `@on.click="setToObject …"`
+  SetToObject
+  /// `@on.click="setToString …"`
+  SetToString
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_selector_swap(
-  f : (JsonSelectorMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for
-    m in (
-      [SetToArray, SetToBool, SetToNull, SetToNumber, SetToObject, SetToString] :
-      Array[JsonSelectorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn JsonSelectorMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonSelectorMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setToArray", []) => SetToArray
+      ("setToBool", [Bool(a0)]) => SetToBool(a0)
+      ("setToNull", []) => SetToNull
+      ("setToNumber", []) => SetToNumber
+      ("setToObject", []) => SetToObject
+      ("setToString", []) => SetToString
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -340,70 +333,50 @@ pub let json_bool_common_style : String = ""
 pub let json_bool_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonBoolMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum JsonBoolInput {
   ToggleValue
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonBoolMethod::name(self : JsonBoolMethod) -> String {
+pub fn JsonBoolInput::name(self : JsonBoolInput) -> String {
   match self {
     ToggleValue => "toggleValue"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_bool_mutate(
-  f : (JsonBoolMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ToggleValue] : Array[JsonBoolMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn JsonBoolInput::parse(s : String) -> JsonBoolInput? {
+  match s {
+    "toggleValue" => Some(ToggleValue)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_bool_compute(
-  f : (JsonBoolMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ToggleValue] : Array[JsonBoolMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to json.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum JsonBoolMsg {
+  /// `@on.click="toggleValue …"`
+  ToggleValue
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_bool_swap(
-  f : (JsonBoolMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleValue] : Array[JsonBoolMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("toggleValue", []) => ToggleValue
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -521,70 +494,50 @@ pub let json_string_common_style : String = ""
 pub let json_string_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonStringMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum JsonStringInput {
   SetValue
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonStringMethod::name(self : JsonStringMethod) -> String {
+pub fn JsonStringInput::name(self : JsonStringInput) -> String {
   match self {
     SetValue => "setValue"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_string_mutate(
-  f : (JsonStringMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetValue] : Array[JsonStringMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn JsonStringInput::parse(s : String) -> JsonStringInput? {
+  match s {
+    "setValue" => Some(SetValue)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_string_compute(
-  f : (JsonStringMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetValue] : Array[JsonStringMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to json.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum JsonStringMsg {
+  /// `@on.input="setValue …"`
+  SetValue(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_string_swap(
-  f : (JsonStringMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetValue] : Array[JsonStringMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setValue", [Str(a0)]) => SetValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -707,70 +660,50 @@ pub let json_number_common_style : String = ""
 pub let json_number_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonNumberMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum JsonNumberInput {
   SetRawValue
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonNumberMethod::name(self : JsonNumberMethod) -> String {
+pub fn JsonNumberInput::name(self : JsonNumberInput) -> String {
   match self {
     SetRawValue => "setRawValue"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_number_mutate(
-  f : (JsonNumberMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetRawValue] : Array[JsonNumberMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn JsonNumberInput::parse(s : String) -> JsonNumberInput? {
+  match s {
+    "setRawValue" => Some(SetRawValue)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_number_compute(
-  f : (JsonNumberMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetRawValue] : Array[JsonNumberMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to json.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum JsonNumberMsg {
+  /// `@on.input="setRawValue …"`
+  SetRawValue(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_number_swap(
-  f : (JsonNumberMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetRawValue] : Array[JsonNumberMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setRawValue", [Str(a0)]) => SetRawValue(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -896,6 +829,7 @@ pub let json_array_global_style : String = ""
 pub(all) enum JsonArrayInput {
   AddItem
   OnDropOnItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -903,6 +837,7 @@ pub fn JsonArrayInput::name(self : JsonArrayInput) -> String {
   match self {
     AddItem => "addItem"
     OnDropOnItem => "onDropOnItem"
+    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -911,6 +846,7 @@ pub fn JsonArrayInput::parse(s : String) -> JsonArrayInput? {
   match s {
     "addItem" => Some(AddItem)
     "onDropOnItem" => Some(OnDropOnItem)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -925,6 +861,8 @@ pub(all) enum JsonArrayMsg {
   AddItem
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -939,76 +877,10 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum JsonArrayMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonArrayMethod::name(self : JsonArrayMethod) -> String {
-  match self {
-    RemoveInItemsAt => "removeInItemsAt"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_mutate(
-  f : (JsonArrayMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonArrayMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_compute(
-  f : (JsonArrayMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonArrayMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_swap(
-  f : (JsonArrayMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonArrayMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1138,70 +1010,52 @@ pub let json_object_key_val_common_style : String = ""
 pub let json_object_key_val_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum JsonObjectKeyValMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum JsonObjectKeyValInput {
   SetKey
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn JsonObjectKeyValMethod::name(self : JsonObjectKeyValMethod) -> String {
+pub fn JsonObjectKeyValInput::name(self : JsonObjectKeyValInput) -> String {
   match self {
     SetKey => "setKey"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_key_val_mutate(
-  f : (JsonObjectKeyValMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetKey] : Array[JsonObjectKeyValMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn JsonObjectKeyValInput::parse(s : String) -> JsonObjectKeyValInput? {
+  match s {
+    "setKey" => Some(SetKey)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_key_val_compute(
-  f : (JsonObjectKeyValMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetKey] : Array[JsonObjectKeyValMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to json.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum JsonObjectKeyValMsg {
+  /// `@on.input="setKey …"`
+  SetKey(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_key_val_swap(
-  f : (JsonObjectKeyValMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetKey] : Array[JsonObjectKeyValMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn JsonObjectKeyValMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> JsonObjectKeyValMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setKey", [Str(a0)]) => SetKey(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -1327,6 +1181,7 @@ pub let json_object_global_style : String = ""
 pub(all) enum JsonObjectInput {
   AddItem
   OnDropOnItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -1334,6 +1189,7 @@ pub fn JsonObjectInput::name(self : JsonObjectInput) -> String {
   match self {
     AddItem => "addItem"
     OnDropOnItem => "onDropOnItem"
+    RemoveInItemsAt => "removeInItemsAt"
   }
 }
 
@@ -1342,6 +1198,7 @@ pub fn JsonObjectInput::parse(s : String) -> JsonObjectInput? {
   match s {
     "addItem" => Some(AddItem)
     "onDropOnItem" => Some(OnDropOnItem)
+    "removeInItemsAt" => Some(RemoveInItemsAt)
     _ => None
   }
 }
@@ -1356,6 +1213,8 @@ pub(all) enum JsonObjectMsg {
   AddItem
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
+  /// `@on.click="removeInItemsAt …"`
+  RemoveInItemsAt(@tutuca.Value)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -1370,74 +1229,8 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
     match (name, args) {
       ("addItem", []) => AddItem
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
+      ("removeInItemsAt", [a0]) => RemoveInItemsAt(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum JsonObjectMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectMethod::name(self : JsonObjectMethod) -> String {
-  match self {
-    RemoveInItemsAt => "removeInItemsAt"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_mutate(
-  f : (JsonObjectMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonObjectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_compute(
-  f : (JsonObjectMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonObjectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_swap(
-  f : (JsonObjectMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([RemoveInItemsAt] : Array[JsonObjectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

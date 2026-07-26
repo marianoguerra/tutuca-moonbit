@@ -137,12 +137,16 @@ pub let dn_d_example_global_style : String = ""
 /// Every bare `@on` handler name the views reference.
 pub(all) enum DnDExampleInput {
   OnDropOnItem
+  ResetQuery
+  SetQuery
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn DnDExampleInput::name(self : DnDExampleInput) -> String {
   match self {
     OnDropOnItem => "onDropOnItem"
+    ResetQuery => "resetQuery"
+    SetQuery => "setQuery"
   }
 }
 
@@ -150,6 +154,8 @@ pub fn DnDExampleInput::name(self : DnDExampleInput) -> String {
 pub fn DnDExampleInput::parse(s : String) -> DnDExampleInput? {
   match s {
     "onDropOnItem" => Some(OnDropOnItem)
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
     _ => None
   }
 }
@@ -162,6 +168,10 @@ pub fn DnDExampleInput::parse(s : String) -> DnDExampleInput? {
 pub(all) enum DnDExampleMsg {
   /// `@on.drop="onDropOnItem …"`
   OnDropOnItem(@tutuca.Value, @tutuca.Value)
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -175,76 +185,9 @@ pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
   Some(
     match (name, args) {
       ("onDropOnItem", [a0, a1]) => OnDropOnItem(a0, a1)
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Every `$name` the views call.
-pub(all) enum DnDExampleMethod {
-  ResetQuery
-  SetQuery
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DnDExampleMethod::name(self : DnDExampleMethod) -> String {
-  match self {
-    ResetQuery => "resetQuery"
-    SetQuery => "setQuery"
-  }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dn_d_example_mutate(
-  f : (DnDExampleMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[DnDExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dn_d_example_compute(
-  f : (DnDExampleMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[DnDExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dn_d_example_swap(
-  f : (DnDExampleMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[DnDExampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

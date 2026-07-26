@@ -146,70 +146,52 @@ pub let composability_common_style : String = ""
 pub let composability_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ComposabilityMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ComposabilityInput {
   SetActiveSection
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ComposabilityMethod::name(self : ComposabilityMethod) -> String {
+pub fn ComposabilityInput::name(self : ComposabilityInput) -> String {
   match self {
     SetActiveSection => "setActiveSection"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] composability_mutate(
-  f : (ComposabilityMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetActiveSection] : Array[ComposabilityMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ComposabilityInput::parse(s : String) -> ComposabilityInput? {
+  match s {
+    "setActiveSection" => Some(SetActiveSection)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] composability_compute(
-  f : (ComposabilityMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetActiveSection] : Array[ComposabilityMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to composability.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ComposabilityMsg {
+  /// `@on.click="setActiveSection …"`
+  SetActiveSection(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] composability_swap(
-  f : (ComposabilityMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetActiveSection] : Array[ComposabilityMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ComposabilityMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ComposabilityMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setActiveSection", [Str(a0)]) => SetActiveSection(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|

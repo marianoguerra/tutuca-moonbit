@@ -633,6 +633,7 @@ pub let root_global_style : String = ""
 ///|
 /// Every bare `@on` handler name the views reference.
 pub(all) enum RootInput {
+  ClearFilters
   OnCategoryToggle
   OnRoleToggle
   OnToggleFeaturedFirst
@@ -643,6 +644,7 @@ pub(all) enum RootInput {
 ///|
 pub fn RootInput::name(self : RootInput) -> String {
   match self {
+    ClearFilters => "clearFilters"
     OnCategoryToggle => "onCategoryToggle"
     OnRoleToggle => "onRoleToggle"
     OnToggleFeaturedFirst => "onToggleFeaturedFirst"
@@ -654,6 +656,7 @@ pub fn RootInput::name(self : RootInput) -> String {
 ///|
 pub fn RootInput::parse(s : String) -> RootInput? {
   match s {
+    "clearFilters" => Some(ClearFilters)
     "onCategoryToggle" => Some(OnCategoryToggle)
     "onRoleToggle" => Some(OnRoleToggle)
     "onToggleFeaturedFirst" => Some(OnToggleFeaturedFirst)
@@ -669,6 +672,8 @@ pub fn RootInput::parse(s : String) -> RootInput? {
 /// handler added to personal_site.html breaks every `match` over this type
 /// until it is handled.
 pub(all) enum RootMsg {
+  /// `@on.click="clearFilters …"`
+  ClearFilters
   /// `@on.click="onCategoryToggle …"`
   OnCategoryToggle(@tutuca.Value, Bool)
   /// `@on.click="onRoleToggle …"`
@@ -691,6 +696,7 @@ pub fn RootMsg::from_dispatch(d : @component.Dispatch) -> RootMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
+      ("clearFilters", []) => ClearFilters
       ("onCategoryToggle", [a0, Bool(a1)]) => OnCategoryToggle(a0, a1)
       ("onRoleToggle", [a0, Bool(a1)]) => OnRoleToggle(a0, a1)
       ("onToggleFeaturedFirst", []) => OnToggleFeaturedFirst
@@ -704,14 +710,12 @@ pub fn RootMsg::from_dispatch(d : @component.Dispatch) -> RootMsg? {
 ///|
 /// Every `$name` the views call.
 pub(all) enum RootMethod {
-  ClearFilters
   HasActiveFilters
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn RootMethod::name(self : RootMethod) -> String {
   match self {
-    ClearFilters => "clearFilters"
     HasActiveFilters => "hasActiveFilters"
   }
 }
@@ -724,7 +728,7 @@ pub fn[S] root_mutate(
   f : (RootMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ClearFilters, HasActiveFilters] : Array[RootMethod]) {
+  for m in ([HasActiveFilters] : Array[RootMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -741,7 +745,7 @@ pub fn[S] root_compute(
   f : (RootMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
 ) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
   let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ClearFilters, HasActiveFilters] : Array[RootMethod]) {
+  for m in ([HasActiveFilters] : Array[RootMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()
@@ -761,7 +765,7 @@ pub fn[S] root_swap(
     String,
     (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
   ] = Map([])
-  for m in ([ClearFilters, HasActiveFilters] : Array[RootMethod]) {
+  for m in ([HasActiveFilters] : Array[RootMethod]) {
     match f(m) {
       Some(h) => out[m.name()] = h
       None => ()

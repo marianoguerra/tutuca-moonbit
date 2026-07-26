@@ -405,13 +405,29 @@ fn component_list_main_view_ir() -> @anode.View {
       ),
     ]),
     [
-      [@anode.on("click", Method("toggleShowSettings"))],
+      [@anode.on("click", HandlerName(name="toggleShowSettings", ns=Input))],
       [@anode.on("click", HandlerName(name="onAdd", ns=Input))],
-      [@anode.on("input", Method("setDir"), args=[Name("value")])],
-      [@anode.on("input", Method("setJustify"), args=[Name("value")])],
-      [@anode.on("input", Method("setAlign"), args=[Name("value")])],
-      [@anode.on("input", Method("setGap"), args=[Name("valueAsInt")])],
-      [@anode.on("input", Method("toggleWrap"))],
+      [
+        @anode.on("input", HandlerName(name="setDir", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setJustify", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setAlign", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+      [
+        @anode.on("input", HandlerName(name="setGap", ns=Input), args=[
+          Name("valueAsInt"),
+        ]),
+      ],
+      [@anode.on("input", HandlerName(name="toggleWrap", ns=Input))],
     ],
   )
 }
@@ -496,7 +512,13 @@ fn component_picker_main_view_ir() -> @anode.View {
         @anode.h("div", [], [@anode.render(2, Field("selected"))]),
       ),
     ]),
-    [[@anode.on("input", Method("setFilterText"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setFilterText", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 

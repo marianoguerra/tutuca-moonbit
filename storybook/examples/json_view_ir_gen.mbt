@@ -77,12 +77,16 @@ fn json_selector_main_view_ir() -> @anode.View {
       ],
     ),
     [
-      [@anode.on("click", Method("setToNull"))],
-      [@anode.on("click", Method("setToBool"), args=[Name("isCtrl")])],
-      [@anode.on("click", Method("setToNumber"))],
-      [@anode.on("click", Method("setToString"))],
-      [@anode.on("click", Method("setToArray"))],
-      [@anode.on("click", Method("setToObject"))],
+      [@anode.on("click", HandlerName(name="setToNull", ns=Input))],
+      [
+        @anode.on("click", HandlerName(name="setToBool", ns=Input), args=[
+          Name("isCtrl"),
+        ]),
+      ],
+      [@anode.on("click", HandlerName(name="setToNumber", ns=Input))],
+      [@anode.on("click", HandlerName(name="setToString", ns=Input))],
+      [@anode.on("click", HandlerName(name="setToArray", ns=Input))],
+      [@anode.on("click", HandlerName(name="setToObject", ns=Input))],
     ],
   )
 }
@@ -145,7 +149,7 @@ fn json_bool_main_view_ir() -> @anode.View {
         ),
       ],
     ),
-    [[@anode.on("click", Method("toggleValue"))]],
+    [[@anode.on("click", HandlerName(name="toggleValue", ns=Input))]],
   )
 }
 
@@ -172,7 +176,13 @@ fn json_string_main_view_ir() -> @anode.View {
       ],
       [],
     ),
-    [[@anode.on("input", Method("setValue"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setValue", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -201,7 +211,13 @@ fn json_number_main_view_ir() -> @anode.View {
       ],
       [],
     ),
-    [[@anode.on("input", Method("setRawValue"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setRawValue", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -270,7 +286,11 @@ fn json_array_main_view_ir() -> @anode.View {
     ),
     [
       [@anode.on("click", HandlerName(name="addItem", ns=Input))],
-      [@anode.on("click", Method("removeInItemsAt"), args=[Bind("key")])],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
       [
         @anode.on("drop", HandlerName(name="onDropOnItem", ns=Input), args=[
           Bind("key"),
@@ -319,7 +339,13 @@ fn json_object_key_val_main_view_ir() -> @anode.View {
         @anode.render(0, Field("value")),
       ],
     ),
-    [[@anode.on("input", Method("setKey"), args=[Name("value")])]],
+    [
+      [
+        @anode.on("input", HandlerName(name="setKey", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -390,7 +416,11 @@ fn json_object_main_view_ir() -> @anode.View {
     ),
     [
       [@anode.on("click", HandlerName(name="addItem", ns=Input))],
-      [@anode.on("click", Method("removeInItemsAt"), args=[Bind("key")])],
+      [
+        @anode.on("click", HandlerName(name="removeInItemsAt", ns=Input), args=[
+          Bind("key"),
+        ]),
+      ],
       [
         @anode.on("drop", HandlerName(name="onDropOnItem", ns=Input), args=[
           Bind("key"),

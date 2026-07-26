@@ -64,10 +64,24 @@ test "call sites that disagree on a position fall back to Value" {
 }
 
 ///|
-test "$name in event position is a method, not an input" {
-  let s = surface_of("<button @on.click=\"$inc\" :title=\"$label\">x</button>")
-  assert_eq(s.methods, ["inc", "label"])
-  assert_eq(s.inputs.map(i => i.name), [])
+test "$name is a method in a value position and refused in an event one" {
+  // A value position is where `$` earns its keep: there is no event and no
+  // ctx, so an input handler cannot go there.
+  let s = surface_of("<button @on.click=\"inc\" :title=\"$label\">x</button>")
+  assert_eq(s.methods, ["label"])
+  assert_eq(s.inputs.map(i => i.name), ["inc"])
+  // In an event position it is the SAME dispatch as the bare name
+  // (app/app.mbt collapses both into push_input), so the sigil claims a
+  // distinction that does not exist and is refused.
+  try surface_of("<button @on.click=\"$inc\">x</button>") |> ignore catch {
+    MethodInEventPosition(name~, site~, ..) => {
+      assert_eq(name, "inc")
+      assert_eq(site, "@on.click")
+    }
+    e => fail("expected the sigil to be refused, got \{e.message()}")
+  } noraise {
+    _ => fail("expected the sigil to be refused")
+  }
 }
 
 ///|

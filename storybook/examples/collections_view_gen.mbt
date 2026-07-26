@@ -129,70 +129,52 @@ pub let render_with_scope_common_style : String = ""
 pub let render_with_scope_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum RenderWithScopeMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum RenderWithScopeInput {
   SetText
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn RenderWithScopeMethod::name(self : RenderWithScopeMethod) -> String {
+pub fn RenderWithScopeInput::name(self : RenderWithScopeInput) -> String {
   match self {
     SetText => "setText"
   }
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] render_with_scope_mutate(
-  f : (RenderWithScopeMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([SetText] : Array[RenderWithScopeMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn RenderWithScopeInput::parse(s : String) -> RenderWithScopeInput? {
+  match s {
+    "setText" => Some(SetText)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] render_with_scope_compute(
-  f : (RenderWithScopeMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([SetText] : Array[RenderWithScopeMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to collections.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum RenderWithScopeMsg {
+  /// `@on.input="setText …"`
+  SetText(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] render_with_scope_swap(
-  f : (RenderWithScopeMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetText] : Array[RenderWithScopeMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn RenderWithScopeMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> RenderWithScopeMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("setText", [Str(a0)]) => SetText(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -329,14 +311,14 @@ pub let list_filter_enrich_common_style : String = ""
 pub let list_filter_enrich_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ListFilterEnrichMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ListFilterEnrichInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ListFilterEnrichMethod::name(self : ListFilterEnrichMethod) -> String {
+pub fn ListFilterEnrichInput::name(self : ListFilterEnrichInput) -> String {
   match self {
     ResetQuery => "resetQuery"
     SetQuery => "setQuery"
@@ -344,57 +326,43 @@ pub fn ListFilterEnrichMethod::name(self : ListFilterEnrichMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_mutate(
-  f : (ListFilterEnrichMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ListFilterEnrichInput::parse(s : String) -> ListFilterEnrichInput? {
+  match s {
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_compute(
-  f : (ListFilterEnrichMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to collections.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ListFilterEnrichMsg {
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_swap(
-  f : (ListFilterEnrichMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ListFilterEnrichMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ListFilterEnrichMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
 
 ///|
@@ -535,15 +503,15 @@ pub let list_filter_enrich_with_common_style : String = ""
 pub let list_filter_enrich_with_global_style : String = ""
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum ListFilterEnrichWithMethod {
+/// Every bare `@on` handler name the views reference.
+pub(all) enum ListFilterEnrichWithInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
 
 ///|
-pub fn ListFilterEnrichWithMethod::name(
-  self : ListFilterEnrichWithMethod,
+pub fn ListFilterEnrichWithInput::name(
+  self : ListFilterEnrichWithInput,
 ) -> String {
   match self {
     ResetQuery => "resetQuery"
@@ -552,55 +520,43 @@ pub fn ListFilterEnrichWithMethod::name(
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_mutate(
-  f : (ListFilterEnrichWithMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
+pub fn ListFilterEnrichWithInput::parse(
+  s : String,
+) -> ListFilterEnrichWithInput? {
+  match s {
+    "resetQuery" => Some(ResetQuery)
+    "setQuery" => Some(SetQuery)
+    _ => None
   }
-  out
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_compute(
-  f : (ListFilterEnrichWithMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to collections.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum ListFilterEnrichWithMsg {
+  /// `@on.keydown="resetQuery …"`
+  ResetQuery
+  /// `@on.input="setQuery …"`
+  SetQuery(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_swap(
-  f : (ListFilterEnrichWithMethod) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn ListFilterEnrichWithMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> ListFilterEnrichWithMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("resetQuery", []) => ResetQuery
+      ("setQuery", [Str(a0)]) => SetQuery(a0)
+      _ => Unknown(name, args)
+    },
+  )
 }
