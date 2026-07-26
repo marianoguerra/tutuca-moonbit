@@ -76,7 +76,7 @@ fn counter() -> @component.Component {
           #|<div>
           #|  <button class="dec" @on.click="dec">-</button>
           #|  <span class="count" @text=".count"></span>
-          #|  <button class="inc" @on.click="$inc">+</button>
+          #|  <button class="inc" @on.click="inc">+</button>
           #|</div>
         ),
       ),
@@ -138,7 +138,7 @@ resulting DOM by CSS selector:
 test "counter: clicks flow through the whole framework" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".count"), content="0")
-  h.click(".inc") // @on.click="$inc"
+  h.click(".inc") // @on.click="inc"
   inspect(h.text(".count"), content="1")
   h.click(".dec") // @on.click="dec"
   h.click(".dec")
@@ -194,9 +194,9 @@ fn profile_module() -> @component.ModuleDef {
         "main",
         raw_view=(
           #|<section>
-          #|  <input class="who" :value=".name" @on.input="$setName value"
+          #|  <input class="who" :value=".name" @on.input="setName value"
           #|    :title="$'Editing {.name}'" />
-          #|  <button class="wave" @on.click="$toggleWaving">wave</button>
+          #|  <button class="wave" @on.click="toggleWaving">wave</button>
           #|  <p class="out" @text="$'Hello, {.name}!'"></p>
           #|</section>
         ),
@@ -217,7 +217,7 @@ test "generated mutators: setName and toggleWaving exist unwritten" {
 }
 ```
 
-`value` in `@on.input="$setName value"` is an event-supplied argument: the
+`value` in `@on.input="setName value"` is an event-supplied argument: the
 input's current value. Other event names available in handler-argument
 position include `key`, `isCtrl`, `isShift`, and (for drag & drop)
 `dragInfo`.
@@ -244,9 +244,9 @@ fn search_module() -> @component.ModuleDef {
         raw_view=(
           #|<section>
           #|  <input class="q" :value=".draft"
-          #|    @on.input="$setDraft value"
-          #|    @on.keydown+send="$setSent value"
-          #|    @on.keydown+cancel="$resetDraft" />
+          #|    @on.input="setDraft value"
+          #|    @on.keydown+send="setSent value"
+          #|    @on.keydown+cancel="resetDraft" />
           #|  <p class="sent" @text=".sent"></p>
           #|</section>
         ),
@@ -291,7 +291,7 @@ fn toggle_module() -> @component.ModuleDef {
         "main",
         raw_view=(
           #|<section>
-          #|  <button class="flip" @on.click="$toggleOn"
+          #|  <button class="flip" @on.click="toggleOn"
           #|    @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
           #|  <p class="yes" @show=".on">it is ON</p>
           #|  <p class="no" @hide=".on">it is OFF</p>
@@ -533,7 +533,7 @@ fn chat_module() -> @component.ModuleDef {
         raw_view=(
           #|<section>
           #|  <x render=".status"></x>
-          #|  <input class="draft" :value=".draft" @on.input="$setDraft value" />
+          #|  <input class="draft" :value=".draft" @on.input="setDraft value" />
           #|  <button class="send" @on.click="submit">send</button>
           #|</section>
         ),

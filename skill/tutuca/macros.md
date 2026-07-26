@@ -52,7 +52,7 @@ fn btn_rm_macro() -> @anode.Macro {
 ```
 
 ```html
-<!-- expands to @on.click="$removeInItemsAt @key" -->
+<!-- expands to @on.click="removeInItemsAt @key" -->
 <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
 ```
 
@@ -108,7 +108,7 @@ fn panel_macro() -> @anode.Macro {
 
 ```html
 <x:panel>
-  <x slot="actions"><button @on.click="$inc">+</button></x>
+  <x slot="actions"><button @on.click="inc">+</button></x>
   <p>default slot content</p>
   <x slot="footer">© 2026</x>
 </x:panel>

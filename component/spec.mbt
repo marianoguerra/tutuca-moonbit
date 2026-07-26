@@ -219,7 +219,6 @@ pub struct Component {
   // introspection metadata (the typed handlers themselves are erased behind
   // make_fn): bucket name lists + whether an update fn exists. update's
   // handled names are unknowable — it is one opaque pattern match.
-  mutate_names : Array[String]
   compute_names : Array[String]
   swap_names : Array[String]
   alter_names : Array[String]

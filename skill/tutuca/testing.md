@@ -31,7 +31,7 @@ Author tests as plain `test "..." { ... }` blocks in `*_test.mbt` files:
 test "counter: click increments" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="$inc"
+  h.click(".btn-success") // @on.click="inc"
   inspect(h.text(".stat-value"), content="1")
 }
 ```
@@ -118,9 +118,9 @@ you want to look at it.
   (the `format_size` pattern in `storybook/examples/file_picker.mbt`) and
   unit-test it directly.
 - **Handlers in isolation** — the typed handlers are erased behind the
-  compiled `Component` (only the name lists — `mutate_names`,
-  `compute_names`, `alter_names`, `generated_names`, `has_update` —
-  remain for introspection), so there is no handler table to call into.
+  compiled `Component` (only the name lists — `compute_names`,
+  `swap_names`, `alter_names`, `generated_names`, `has_update` — remain
+  for introspection), so there is no handler table to call into.
   For unit-level checks, keep the handler a named `fn` (or a bucket-map
   builder like `fp_update()` in `storybook/examples/filter_paginate.mbt`) and call
   it directly with a state struct — the arguments are plain typed
@@ -228,10 +228,11 @@ Tutuca templates resolve handler args by name (see
 event**. With named args, the handler pattern-matches a plain literal;
 with `event`, it must dig through an event-shaped `Map`.
 
-The prefix in the template picks the handler kind: a leading `$`
-means a `mutate`/`compute` entry (or generated mutator), no prefix
-dispatches an `Input` arm of `update`. The same named-arg rule applies
-to both.
+Every `@on` handler is written BARE and dispatches an `Input` arm of
+`update`. A leading `$` is refused there: in an event position a `$name`
+and a bare name are the same dispatch, so the sigil would claim a
+distinction that does not exist. `$` belongs in a value position
+(`@text="$label"`), where a `compute` entry answers it.
 
 **Bad — Input arm taking the event:**
 
@@ -263,18 +264,17 @@ custom events deliver plain `Map` metadata as `value`.
 
 ## Worked example
 
-Interaction tests covering a `mutate` entry (`$inc`), an `update`
-`Input` arm (`dec`), and a generated mutator, mirroring
-`storybook/examples/counter_test.mbt`:
+Interaction tests covering two `update` `Input` arms and a generated
+mutator, mirroring `storybook/examples/counter_test.mbt`:
 
 ```moonbit
 test "counter: inc and dec round-trip" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="$inc"   (mutate)
+  h.click(".btn-success") // @on.click="inc"
   h.click(".btn-success")
   inspect(h.text(".stat-value"), content="2")
-  h.click(".btn-error")   // @on.click="dec"    (update Input arm)
+  h.click(".btn-error")   // @on.click="dec"
   inspect(h.text(".stat-value"), content="1")
 }
 

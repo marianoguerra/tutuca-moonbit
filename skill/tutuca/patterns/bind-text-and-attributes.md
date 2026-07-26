@@ -9,7 +9,7 @@ string from several values.
 <x text="$getStrUpper"></x>     <!-- $ calls a compute; no wrapping element -->
 
 <!-- attributes: plain = static, :attr = dynamic -->
-<input :value=".str" @on.input="$setStr value" />
+<input :value=".str" @on.input="setStr value" />
 <a :href=".url" :title="$'Hi {.name}'">link</a>   <!-- $'…' string template -->
 <button :class="$'btn btn-{.kind}'">x</button>
 

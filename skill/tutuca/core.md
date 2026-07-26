@@ -276,7 +276,7 @@ value slot — conditions (`@show`, `@if`), iteration (`@each`,
 `render-each`, `@when`), enrichment (`@enrich-with`, `@loop-with`), template
 expansion (`{…}`, `:attr`, `@text`) — names a field, handler, or macro
 defined on the component (or registered with the scope). Logic lives in
-`update` / `mutate` / `compute` and the render buckets (`when` /
+`update` / `compute` / `swap` and the render buckets (`when` /
 `enrich` / `enrich_scope` / `loop_with`) and is referenced by name; the
 template itself only routes data and events.
 
@@ -318,8 +318,8 @@ resolves by slot:
 
 - **First slot** — an event name dispatched as `Input(name, args)` to
   the `update` fn; when no `update` arm claims it, dispatch falls back
-  to a `mutate` entry or generated mutator of the same name. Use
-  `$name` to call `mutate`/`compute` directly.
+  to a generated mutator of the same name. `$name` is for VALUE
+  positions, where a `compute` entry answers it.
 - **Subsequent slots** — built-in handler argument name (full list in
   *Event Handling*); anything else triggers a lint warning.
 
@@ -364,7 +364,7 @@ A string template is written `$'…'` — a single-quoted run with a leading
 ```
 
 MoonBit note: inside `#|` raw strings, template quoting is written as-is
-(`@on.click="$setView 'edit'"`); inside a normal MoonBit string you must
+(`@on.click="setView 'edit'"`); inside a normal MoonBit string you must
 escape the double quotes (`"<p :class=\"'flex gap-3'\">x</p>"`). Prefer
 `#|` raw strings for multi-line views.
 
@@ -409,9 +409,6 @@ priv struct MyCompState {
     Response("loadData", [List(rows), _err]) =>
       Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
     _ => None // ALWAYS needed
-  },
-  mutate={ // pure state change, $-callable: (s, args) => S
-    "inc": (s : MyCompState, _args) => { ..s, count: s.count + 1 },
   },
   compute={ // pure value read, $-callable: (s, args) => Value
     "label": (s : MyCompState, _args) => Str("n=\{s.count}"),
@@ -476,8 +473,8 @@ gains the set mutators). `comp` entries are always slots.
 **Every** field additionally gets `setX`, `updateX` (takes a `Fn` value —
 code-side use), `resetX`, and `xLen` (`Null` for non-sized values). The
 generated names keep their **JS camelCase spelling** — that is what makes
-views port verbatim: `@on.click="$removeInItemsAt @key"`,
-`@on.input="$setQuery value"`, `@on.click="$toggleView"` all call
+views port verbatim: `@on.click="removeInItemsAt @key"`,
+`@on.input="setQuery value"`, `@on.click="toggleView"` all call
 generated mutators. User-supplied `mutate` entries win over generated
 ones of the same name.
 
@@ -564,7 +561,7 @@ other inline content, or a loop binding). Both take the same value forms
 ## Attribute Binding
 
 ```html
-<input :value=".str" @on.input="$setStr value" />
+<input :value=".str" @on.input="setStr value" />
 <a :href=".url" :title="$'Hi {.name}'">link</a>       <!-- string template -->
 <button :class="$'btn {.color}'">x</button>
 ```
@@ -628,20 +625,20 @@ first**: several of these become build errors that way. The usual suspects:
 
 ```html
 <!-- $-handler (`$`) vs update dispatch (no prefix) -->
-<button @on.click="$inc">+</button>
+<button @on.click="inc">+</button>
 <button @on.click="dec">-</button>
 
 <!-- pass args by name -->
-<input @on.input="$setStr value" />
-<input @on.input="$setN valueAsInt" />
-<button @on.click="$pick @key isAlt">pick</button>
+<input @on.input="setStr value" />
+<input @on.input="setN valueAsInt" />
+<button @on.click="pick @key isAlt">pick</button>
 <button @on.click="loadAnotherWay">load</button>
 ```
 
 Written args arrive in the handler's `args` array in template order —
 pattern-match them directly (`Input("search", [Str(q), ..]) => ...`).
 For an `update` arm the `&Ctx` is the explicit third parameter of the
-update fn; a `$`-handler gets no ctx (`mutate`/`compute` are pure). So
+update fn; a `$`-handler gets no ctx (`compute` is pure). So
 `$pick @key isAlt` calls the `$`-handler with `args = [key, isAlt]`, and
 `loadAnotherWay` dispatches `Input("loadAnotherWay", [])` plus ctx.
 
@@ -679,8 +676,8 @@ metadata, see the table above.) See [testing.md](./testing.md)
 - `keydown` only: `+send` (Enter), `+cancel` (Escape)
 
 ```html
-<input @on.keydown+send="$submit value" @on.keydown+cancel="$reset" />
-<button @on.click+ctrl="$soloOnly">ctrl-click</button>
+<input @on.keydown+send="submit value" @on.keydown+cancel="reset" />
+<button @on.click+ctrl="soloOnly">ctrl-click</button>
 ```
 
 ### Web Components & Custom Events

@@ -8,9 +8,9 @@
 // deviations:
 // - fields come from `Component::specs` (derived from the init state +
 //   explicit slot specs).
-// - the handler channels are the typed buckets: `mutate`/`compute` list
-//   their names ("Methods"), the render-time buckets list under "Alter", and
-//   `update` is one opaque pattern match — shown as a presence flag.
+// - the handler channels are the typed buckets: `compute` lists its names
+//   ("Methods"), the render-time buckets list under "Alter", and `update` is
+//   one opaque pattern match — shown as a presence flag.
 // - generated field mutators never appear (they live in their own table).
 
 ///|
@@ -59,7 +59,7 @@ pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
     "name": Str(comp.name),
     "id": Num(comp.id.to_double()),
     "fields": List(fields),
-    "methods": names(comp.mutate_names + comp.compute_names),
+    "methods": names(comp.compute_names),
     "update": names(if comp.has_update { ["update"] } else { [] }),
     "swap": names(comp.swap_names),
     "alter": names(comp.alter_names),

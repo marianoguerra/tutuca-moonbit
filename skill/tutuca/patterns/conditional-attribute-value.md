@@ -8,7 +8,7 @@ depending on a condition.
   @if.class=".isActive"
   @then="'btn btn-success'"
   @else="'btn btn-ghost'"
-  @on.click="$toggleIsActive"
+  @on.click="toggleIsActive"
 >
   toggle
 </button>

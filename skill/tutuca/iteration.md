@@ -163,7 +163,7 @@ whatever you wrote into `binds`).
 in the matching typed bucket: `@when="filterItem"` → the `when` entry,
 `@enrich-with` → `enrich` (or `enrich_scope` without `@each`),
 `@loop-with` → `loop_with`. When no typed-bucket entry matches, the name
-falls back to a `compute`/`mutate`/generated entry (works, not
+falls back to a `compute`/generated entry (works, not
 idiomatic — the typed buckets keep iteration helpers grouped and give
 them the right signature).
 

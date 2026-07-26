@@ -38,8 +38,9 @@ channel needed. See [core.md](./core.md) "The value tree".
 Reach for the *narrowest* channel that does the job, and only move further down
 the ladder when the one above can't express it:
 
-- **The component owns the state needed to respond** → call a **`mutate`**
-  entry (or a generated mutator) on itself — stays self-contained. See
+- **The component owns the state needed to respond** → answer it in an
+  **`update` `Input` arm** (or let a generated mutator serve it) — stays
+  self-contained. See
   [core.md](./core.md) *Computed values & predicates*.
 - **An ancestor owns aggregate state** (a log, a selection, a total) → **`ctx.bubble`**
   up toward the root; the first ancestor with a matching handler runs. See
@@ -58,7 +59,7 @@ the ladder when the one above can't express it:
   know about it → **`provide` / `lookup` (`*name`)** across the tree — the last
   resort. See [advanced.md](./advanced.md).
 
-A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`,
+A compact worked version of the first four (an `Input` arm, `bubble`, `send`/`receive`,
 `request`/`response`) lives in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
@@ -122,12 +123,12 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
   the transactor. → [core.md](./core.md) "Event Handling" and "Web Components &
   Custom Events"
 
-- **Do put a handler in the right bucket for its needs: `mutate` for pure
-  state→state, `compute` for pure reads (both callable from value positions),
-  an `update` arm when it needs `ctx`.** The split is enforced by the types
-  (`mutate`/`compute` signatures have no ctx parameter), so a `$`-handler
-  that wants to `ctx.request` belongs in an `Input` / `Receive` arm of
-  `update`. → [core.md](./core.md) "Common pitfalls"
+- **Do put a handler in the right bucket for its needs: an `update` arm for
+  an event, `compute` for a pure read in a value position.** The split is
+  about WHERE the handler is called from, not what it does: a `compute`
+  entry answers `@text="$label"`, where there is no event and no `ctx`; an
+  event handler is a bare name and is answered in `update`, which gets the
+  `ctx`. → [core.md](./core.md) "Common pitfalls"
 
 - **Do use inline predicates and auto-generated mutators. Don't hand-write
   `isSelected` / `select` boilerplate.** A single field plus
@@ -153,7 +154,7 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
 
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
   generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
-  with `@on.click="$setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
+  with `@on.click="setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
   derive the current value from one field. (See `storybook/examples/composability.mbt`.)
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.
@@ -163,8 +164,8 @@ A compact worked version of the first four (`mutate`, `bubble`, `send`/`receive`
 - **Host code poking the root state or attaching a listener → an
   `app.send_at_root` handler on the root**, with the mutation expressed as
   `Some({ ..s, ... })` in a `Receive` arm.
-- **A `mutate`/`compute` entry that fabricates dispatch (or ignores that it
-  can't) → move it to an `update` arm** and let the type give it a real `ctx`.
+- **A `compute` entry that fabricates dispatch (or ignores that it can't) →
+  move it to an `update` arm** and let the type give it a real `ctx`.
 
 ## See also
 

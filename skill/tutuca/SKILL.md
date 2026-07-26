@@ -1,6 +1,6 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions with a typed state struct, `#|` raw-string HTML views, `@`-directives, the `update` dispatch match plus `mutate` / `compute` and the typed render buckets, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or generating views with `tutuca gen-views`. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
+description: Use when authoring or reviewing tutuca components in the MoonBit port — `@component.component(...)` definitions with a typed state struct, `#|` raw-string HTML views, `@`-directives, the `update` dispatch match plus `compute` / `swap` and the typed render buckets, macros, `ModuleDef` modules — or when testing with `moon test` + the `@harness` package, or generating views with `tutuca gen-views`. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
 ---
 
 <!-- The MoonBit tutuca skill lives at skill/tutuca/ in this repo and is

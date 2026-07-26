@@ -10,7 +10,7 @@ list more than necessary.
   <input :value=".query" @on.input="search value" />
   <li @each=".items" @when="onlyMatches" @loop-with="page">  <!-- COLLECT pass -->
     <span @text="@key"></span> <x render-it></x>
-    <button @on.click="$removeInItemsAt @key">✕</button>
+    <button @on.click="removeInItemsAt @key">✕</button>
   </li>
   <button :disabled="@isFirst" @on.click="prev">‹</button>
   <button @text="@pageLabel"></button>

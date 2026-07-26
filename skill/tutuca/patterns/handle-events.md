@@ -3,16 +3,16 @@
 **Problem:** respond to a DOM event and update state.
 
 ```html
-<button @on.click="$inc">+</button>      <!-- $ calls a mutate/generated -->
+<button @on.click="inc">+</button>      <!-- $ calls a mutate/generated -->
 <button @on.click="dec">-</button>        <!-- bare name = update Input arm -->
 
 <!-- pass args by name -->
-<input @on.input="$setStr value" />
-<input @on.input="$setN valueAsInt" />
+<input @on.input="setStr value" />
+<input @on.input="setN valueAsInt" />
 <button @on.click="onAddItem">+</button>
 
 <!-- modifiers: keydown +send (Enter) / +cancel (Esc), and +ctrl/+cmd/+alt -->
-<input @on.keydown+send="$submit value" @on.keydown+cancel="$reset" />
+<input @on.keydown+send="submit value" @on.keydown+cancel="reset" />
 
 <!-- custom elements: any CustomEvent reaches @on.<name>, detail is `value` -->
 <emoji-picker @on.emoji-click="onPick value"></emoji-picker>

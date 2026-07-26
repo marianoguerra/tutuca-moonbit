@@ -425,7 +425,7 @@ per-step-kind pinning rules are in [semantics.md](./semantics.md).
 ## See also
 
 - [core.md](./core.md) — the core mental model, `view` directives, the
-  `update`/`mutate`/`compute` overview, and *The ModuleDef convention*.
+  `update`/`compute` overview, and *The ModuleDef convention*.
 - [semantics.md](./semantics.md) — the path/transaction model behind these
   channels: path steps, the transaction lifecycle, teleporting, and the
   key-pinning rules `live_path` toggles.

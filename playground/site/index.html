@@ -56,12 +56,16 @@
   &lt;button @on.click="inc" @text=".count"&gt;&lt;/button&gt;
 &lt;/template&gt;
 
-// counter.mbt — `tutuca gen-views` generated CounterState from
-// the schema above, and checked `.count` against it
+// counter.mbt — `tutuca gen-views` generated CounterState and CounterMsg
+// from the schema and the view above, and checked `.count` against them
 let counter = @component.component(
   name="Counter",
   views=counter_views(),
   init=CounterState::{ count: 0 },
+  update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+    Some(Inc) => Some({ count: s.count + 1 })
+    Some(Unknown(_, _)) | None => None
+  },
 )</code></pre>
     </header>
     <main>

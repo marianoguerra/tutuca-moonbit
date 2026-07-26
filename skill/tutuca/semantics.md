@@ -194,7 +194,7 @@ things per step kind:
 
 - [core.md](./core.md) — *Mental model* and *Paths, not references* (the
   high-level invariants this file expands on), `view` directives, the
-  `update`/`mutate`/`compute` buckets.
+  `update`/`compute`/`swap` buckets.
 - [request-response.md](./request-response.md) — the dispatch **API**:
   `Bubble` / `send`-`Receive` / `request`-`Response`, `ctx.at()`,
   catch-all arms, request-handler registration, and the `live_path`
