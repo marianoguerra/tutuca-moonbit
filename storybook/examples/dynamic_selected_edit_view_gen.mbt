@@ -75,16 +75,6 @@ pub let dse_root_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn dse_root_specs() -> Map[String, @component.FieldSpec] {
-  { "items": @component.FieldSpec::omap() }
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -192,6 +182,51 @@ pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn dse_root_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "1e0db39e41167c58",
+    fields: [
+      {
+        name: "items",
+        ty: "an ordered map of any",
+        kind: @component.FOMap,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "selectedKey",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "editor",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: ["selectItem"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the DseEditor component.
 ///
 /// Declared as `interface dse-editor` in the state block. Adding a
@@ -250,16 +285,6 @@ pub fn DseEditorField::kind(self : DseEditorField) -> @component.FieldKind {
 pub let dse_editor_field_names : Array[String] = ["missing"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn dse_editor_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -304,6 +329,35 @@ pub let dse_editor_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let dse_editor_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn dse_editor_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "6d6412be74f3d0b4",
+    fields: [
+      {
+        name: "missing",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the DseEntry component.
@@ -362,16 +416,6 @@ pub fn DseEntryField::kind(self : DseEntryField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let dse_entry_field_names : Array[String] = ["name"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn dse_entry_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -466,4 +510,33 @@ pub fn DseEntryMsg::from_dispatch(d : @component.Dispatch) -> DseEntryMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn dse_entry_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "2184b70b210b0dff",
+    fields: [
+      {
+        name: "name",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setName"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main", "edit"],
+    init_names: [],
+  }
 }

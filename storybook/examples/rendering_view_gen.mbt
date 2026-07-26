@@ -74,16 +74,6 @@ pub fn PushViewField::kind(self : PushViewField) -> @component.FieldKind {
 pub let push_view_field_names : Array[String] = ["items", "query", "view"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn push_view_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -249,6 +239,51 @@ pub fn[S] push_view_swap(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn push_view_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "59de8df8ec76d36f",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "query",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "view",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["resetQuery", "setQuery", "toggleView"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["getToggleLabel"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the SeqItemAccess component.
 ///
 /// Declared as `interface seq-item-access` in the state block. Adding a
@@ -326,16 +361,6 @@ pub fn SeqItemAccessField::kind(
 pub let seq_item_access_field_names : Array[String] = [
   "byKey", "byIndex", "currentKey", "currentIndex",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn seq_item_access_specs() -> Map[String, @component.FieldSpec] {
-  { "byKey": @component.FieldSpec::omap() }
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -519,6 +544,59 @@ pub fn[S] seq_item_access_swap(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn seq_item_access_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "3d8aff68ab0f9efc",
+    fields: [
+      {
+        name: "byKey",
+        ty: "an ordered map of any",
+        kind: @component.FOMap,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "byIndex",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "currentKey",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "currentIndex",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setCurrentIndex", "setCurrentKey"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["getMaxIndex"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Pagination component.
 ///
 /// Declared as `interface pagination` in the state block. Adding a
@@ -583,16 +661,6 @@ pub fn PaginationField::kind(self : PaginationField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let pagination_field_names : Array[String] = ["items", "page", "pageSize"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn pagination_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -757,4 +825,49 @@ pub fn[S] pagination_swap(
     }
   }
   out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn pagination_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "c2aa11aab6bf6478",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "page",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "pageSize",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["next", "prev"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["isFirstPage", "isLastPage", "pageLabel"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

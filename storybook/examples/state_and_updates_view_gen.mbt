@@ -83,16 +83,6 @@ pub let attribute_binding_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn attribute_binding_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -218,6 +208,59 @@ pub fn AttributeBindingMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn attribute_binding_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "8ea3de0f9d1d7877",
+    fields: [
+      {
+        name: "str",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "num",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "bool",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "notSet",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setBool", "setRawNumber", "setStr"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the ConditionalAttributes component.
 ///
 /// Declared as `interface conditional-attributes` in the state block. Adding a
@@ -281,16 +324,6 @@ pub fn ConditionalAttributesField::kind(
 ///|
 /// Every field, in declaration order.
 pub let conditional_attributes_field_names : Array[String] = ["isActive"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn conditional_attributes_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -398,6 +431,35 @@ pub fn ConditionalAttributesMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn conditional_attributes_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "910117f2f10fc51d",
+    fields: [
+      {
+        name: "isActive",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["toggleIsActive"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the EventModifiers component.
 ///
 /// Declared as `interface event-modifiers` in the state block. Adding a
@@ -462,16 +524,6 @@ pub fn EventModifiersField::kind(
 pub let event_modifiers_field_names : Array[String] = [
   "query", "lastSentSearch",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn event_modifiers_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -586,6 +638,43 @@ pub fn EventModifiersMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn event_modifiers_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "d6a42b598e90df83",
+    fields: [
+      {
+        name: "query",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "lastSentSearch",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["onInput", "resetQuery", "setLastSentSearch"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the ShowHide component.
 ///
 /// Declared as `interface show-hide` in the state block. Adding a
@@ -646,16 +735,6 @@ pub fn ShowHideField::kind(self : ShowHideField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let show_hide_field_names : Array[String] = ["isOpen", "count"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn show_hide_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -806,4 +885,41 @@ pub fn[S] show_hide_swap(
     }
   }
   out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn show_hide_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "3f79c6cc46a1f1b3",
+    fields: [
+      {
+        name: "isOpen",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["incCount", "toggleIsOpen"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["label"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

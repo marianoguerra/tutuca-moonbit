@@ -180,6 +180,55 @@ fn rich_sample_comp() -> @component.Component {
     },
     name="RichSample",
     init=SampleState::{ title: "", count: 0, tags: [], open: false },
+    // Hand-written here because this demo builds its views at runtime, but
+    // the shape is exactly what `gen-views` emits for a component with a
+    // `tutuca/state` block. It is what makes the Update / Receive / Bubble /
+    // Response / Ids / Fixtures panels appear at all.
+    schema={
+      fingerprint: "richsample0000001",
+      fields: [
+        {
+          name: "title",
+          ty: "string",
+          kind: FText,
+          elem: None,
+          slot: None,
+          members: [],
+        },
+        {
+          name: "count",
+          ty: "s32",
+          kind: FInt,
+          elem: None,
+          slot: None,
+          members: [],
+        },
+        {
+          name: "tags",
+          ty: "values",
+          kind: FList,
+          elem: Some("any"),
+          slot: None,
+          members: [],
+        },
+        {
+          name: "open",
+          ty: "bool",
+          kind: FBool,
+          elem: None,
+          slot: None,
+          members: [],
+        },
+      ],
+      inputs: ["inc", "reset"],
+      receives: ["ping"],
+      bubbles: ["onChild"],
+      responses: ["onData"],
+      methods: ["double", "label"],
+      ids: [],
+      view_names: ["main", "compact"],
+      init_names: [],
+    },
     compute={
       "label": (s : SampleState, _args) => Str(s.title),
       "double": (s : SampleState, _args) => Num((s.count * 2).to_double()),

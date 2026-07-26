@@ -66,16 +66,6 @@ pub fn PlaylistField::kind(self : PlaylistField) -> @component.FieldKind {
 pub let playlist_field_names : Array[String] = ["songs"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn playlist_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -169,6 +159,35 @@ pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn playlist_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "cc5dc1cd9f4badee",
+    fields: [
+      {
+        name: "songs",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["removeSong"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Song component.
 ///
 /// Declared as `interface song` in the state block. Adding a
@@ -227,16 +246,6 @@ pub fn SongField::kind(self : SongField) -> @component.FieldKind {
 pub let song_field_names : Array[String] = ["title"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn song_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -281,3 +290,32 @@ pub let song_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let song_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn song_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5d3ec9756ba331ba",
+    fields: [
+      {
+        name: "title",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}

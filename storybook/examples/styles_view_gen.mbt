@@ -37,16 +37,6 @@ pub fn styles_example_zero_args() -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn styles_example_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -80,6 +70,26 @@ pub let styles_example_common_style : String =
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let styles_example_global_style : String = ".styles-example-global-class { color: green; }"
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn styles_example_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5c435ae5582bab80",
+    fields: [],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main", "one", "two"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the StylesExampleRoot component.
@@ -141,16 +151,6 @@ pub fn StylesExampleRootField::kind(
 pub let styles_example_root_field_names : Array[String] = ["value"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn styles_example_root_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -176,3 +176,32 @@ pub let styles_example_root_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let styles_example_root_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn styles_example_root_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5407ac5b07426d2a",
+    fields: [
+      {
+        name: "value",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}

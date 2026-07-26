@@ -87,16 +87,6 @@ pub let lint_demo_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn lint_demo_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -203,16 +193,6 @@ pub fn HtmlLintDemoField::kind(
 pub let html_lint_demo_field_names : Array[String] = ["count"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn html_lint_demo_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -298,16 +278,6 @@ pub fn ScopedStyleDemoField::kind(
 ///|
 /// Every field, in declaration order.
 pub let scoped_style_demo_field_names : Array[String] = ["count"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn scoped_style_demo_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when

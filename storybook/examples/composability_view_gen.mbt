@@ -88,16 +88,6 @@ pub let composability_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn composability_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -221,4 +211,83 @@ pub fn ComposabilityId::id(self : ComposabilityId) -> String {
 /// The `#id` CSS selector for this element.
 pub fn ComposabilityId::selector(self : ComposabilityId) -> String {
   "#" + self.id()
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn composability_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "a3b3ea198bfa01dd",
+    fields: [
+      {
+        name: "activeSection",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "todo",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "json",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "tree",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "personalSite",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "visualWasm",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "dnd",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: ["setActiveSection"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [
+      "tab-dnd", "tab-json", "tab-personal-site", "tab-todo", "tab-tree", "tab-visual-wasm",
+    ],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

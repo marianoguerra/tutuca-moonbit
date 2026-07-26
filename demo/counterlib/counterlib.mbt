@@ -31,6 +31,9 @@ pub fn counter_comp() -> @component.Component {
     // parsing at startup. For a runtime-parsed view instead, build the map
     // with @anode.View::new.
     views=counter_views(),
+    // What the schema declares, for the inspector — and it also stops the
+    // runtime inferring field kinds from the init value.
+    schema=counter_schema(),
     // The named `fresh` state from the init block. Fixtures live there
     // rather than in the schema because a default is a value, not a type —
     // and each is checked against the schema at generation time.
@@ -89,4 +92,30 @@ test "the schema declares each field's kind rather than inferring it" {
   assert_true(CounterField::Label.kind() is FText)
   assert_true(CounterField::History.kind() is FList)
   assert_eq(counter_field_names, ["label", "count", "history"])
+}
+
+///|
+/// The schema reaches the runtime, so the field kinds are DECLARED rather
+/// than inferred from the init value.
+test "the component takes its kinds from the schema, not the seed value" {
+  let comp = counter_comp()
+  guard comp.schema is Some(si) else { fail("no schema on the component") }
+  assert_eq(si.fingerprint, counter_schema_fingerprint)
+  // The names `update` answers — unknowable by reflection, since update is
+  // one opaque pattern match.
+  assert_eq(si.inputs, ["add", "resetCount", "setLabel"])
+  assert_eq(si.receives, ["resetTo"])
+  assert_eq(si.init_names, ["fresh", "with-history"])
+  // `count` seeds at 0, which `FieldSpec::of_default` would also call FInt —
+  // but for the wrong reason. The schema says s32.
+  guard si.field("count") is Some(fi)
+  assert_eq(fi.ty, "s32")
+  assert_true(fi.kind is FInt)
+  // ...and an element type, which a runtime spec has no room for.
+  guard si.field("history") is Some(hf)
+  assert_eq(hf.ty, "list<s32>")
+  assert_eq(hf.elem, Some("s32"))
+  // The specs the runtime actually built agree with it.
+  guard comp.specs.get("count") is Some(sp)
+  assert_true(sp.kind is FInt)
 }

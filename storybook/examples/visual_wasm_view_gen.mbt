@@ -40,16 +40,6 @@ pub fn vw_empty_zero_args() -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_empty_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -116,16 +106,6 @@ pub fn VwImmField::kind(self : VwImmField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let vw_imm_field_names : Array[String] = ["value", "rawValue"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_imm_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -211,16 +191,6 @@ pub fn VwTypesField::kind(self : VwTypesField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let vw_types_field_names : Array[String] = ["items"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_types_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -318,16 +288,6 @@ pub fn VwContainerField::kind(self : VwContainerField) -> @component.FieldKind {
 pub let vw_container_field_names : Array[String] = [
   "items", "expanded", "editing",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_container_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -457,16 +417,6 @@ pub fn VwIfField::kind(self : VwIfField) -> @component.FieldKind {
 pub let vw_if_field_names : Array[String] = [
   "thn", "else", "expanded", "editingIf", "editingThn", "editingElse",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_if_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -603,16 +553,6 @@ pub let vw_section_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_section_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -721,16 +661,6 @@ pub fn VwMemoryField::kind(self : VwMemoryField) -> @component.FieldKind {
 pub let vw_memory_field_names : Array[String] = ["n", "m"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_memory_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -825,16 +755,6 @@ pub fn VwPickerField::kind(self : VwPickerField) -> @component.FieldKind {
 pub let vw_picker_field_names : Array[String] = [
   "currentSection", "instructions", "filter",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn vw_picker_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when

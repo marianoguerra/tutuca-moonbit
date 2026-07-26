@@ -72,16 +72,6 @@ pub let emoji_picker_field_names : Array[String] = [
 ]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn emoji_picker_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -186,4 +176,41 @@ pub fn EmojiPickerMsg::from_dispatch(
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn emoji_picker_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "4ae49bac65c482b5",
+    fields: [
+      {
+        name: "current",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "isPickerVisible",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["onEmojiClick", "toggleIsPickerVisible"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

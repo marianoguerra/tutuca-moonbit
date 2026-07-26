@@ -52,6 +52,31 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   interleaved A/B on the render path puts `patch counter` at 19.0/19.5 µs
   against 20.3 µs — a few percent, which is what a bridge that is not the
   bottleneck should look like.
+- **The generator exports a static description, and the inspector reads it.**
+  `gen-views` emits `<v>_schema()`, a `@component.SchemaInfo` carrying the
+  field types with their element types and a `flags` set's members, the `@on`
+  names the views raise, the declared message buckets, the constant element
+  ids, the view names and the named fixtures. A component passes it as
+  `schema~`.
+
+  The headline is `update`. At runtime it is one opaque pattern match, so
+  introspection could only ever report THAT an update exists — the component
+  inspector literally rendered `["update"]`. The schema knows every name it
+  answers, and the panel now lists them. Receive / Bubble / Response appear at
+  all for the first time: those names are raised from MoonBit, never written
+  in a view, so nothing at runtime could recover them.
+
+  Passing `schema~` also stops `component()` inferring field kinds from the
+  encoded init value — the guess that made `FInt` vs `FFloat` depend on
+  whether a seed double happened to be integral. Two sources of truth for the
+  same fact is worse than either alone, so the declared kind simply wins. A
+  component with no schema keeps the reflection path unchanged, which is what
+  every unmigrated one still uses.
+
+  This supersedes the generated `<v>_specs()` helper, which was emitted but
+  never passed by anything — the runtime was guessing kinds it had already
+  been told. Removed. Net cost to a generated module: ~700 bytes.
+
 - **Schema-only view files.** A file may carry a `tutuca/state` block and no
   `<template>`, which is how a component whose views are built in MoonBit
   still gets a generated state type — the schema lives in a view file, so it

@@ -72,16 +72,6 @@ pub fn SwatchPickerField::kind(
 pub let swatch_picker_field_names : Array[String] = ["color", "palette"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn swatch_picker_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -185,6 +175,43 @@ pub fn SwatchPickerMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn swatch_picker_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "30457ae742655759",
+    fields: [
+      {
+        name: "color",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "palette",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setColor"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Quadratic component.
 ///
 /// Declared as `interface quadratic` in the state block. Adding a
@@ -249,16 +276,6 @@ pub fn QuadraticField::kind(self : QuadraticField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let quadratic_field_names : Array[String] = ["a", "b", "c"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn quadratic_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -424,4 +441,49 @@ pub fn[S] quadratic_swap(
     }
   }
   out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn quadratic_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "bb32e2a1638d9036",
+    fields: [
+      {
+        name: "a",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "b",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "c",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setA", "setB", "setC"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["classify", "discriminant"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

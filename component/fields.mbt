@@ -69,3 +69,14 @@ fn FieldSpec::coerce_or_default(
     _ => self.default
   }
 }
+
+///|
+/// The declared description of a field, by runtime name.
+pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo? {
+  for f in self.fields {
+    if f.name == name {
+      return Some(f)
+    }
+  }
+  None
+}

@@ -68,16 +68,6 @@ pub fn TrafficLightField::kind(
 pub let traffic_light_field_names : Array[String] = ["lightIndex"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn traffic_light_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -224,6 +214,35 @@ pub fn[S] traffic_light_swap(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn traffic_light_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "641f8260005d94a3",
+    fields: [
+      {
+        name: "lightIndex",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["nextLight"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["light"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the TabbedUI component.
 ///
 /// Declared as `interface tabbed-u-i` in the state block. Adding a
@@ -280,16 +299,6 @@ pub fn TabbedUIField::kind(self : TabbedUIField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let tabbed_u_i_field_names : Array[String] = ["tab"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn tabbed_u_i_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -408,6 +417,35 @@ pub fn TabbedUIId::selector(self : TabbedUIId) -> String {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn tabbed_u_i_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "91f1c8c673117b38",
+    fields: [
+      {
+        name: "tab",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setTab"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: ["t-features", "t-overview", "t-pricing"],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the ListAndFilter component.
 ///
 /// Declared as `interface list-and-filter` in the state block. Adding a
@@ -470,16 +508,6 @@ pub fn ListAndFilterField::kind(
 ///|
 /// Every field, in declaration order.
 pub let list_and_filter_field_names : Array[String] = ["items", "query"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn list_and_filter_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -590,4 +618,41 @@ pub fn ListAndFilterMsg::from_dispatch(
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn list_and_filter_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "80f3b6c5cd0e5b4d",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "query",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["resetQuery", "setQuery"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

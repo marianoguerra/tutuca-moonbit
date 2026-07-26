@@ -74,16 +74,6 @@ pub fn TableRowField::kind(self : TableRowField) -> @component.FieldKind {
 pub let table_row_field_names : Array[String] = ["name", "qty", "price"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn table_row_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -131,6 +121,51 @@ pub let table_row_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let table_row_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn table_row_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "78cde2ca3599de8c",
+    fields: [
+      {
+        name: "name",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "qty",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "price",
+        ty: "f64",
+        kind: @component.FFloat,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the ItemTable component.
@@ -191,16 +226,6 @@ pub fn ItemTableField::kind(self : ItemTableField) -> @component.FieldKind {
 pub let item_table_field_names : Array[String] = ["rows"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn item_table_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -249,6 +274,35 @@ pub let item_table_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let item_table_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn item_table_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "413b1cfe818d4bc7",
+    fields: [
+      {
+        name: "rows",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the SelectOption component.
@@ -315,16 +369,6 @@ pub fn SelectOptionField::kind(
 pub let select_option_field_names : Array[String] = ["value", "label"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn select_option_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -370,6 +414,43 @@ pub let select_option_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let select_option_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn select_option_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "07ec6c7cf74c56fc",
+    fields: [
+      {
+        name: "value",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "label",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the ItemSelect component.
@@ -432,16 +513,6 @@ pub fn ItemSelectField::kind(self : ItemSelectField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let item_select_field_names : Array[String] = ["options", "current"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn item_select_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -545,6 +616,43 @@ pub fn ItemSelectMsg::from_dispatch(d : @component.Dispatch) -> ItemSelectMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn item_select_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "c0c9027a3ae072e5",
+    fields: [
+      {
+        name: "options",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "current",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setCurrent"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the PseudoXDemo component.
 ///
 /// Declared as `interface pseudo-x-demo` in the state block. Adding a
@@ -604,16 +712,6 @@ pub fn PseudoXDemoField::kind(self : PseudoXDemoField) -> @component.FieldKind {
 pub let pseudo_x_demo_field_names : Array[String] = ["table", "select"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn pseudo_x_demo_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -639,3 +737,40 @@ pub let pseudo_x_demo_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let pseudo_x_demo_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn pseudo_x_demo_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "e785760a33d1bedc",
+    fields: [
+      {
+        name: "table",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+      {
+        name: "select",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}

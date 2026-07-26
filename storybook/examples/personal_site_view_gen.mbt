@@ -70,16 +70,6 @@ pub fn AltUrlField::kind(self : AltUrlField) -> @component.FieldKind {
 pub let alt_url_field_names : Array[String] = ["label", "url"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn alt_url_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -125,6 +115,43 @@ pub let alt_url_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let alt_url_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn alt_url_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5894c82bae5b3921",
+    fields: [
+      {
+        name: "label",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "url",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the PsEntry component.
@@ -233,16 +260,6 @@ pub let ps_entry_field_names : Array[String] = [
   "title", "description", "lang", "startYear", "endYear", "role", "featured", "url",
   "altUrls", "categories",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn ps_entry_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -384,6 +401,107 @@ pub fn[S] ps_entry_swap(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn ps_entry_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "dbbed9cebaa1412f",
+    fields: [
+      {
+        name: "title",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "description",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "lang",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "startYear",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "endYear",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "role",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "featured",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "url",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "altUrls",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "categories",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["isSpanish", "langFlag", "yearDisplay"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Root component.
 ///
 /// Declared as `interface root` in the state block. Adding a
@@ -480,19 +598,6 @@ pub let root_field_names : Array[String] = [
   "allEntries", "allCategories", "allRoles", "selectedCategories", "selectedRoles",
   "featuredFirst", "sortByEnd", "sortAsc",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn root_specs() -> Map[String, @component.FieldSpec] {
-  {
-    "selectedCategories": @component.FieldSpec::set(),
-    "selectedRoles": @component.FieldSpec::set(),
-  }
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -738,4 +843,92 @@ pub fn[S] root_swap(
     }
   }
   out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn root_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "b2600c9777dc4864",
+    fields: [
+      {
+        name: "allEntries",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "allCategories",
+        ty: "list<string>",
+        kind: @component.FList,
+        elem: Some("string"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "allRoles",
+        ty: "list<string>",
+        kind: @component.FList,
+        elem: Some("string"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "selectedCategories",
+        ty: "text-set",
+        kind: @component.FSet,
+        elem: Some("string"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "selectedRoles",
+        ty: "text-set",
+        kind: @component.FSet,
+        elem: Some("string"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "featuredFirst",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "sortByEnd",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "sortAsc",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [
+      "clearFilters", "onCategoryToggle", "onRoleToggle", "onToggleFeaturedFirst",
+      "onToggleSortAsc", "onToggleSortByEnd",
+    ],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["hasActiveFilters"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

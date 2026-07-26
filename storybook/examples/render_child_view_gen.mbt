@@ -66,16 +66,6 @@ pub fn GreetingField::kind(self : GreetingField) -> @component.FieldKind {
 pub let greeting_field_names : Array[String] = ["name"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn greeting_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -120,6 +110,35 @@ pub let greeting_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let greeting_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn greeting_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "291131f40d1ed859",
+    fields: [
+      {
+        name: "name",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the Page component.
@@ -178,16 +197,6 @@ pub fn PageField::kind(self : PageField) -> @component.FieldKind {
 pub let page_field_names : Array[String] = ["greeting"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn page_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -213,6 +222,35 @@ pub let page_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let page_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn page_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "db02b6e5e92c5199",
+    fields: [
+      {
+        name: "greeting",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the Entry component.
@@ -275,16 +313,6 @@ pub fn EntryField::kind(self : EntryField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let entry_field_names : Array[String] = ["title", "description"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn entry_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -389,6 +417,43 @@ pub fn EntryMsg::from_dispatch(d : @component.Dispatch) -> EntryMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn entry_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "e63d2a9edab89eef",
+    fields: [
+      {
+        name: "title",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "description",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setDescription", "setTitle"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main", "edit"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the MultipleViews component.
 ///
 /// Declared as `interface multiple-views` in the state block. Adding a
@@ -447,16 +512,6 @@ pub fn MultipleViewsField::kind(
 pub let multiple_views_field_names : Array[String] = ["value"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn multiple_views_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -482,3 +537,32 @@ pub let multiple_views_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let multiple_views_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn multiple_views_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "74788bd77ca3a59f",
+    fields: [
+      {
+        name: "value",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}

@@ -74,16 +74,6 @@ pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
 pub let counter_field_names : Array[String] = ["label", "count", "history"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn counter_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -323,4 +313,49 @@ pub fn CounterId::id(self : CounterId) -> String {
 /// The `#id` CSS selector for this element.
 pub fn CounterId::selector(self : CounterId) -> String {
   "#" + self.id()
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn counter_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "3d30a5c1ebb6ea6f",
+    fields: [
+      {
+        name: "label",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "history",
+        ty: "list<s32>",
+        kind: @component.FList,
+        elem: Some("s32"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["add", "resetCount", "setLabel"],
+    receives: ["resetTo"],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: ["count", "dec", "history", "inc", "label", "reset"],
+    view_names: ["main"],
+    init_names: ["fresh", "with-history"],
+  }
 }

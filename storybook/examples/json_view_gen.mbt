@@ -37,16 +37,6 @@ pub fn json_selector_zero_args() -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_selector_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -153,6 +143,28 @@ pub fn JsonSelectorMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_selector_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "823721696e1e4913",
+    fields: [],
+    inputs: [
+      "setToArray", "setToBool", "setToNull", "setToNumber", "setToObject", "setToString",
+    ],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonNull component.
 ///
 /// Declared as `interface json-null` in the state block. Adding a
@@ -182,16 +194,6 @@ pub fn json_null_zero_args() -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_null_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -217,6 +219,26 @@ pub let json_null_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let json_null_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_null_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "28cebc724be3edcf",
+    fields: [],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the JsonBool component.
@@ -275,16 +297,6 @@ pub fn JsonBoolField::kind(self : JsonBoolField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let json_bool_field_names : Array[String] = ["value"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_bool_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -380,6 +392,35 @@ pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_bool_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "d4b8a46eb24ceada",
+    fields: [
+      {
+        name: "value",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["toggleValue"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonString component.
 ///
 /// Declared as `interface json-string` in the state block. Adding a
@@ -436,16 +477,6 @@ pub fn JsonStringField::kind(self : JsonStringField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let json_string_field_names : Array[String] = ["value"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_string_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -541,6 +572,35 @@ pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_string_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "56e6fad878f71b0c",
+    fields: [
+      {
+        name: "value",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setValue"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonNumber component.
 ///
 /// Declared as `interface json-number` in the state block. Adding a
@@ -601,16 +661,6 @@ pub fn JsonNumberField::kind(self : JsonNumberField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let json_number_field_names : Array[String] = ["strValue", "value"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_number_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -707,6 +757,43 @@ pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_number_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "f0f29389d0ef3ee2",
+    fields: [
+      {
+        name: "strValue",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "value",
+        ty: "f64",
+        kind: @component.FFloat,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setRawValue"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonArray component.
 ///
 /// Declared as `interface json-array` in the state block. Adding a
@@ -763,16 +850,6 @@ pub fn JsonArrayField::kind(self : JsonArrayField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let json_array_field_names : Array[String] = ["items"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_array_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -884,6 +961,35 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_array_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "52ac0f26bb122de2",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["addItem", "onDropOnItem", "removeInItemsAt"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonObjectKeyVal component.
 ///
 /// Declared as `interface json-object-key-val` in the state block. Adding a
@@ -947,16 +1053,6 @@ pub fn JsonObjectKeyValField::kind(
 ///|
 /// Every field, in declaration order.
 pub let json_object_key_val_field_names : Array[String] = ["key", "value"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_object_key_val_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -1059,6 +1155,43 @@ pub fn JsonObjectKeyValMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_object_key_val_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "f20288305b90ddee",
+    fields: [
+      {
+        name: "key",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "value",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setKey"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the JsonObject component.
 ///
 /// Declared as `interface json-object` in the state block. Adding a
@@ -1115,16 +1248,6 @@ pub fn JsonObjectField::kind(self : JsonObjectField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let json_object_field_names : Array[String] = ["items"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn json_object_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -1233,4 +1356,33 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn json_object_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "25415f50b72a94c2",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["addItem", "onDropOnItem", "removeInItemsAt"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

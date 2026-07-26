@@ -39,6 +39,10 @@ pub(all) struct FieldSpec {
 declare fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
 
 ///|
+/// The declared description of a field, by runtime name.
+declare pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo?
+
+///|
 /// A component-typed slot field: default instance made via the scope at make
 /// time.
 declare pub fn FieldSpec::comp(
@@ -206,6 +210,59 @@ pub(all) struct RequestFn(
 
 ///|
 /// A compiled component: views + field specs + provide/lookup + styles, with
+/// One state field, as the schema DECLARES it.
+///
+/// The runtime's own `FieldSpec` is recovered from the encoded init value and
+/// can only say as much as a value can — `FInt` or `FFloat` depending on
+/// whether a seed double happened to be integral, `FList` with no element
+/// type. This carries what the author wrote instead.
+pub(all) struct FieldInfo {
+  name : String
+  /// The WIT spelling verbatim — `list<card>`, `option<string>`, `text-set`.
+  /// Carried rather than reconstructed, so an inspector shows what is in the
+  /// file.
+  ty : String
+  kind : FieldKind
+  /// A collection's element type, so a viewer can descend rather than stop
+  /// at "list". None for a scalar.
+  elem : String?
+  /// The component a child slot holds; None for a data field.
+  slot : String?
+  /// A `flags` field's declared members — the one thing about a set that
+  /// only the schema knows, since the encoded init value is just a Map.
+  /// Empty for every other field, and for a set with open membership.
+  members : Array[String]
+}
+
+///|
+/// What a component's schema declares, as static metadata.
+///
+/// Absent for a component with no `<script type="tutuca/state">` block —
+/// those keep the reflection path, which is all a runtime descriptor could
+/// ever offer.
+///
+/// `inputs` is the one that matters most: the names `update` answers are
+/// UNKNOWABLE at runtime (it is one opaque pattern match), so introspection
+/// could only ever report THAT an update exists. The generator knows them.
+pub(all) struct SchemaInfo {
+  /// Structural identity of the schema — over shape, not source text.
+  fingerprint : String
+  fields : Array[FieldInfo]
+  /// The `@on` handler names the views raise.
+  inputs : Array[String]
+  receives : Array[String]
+  bubbles : Array[String]
+  responses : Array[String]
+  /// `$name` callables in VALUE positions.
+  methods : Array[String]
+  /// Constant element ids — the selectors a test addresses.
+  ids : Array[String]
+  view_names : Array[String]
+  /// Named fixtures from the `tutuca/init` block.
+  init_names : Array[String]
+}
+
+///|
 /// the typed-state half (S, handlers) erased behind the make closure.
 /// `id` comes from a process-global counter (JS _compId) — tests must not
 /// assert absolute ids.
@@ -224,6 +281,10 @@ pub struct Component {
   alter_names : Array[String]
   generated_names : Array[String] // the per-field mutators gen_mutators built
   has_update : Bool
+  /// The generator's static description, when the component has a schema.
+  /// Everything above this line is what a runtime descriptor can recover;
+  /// this is what was declared.
+  schema : SchemaInfo?
   mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]
@@ -269,6 +330,10 @@ declare pub fn[S : ToJson + @json.FromJson] component(
   /// (benchmarks/codec_bench_test.mbt).
   encode? : (S) -> Map[String, @tutuca.Value],
   decode? : (Map[String, @tutuca.Value]) -> S?,
+  /// The generator's static description of this component's schema. Given
+  /// one, `component` stops inferring field kinds from the init value and
+  /// reads the declared ones instead.
+  schema? : SchemaInfo,
 ) -> Component
 
 ///|

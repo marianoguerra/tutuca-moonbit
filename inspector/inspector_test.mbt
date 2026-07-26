@@ -116,15 +116,21 @@ test "component inspector: sections toggle one by one and all at once" {
     "Component: Rich Sample",
   )
   inspect(h.text(".comp-title"), content="RichSample")
+  // Receive / Bubble / Response appear only because the component is
+  // DESCRIBED: those names are raised from MoonBit, never written in a
+  // view, so nothing at runtime can recover them.
   assert_true(
     h.texts(".comp-section") ==
-    ["Fields", "Methods", "Update", "Alter", "Views"],
+    [
+      "Fields", "Methods", "Update", "Receive", "Bubble", "Response", "Alter", "Views",
+    ],
   )
   // Fields starts expanded (4 rows), name sections collapsed
   inspect(h.find_all(".comp-field").length(), content="4")
   inspect(h.find_all(".comp-name").length(), content="0")
   // plain click expands just Methods (the compute names). `inc`/`reset` are
-  // update arms, not methods — they answer a dispatch, not a field read.
+  // update arms, not methods — they answer a dispatch, not a field read, and
+  // they show under "Update" now that the schema names them.
   h.click(".comp-section", nth=1)
   assert_true(h.texts(".comp-name").contains("label"))
   assert_true(h.texts(".comp-name").contains("double"))
@@ -138,8 +144,15 @@ test "component inspector: sections toggle one by one and all at once" {
     nth=2,
   )
   let names = h.texts(".comp-name")
-  assert_true(names.contains("update")) // the opaque Dispatch match, as a flag
-  assert_true(names.contains("rows"))
+  // "update" as a bare flag is gone: the Update panel lists the names the
+  // match actually answers, which is the whole point of describing it.
+  assert_false(names.contains("update"))
+  assert_true(names.contains("inc"))
+  assert_true(names.contains("reset"))
+  assert_true(names.contains("ping")) // Receive
+  assert_true(names.contains("onChild")) // Bubble
+  assert_true(names.contains("onData")) // Response
+  assert_true(names.contains("rows")) // Alter, still reflected
   inspect(h.find_all(".comp-view").length(), content="2")
 }
 

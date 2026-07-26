@@ -30,10 +30,94 @@ fn field_kind_name(k : @component.FieldKind) -> String {
 }
 
 ///|
-/// The pure snapshot the component inspector renders (JS introspectComponent):
-/// name, id, fields (name/type/default), the typed-bucket name lists, the
-/// update flag, and each view's raw template source.
+/// The pure snapshot the component inspector renders (JS introspectComponent).
+///
+/// Two sources. A component with a `tutuca/state` schema is DESCRIBED by its
+/// generator — field types with their element types, the names `update`
+/// answers, the declared message buckets, the element ids, the named
+/// fixtures. One without is RECOVERED from the runtime descriptor, which is
+/// all a JS port ever had and all that is knowable without a schema.
 pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
+  match comp.schema {
+    Some(si) => summary_from_schema(comp, si)
+    None => summary_from_specs(comp)
+  }
+}
+
+///|
+fn name_list(keys : Array[String]) -> @tutuca.Value {
+  let out : Array[@tutuca.Value] = []
+  for k in keys {
+    out.push(Str(k))
+  }
+  List(out)
+}
+
+///|
+fn view_rows(comp : @component.Component) -> @tutuca.Value {
+  let views : Array[@tutuca.Value] = []
+  for _name, view in comp.views {
+    views.push(Map({ "name": Str(view.name), "rawView": Str(view.raw_view) }))
+  }
+  List(views)
+}
+
+///|
+/// The declared description. `update` is the interesting row: at runtime it
+/// is one opaque pattern match, so reflection can only say THAT it exists —
+/// the schema knows every name it answers.
+fn summary_from_schema(
+  comp : @component.Component,
+  si : @component.SchemaInfo,
+) -> @tutuca.Value {
+  let fields : Array[@tutuca.Value] = []
+  for f in si.fields {
+    let row : Map[String, @tutuca.Value] = {
+      "name": Str(f.name),
+      // The WIT spelling the author wrote, not a label reconstructed from
+      // the runtime kind: `list<card>`, not `list`.
+      "type": Str(f.ty),
+      "default": match comp.specs.get(f.name) {
+        Some(sp) => sp.default
+        None => Null
+      },
+    }
+    match f.elem {
+      Some(e) => row["elem"] = Str(e)
+      None => ()
+    }
+    match f.slot {
+      Some(c) => row["slot"] = Str(c)
+      None => ()
+    }
+    if !f.members.is_empty() {
+      row["members"] = name_list(f.members)
+    }
+    fields.push(Map(row))
+  }
+  Map({
+    "name": Str(comp.name),
+    "id": Num(comp.id.to_double()),
+    "fingerprint": Str(si.fingerprint),
+    "fields": List(fields),
+    "methods": name_list(si.methods),
+    "update": name_list(si.inputs),
+    "receive": name_list(si.receives),
+    "bubble": name_list(si.bubbles),
+    "response": name_list(si.responses),
+    "swap": name_list(comp.swap_names),
+    "alter": name_list(comp.alter_names),
+    "ids": name_list(si.ids),
+    "fixtures": name_list(si.init_names),
+    "views": view_rows(comp),
+  })
+}
+
+///|
+/// The reflected description, for a component with no schema: field kinds
+/// inferred from the encoded init value, and `update` as a presence flag
+/// because its handled names are unknowable.
+fn summary_from_specs(comp : @component.Component) -> @tutuca.Value {
   let fields : Array[@tutuca.Value] = []
   for name, spec in comp.specs {
     fields.push(
@@ -44,26 +128,15 @@ pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
       }),
     )
   }
-  let names = (keys : Array[String]) => {
-    let out : Array[@tutuca.Value] = []
-    for k in keys {
-      out.push(Str(k))
-    }
-    @tutuca.Value::List(out)
-  }
-  let views : Array[@tutuca.Value] = []
-  for _name, view in comp.views {
-    views.push(Map({ "name": Str(view.name), "rawView": Str(view.raw_view) }))
-  }
   Map({
     "name": Str(comp.name),
     "id": Num(comp.id.to_double()),
     "fields": List(fields),
-    "methods": names(comp.compute_names),
-    "update": names(if comp.has_update { ["update"] } else { [] }),
-    "swap": names(comp.swap_names),
-    "alter": names(comp.alter_names),
-    "views": List(views),
+    "methods": name_list(comp.compute_names),
+    "update": name_list(if comp.has_update { ["update"] } else { [] }),
+    "swap": name_list(comp.swap_names),
+    "alter": name_list(comp.alter_names),
+    "views": view_rows(comp),
   })
 }
 
@@ -399,8 +472,13 @@ fn Inspector::component_view(
     group in [
       ("Methods", "methods"),
       ("Update", "update"),
+      ("Receive", "receive"),
+      ("Bubble", "bubble"),
+      ("Response", "response"),
       ("Swap", "swap"),
       ("Alter", "alter"),
+      ("Ids", "ids"),
+      ("Fixtures", "fixtures"),
     ] {
     let (label, key) = group
     match self.comp_names_section(label, d.get(key).unwrap_or(Null)) {

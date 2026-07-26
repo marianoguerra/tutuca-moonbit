@@ -70,16 +70,6 @@ pub fn DnDExampleField::kind(self : DnDExampleField) -> @component.FieldKind {
 pub let dn_d_example_field_names : Array[String] = ["items", "query"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn dn_d_example_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -190,4 +180,41 @@ pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn dn_d_example_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "669b14463cd52e60",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "query",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["onDropOnItem", "resetQuery", "setQuery"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

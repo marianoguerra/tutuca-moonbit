@@ -64,7 +64,7 @@ test "a file with no state block generates exactly what it did before" {
 }
 
 ///|
-test "sets, ordered maps and child slots become the specs map" {
+test "sets, ordered maps and child slots are described in the schema" {
   let html =
     #|<script type="tutuca/state">
     #|  interface card {
@@ -89,17 +89,17 @@ test "sets, ordered maps and child slots become the specs map" {
     "board.html",
     @viewgen.split_file(html),
   )
-  // Every kind the runtime cannot infer from an encoded init value, and
-  // nothing else: `plain` is a String, which FieldSpec::of_default gets right.
-  assert_true(
-    src.contains(
-      "\"vis\": @component.FieldSpec::set(members=[\"done\", \"active\"])",
-    ),
-  )
-  assert_true(src.contains("\"tags\": @component.FieldSpec::set()"))
-  assert_true(src.contains("\"order\": @component.FieldSpec::omap()"))
-  assert_true(src.contains("\"lead\": @component.FieldSpec::comp(\"Card\")"))
-  assert_false(src.contains("\"plain\": @component.FieldSpec"))
+  // Every field is described, with the things a runtime spec has no room
+  // for: the WIT spelling, a collection's element type, the component a slot
+  // holds, and a `flags` set's declared membership.
+  assert_true(src.contains("kind: @component.FSet"))
+  assert_true(src.contains("members: [\"done\", \"active\"]"))
+  assert_true(src.contains("ty: \"text-set\""))
+  assert_true(src.contains("kind: @component.FOMap"))
+  assert_true(src.contains("slot: Some(\"Card\")"))
+  // ...and a plain field is described too — the descriptor is the whole
+  // schema, not only the parts the runtime would get wrong.
+  assert_true(src.contains("name: \"plain\""))
   // Two components, two states.
   assert_true(src.contains("priv struct CardState {"))
   assert_true(src.contains("priv struct BoardState {"))

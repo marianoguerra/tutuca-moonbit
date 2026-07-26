@@ -72,16 +72,6 @@ pub fn SelectorEntryField::kind(
 pub let selector_entry_field_names : Array[String] = ["value", "label"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn selector_entry_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -184,6 +174,43 @@ pub fn SelectorEntryMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn selector_entry_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "1324f37b25b27096",
+    fields: [
+      {
+        name: "value",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "label",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setLabel", "setValue"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Selector component.
 ///
 /// Declared as `interface selector` in the state block. Adding a
@@ -244,16 +271,6 @@ pub fn SelectorField::kind(self : SelectorField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let selector_field_names : Array[String] = ["items", "selectedValue"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn selector_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -357,6 +374,43 @@ pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn selector_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "7d6e4c9774279bbb",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "selectedValue",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setSelectedValue"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the EntryEditorAndSelector component.
 ///
 /// Declared as `interface entry-editor-and-selector` in the state block. Adding a
@@ -425,16 +479,6 @@ pub fn EntryEditorAndSelectorField::kind(
 pub let entry_editor_and_selector_field_names : Array[String] = [
   "items", "selector",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn entry_editor_and_selector_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -552,6 +596,43 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn entry_editor_and_selector_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "7114357b2636c359",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "selector",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: ["onAddItem", "removeInItemsAt"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Sheet component.
 ///
 /// Declared as `interface sheet` in the state block. Adding a
@@ -608,16 +689,6 @@ pub fn SheetField::kind(self : SheetField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let sheet_field_names : Array[String] = ["title"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn sheet_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -713,6 +784,35 @@ pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn sheet_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5ee8832621359ec0",
+    fields: [
+      {
+        name: "title",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setTitle"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Toolbar component.
 ///
 /// Declared as `interface toolbar` in the state block. Adding a
@@ -742,16 +842,6 @@ pub fn toolbar_zero_args() -> Map[String, @tutuca.Value] {
 }
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn toolbar_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -777,6 +867,26 @@ pub let toolbar_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let toolbar_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn toolbar_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "56782604789d5a5e",
+    fields: [],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the Panel component.
@@ -835,16 +945,6 @@ pub fn PanelField::kind(self : PanelField) -> @component.FieldKind {
 pub let panel_field_names : Array[String] = ["toolbar"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn panel_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -870,6 +970,35 @@ pub let panel_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let panel_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn panel_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "f64005029cb0440a",
+    fields: [
+      {
+        name: "toolbar",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the Workspace component.
@@ -931,16 +1060,6 @@ pub fn WorkspaceField::kind(self : WorkspaceField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let workspace_field_names : Array[String] = ["sheet", "panel"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn workspace_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -1036,4 +1155,41 @@ pub fn[S] workspace_swap(
     }
   }
   out
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn workspace_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "de7864d15ebd3a60",
+    fields: [
+      {
+        name: "sheet",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "panel",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["sheetTitle"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

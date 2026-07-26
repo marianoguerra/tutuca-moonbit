@@ -54,6 +54,7 @@ fn new_component(
   alter_names? : Array[String] = [],
   generated_names? : Array[String] = [],
   has_update? : Bool = false,
+  schema? : SchemaInfo?,
 ) -> Component {
   // Views arrive already built — either compiled ahead of time by
   // `tutuca gen-views` (View::from_ir) or parsed from source by
@@ -75,6 +76,7 @@ fn new_component(
     alter_names,
     generated_names,
     has_update,
+    schema: schema.bind(x => x),
     make_fn: _args => Null,
     raw_provide: provide,
     raw_lookup: lookup,
@@ -124,6 +126,7 @@ pub fn[S : ToJson + @json.FromJson] component(
   lookup? : Map[String, LookupSpec] = Map([]),
   encode? : (S) -> Map[String, @tutuca.Value],
   decode? : (Map[String, @tutuca.Value]) -> S?,
+  schema? : SchemaInfo,
 ) -> Component {
   let init_fields = match encode {
     Some(f) => f(init)
@@ -134,8 +137,36 @@ pub fn[S : ToJson + @json.FromJson] component(
     s_fields.push(k)
   }
   let all_specs : Map[String, FieldSpec] = Map([])
+  // The schema DECLARES each field's kind. Without one there is nothing to
+  // read but the seed value, and `of_default` guesses from it — which is why
+  // `FInt` vs `FFloat` used to depend on whether a double happened to be
+  // integral. With one, the guess is skipped entirely: two sources of truth
+  // for the same fact is worse than either alone.
   for k, v in init_fields {
-    all_specs[k] = FieldSpec::of_default(v)
+    all_specs[k] = match schema {
+      Some(si) =>
+        match si.field(k) {
+          Some(fi) => { kind: fi.kind, default: v }
+          None => FieldSpec::of_default(v)
+        }
+      None => FieldSpec::of_default(v)
+    }
+  }
+  // A slot is declared in the schema but carries no init value, so it is not
+  // in `init_fields` at all — it has to be added.
+  match schema {
+    Some(si) =>
+      for fi in si.fields {
+        // A slot carries no init value, so it is not in `init_fields` at all.
+        if fi.slot is Some(comp) && !all_specs.contains(fi.name) {
+          all_specs[fi.name] = FieldSpec::comp(comp)
+        }
+        // A `flags` set's declared membership seeds its default.
+        if !fi.members.is_empty() {
+          all_specs[fi.name] = FieldSpec::set(members=fi.members)
+        }
+      }
+    None => ()
   }
   for k, sp in specs {
     match (all_specs.get(k), sp.kind) {
@@ -177,6 +208,7 @@ pub fn[S : ToJson + @json.FromJson] component(
       map_keys(loop_with),
     generated_names=map_keys(tspec.generated),
     has_update=update is Some(_),
+    schema~,
   )
   tspec.comp = Some(comp)
   comp.make_fn = args => make_typed(comp, tspec, args)

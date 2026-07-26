@@ -70,16 +70,6 @@ pub fn ItemField::kind(self : ItemField) -> @component.FieldKind {
 pub let item_field_names : Array[String] = ["completed", "text"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn item_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -180,6 +170,43 @@ pub fn ItemMsg::from_dispatch(d : @component.Dispatch) -> ItemMsg? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn item_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "1e66ddad592bcfff",
+    fields: [
+      {
+        name: "completed",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "text",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["setCompleted", "setText"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the Items component.
 ///
 /// Declared as `interface items` in the state block. Adding a
@@ -236,16 +263,6 @@ pub fn ItemsField::kind(self : ItemsField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let items_field_names : Array[String] = ["items"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn items_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -348,4 +365,33 @@ pub fn ItemsMsg::from_dispatch(d : @component.Dispatch) -> ItemsMsg? {
       _ => Unknown(name, args)
     },
   )
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn items_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "a499a33b72d011a0",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["onAddItem", "removeInItemsAt"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
 }

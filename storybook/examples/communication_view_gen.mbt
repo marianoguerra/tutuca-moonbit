@@ -70,16 +70,6 @@ pub fn StatusField::kind(self : StatusField) -> @component.FieldKind {
 pub let status_field_names : Array[String] = ["message", "count"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn status_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -126,6 +116,43 @@ pub let status_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let status_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn status_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "818952001ae7566e",
+    fields: [
+      {
+        name: "message",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
 
 ///|
 /// The state of the SendReceive component.
@@ -187,16 +214,6 @@ pub fn SendReceiveField::kind(self : SendReceiveField) -> @component.FieldKind {
 ///|
 /// Every field, in declaration order.
 pub let send_receive_field_names : Array[String] = ["draft", "status"]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn send_receive_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -306,6 +323,43 @@ pub fn SendReceiveMsg::from_dispatch(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn send_receive_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "af6010efd88e64f0",
+    fields: [
+      {
+        name: "draft",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "status",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: ["clearStatus", "setDraft", "submit"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the TreeItem component.
 ///
 /// Declared as `interface tree-item` in the state block. Adding a
@@ -379,16 +433,6 @@ pub fn TreeItemField::kind(self : TreeItemField) -> @component.FieldKind {
 pub let tree_item_field_names : Array[String] = [
   "type", "label", "isOpen", "items",
 ]
-
-///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn tree_item_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
 
 ///|
 /// The structural fingerprint of this component's schema. Changes when
@@ -551,6 +595,59 @@ pub fn[S] tree_item_swap(
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn tree_item_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "e6692133fe7c7e9a",
+    fields: [
+      {
+        name: "type",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "label",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "isOpen",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: ["onItemClick"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["areChildsVisible"],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the TreeRoot component.
 ///
 /// Declared as `interface tree-root` in the state block. Adding a
@@ -612,16 +709,6 @@ pub fn TreeRootField::kind(self : TreeRootField) -> @component.FieldKind {
 pub let tree_root_field_names : Array[String] = ["log", "root"]
 
 ///|
-/// The `specs~` map for this component, derived from the schema.
-///
-/// Sets, ordered maps and child slots all encode to a plain Map or Null,
-/// so the runtime cannot tell them apart from the init value alone. Every
-/// other field's kind it infers correctly and is left to it.
-pub fn tree_root_specs() -> Map[String, @component.FieldSpec] {
-  Map([])
-}
-
-///|
 /// The structural fingerprint of this component's schema. Changes when
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
@@ -670,3 +757,40 @@ pub let tree_root_common_style : String = ""
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let tree_root_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn tree_root_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "956f1bda15ce4557",
+    fields: [
+      {
+        name: "log",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "root",
+        ty: "component",
+        kind: @component.FComp(comp="", args=Map([])),
+        elem: Some("any"),
+        slot: Some(""),
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: ["main"],
+    init_names: [],
+  }
+}

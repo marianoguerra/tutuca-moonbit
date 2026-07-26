@@ -29,7 +29,6 @@ fn emit_state(
   emit_state_struct(t, def, out)
   emit_zero(t, v, def, out)
   emit_field_enum(t, v, def, derives, out)
-  emit_specs(v, def, out)
   emit_fingerprint(v, def, out)
   emit_inits(t, v, def, inits, out)
   emit_codec(t, v, def, out)
@@ -336,56 +335,74 @@ fn emit_field_enum(
 }
 
 ///|
-/// The `specs~` map, derived rather than hand-written.
+/// The static description an inspector reads instead of reflecting.
 ///
-/// Only the fields whose kind the runtime cannot infer from the encoded init
-/// value appear: a set, an ordered map and a child slot are all `Map` or
-/// `Null` once encoded, so `FieldSpec::of_default` would call them FMap and
-/// FAny. The rest are left to it, so the map stays as short as what it
-/// actually corrects.
-fn emit_specs(
+/// Everything here is known at generation time and none of it survives into
+/// the runtime descriptor on its own. The `inputs` list is the point: the
+/// names `update` answers are one opaque pattern match at runtime, so
+/// introspection could only ever report THAT an update exists.
+fn emit_schema(
+  t : String,
   v : String,
   def : @statedef.StateDef,
+  surface : Surface,
+  views : ViewSet,
+  inits : Array[@statedef.InitState],
   out : StringBuilder,
 ) -> Unit {
-  let entries : Array[String] = []
+  let strs = (xs : Array[String]) => "[" + xs.map(quote).join(", ") + "]"
+  out.write_string(
+    "///|\n" +
+    "/// What this component's schema declares, for `schema~`.\n" +
+    "///\n" +
+    "/// Passing it to `component` also stops the runtime inferring field\n" +
+    "/// kinds from the init value — the schema states them.\n" +
+    "pub fn \{v}_schema() -> @component.SchemaInfo {\n" +
+    "  {\n" +
+    "    fingerprint: \{quote(@statedef.fingerprint([def]))},\n" +
+    "    fields: [\n",
+  )
   for f in def.fields {
-    match f.ty {
-      TSet => entries.push("  \{quote(f.name)}: @component.FieldSpec::set(),")
-      TFlags(n) => {
-        let members = match def.user_ty(n) {
+    let elem = match f.ty.elem() {
+      Some(e) => "Some(\{quote(e.show_wit())})"
+      None => "None"
+    }
+    let slot = match f.ty {
+      TComp(Some(c)) => "Some(\{quote(c)})"
+      TComp(None) => "Some(\"\")"
+      _ => "None"
+    }
+    // Only a `flags` set has declared members; an open `text-set` does not.
+    let members = match f.ty {
+      TFlags(n) =>
+        match def.user_ty(n) {
           Some({ kind: UFlags(ms), .. }) => ms.map(m => quote(m.1)).join(", ")
           _ => ""
         }
-        entries.push(
-          "  \{quote(f.name)}: @component.FieldSpec::set(members=[\{members}]),",
-        )
-      }
-      TOMap(_) =>
-        entries.push("  \{quote(f.name)}: @component.FieldSpec::omap(),")
-      TComp(Some(c)) =>
-        entries.push(
-          "  \{quote(f.name)}: @component.FieldSpec::comp(\{quote(c)}),",
-        )
-      _ => ()
+      _ => ""
     }
+    out.write_string(
+      "      {\n" +
+      "        name: \{quote(f.name)},\n" +
+      "        ty: \{quote(f.ty.show_wit())},\n" +
+      "        kind: \{f.ty.field_kind_src()},\n" +
+      "        elem: \{elem},\n" +
+      "        slot: \{slot},\n" +
+      "        members: [\{members}],\n" +
+      "      },\n",
+    )
   }
   out.write_string(
-    "///|\n" +
-    "/// The `specs~` map for this component, derived from the schema.\n" +
-    "///\n" +
-    "/// Sets, ordered maps and child slots all encode to a plain Map or Null,\n" +
-    "/// so the runtime cannot tell them apart from the init value alone. Every\n" +
-    "/// other field's kind it infers correctly and is left to it.\n" +
-    "pub fn \{v}_specs() -> Map[String, @component.FieldSpec] {\n",
+    "    ],\n" +
+    "    inputs: \{strs(surface.inputs.map(i => i.name))},\n" +
+    "    receives: \{strs(def.receive.map(m => m.name))},\n" +
+    "    bubbles: \{strs(def.bubble.map(m => m.name))},\n" +
+    "    responses: \{strs(def.response.map(m => m.name))},\n" +
+    "    methods: \{strs(surface.methods)},\n" +
+    "    ids: \{strs(surface.ids)},\n" +
+    "    view_names: \{strs(views.views.map(vw => vw.name))},\n" +
+    "    init_names: \{strs(inits.map(st => st.name))},\n" +
+    "  }\n}\n\n",
   )
-  if entries.is_empty() {
-    out.write_string("  Map([])\n}\n\n")
-  } else {
-    out.write_string("  {\n")
-    for e in entries {
-      out.write_string("  \{e}\n")
-    }
-    out.write_string("  }\n}\n\n")
-  }
+  t |> ignore
 }

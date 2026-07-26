@@ -385,3 +385,95 @@ test "build_inspector_views resolves the descriptor through a registry" {
   assert_false(plain.has_component)
   assert_true(plain.component_view is Null)
 }
+
+///|
+/// A schema-backed component, described rather than reflected.
+fn schema_sample_comp() -> @component.Component {
+  @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Described",
+    init=RichState::{ title: "", count: 0, tags: [], open: false },
+    update=(_s : RichState, _msg, _ctx) => None,
+    schema={
+      fingerprint: "deadbeefcafe0001",
+      fields: [
+        {
+          name: "title",
+          ty: "string",
+          kind: FText,
+          elem: None,
+          slot: None,
+          members: [],
+        },
+        {
+          name: "count",
+          ty: "s32",
+          kind: FInt,
+          elem: None,
+          slot: None,
+          members: [],
+        },
+        {
+          name: "tags",
+          ty: "list<string>",
+          kind: FList,
+          elem: Some("string"),
+          slot: None,
+          members: [],
+        },
+      ],
+      inputs: ["inc", "reset"],
+      receives: ["ping"],
+      bubbles: ["onChild"],
+      responses: ["onData"],
+      methods: ["label"],
+      ids: ["counter", "resetBtn"],
+      view_names: ["main"],
+      init_names: ["fresh"],
+    },
+  )
+}
+
+///|
+/// What a schema buys the inspector, against what reflection can reach.
+test "a described component surfaces what reflection cannot" {
+  guard @inspector.component_summary(schema_sample_comp()) is Map(d) else {
+    fail("summary is not a Map")
+  }
+  // THE one. At runtime `update` is a single opaque pattern match, so the
+  // reflected summary can only report that one exists; the schema knows
+  // every name it answers.
+  assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
+  // Buckets that are invisible without a schema — they are raised from
+  // MoonBit, never written in a view.
+  assert_eq(d.get("receive"), Some(List([Str("ping")])))
+  assert_eq(d.get("bubble"), Some(List([Str("onChild")])))
+  assert_eq(d.get("response"), Some(List([Str("onData")])))
+  // The selectors a test addresses, and the fixtures it can seed from.
+  assert_eq(d.get("ids"), Some(List([Str("counter"), Str("resetBtn")])))
+  assert_eq(d.get("fixtures"), Some(List([Str("fresh")])))
+  assert_eq(d.get("fingerprint"), Some(Str("deadbeefcafe0001")))
+  // A field carries the WIT spelling and its element type, where the
+  // reflected form could only say "list".
+  guard d.get("fields") is Some(List(fields))
+  guard fields[2] is Map(tags)
+  assert_eq(tags.get("name"), Some(Str("tags")))
+  assert_eq(tags.get("type"), Some(Str("list<string>")))
+  assert_eq(tags.get("elem"), Some(Str("string")))
+}
+
+///|
+/// The reflected path is unchanged for a component with no schema — that is
+/// the fallback contract, and most components are still on it.
+test "an undescribed component still reflects" {
+  guard @inspector.component_summary(sample_comp()) is Map(d) else {
+    fail("summary is not a Map")
+  }
+  assert_eq(d.get("update"), Some(List([Str("update")])))
+  assert_eq(d.get("receive"), None)
+  assert_eq(d.get("ids"), None)
+  guard d.get("fields") is Some(List(fields))
+  guard fields[0] is Map(f0)
+  // A label reconstructed from the runtime kind, not the author's spelling.
+  assert_eq(f0.get("type"), Some(Str("text")))
+}

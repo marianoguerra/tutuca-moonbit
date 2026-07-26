@@ -324,8 +324,10 @@ fn emit_component(
   // generation time — under a loop as well as at the root, which the list
   // never covered — so emitting a weaker second check would only invite
   // someone to rely on it.
-  if state is Some(_) {
+  if state is Some(def_) {
     emit_ids(t, surface, derives, out)
+    // Last, because it names things every section above declares.
+    emit_schema(t, v, def_, surface, views, inits, out)
     return
   }
   out.write_string(
