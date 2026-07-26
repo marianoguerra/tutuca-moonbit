@@ -73,6 +73,7 @@ fn instance_fields_comp() -> @component.Component {
       ),
     },
     name="InstanceFields",
+    update=(s : InstanceFieldsState, msg, _ctx) => composite_update(s, msg),
     init=InstanceFieldsState::{
       items: [],
       isExpanded: false,
@@ -84,7 +85,6 @@ fn instance_fields_comp() -> @component.Component {
       let n = s.items.length()
       "{\{n}}"
     }),
-    mutate=composite_mutate(),
     loop_with=composite_loop_with(),
   )
 }
@@ -105,10 +105,11 @@ fn instance_inspector_comp() -> @component.Component {
     },
     name="InstanceInspector",
     init=WrapperState::{ value: Null },
-    mutate={
-      "toggleIsExpanded": (s : WrapperState, _args) => {
-        value: toggle_wrapped(s.value),
-      },
+    update=(s : WrapperState, msg, _ctx) => {
+      match msg {
+        Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
+        _ => None
+      }
     },
   )
 }
@@ -187,14 +188,14 @@ fn instance_explorer_comp() -> @component.Component {
           #|      @if.class="equals? .activeTab 'instance'"
           #|      @then="'tab tab-active tab-instance'"
           #|      @else="'tab tab-instance'"
-          #|      @on.click="$setActiveTab 'instance'">
+          #|      @on.click="setActiveTab 'instance'">
           #|      Instance
           #|    </a>
           #|    <a role="tab" @show=".hasComponent"
           #|      @if.class="equals? .activeTab 'component'"
           #|      @then="'tab tab-active tab-component'"
           #|      @else="'tab tab-component'"
-          #|      @on.click="$setActiveTab 'component'">
+          #|      @on.click="setActiveTab 'component'">
           #|      Component
           #|    </a>
           #|  </div>

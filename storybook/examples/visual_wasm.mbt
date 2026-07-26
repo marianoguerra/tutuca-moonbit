@@ -112,23 +112,30 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
       "main": @anode.View::new(
         "main",
         raw_view="<div class=\"flex gap-3 items-baseline instr-imm\"><span>\{label}</span>" +
-          "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"$setFromRawValue value\" /></div>",
+          "<input class=\"input px-1 py-0 m-0 h-auto input-ghost font-mono text-blue-400 imm\" :value=\".value\" :style=\"$'width: {$getInputWidth}; outline: none'\" @on.input=\"setFromRawValue value\" /></div>",
       ),
     },
     name~,
     init=VwImmState::{ value: 0, rawValue: "0" },
-    mutate={
-      "setFromRawValue": (s : VwImmState, args) => {
-        let raw = match args {
-          [Str(t), ..] => t
-          _ => ""
+    // Runtime views throughout this file (the tree is assembled in MoonBit),
+    // so there is no generated Msg and every arm names the dispatch directly.
+    update=(s : VwImmState, msg, _ctx) => {
+      match msg {
+        Input("setFromRawValue", args) => {
+          let raw = match args {
+            [Str(t), ..] => t
+            _ => ""
+          }
+          let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
+          Some(
+            match parsed {
+              Some(v) => { value: v, rawValue: raw }
+              None => { ..s, rawValue: raw }
+            },
+          )
         }
-        let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
-        match parsed {
-          Some(v) => { value: v, rawValue: raw }
-          None => { ..s, rawValue: raw }
-        }
-      },
+        _ => None
+      }
     },
     compute={
       "getInputWidth": (s : VwImmState, _args) => {
@@ -342,30 +349,32 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         raw_view=(
           #|<div class="flex items-center types-editor">
           #|  <div class="flex items-center group type-entry" @each=".items">
-          #|    <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 add-at" @on.click="$addItemAt @key">+</button>
+          #|    <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 add-at" @on.click="addItemAt @key">+</button>
           #|    <x render-it as="editor"></x>
-          #|    <button class="btn btn-xs btn-soft btn-circle btn-error max-sm:opacity-100 opacity-0 group-hover:opacity-100 rm" @on.click="$removeInItemsAt @key">⛔</button>
+          #|    <button class="btn btn-xs btn-soft btn-circle btn-error max-sm:opacity-100 opacity-0 group-hover:opacity-100 rm" @on.click="removeInItemsAt @key">⛔</button>
           #|  </div>
-          #|  <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 append" @on.click="$appendItem">+</button>
+          #|  <button class="btn btn-xs btn-soft btn-circle btn-success mx-3 append" @on.click="appendItem">+</button>
           #|</div>
         ),
       ),
     },
     name="Types",
     init=VwTypesState::{ items: [] },
-    mutate={
-      "addItemAt": (s : VwTypesState, args) => {
-        let items = s.items.copy()
-        let at = @cmp.minimum(
-          @cmp.maximum(0, vw_int_arg(args, 0)),
-          items.length(),
-        )
-        items.insert(at, vw_make_type(reg, "TypeI32"))
-        { items, }
-      },
-      "appendItem": (s : VwTypesState, _args) => {
-        items: s.items + [vw_make_type(reg, "TypeI32")],
-      },
+    update=(s : VwTypesState, msg, _ctx) => {
+      match msg {
+        Input("addItemAt", args) => {
+          let items = s.items.copy()
+          let at = @cmp.minimum(
+            @cmp.maximum(0, vw_int_arg(args, 0)),
+            items.length(),
+          )
+          items.insert(at, vw_make_type(reg, "TypeI32"))
+          Some({ items, })
+        }
+        Input("appendItem", _) =>
+          Some({ items: s.items + [vw_make_type(reg, "TypeI32")] })
+        _ => None
+      }
     },
     encode=vw_types_encode,
     decode=vw_types_decode,
@@ -422,15 +431,17 @@ fn vw_blocklike_view(keyword : String) -> String {
 }
 
 ///|
-fn vw_container_mutate(
+fn vw_container_update(
   reg : VwReg,
-) -> Map[String, (VwContainerState, Array[@tutuca.Value]) -> VwContainerState] {
-  {
-    "addItemAt": (s, args) => {
-      ..s,
-      items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)),
-    },
-    "appendItem": (s, _args) => { ..s, items: s.items + [vw_make_picker(reg)] },
+) -> (VwContainerState, @component.Dispatch, &@tutuca.Ctx) -> VwContainerState? {
+  (s, msg, _ctx) => {
+    match msg {
+      Input("addItemAt", args) =>
+        Some({ ..s, items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)) })
+      Input("appendItem", _) =>
+        Some({ ..s, items: s.items + [vw_make_picker(reg)] })
+      _ => None
+    }
   }
 }
 
@@ -465,7 +476,7 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
     encode=vw_container_encode,
     decode=vw_container_decode,
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate=vw_container_mutate(reg),
+    update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
 }
@@ -485,7 +496,7 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
     encode=vw_container_encode,
     decode=vw_container_decode,
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate=vw_container_mutate(reg),
+    update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
 }
@@ -524,7 +535,7 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
       "blockType": @component.FieldSpec::comp("BlockType"),
       "locals": @component.FieldSpec::comp("Types"),
     },
-    mutate=vw_container_mutate(reg),
+    update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
 }
@@ -577,23 +588,21 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       editingElse: false,
     },
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
-    mutate={
-      "addThnAt": (s : VwIfState, args) => {
-        ..s,
-        thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)),
-      },
-      "appendInThn": (s : VwIfState, _args) => {
-        ..s,
-        thn: s.thn + [vw_make_picker(reg)],
-      },
-      "addElseAt": (s : VwIfState, args) => {
-        ..s,
-        else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
-      },
-      "appendInElse": (s : VwIfState, _args) => {
-        ..s,
-        else_: s.else_ + [vw_make_picker(reg)],
-      },
+    update=(s : VwIfState, msg, _ctx) => {
+      match msg {
+        Input("addThnAt", args) =>
+          Some({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) })
+        Input("appendInThn", _) =>
+          Some({ ..s, thn: s.thn + [vw_make_picker(reg)] })
+        Input("addElseAt", args) =>
+          Some({
+            ..s,
+            else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
+          })
+        Input("appendInElse", _) =>
+          Some({ ..s, else_: s.else_ + [vw_make_picker(reg)] })
+        _ => None
+      }
     },
     encode=vw_if_encode,
     decode=vw_if_decode,
@@ -611,7 +620,7 @@ fn vw_section_comp() -> @component.Component {
           #|  <p class="flex gap-3 items-center header">
           #|    <x:btn-toggle-expand></x:btn-toggle-expand>
           #|    <span class="sec-name" @text=".name"></span>
-          #|    <button class="btn btn-xs btn-soft btn-primary add-default" @on.click="$addDefaultItem">+</button>
+          #|    <button class="btn btn-xs btn-soft btn-primary add-default" @on.click="addDefaultItem">+</button>
           #|  </p>
           #|  <div class="flex flex-col gap-3 ml-2 sec-items" @show=".expanded"><x render-each=".items"></x></div>
           #|</section>
@@ -626,11 +635,12 @@ fn vw_section_comp() -> @component.Component {
       expanded: true,
       defaultItem: Null,
     },
-    mutate={
-      "addDefaultItem": (s : VwSectionState, _args) => {
-        ..s,
-        items: s.items + [vw_with_editing(s.defaultItem)],
-      },
+    update=(s : VwSectionState, msg, _ctx) => {
+      match msg {
+        Input("addDefaultItem", _) =>
+          Some({ ..s, items: s.items + [vw_with_editing(s.defaultItem)] })
+        _ => None
+      }
     },
     encode=vw_section_encode,
     decode=vw_section_decode,
@@ -661,24 +671,23 @@ fn vw_memory_comp() -> @component.Component {
         raw_view=(
           #|<div class="flex gap-3 items-center memory">
           #|  <label class="input input-ghost outline-0 items-baseline h-auto">Pages
-          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="$setNFromString value" /></label>
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 n" type="number" :value=".n" @on.input="setNFromString value" /></label>
           #|  <label class="input input-ghost outline-0 items-baseline h-auto">Max Pages
-          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="$setMFromString value" /></label>
+          #|    <input class="px-1 py-0 m-0 h-auto w-auto font-mono text-blue-400 m" type="number" :value=".m" @on.input="setMFromString value" /></label>
           #|</div>
         ),
       ),
     },
     name="Memory",
     init=VwMemoryState::{ n: 1, m: 1 },
-    mutate={
-      "setNFromString": (s : VwMemoryState, args) => {
-        ..s,
-        n: vw_int_value(args, s.n),
-      },
-      "setMFromString": (s : VwMemoryState, args) => {
-        ..s,
-        m: vw_int_value(args, s.m),
-      },
+    update=(s : VwMemoryState, msg, _ctx) => {
+      match msg {
+        Input("setNFromString", args) =>
+          Some({ ..s, n: vw_int_value(args, s.n) })
+        Input("setMFromString", args) =>
+          Some({ ..s, m: vw_int_value(args, s.m) })
+        _ => None
+      }
     },
     encode=vw_memory_encode,
     decode=vw_memory_decode,
@@ -737,10 +746,10 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "<label class=\"\{r.3} radio-label\"><input type=\"radio\" class=\"radio \{r.2} radio-xs r-\{r.0}\" @on.input=\"\{r.1}\" /> \{r.0}</label>",
     )
   }
-  let mutate : Map[
-    String,
-    (VwPickerState, Array[@tutuca.Value]) -> VwPickerState,
-  ] = Map([])
+  // Built from data, like the radios above — this component is generated
+  // from `vw_categories()` rather than written out. It is a dispatch table
+  // the `update` below consults, not a bucket of its own.
+  let sections : Map[String, (VwPickerState) -> VwPickerState] = Map([])
   let compute : Map[
     String,
     (VwPickerState, Array[@tutuca.Value]) -> @tutuca.Value,
@@ -748,7 +757,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
   let cats = vw_categories()
   for r in radios {
     let section = r.0
-    mutate["setCurrent" + cap(section)] = (s, _args) => {
+    sections["setCurrent" + cap(section)] = s => {
       let list = if section == "all" {
         vw_all_ids()
       } else {
@@ -769,7 +778,7 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       "main": @anode.View::new(
         "main",
         raw_view="<section class=\"flex flex-col gap-3 w-xl picker\">" +
-          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"$setFilter value\" />" +
+          "<input type=\"search\" class=\"input w-full outline-0 filter\" placeholder=\"Filter instructions\" :value=\".filter\" @on.input=\"setFilter value\" />" +
           "<div class=\"flex gap-3 text-xs justify-between radios\">\{radio_html.to_string()}</div>" +
           "<div class=\"flex flex-col gap-1 max-h-[25vh] overflow-y-auto instr-list\">" +
           // DIVERGENCE: pass @value (the id) directly instead of reading it off the
@@ -784,7 +793,16 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       instructions: vw_all_ids().map(x => (Str(x) : @tutuca.Value)),
       filter: "",
     },
-    mutate~,
+    update=(s : VwPickerState, msg, _ctx) => {
+      match msg {
+        Input(name, _) =>
+          match sections.get(name) {
+            Some(f) => Some(f(s))
+            None => None
+          }
+        _ => None
+      }
+    },
     compute~,
     loop_with={
       "loopWith": (s : VwPickerState, _seq, _ctx) => {
@@ -842,7 +860,7 @@ fn vw_macros() -> Map[String, @anode.Macro] {
   {
     "btn-toggle-expand": {
       defaults: Map([]),
-      raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\"$toggleExpanded\">" +
+      raw_view: "<button class=\"toggle-expand\" @if.class=\".expanded\" @then=\"'btn btn-xs btn-soft btn-primary btn-circle on'\" @else=\"'btn btn-xs btn-soft btn-success btn-circle off'\" @on.click=\"toggleExpanded\">" +
       "<span @show=\".expanded\">▽</span><span @hide=\".expanded\">▷</span></button>",
     },
     "btn-toggle-edit": {

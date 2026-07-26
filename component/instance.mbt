@@ -12,7 +12,6 @@ priv struct TypedSpec[S] {
   init : S
   s_fields : Array[String]
   update : ((S, Dispatch, &@tutuca.Ctx) -> S?)?
-  mutate : Map[String, (S, Array[@tutuca.Value]) -> S]
   compute : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value]
   swap : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?]
   when : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool]
@@ -334,18 +333,9 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_f
       match self.spec.compute.get(name) {
         Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
         None =>
-          match self.spec.mutate.get(name) {
-            Some(f) =>
-              Some(
-                Fn(args => {
-                  self.with_state(f(self.state, drop_this(args))).to_value()
-                }),
-              )
-            None =>
-              match self.spec.generated.get(name) {
-                Some(g) => Some(Fn(args => g(self, drop_this(args))))
-                None => None
-              }
+          match self.spec.generated.get(name) {
+            Some(g) => Some(Fn(args => g(self, drop_this(args))))
+            None => None
           }
       }
   }
@@ -430,14 +420,9 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_r
   match self.spec.compute.get(name) {
     Some(f) => Fn(args => f(self.state, drop_this(args)))
     None =>
-      match self.spec.mutate.get(name) {
-        Some(f) =>
-          Fn(args => self.with_state(f(self.state, drop_this(args))).to_value())
-        None =>
-          match self.spec.generated.get(name) {
-            Some(g) => Fn(args => g(self, drop_this(args)))
-            None => Null
-          }
+      match self.spec.generated.get(name) {
+        Some(g) => Fn(args => g(self, drop_this(args)))
+        None => Null
       }
   }
 }
@@ -450,11 +435,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_h
 ) {
   let has_update = self.spec.update is Some(_)
   let input_fallback = bucket is Input &&
-    (
-      self.spec.swap.contains(name) ||
-      self.spec.mutate.contains(name) ||
-      self.spec.generated.contains(name)
-    )
+    (self.spec.swap.contains(name) || self.spec.generated.contains(name))
   if !has_update && !input_fallback {
     return None
   }
@@ -489,17 +470,10 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_h
         }
         None => ()
       }
-      // Input dispatch falls through to $-mutators so `$setTitle 'x'`-style
-      // input works (the JS methods fallback).
+      // Input dispatch falls through to the GENERATED mutators, so a view
+      // writing `setTitle 'x'` reaches the setter every field gets without
+      // the component declaring one.
       if bucket is Input {
-        match self.spec.mutate.get(name) {
-          Some(f) =>
-            return Some(
-              self.with_state(f(self.state, args)).to_value()
-              as &@tutuca.PathNode,
-            )
-          None => ()
-        }
         match self.spec.generated.get(name) {
           Some(g) =>
             match g(self, args) {

@@ -184,12 +184,10 @@ fn rich_sample_comp() -> @component.Component {
       "label": (s : SampleState, _args) => Str(s.title),
       "double": (s : SampleState, _args) => Num((s.count * 2).to_double()),
     },
-    mutate={
-      "inc": (s : SampleState, _args) => { ..s, count: s.count + 1 },
-      "reset": (s : SampleState, _args) => { ..s, count: 0 },
-    },
     update=(s : SampleState, msg, _ctx) => {
       match msg {
+        Input("inc", _) => Some({ ..s, count: s.count + 1 })
+        Input("reset", _) => Some({ ..s, count: 0 })
         Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
           Some(s)
         _ => None
@@ -219,7 +217,12 @@ fn sample_card_comp() -> @component.Component {
     name="SampleCard",
     init=SampleState::{ title: "", count: 0, tags: [], open: false },
     compute={ "label": (s : SampleState, _args) => Str(s.title) },
-    mutate={ "bump": (s : SampleState, _args) => { ..s, count: s.count + 1 } },
+    update=(s : SampleState, msg, _ctx) => {
+      match msg {
+        Input("bump", _) => Some({ ..s, count: s.count + 1 })
+        _ => None
+      }
+    },
   )
 }
 

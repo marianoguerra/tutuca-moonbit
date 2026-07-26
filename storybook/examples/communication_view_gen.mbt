@@ -514,23 +514,6 @@ pub fn TreeItemMethod::name(self : TreeItemMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tree_item_mutate(
-  f : (TreeItemMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([AreChildsVisible] : Array[TreeItemMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.

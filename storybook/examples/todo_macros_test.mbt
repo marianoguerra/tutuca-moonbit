@@ -5,7 +5,7 @@ test "todo-macros: the checkbox/input macros expand with two-way bindings" {
   inspect(h.find_all(".hbox").length(), content="1")
   inspect(h.value_of("input.input"), content="do the thing")
   inspect(h.checked_of("input.checkbox"), content="false")
-  // :handler="$setText" threaded through ^handler -> @on.input="$setText value"
+  // :handler="$setText" threaded through ^handler -> @on.input="setText value"
   h.type_into("input.input", "buy milk")
   inspect(h.value_of("input.input"), content="buy milk")
   h.check("input.checkbox", true)

@@ -123,12 +123,13 @@ test "component inspector: sections toggle one by one and all at once" {
   // Fields starts expanded (4 rows), name sections collapsed
   inspect(h.find_all(".comp-field").length(), content="4")
   inspect(h.find_all(".comp-name").length(), content="0")
-  // plain click expands just Methods (mutate + compute names)
+  // plain click expands just Methods (the compute names). `inc`/`reset` are
+  // update arms, not methods — they answer a dispatch, not a field read.
   h.click(".comp-section", nth=1)
   assert_true(h.texts(".comp-name").contains("label"))
   assert_true(h.texts(".comp-name").contains("double"))
-  assert_true(h.texts(".comp-name").contains("inc"))
-  assert_true(h.texts(".comp-name").contains("reset"))
+  assert_false(h.texts(".comp-name").contains("inc"))
+  assert_false(h.texts(".comp-name").contains("reset"))
   // ctrl-click a COLLAPSED section bubbles toggleAllSections(true):
   // every section opens
   h.fire(

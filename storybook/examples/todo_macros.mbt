@@ -4,7 +4,7 @@
 //
 // The interesting bit is `^handler ^arg` INDIRECTION: a macro takes the handler
 // name AND its argument as parameters, so `<x:btn-rm :handler="$removeInItemsAt"
-// :arg="@key">` expands to `@on.click="$removeInItemsAt @key"`. Macro params are
+// :arg="@key">` expands to `@on.click="removeInItemsAt @key"`. Macro params are
 // substituted as SOURCE TEXT, so a handler name or a loop binding threads
 // straight through.
 

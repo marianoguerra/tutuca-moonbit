@@ -21,10 +21,12 @@ fn traffic_light_comp() -> @component.Component {
         Str(traffic_lights[s.lightIndex % traffic_lights.length()])
       },
     },
-    mutate={
-      "nextLight": (s : TrafficLightState, _args) => {
-        lightIndex: (s.lightIndex + 1) % traffic_lights.length(),
-      },
+    update=(s : TrafficLightState, msg, _ctx) => {
+      match TrafficLightMsg::from_dispatch(msg) {
+        Some(NextLight) =>
+          Some({ lightIndex: (s.lightIndex + 1) % traffic_lights.length() })
+        Some(Unknown(_, _)) | None => None
+      }
     },
     // The schema-generated direct codec, in place of the JSON bridge.
     encode=traffic_light_encode,

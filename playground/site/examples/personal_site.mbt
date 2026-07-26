@@ -302,13 +302,6 @@ fn root_comp() -> @component.Component {
         sortByEnd: false,
         sortAsc: false,
       },
-    mutate={
-        "clearFilters": (s : RootState, _args) => {
-          ..s,
-          selectedCategories: ps_set_of(s.allCategories),
-          selectedRoles: ps_set_of(s.allRoles),
-        },
-      },
     compute={
         "hasActiveFilters": (s : RootState, _args) => Bool(
           s.selectedCategories.length() != s.allCategories.length() ||
@@ -352,6 +345,12 @@ fn root_comp() -> @component.Component {
         },
       },
     update=(s : RootState, msg, ctx) => match msg {
+        Input("clearFilters", _) =>
+          Some({
+            ..s,
+            selectedCategories: ps_set_of(s.allCategories),
+            selectedRoles: ps_set_of(s.allRoles),
+          })
         Input("onCategoryToggle", args) =>
           Some({
             ..s,

@@ -252,7 +252,6 @@ declare pub fn[S : ToJson + @json.FromJson] component(
   common_style? : String,
   global_style? : String,
   update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
-  mutate? : Map[String, (S, Array[@tutuca.Value]) -> S],
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value],
   swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?],
   when? : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool],

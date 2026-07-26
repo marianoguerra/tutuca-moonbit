@@ -6,7 +6,7 @@
 //   docs/examples/macro-named-slots.js — named slots
 //
 // A macro is pure template expansion: no state, no lifecycle, no handlers of
-// its own. `@on.click="$inc"` inside a macro calls `inc` on the COMPONENT the
+// its own. `@on.click="inc"` inside a macro calls `inc` on the COMPONENT the
 // macro expands into — that is the key difference from a component.
 //
 // In MoonBit a macro is the plain record `@anode.Macro::{ defaults, raw_view }`;
@@ -124,7 +124,7 @@ fn card_macro() -> @anode.Macro {
 }
 
 ///|
-/// The `@on.click="$inc"` inside the second card's slot content calls `inc` on
+/// The `@on.click="inc"` inside the second card's slot content calls `inc` on
 /// MacroSlots — macros have no methods of their own.
 fn macro_slots_comp() -> @component.Component {
   @component.component(
@@ -137,7 +137,7 @@ fn macro_slots_comp() -> @component.Component {
           #|    <p>This content is passed into the card's slot.</p>
           #|  </x:card>
           #|  <x:card title="Interactive">
-          #|    <button class="btn btn-soft btn-success bump" @on.click="$inc">+</button>
+          #|    <button class="btn btn-soft btn-success bump" @on.click="inc">+</button>
           #|    <p>Count: <span class="count" @text=".count"></span></p>
           #|  </x:card>
           #|</div>
@@ -146,7 +146,14 @@ fn macro_slots_comp() -> @component.Component {
     },
     name="MacroSlots",
     init=MacroSlotsState::{ count: 0 },
-    mutate={ "inc": (s : MacroSlotsState, _args) => { count: s.count + 1 } },
+    // Runtime views (a macro body is registered from MoonBit), so there is
+    // no generated Msg and the arm names the dispatch directly.
+    update=(s : MacroSlotsState, msg, _ctx) => {
+      match msg {
+        Input("inc", _) => Some({ count: s.count + 1 })
+        _ => None
+      }
+    },
     encode=macro_slots_encode,
     decode=macro_slots_decode,
   )
@@ -194,7 +201,7 @@ fn macro_named_slots_comp() -> @component.Component {
         raw_view=(
           #|<x:panel title="Dashboard">
           #|  <x slot="actions">
-          #|    <button class="btn btn-sm btn-soft btn-success bump" @on.click="$inc">+</button>
+          #|    <button class="btn btn-sm btn-soft btn-success bump" @on.click="inc">+</button>
           #|  </x>
           #|  <p>Count: <span class="count" @text=".count"></span></p>
           #|  <p>This is the default slot content.</p>
@@ -207,8 +214,11 @@ fn macro_named_slots_comp() -> @component.Component {
     },
     name="MacroNamedSlots",
     init=MacroNamedSlotsState::{ count: 0 },
-    mutate={
-      "inc": (s : MacroNamedSlotsState, _args) => { count: s.count + 1 },
+    update=(s : MacroNamedSlotsState, msg, _ctx) => {
+      match msg {
+        Input("inc", _) => Some({ count: s.count + 1 })
+        _ => None
+      }
     },
     encode=macro_named_slots_encode,
     decode=macro_named_slots_decode,

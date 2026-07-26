@@ -772,23 +772,6 @@ pub fn ShowHideMethod::name(self : ShowHideMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] show_hide_mutate(
-  f : (ShowHideMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([Label] : Array[ShowHideMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.

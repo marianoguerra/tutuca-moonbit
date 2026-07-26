@@ -240,7 +240,6 @@ fn comp_section_comp() -> @component.Component {
       let n = s.items.length()
       "(\{n})"
     }),
-    mutate=composite_mutate(),
     loop_with=composite_loop_with(),
     update=(s : CompSectionState, msg, ctx) => {
       match msg {
@@ -253,7 +252,8 @@ fn comp_section_comp() -> @component.Component {
           } else {
             Some({ ..s, isExpanded: !s.isExpanded })
           }
-        _ => None
+        // The shared prev/next page arms.
+        _ => composite_update(s, msg)
       }
     },
   )

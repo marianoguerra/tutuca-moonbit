@@ -347,23 +347,6 @@ test "a view with a $method, several views and styles" {
       #|}
       #|
       #|///|
-      #|/// Build `mutate~` from an exhaustive match over the names the views call.
-      #|/// Return None for a name another bucket serves, or one of the mutators
-      #|/// generated from the state's fields.
-      #|pub fn[S] todo_list_mutate(
-      #|  f : (TodoListMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-      #|) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-      #|  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-      #|  for m in ([DoneLabel] : Array[TodoListMethod]) {
-      #|    match f(m) {
-      #|      Some(h) => out[m.name()] = h
-      #|      None => ()
-      #|    }
-      #|  }
-      #|  out
-      #|}
-      #|
-      #|///|
       #|/// Build `compute~` from an exhaustive match over the names the views call.
       #|/// Return None for a name another bucket serves, or one of the mutators
       #|/// generated from the state's fields.

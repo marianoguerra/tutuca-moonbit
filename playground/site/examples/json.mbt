@@ -76,21 +76,17 @@ fn json_number_comp() -> @component.Component {
     views=json_number_views(),
     name="JsonNumber",
     init=JsonNumberState::{ strValue: "0", value: 0 },
-    mutate={
-      // keep the raw string always, update the numeric value only when finite
-      "setRawValue": (s : JsonNumberState, args) => {
-        let raw = match args {
-          [Str(t)] => t
-          _ => ""
-        }
-        let parsed : Double? = Some(@string.parse_double(raw)) catch {
-          _ => None
-        }
-        match parsed {
+    // Keep the raw string always, update the numeric value only when finite.
+    // The payload is typed String by the generator, so no unpacking.
+    update=(s : JsonNumberState, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
+      Some(SetRawValue(raw)) => {
+        let parsed : Double? = Some(@string.parse_double(raw)) catch { _ => None }
+        Some(match parsed {
           Some(n) => { strValue: raw, value: n }
           None => { ..s, strValue: raw }
-        }
-      },
+        })
+      }
+      Some(Unknown(_, _)) | None => None
     },
     encode=json_number_encode,
     decode=json_number_decode,

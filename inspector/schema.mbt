@@ -97,7 +97,7 @@ fn make_schema_view(accent : String, body? : String = GRID_BODY) -> String {
     #|      type="button"
     #|      class="cursor-pointer text-base-content/70 hover:text-base-content inline-flex items-center gap-1"
     #|      :disabled="$isItemsEmpty"
-    #|      @on.click="$toggleIsExpanded">
+    #|      @on.click="toggleIsExpanded">
     #|      <span @hide="$isItemsEmpty" @text="$arrowText"></span>
     #|      <span class="__ACCENT__ font-semibold" @text="$typeText"></span>
     #|      <span class="text-base-content/50" @text="$countText"></span>
@@ -105,9 +105,9 @@ fn make_schema_view(accent : String, body? : String = GRID_BODY) -> String {
     #|    <span @each=".badges" class="badge badge-xs badge-ghost font-mono font-normal"><x text="@value"></x></span>
     #|    <span @show=".deprecated" class="badge badge-xs badge-warning">deprecated</span>
     #|    <div @show="$showPagination" class="join">
-    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="$prevPage">«</button>
+    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
     #|      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
-    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="$nextPage">»</button>
+    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
     #|    </div>
     #|  </span>
     #|  <span @show="truthy? .title" class="block text-base-content/80 italic" @text=".title"></span>

@@ -66,7 +66,7 @@ test "macro-slots: slot content lands inside the macro, and stays live" {
     ),
   )
   inspect(h.text(".count"), content="0")
-  // @on.click="$inc" inside the macro's slot calls inc on the HOST component
+  // @on.click="inc" inside the macro's slot calls inc on the HOST component
   h.click(".bump")
   h.click(".bump")
   inspect(h.text(".count"), content="2")

@@ -41,7 +41,7 @@ fn lint_demo_comp() -> @component.Component {
           #|
           #|  <!-- INPUT_HANDLER_METHOD_NOT_IMPLEMENTED + INPUT_HANDLER_FOR_INPUT_HANDLER_METHOD:
           #|       doKeyDown is input but referenced as method (with $) -->
-          #|  <button @on.keydown="$doKeyDown">handler as method</button>
+          #|  <button @on.keydown="doKeyDown">handler as method</button>
           #|
           #|  <!-- FIELD_VAL_NOT_DEFINED: .missing is not defined -->
           #|  <p :title=".missing">undefined field</p>
@@ -156,7 +156,14 @@ fn lint_demo_comp() -> @component.Component {
       isOpen: false,
       child: Null,
     },
-    mutate={ "doClick": (s : LintDemoState, _args) => s },
+    // This component builds its views at runtime, so there is no generated
+    // Msg to match on and the arm names the dispatch directly.
+    update=(_s : LintDemoState, msg, _ctx) => {
+      match msg {
+        Input("doClick", _) => None
+        _ => None
+      }
+    },
     when={
       // ALT_HANDLER_NOT_REFERENCED: defined here but never used in a view
       "unusedAlter": (_s : LintDemoState, _key, _value, _iter) => true,

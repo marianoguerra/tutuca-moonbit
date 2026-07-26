@@ -402,23 +402,6 @@ pub fn ComponentListMethod::name(self : ComponentListMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] component_list_mutate(
-  f : (ComponentListMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([FlexStyle] : Array[ComponentListMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.

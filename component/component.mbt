@@ -100,7 +100,7 @@ fn new_component(
 ///   @enrich-with mutates the binds map; the scope form returns binds;
 ///   @loop-with returns a LoopWith slice/order plan).
 /// Auto-mutators are generated per field (setX / updateX / resetX / toggleX /
-/// xLen / pushInX / setInXAt / ...); user mutate/compute win over them.
+/// xLen / pushInX / setInXAt / ...); a user `compute` entry wins over them.
 /// `specs` adds Value-level slot fields (child components via
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
 pub fn[S : ToJson + @json.FromJson] component(
@@ -110,7 +110,6 @@ pub fn[S : ToJson + @json.FromJson] component(
   common_style? : String = "",
   global_style? : String = "",
   update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
-  mutate? : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([]),
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),
   swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([],
   ),
@@ -153,7 +152,6 @@ pub fn[S : ToJson + @json.FromJson] component(
     init,
     s_fields,
     update,
-    mutate,
     compute,
     swap,
     when,
@@ -173,7 +171,6 @@ pub fn[S : ToJson + @json.FromJson] component(
     provide,
     lookup,
     all_specs,
-    mutate_names=map_keys(mutate),
     compute_names=map_keys(compute),
     swap_names=map_keys(swap),
     alter_names=map_keys(when) +

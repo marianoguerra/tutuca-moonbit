@@ -15,7 +15,7 @@ fn schema_scalar_comp() -> @component.Component {
     name="SchemaScalar",
     init=schema_node_init(),
     compute=schema_node_compute(_s => ""),
-    mutate=composite_mutate(),
+    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -55,7 +55,7 @@ fn schema_object_comp() -> @component.Component {
         ""
       }
     }),
-    mutate=composite_mutate(),
+    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -149,7 +149,7 @@ fn schema_array_comp() -> @component.Component {
         ""
       }
     }),
-    mutate=composite_mutate(),
+    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -234,7 +234,7 @@ fn schema_enum_comp() -> @component.Component {
         ""
       }
     }),
-    mutate=composite_mutate(),
+    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -303,7 +303,7 @@ fn schema_combinator_comp() -> @component.Component {
         ""
       }
     }),
-    mutate=composite_mutate(),
+    update=(s : SchemaNodeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }

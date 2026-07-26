@@ -29,18 +29,10 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
       isLoading: false,
       error: Null,
     },
-    mutate={
-      "toggleView": (s : RequestExampleState, _args) => {
-        ..s,
-        view: if s.view == "main" {
-          "edit"
-        } else {
-          "main"
-        },
-      },
-    },
     update=(s : RequestExampleState, msg, ctx) => {
       match msg {
+        Input("toggleView", _) =>
+          Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
         // the host dispatches this after start() — see App::send_at_root
         Receive("init", _) => {
           ctx.request("loadData", [], @tutuca.RequestOpts::new())

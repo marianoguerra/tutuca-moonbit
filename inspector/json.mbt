@@ -134,28 +134,32 @@ fn[S : Composite] composite_compute(
 }
 
 ///|
-/// The prev/next page mutators (pure state changes, $-called from the view).
-fn[S : Composite] composite_mutate() -> Map[
-  String,
-  (S, Array[@tutuca.Value]) -> S,
-] {
-  {
-    "prevPage": (s, _args) => {
+/// The prev/next page arms, shared by every paged inspector component.
+///
+/// A helper an `update` DELEGATES to rather than a bucket of its own: a
+/// component with arms of its own ends its match with
+/// `_ => composite_update(s, msg)`, so the sharing survives without a second
+/// place for a handler to live. `None` means "no change", which is what the
+/// old bucket expressed by returning `s` unchanged at a boundary.
+fn[S : Composite] composite_update(s : S, msg : @component.Dispatch) -> S? {
+  match msg {
+    Input("prevPage", _) => {
       let cur = s.current_page()
       if cur > 0 {
-        s.with_current_page(cur - 1)
+        Some(s.with_current_page(cur - 1))
       } else {
-        s
+        None
       }
-    },
-    "nextPage": (s, _args) => {
+    }
+    Input("nextPage", _) => {
       let cur = s.current_page()
       if cur < page_count_of(s) - 1 {
-        s.with_current_page(cur + 1)
+        Some(s.with_current_page(cur + 1))
       } else {
-        s
+        None
       }
-    },
+    }
+    _ => None
   }
 }
 
@@ -192,9 +196,9 @@ fn make_composite_view(
     #|      <span @text="$countText"></span>
     #|    </button>
     #|    <div @show="$showPagination" class="join">
-    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="$prevPage">«</button>
+    #|      <button type="button" class="join-item btn btn-xs pg-prev" :disabled="$cannotPrevPage" @on.click="prevPage">«</button>
     #|      <span class="join-item badge font-mono text-xs pg-label" @text="$pageIndicatorText"></span>
-    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="$nextPage">»</button>
+    #|      <button type="button" class="join-item btn btn-xs pg-next" :disabled="$cannotNextPage" @on.click="nextPage">»</button>
     #|    </div>
     #|  </span>
     #|  <div @show=".isExpanded" class="ml-1 flex flex-col gap-0.5 border-l __BORDER_CLASS__ pl-2 mt-0.5">
@@ -394,7 +398,7 @@ fn json_array_comp() -> @component.Component {
       let n = s.items.length()
       "(\{n})"
     }),
-    mutate=composite_mutate(),
+    update=(s : CompositeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -414,7 +418,7 @@ fn json_object_comp() -> @component.Component {
       let n = s.items.length()
       "{\{n}}"
     }),
-    mutate=composite_mutate(),
+    update=(s : CompositeState, msg, _ctx) => composite_update(s, msg),
     loop_with=composite_loop_with(),
   )
 }
@@ -509,10 +513,11 @@ fn data_inspector_comp() -> @component.Component {
     },
     name="DataInspector",
     init=WrapperState::{ value: Null },
-    mutate={
-      "toggleIsExpanded": (s : WrapperState, _args) => {
-        value: toggle_wrapped(s.value),
-      },
+    update=(s : WrapperState, msg, _ctx) => {
+      match msg {
+        Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
+        _ => None
+      }
     },
   )
 }

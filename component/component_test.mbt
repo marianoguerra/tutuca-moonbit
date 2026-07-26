@@ -254,22 +254,29 @@ priv struct CountOnly {
 } derive(ToJson, FromJson)
 
 ///|
-test "mutate and compute buckets surface as pre-bound Fns" {
+test "a compute entry is a pre-bound Fn; an update arm is not" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Counter",
     init=CountOnly::{ count: 1 },
-    mutate={ "inc": (s : CountOnly, _args) => { count: s.count + 1 } },
+    update=(s : CountOnly, msg, _ctx) => {
+      match msg {
+        Input("inc", _) => Some({ count: s.count + 1 })
+        _ => None
+      }
+    },
     compute={ "label": (s : CountOnly, _args) => Str("n=\{s.count}") },
   )
   let t = comp.make(Map([]))
   guard t is Obj(o)
+  // A `compute` entry is reachable in a VALUE position — that is what the
+  // bucket is for, and why an update arm cannot replace it: there is no
+  // event and no ctx there.
   guard o.obj_field("label") is Some(Fn(label))
   assert_true(label([Null]) == Str("n=1"))
-  guard o.obj_field("inc") is Some(Fn(inc))
-  guard inc([Null]) is Obj(o2)
-  assert_true(o2.obj_field("count") == Some(Num(2)))
-  // and through Input dispatch (event position)
+  // An `update` arm is NOT: it answers a dispatch, not a field read.
+  assert_true(o.obj_field("inc") is None)
+  // ...and it does answer through Input dispatch (event position).
   let root : @tutuca.Value = Map({ "c": t })
   let node : &@tutuca.PathNode = root
   let p = @tutuca.Path::new(steps=[FieldStep("c")])

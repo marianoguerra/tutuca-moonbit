@@ -77,7 +77,7 @@ For `--name Counter` the module declares `counter_views()` /
 `CounterInput` + `CounterMsg` with `CounterMsg::from_dispatch` (payload types
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
--> `@tutuca.Value`), `CounterMethod` + `counter_mutate`/`_compute`/`_swap`
+-> `@tutuca.Value`), `CounterMethod` + `counter_compute`/`_swap`
 (the `$`-callables, built from an exhaustive match), `CounterView` and
 `CounterId`. A file that also carries a `<script type="tutuca/state">` block
 gets the state half: `CounterState` itself with its `ToJson`/`FromJson`

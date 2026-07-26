@@ -212,23 +212,6 @@ pub fn PushViewMethod::name(self : PushViewMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] push_view_mutate(
-  f : (PushViewMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([GetToggleLabel] : Array[PushViewMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.
@@ -499,23 +482,6 @@ pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] seq_item_access_mutate(
-  f : (SeqItemAccessMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([GetMaxIndex] : Array[SeqItemAccessMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.
@@ -754,23 +720,6 @@ pub fn PaginationMethod::name(self : PaginationMethod) -> String {
     IsLastPage => "isLastPage"
     PageLabel => "pageLabel"
   }
-}
-
-///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] pagination_mutate(
-  f : (PaginationMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

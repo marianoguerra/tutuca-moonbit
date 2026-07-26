@@ -75,8 +75,8 @@ For a component named `Counter` the generated module declares
 `counter_views()` (the built views, for `views~`),
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
-`CounterMsg::from_dispatch`), `CounterMethod` with `counter_mutate` /
-`counter_compute` / `counter_swap` (the `$`-callables, as exhaustive matches),
+`CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` /
+`counter_swap` (the `$`-callables, as exhaustive matches),
 `CounterView` / `CounterId`. The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
 `"moonbitlang/core/debug"`.

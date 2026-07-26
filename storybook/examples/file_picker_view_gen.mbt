@@ -229,23 +229,6 @@ pub fn FilePickerMethod::name(self : FilePickerMethod) -> String {
 }
 
 ///|
-/// Build `mutate~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] file_picker_mutate(
-  f : (FilePickerMethod) -> ((S, Array[@tutuca.Value]) -> S)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> S] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> S] = Map([])
-  for m in ([LastModifiedLabel, SizeLabel, TypeLabel] : Array[FilePickerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Build `compute~` from an exhaustive match over the names the views call.
 /// Return None for a name another bucket serves, or one of the mutators
 /// generated from the state's fields.

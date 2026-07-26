@@ -20,7 +20,7 @@ fn schema_viewer_comp() -> @component.Component {
         "main",
         raw_view=(
           #|<div class="inline-flex flex-col items-start gap-1 schema-viewer">
-          #|  <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="$toggleShowRaw" @text="$toggleLabel"></button>
+          #|  <button type="button" class="btn btn-xs btn-ghost self-end raw-toggle" @on.click="toggleShowRaw" @text="$toggleLabel"></button>
           #|  <x render=".value" @hide=".showRaw"></x>
           #|  <x render=".raw" @show=".showRaw"></x>
           #|</div>
@@ -34,11 +34,12 @@ fn schema_viewer_comp() -> @component.Component {
       rawSchema: Null,
       showRaw: false,
     },
-    mutate={
-      "toggleIsExpanded": (s : SchemaViewerState, _args) => {
-        ..s,
-        value: toggle_wrapped(s.value),
-      },
+    update=(s : SchemaViewerState, msg, _ctx) => {
+      match msg {
+        Input("toggleIsExpanded", _) =>
+          Some({ ..s, value: toggle_wrapped(s.value) })
+        _ => None
+      }
     },
     compute={
       "toggleLabel": (s : SchemaViewerState, _args) => {

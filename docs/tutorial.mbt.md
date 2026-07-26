@@ -86,14 +86,13 @@ fn counter() -> @component.Component {
     // views call update by bare name: @on.click="dec"
     update=(s : CounterState, msg, _ctx) => {
       match msg {
+        Input("inc", _) => Some({ count: s.count + 1 })
         Input("dec", _) => Some({ count: s.count - 1 })
         _ => None
       }
     },
-    // Reached by a bare name like any handler: @on.click="inc". The bucket
-    // is about what the handler needs (this one is pure), not about how the
-    // template spells it.
-    mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
+    // Every handler the views raise is answered here, `inc` included:
+    // there is one place for them.
   )
 }
 
@@ -119,9 +118,10 @@ Things to notice:
   `Input(name, args)` for view events, plus `Receive`/`Bubble`/`Response`
   (below). It gets a `ctx` to send messages with; returning `None` means
   "no change".
-- **`mutate` entries are pure state changes** callable as `$name`; `compute`
-  entries (not needed here) return display values for positions like
-  `@text="$label"`.
+- **`compute` entries return display values** for positions like
+  `@text="$label"`, where there is no event and no `ctx` and an `update` arm
+  cannot go. That is what `$` means; an event handler is a bare name and is
+  answered in `update`.
 - Nobody wrote a setter: handlers build a **new** struct
   (`{ count: s.count + 1 }`, or `{ ..s, x: v }` to keep the rest); the
   original is untouched.

@@ -24,20 +24,21 @@ fn attribute_binding_comp() -> @component.Component {
       bool: true,
       notSet: Null,
     },
-    mutate={
-      // parse-and-validate before writing: a bad number leaves state untouched
-      // (JS: `Number.isNaN(n) ? this : this.setNum(n)`)
-      "setRawNumber": (s : AttributeBindingState, args) => {
-        let parsed : Int? = match args {
-          [Str(v)] => Some(@string.parse_int(v)) catch { _ => None }
-          [Num(n)] => Some(n.to_int())
-          _ => None
-        }
-        match parsed {
-          Some(n) => { ..s, num: n }
-          None => s
-        }
-      },
+    // Parse-and-validate before writing: a bad number leaves state untouched
+    // (JS: `Number.isNaN(n) ? this : this.setNum(n)`). The payload is typed
+    // `String` by the generator — every call site passes one — so the
+    // untyped two-branch unpack is gone.
+    update=(s : AttributeBindingState, msg, _ctx) => {
+      match AttributeBindingMsg::from_dispatch(msg) {
+        Some(SetRawNumber(v)) =>
+          match (Some(@string.parse_int(v)) catch { _ => None }) {
+            Some(n) => Some({ ..s, num: n })
+            None => None
+          }
+        // Served by the generated mutators for `str` and `bool`.
+        Some(SetStr(_)) | Some(SetBool(_)) => None
+        Some(Unknown(_, _)) | None => None
+      }
     },
     // The schema-generated direct codec, in place of the JSON bridge.
     encode=attribute_binding_encode,
@@ -159,8 +160,13 @@ fn show_hide_comp() -> @component.Component {
         }
       },
     },
-    mutate={
-      "incCount": (s : ShowHideState, _args) => { ..s, count: s.count + 1 },
+    update=(s : ShowHideState, msg, _ctx) => {
+      match ShowHideMsg::from_dispatch(msg) {
+        Some(IncCount) => Some({ ..s, count: s.count + 1 })
+        // Served by the generated toggle for the `isOpen` field.
+        Some(ToggleIsOpen) => None
+        Some(Unknown(_, _)) | None => None
+      }
     },
     // The schema-generated direct codec, in place of the JSON bridge.
     encode=show_hide_encode,

@@ -295,14 +295,9 @@ fn emit_component(
       method_variants,
       derives,
     )
-    emit_bucket(
-      out,
-      "\{t}Method",
-      "\{v}_mutate",
-      "(S, Array[@tutuca.Value]) -> S",
-      "Build `mutate~` from an exhaustive match over the names the views call.",
-      method_variants,
-    )
+    // No `<v>_mutate`: the bucket is gone. A `$name` only ever appears in a
+    // value position now, where `compute` and `swap` are what answer it —
+    // an event handler is a bare name and belongs to `update`.
     emit_bucket(
       out,
       "\{t}Method",

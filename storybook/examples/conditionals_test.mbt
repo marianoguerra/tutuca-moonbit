@@ -78,6 +78,6 @@ test "list-and-filter: the filter is case-insensitive, and Escape resets it" {
   })
   h.type_into("input", "EMPEROR")
   inspect(h.find_all("li").length(), content="1")
-  h.key_down("input", "Escape") // @on.keydown+cancel="$resetQuery"
+  h.key_down("input", "Escape") // @on.keydown+cancel="resetQuery"
   inspect(h.find_all("li").length(), content="14")
 }

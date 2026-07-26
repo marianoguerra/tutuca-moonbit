@@ -77,10 +77,10 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   a `$name` and a bare name are the same dispatch there — app/app.mbt
   hands both to `push_input` — so the sigil would claim a distinction
   that does not exist.
-- **Handlers that need `ctx` go in `update`, not `mutate`/`compute`.**
-  A `mutate` entry is pure — `(s, args) => S` — and a `compute` entry is
-  pure — `(s, args) => Value` — because `$`-callables are also evaluated
-  in value positions (`@text="$label"`), where no event exists. The
+- **Every event handler goes in `update`.** There is one bucket for them,
+  and a view names it bare. A `compute` entry is pure — `(s, args) => Value`
+  — and exists for the other job: a `$`-callable evaluated in a VALUE
+  position (`@text="$label"`), where no event and no ctx exist. The
   `update` fn — `(s, msg, ctx) => S?` — gets the `&Ctx` and can
   `ctx.send` / `ctx.request`. Every `@on` handler is written bare,
   whichever bucket serves it; `$` is for value positions only.
@@ -138,12 +138,15 @@ fn counter_comp() -> @component.Component {
   @component.component(
   views={
     "main": @anode.View::new("main", raw_view=(
-      #|<button @on.click="$inc" @text=".count"></button>
+      #|<button @on.click="inc" @text=".count"></button>
     )),
   },
   name="Counter",
   init=CounterState::{ count: 0 },
-  mutate={ "inc": (s : CounterState, _args) => { count: s.count + 1 } },
+  update=(s : CounterState, msg, _ctx) => match msg {
+    Input("inc", _) => Some({ count: s.count + 1 })
+    _ => None
+  },
 )
 }
 

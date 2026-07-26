@@ -53,31 +53,27 @@ fn playlist_comp() -> @component.Component {
     views=playlist_views(),
     name="Playlist",
     init=PlaylistState::{ songs: Obj(KeyedList::{ order: [], items: Map([]) }) },
-    mutate={
-      // The state only sees `&Obj`, so the removal REBUILDS the keyed
-      // list from obj_seq_entries minus the key (there is no downcast back
-      // to KeyedList — the port's trait-object rule).
-      "removeSong": (s : PlaylistState, args) => {
-        guard args is [Str(key), ..] else { return s }
-        match s.songs {
-          Obj(o) =>
-            match o.obj_seq_entries() {
-              Some(entries) => {
-                let mut next = KeyedList::{ order: [], items: Map([]) }
-                for entry in entries {
-                  let (pk, v) = entry
-                  match pk {
-                    KStr(k) => if k != key { next = next.set(k, v) }
-                    _ => ()
-                  }
-                }
-                { songs: Obj(next) }
-              }
-              None => s
+    // The state only sees `&Obj`, so the removal REBUILDS the keyed list from
+    // obj_seq_entries minus the key (there is no downcast back to KeyedList —
+    // the port's trait-object rule).
+    update=(s : PlaylistState, msg, _ctx) => {
+      match PlaylistMsg::from_dispatch(msg) {
+        Some(RemoveSong(key_v)) => {
+          guard key_v is Str(key) else { return None }
+          guard s.songs is Obj(o) else { return None }
+          guard o.obj_seq_entries() is Some(entries) else { return None }
+          let mut next = KeyedList::{ order: [], items: Map([]) }
+          for entry in entries {
+            let (pk, v) = entry
+            match pk {
+              KStr(k) => if k != key { next = next.set(k, v) }
+              _ => ()
             }
-          _ => s
+          }
+          Some({ songs: Obj(next) })
         }
-      },
+        Some(Unknown(_, _)) | None => None
+      }
     },
     // The schema-generated direct codec, in place of the JSON bridge.
     encode=playlist_encode,

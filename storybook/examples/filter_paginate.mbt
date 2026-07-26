@@ -102,7 +102,7 @@ fn fp_only_matches() -> Map[
 const ROW =
   #|<span class="badge badge-neutral" @text="@key"></span>
   #|      <x render-it></x>
-  #|      <button class="btn btn-sm btn-error btn-outline rm" @on.click="$removeInItemsAt @key">x</button>
+  #|      <button class="btn btn-sm btn-error btn-outline rm" @on.click="removeInItemsAt @key">x</button>
 
 ///|
 fn fp_num_keys(keys : Array[Int]) -> @component.LoopWith {

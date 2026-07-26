@@ -27,17 +27,17 @@ fn counter_module() -> @component.ModuleDef {
           #|<div>
           #|  <button class="btn-error" @on.click="dec">-</button>
           #|  <div class="stat-value" @text=".count"></div>
-          #|  <button class="btn-success" @on.click="$inc">+</button>
-          #|  <input class="label-input" :value=".label" @on.input="$setLabel value">
+          #|  <button class="btn-success" @on.click="inc">+</button>
+          #|  <input class="label-input" :value=".label" @on.input="setLabel value">
           #|</div>
         ),
       ),
     },
     name="Counter",
     init=CounterState::{ count: 0, label: "" },
-    mutate={ "inc": (s : CounterState, _args) => { ..s, count: s.count + 1 } },
     update=(s : CounterState, msg, _ctx) => {
       match msg {
+        Input("inc", _) => Some({ ..s, count: s.count + 1 })
         Input("dec", _) => Some({ ..s, count: s.count - 1 })
         _ => None
       }
@@ -52,7 +52,7 @@ fn counter_module() -> @component.ModuleDef {
 test "harness drives a module: click re-renders the DOM" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
-  h.click(".btn-success") // @on.click="$inc"
+  h.click(".btn-success") // @on.click="inc"
   inspect(h.text(".stat-value"), content="1")
   h.click(".btn-error") // @on.click="dec"
   inspect(h.text(".stat-value"), content="0")

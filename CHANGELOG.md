@@ -97,6 +97,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The `mutate` bucket is removed (breaking).** With `$` refused at an `@on`
+  site, `mutate` had no job left that `update` does not do: both are reached
+  by the same bare name and the same dispatch, `update` is strictly more
+  capable (it gets a `ctx`), and nothing internal used the bucket — the
+  generated setters live in their own table. Its one remaining claim was
+  purity-by-signature, which is not worth a second place for a handler to
+  live.
+
+  `component()` loses the `mutate~` parameter, `TypedSpec` loses the field
+  and its three dispatch reads, and `gen-views` stops emitting the
+  `<v>_mutate` builder. All 41 call sites across 24 files are migrated by
+  hand: 21 were a rename, 8 genuinely transformed (an untyped `Array[Value]`
+  becomes the typed payload of a `<C>Msg` variant), and the shared inspector
+  paging bucket became a `composite_update` helper that a component's own
+  `update` delegates to from its fallback arm.
+
+  `compute` and `swap` stay. `compute` answers a `$name` in a VALUE position
+  (`@text="$label"`), where there is no event and no ctx and an `update` arm
+  cannot reach; `swap` returns a `Value`, so it can replace a node with a
+  different component's instance, which `update` — returning `S?` — cannot.
+
 - **A `$name` in an `@on` handler position is now a generation error.** It
   was never a second mechanism: `app/app.mbt` collapses `HandlerName` and
   `Method` into one string and hands both to `push_input`, so `@on.click="$inc"`

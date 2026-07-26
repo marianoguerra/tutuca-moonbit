@@ -7,7 +7,7 @@ test "counter: renders the initial count" {
 ///|
 test "counter: $inc (a method) increments, dec (an input handler) decrements" {
   let h = @harness.mount(counter_module(), "Counter")
-  h.click(".btn-success") // the + button, @on.click="$inc"
+  h.click(".btn-success") // the + button, @on.click="inc"
   inspect(h.text(".stat-value"), content="1")
   h.click(".btn-error") // the - button, @on.click="dec"
   h.click(".btn-error")

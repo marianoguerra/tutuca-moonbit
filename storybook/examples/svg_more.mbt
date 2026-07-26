@@ -160,7 +160,7 @@ fn icon_gallery_comp() -> @component.Component {
           #|<div class="flex flex-col gap-4">
           #|  <label class="flex items-center gap-2 text-sm">
           #|    Size
-          #|    <input type="range" min="16" max="80" :value=".size" @on.input="$setSize valueAsInt" />
+          #|    <input type="range" min="16" max="80" :value=".size" @on.input="setSize valueAsInt" />
           #|    <code class="sizeval" @text=".size"></code>
           #|  </label>
           #|  <div class="flex items-end gap-6 text-primary icons">

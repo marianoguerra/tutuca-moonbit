@@ -20,6 +20,21 @@ fn ocall(v : @tutuca.Value, name : String) -> @tutuca.Value {
 }
 
 ///|
+/// Dispatch an Input to a component instance and return the successor.
+///
+/// Paging moved from a `mutate` bucket to an `update` arm, so `prevPage` /
+/// `nextPage` answer a DISPATCH now rather than a field read — `ocall` would
+/// find no Fn to call. This is how the view reaches them too.
+fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
+  guard v is Obj(o) else { return Null }
+  guard o.obj_handler(Input, name) is Some(Handler(f)) else { return Null }
+  match f([], @tutuca.NullCtx::{  }) {
+    Some(node) => node.as_value().unwrap_or(Null)
+    None => v
+  }
+}
+
+///|
 fn otext(v : @tutuca.Value, name : String) -> String {
   match ocall(v, name) {
     Str(s) => s
@@ -94,15 +109,21 @@ test "composite pagination: 25 items page at 10, prev/next clamp" {
   assert_true(ocall(arr, "cannotPrevPage") is Bool(true))
   assert_true(ocall(arr, "cannotNextPage") is Bool(false))
   assert_true(ocall(arr, "hasPagination") is Null) // not a method — view uses showPagination
-  let p2 = ocall(arr, "nextPage")
+  let p2 = odispatch(arr, "nextPage")
   inspect(otext(p2, "pageIndicatorText"), content="2 / 3")
-  let p3 = ocall(p2, "nextPage")
+  let p3 = odispatch(p2, "nextPage")
   inspect(otext(p3, "pageIndicatorText"), content="3 / 3")
   assert_true(ocall(p3, "cannotNextPage") is Bool(true))
   // clamped: another next stays on the last page
-  inspect(otext(ocall(p3, "nextPage"), "pageIndicatorText"), content="3 / 3")
+  inspect(
+    otext(odispatch(p3, "nextPage"), "pageIndicatorText"),
+    content="3 / 3",
+  )
   // and back
-  inspect(otext(ocall(p3, "prevPage"), "pageIndicatorText"), content="2 / 3")
+  inspect(
+    otext(odispatch(p3, "prevPage"), "pageIndicatorText"),
+    content="2 / 3",
+  )
 }
 
 ///|
@@ -147,12 +168,10 @@ fn sample_comp() -> @component.Component {
       "label": (s : RichState, _args) => Str(s.title),
       "double": (s : RichState, _args) => Num((s.count * 2).to_double()),
     },
-    mutate={
-      "inc": (s : RichState, _args) => { ..s, count: s.count + 1 },
-      "reset": (s : RichState, _args) => { ..s, count: 0 },
-    },
     update=(s : RichState, msg, _ctx) => {
       match msg {
+        Input("inc", _) => Some({ ..s, count: s.count + 1 })
+        Input("reset", _) => Some({ ..s, count: 0 })
         Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
           Some(s)
         _ => None
@@ -178,13 +197,15 @@ test "component_summary reads fields, buckets, and view sources" {
   assert_true(f0.get("name") is Some(Str("title")))
   assert_true(f0.get("type") is Some(Str("text")))
   assert_true(f0.get("default") is Some(Str("")))
-  // methods = mutate + compute names; the generated mutators (setTitle,
-  // toggleOpen, …) never appear (they live in their own table)
+  // methods = the compute names. `inc`/`reset` are update arms, not
+  // methods: they answer a dispatch rather than a field read. The generated
+  // mutators (setTitle, toggleOpen, …) never appear either — they live in
+  // their own table.
   guard d.get("methods") is Some(List(methods)) else { fail("no methods") }
   assert_true(methods.contains(Str("label")))
   assert_true(methods.contains(Str("double")))
-  assert_true(methods.contains(Str("inc")))
-  assert_true(methods.contains(Str("reset")))
+  assert_false(methods.contains(Str("inc")))
+  assert_false(methods.contains(Str("reset")))
   assert_false(methods.contains(Str("setTitle")))
   assert_false(methods.contains(Str("toggleOpen")))
   assert_false(methods.contains(Str("pushInTags")))

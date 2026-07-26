@@ -34,15 +34,14 @@ fn push_view_comp() -> @component.Component {
     views=push_view_views(),
     name="PushView",
     init=PushViewState::{ items: [], query: "", view: "main" },
-    mutate={
-      "toggleView": (s : PushViewState, _args) => {
-        ..s,
-        view: if s.view == "main" {
-          "edit"
-        } else {
-          "main"
-        },
-      },
+    update=(s : PushViewState, msg, _ctx) => {
+      match PushViewMsg::from_dispatch(msg) {
+        Some(ToggleView) =>
+          Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
+        // Served by the generated mutators for the `query` field.
+        Some(ResetQuery) | Some(SetQuery(_)) => None
+        Some(Unknown(_, _)) | None => None
+      }
     },
     compute={
       "getToggleLabel": (s : PushViewState, _args) => {
