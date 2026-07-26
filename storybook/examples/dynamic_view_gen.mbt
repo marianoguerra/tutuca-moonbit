@@ -296,10 +296,12 @@ fn selector_encode(s : SelectorState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn selector_decode(f : Map[String, @tutuca.Value]) -> SelectorState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   let v_selectedValue = f.get("selectedValue").unwrap_or(Null)
   Some(SelectorState::{ items: v_items, selectedValue: v_selectedValue })
@@ -505,10 +507,12 @@ fn entry_editor_and_selector_encode(
 fn entry_editor_and_selector_decode(
   f : Map[String, @tutuca.Value],
 ) -> EntryEditorAndSelectorState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(EntryEditorAndSelectorState::{ items: v_items })
 }
@@ -848,6 +852,24 @@ pub fn toolbar_zero_args() -> Map[String, @tutuca.Value] {
 pub let toolbar_schema_fingerprint : String = "56782604789d5a5e"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn toolbar_encode(_s : ToolbarState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn toolbar_decode(_f : Map[String, @tutuca.Value]) -> ToolbarState? {
+  Some(ToolbarState::{  })
+}
+
+///|
 /// The views declared in dynamic.html.
 pub(all) enum ToolbarView {
   Main
@@ -949,6 +971,24 @@ pub let panel_field_names : Array[String] = ["toolbar"]
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let panel_schema_fingerprint : String = "f64005029cb0440a"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn panel_encode(_s : PanelState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn panel_decode(_f : Map[String, @tutuca.Value]) -> PanelState? {
+  Some(PanelState::{  })
+}
 
 ///|
 /// The views declared in dynamic.html.

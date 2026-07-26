@@ -113,8 +113,8 @@ fn attribute_binding_decode(
   f : Map[String, @tutuca.Value],
 ) -> AttributeBindingState? {
   guard f.get("str") is Some(Str(v_str)) else { return None }
-  guard f.get("num") is Some(Num(n_num)) else { return None }
-  let v_num = n_num.to_int()
+  guard f.get("num") is Some(Num(t1_num)) else { return None }
+  let v_num = t1_num.to_int()
   guard f.get("bool") is Some(Bool(v_bool)) else { return None }
   let v_notSet = f.get("notSet").unwrap_or(Null)
   Some(AttributeBindingState::{
@@ -758,8 +758,8 @@ fn show_hide_encode(s : ShowHideState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn show_hide_decode(f : Map[String, @tutuca.Value]) -> ShowHideState? {
   guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(ShowHideState::{ isOpen: v_isOpen, count: v_count })
 }
 

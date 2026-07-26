@@ -43,6 +43,26 @@ pub fn styles_example_zero_args() -> Map[String, @tutuca.Value] {
 pub let styles_example_schema_fingerprint : String = "5c435ae5582bab80"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn styles_example_encode(_s : StylesExampleState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn styles_example_decode(
+  _f : Map[String, @tutuca.Value],
+) -> StylesExampleState? {
+  Some(StylesExampleState::{  })
+}
+
+///|
 /// The views declared in styles.html.
 pub(all) enum StylesExampleView {
   Main
@@ -155,6 +175,28 @@ pub let styles_example_root_field_names : Array[String] = ["value"]
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let styles_example_root_schema_fingerprint : String = "5407ac5b07426d2a"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn styles_example_root_encode(
+  _s : StylesExampleRootState,
+) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn styles_example_root_decode(
+  _f : Map[String, @tutuca.Value],
+) -> StylesExampleRootState? {
+  Some(StylesExampleRootState::{  })
+}
 
 ///|
 /// The views declared in styles.html.

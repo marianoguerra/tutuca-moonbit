@@ -88,8 +88,8 @@ fn traffic_light_encode(s : TrafficLightState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn traffic_light_decode(f : Map[String, @tutuca.Value]) -> TrafficLightState? {
-  guard f.get("lightIndex") is Some(Num(n_lightIndex)) else { return None }
-  let v_lightIndex = n_lightIndex.to_int()
+  guard f.get("lightIndex") is Some(Num(t1_lightIndex)) else { return None }
+  let v_lightIndex = t1_lightIndex.to_int()
   Some(TrafficLightState::{ lightIndex: v_lightIndex })
 }
 
@@ -535,10 +535,12 @@ fn list_and_filter_encode(s : ListAndFilterState) -> Map[String, @tutuca.Value] 
 fn list_and_filter_decode(
   f : Map[String, @tutuca.Value],
 ) -> ListAndFilterState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListAndFilterState::{ items: v_items, query: v_query })

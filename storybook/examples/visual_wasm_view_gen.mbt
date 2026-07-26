@@ -46,6 +46,24 @@ pub fn vw_empty_zero_args() -> Map[String, @tutuca.Value] {
 pub let vw_empty_schema_fingerprint : String = "ce4923df302b81b2"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn vw_empty_encode(_s : VwEmptyState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn vw_empty_decode(_f : Map[String, @tutuca.Value]) -> VwEmptyState? {
+  Some(VwEmptyState::{  })
+}
+
+///|
 /// The state of the VwImm component.
 ///
 /// Declared as `interface vw-imm` in the state block. Adding a
@@ -128,8 +146,8 @@ fn vw_imm_encode(s : VwImmState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_imm_decode(f : Map[String, @tutuca.Value]) -> VwImmState? {
-  guard f.get("value") is Some(Num(n_value)) else { return None }
-  let v_value = n_value.to_int()
+  guard f.get("value") is Some(Num(t1_value)) else { return None }
+  let v_value = t1_value.to_int()
   guard f.get("rawValue") is Some(Str(v_rawValue)) else { return None }
   Some(VwImmState::{ value: v_value, rawValue: v_rawValue })
 }
@@ -213,10 +231,12 @@ fn vw_types_encode(s : VwTypesState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_types_decode(f : Map[String, @tutuca.Value]) -> VwTypesState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(VwTypesState::{ items: v_items })
 }
@@ -314,10 +334,12 @@ fn vw_container_encode(s : VwContainerState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_container_decode(f : Map[String, @tutuca.Value]) -> VwContainerState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("expanded") is Some(Bool(v_expanded)) else { return None }
   guard f.get("editing") is Some(Bool(v_editing)) else { return None }
@@ -446,15 +468,19 @@ fn vw_if_encode(s : VwIfState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_if_decode(f : Map[String, @tutuca.Value]) -> VwIfState? {
-  guard f.get("thn") is Some(List(l_thn)) else { return None }
+  guard f.get("thn") is Some(t1_thn) else { return None }
+  guard t1_thn is List(u1_thn) else { return None }
   let v_thn : Array[@tutuca.Value] = []
-  for x in l_thn {
-    v_thn.push(x)
+  for e1_thn in u1_thn {
+    let x1_thn = e1_thn
+    v_thn.push(x1_thn)
   }
-  guard f.get("else") is Some(List(l_else_)) else { return None }
+  guard f.get("else") is Some(t1_else_) else { return None }
+  guard t1_else_ is List(u1_else_) else { return None }
   let v_else_ : Array[@tutuca.Value] = []
-  for x in l_else_ {
-    v_else_.push(x)
+  for e1_else_ in u1_else_ {
+    let x1_else_ = e1_else_
+    v_else_.push(x1_else_)
   }
   guard f.get("expanded") is Some(Bool(v_expanded)) else { return None }
   guard f.get("editingIf") is Some(Bool(v_editingIf)) else { return None }
@@ -579,13 +605,15 @@ fn vw_section_encode(s : VwSectionState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_section_decode(f : Map[String, @tutuca.Value]) -> VwSectionState? {
-  guard f.get("id") is Some(Num(n_id)) else { return None }
-  let v_id = n_id.to_int()
+  guard f.get("id") is Some(Num(t1_id)) else { return None }
+  let v_id = t1_id.to_int()
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("expanded") is Some(Bool(v_expanded)) else { return None }
   let v_defaultItem = f.get("defaultItem").unwrap_or(Null)
@@ -681,10 +709,10 @@ fn vw_memory_encode(s : VwMemoryState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn vw_memory_decode(f : Map[String, @tutuca.Value]) -> VwMemoryState? {
-  guard f.get("n") is Some(Num(n_n)) else { return None }
-  let v_n = n_n.to_int()
-  guard f.get("m") is Some(Num(n_m)) else { return None }
-  let v_m = n_m.to_int()
+  guard f.get("n") is Some(Num(t1_n)) else { return None }
+  let v_n = t1_n.to_int()
+  guard f.get("m") is Some(Num(t1_m)) else { return None }
+  let v_m = t1_m.to_int()
   Some(VwMemoryState::{ n: v_n, m: v_m })
 }
 
@@ -784,10 +812,12 @@ fn vw_picker_decode(f : Map[String, @tutuca.Value]) -> VwPickerState? {
   guard f.get("currentSection") is Some(Str(v_currentSection)) else {
     return None
   }
-  guard f.get("instructions") is Some(List(l_instructions)) else { return None }
+  guard f.get("instructions") is Some(t1_instructions) else { return None }
+  guard t1_instructions is List(u1_instructions) else { return None }
   let v_instructions : Array[@tutuca.Value] = []
-  for x in l_instructions {
-    v_instructions.push(x)
+  for e1_instructions in u1_instructions {
+    let x1_instructions = e1_instructions
+    v_instructions.push(x1_instructions)
   }
   guard f.get("filter") is Some(Str(v_filter)) else { return None }
   Some(VwPickerState::{

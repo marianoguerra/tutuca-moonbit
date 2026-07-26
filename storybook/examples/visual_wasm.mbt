@@ -101,6 +101,8 @@ fn vw_instr(name : String, label : String) -> @component.Component {
     },
     name~,
     init=VwEmptyState::{  },
+    encode=vw_empty_encode,
+    decode=vw_empty_decode,
   )
 }
 

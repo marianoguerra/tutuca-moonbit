@@ -285,10 +285,12 @@ fn items_encode(s : ItemsState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn items_decode(f : Map[String, @tutuca.Value]) -> ItemsState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(ItemsState::{ items: v_items })
 }

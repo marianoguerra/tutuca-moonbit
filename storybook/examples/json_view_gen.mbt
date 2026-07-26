@@ -43,6 +43,24 @@ pub fn json_selector_zero_args() -> Map[String, @tutuca.Value] {
 pub let json_selector_schema_fingerprint : String = "823721696e1e4913"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_selector_encode(_s : JsonSelectorState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_selector_decode(_f : Map[String, @tutuca.Value]) -> JsonSelectorState? {
+  Some(JsonSelectorState::{  })
+}
+
+///|
 /// The views declared in json.html.
 pub(all) enum JsonSelectorView {
   Main
@@ -198,6 +216,24 @@ pub fn json_null_zero_args() -> Map[String, @tutuca.Value] {
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let json_null_schema_fingerprint : String = "28cebc724be3edcf"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn json_null_encode(_s : JsonNullState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn json_null_decode(_f : Map[String, @tutuca.Value]) -> JsonNullState? {
+  Some(JsonNullState::{  })
+}
 
 ///|
 /// The views declared in json.html.
@@ -872,10 +908,12 @@ fn json_array_encode(s : JsonArrayState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn json_array_decode(f : Map[String, @tutuca.Value]) -> JsonArrayState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(JsonArrayState::{ items: v_items })
 }
@@ -1270,10 +1308,12 @@ fn json_object_encode(s : JsonObjectState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn json_object_decode(f : Map[String, @tutuca.Value]) -> JsonObjectState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(JsonObjectState::{ items: v_items })
 }

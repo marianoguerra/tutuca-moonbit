@@ -108,16 +108,18 @@ fn people_encode(s : PeopleState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn people_decode(f : Map[String, @tutuca.Value]) -> PeopleState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  guard f.get("page") is Some(Num(n_page)) else { return None }
-  let v_page = n_page.to_int()
-  guard f.get("pageSize") is Some(Num(n_pageSize)) else { return None }
-  let v_pageSize = n_pageSize.to_int()
+  guard f.get("page") is Some(Num(t1_page)) else { return None }
+  let v_page = t1_page.to_int()
+  guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
+  let v_pageSize = t1_pageSize.to_int()
   Some(PeopleState::{
     items: v_items,
     query: v_query,
@@ -411,6 +413,24 @@ pub let strategies_field_names : Array[String] = ["naive", "shared", "coupled"]
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let strategies_schema_fingerprint : String = "6bace7a4dde1b354"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn strategies_encode(_s : StrategiesState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn strategies_decode(_f : Map[String, @tutuca.Value]) -> StrategiesState? {
+  Some(StrategiesState::{  })
+}
 
 ///|
 /// The views declared in filter_paginate.html.

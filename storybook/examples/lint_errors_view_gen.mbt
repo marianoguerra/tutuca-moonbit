@@ -113,12 +113,14 @@ fn lint_demo_encode(s : LintDemoState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn lint_demo_decode(f : Map[String, @tutuca.Value]) -> LintDemoState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("kind") is Some(Str(v_kind)) else { return None }
   guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
@@ -213,8 +215,8 @@ fn html_lint_demo_encode(s : HtmlLintDemoState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn html_lint_demo_decode(f : Map[String, @tutuca.Value]) -> HtmlLintDemoState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(HtmlLintDemoState::{ count: v_count })
 }
 
@@ -304,7 +306,7 @@ fn scoped_style_demo_encode(
 fn scoped_style_demo_decode(
   f : Map[String, @tutuca.Value],
 ) -> ScopedStyleDemoState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(ScopedStyleDemoState::{ count: v_count })
 }

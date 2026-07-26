@@ -91,8 +91,8 @@ fn status_encode(s : StatusState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn status_decode(f : Map[String, @tutuca.Value]) -> StatusState? {
   guard f.get("message") is Some(Str(v_message)) else { return None }
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(StatusState::{ message: v_message, count: v_count })
 }
 
@@ -463,10 +463,12 @@ fn tree_item_decode(f : Map[String, @tutuca.Value]) -> TreeItemState? {
   guard f.get("type") is Some(Str(v_type_)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("isOpen") is Some(Bool(v_isOpen)) else { return None }
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   Some(TreeItemState::{
     type_: v_type_,
@@ -729,10 +731,12 @@ fn tree_root_encode(s : TreeRootState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn tree_root_decode(f : Map[String, @tutuca.Value]) -> TreeRootState? {
-  guard f.get("log") is Some(List(l_log)) else { return None }
+  guard f.get("log") is Some(t1_log) else { return None }
+  guard t1_log is List(u1_log) else { return None }
   let v_log : Array[@tutuca.Value] = []
-  for x in l_log {
-    v_log.push(x)
+  for e1_log in u1_log {
+    let x1_log = e1_log
+    v_log.push(x1_log)
   }
   Some(TreeRootState::{ log: v_log })
 }

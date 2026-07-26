@@ -276,17 +276,19 @@ fn component_list_encode(s : ComponentListState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn component_list_decode(f : Map[String, @tutuca.Value]) -> ComponentListState? {
-  guard f.get("entries") is Some(List(l_entries)) else { return None }
+  guard f.get("entries") is Some(t1_entries) else { return None }
+  guard t1_entries is List(u1_entries) else { return None }
   let v_entries : Array[@tutuca.Value] = []
-  for x in l_entries {
-    v_entries.push(x)
+  for e1_entries in u1_entries {
+    let x1_entries = e1_entries
+    v_entries.push(x1_entries)
   }
   guard f.get("showSettings") is Some(Bool(v_showSettings)) else { return None }
   guard f.get("dir") is Some(Str(v_dir)) else { return None }
   guard f.get("justify") is Some(Str(v_justify)) else { return None }
   guard f.get("align") is Some(Str(v_align)) else { return None }
-  guard f.get("gap") is Some(Num(n_gap)) else { return None }
-  let v_gap = n_gap.to_int()
+  guard f.get("gap") is Some(Num(t1_gap)) else { return None }
+  let v_gap = t1_gap.to_int()
   guard f.get("wrap") is Some(Bool(v_wrap)) else { return None }
   Some(ComponentListState::{
     entries: v_entries,
@@ -636,10 +638,12 @@ fn component_picker_decode(
   f : Map[String, @tutuca.Value],
 ) -> ComponentPickerState? {
   guard f.get("filterText") is Some(Str(v_filterText)) else { return None }
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   let v_selected = f.get("selected").unwrap_or(Null)
   Some(ComponentPickerState::{

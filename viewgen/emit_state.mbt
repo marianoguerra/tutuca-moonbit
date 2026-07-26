@@ -143,6 +143,11 @@ fn emit_fingerprint(
 ///|
 /// The named `record`/`enum`/`variant` types the state mentions, in the
 /// stable order statedef sorted them into.
+///
+/// `pub(all)`, like every other piece of generated vocabulary (`<T>Field`,
+/// `<T>Msg`, `<T>View`): these are the names an `update` pattern-matches and a
+/// test constructs. Private, their `Eq`/`Debug` derives also read as unused to
+/// a non-test build, which is a warning for something the tests do use.
 fn emit_user_types(
   def : @statedef.StateDef,
   derives : String,
@@ -156,7 +161,7 @@ fn emit_user_types(
         }
         out.write_string("///|\n")
         emit_doc(ty.doc, "The `\{ty.wit_name}` record.", out)
-        out.write_string("priv struct \{ty.name} {\n")
+        out.write_string("pub(all) struct \{ty.name} {\n")
         for f in fields {
           out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
         }
@@ -165,7 +170,7 @@ fn emit_user_types(
       UEnum(cases) => {
         out.write_string("///|\n")
         emit_doc(ty.doc, "The `\{ty.wit_name}` enum.", out)
-        out.write_string("priv enum \{ty.name} {\n")
+        out.write_string("pub(all) enum \{ty.name} {\n")
         for c in cases {
           out.write_string("  \{c.1}\n")
         }
@@ -174,7 +179,7 @@ fn emit_user_types(
       UVariant(cases) => {
         out.write_string("///|\n")
         emit_doc(ty.doc, "The `\{ty.wit_name}` variant.", out)
-        out.write_string("priv enum \{ty.name} {\n")
+        out.write_string("pub(all) enum \{ty.name} {\n")
         for c in cases {
           if c.payload.is_empty() {
             out.write_string("  \{c.variant}\n")

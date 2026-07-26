@@ -46,6 +46,24 @@ pub fn macros_no_zero_args() -> Map[String, @tutuca.Value] {
 pub let macros_no_schema_fingerprint : String = "d913a4b9e7d1c76a"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn macros_no_encode(_s : MacrosNoState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn macros_no_decode(_f : Map[String, @tutuca.Value]) -> MacrosNoState? {
+  Some(MacrosNoState::{  })
+}
+
+///|
 /// The state of the MacroParams component.
 ///
 /// Declared as `interface macro-params` in the state block. Adding a
@@ -207,8 +225,8 @@ fn macro_slots_encode(s : MacroSlotsState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn macro_slots_decode(f : Map[String, @tutuca.Value]) -> MacroSlotsState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(MacroSlotsState::{ count: v_count })
 }
 
@@ -298,7 +316,7 @@ fn macro_named_slots_encode(
 fn macro_named_slots_decode(
   f : Map[String, @tutuca.Value],
 ) -> MacroNamedSlotsState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(MacroNamedSlotsState::{ count: v_count })
 }

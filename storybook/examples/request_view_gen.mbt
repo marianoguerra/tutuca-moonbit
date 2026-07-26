@@ -122,10 +122,12 @@ fn request_example_encode(
 fn request_example_decode(
   f : Map[String, @tutuca.Value],
 ) -> RequestExampleState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   guard f.get("view") is Some(Str(v_view)) else { return None }

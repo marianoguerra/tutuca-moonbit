@@ -32,8 +32,8 @@ pub fn minimum_viable_component_views() -> Map[String, @anode.View] {
 
 ///|
 /// The MinimumViableComponent component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -95,6 +95,8 @@ fn minimum_viable_component_component(
     specs~,
     provide~,
     lookup~,
+    encode=minimum_viable_component_encode,
+    decode=minimum_viable_component_decode,
     schema=minimum_viable_component_schema(),
   )
 }
@@ -118,8 +120,8 @@ pub fn static_view_component_views() -> Map[String, @anode.View] {
 
 ///|
 /// The StaticViewComponent component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -181,6 +183,8 @@ fn static_view_component_component(
     specs~,
     provide~,
     lookup~,
+    encode=static_view_component_encode,
+    decode=static_view_component_decode,
     schema=static_view_component_schema(),
   )
 }

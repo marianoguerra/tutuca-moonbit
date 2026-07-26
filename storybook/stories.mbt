@@ -25,7 +25,8 @@ fn section_for(name : String) -> String {
     | "event-modifiers"
     | "show-hide"
     | "traffic-light"
-    | "tabbed-ui" => "Basics"
+    | "tabbed-ui"
+    | "nested-state" => "Basics"
     "list-iteration"
     | "list-and-filter"
     | "list-filter-enrich"
@@ -81,6 +82,10 @@ fn meta_for(name : String) -> (String, String) {
       ("Minimum Viable Component", "Smallest possible component definition")
     "static-view-component" =>
       ("Static View Component", "Component with only a static view")
+    "nested-state" =>
+      (
+        "Nested State Types", "record, enum, variant, option and tuple in the state schema",
+      )
     "text-directive" =>
       ("Text Directive", "@text and <x text> render field and method values")
     "danger-set-inner-html" =>

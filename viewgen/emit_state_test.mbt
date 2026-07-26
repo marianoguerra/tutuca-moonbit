@@ -121,8 +121,10 @@ test "named types become MoonBit types, and a keyword field escapes" {
     "editor.html",
     @viewgen.split_file(html),
   )
-  assert_true(src.contains("priv enum EditorMode {"))
-  assert_true(src.contains("priv struct EditorItem {"))
+  // `pub(all)`, like the rest of the generated vocabulary: an `update` matches
+  // these and a test constructs them.
+  assert_true(src.contains("pub(all) enum EditorMode {"))
+  assert_true(src.contains("pub(all) struct EditorItem {"))
   assert_true(src.contains("  items : Array[EditorItem]"))
   assert_true(src.contains("m: EditorMode::View,"))
   // The runtime name stays `type` — it is what the view and the JSON use —

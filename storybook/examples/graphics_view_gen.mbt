@@ -96,10 +96,12 @@ fn swatch_picker_encode(s : SwatchPickerState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn swatch_picker_decode(f : Map[String, @tutuca.Value]) -> SwatchPickerState? {
   guard f.get("color") is Some(Str(v_color)) else { return None }
-  guard f.get("palette") is Some(List(l_palette)) else { return None }
+  guard f.get("palette") is Some(t1_palette) else { return None }
+  guard t1_palette is List(u1_palette) else { return None }
   let v_palette : Array[@tutuca.Value] = []
-  for x in l_palette {
-    v_palette.push(x)
+  for e1_palette in u1_palette {
+    let x1_palette = e1_palette
+    v_palette.push(x1_palette)
   }
   Some(SwatchPickerState::{ color: v_color, palette: v_palette })
 }
@@ -302,12 +304,12 @@ fn quadratic_encode(s : QuadraticState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn quadratic_decode(f : Map[String, @tutuca.Value]) -> QuadraticState? {
-  guard f.get("a") is Some(Num(n_a)) else { return None }
-  let v_a = n_a.to_int()
-  guard f.get("b") is Some(Num(n_b)) else { return None }
-  let v_b = n_b.to_int()
-  guard f.get("c") is Some(Num(n_c)) else { return None }
-  let v_c = n_c.to_int()
+  guard f.get("a") is Some(Num(t1_a)) else { return None }
+  let v_a = t1_a.to_int()
+  guard f.get("b") is Some(Num(t1_b)) else { return None }
+  let v_b = t1_b.to_int()
+  guard f.get("c") is Some(Num(t1_c)) else { return None }
+  let v_c = t1_c.to_int()
   Some(QuadraticState::{ a: v_a, b: v_b, c: v_c })
 }
 

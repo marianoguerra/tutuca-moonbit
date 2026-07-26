@@ -289,10 +289,12 @@ fn list_filter_enrich_encode(
 fn list_filter_enrich_decode(
   f : Map[String, @tutuca.Value],
 ) -> ListFilterEnrichState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListFilterEnrichState::{ items: v_items, query: v_query })
@@ -506,10 +508,12 @@ fn list_filter_enrich_with_encode(
 fn list_filter_enrich_with_decode(
   f : Map[String, @tutuca.Value],
 ) -> ListFilterEnrichWithState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListFilterEnrichWithState::{ items: v_items, query: v_query })

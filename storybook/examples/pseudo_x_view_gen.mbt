@@ -95,8 +95,8 @@ fn table_row_encode(s : TableRowState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn table_row_decode(f : Map[String, @tutuca.Value]) -> TableRowState? {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  guard f.get("qty") is Some(Num(n_qty)) else { return None }
-  let v_qty = n_qty.to_int()
+  guard f.get("qty") is Some(Num(t1_qty)) else { return None }
+  let v_qty = t1_qty.to_int()
   guard f.get("price") is Some(Num(v_price)) else { return None }
   Some(TableRowState::{ name: v_name, qty: v_qty, price: v_price })
 }
@@ -246,10 +246,12 @@ fn item_table_encode(s : ItemTableState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn item_table_decode(f : Map[String, @tutuca.Value]) -> ItemTableState? {
-  guard f.get("rows") is Some(List(l_rows)) else { return None }
+  guard f.get("rows") is Some(t1_rows) else { return None }
+  guard t1_rows is List(u1_rows) else { return None }
   let v_rows : Array[@tutuca.Value] = []
-  for x in l_rows {
-    v_rows.push(x)
+  for e1_rows in u1_rows {
+    let x1_rows = e1_rows
+    v_rows.push(x1_rows)
   }
   Some(ItemTableState::{ rows: v_rows })
 }
@@ -538,10 +540,12 @@ fn item_select_encode(s : ItemSelectState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn item_select_decode(f : Map[String, @tutuca.Value]) -> ItemSelectState? {
-  guard f.get("options") is Some(List(l_options)) else { return None }
+  guard f.get("options") is Some(t1_options) else { return None }
+  guard t1_options is List(u1_options) else { return None }
   let v_options : Array[@tutuca.Value] = []
-  for x in l_options {
-    v_options.push(x)
+  for e1_options in u1_options {
+    let x1_options = e1_options
+    v_options.push(x1_options)
   }
   guard f.get("current") is Some(Str(v_current)) else { return None }
   Some(ItemSelectState::{ options: v_options, current: v_current })
@@ -716,6 +720,24 @@ pub let pseudo_x_demo_field_names : Array[String] = ["table", "select"]
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let pseudo_x_demo_schema_fingerprint : String = "e785760a33d1bedc"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn pseudo_x_demo_encode(_s : PseudoXDemoState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn pseudo_x_demo_decode(_f : Map[String, @tutuca.Value]) -> PseudoXDemoState? {
+  Some(PseudoXDemoState::{  })
+}
 
 ///|
 /// The views declared in pseudo_x.html.

@@ -86,8 +86,8 @@ fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
   Some(CounterState::{ count: v_count })
 }
 

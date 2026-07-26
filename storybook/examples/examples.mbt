@@ -41,6 +41,7 @@ pub fn all_examples() -> Array[ExampleModule] {
       danger_set_inner_html_module(),
     ),
     ex("counter", "Counter", counter_module()),
+    ex("nested-state", "NestedState", nested_state_module()),
     ex("attribute-binding", "AttributeBinding", attribute_binding_module()),
     ex(
       "conditional-attributes",

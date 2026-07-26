@@ -519,8 +519,8 @@ pub fn toolbar_views() -> Map[String, @anode.View] {
 
 ///|
 /// The Toolbar component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -578,6 +578,8 @@ fn toolbar_component(
     specs~,
     provide~,
     lookup~,
+    encode=toolbar_encode,
+    decode=toolbar_decode,
     schema=toolbar_schema(),
   )
 }
@@ -615,8 +617,8 @@ pub fn panel_views() -> Map[String, @anode.View] {
 
 ///|
 /// The Panel component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -674,6 +676,8 @@ fn panel_component(
     specs~,
     provide~,
     lookup~,
+    encode=panel_encode,
+    decode=panel_decode,
     schema=panel_schema(),
   )
 }

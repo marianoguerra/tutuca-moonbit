@@ -203,6 +203,24 @@ pub let page_field_names : Array[String] = ["greeting"]
 pub let page_schema_fingerprint : String = "db02b6e5e92c5199"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn page_encode(_s : PageState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn page_decode(_f : Map[String, @tutuca.Value]) -> PageState? {
+  Some(PageState::{  })
+}
+
+///|
 /// The views declared in render_child.html.
 pub(all) enum PageView {
   Main
@@ -516,6 +534,26 @@ pub let multiple_views_field_names : Array[String] = ["value"]
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let multiple_views_schema_fingerprint : String = "74788bd77ca3a59f"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn multiple_views_encode(_s : MultipleViewsState) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn multiple_views_decode(
+  _f : Map[String, @tutuca.Value],
+) -> MultipleViewsState? {
+  Some(MultipleViewsState::{  })
+}
 
 ///|
 /// The views declared in render_child.html.

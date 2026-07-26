@@ -89,8 +89,8 @@ pub fn styles_example_views() -> Map[String, @anode.View] {
 
 ///|
 /// The StylesExample component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -152,6 +152,8 @@ fn styles_example_component(
     specs~,
     provide~,
     lookup~,
+    encode=styles_example_encode,
+    decode=styles_example_decode,
     schema=styles_example_schema(),
   )
 }
@@ -181,8 +183,8 @@ pub fn styles_example_root_views() -> Map[String, @anode.View] {
 
 ///|
 /// The StylesExampleRoot component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -244,6 +246,8 @@ fn styles_example_root_component(
     specs~,
     provide~,
     lookup~,
+    encode=styles_example_root_encode,
+    decode=styles_example_root_decode,
     schema=styles_example_root_schema(),
   )
 }

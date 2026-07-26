@@ -98,10 +98,12 @@ fn push_view_encode(s : PushViewState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn push_view_decode(f : Map[String, @tutuca.Value]) -> PushViewState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   guard f.get("view") is Some(Str(v_view)) else { return None }
@@ -396,19 +398,23 @@ fn seq_item_access_encode(s : SeqItemAccessState) -> Map[String, @tutuca.Value] 
 fn seq_item_access_decode(
   f : Map[String, @tutuca.Value],
 ) -> SeqItemAccessState? {
-  guard f.get("byKey") is Some(Map(m_byKey)) else { return None }
+  guard f.get("byKey") is Some(t1_byKey) else { return None }
+  guard t1_byKey is Map(u1_byKey) else { return None }
   let v_byKey : Map[String, @tutuca.Value] = Map([])
-  for k, x in m_byKey {
-    v_byKey[k] = x
+  for k, e1_byKey in u1_byKey {
+    let x1_byKey = e1_byKey
+    v_byKey[k] = x1_byKey
   }
-  guard f.get("byIndex") is Some(List(l_byIndex)) else { return None }
+  guard f.get("byIndex") is Some(t1_byIndex) else { return None }
+  guard t1_byIndex is List(u1_byIndex) else { return None }
   let v_byIndex : Array[@tutuca.Value] = []
-  for x in l_byIndex {
-    v_byIndex.push(x)
+  for e1_byIndex in u1_byIndex {
+    let x1_byIndex = e1_byIndex
+    v_byIndex.push(x1_byIndex)
   }
   let v_currentKey = f.get("currentKey").unwrap_or(Null)
-  guard f.get("currentIndex") is Some(Num(n_currentIndex)) else { return None }
-  let v_currentIndex = n_currentIndex.to_int()
+  guard f.get("currentIndex") is Some(Num(t1_currentIndex)) else { return None }
+  let v_currentIndex = t1_currentIndex.to_int()
   Some(SeqItemAccessState::{
     byKey: v_byKey,
     byIndex: v_byIndex,
@@ -687,15 +693,17 @@ fn pagination_encode(s : PaginationState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn pagination_decode(f : Map[String, @tutuca.Value]) -> PaginationState? {
-  guard f.get("items") is Some(List(l_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
-  for x in l_items {
-    v_items.push(x)
+  for e1_items in u1_items {
+    let x1_items = e1_items
+    v_items.push(x1_items)
   }
-  guard f.get("page") is Some(Num(n_page)) else { return None }
-  let v_page = n_page.to_int()
-  guard f.get("pageSize") is Some(Num(n_pageSize)) else { return None }
-  let v_pageSize = n_pageSize.to_int()
+  guard f.get("page") is Some(Num(t1_page)) else { return None }
+  let v_page = t1_page.to_int()
+  guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
+  let v_pageSize = t1_pageSize.to_int()
   Some(PaginationState::{ items: v_items, page: v_page, pageSize: v_pageSize })
 }
 

@@ -89,10 +89,12 @@ fn bar_chart_encode(s : BarChartState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn bar_chart_decode(f : Map[String, @tutuca.Value]) -> BarChartState? {
-  guard f.get("values") is Some(List(l_values)) else { return None }
+  guard f.get("values") is Some(t1_values) else { return None }
+  guard t1_values is List(u1_values) else { return None }
   let v_values : Array[@tutuca.Value] = []
-  for x in l_values {
-    v_values.push(x)
+  for e1_values in u1_values {
+    let x1_values = e1_values
+    v_values.push(x1_values)
   }
   Some(BarChartState::{ values: v_values })
 }
@@ -176,7 +178,7 @@ fn icon_gallery_encode(s : IconGalleryState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn icon_gallery_decode(f : Map[String, @tutuca.Value]) -> IconGalleryState? {
-  guard f.get("size") is Some(Num(n_size)) else { return None }
-  let v_size = n_size.to_int()
+  guard f.get("size") is Some(Num(t1_size)) else { return None }
+  let v_size = t1_size.to_int()
   Some(IconGalleryState::{ size: v_size })
 }

@@ -134,8 +134,8 @@ pub fn page_views() -> Map[String, @anode.View] {
 
 ///|
 /// The Page component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -192,6 +192,8 @@ fn page_component(
     specs~,
     provide~,
     lookup~,
+    encode=page_encode,
+    decode=page_decode,
     schema=page_schema(),
   )
 }
@@ -357,8 +359,8 @@ pub fn multiple_views_views() -> Map[String, @anode.View] {
 
 ///|
 /// The MultipleViews component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -420,6 +422,8 @@ fn multiple_views_component(
     specs~,
     provide~,
     lookup~,
+    encode=multiple_views_encode,
+    decode=multiple_views_decode,
     schema=multiple_views_schema(),
   )
 }

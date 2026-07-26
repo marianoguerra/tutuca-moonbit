@@ -138,16 +138,15 @@ fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  guard f.get("count") is Some(Num(n_count)) else { return None }
-  let v_count = n_count.to_int()
-  guard f.get("history") is Some(List(l_history)) else { return None }
+  guard f.get("count") is Some(Num(t1_count)) else { return None }
+  let v_count = t1_count.to_int()
+  guard f.get("history") is Some(t1_history) else { return None }
+  guard t1_history is List(u1_history) else { return None }
   let v_history : Array[Int] = []
-  for x in l_history {
-    if x is Num(n) {
-      v_history.push(n.to_int())
-    } else {
-      return None
-    }
+  for e1_history in u1_history {
+    guard e1_history is Num(u2_history) else { return None }
+    let x1_history = u2_history.to_int()
+    v_history.push(x1_history)
   }
   Some(CounterState::{ label: v_label, count: v_count, history: v_history })
 }

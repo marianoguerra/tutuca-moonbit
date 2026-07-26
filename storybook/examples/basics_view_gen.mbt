@@ -46,6 +46,28 @@ pub fn minimum_viable_component_zero_args() -> Map[String, @tutuca.Value] {
 pub let minimum_viable_component_schema_fingerprint : String = "0f2138963e0265a7"
 
 ///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn minimum_viable_component_encode(
+  _s : MinimumViableComponentState,
+) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn minimum_viable_component_decode(
+  _f : Map[String, @tutuca.Value],
+) -> MinimumViableComponentState? {
+  Some(MinimumViableComponentState::{  })
+}
+
+///|
 /// The views declared in basics.html.
 pub(all) enum MinimumViableComponentView {
   Main
@@ -123,6 +145,28 @@ pub fn static_view_component_zero_args() -> Map[String, @tutuca.Value] {
 /// the SHAPE changes — a renamed or retyped field, a new message case —
 /// and not when the block is merely reformatted.
 pub let static_view_component_schema_fingerprint : String = "a2006cc55bf0a041"
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through: it is exactly what `with_value_stash` exists to rescue from
+/// the JSON path, and this way it never enters one.
+fn static_view_component_encode(
+  _s : StaticViewComponentState,
+) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+fn static_view_component_decode(
+  _f : Map[String, @tutuca.Value],
+) -> StaticViewComponentState? {
+  Some(StaticViewComponentState::{  })
+}
 
 ///|
 /// The views declared in basics.html.
@@ -266,8 +310,8 @@ fn text_directive_encode(s : TextDirectiveState) -> Map[String, @tutuca.Value] {
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn text_directive_decode(f : Map[String, @tutuca.Value]) -> TextDirectiveState? {
   guard f.get("str") is Some(Str(v_str)) else { return None }
-  guard f.get("num") is Some(Num(n_num)) else { return None }
-  let v_num = n_num.to_int()
+  guard f.get("num") is Some(Num(t1_num)) else { return None }
+  let v_num = t1_num.to_int()
   guard f.get("bool") is Some(Bool(v_bool)) else { return None }
   let v_notSet = f.get("notSet").unwrap_or(Null)
   Some(TextDirectiveState::{

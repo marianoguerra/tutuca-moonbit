@@ -35,6 +35,8 @@ fn static_macro_comp() -> @component.Component {
     },
     name="StaticMacro",
     init=MacrosNoState::{  },
+    encode=macros_no_encode,
+    decode=macros_no_decode,
   )
 }
 

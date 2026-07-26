@@ -104,10 +104,12 @@ fn dse_root_encode(s : DseRootState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn dse_root_decode(f : Map[String, @tutuca.Value]) -> DseRootState? {
-  guard f.get("items") is Some(Map(m_items)) else { return None }
+  guard f.get("items") is Some(t1_items) else { return None }
+  guard t1_items is Map(u1_items) else { return None }
   let v_items : Map[String, @tutuca.Value] = Map([])
-  for k, x in m_items {
-    v_items[k] = x
+  for k, e1_items in u1_items {
+    let x1_items = e1_items
+    v_items[k] = x1_items
   }
   guard f.get("selectedKey") is Some(Str(v_selectedKey)) else { return None }
   Some(DseRootState::{ items: v_items, selectedKey: v_selectedKey })

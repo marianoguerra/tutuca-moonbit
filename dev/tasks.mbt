@@ -278,6 +278,7 @@ fn gen_views_commands() -> Array[Command] {
     ("storybook/examples/lint_errors.html", None),
     ("storybook/examples/list_iteration.html", Some("ListIteration")),
     ("storybook/examples/macros.html", None),
+    ("storybook/examples/nested_state.html", Some("NestedState")),
     ("storybook/examples/personal_site.html", None),
     ("storybook/examples/pseudo_x.html", None),
     ("storybook/examples/render_child.html", None),

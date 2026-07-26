@@ -63,9 +63,12 @@ test "a schema-backed component gets a wrapper over component()" {
 }
 
 ///|
-/// A record field has its own derived ToJson, so the generator emits no
-/// direct codec for it (emit_codec.mbt) — and the wrapper must not name one.
-test "no direct codec, no encode/decode in the wrapper" {
+/// A record field used to be the case that got NO direct codec, on the
+/// grounds that it had its own derived ToJson. That left the JSON bridge as
+/// the runtime's answer for it — and a fallback something still needs is a
+/// fallback that cannot be deleted. Nested types now get a codec like every
+/// other shape, and the wrapper names it.
+test "a nested record still gets a direct codec, named by the wrapper" {
   let f = @viewgen.split_file(
     (
       #|<script type="tutuca/state">
@@ -80,12 +83,11 @@ test "no direct codec, no encode/decode in the wrapper" {
   )
   let ir = @viewgen.emit_ir_module("Card", "card.html", f)
   assert_true(ir.contains("\nfn card_component(\n"))
-  assert_false(ir.contains("card_encode"))
-  assert_false(ir.contains("card_decode"))
-  // The schema still reaches component(): it is what declares the kinds.
+  assert_true(ir.contains("    encode=card_encode,"))
+  assert_true(ir.contains("    decode=card_decode,"))
+  // The schema reaches component() too: it is what declares the kinds.
   assert_true(ir.contains("    schema=card_schema(),"))
-  // …and the doc says so, rather than promising a codec that is not there.
-  assert_true(ir.contains("its styles and its\n/// schema."))
+  assert_true(ir.contains("its schema\n/// and its direct codec."))
 }
 
 ///|

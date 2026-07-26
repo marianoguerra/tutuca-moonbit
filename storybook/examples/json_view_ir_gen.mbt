@@ -105,8 +105,8 @@ pub fn json_selector_views() -> Map[String, @anode.View] {
 
 ///|
 /// The JsonSelector component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -166,6 +166,8 @@ fn json_selector_component(
     specs~,
     provide~,
     lookup~,
+    encode=json_selector_encode,
+    decode=json_selector_decode,
     schema=json_selector_schema(),
   )
 }
@@ -193,8 +195,8 @@ pub fn json_null_views() -> Map[String, @anode.View] {
 
 ///|
 /// The JsonNull component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles and its
-/// schema. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views, its styles, its schema
+/// and its direct codec. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -252,6 +254,8 @@ fn json_null_component(
     specs~,
     provide~,
     lookup~,
+    encode=json_null_encode,
+    decode=json_null_decode,
     schema=json_null_schema(),
   )
 }

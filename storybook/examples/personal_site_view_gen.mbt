@@ -301,15 +301,19 @@ fn ps_entry_decode(f : Map[String, @tutuca.Value]) -> PsEntryState? {
   let v_role = f.get("role").unwrap_or(Null)
   guard f.get("featured") is Some(Bool(v_featured)) else { return None }
   guard f.get("url") is Some(Str(v_url)) else { return None }
-  guard f.get("altUrls") is Some(List(l_altUrls)) else { return None }
+  guard f.get("altUrls") is Some(t1_altUrls) else { return None }
+  guard t1_altUrls is List(u1_altUrls) else { return None }
   let v_altUrls : Array[@tutuca.Value] = []
-  for x in l_altUrls {
-    v_altUrls.push(x)
+  for e1_altUrls in u1_altUrls {
+    let x1_altUrls = e1_altUrls
+    v_altUrls.push(x1_altUrls)
   }
-  guard f.get("categories") is Some(List(l_categories)) else { return None }
+  guard f.get("categories") is Some(t1_categories) else { return None }
+  guard t1_categories is List(u1_categories) else { return None }
   let v_categories : Array[@tutuca.Value] = []
-  for x in l_categories {
-    v_categories.push(x)
+  for e1_categories in u1_categories {
+    let x1_categories = e1_categories
+    v_categories.push(x1_categories)
   }
   Some(PsEntryState::{
     title: v_title,
@@ -641,43 +645,39 @@ fn root_encode(s : RootState) -> Map[String, @tutuca.Value] {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 fn root_decode(f : Map[String, @tutuca.Value]) -> RootState? {
-  guard f.get("allEntries") is Some(List(l_allEntries)) else { return None }
+  guard f.get("allEntries") is Some(t1_allEntries) else { return None }
+  guard t1_allEntries is List(u1_allEntries) else { return None }
   let v_allEntries : Array[@tutuca.Value] = []
-  for x in l_allEntries {
-    v_allEntries.push(x)
+  for e1_allEntries in u1_allEntries {
+    let x1_allEntries = e1_allEntries
+    v_allEntries.push(x1_allEntries)
   }
-  guard f.get("allCategories") is Some(List(l_allCategories)) else {
-    return None
-  }
+  guard f.get("allCategories") is Some(t1_allCategories) else { return None }
+  guard t1_allCategories is List(u1_allCategories) else { return None }
   let v_allCategories : Array[String] = []
-  for x in l_allCategories {
-    if x is Str(s) {
-      v_allCategories.push(s)
-    } else {
-      return None
-    }
+  for e1_allCategories in u1_allCategories {
+    guard e1_allCategories is Str(x1_allCategories) else { return None }
+    v_allCategories.push(x1_allCategories)
   }
-  guard f.get("allRoles") is Some(List(l_allRoles)) else { return None }
+  guard f.get("allRoles") is Some(t1_allRoles) else { return None }
+  guard t1_allRoles is List(u1_allRoles) else { return None }
   let v_allRoles : Array[String] = []
-  for x in l_allRoles {
-    if x is Str(s) {
-      v_allRoles.push(s)
-    } else {
-      return None
-    }
+  for e1_allRoles in u1_allRoles {
+    guard e1_allRoles is Str(x1_allRoles) else { return None }
+    v_allRoles.push(x1_allRoles)
   }
-  guard f.get("selectedCategories") is Some(Map(m_selectedCategories)) else {
+  guard f.get("selectedCategories") is Some(t1_selectedCategories) else {
     return None
   }
+  guard t1_selectedCategories is Map(u1_selectedCategories) else { return None }
   let v_selectedCategories : Map[String, Bool] = Map([])
-  for k, x in m_selectedCategories {
+  for k, x in u1_selectedCategories {
     v_selectedCategories[k] = x is Bool(true)
   }
-  guard f.get("selectedRoles") is Some(Map(m_selectedRoles)) else {
-    return None
-  }
+  guard f.get("selectedRoles") is Some(t1_selectedRoles) else { return None }
+  guard t1_selectedRoles is Map(u1_selectedRoles) else { return None }
   let v_selectedRoles : Map[String, Bool] = Map([])
-  for k, x in m_selectedRoles {
+  for k, x in u1_selectedRoles {
     v_selectedRoles[k] = x is Bool(true)
   }
   guard f.get("featuredFirst") is Some(Bool(v_featuredFirst)) else {
