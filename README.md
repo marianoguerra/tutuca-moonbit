@@ -20,23 +20,19 @@ backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
 </script>
 
 <template id="Counter">
-  <button @on.click="$inc" @text=".count"></button>
+  <button @on.click="inc" @text=".count"></button>
 </template>
 ```
 
 ```moonbit
-// CounterState came from the schema above; `.count` was checked against it.
-@component.component(
-  views=counter_views(),
-  name="Counter",
-  init=CounterState::{ count: 0 },
-  update=(s : CounterState, msg, _ctx) => {
-    match CounterMsg::from_dispatch(msg) {
-      Some(Dec) => Some({ count: s.count - 1 })
-      _ => None
-    }
-  },
-)
+// `tutuca gen-views` made CounterState, CounterMsg and counter_component out
+// of the schema and the view above, and checked `.count` against them. The
+// name, the views, the styles, the codec and the schema are not arguments —
+// the view file states them, and the wrapper passes them.
+counter_component(update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+  Some(Inc) => Some({ count: s.count + 1 })
+  Some(Unknown(_, _)) | None => None
+})
 ```
 
 ## Start here

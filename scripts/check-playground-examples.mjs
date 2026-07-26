@@ -69,20 +69,53 @@ if (!examples.length) {
   process.exit(1);
 }
 
+// One unit to check: the MoonBit source, and the view file it reads (null for
+// a runtime-view example). Examples come from disk; the landing page's hero
+// snippet is carved out of index.html — it is the first code anyone sees and
+// nothing else compiles it, so it drifted twice before this check existed.
+const units = examples.map((name) => ({
+  name,
+  mbt: readFileSync(join(EXAMPLES, name), "utf8"),
+  html: existsSync(join(EXAMPLES, name.replace(/\.mbt$/, ".html")))
+    ? readFileSync(join(EXAMPLES, name.replace(/\.mbt$/, ".html")), "utf8")
+    : null,
+}));
+units.push(heroTeaser());
+
+// The `<pre class="hero-teaser">` block on the landing page holds BOTH halves
+// of a component — the view file, then the MoonBit that uses it, separated by
+// the `// counter.mbt` line. Split them and check the pair like any example.
+function heroTeaser() {
+  const page = readFileSync(join(REPO, "playground/site/index.html"), "utf8");
+  const block = /<pre class="hero-teaser"><code>([\s\S]*?)<\/code><\/pre>/.exec(page);
+  if (!block) throw new Error("no hero-teaser block in playground/site/index.html");
+  const src = block[1]
+    .replace(/&lt;/g, "<").replace(/&gt;/g, ">")
+    .replace(/&quot;/g, '"').replace(/&#39;/g, "'")
+    .replace(/&amp;/g, "&");
+  const split = src.indexOf("// counter.mbt");
+  if (split < 0) throw new Error("hero-teaser has no `// counter.mbt` divider");
+  return {
+    name: "index.html (hero snippet)",
+    // A fragment, not a whole example: it shows one `let`, so give it
+    // somewhere to live rather than rewriting the snippet to suit the check.
+    mbt: `fn hero_teaser() -> @component.Component {\n${src.slice(split)}\n  counter\n}\n`,
+    html: src.slice(0, split),
+  };
+}
+
 const failures = [];
 try {
   mkdirSync(SCAFFOLD, { recursive: true });
   writeFileSync(join(SCAFFOLD, "moon.pkg"), MOON_PKG);
-  for (const name of examples) {
-    copyFileSync(join(EXAMPLES, name), join(SCAFFOLD, "example.mbt"));
+  for (const { name, mbt, html } of units) {
+    writeFileSync(join(SCAFFOLD, "example.mbt"), mbt);
 
-    // The sibling .html, generated as the browser generates it (no
+    // The view half, generated as the browser generates it (no
     // moonbitlang/core/debug in the playground package, so no debug derive).
-    const viewFile = join(EXAMPLES, name.replace(/\.mbt$/, ".html"));
     let views = "";
     let ir = "";
-    if (existsSync(viewFile)) {
-      const html = readFileSync(viewFile, "utf8");
+    if (html !== null) {
       const r = JSON.parse(
         globalThis.__tutucaViewgen(html, (NAME_RE.exec(html) || [, "View"])[1]),
       );
@@ -115,5 +148,5 @@ try {
 for (const [name, out] of failures) {
   console.error(`\n=== ${name} ===\n${out}`);
 }
-console.log(`\n${examples.length - failures.length}/${examples.length} playground examples compile`);
+console.log(`\n${units.length - failures.length}/${units.length} playground examples compile`);
 process.exit(failures.length ? 1 : 0);
