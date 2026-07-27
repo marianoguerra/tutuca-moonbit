@@ -97,6 +97,11 @@ declare pub fn FieldInfo::kind(self : FieldInfo) -> FieldKind
 declare pub fn FieldInfo::default(self : FieldInfo) -> Value
 
 ///|
+/// The name of a field's generated mutator: `mutator_name("set", "count")` is
+/// `"setCount"`. One home for a convention two unrelated places must agree on.
+declare pub fn mutator_name(verb : String, field : String) -> String
+
+///|
 /// A component's declared schema, with the channels it does not use defaulted
 /// to empty.
 ///

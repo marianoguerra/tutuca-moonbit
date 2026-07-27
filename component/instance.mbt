@@ -444,3 +444,45 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
     None => None
   }
 }
+
+///|
+/// The single collection field a state stands for, when it has exactly one.
+///
+/// This is the rule the guest emitter already used, and it is deliberately
+/// narrow: the state's ONLY field, and a collection. Iterating an instance
+/// means iterating the one sequence it IS, and a state with a second field is
+/// not that sequence — it is a record that happens to hold one. Widening this
+/// to "the only collection among several fields" makes `{title, items}` iterate
+/// as `items` and hide `title`, which is exactly what an inspector opening the
+/// instance must not see.
+fn[S] TypedInstance::seq_field(self : TypedInstance[S]) -> String? {
+  guard self.spec.comp is Some(c) else { return None }
+  guard c.schema.fields is [f] else { return None }
+  guard f.kind() is (FList | FOMap | FSet | FMap) else { return None }
+  Some(f.name)
+}
+
+///|
+/// Ordered entries, so `@each` can iterate an instance as the sequence it
+/// stands for.
+///
+/// A typed instance used to implement neither this nor `obj_item`, which made
+/// it the LEAST capable of the three `Obj` implementations — `DynObj` forwards
+/// both to its guest, and the guest emitter derived them from the schema. The
+/// host's own instances can be asked the same question off the same schema.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_seq_entries(self) {
+  guard self.seq_field() is Some(name) else { return None }
+  Some(self.get(name).entries())
+}
+
+///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_item(self, key) {
+  guard self.seq_field() is Some(name) else { return None }
+  self.get(name).item_opt(key)
+}
+
+///|
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_item(self, key, v) {
+  guard self.seq_field() is Some(name) else { return None }
+  Some(self.set(name, self.get(name).with_item(key, v)).to_value())
+}

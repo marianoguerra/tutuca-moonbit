@@ -63,3 +63,19 @@ pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo? {
 pub fn SchemaInfo::field_names(self : SchemaInfo) -> Array[String] {
   self.fields.map(f => f.name)
 }
+
+///|
+/// The name of a field's generated mutator: `count` + `set` -> `setCount`.
+///
+/// The convention lives HERE, in one function, because two places have to agree
+/// on it and neither can see the other. `component()` builds the mutators by
+/// concatenating it, and the state editor — which holds a bare `Value` and calls
+/// them by name through `Obj::obj_field` — reconstructed the same string from
+/// its own copy. Two spellings of one convention, either of which could have
+/// been changed alone.
+pub fn mutator_name(verb : String, field : String) -> String {
+  if field.is_empty() {
+    return verb
+  }
+  verb + field[0:1].to_owned().to_upper() + field[1:].to_owned()
+}

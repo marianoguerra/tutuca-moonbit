@@ -21,13 +21,11 @@ fn[V] map_keys(m : Map[String, V]) -> Array[String] {
 }
 
 ///|
-fn cap_first(s : String) -> String {
-  if s.length() == 0 {
-    return s
-  }
-  let head = s[0:1]
-  let tail = s[1:]
-  head.to_owned().to_upper() + tail.to_owned()
+/// The mutator-name convention, from the one place that states it. The state
+/// editor calls these by name through `Obj::obj_field`, so the two sides have
+/// to agree and neither can see the other.
+fn mut_name(verb : String, field : String) -> String {
+  @tutuca.mutator_name(verb, field)
 }
 
 ///|
@@ -418,13 +416,14 @@ fn[S] gen_mutators(
   into : Map[String, (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value],
 ) -> Unit {
   for name, spec in fields {
-    let u = cap_first(name)
-    into["set" + u] = (inst, args) => {
+    into[mut_name("set", name)] = (inst, args) => {
       inst.set(name, args.get(0).unwrap_or(Null)).to_value()
     }
-    into["reset" + u] = (inst, _args) => inst.set(name, spec.default).to_value()
+    into[mut_name("reset", name)] = (inst, _args) => {
+      inst.set(name, spec.default).to_value()
+    }
     // the update fn is a plain lambda: it receives ONLY the current value
-    into["update" + u] = (inst, args) => {
+    into[mut_name("update", name)] = (inst, args) => {
       match args {
         [Fn(f), ..] => inst.set(name, f([inst.get(name)])).to_value()
         _ => inst.to_value()
@@ -438,7 +437,7 @@ fn[S] gen_mutators(
     }
     match spec.kind {
       FBool =>
-        into["toggle" + u] = (inst, _args) => {
+        into[mut_name("toggle", name)] = (inst, _args) => {
           match inst.get(name) {
             Bool(b) => inst.set(name, Bool(!b)).to_value()
             _ => inst.to_value()
@@ -447,7 +446,7 @@ fn[S] gen_mutators(
       // Set fields (JS FieldSet.extendProtoForType): membership mutators over
       // the Map-backed set (key = member display string, value Bool(true)).
       FSet => {
-        into["addIn" + u] = (inst, args) => {
+        into[mut_name("addIn", name)] = (inst, args) => {
           match (inst.get(name), args) {
             (Map(m), [v, ..]) => {
               let out = m.copy()
@@ -472,15 +471,15 @@ fn[S] gen_mutators(
             _ => inst.to_value()
           }
         }
-        into["deleteIn" + u] = delete_member
-        into["removeIn" + u] = delete_member
-        into["hasIn" + u] = (inst, args) => {
+        into[mut_name("deleteIn", name)] = delete_member
+        into[mut_name("removeIn", name)] = delete_member
+        into[mut_name("hasIn", name)] = (inst, args) => {
           match (inst.get(name), args) {
             (Map(m), [v, ..]) => Bool(m.contains(v.to_display_string()))
             _ => Bool(false)
           }
         }
-        into["toggleIn" + u] = (inst, args) => {
+        into[mut_name("toggleIn", name)] = (inst, args) => {
           match (inst.get(name), args) {
             (Map(m), [v, ..]) => {
               let key = v.to_display_string()
@@ -497,7 +496,7 @@ fn[S] gen_mutators(
         }
       }
       FList | FMap | FOMap => {
-        into["pushIn" + u] = (inst, args) => {
+        into[mut_name("pushIn", name)] = (inst, args) => {
           match (inst.get(name), args) {
             (List(a), [v, ..]) => {
               let out = a.copy()
@@ -509,7 +508,7 @@ fn[S] gen_mutators(
         }
         // JS FieldList.insertIn<X>At(i, v): insert v BEFORE index i (oo.js:221).
         // List-only in JS; harmless on the (currently absent) map case.
-        into["insertIn" + u + "At"] = (inst, args) => {
+        into[mut_name("insertIn", name) + "At"] = (inst, args) => {
           match (inst.get(name), args) {
             (List(a), [Num(i), v, ..]) => {
               let out = a.copy()
@@ -524,8 +523,10 @@ fn[S] gen_mutators(
             _ => inst.to_value()
           }
         }
-        into["setIn" + u + "At"] = (inst, args) => seq_set(inst, name, args)
-        into["updateIn" + u + "At"] = (inst, args) => {
+        into[mut_name("setIn", name) + "At"] = (inst, args) => {
+          seq_set(inst, name, args)
+        }
+        into[mut_name("updateIn", name) + "At"] = (inst, args) => {
           seq_update(inst, name, args)
         }
         // JS names these deleteIn<X>At / removeIn<X>At for KEYED fields:
@@ -533,10 +534,10 @@ fn[S] gen_mutators(
         // (src/oo.js:201). The bare deleteIn<X> / removeIn<X> spelling is the
         // SET-field variant, generated in the FSet arm above. Views like
         // `$removeInItemsAt @key` (docs/examples/todo.js, json.js) depend on it.
-        into["deleteIn" + u + "At"] = (inst, args) => {
+        into[mut_name("deleteIn", name) + "At"] = (inst, args) => {
           seq_delete(inst, name, args)
         }
-        into["removeIn" + u + "At"] = (inst, args) => {
+        into[mut_name("removeIn", name) + "At"] = (inst, args) => {
           seq_delete(inst, name, args)
         }
       }

@@ -685,3 +685,25 @@ test "state editor: the form wraps the target it edits" {
   assert_true(oget(ed, "target") is Obj(_))
   assert_eq(olist(ed, "rows").length(), 4)
 }
+
+///|
+/// The state editor reaches a generated mutator BY NAME through `Obj::obj_field`
+/// — it holds a bare `Value`, so it has no other way in. That means two places
+/// have to agree on how a field name becomes a mutator name, and neither can
+/// see the other: `component()` builds `setTitle`, the editor asks for it.
+///
+/// They agree because there is one function, not two spellings of a convention.
+test "the editor's setter name is the one the component generated" {
+  let card = sample_comp().make({ "title": Str("Hello") })
+  guard card is Obj(o)
+  // The name the convention produces...
+  let setter = @tutuca.mutator_name("set", "title")
+  assert_eq(setter, "setTitle")
+  // ...is a mutator the instance actually answers to.
+  guard o.obj_field(setter) is Some(Fn(set))
+  guard set([Null, Str("Bye")]) is Obj(o2)
+  assert_eq(o2.obj_field("title"), Some(Str("Bye")))
+  // An empty field name has no mutator to build, and must not produce a bare
+  // verb that collides with something else.
+  assert_eq(@tutuca.mutator_name("set", ""), "set")
+}

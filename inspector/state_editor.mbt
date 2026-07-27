@@ -35,10 +35,7 @@ fn control_for(kind : @component.FieldKind) -> String {
 /// calling it needs no downcast and no registry — just the field name the
 /// schema already gave us.
 fn setter_name(field : String) -> String {
-  if field.is_empty() {
-    return field
-  }
-  "set" + field[0:1].to_owned().to_upper() + field[1:].to_owned()
+  @tutuca.mutator_name("set", field)
 }
 
 ///|
