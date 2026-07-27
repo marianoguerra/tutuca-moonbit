@@ -179,7 +179,6 @@ async fn run_gen_views(
   name : String,
   dry_run : Bool,
   ir : Bool,
-  wit : Bool,
 ) -> Unit noraise {
   let source = @fs.read_file(input).text() catch {
     e => {
@@ -196,7 +195,7 @@ async fn run_gen_views(
       return
     }
   }
-  let plan = match @cli.gen_views(source, name~, input~, target~, ir~, wit~) {
+  let plan = match @cli.gen_views(source, name~, input~, target~, ir~) {
     Ok(plan) => plan
     Err(shape) => {
       emit_and_exit(@cli.error_emit(opts, shape))
@@ -684,8 +683,8 @@ async fn main {
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)
-    GenViews(opts, input~, target~, name~, dry_run~, ir~, wit~) =>
-      run_gen_views(opts, input, target, name, dry_run, ir, wit)
+    GenViews(opts, input~, target~, name~, dry_run~, ir~) =>
+      run_gen_views(opts, input, target, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
   }

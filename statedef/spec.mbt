@@ -86,8 +86,8 @@ pub(all) struct MethodDef {
   /// The runtime name a `$name` call and a `Value::field` read both use.
   name : String
   params : Array[StateTy]
-  /// None for a `func` with no result — the value world has no Unit, so this
-  /// is what tells `to_wit` to write the arrow back the way it found it.
+  /// None for a `func` with no result — the value world has no Unit, so a
+  /// method that only acts is distinguishable from one that answers.
   result : StateTy?
   doc : String?
 } derive(Eq, @debug.Debug)
@@ -251,12 +251,6 @@ declare pub fn StateDef::moonbit_ty(self : StateDef, ty : StateTy) -> String
 declare pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String
 
 ///|
-/// The schema back out as a self-contained WIT document, with every marker
-/// LOWERED to its structural form — external tooling cannot know tutuca's
-/// readings of `any`, `text-set` or a component slot.
-declare pub fn to_wit(defs : Array[StateDef], pkg? : String) -> String
-
-///|
 /// Parse and validate a `<script type="tutuca/init">` block against a
 /// component's schema. WIT declares no defaults, so named initial states get
 /// a block of their own rather than a comment convention in the schema.
@@ -268,18 +262,6 @@ declare pub fn parse_init(
 ///|
 /// The one-line message the CLI reports for a bad init block.
 declare pub fn InitError::message(self : InitError) -> String
-
-///|
-/// A dyncomp guest's state struct and its four shape-derived accessors:
-/// `get_field`, `with_field`, `to_json` and `seq_entries`.
-///
-/// Not `handle` or `call_method` — those are behaviour, which is what a
-/// guest is for. The schema owns the shape; the author owns the conduct.
-declare pub fn to_guest(
-  def : StateDef,
-  trait_name? : String,
-  values? : String,
-) -> String
 
 ///|
 /// A stable structural fingerprint of the schema: over shape, not over

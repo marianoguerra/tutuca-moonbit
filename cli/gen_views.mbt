@@ -107,9 +107,15 @@ let gen_views_help : String =
   #|    CounterInput / CounterMsg            @on handler names, with the argument
   #|                                         shapes inferred from the call sites,
   #|                                         plus CounterMsg::from_dispatch
-  #|    CounterMethod + counter_mutate/…     $-callable names as exhaustive matches
-  #|    CounterView / CounterId              view names and element ids
-  #|    counter_fields / …_missing_fields    the state fields the views read
+  #|    CounterMethod                        $-callable names, answered as an
+  #|                                         exhaustive match
+  #|
+  #|  With a <script type="tutuca/state"> block it also declares CounterState,
+  #|  its zero, its codec, and one SchemaInfo carrying the whole declaration:
+  #|  the fields with their declared kinds, the handler channels, the view
+  #|  names, the element ids and the fixture names. That descriptor is what an
+  #|  instance answers obj_schema() with, so an inspector holding a bare Value
+  #|  can read it with no component registry.
   #|
   #|  --name  the component name, for a file whose templates do not name one
   #|          (default: the file's basename, capitalized). A file that names
@@ -174,7 +180,6 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
   let mut out : String? = None
   let mut dry_run = false
   let mut ir = true
-  let mut wit = false
   let mut i = 0
   while i < args.length() {
     let a = args[i]
@@ -193,7 +198,6 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
         return Done({ out: gen_views_help, err: "", exit_code: 0 })
       "--dry-run" => dry_run = true
       "--no-ir" => ir = false
-      "--wit" => wit = true
       _ =>
         if a.has_prefix("--name") {
           match value_of("--name") {
@@ -260,7 +264,7 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
       }
     None => join_path(dir, "\{stem}_view_gen.mbt")
   }
-  GenViews(opts, input=path, target~, name=comp_name, dry_run~, ir~, wit~)
+  GenViews(opts, input=path, target~, name=comp_name, dry_run~, ir~)
 }
 
 ///|
@@ -284,7 +288,6 @@ pub fn gen_views(
   input~ : String,
   target~ : String,
   ir~ : Bool,
-  wit? : Bool = false,
 ) -> Result[GenPlan, ErrShape] {
   let files : Array[(String, String)] = []
   let diagnostics : Array[String] = []
@@ -301,17 +304,6 @@ pub fn gen_views(
     if ir && @viewgen.emit_ir_module_opt(name, file, views) is Some(src) {
       files.push((ir_target(target), src))
     }
-    // The schema back out as a self-contained WIT document, for a polyglot
-    // guest or any tool that speaks WIT. Markers are lowered on the way out:
-    // nothing outside tutuca knows what `text-set` means.
-    if wit && !views.state.is_empty() {
-      files.push(
-        (
-          wit_target(target),
-          @statedef.to_wit(views.state, pkg="tutuca:\{stem_of(file)}"),
-        ),
-      )
-    }
   } catch {
     e =>
       return Err(
@@ -323,32 +315,6 @@ pub fn gen_views(
       )
   }
   Ok({ files, diagnostics })
-}
-
-///|
-/// "…/counter_view_gen.mbt" -> "…/counter.wit"
-fn wit_target(target : String) -> String {
-  let base = if target.has_suffix("_view_gen.mbt") {
-    target[:target.length() - 13].to_owned()
-  } else if target.has_suffix(".mbt") {
-    target[:target.length() - 4].to_owned()
-  } else {
-    target
-  }
-  base + ".wit"
-}
-
-///|
-/// "counter.html" -> "counter", for the emitted document's package name.
-fn stem_of(file : String) -> String {
-  let chars = file.to_array()
-  let mut dot = chars.length()
-  for i, c in chars {
-    if c == '.' {
-      dot = i
-    }
-  }
-  file[:dot].to_owned()
 }
 
 ///|

@@ -193,9 +193,7 @@ and not a type:
 
 Each is checked against the schema — a fixture setting a field the schema
 dropped fails the build — and becomes `CounterState::fresh()` plus a public
-`counter_init_args("fresh")` for a ModuleDef example. `--wit` additionally
-writes the schema back out as a self-contained `.wit` document for
-`wit-bindgen`, with the markers lowered.
+`counter_init_args("fresh")` for a ModuleDef example.
 
 **Not in this port:**
 

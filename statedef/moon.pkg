@@ -15,9 +15,3 @@ import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",
 }
-
-// The emitted WIT is checked by feeding it BACK through the parser: a
-// document wit-bindgen would reject is worse than none.
-import {
-  "mizchi/wit",
-} for "test"
