@@ -36,18 +36,14 @@ fn lower(c : Char) -> Char {
 ///|
 /// "setLabel" / "set-label" / "set_label" -> "SetLabel". Separators and any
 /// other non-alphanumeric characters are dropped, capitalizing what follows.
+///
+/// The same rule statedef applies to a WIT name, and deliberately the same
+/// function: a handler the views raise and a message case the schema declares
+/// both end up as variants of a generated enum, so if the two spellings could
+/// drift, a name declared in the block and used in a view would produce two
+/// different variants and neither would be wrong on its own.
 pub fn variant_name(name : String) -> String {
-  let sb = StringBuilder::new()
-  let mut cap = true
-  for c in name.to_array() {
-    if is_alnum(c) {
-      sb.write_char(if cap { upper(c) } else { c })
-      cap = false
-    } else {
-      cap = true
-    }
-  }
-  sb.to_string()
+  @statedef.upper_name(name)
 }
 
 ///|
