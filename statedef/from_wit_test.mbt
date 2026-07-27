@@ -396,3 +396,37 @@ test "a func signature is held to the state type subset" {
     true,
   )
 }
+
+///|
+/// Where the line between a legal recursive shape and an impossible one falls.
+///
+/// A tree is an ordinary thing for a component to hold, and `list<node>` is how
+/// it is spelled: that becomes `Array[TreeNode]` in MoonBit, so both the struct
+/// and the type-directed zero terminate. What cannot work is containment with
+/// no indirection — the struct would hold a value of its own size, and the
+/// generated zero would be an infinitely nested literal.
+///
+/// Both used to run the emitters off the end of the stack: only `type a = a`
+/// was refused, and everything else SEGFAULTED the generator with no message.
+test "a self-referential record is refused, but a tree through a list is not" {
+  let defs = @statedef.parse_state(
+    "interface tree { record node { label: string, kids: list<node> } record state { root: node } }",
+  )
+  assert_eq(defs[0].types.map(t => t.wit_name), ["node"])
+  // ...and the same through `option`, which is an Option in MoonBit.
+  @statedef.parse_state(
+    "interface tree { record node { next: option<node> } record state { root: node } }",
+  )
+  |> ignore
+  // Directly, through a tuple, and in a variant payload — every shape that
+  // would be laid out inline.
+  for
+    src in [
+      "interface t { record node { next: node } record state { root: node } }", "interface t { record node { pair: tuple<s32, node> } record state { root: node } }",
+      "interface t { variant node { leaf, branch(node) } record state { root: node } }",
+      // ...and indirectly, which the direct-alias check never saw at all.
+       "interface t { record a { b: b } record b { a: a } record state { root: a } }",
+    ] {
+    assert_true(err_of(src).contains("refers to itself"))
+  }
+}

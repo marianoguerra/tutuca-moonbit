@@ -36,47 +36,6 @@
 // decode gaining most because the JSON path rebuilds a whole `Json` object
 // just to hand it to `from_json`.
 
-///|
-/// Whether this component gets a direct codec at all.
-///
-/// Every schema-backed component does — this answers `true` for the whole
-/// `StateTy` lattice and exists only so an unhandled shape fails loudly here
-/// rather than emitting code that does not compile.
-///
-/// A state with NO carried fields gets one too. It looks pointless — the codec
-/// is `Map([])` and `Some(State::{})` — but "pointless" is the argument FOR
-/// emitting it: the runtime's only alternative is the JSON bridge, and a
-/// component reaching for the bridge to convert nothing is the bridge
-/// justifying its own existence. 14 of the corpus's 93 components are in that
-/// shape (an empty `record state`, or one whose every field is a `component`
-/// slot, which `in_struct` excludes), and each was a reason it could not go.
-fn has_direct_codec(def : @statedef.StateDef) -> Bool {
-  def.fields.iter().filter(f => f.ty.in_struct()).all(f => direct(def, f.ty))
-}
-
-///|
-/// True when a type has a direct Value form. Recursive, because a
-/// `list<card>` is only as direct as `card` is.
-fn direct(def : @statedef.StateDef, ty : @statedef.StateTy) -> Bool {
-  match ty {
-    TBool | TInt(..) | TFloat | TText | TAny | TSet | TFlags(_) | TComp(_) =>
-      true
-    TList(e) | TOMap(e) | TOption(e) => direct(def, e)
-    TTuple(ts) => ts.iter().all(t => direct(def, t))
-    // A named type is direct when it resolves and its own parts are. An
-    // unresolved name falls back to @tutuca.Value (see moonbit_ty), which is
-    // direct by definition.
-    TRecord(n) | TEnum(n) | TVariant(n) =>
-      match def.user_ty(n) {
-        Some({ kind: URecord(fs), .. }) => fs.iter().all(f => direct(def, f.ty))
-        Some({ kind: UVariant(cs), .. }) =>
-          cs.iter().all(c => c.payload.iter().all(p => direct(def, p)))
-        // an enum is payload-free, and flags are Map-backed
-        Some(_) | None => true
-      }
-  }
-}
-
 // ---------------------------------------------------------------------------
 // Converters for the named types, emitted once each
 // ---------------------------------------------------------------------------
@@ -243,7 +202,6 @@ fn emit_codec(
   def : @statedef.StateDef,
   out : StringBuilder,
 ) -> Unit {
-  guard has_direct_codec(def) else { return }
   emit_user_codecs(def, out)
   let carried = def.fields.filter(f => f.ty.in_struct())
   // With nothing to read off the state, the parameters go unused — and an

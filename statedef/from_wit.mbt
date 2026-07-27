@@ -161,6 +161,7 @@ fn one_interface(
   // generated module churn between runs and break the drift check.
   let sorted = types
   sorted.sort_by((a, b) => str_cmp(a.wit_name, b.wit_name))
+  check_acyclic(sorted, fields)
   {
     wit_name: iface.name,
     component: comp,
@@ -381,5 +382,84 @@ fn named(d : Decls, name : String, where_ : String) -> StateTy raise DefError {
       type_of(d, inner, where_)
     }
     Resource(_) => TComp(None)
+  }
+}
+
+///|
+/// Refuse a named type that contains ITSELF with no indirection in between.
+///
+/// `list<node>` and `option<node>` are fine, and this is the point of drawing
+/// the line here rather than at "mentions itself": those become an `Array` and
+/// an `Option` in MoonBit, so both the struct and the type-directed `zero_expr`
+/// terminate, and a tree is a perfectly ordinary thing for a component to hold.
+/// `record node { next: node }` is not fine: the struct would have to contain a
+/// value of its own size, and the zero would be an infinitely nested literal.
+///
+/// Only a direct alias (`type a = a`) used to be caught. Everything else ran the
+/// emitters off the end of the stack — a segfault with no message, on a schema
+/// a person could reasonably write.
+fn check_acyclic(
+  types : Array[UserTy],
+  state_fields : Array[FieldDef],
+) -> Unit raise DefError {
+  let by_name : Map[String, Array[StateTy]] = Map([])
+  for t in types {
+    by_name[t.wit_name] = match t.kind {
+      URecord(fs) => fs.map(f => f.ty)
+      // A variant's zero is its FIRST case, but which case that is depends on
+      // declaration order, and a schema whose validity turned on that would be
+      // a trap. Every payload counts.
+      UVariant(cs) => cs.map(c => c.payload).fold(init=[], (a, b) => a + b)
+      UEnum(_) | UFlags(_) => []
+    }
+  }
+  // `state` is not among `types`, but it is a record like any other and a
+  // field of it can name one — so it is the root the walk starts from, and it
+  // is itself reachable by name.
+  by_name["state"] = state_fields.map(f => f.ty)
+  let on_path : Map[String, Unit] = Map([])
+  for name, _ in by_name {
+    walk_named(name, by_name, on_path)
+  }
+}
+
+///|
+/// One step of `check_acyclic`'s depth-first walk. `on_path` holds the names
+/// between the root and here: reaching one of them again is the cycle, while
+/// reaching a name already finished is just two fields sharing a type.
+fn walk_named(
+  name : String,
+  by_name : Map[String, Array[StateTy]],
+  on_path : Map[String, Unit],
+) -> Unit raise DefError {
+  if on_path.contains(name) {
+    raise CyclicType(name)
+  }
+  guard by_name.get(name) is Some(parts) else { return }
+  on_path[name] = ()
+  for ty in parts {
+    walk_inline(ty, by_name, on_path)
+  }
+  on_path.remove(name) |> ignore
+}
+
+///|
+/// Follow only the containment a MoonBit value pays for INLINE. `list`,
+/// `option` and the ordered-map marker each put a heap indirection in the way,
+/// which is exactly what makes the recursion finite.
+fn walk_inline(
+  ty : StateTy,
+  by_name : Map[String, Array[StateTy]],
+  on_path : Map[String, Unit],
+) -> Unit raise DefError {
+  match ty {
+    TList(_) | TOption(_) | TOMap(_) => ()
+    TTuple(ts) =>
+      for t in ts {
+        walk_inline(t, by_name, on_path)
+      }
+    TRecord(n) | TVariant(n) | TEnum(n) | TFlags(n) =>
+      walk_named(n, by_name, on_path)
+    TBool | TInt(..) | TFloat | TText | TSet | TComp(_) | TAny => ()
   }
 }
