@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.6.0] - 2026-07-27
+
 ### Added
 
 - **Every storybook story gets a live Instance tab.** Story | Instance beside
@@ -69,6 +71,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   container match out itself and its copy had lost the `Obj` arm, so a
   collection that `@each` iterated fine answered `Null` through seq-access. All
   four copies of that match are one lookup now.
+
+- **The storybook's Instance tab rendered blank.** The explorer was built
+  correctly and had no descriptor anyone could render it with: `<x render>`
+  resolves an instance through the shared registry by component id, and the
+  gallery registered the shell and each story's module but never the
+  inspector's own components. `Inspector::components` is public so a host that
+  renders an inspector view it built itself can register them.
+
+- **A nested instance rendered as `Object`.** Only the inspector's ROOT row
+  read the name off `v.schema()`; every level below it went through
+  `classify`, which matched on `obj_schema()` for the fields and dropped the
+  name, so a component holding child components opened into `Object {1}`
+  instead of `JsonBoolean {1}`.
 
 ### Changed (BREAKING)
 
