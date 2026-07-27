@@ -405,3 +405,33 @@ now, the bridge and the stash are deleted, and there is no second path to
 measure against. The numbers stay recorded here — they are why the codec
 exists, and re-deriving them would mean rebuilding the thing they argued
 against.
+
+## Rejected: building only the mutators something names
+
+`gen_mutators` builds every per-field mutator — `setX`, `updateX`, `resetX`,
+`toggleX`, `pushInXAt`, … — for every field at every `component()` call, into a
+string-keyed map, whether a view mentions them or not. Across the corpus that
+is ~3490 closures for 349 state fields, against 167 names that any view or
+schema mentions at all (most of which are `update` arms, not mutators). Well
+over 90% are built and never called, so gating each one on being named looked
+like free boot-time savings.
+
+Measured as an upper bound — building NONE at all, which is the most the gate
+could ever save:
+
+| | all mutators | none built | |
+|---|---|---|---|
+| `render all examples` | 20.29 ms ± 18.0% | 18.99 ms ± 8.6% | −6.4% |
+| `render todo 1000` | 25.98 ms ± 8.3% | 25.77 ms ± 8.6% | −0.8% |
+
+Both are inside this machine's run-to-run drift, and the only one that moves at
+all is the benchmark that mounts fifty modules — construction cost, which a
+real app pays once. The render-heavy case moves 0.8%, which is nothing.
+
+Not kept. The gate is also not free to write correctly: a component whose views
+are built at run time (visual_wasm's factories, the macro examples) has no
+`inputs` in its schema, because the generator never saw those views — so the
+gate would have to read the handler names back off the compiled view trees,
+which is a second implementation of `viewgen/surface.mbt`'s walker living in
+the runtime. Paying that for a number this size is the trade this file exists
+to refuse.
