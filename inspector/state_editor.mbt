@@ -101,15 +101,10 @@ pub fn Inspector::edit_instance(
 fn coerce_edit(kind : @component.FieldKind, v : @tutuca.Value) -> @tutuca.Value {
   match (kind, v) {
     (FInt, Str(s)) =>
-      match (try? @string.parse_double(s)) {
-        Ok(n) => Num(n.to_int().to_double())
-        Err(_) => v
+      Num(@string.parse_double(s).to_int().to_double()) catch {
+        _ => v
       }
-    (FFloat, Str(s)) =>
-      match (try? @string.parse_double(s)) {
-        Ok(n) => Num(n)
-        Err(_) => v
-      }
+    (FFloat, Str(s)) => Num(@string.parse_double(s)) catch { _ => v }
     (FInt, Num(n)) => Num(n.to_int().to_double())
     _ => v
   }

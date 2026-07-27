@@ -197,3 +197,23 @@ fn Inspector::explore_instance(
     "hasComponent": Bool(true),
   })
 }
+
+///|
+/// Instance + definition tabs over any value, with the registry optional.
+///
+/// The twin of `explore_instance` for a caller that has a value and not
+/// necessarily its descriptor — a devtool handed a live instance, which is the
+/// usual case. The Instance tab works either way now that a value names its
+/// own fields; the registry only adds the Component tab beside it.
+pub fn Inspector::explore_value(
+  self : Inspector,
+  v : @tutuca.Value,
+  comps? : @component.Components,
+) -> @tutuca.Value {
+  let views = self.build_inspector_views(v, comps?)
+  self.make_("InstanceExplorer", args={
+    "instanceView": views.instance_view,
+    "componentView": views.component_view,
+    "hasComponent": Bool(views.has_component),
+  })
+}

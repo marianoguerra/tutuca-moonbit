@@ -170,3 +170,70 @@ test "empty URL state keeps the default selection and clears focus" {
   assert_true(root_field(app, "focus") == Str(""))
   assert_true(root_field(app, "focusValue") is Null)
 }
+
+///|
+/// Dispatch a shell input straight through the Obj trait and return the
+/// successor root — the same route a click takes, without the DOM plumbing
+/// this package has no glue for.
+fn shell_input(
+  root : @tutuca.Value,
+  name : String,
+  args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  guard root is Obj(o) else { return root }
+  guard o.obj_handler(Input, name) is Some(Handler(f)) else { return root }
+  match f(args, @tutuca.NullCtx::{  }) {
+    Some(node) => node.as_value().unwrap_or(root)
+    None => root
+  }
+}
+
+///|
+/// Every story gets a Story | Instance tab pair, and the Instance pane shows
+/// the inspector over that story's OWN instance.
+///
+/// The explorer reads the instance rather than being handed a descriptor
+/// alongside it, which is what makes one per story affordable at all: the
+/// gallery has no per-story inspector code, and never had anywhere to put any.
+test "each story pane offers a live Instance tab" {
+  let sections = pick(["counter", "traffic-light"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  assert_true(container.to_html().contains("story-tab"))
+  assert_true(container.to_html().contains("instance-tab"))
+  let root = app.transactor.root.as_value().unwrap_or(Null)
+  // closed: the explorer is not built for a tab nobody opened
+  assert_true(root.field("t0") is Str("story"))
+  assert_true(root.field("i0") is Null)
+
+  // open it: the explorer appears, over this story's instance
+  let opened = shell_input(root, "onStoryTab", [Num(0), Str("instance")])
+  assert_true(opened.field("t0") is Str("instance"))
+  assert_true(opened.field("i0") is Obj(_))
+  // ...and it is the InstanceExplorer, with the Component tab beside the
+  // fields because the gallery's registry resolved the story's descriptor
+  assert_true(opened.field("i0").field("hasComponent") is Bool(true))
+
+  // LIVE: a story dispatch writes `s0` through the shell, and the explorer is
+  // rebuilt in the same successor rather than showing the state as of the
+  // moment the tab was opened.
+  let story = opened.field("s0")
+  assert_true(story.field("count") is Num(0.0))
+  let bumped = story.call_field("setCount", [Num(7)])
+  let after = opened.with_field("s0", bumped)
+  assert_true(after.field("s0").field("count") is Num(7.0))
+  let before_explorer = opened.field("i0")
+  let after_explorer = after.field("i0")
+  assert_true(after_explorer is Obj(_))
+  @test.assert_not_same_object(after_explorer, before_explorer)
+
+  // a story whose tab is CLOSED rebuilds nothing
+  let quiet = root.with_field("s0", bumped)
+  assert_true(quiet.field("i0") is Null)
+
+  // closing drops the explorer: it is a whole component tree
+  let closed = shell_input(opened, "onStoryTab", [Num(0), Str("story")])
+  assert_true(closed.field("t0") is Str("story"))
+  assert_true(closed.field("i0") is Null)
+}

@@ -10,6 +10,8 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/storybook" @sb,
+  // the per-story Instance tab renders the inspector over the live instance
+  "marianoguerra/tutuca/inspector",
 }
 
 import {

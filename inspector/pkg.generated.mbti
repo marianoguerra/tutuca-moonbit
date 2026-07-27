@@ -863,6 +863,7 @@ pub fn Inspector::classify(Self, @core.Value) -> @core.Value
 pub fn Inspector::classify_schema(Self, @core.Value) -> @core.Value
 pub fn Inspector::edit_instance(Self, @core.Value) -> @core.Value
 pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
+pub fn Inspector::explore_value(Self, @core.Value, comps? : @component.Components) -> @core.Value
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
 pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
 pub fn Inspector::module_(Self) -> @component.ModuleDef

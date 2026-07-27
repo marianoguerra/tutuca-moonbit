@@ -62,6 +62,30 @@ priv struct ShellSpec {
   id_to_field : Map[String, String]
   init_fields : Array[String]
   num_sections : Int
+  /// Builds the per-story Instance tab. One Inspector for the whole gallery,
+  /// so every explorer it makes resolves against the same registered
+  /// components.
+  insp : @inspector.Inspector
+  /// The story components, for the explorer's Component tab. Wired in `mount`
+  /// (the shell is built before the scope exists) and absent in a shell built
+  /// for a test, which the explorer handles by showing the instance alone.
+  mut comps : @component.Components?
+}
+
+///|
+/// The Instance tab's content for one story instance: the inspector's
+/// InstanceExplorer over it — its fields, and its component's definition.
+///
+/// This is what the schema work bought at the gallery level. The explorer used
+/// to need the instance AND its descriptor handed in together, because a value
+/// could not name its own fields; it reads the instance now, and the registry
+/// is only for the Component tab beside it.
+fn ShellSpec::explorer_of(
+  self : ShellSpec,
+  instance : @tutuca.Value,
+) -> @tutuca.Value {
+  guard instance is Obj(_) else { return Null }
+  self.insp.explore_value(instance, comps?=self.comps)
 }
 
 ///|
@@ -239,11 +263,40 @@ impl @tutuca.Obj for ShellInst with fn obj_field(self, name) {
 }
 
 ///|
+/// Copy-on-write write-through — and the seam that keeps the Instance tab
+/// LIVE.
+///
+/// A story dispatch updates the leaf at `.s<N>`, and the path rebuilds the
+/// spine THROUGH here. So this is where the story's successor instance first
+/// exists, and rebuilding `i<N>` from it in the same successor is what makes
+/// the explorer track the story rather than show the state as of the moment
+/// the tab was opened. Only when that tab is the one on screen: a gallery has
+/// ~50 stories, and an explorer nobody is looking at is pure cost.
+///
+/// One instance out, so no extra transaction and no chance of a rebuild loop.
 impl @tutuca.Obj for ShellInst with fn obj_with_field(self, name, v) {
-  if self.fields.contains(name) {
-    Some(self.set(name, v).to_value())
-  } else {
-    None
+  guard self.fields.contains(name) else { return None }
+  let next = self.set(name, v)
+  guard story_index(name) is Some(idx) else { return Some(next.to_value()) }
+  guard next.get("t\{idx}") is Str("instance") else {
+    return Some(next.to_value())
+  }
+  Some(next.set("i\{idx}", self.spec.explorer_of(v)).to_value())
+}
+
+///|
+/// `s12` -> 12, for any other field name None. The story panes address their
+/// fields by index, and this is the one place that has to read one back.
+fn story_index(name : String) -> Int? {
+  guard name.length() > 1 && name[0] is 's' else { return None }
+  let digits = name[1:].to_owned()
+  for c in digits {
+    if !(c is ('0'..='9')) {
+      return None
+    }
+  }
+  Some(@string.parse_int(digits)) catch {
+    _ => None
   }
 }
 
@@ -295,6 +348,29 @@ impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
     // Collapse/expand a group in place (no URL change, matching the JS
     // storybook): flip its `cK` flag, then recompute so its rows hide/show
     // under the current filter.
+    // Story | Instance for one pane. Switching TO the instance tab builds the
+    // explorer (it is Null until then), which is also the only place it is
+    // built from a cold start — `obj_with_field` only keeps a live one fresh.
+    (Input, "onStoryTab") =>
+      Some(
+        Handler((args, _ctx) => {
+          let (idx, tab) = match args {
+            [Num(n), Str(t), ..] => (n.to_int(), t)
+            _ => (-1, "story")
+          }
+          guard idx >= 0 else { return done(self) }
+          let next = self.set("t\{idx}", Str(tab))
+          done(
+            if tab == "instance" {
+              next.set("i\{idx}", self.spec.explorer_of(self.get("s\{idx}")))
+            } else {
+              // dropped on the way out: an explorer is a whole component tree,
+              // and a closed tab has no use for one.
+              next.set("i\{idx}", Null)
+            },
+          )
+        }),
+      )
     (Input, "onToggleSection") =>
       Some(
         Handler((args, _ctx) => {
@@ -559,6 +635,11 @@ fn build_shell(
     for s in sec.stories {
       defaults["s\{idx}"] = Null
       defaults["v\{idx}"] = Bool(true)
+      // the per-story tab, and the explorer the Instance tab renders. `i<N>`
+      // starts Null and is built the first time the tab is opened: a gallery
+      // has ~50 stories and nobody is looking at 50 explorers.
+      defaults["t\{idx}"] = Str("story")
+      defaults["i\{idx}"] = Null
       if s.renderable {
         id_to_field[s.id] = "s\{idx}"
         if s.init {
@@ -580,9 +661,31 @@ fn build_shell(
         "<div class=\"text-xs opacity-50 mb-3\">\{esc(s.section)}</div>",
       )
       if s.renderable {
+        // Story | Instance, per story. The Instance pane renders the
+        // inspector's explorer over THIS story's live instance — `i<N>` is
+        // rebuilt whenever `s<N>` is written (see obj_with_field), so it
+        // tracks the story as you drive it.
         sb.write_string(
-          "<div class=\"border border-base-300 rounded-lg p-4 bg-base-100\">" +
+          "<div role=\"tablist\" class=\"tabs tabs-sm mb-2\">" +
+          "<a role=\"tab\" class=\"tab story-tab\"" +
+          " @if.class=\"equals? .t\{idx} 'story'\"" +
+          " @then=\"'tab tab-active story-tab'\" @else=\"'tab story-tab'\"" +
+          " @on.click=\"onStoryTab \{idx} 'story'\">Story</a>" +
+          "<a role=\"tab\" class=\"tab instance-tab\"" +
+          " @if.class=\"equals? .t\{idx} 'instance'\"" +
+          " @then=\"'tab tab-active instance-tab'\" @else=\"'tab instance-tab'\"" +
+          " @on.click=\"onStoryTab \{idx} 'instance'\">Instance</a>" +
+          "</div>",
+        )
+        sb.write_string(
+          "<div @show=\"equals? .t\{idx} 'story'\"" +
+          " class=\"border border-base-300 rounded-lg p-4 bg-base-100\">" +
           "<x render=\".s\{idx}\"></x></div>",
+        )
+        sb.write_string(
+          "<div @show=\"equals? .t\{idx} 'instance'\"" +
+          " class=\"border border-base-300 rounded-lg p-4 bg-base-100 overflow-auto\">" +
+          "<x render=\".i\{idx}\"></x></div>",
         )
       } else {
         sb.write_string(
@@ -607,6 +710,8 @@ fn build_shell(
     id_to_field,
     init_fields,
     num_sections,
+    insp: @inspector.Inspector::new(),
+    comps: None,
   }
   // The shell's field set depends on the section list, which is why it is a
   // `for_type` component and not a typed-state one. Depending on a runtime
@@ -663,6 +768,10 @@ pub fn[N : @vdom.DomWalk] mount(
   let root_scope = @component.ComponentStack::new()
   let (shell, spec, fields) = build_shell(sections)
   root_scope.register_components([shell])
+  // The registry is shared by id across every story's child scope, so this one
+  // resolves any story instance the Instance tab is opened on — which is what
+  // puts the Component tab beside the fields.
+  spec.comps = Some(root_scope.comps)
   if !url_handlers.is_empty() {
     root_scope.register_request_handlers(url_handlers)
   }

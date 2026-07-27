@@ -8,6 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Every storybook story gets a live Instance tab.** Story | Instance beside
+  each pane; the Instance pane renders the inspector's explorer over that
+  story's own instance, with the Component tab beside its fields. It stays live
+  because `i<N>` is rebuilt in the same successor that writes `s<N>` — a story
+  dispatch rebuilds the spine through the shell's `obj_with_field`, so the
+  explorer tracks the story rather than showing the state as of the moment the
+  tab was opened. Built when the tab is opened and dropped when it is closed:
+  a gallery has ~50 stories and an explorer is a whole component tree.
+
+  `Inspector::explore_value(v, comps?)` is the entry point — the registry is
+  optional now that a value names its own fields.
+
 - **A schema-driven state editor.** `@inspector.Inspector::edit_instance(v)`
   renders a form over any component instance: one row per DECLARED field, a
   control chosen from the field's kind (checkbox / number / text, with a
