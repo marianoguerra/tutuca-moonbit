@@ -20,10 +20,6 @@ pub fn parse_state(String) -> Array[StateDef] raise DefError
 
 pub fn str_cmp(String, String) -> Int
 
-pub fn to_guest(StateDef, trait_name? : String, values? : String) -> String
-
-pub fn to_wit(Array[StateDef], pkg? : String) -> String
-
 pub fn upper_name(String) -> String
 
 // Errors
@@ -100,6 +96,7 @@ pub(all) struct StateDef {
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
+pub fn StateDef::ty_info_src(Self, StateTy) -> String
 pub fn StateDef::user_ty(Self, String) -> UserTy?
 pub fn StateDef::zero_expr(Self, StateTy) -> String
 
@@ -121,7 +118,6 @@ pub(all) enum StateTy {
   TAny
 } derive(Eq, @debug.Debug)
 pub fn StateTy::elem(Self) -> Self?
-pub fn StateTy::field_kind_src(Self) -> String
 pub fn StateTy::in_struct(Self) -> Bool
 pub fn StateTy::is_boolish(Self) -> Bool
 pub fn StateTy::is_renderable(Self) -> Bool

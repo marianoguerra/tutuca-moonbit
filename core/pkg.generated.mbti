@@ -8,6 +8,8 @@ import {
 }
 
 // Values
+pub fn mutator_name(String, String) -> String
+
 pub fn parse_alter_handler(String, ParseCtx) -> Val?
 
 pub fn parse_bool(String, ParseCtx) -> Val?
@@ -65,13 +67,11 @@ pub(all) enum DispatchStep {
 
 pub(all) struct FieldInfo {
   name : String
-  ty : String
-  kind : FieldKind
-  elem : String?
-  slot : String?
-  members : Array[String]
+  ty : TyInfo
 }
-pub fn FieldInfo::new(String, String, FieldKind, elem? : String, slot? : String, members? : Array[String]) -> Self
+pub fn FieldInfo::default(Self) -> Value
+pub fn FieldInfo::kind(Self) -> FieldKind
+pub fn FieldInfo::new(String, TyInfo) -> Self
 
 pub(all) enum FieldKind {
   FBool
@@ -230,6 +230,30 @@ pub(all) struct StepKey {
   field : String
   key : PathKey?
 } derive(Eq, @debug.Debug)
+
+pub(all) enum TyInfo {
+  TyBool
+  TyInt
+  TyFloat
+  TyText
+  TyList(TyInfo)
+  TyTuple(Array[TyInfo])
+  TyOption(TyInfo)
+  TyRecord(String)
+  TyEnum(String)
+  TyVariant(String)
+  TyFlags(String, Array[String])
+  TySet
+  TyOMap(TyInfo)
+  TyComp(String?)
+  TyAny
+} derive(Eq, @debug.Debug)
+pub fn TyInfo::elem(Self) -> Self?
+pub fn TyInfo::kind(Self) -> FieldKind
+pub fn TyInfo::members(Self) -> Array[String]
+pub fn TyInfo::show_wit(Self) -> String
+pub fn TyInfo::slot(Self) -> String?
+pub fn TyInfo::zero(Self) -> Value
 
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool)

@@ -8,7 +8,9 @@ import {
 }
 
 // Values
-pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> S?, compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], specs? : Map[String, FieldSpec], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
+pub fn[E, H] build_bucket(Array[E], (E) -> String, (E) -> H?) -> Map[String, H]
+
+pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.View], init~ : S, common_style? : String, global_style? : String, update? : (S, Dispatch, &@core.Ctx) -> S?, compute? : Map[String, (S, Array[@core.Value]) -> @core.Value], swap? : Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?], when? : Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool], enrich? : Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit], enrich_scope? : Map[String, (S) -> Map[String, @core.Value]], loop_with? : Map[String, (S, @core.Value, LoopCtx) -> LoopWith], slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Component
 
 pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
@@ -21,7 +23,6 @@ pub struct Component {
   views : Map[String, @anode.View]
   common_style : String
   global_style : String
-  specs : Map[String, FieldSpec]
   swap_names : Array[String]
   alter_names : Array[String]
   schema : @core.SchemaInfo
@@ -31,6 +32,7 @@ pub struct Component {
   provide : Map[String, ProvideInfo]
   lookup : Map[String, LookupInfo]
   mut scope : ComponentStack?
+  // private fields
 }
 pub fn Component::compile(Self) -> Unit raise
 pub fn Component::compile_style(Self) -> String
@@ -89,14 +91,6 @@ pub(all) struct ExampleDef {
   args : Map[String, @core.Value]
   view : String?
 }
-
-pub(all) struct FieldSpec {
-  kind : @core.FieldKind
-  default : @core.Value
-} derive(@debug.Debug)
-pub fn FieldSpec::comp(String, args? : Map[String, @core.Value]) -> Self
-pub fn FieldSpec::omap(default? : Map[String, @core.Value]) -> Self
-pub fn FieldSpec::set(members? : Array[String]) -> Self
 
 pub(all) struct LookupInfo {
   name : String

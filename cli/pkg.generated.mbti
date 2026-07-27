@@ -55,7 +55,7 @@ pub fn find_command(String) -> CommandSpec?
 
 pub fn gen_css_success(String, files~ : Int, classes~ : Int) -> String
 
-pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool, wit? : Bool) -> Result[GenPlan, ErrShape]
+pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
 pub fn gen_views_success(String, String) -> String
 
@@ -149,7 +149,7 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
-  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool, wit~ : Bool)
+  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
 } derive(Eq, @debug.Debug)

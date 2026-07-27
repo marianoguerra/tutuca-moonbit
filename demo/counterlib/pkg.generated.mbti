@@ -13,48 +13,19 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let counter_field_names : Array[String]
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let counter_global_style : String
 
 pub fn counter_init_args(String) -> Map[String, @core.Value]?
 
-pub let counter_init_names : Array[String]
-
-pub let counter_schema_fingerprint : String
-
-pub fn[S] counter_swap((CounterInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn counter_views() -> Map[String, @anode.View]
-
-pub fn counter_zero_args() -> Map[String, @core.Value]
 
 pub fn module_def() -> @component.ModuleDef
 
 // Errors
 
 // Types and methods
-pub(all) enum CounterField {
-  Label
-  Count
-  History
-} derive(Eq, @debug.Debug)
-pub fn CounterField::kind(Self) -> @core.FieldKind
-pub fn CounterField::name(Self) -> String
-
-pub(all) enum CounterId {
-  Count
-  Dec
-  History
-  Inc
-  Label
-  Reset
-} derive(Eq, @debug.Debug)
-pub fn CounterId::id(Self) -> String
-pub fn CounterId::selector(Self) -> String
-
 pub(all) enum CounterInput {
   Add
   ResetCount
@@ -84,11 +55,7 @@ pub(all) struct CounterState {
   count : Int
   history : Array[Int]
 }
-
-pub(all) enum CounterView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn CounterView::name(Self) -> String
+pub fn CounterState::zero() -> Self
 
 // Type aliases
 

@@ -16,5 +16,6 @@ import {
 
 import {
   "marianoguerra/tutuca/vdom/memdom",
+  "marianoguerra/tutuca/render",
   "moonbitlang/core/test",
 } for "test"

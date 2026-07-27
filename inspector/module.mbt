@@ -91,7 +91,12 @@ pub fn Inspector::new() -> Inspector {
 
 ///|
 /// Every inspector component, in registration order (JS getComponents()).
-fn Inspector::components(self : Inspector) -> Array[@component.Component] {
+///
+/// Public because a host that renders an inspector view it built itself (the
+/// storybook gallery's Instance tab) has to register these: a rendered
+/// instance resolves its component through the registry, so an unregistered
+/// one draws nothing.
+pub fn Inspector::components(self : Inspector) -> Array[@component.Component] {
   self.comps.values().collect()
 }
 

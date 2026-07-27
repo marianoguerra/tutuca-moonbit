@@ -11,222 +11,119 @@ import {
 // Values
 pub let chat_common_style : String
 
-pub fn chat_component(name? : String, views? : Map[String, @anode.View], init? : ChatState, common_style? : String, global_style? : String, update? : (ChatState, @component.Dispatch, &@core.Ctx) -> ChatState?, swap? : (ChatInput) -> ((ChatState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let chat_field_names : Array[String]
+pub fn chat_component(name? : String, views? : Map[String, @anode.View], init? : ChatState, common_style? : String, global_style? : String, update? : (ChatState, @component.Dispatch, &@core.Ctx) -> ChatState?, swap? : (ChatInput) -> ((ChatState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let chat_global_style : String
 
-pub let chat_schema_fingerprint : String
-
-pub fn[S] chat_swap((ChatInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn chat_views() -> Map[String, @anode.View]
-
-pub fn chat_zero_args() -> Map[String, @core.Value]
 
 pub let counter_common_style : String
 
-pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let counter_field_names : Array[String]
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let counter_global_style : String
 
-pub let counter_schema_fingerprint : String
-
-pub fn[S] counter_swap((CounterInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn counter_views() -> Map[String, @anode.View]
-
-pub fn counter_zero_args() -> Map[String, @core.Value]
 
 pub let features_common_style : String
 
-pub fn features_component(name? : String, views? : Map[String, @anode.View], init? : FeaturesState, common_style? : String, global_style? : String, update? : (FeaturesState, @component.Dispatch, &@core.Ctx) -> FeaturesState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let features_field_names : Array[String]
+pub fn features_component(name? : String, views? : Map[String, @anode.View], init? : FeaturesState, common_style? : String, global_style? : String, update? : (FeaturesState, @component.Dispatch, &@core.Ctx) -> FeaturesState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let features_global_style : String
 
-pub let features_schema_fingerprint : String
-
 pub fn features_views() -> Map[String, @anode.View]
-
-pub fn features_zero_args() -> Map[String, @core.Value]
 
 pub let fp_greeting_common_style : String
 
-pub fn fp_greeting_component(name? : String, views? : Map[String, @anode.View], init? : FpGreetingState, common_style? : String, global_style? : String, update? : (FpGreetingState, @component.Dispatch, &@core.Ctx) -> FpGreetingState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let fp_greeting_field_names : Array[String]
+pub fn fp_greeting_component(name? : String, views? : Map[String, @anode.View], init? : FpGreetingState, common_style? : String, global_style? : String, update? : (FpGreetingState, @component.Dispatch, &@core.Ctx) -> FpGreetingState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let fp_greeting_global_style : String
 
-pub let fp_greeting_schema_fingerprint : String
-
 pub fn fp_greeting_views() -> Map[String, @anode.View]
-
-pub fn fp_greeting_zero_args() -> Map[String, @core.Value]
 
 pub let fruits_common_style : String
 
-pub fn fruits_component(name? : String, views? : Map[String, @anode.View], init? : FruitsState, common_style? : String, global_style? : String, update? : (FruitsState, @component.Dispatch, &@core.Ctx) -> FruitsState?, when? : (FruitsWhen) -> ((FruitsState, @core.Value, @core.Value, @core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let fruits_field_names : Array[String]
+pub fn fruits_component(name? : String, views? : Map[String, @anode.View], init? : FruitsState, common_style? : String, global_style? : String, update? : (FruitsState, @component.Dispatch, &@core.Ctx) -> FruitsState?, when? : (FruitsWhen) -> ((FruitsState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let fruits_global_style : String
 
-pub let fruits_schema_fingerprint : String
-
 pub fn fruits_views() -> Map[String, @anode.View]
-
-pub fn[S] fruits_when((FruitsWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
-
-pub fn fruits_zero_args() -> Map[String, @core.Value]
 
 pub let greeting_common_style : String
 
-pub fn greeting_component(name? : String, views? : Map[String, @anode.View], init? : GreetingState, common_style? : String, global_style? : String, update? : (GreetingState, @component.Dispatch, &@core.Ctx) -> GreetingState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let greeting_field_names : Array[String]
+pub fn greeting_component(name? : String, views? : Map[String, @anode.View], init? : GreetingState, common_style? : String, global_style? : String, update? : (GreetingState, @component.Dispatch, &@core.Ctx) -> GreetingState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let greeting_global_style : String
 
-pub let greeting_schema_fingerprint : String
-
 pub fn greeting_views() -> Map[String, @anode.View]
-
-pub fn greeting_zero_args() -> Map[String, @core.Value]
 
 pub let mailbox_common_style : String
 
-pub fn mailbox_component(name? : String, views? : Map[String, @anode.View], init? : MailboxState, common_style? : String, global_style? : String, update? : (MailboxState, @component.Dispatch, &@core.Ctx) -> MailboxState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let mailbox_field_names : Array[String]
+pub fn mailbox_component(name? : String, views? : Map[String, @anode.View], init? : MailboxState, common_style? : String, global_style? : String, update? : (MailboxState, @component.Dispatch, &@core.Ctx) -> MailboxState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let mailbox_global_style : String
 
-pub let mailbox_schema_fingerprint : String
-
 pub fn mailbox_views() -> Map[String, @anode.View]
-
-pub fn mailbox_zero_args() -> Map[String, @core.Value]
 
 pub let note_common_style : String
 
-pub fn note_component(name? : String, views? : Map[String, @anode.View], init? : NoteState, common_style? : String, global_style? : String, update? : (NoteState, @component.Dispatch, &@core.Ctx) -> NoteState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let note_field_names : Array[String]
+pub fn note_component(name? : String, views? : Map[String, @anode.View], init? : NoteState, common_style? : String, global_style? : String, update? : (NoteState, @component.Dispatch, &@core.Ctx) -> NoteState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let note_global_style : String
 
-pub let note_schema_fingerprint : String
-
 pub fn note_views() -> Map[String, @anode.View]
-
-pub fn note_zero_args() -> Map[String, @core.Value]
 
 pub let page_common_style : String
 
-pub fn page_component(name? : String, views? : Map[String, @anode.View], init? : PageState, common_style? : String, global_style? : String, update? : (PageState, @component.Dispatch, &@core.Ctx) -> PageState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let page_field_names : Array[String]
+pub fn page_component(name? : String, views? : Map[String, @anode.View], init? : PageState, common_style? : String, global_style? : String, update? : (PageState, @component.Dispatch, &@core.Ctx) -> PageState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let page_global_style : String
 
-pub let page_schema_fingerprint : String
-
 pub fn page_views() -> Map[String, @anode.View]
-
-pub fn page_zero_args() -> Map[String, @core.Value]
 
 pub let profile_common_style : String
 
-pub fn profile_component(name? : String, views? : Map[String, @anode.View], init? : ProfileState, common_style? : String, global_style? : String, update? : (ProfileState, @component.Dispatch, &@core.Ctx) -> ProfileState?, swap? : (ProfileInput) -> ((ProfileState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let profile_field_names : Array[String]
+pub fn profile_component(name? : String, views? : Map[String, @anode.View], init? : ProfileState, common_style? : String, global_style? : String, update? : (ProfileState, @component.Dispatch, &@core.Ctx) -> ProfileState?, swap? : (ProfileInput) -> ((ProfileState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let profile_global_style : String
 
-pub let profile_schema_fingerprint : String
-
-pub fn[S] profile_swap((ProfileInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn profile_views() -> Map[String, @anode.View]
-
-pub fn profile_zero_args() -> Map[String, @core.Value]
 
 pub let quotes_common_style : String
 
-pub fn quotes_component(name? : String, views? : Map[String, @anode.View], init? : QuotesState, common_style? : String, global_style? : String, update? : (QuotesState, @component.Dispatch, &@core.Ctx) -> QuotesState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let quotes_field_names : Array[String]
+pub fn quotes_component(name? : String, views? : Map[String, @anode.View], init? : QuotesState, common_style? : String, global_style? : String, update? : (QuotesState, @component.Dispatch, &@core.Ctx) -> QuotesState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let quotes_global_style : String
 
-pub let quotes_schema_fingerprint : String
-
 pub fn quotes_views() -> Map[String, @anode.View]
-
-pub fn quotes_zero_args() -> Map[String, @core.Value]
 
 pub let search_common_style : String
 
-pub fn search_component(name? : String, views? : Map[String, @anode.View], init? : SearchState, common_style? : String, global_style? : String, update? : (SearchState, @component.Dispatch, &@core.Ctx) -> SearchState?, swap? : (SearchInput) -> ((SearchState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let search_field_names : Array[String]
+pub fn search_component(name? : String, views? : Map[String, @anode.View], init? : SearchState, common_style? : String, global_style? : String, update? : (SearchState, @component.Dispatch, &@core.Ctx) -> SearchState?, swap? : (SearchInput) -> ((SearchState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let search_global_style : String
 
-pub let search_schema_fingerprint : String
-
-pub fn[S] search_swap((SearchInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn search_views() -> Map[String, @anode.View]
-
-pub fn search_zero_args() -> Map[String, @core.Value]
 
 pub let status_common_style : String
 
-pub fn status_component(name? : String, views? : Map[String, @anode.View], init? : StatusState, common_style? : String, global_style? : String, update? : (StatusState, @component.Dispatch, &@core.Ctx) -> StatusState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let status_field_names : Array[String]
+pub fn status_component(name? : String, views? : Map[String, @anode.View], init? : StatusState, common_style? : String, global_style? : String, update? : (StatusState, @component.Dispatch, &@core.Ctx) -> StatusState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let status_global_style : String
 
-pub let status_schema_fingerprint : String
-
 pub fn status_views() -> Map[String, @anode.View]
-
-pub fn status_zero_args() -> Map[String, @core.Value]
 
 pub let toggle_common_style : String
 
-pub fn toggle_component(name? : String, views? : Map[String, @anode.View], init? : ToggleState, common_style? : String, global_style? : String, update? : (ToggleState, @component.Dispatch, &@core.Ctx) -> ToggleState?, swap? : (ToggleInput) -> ((ToggleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let toggle_field_names : Array[String]
+pub fn toggle_component(name? : String, views? : Map[String, @anode.View], init? : ToggleState, common_style? : String, global_style? : String, update? : (ToggleState, @component.Dispatch, &@core.Ctx) -> ToggleState?, swap? : (ToggleInput) -> ((ToggleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let toggle_global_style : String
 
-pub let toggle_schema_fingerprint : String
-
-pub fn[S] toggle_swap((ToggleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
-
 pub fn toggle_views() -> Map[String, @anode.View]
-
-pub fn toggle_zero_args() -> Map[String, @core.Value]
 
 // Errors
 
 // Types and methods
-pub(all) enum ChatField {
-  Draft
-  Status
-} derive(Eq, @debug.Debug)
-pub fn ChatField::kind(Self) -> @core.FieldKind
-pub fn ChatField::name(Self) -> String
-
 pub(all) enum ChatInput {
   SetDraft
   Submit
@@ -243,18 +140,9 @@ pub fn ChatMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) struct ChatState {
   draft : String
+  status : @core.Value
 }
-
-pub(all) enum ChatView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ChatView::name(Self) -> String
-
-pub(all) enum CounterField {
-  Count
-} derive(Eq, @debug.Debug)
-pub fn CounterField::kind(Self) -> @core.FieldKind
-pub fn CounterField::name(Self) -> String
+pub fn ChatState::zero() -> Self
 
 pub(all) enum CounterInput {
   Dec
@@ -273,97 +161,37 @@ pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
 pub(all) struct CounterState {
   count : Int
 }
-
-pub(all) enum CounterView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn CounterView::name(Self) -> String
-
-pub(all) enum FeaturesField {
-  Status
-} derive(Eq, @debug.Debug)
-pub fn FeaturesField::kind(Self) -> @core.FieldKind
-pub fn FeaturesField::name(Self) -> String
+pub fn CounterState::zero() -> Self
 
 pub(all) struct FeaturesState {
   status : String
 }
-
-pub(all) enum FeaturesView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn FeaturesView::name(Self) -> String
-
-pub(all) enum FpGreetingField {
-  Name
-} derive(Eq, @debug.Debug)
-pub fn FpGreetingField::kind(Self) -> @core.FieldKind
-pub fn FpGreetingField::name(Self) -> String
+pub fn FeaturesState::zero() -> Self
 
 pub(all) struct FpGreetingState {
   name : String
 }
-
-pub(all) enum FpGreetingView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn FpGreetingView::name(Self) -> String
-
-pub(all) enum FruitsField {
-  Items
-} derive(Eq, @debug.Debug)
-pub fn FruitsField::kind(Self) -> @core.FieldKind
-pub fn FruitsField::name(Self) -> String
+pub fn FpGreetingState::zero() -> Self
 
 pub(all) struct FruitsState {
   items : Array[String]
 }
-
-pub(all) enum FruitsView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn FruitsView::name(Self) -> String
+pub fn FruitsState::zero() -> Self
 
 pub(all) enum FruitsWhen {
   NotTooLong
 } derive(Eq, @debug.Debug)
 pub fn FruitsWhen::name(Self) -> String
 
-pub(all) enum GreetingField {
-  Name
-} derive(Eq, @debug.Debug)
-pub fn GreetingField::kind(Self) -> @core.FieldKind
-pub fn GreetingField::name(Self) -> String
-
 pub(all) struct GreetingState {
   name : String
 }
-
-pub(all) enum GreetingView {
-  Main
-  Shout
-} derive(Eq, @debug.Debug)
-pub fn GreetingView::name(Self) -> String
-
-pub(all) enum MailboxField {
-  Note
-} derive(Eq, @debug.Debug)
-pub fn MailboxField::kind(Self) -> @core.FieldKind
-pub fn MailboxField::name(Self) -> String
+pub fn GreetingState::zero() -> Self
 
 pub(all) struct MailboxState {
+  note : @core.Value
 }
-
-pub(all) enum MailboxView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn MailboxView::name(Self) -> String
-
-pub(all) enum NoteField {
-  Text
-} derive(Eq, @debug.Debug)
-pub fn NoteField::kind(Self) -> @core.FieldKind
-pub fn NoteField::name(Self) -> String
+pub fn MailboxState::zero() -> Self
 
 pub(all) enum NoteReceive {
   Write(String)
@@ -376,32 +204,12 @@ pub fn NoteReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct NoteState {
   text : String
 }
-
-pub(all) enum NoteView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn NoteView::name(Self) -> String
-
-pub(all) enum PageField {
-  Greeting
-} derive(Eq, @debug.Debug)
-pub fn PageField::kind(Self) -> @core.FieldKind
-pub fn PageField::name(Self) -> String
+pub fn NoteState::zero() -> Self
 
 pub(all) struct PageState {
+  greeting : @core.Value
 }
-
-pub(all) enum PageView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn PageView::name(Self) -> String
-
-pub(all) enum ProfileField {
-  Name
-  Waving
-} derive(Eq, @debug.Debug)
-pub fn ProfileField::kind(Self) -> @core.FieldKind
-pub fn ProfileField::name(Self) -> String
+pub fn PageState::zero() -> Self
 
 pub(all) enum ProfileInput {
   SetName
@@ -421,18 +229,7 @@ pub(all) struct ProfileState {
   name : String
   waving : Bool
 }
-
-pub(all) enum ProfileView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ProfileView::name(Self) -> String
-
-pub(all) enum QuotesField {
-  Items
-  IsLoading
-} derive(Eq, @debug.Debug)
-pub fn QuotesField::kind(Self) -> @core.FieldKind
-pub fn QuotesField::name(Self) -> String
+pub fn ProfileState::zero() -> Self
 
 pub(all) enum QuotesReceive {
   Init
@@ -453,18 +250,7 @@ pub(all) struct QuotesState {
   items : Array[String]
   isLoading : Bool
 }
-
-pub(all) enum QuotesView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn QuotesView::name(Self) -> String
-
-pub(all) enum SearchField {
-  Draft
-  Sent
-} derive(Eq, @debug.Debug)
-pub fn SearchField::kind(Self) -> @core.FieldKind
-pub fn SearchField::name(Self) -> String
+pub fn QuotesState::zero() -> Self
 
 pub(all) enum SearchInput {
   ResetDraft
@@ -486,17 +272,7 @@ pub(all) struct SearchState {
   draft : String
   sent : String
 }
-
-pub(all) enum SearchView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn SearchView::name(Self) -> String
-
-pub(all) enum StatusField {
-  Message
-} derive(Eq, @debug.Debug)
-pub fn StatusField::kind(Self) -> @core.FieldKind
-pub fn StatusField::name(Self) -> String
+pub fn SearchState::zero() -> Self
 
 pub(all) enum StatusReceive {
   Flash(String)
@@ -509,18 +285,7 @@ pub fn StatusReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct StatusState {
   message : String
 }
-
-pub(all) enum StatusView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn StatusView::name(Self) -> String
-
-pub(all) enum ToggleField {
-  On
-  Message
-} derive(Eq, @debug.Debug)
-pub fn ToggleField::kind(Self) -> @core.FieldKind
-pub fn ToggleField::name(Self) -> String
+pub fn StatusState::zero() -> Self
 
 pub(all) enum ToggleInput {
   ToggleOn
@@ -538,11 +303,7 @@ pub(all) struct ToggleState {
   on : Bool
   message : @core.Value
 }
-
-pub(all) enum ToggleView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ToggleView::name(Self) -> String
+pub fn ToggleState::zero() -> Self
 
 // Type aliases
 

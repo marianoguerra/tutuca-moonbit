@@ -770,6 +770,13 @@ pub fn[N : @vdom.DomWalk] mount(
   // resolves any story instance the Instance tab is opened on — which is what
   // puts the Component tab beside the fields.
   spec.comps = Some(root_scope.comps)
+  // The explorer the Instance tab renders is an instance of the INSPECTOR's
+  // components, and `<x render=".iN">` resolves an instance through the
+  // registry by component id — so an unregistered explorer renders as nothing
+  // and the tab comes up blank. Registered in a scope of its own rather than
+  // the root's, so ~35 inspector names (JsonObject, CompField, …) don't become
+  // visible to every story that didn't register a component of that name.
+  root_scope.enter().register_components(spec.insp.components())
   if !url_handlers.is_empty() {
     root_scope.register_request_handlers(url_handlers)
   }

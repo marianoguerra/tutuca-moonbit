@@ -237,3 +237,41 @@ test "each story pane offers a live Instance tab" {
   assert_true(closed.field("t0") is Str("story"))
   assert_true(closed.field("i0") is Null)
 }
+
+///|
+/// First descendant of `n` (itself included) whose class list contains `cls`.
+fn walk_by_class(n : @memdom.MemNode, cls : String) -> @memdom.MemNode? {
+  if @vdom.DomWalk::attribute(n, "class") is Some(c) && c.contains(cls) {
+    return Some(n)
+  }
+  for kid in @vdom.DomNode::child_nodes(n) {
+    if walk_by_class(kid, cls) is Some(f) {
+      return Some(f)
+    }
+  }
+  None
+}
+
+///|
+/// The Instance tab RENDERS, not merely builds.
+///
+/// The explorer is made from the shell's own Inspector, and a rendered
+/// instance resolves its component through the app's registry by id — so an
+/// inspector nobody registered draws nothing and the pane comes up blank, with
+/// every value-level assertion above still passing. This drives the real
+/// click and reads the DOM back.
+test "the Instance tab renders the explorer, not a blank pane" {
+  let sections = pick(["counter"])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let app = mount(sections, container, @vdom.RenderOpts::new(doc))
+  guard walk_by_class(container, "instance-tab") is Some(tab) else {
+    fail("no Instance tab in the rendered gallery")
+  }
+  let _ = app.dispatch(tab, @render.DomEvent::new(name="click"))
+  let html = container.to_html()
+  // the counter's own field, shown as an InstanceFields row
+  assert_true(html.contains(">count<"))
+  // and the tab pair the explorer puts over it
+  assert_true(html.contains("Component"))
+}

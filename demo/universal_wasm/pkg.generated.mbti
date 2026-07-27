@@ -10,57 +10,27 @@ import {
 // Values
 pub let component_entry_common_style : String
 
-pub fn component_entry_component(name? : String, views? : Map[String, @anode.View], init? : ComponentEntryState, common_style? : String, global_style? : String, update? : (ComponentEntryState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentEntryState?, compute? : (ComponentEntryMethod) -> ((ComponentEntryState, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?, swap? : (ComponentEntryInput) -> ((ComponentEntryState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub fn[S] component_entry_compute((ComponentEntryMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value]
-
-pub let component_entry_field_names : Array[String]
+pub fn component_entry_component(name? : String, views? : Map[String, @anode.View], init? : ComponentEntryState, common_style? : String, global_style? : String, update? : (ComponentEntryState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentEntryState?, compute? : (ComponentEntryMethod) -> ((ComponentEntryState, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?, swap? : (ComponentEntryInput) -> ((ComponentEntryState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let component_entry_global_style : String
 
-pub let component_entry_schema_fingerprint : String
-
-pub fn[S] component_entry_swap((ComponentEntryInput) -> ((S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?]
-
 pub fn component_entry_views() -> Map[String, @anode.View]
-
-pub fn component_entry_zero_args() -> Map[String, @marianoguerra/tutuca/core.Value]
 
 pub let component_list_common_style : String
 
-pub fn component_list_component(name? : String, views? : Map[String, @anode.View], init? : ComponentListState, common_style? : String, global_style? : String, update? : (ComponentListState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentListState?, compute? : (ComponentListMethod) -> ((ComponentListState, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?, swap? : (ComponentListInput) -> ((ComponentListState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub fn[S] component_list_compute((ComponentListMethod) -> ((S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value]
-
-pub let component_list_field_names : Array[String]
+pub fn component_list_component(name? : String, views? : Map[String, @anode.View], init? : ComponentListState, common_style? : String, global_style? : String, update? : (ComponentListState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentListState?, compute? : (ComponentListMethod) -> ((ComponentListState, Array[@marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value)?, swap? : (ComponentListInput) -> ((ComponentListState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let component_list_global_style : String
 
-pub let component_list_schema_fingerprint : String
-
-pub fn[S] component_list_swap((ComponentListInput) -> ((S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?]
-
 pub fn component_list_views() -> Map[String, @anode.View]
-
-pub fn component_list_zero_args() -> Map[String, @marianoguerra/tutuca/core.Value]
 
 pub let component_picker_common_style : String
 
-pub fn component_picker_component(name? : String, views? : Map[String, @anode.View], init? : ComponentPickerState, common_style? : String, global_style? : String, update? : (ComponentPickerState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentPickerState?, swap? : (ComponentPickerInput) -> ((ComponentPickerState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, when? : (ComponentPickerWhen) -> ((ComponentPickerState, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let component_picker_field_names : Array[String]
+pub fn component_picker_component(name? : String, views? : Map[String, @anode.View], init? : ComponentPickerState, common_style? : String, global_style? : String, update? : (ComponentPickerState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> ComponentPickerState?, swap? : (ComponentPickerInput) -> ((ComponentPickerState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, when? : (ComponentPickerWhen) -> ((ComponentPickerState, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let component_picker_global_style : String
 
-pub let component_picker_schema_fingerprint : String
-
-pub fn[S] component_picker_swap((ComponentPickerInput) -> ((S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?) -> Map[String, (S, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?]
-
 pub fn component_picker_views() -> Map[String, @anode.View]
-
-pub fn[S] component_picker_when((ComponentPickerWhen) -> ((S, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value) -> Bool)?) -> Map[String, (S, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value, @marianoguerra/tutuca/core.Value) -> Bool]
-
-pub fn component_picker_zero_args() -> Map[String, @marianoguerra/tutuca/core.Value]
 
 pub fn dyncomp_on_load_error(Int, String) -> Unit
 
@@ -76,29 +46,15 @@ pub fn state_json() -> String
 
 pub let universal_wasm_common_style : String
 
-pub fn universal_wasm_component(name? : String, views? : Map[String, @anode.View], init? : UniversalWasmState, common_style? : String, global_style? : String, update? : (UniversalWasmState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> UniversalWasmState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let universal_wasm_field_names : Array[String]
+pub fn universal_wasm_component(name? : String, views? : Map[String, @anode.View], init? : UniversalWasmState, common_style? : String, global_style? : String, update? : (UniversalWasmState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> UniversalWasmState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let universal_wasm_global_style : String
 
-pub let universal_wasm_schema_fingerprint : String
-
 pub fn universal_wasm_views() -> Map[String, @anode.View]
-
-pub fn universal_wasm_zero_args() -> Map[String, @marianoguerra/tutuca/core.Value]
 
 // Errors
 
 // Types and methods
-pub(all) enum ComponentEntryField {
-  Module
-  Name
-  Label
-} derive(Eq, @debug.Debug)
-pub fn ComponentEntryField::kind(Self) -> @marianoguerra/tutuca/core.FieldKind
-pub fn ComponentEntryField::name(Self) -> String
-
 pub(all) enum ComponentEntryInput {
   OnSelect
 } derive(Eq, @debug.Debug)
@@ -121,23 +77,7 @@ pub(all) struct ComponentEntryState {
   name : String
   label : String
 }
-
-pub(all) enum ComponentEntryView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ComponentEntryView::name(Self) -> String
-
-pub(all) enum ComponentListField {
-  Entries
-  ShowSettings
-  Dir
-  Justify
-  Align
-  Gap
-  Wrap
-} derive(Eq, @debug.Debug)
-pub fn ComponentListField::kind(Self) -> @marianoguerra/tutuca/core.FieldKind
-pub fn ComponentListField::name(Self) -> String
+pub fn ComponentEntryState::zero() -> Self
 
 pub(all) enum ComponentListInput {
   OnAdd
@@ -177,19 +117,7 @@ pub(all) struct ComponentListState {
   gap : Int
   wrap : Bool
 }
-
-pub(all) enum ComponentListView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ComponentListView::name(Self) -> String
-
-pub(all) enum ComponentPickerField {
-  FilterText
-  Items
-  Selected
-} derive(Eq, @debug.Debug)
-pub fn ComponentPickerField::kind(Self) -> @marianoguerra/tutuca/core.FieldKind
-pub fn ComponentPickerField::name(Self) -> String
+pub fn ComponentListState::zero() -> Self
 
 pub(all) enum ComponentPickerInput {
   SetFilterText
@@ -208,32 +136,18 @@ pub(all) struct ComponentPickerState {
   items : Array[@marianoguerra/tutuca/core.Value]
   selected : @marianoguerra/tutuca/core.Value
 }
-
-pub(all) enum ComponentPickerView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn ComponentPickerView::name(Self) -> String
+pub fn ComponentPickerState::zero() -> Self
 
 pub(all) enum ComponentPickerWhen {
   MatchesFilter
 } derive(Eq, @debug.Debug)
 pub fn ComponentPickerWhen::name(Self) -> String
 
-pub(all) enum UniversalWasmField {
-  Status
-  List
-} derive(Eq, @debug.Debug)
-pub fn UniversalWasmField::kind(Self) -> @marianoguerra/tutuca/core.FieldKind
-pub fn UniversalWasmField::name(Self) -> String
-
 pub(all) struct UniversalWasmState {
   status : String
+  list : @marianoguerra/tutuca/core.Value
 }
-
-pub(all) enum UniversalWasmView {
-  Main
-} derive(Eq, @debug.Debug)
-pub fn UniversalWasmView::name(Self) -> String
+pub fn UniversalWasmState::zero() -> Self
 
 // Type aliases
 
