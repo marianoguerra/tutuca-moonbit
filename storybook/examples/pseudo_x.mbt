@@ -31,10 +31,7 @@ fn item_select_comp() -> @component.Component {
 
 ///|
 fn pseudo_x_demo_comp() -> @component.Component {
-  pseudo_x_demo_component(specs={
-    "table": @component.FieldSpec::comp("ItemTable"),
-    "select": @component.FieldSpec::comp("ItemSelect"),
-  })
+  pseudo_x_demo_component()
 }
 
 ///|

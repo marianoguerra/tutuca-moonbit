@@ -400,10 +400,10 @@ pub let pseudo_x_demo_global_style : String = ""
 impl @component.Fields for PseudoXDemoState with fn schema() {
   @component.SchemaInfo::new(
     name="PseudoXDemo",
-    fingerprint="e785760a33d1bedc",
+    fingerprint="32abcf05a4118ab4",
     fields=[
-      @component.FieldInfo::new("table", TyComp(None)),
-      @component.FieldInfo::new("select", TyComp(None)),
+      @component.FieldInfo::new("table", TyComp(Some("ItemTable"))),
+      @component.FieldInfo::new("select", TyComp(Some("ItemSelect"))),
     ],
     view_names=["main"],
   )

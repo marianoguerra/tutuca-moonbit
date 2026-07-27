@@ -126,8 +126,8 @@ pub let styles_example_root_global_style : String = ""
 impl @component.Fields for StylesExampleRootState with fn schema() {
   @component.SchemaInfo::new(
     name="StylesExampleRoot",
-    fingerprint="5407ac5b07426d2a",
-    fields=[@component.FieldInfo::new("value", TyComp(None))],
+    fingerprint="1f5350c9854ee343",
+    fields=[@component.FieldInfo::new("value", TyComp(Some("StylesExample")))],
     view_names=["main"],
   )
 }

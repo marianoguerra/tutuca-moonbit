@@ -14,7 +14,7 @@
   interface entry-editor-and-selector {
     record state {
     items: values,
-    selector: component,
+    selector: selector,
     }
   }
   interface sheet {
@@ -28,13 +28,13 @@
   }
   interface panel {
     record state {
-      toolbar: component,
+      toolbar: toolbar,
     }
   }
   interface workspace {
     record state {
     sheet: any,
-    panel: component,
+    panel: panel,
     }
   }
 </script>

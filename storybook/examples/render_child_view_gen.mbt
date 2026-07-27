@@ -324,8 +324,8 @@ pub let multiple_views_global_style : String = ""
 impl @component.Fields for MultipleViewsState with fn schema() {
   @component.SchemaInfo::new(
     name="MultipleViews",
-    fingerprint="74788bd77ca3a59f",
-    fields=[@component.FieldInfo::new("value", TyComp(None))],
+    fingerprint="5d0a354dcce454b2",
+    fields=[@component.FieldInfo::new("value", TyComp(Some("Entry")))],
     view_names=["main"],
   )
 }

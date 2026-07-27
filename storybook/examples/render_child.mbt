@@ -77,9 +77,7 @@ pub fn entry_module() -> @component.ModuleDef {
 /// once through `as="edit"`. Editing the inputs updates both, because they are
 /// one value.
 fn multiple_views_comp() -> @component.Component {
-  multiple_views_component(specs={
-    "value": @component.FieldSpec::comp("Entry"),
-  })
+  multiple_views_component()
 }
 
 ///|

@@ -8,7 +8,7 @@
   interface send-receive {
     record state {
     draft: string,
-    status: component,
+    status: status,
     }
   }
   interface tree-item {
@@ -22,7 +22,7 @@
   interface tree-root {
     record state {
     log: values,
-    root: component,
+    root: tree-item,
     }
   }
 </script>

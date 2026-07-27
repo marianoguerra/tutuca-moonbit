@@ -196,10 +196,10 @@ pub fn SendReceiveMsg::from_dispatch(
 impl @component.Fields for SendReceiveState with fn schema() {
   @component.SchemaInfo::new(
     name="SendReceive",
-    fingerprint="af6010efd88e64f0",
+    fingerprint="ada644a0bb9fd091",
     fields=[
       @component.FieldInfo::new("draft", TyText),
-      @component.FieldInfo::new("status", TyComp(None)),
+      @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
     inputs=["clearStatus", "setDraft", "submit"],
     view_names=["main"],
@@ -423,10 +423,10 @@ pub let tree_root_global_style : String = ""
 impl @component.Fields for TreeRootState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeRoot",
-    fingerprint="956f1bda15ce4557",
+    fingerprint="317de328210e1763",
     fields=[
       @component.FieldInfo::new("log", TyList(TyAny)),
-      @component.FieldInfo::new("root", TyComp(None)),
+      @component.FieldInfo::new("root", TyComp(Some("TreeItem"))),
     ],
     view_names=["main"],
   )

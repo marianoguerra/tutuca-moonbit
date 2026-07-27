@@ -19,9 +19,7 @@ fn styles_example_comp() -> @component.Component {
 
 ///|
 fn styles_example_root_comp() -> @component.Component {
-  styles_example_root_component(specs={
-    "value": @component.FieldSpec::comp("StylesExample"),
-  })
+  styles_example_root_component()
 }
 
 ///|

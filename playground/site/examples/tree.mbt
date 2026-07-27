@@ -46,7 +46,6 @@ fn tree_item_comp() -> @component.Component {
 fn tree_root_comp() -> @component.Component {
   tree_root_component(
     init=TreeRootState::{ log: [] },
-    specs={ "root": @component.FieldSpec::comp("TreeItem") },
     update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {

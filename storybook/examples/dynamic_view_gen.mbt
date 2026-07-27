@@ -381,10 +381,10 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="EntryEditorAndSelector",
-    fingerprint="7114357b2636c359",
+    fingerprint="8084ff0442264677",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
-      @component.FieldInfo::new("selector", TyComp(None)),
+      @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
     ],
     inputs=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
@@ -616,8 +616,8 @@ pub let panel_global_style : String = ""
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(
     name="Panel",
-    fingerprint="f64005029cb0440a",
-    fields=[@component.FieldInfo::new("toolbar", TyComp(None))],
+    fingerprint="a03c9d089c76f2f6",
+    fields=[@component.FieldInfo::new("toolbar", TyComp(Some("Toolbar")))],
     view_names=["main"],
   )
 }
@@ -693,10 +693,10 @@ pub fn WorkspaceMethod::name(self : WorkspaceMethod) -> String {
 impl @component.Fields for WorkspaceState with fn schema() {
   @component.SchemaInfo::new(
     name="Workspace",
-    fingerprint="de7864d15ebd3a60",
+    fingerprint="09e5da0dd17987cb",
     fields=[
       @component.FieldInfo::new("sheet", TyAny),
-      @component.FieldInfo::new("panel", TyComp(None)),
+      @component.FieldInfo::new("panel", TyComp(Some("Panel"))),
     ],
     methods=["sheetTitle"],
     view_names=["main"],

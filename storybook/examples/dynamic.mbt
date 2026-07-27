@@ -31,7 +31,6 @@ fn selector_comp() -> @component.Component {
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   entry_editor_and_selector_component(
     init={ items: [] },
-    specs={ "selector": @component.FieldSpec::comp("Selector") },
     provide={ "entries": ".items" },
     update=(s, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
@@ -102,7 +101,7 @@ fn toolbar_comp() -> @component.Component {
 
 ///|
 fn panel_comp() -> @component.Component {
-  panel_component(specs={ "toolbar": @component.FieldSpec::comp("Toolbar") })
+  panel_component()
 }
 
 ///|
@@ -114,10 +113,7 @@ fn panel_comp() -> @component.Component {
 fn workspace_comp() -> @component.Component {
   workspace_component(
     init={ sheet: Null },
-    specs={
-      "sheet": @component.FieldSpec::comp("Sheet"),
-      "panel": @component.FieldSpec::comp("Panel"),
-    },
+    specs={ "sheet": @component.FieldSpec::comp("Sheet") },
     provide={ "active": ".sheet" },
     compute=m => {
       match m {

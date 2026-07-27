@@ -37,35 +37,29 @@ fn status_comp() -> @component.Component {
 /// `ctx.send(name, args)` dispatches a `Receive` arm on SELF (so several call
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
-  send_receive_component(
-    init={ draft: "" },
-    specs={ "status": @component.FieldSpec::comp("Status") },
-    update=(s, msg, ctx) => {
-      match msg {
-        Input("submit", _) => {
-          let text = s.draft.trim().to_owned()
-          if text != "" {
-            // message the sibling child by path — JS spells this
-            // `ctx.at.field("status").send("flash", [text])`
-            ctx.send_at_path(
-              ctx.path().concat([FieldStep("status")]),
-              "flash",
-              [Str(text)],
-            )
-            // …and message SELF, reusing the `clearDraft` receive handler
-            ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
-          }
-          None
+  send_receive_component(init={ draft: "" }, update=(s, msg, ctx) => {
+    match msg {
+      Input("submit", _) => {
+        let text = s.draft.trim().to_owned()
+        if text != "" {
+          // message the sibling child by path — JS spells this
+          // `ctx.at.field("status").send("flash", [text])`
+          ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
+            Str(text),
+          ])
+          // …and message SELF, reusing the `clearDraft` receive handler
+          ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
         }
-        Input("clearStatus", _) => {
-          ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
-          None
-        }
-        Receive("clearDraft", _) => Some({ draft: "" })
-        _ => None
+        None
       }
-    },
-  )
+      Input("clearStatus", _) => {
+        ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
+        None
+      }
+      Receive("clearDraft", _) => Some({ draft: "" })
+      _ => None
+    }
+  })
 }
 
 ///|
@@ -124,28 +118,24 @@ fn tree_item_comp() -> @component.Component {
 /// The root catches the bubbled event and records it — aggregate state kept
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
-  tree_root_component(
-    init={ log: [] },
-    specs={ "root": @component.FieldSpec::comp("TreeItem") },
-    update=(s, msg, _ctx) => {
-      match msg {
-        Bubble("treeItemSelected", args) => {
-          let label = match args {
-            [Obj(o), ..] =>
-              match o.obj_field("label") {
-                Some(Str(v)) => v
-                _ => "?"
-              }
-            _ => "?"
-          }
-          let log = s.log.copy()
-          log.insert(0, Str("selected: \{label}"))
-          Some({ log, })
+  tree_root_component(init={ log: [] }, update=(s, msg, _ctx) => {
+    match msg {
+      Bubble("treeItemSelected", args) => {
+        let label = match args {
+          [Obj(o), ..] =>
+            match o.obj_field("label") {
+              Some(Str(v)) => v
+              _ => "?"
+            }
+          _ => "?"
         }
-        _ => None
+        let log = s.log.copy()
+        log.insert(0, Str("selected: \{label}"))
+        Some({ log, })
       }
-    },
-  )
+      _ => None
+    }
+  })
 }
 
 ///|
