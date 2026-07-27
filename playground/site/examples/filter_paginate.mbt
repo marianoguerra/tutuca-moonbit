@@ -261,11 +261,6 @@ fn page_slice(keys : Array[Int], start : Int, n : Int) -> Array[Int] {
 ///|
 fn strategies_comp() -> @component.Component {
   strategies_component(
-    specs={
-      "naive": @component.FieldSpec::comp("NaivePeople"),
-      "shared": @component.FieldSpec::comp("SharedPeople"),
-      "coupled": @component.FieldSpec::comp("CoupledPeople"),
-    },
   )
 }
 

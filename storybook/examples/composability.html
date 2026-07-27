@@ -1,12 +1,17 @@
 <script type="tutuca/state">
   interface composability {
+    resource items;
+    resource json-array;
+    resource tree-root;
+    resource root;
+    resource module;
     record state {
     active-section: string,
-    todo: component,
-    json: component,
-    tree: component,
-    personal-site: component,
-    visual-wasm: component,
+    todo: items,
+    json: json-array,
+    tree: tree-root,
+    personal-site: root,
+    visual-wasm: module,
     dnd: component,
     }
   }

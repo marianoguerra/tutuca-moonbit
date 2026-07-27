@@ -10,10 +10,11 @@
     }
   }
   interface dse-root {
+    resource editor;
     record state {
     items: value-omap,
     selected-key: string,
-    editor: component,
+    editor: editor,
     }
   }
 </script>

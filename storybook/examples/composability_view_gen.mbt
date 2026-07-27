@@ -116,14 +116,14 @@ pub fn ComposabilityMsg::from_dispatch(
 impl @component.Fields for ComposabilityState with fn schema() {
   @component.SchemaInfo::new(
     name="Composability",
-    fingerprint="a3b3ea198bfa01dd",
+    fingerprint="641fdd7d92b5c29d",
     fields=[
       @component.FieldInfo::new("activeSection", TyText),
-      @component.FieldInfo::new("todo", TyComp(None)),
-      @component.FieldInfo::new("json", TyComp(None)),
-      @component.FieldInfo::new("tree", TyComp(None)),
-      @component.FieldInfo::new("personalSite", TyComp(None)),
-      @component.FieldInfo::new("visualWasm", TyComp(None)),
+      @component.FieldInfo::new("todo", TyComp(Some("Items"))),
+      @component.FieldInfo::new("json", TyComp(Some("JsonArray"))),
+      @component.FieldInfo::new("tree", TyComp(Some("TreeRoot"))),
+      @component.FieldInfo::new("personalSite", TyComp(Some("Root"))),
+      @component.FieldInfo::new("visualWasm", TyComp(Some("Module"))),
       @component.FieldInfo::new("dnd", TyComp(None)),
     ],
     inputs=["setActiveSection"],

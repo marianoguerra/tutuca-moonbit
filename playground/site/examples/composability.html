@@ -30,11 +30,12 @@
     }
   }
   interface composability {
+    resource tree-root;
     record state {
     active-section: string,
     counter: component,
     todo: component,
-    tree: component,
+    tree: tree-root,
     }
   }
 </script>

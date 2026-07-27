@@ -28,11 +28,7 @@ fn composability_comp(
   composability_component(
     init={ activeSection: "todo" },
     specs={
-      "todo": @component.FieldSpec::comp("Items"),
       "json": @component.FieldSpec::comp("JsonArray", args=json_args),
-      "tree": @component.FieldSpec::comp("TreeRoot"),
-      "personalSite": @component.FieldSpec::comp("Root"),
-      "visualWasm": @component.FieldSpec::comp("Module"),
       "dnd": @component.FieldSpec::comp("DnDExample", args=dnd_args),
     },
     update=(s, msg, ctx) => {

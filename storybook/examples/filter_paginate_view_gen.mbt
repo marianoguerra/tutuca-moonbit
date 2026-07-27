@@ -194,11 +194,11 @@ pub let strategies_global_style : String = ""
 impl @component.Fields for StrategiesState with fn schema() {
   @component.SchemaInfo::new(
     name="Strategies",
-    fingerprint="6bace7a4dde1b354",
+    fingerprint="9acd1d9048355c06",
     fields=[
       @component.FieldInfo::new("naive", TyComp(None)),
-      @component.FieldInfo::new("shared", TyComp(None)),
-      @component.FieldInfo::new("coupled", TyComp(None)),
+      @component.FieldInfo::new("shared", TyComp(Some("SharedPeople"))),
+      @component.FieldInfo::new("coupled", TyComp(Some("CoupledPeople"))),
     ],
     view_names=["main"],
   )

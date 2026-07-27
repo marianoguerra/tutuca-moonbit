@@ -15,10 +15,12 @@
     }
   }
   interface strategies {
+    resource shared-people;
+    resource coupled-people;
     record state {
     naive: component,
-    shared: component,
-    coupled: component,
+    shared: shared-people,
+    coupled: coupled-people,
     }
   }
   // SharedPeople and CoupledPeople deliberately share NaivePeople's state

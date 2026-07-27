@@ -84,7 +84,6 @@ fn cx_tree_item_comp() -> @component.Component {
 fn cx_tree_root_comp() -> @component.Component {
   tree_root_component(
     init=TreeRootState::{ log: [] },
-    specs={ "root": @component.FieldSpec::comp("TreeItem") },
     update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
@@ -133,8 +132,6 @@ fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Comp
   composability_component(
     init=ComposabilityState::{ activeSection: "counter" },
     specs={
-      "counter": @component.FieldSpec::comp("Counter"),
-      "todo": @component.FieldSpec::comp("Items"),
       "tree": @component.FieldSpec::comp("TreeRoot", args=tree_args),
     },
   )

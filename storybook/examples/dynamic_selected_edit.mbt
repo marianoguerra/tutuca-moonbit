@@ -32,7 +32,6 @@ fn dse_root_comp() -> @component.Component {
   dse_root_component(
     name="Root",
     init={ items: Map([]), selectedKey: "" },
-    specs={ "editor": @component.FieldSpec::comp("Editor") },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
     update=(s, msg, _ctx) => {

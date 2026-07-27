@@ -292,12 +292,36 @@ fn user_ty(d : Decls, td : @wit.TypeDef) -> UserTy raise DefError {
         kind: URecord([]),
         doc: td.docs,
       }
-    Resource(_) =>
-      raise UnsupportedType(
-        where_="\{d.iface}.\{td.name}",
-        ty="resource",
-        why="state is plain data; a child component is a field typed by its own interface name",
-      )
+    // A method-less `resource` names a component this block does NOT declare —
+    // one from another module. WIT's own reading of a resource is "a handle to
+    // something whose representation you do not have", which is exactly what a
+    // foreign child component is, so this is a spelling rather than a marker.
+    //
+    // A sibling interface is still the better answer when there is one: it is
+    // checked, and the views can be checked against it. This is for the case
+    // that had no spelling at all and so had to be stated twice — once as
+    // `field: component` in the block and again as
+    // `specs={"field": FieldSpec::comp("Name")}` in MoonBit, where nothing
+    // could notice the two disagreeing.
+    //
+    // Like an alias, it contributes no MoonBit type: the component's own module
+    // declares that. Methods are still refused — a slot is a handle, and
+    // anything a parent calls on a child goes through the message buckets.
+    Resource(r) => {
+      if !r.funcs.is_empty() {
+        raise UnsupportedType(
+          where_="\{d.iface}.\{td.name}",
+          ty="resource with methods",
+          why="a slot is a handle to a component; what a parent asks of a child goes through `receive`",
+        )
+      }
+      return {
+        wit_name: td.name,
+        name: d.comp + upper_name(td.name),
+        kind: URecord([]),
+        doc: td.docs,
+      }
+    }
   }
   { wit_name: td.name, name: d.comp + upper_name(td.name), kind, doc: td.docs }
 }
@@ -381,7 +405,10 @@ fn named(d : Decls, name : String, where_ : String) -> StateTy raise DefError {
       }
       type_of(d, inner, where_)
     }
-    Resource(_) => TComp(None)
+    // A `resource` names a component from another module; the slot carries the
+    // name, resolved through the registration scope at make time exactly as a
+    // sibling's would be.
+    Resource(_) => TComp(Some(component_of(name)))
   }
 }
 

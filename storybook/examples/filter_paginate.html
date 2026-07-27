@@ -20,10 +20,12 @@
     }
   }
   interface strategies {
+    resource shared-people;
+    resource coupled-people;
     record state {
     naive: component,
-    shared: component,
-    coupled: component,
+    shared: shared-people,
+    coupled: coupled-people,
     }
   }
 </script>

@@ -275,12 +275,9 @@ test "out-of-subset WIT is rejected, and the message says why" {
     ),
     true,
   )
-  assert_eq(
-    err_of("interface c { resource handle; record state { n: s32 } }").contains(
-      "resource",
-    ),
-    true,
-  )
+  // A method-LESS resource is in the subset: it names a component from another
+  // module, which is the one child slot a sibling interface cannot express.
+  // (See "a method-less resource names a component from another module".)
   // `map` IS standard WIT, but mizchi/wit@0.3.1 does not parse it, so it
   // surfaces as a syntax error rather than a subset rejection. Recorded here
   // so the day the parser gains it, this test fails and says so.
@@ -432,4 +429,38 @@ test "a self-referential record is refused, but a tree through a list is not" {
     ] {
     assert_true(err_of(src).contains("refers to itself"))
   }
+}
+
+///|
+/// A slot whose component lives in ANOTHER module.
+///
+/// A sibling interface is the better answer when there is one — it is checked,
+/// and so are the views that render into it. But a block resolves names against
+/// its own siblings only, so a child from another module had no spelling at
+/// all: it was `field: component` here and `FieldSpec::comp("Name")` in
+/// MoonBit, with nothing able to notice the two disagreeing.
+///
+/// `resource` is WIT's own word for a handle to something whose representation
+/// you do not have, which is what a foreign component is.
+test "a method-less resource names a component from another module" {
+  let d = one(
+    "interface holder { resource tree-root; record state { tree: tree-root, n: s32 } }",
+  )
+  assert_eq(d.fields[0].ty, TComp(Some("TreeRoot")))
+  assert_eq(d.ty_info_src(d.fields[0].ty), "TyComp(Some(\"TreeRoot\"))")
+  // It declares no MoonBit type of its own: the component's own module does.
+  assert_eq(d.types.map(t => t.wit_name), ["tree-root"])
+  assert_true(d.types[0].kind is URecord([]))
+  // A sibling interface still wins where there is one, and reads better.
+  let sib = @statedef.parse_state(
+    "interface card { record state { t: string } } interface board { record state { lead: card } }",
+  )
+  assert_eq(sib[1].fields[0].ty, TComp(Some("Card")))
+  // Methods are refused: a slot is a handle, and what a parent asks of a child
+  // goes through the message buckets.
+  assert_true(
+    err_of("interface h { resource r { ping: func(); } record state { x: r } }").contains(
+      "resource with methods",
+    ),
+  )
 }

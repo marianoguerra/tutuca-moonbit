@@ -129,11 +129,11 @@ pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
 impl @component.Fields for DseRootState with fn schema() {
   @component.SchemaInfo::new(
     name="DseRoot",
-    fingerprint="1e0db39e41167c58",
+    fingerprint="c1417e013696790c",
     fields=[
       @component.FieldInfo::new("items", TyOMap(TyAny)),
       @component.FieldInfo::new("selectedKey", TyText),
-      @component.FieldInfo::new("editor", TyComp(None)),
+      @component.FieldInfo::new("editor", TyComp(Some("Editor"))),
     ],
     inputs=["selectItem"],
     view_names=["main"],
