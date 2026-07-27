@@ -424,28 +424,44 @@ pub fn Inspector::classify(
     // collection iterates, else the fields it DECLARES. Only an instance that
     // says neither falls back to the one opaque line of debug text — which
     // every instance used to get, because nothing could enumerate an `Obj`.
-    Obj(o) =>
+    Obj(o) => {
+      let rows : Array[@tutuca.Value] = []
       match o.obj_seq_entries() {
-        Some(entries) => {
-          let rows : Array[@tutuca.Value] = []
+        Some(entries) =>
           for entry in entries {
             let (k, item) = entry
             rows.push(self.property(fmt_path_key(k), self.classify(item)))
           }
-          self.make_("JsonObject", args={ "items": List(rows) })
-        }
         None =>
           match o.obj_schema() {
-            Some(schema) => {
-              let rows : Array[@tutuca.Value] = []
+            Some(schema) =>
               for f in schema.fields {
                 rows.push(self.property(f.name, self.classify(v.field(f.name))))
               }
-              self.make_("JsonObject", args={ "items": List(rows) })
-            }
-            None => self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
+            None =>
+              return self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
           }
       }
+      // ...under the name it CALLS itself. The root row of the instance
+      // inspector has always shown this (`instance_snapshot` reads the same
+      // name off the same schema); a NESTED instance used to lose it here and
+      // render as a bare `Object`, so a JsonArray's children read `Object {1}`
+      // instead of `JsonBoolean {1}` — indistinguishable from a plain Map that
+      // happened to have one key. `InstanceFields` is JsonObject's twin plus
+      // the `typeName` this needs.
+      let name = match o.obj_schema() {
+        Some(s) => s.name
+        None => ""
+      }
+      if name == "" {
+        self.make_("JsonObject", args={ "items": List(rows) })
+      } else {
+        self.make_("InstanceFields", args={
+          "typeName": Str(name),
+          "items": List(rows),
+        })
+      }
+    }
   }
 }
 

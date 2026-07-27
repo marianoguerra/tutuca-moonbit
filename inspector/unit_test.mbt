@@ -105,19 +105,35 @@ impl @tutuca.Obj for Undescribed with fn obj_debug(_self) {
 }
 
 ///|
-/// An instance shows its DECLARED fields. It used to render as one line of
-/// `obj_debug` text no matter what it carried, because nothing could ask an
-/// `Obj` what its fields were — the inspector's headline limitation.
+/// An instance shows its DECLARED fields, under its own name. It used to
+/// render as one line of `obj_debug` text no matter what it carried, because
+/// nothing could ask an `Obj` what its fields were — the inspector's headline
+/// limitation — and then as a nameless `Object`, which reads as a plain Map.
 test "classify: a described instance opens into its fields" {
   let insp = @inspector.Inspector::new()
   let card = sample_comp().make({ "title": Str("Hello") })
   let obj = insp.classify(card)
-  inspect(otext(obj, "typeText"), content="Object")
+  inspect(otext(obj, "typeText"), content="RichSample")
   let rows = olist(obj, "items")
   assert_true(rows.length() > 0)
   assert_true(oget(rows[0], "key") is Str("title"))
   // ...and the field's VALUE is classified too, not stringified
   inspect(otext(oget(rows[0], "child"), "text"), content="\"Hello\"")
+}
+
+///|
+/// The name survives NESTING — the case that actually showed up, in a
+/// storybook Instance tab over a JSON editor: a component holding a list of
+/// child components rendered them as `Object {1}`, because only the root row
+/// went through `instance_snapshot` and every level below it through
+/// `classify`.
+test "classify: a nested instance keeps its name" {
+  let insp = @inspector.Inspector::new()
+  let card = sample_comp().make({ "title": Str("Hello") })
+  let arr = insp.classify(List([card]))
+  inspect(otext(arr, "typeText"), content="Array")
+  let child = oget(olist(arr, "items")[0], "child")
+  inspect(otext(child, "typeText"), content="RichSample")
 }
 
 ///|
