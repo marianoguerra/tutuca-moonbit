@@ -81,6 +81,8 @@ pub fn Inspector::new() -> Inspector {
       instance_explorer_comp(),
       instance_inspector_comp(),
       instance_fields_comp(),
+      state_editor_comp(insp),
+      state_editor_row_comp(),
     ] {
     insp.comps[c.name] = c
   }
@@ -382,6 +384,14 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
       component: "InstanceExplorer",
       title: "Instance Explorer",
       args: instance_args(insp.explore_instance(card, sample_card)),
+      view: None,
+    },
+    {
+      // A form nobody wrote: every row, control and label comes from what the
+      // component DECLARES, so this example works for any component at all.
+      component: "StateEditor",
+      title: "State Editor (schema-driven)",
+      args: instance_args(insp.edit_instance(card)),
       view: None,
     },
     {

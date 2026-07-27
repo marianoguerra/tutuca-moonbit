@@ -8,6 +8,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A schema-driven state editor.** `@inspector.Inspector::edit_instance(v)`
+  renders a form over any component instance: one row per DECLARED field, a
+  control chosen from the field's kind (checkbox / number / text, with a
+  collection or a child slot shown rather than edited), the WIT spelling as
+  the type label, and an edit written back through the per-field mutator
+  (`setTitle`, `setCount`, …) resolved by name off the instance. No part of it
+  is written per component and none of it needs a downcast.
+
+  It edits the instance it holds — a storybook knob or a fixture builder —
+  rather than writing through to a mounted app, which would need the path the
+  instance sits at.
+
+- **The playground's Activity panel is the transactor's observer stream.** One
+  line per handler invocation with its bucket, name, args, path and whether the
+  leaf changed, newest first. It was a numbered list of state STRINGS, because
+  a record could not be serialized: `before`/`after` are component instances.
+  `ObserveRecord::to_json` exists now, along with `ObserveKind::label` /
+  `ObserveMatch::label`, and the wasm host's `state_json` returns real JSON
+  like the js one.
+
 - **A component instance can describe itself.** `@tutuca.Obj` gains
   `obj_schema()`, and with it the whole generic-access layer in `@tutuca`:
   `Value::field_opt` / `item` / `index` / `key` / `entries` / `size` /

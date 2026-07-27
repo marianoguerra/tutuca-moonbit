@@ -58,25 +58,6 @@ pub fn path_keys_label(path_keys : Array[@tutuca.StepKey]) -> String {
 }
 
 ///|
-fn observe_kind_label(kind : @transactor.ObserveKind) -> String {
-  match kind {
-    Receive => "receive"
-    Input => "input"
-    Bubble => "bubble"
-    Response => "response"
-    Request => "request"
-  }
-}
-
-///|
-fn observe_match_label(m : @transactor.ObserveMatch) -> String {
-  match m {
-    Exact => "exact"
-    NoHandler => "none"
-  }
-}
-
-///|
 /// Turn an observer record into an ActivityEntry instance (JS recordToEntry).
 /// `inspect` builds the before/after value views (defaults to the plain data
 /// inspector). `path_label` and `time` default to the full path label and
@@ -103,10 +84,10 @@ pub fn Inspector::record_to_entry(
   }
   let seq = record.seq
   self.make_("ActivityEntry", args={
-    "kind": Str(observe_kind_label(record.kind)),
+    "kind": Str(record.kind.label()),
     "name": Str(record.name),
     "handlerName": Str(""),
-    "matched": Str(observe_match_label(record.matched)),
+    "matched": Str(record.matched.label()),
     "pathLabel": Str(path_label.unwrap_or(path_keys_label(record.path_keys))),
     "time": Str(time.unwrap_or("#\{seq}")),
     "before": before,

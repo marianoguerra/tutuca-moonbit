@@ -6,6 +6,8 @@ import {
 }
 
 // Values
+pub fn activity_json() -> String
+
 pub fn classes_json() -> String
 
 pub fn mount(@component.ModuleDef, String, root? : String, args? : Map[String, @marianoguerra/tutuca/core.Value]) -> Unit

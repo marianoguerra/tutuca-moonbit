@@ -9,6 +9,8 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/cmp",
+  // parse_double: a text control hands back a String for a numeric field
+  "moonbitlang/core/string",
   "moonbitlang/core/json",
   // the generated *_view_gen.mbt modules derive @debug.Debug on their
   // vocabulary enums

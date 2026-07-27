@@ -1,0 +1,51 @@
+<script type="tutuca/state">
+  interface state-editor-row {
+    /// One field of the edited instance. `kind` picks the control; `text`,
+    /// `num` and `flag` are the three editable shapes, and `readonly` carries
+    /// the rendering for a field no control fits.
+    record state {
+      name: string,
+      %type: string,
+      kind: string,
+      text: string,
+      num: f64,
+      flag: bool,
+      readonly: string,
+      editable: bool,
+    }
+  }
+  interface state-editor {
+    /// `target` is the instance being edited — the source of truth, replaced
+    /// wholesale by every edit. `rows` is its schema, projected.
+    record state {
+      target: any,
+      rows: values,
+      name: string,
+    }
+  }
+</script>
+
+<template id="StateEditorRow">
+  <label class="flex items-center gap-2 leading-tight state-editor-row">
+    <span class="font-mono text-xs w-32 shrink-0 text-right opacity-70 row-name" @text=".name"></span>
+    <span class="font-mono text-[0.65rem] w-24 shrink-0 opacity-40 row-type" @text=".type"></span>
+    <input @show="equals? .kind 'bool'"
+      type="checkbox" class="checkbox checkbox-xs row-bool"
+      :checked=".flag" @on.input="edit value">
+    <input @show="equals? .kind 'num'"
+      type="number" class="input input-xs input-bordered w-40 row-num"
+      :value=".num" @on.input="edit valueAsFloat">
+    <input @show="equals? .kind 'text'"
+      type="text" class="input input-xs input-bordered w-64 row-text"
+      :value=".text" @on.input="edit value">
+    <span @hide=".editable"
+      class="font-mono text-xs opacity-50 row-readonly" @text=".readonly"></span>
+  </label>
+</template>
+
+<template id="StateEditor">
+  <div class="flex flex-col gap-1 state-editor">
+    <div class="font-mono text-sm font-semibold editor-name" @text=".name"></div>
+    <x render-each=".rows"></x>
+  </div>
+</template>

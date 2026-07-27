@@ -8,6 +8,14 @@
 let current : Ref[@app.App[@wdom.WasmNode]?] = Ref(None)
 
 ///|
+/// How many dispatches the activity panel keeps (see the js host twin).
+const ACTIVITY_CAP = 200
+
+///|
+/// The recent dispatches as JSON, newest last.
+let activity : Array[Json] = []
+
+///|
 /// Mount a user-authored module on `#<root_id>`, driving the DOM from wasm.
 pub fn mount(
   m : @component.ModuleDef,
@@ -38,6 +46,13 @@ pub fn mount(
   @wglue.install(app)
   @wglue.install_styles(app, doc)
   current.val = Some(app)
+  app.transactor.observe(record => {
+    activity.push(record.to_json())
+    if activity.length() > ACTIVITY_CAP {
+      activity.remove(0) |> ignore
+    }
+  })
+  |> ignore
   app.send_at_root("init")
 }
 
@@ -48,16 +63,23 @@ pub fn on_event(ev : @core.Any) -> Unit {
 }
 
 ///|
-/// Current root state in tutuca's readable value syntax (inspector "State").
+/// Current root state as JSON, like the js host: an instance projects to its
+/// declared fields rather than flattening to null.
 pub fn state_json() -> String {
   match current.val {
     Some(app) =>
       match app.root_value() {
-        Some(v) => v.to_display_string()
+        Some(v) => v.to_json().stringify()
         None => "—"
       }
     None => "—"
   }
+}
+
+///|
+/// The dispatches since mount, as a JSON array.
+pub fn activity_json() -> String {
+  Json::array(activity).stringify()
 }
 
 ///|

@@ -120,6 +120,25 @@ pub(all) enum ObserveMatch {
 } derive(Debug, Eq)
 
 ///|
+/// The kind as the wire/display word (the JS observeKind string).
+declare pub fn ObserveKind::label(self : ObserveKind) -> String
+
+///|
+/// How the handler was resolved, as the wire/display word.
+declare pub fn ObserveMatch::label(self : ObserveMatch) -> String
+
+///|
+/// One record as JSON — a dispatch a devtool can show, or a host can post
+/// across a boundary.
+///
+/// This could not be written until an instance had a JSON form: `before` and
+/// `after` are the leaf VALUES a handler read and returned, and a component
+/// instance flattened to `null`, which is the whole of what a transaction is
+/// about. `@tutuca.Value::to_json` projects a described instance now, so the
+/// record carries the state change rather than a pair of nulls.
+declare pub fn ObserveRecord::to_json(self : ObserveRecord) -> Json
+
+///|
 /// One normalized record per handler invocation (JS Transactor.observe):
 /// purely observational — dev tools / storybook activity logs subscribe.
 /// `path` has field-resolved keys pinned against the root the handler read,

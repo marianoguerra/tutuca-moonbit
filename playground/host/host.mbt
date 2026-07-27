@@ -10,6 +10,22 @@
 let current : Ref[@app.App[@bdom.BrowserNode]?] = Ref(None)
 
 ///|
+/// How many dispatches the activity panel keeps. A bound, not a budget: the
+/// page polls this after every interaction and a long session would otherwise
+/// grow a log nobody scrolls back through.
+const ACTIVITY_CAP = 200
+
+///|
+/// The recent dispatches, newest last, as JSON — the transactor's observer
+/// stream held for the page to read.
+///
+/// The panel showed a numbered list of state STRINGS before, because a record
+/// could not be serialized: `before`/`after` are component instances, and
+/// those flattened to null. Now each entry carries what the transaction
+/// actually was.
+let activity : Array[Json] = []
+
+///|
 /// Mount a user-authored module on `#<root_id>` and wire events + styles.
 ///
 /// `root` names the component to mount; when omitted it defaults to the first
@@ -55,8 +71,22 @@ pub fn mount(
   @glue.install(app)
   @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
   current.val = Some(app)
+  // Every dispatch, for the activity panel. Subscribing costs nothing when
+  // nobody reads it — the transactor skips building records with no observers
+  // — and this is the one host that always has a reader.
+  // (the return value is an unsubscribe; the page holds the app for its whole
+  // life, so there is nothing to unsubscribe from)
+  app.transactor.observe(record => {
+    activity.push(record.to_json())
+    if activity.length() > ACTIVITY_CAP {
+      activity.remove(0) |> ignore
+    }
+  })
+  |> ignore
   // hand the inspector getters to the page (globalThis.__tutuca.state() etc.)
-  publish_inspector(() => state_json(), () => classes_json())
+  publish_inspector(() => state_json(), () => classes_json(), () => {
+    activity_json()
+  })
   // tutuca has no lifecycle: the HOST dispatches `init` (JS app.sendAtRoot).
   app.send_at_root("init")
 }
@@ -67,8 +97,16 @@ pub fn mount(
 extern "js" fn publish_inspector(
   state : () -> String,
   classes : () -> String,
+  activity : () -> String,
 ) -> Unit =
-  #|(state, classes) => { globalThis.__tutuca = { state, classes } }
+  #|(state, classes, activity) => { globalThis.__tutuca = { state, classes, activity } }
+
+///|
+/// The dispatches since mount, as a JSON array — one object per handler
+/// invocation with its kind, name, args, path, and the before/after leaf.
+pub fn activity_json() -> String {
+  Json::array(activity).stringify()
+}
 
 ///|
 /// Current root state for the inspector's "State" panel, as JSON — which the

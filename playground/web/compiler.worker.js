@@ -62,6 +62,7 @@ const BOOT = {
 pub fn on_event(ev : @core.Any) -> Unit { @host_wasm.on_event(ev) }
 pub fn state_json() -> String { @host_wasm.state_json() }
 pub fn classes_json() -> String { @host_wasm.classes_json() }
+pub fn activity_json() -> String { @host_wasm.activity_json() }
 fn main {
 
 }
@@ -130,7 +131,9 @@ async function compile(userCode, viewsCode, viewsIrCode) {
   // wasm-gc has no callable `main` from JS: the host facade is driven through
   // exported wrappers, so those must be named as link exports.
   const exportedFunctions =
-    fs.target === "wasm-gc" ? ["mount", "on_event", "state_json", "classes_json"] : [];
+    fs.target === "wasm-gc"
+      ? ["mount", "on_event", "state_json", "classes_json", "activity_json"]
+      : [];
   const lk = moonc.linkCore({
     coreFiles: [...fs.cores, bp.core],
     main: fs.userPkg,

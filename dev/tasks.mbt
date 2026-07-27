@@ -265,6 +265,7 @@ fn gen_views_commands() -> Array[Command] {
     ("inspector/json.html", None),
     ("inspector/component_inspector.html", None),
     ("inspector/instance_inspector.html", None),
+    ("inspector/state_editor.html", None),
     ("inspector/schema_components.html", None),
     ("inspector/schema.html", None),
     ("inspector/module.html", None),

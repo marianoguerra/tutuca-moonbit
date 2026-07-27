@@ -111,12 +111,26 @@ function setStatus(msg, cls) {
 }
 
 // --- preview: fresh realm per run, wired to the state/activity inspector ---
+// The Activity panel is the transactor's observer stream, newest first: one
+// line per handler invocation with its bucket, name, path and whether the leaf
+// changed. It used to be a numbered list of state STRINGS — the records could
+// not be serialized, because `before`/`after` are component instances and an
+// instance had no JSON form.
+function activityLine(e) {
+  const args = (e.args || []).map((a) => JSON.stringify(a)).join(", ");
+  const at = e.path ? ` at .${e.path}` : "";
+  const changed = "after" in e ? "" : "  (no change)";
+  const miss = e.matched === "none" ? "  (no handler)" : "";
+  return `#${e.seq} ${e.kind} ${e.name}(${args})${at}${changed}${miss}`;
+}
+
 function inspectorOnState() {
-  const activityLog = [];
-  return (s) => {
+  return (s, a) => {
     stateOut.textContent = tryPretty(s);
-    activityLog.push(s);
-    activity.textContent = activityLog.map((v, i) => `${i}: ${v}`).join("\n");
+    if (a == null) return;
+    let entries = [];
+    try { entries = JSON.parse(a); } catch { return; }
+    activity.textContent = entries.slice().reverse().map(activityLine).join("\n");
   };
 }
 

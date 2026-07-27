@@ -566,6 +566,36 @@ pub fn schema_viewer_views() -> Map[String, @anode.View]
 
 pub fn schema_viewer_zero_args() -> Map[String, @core.Value]
 
+pub let state_editor_common_style : String
+
+pub fn state_editor_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorState, common_style? : String, global_style? : String, update? : (StateEditorState, @component.Dispatch, &@core.Ctx) -> StateEditorState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let state_editor_field_names : Array[String]
+
+pub let state_editor_global_style : String
+
+pub let state_editor_row_common_style : String
+
+pub fn state_editor_row_component(name? : String, views? : Map[String, @anode.View], init? : StateEditorRowState, common_style? : String, global_style? : String, update? : (StateEditorRowState, @component.Dispatch, &@core.Ctx) -> StateEditorRowState?, swap? : (StateEditorRowInput) -> ((StateEditorRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let state_editor_row_field_names : Array[String]
+
+pub let state_editor_row_global_style : String
+
+pub let state_editor_row_schema_fingerprint : String
+
+pub fn[S] state_editor_row_swap((StateEditorRowInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn state_editor_row_views() -> Map[String, @anode.View]
+
+pub fn state_editor_row_zero_args() -> Map[String, @core.Value]
+
+pub let state_editor_schema_fingerprint : String
+
+pub fn state_editor_views() -> Map[String, @anode.View]
+
+pub fn state_editor_zero_args() -> Map[String, @core.Value]
+
 pub let value_fn_common_style : String
 
 pub fn value_fn_component(name? : String, views? : Map[String, @anode.View], init? : ValueFnState, common_style? : String, global_style? : String, update? : (ValueFnState, @component.Dispatch, &@core.Ctx) -> ValueFnState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
@@ -831,6 +861,8 @@ pub struct Inspector {
 pub fn Inspector::build_inspector_views(Self, @core.Value, comps? : @component.Components) -> InspectorViews
 pub fn Inspector::classify(Self, @core.Value) -> @core.Value
 pub fn Inspector::classify_schema(Self, @core.Value) -> @core.Value
+pub fn Inspector::edit_instance(Self, @core.Value) -> @core.Value
+pub fn Inspector::editor_rows(Self, @core.Value) -> Array[@core.Value]
 pub fn Inspector::inspect_component(Self, @component.Component) -> @core.Value
 pub fn Inspector::inspect_instance(Self, @core.Value, @component.Component) -> @core.Value
 pub fn Inspector::module_(Self) -> @component.ModuleDef
@@ -1744,6 +1776,66 @@ pub(all) enum SchemaViewerView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SchemaViewerView::name(Self) -> String
+
+pub(all) enum StateEditorField {
+  Target
+  Rows
+  Name
+} derive(Eq, @debug.Debug)
+pub fn StateEditorField::kind(Self) -> @core.FieldKind
+pub fn StateEditorField::name(Self) -> String
+
+pub(all) enum StateEditorRowField {
+  Name
+  Type
+  Kind
+  Text
+  Num
+  Flag
+  Readonly
+  Editable
+} derive(Eq, @debug.Debug)
+pub fn StateEditorRowField::kind(Self) -> @core.FieldKind
+pub fn StateEditorRowField::name(Self) -> String
+
+pub(all) enum StateEditorRowInput {
+  Edit
+} derive(Eq, @debug.Debug)
+pub fn StateEditorRowInput::name(Self) -> String
+pub fn StateEditorRowInput::parse(String) -> Self?
+
+pub(all) enum StateEditorRowMsg {
+  Edit(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StateEditorRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct StateEditorRowState {
+  name : String
+  type_ : String
+  kind : String
+  text : String
+  num : Double
+  flag : Bool
+  readonly_ : String
+  editable : Bool
+}
+
+pub(all) enum StateEditorRowView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StateEditorRowView::name(Self) -> String
+
+pub(all) struct StateEditorState {
+  target : @core.Value
+  rows : Array[@core.Value]
+  name : String
+}
+
+pub(all) enum StateEditorView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn StateEditorView::name(Self) -> String
 
 pub(all) struct ValueFnState {
 }

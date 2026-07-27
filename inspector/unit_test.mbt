@@ -583,3 +583,51 @@ impl @component.Fields for DescribedState with fn schema() {
     init_names=["fresh"],
   )
 }
+
+// ---------------------------------------------------------------------------
+// The schema-driven state editor
+// ---------------------------------------------------------------------------
+
+///|
+/// A form over a component nobody wrote a form for.
+///
+/// One row per DECLARED field, each carrying the WIT spelling and a control
+/// picked from the kind — which is the whole point: none of it is written per
+/// component, and none of it was reachable before an instance could say what
+/// fields it has.
+test "state editor: rows come from the schema, controls from the kinds" {
+  let insp = @inspector.Inspector::new()
+  let card = sample_comp().make({
+    "title": Str("Hello"),
+    "count": Num(3),
+    "tags": List([Str("a")]),
+    "open": Bool(true),
+  })
+  let rows = insp.editor_rows(card)
+  inspect(rows.length(), content="4")
+  assert_true(oget(rows[0], "name") is Str("title"))
+  assert_true(oget(rows[0], "kind") is Str("text"))
+  assert_true(oget(rows[0], "text") is Str("Hello"))
+  assert_true(oget(rows[1], "kind") is Str("num"))
+  assert_true(oget(rows[1], "num") is Num(3.0))
+  // the WIT spelling, not a label reconstructed from the runtime kind
+  assert_true(oget(rows[2], "type") is Str("values"))
+  // a list is a tree, not a control: shown, not edited
+  assert_true(oget(rows[2], "kind") is Str("readonly"))
+  assert_true(oget(rows[2], "editable") is Bool(false))
+  assert_true(oget(rows[3], "kind") is Str("bool"))
+  assert_true(oget(rows[3], "flag") is Bool(true))
+  // an instance that declares nothing has no form to draw
+  assert_eq(insp.editor_rows(Obj(Undescribed::{  })).length(), 0)
+}
+
+///|
+/// The editor names the component and holds the instance it edits.
+test "state editor: the form wraps the target it edits" {
+  let insp = @inspector.Inspector::new()
+  let card = sample_comp().make({ "title": Str("Hi") })
+  let ed = insp.edit_instance(card)
+  assert_true(oget(ed, "name") is Str("RichSample"))
+  assert_true(oget(ed, "target") is Obj(_))
+  assert_eq(olist(ed, "rows").length(), 4)
+}

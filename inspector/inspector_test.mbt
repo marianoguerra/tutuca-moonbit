@@ -270,3 +270,49 @@ test "every example mounts and renders" {
   }
   ignore(module_)
 }
+
+///|
+/// Drive the generated form through the real DOM: type into the text control,
+/// tick the checkbox, and read the edited instance back.
+///
+/// The chain under test is the whole feature — the row's control came from the
+/// declared kind, the edit bubbled with the field NAME, and the write went
+/// through the per-field mutator resolved by name off the instance. No part of
+/// it knows what component this is.
+test "state editor: editing a control rewrites the instance" {
+  let h = @harness.mount_example(
+    @inspector.inspector_module(),
+    "State Editor (schema-driven)",
+  )
+  // one row per declared field, and the component names itself
+  inspect(h.text(".editor-name"), content="SampleCard")
+  inspect(h.find_all(".state-editor-row").length(), content="4")
+  debug_inspect(
+    h.texts(".row-name"),
+    content=(
+      #|["title", "count", "tags", "open"]
+    ),
+  )
+  // the control per kind: text, number, read-only text, checkbox
+  inspect(h.value_of(".row-text"), content="Hello")
+  inspect(h.value_of(".row-num"), content="3")
+  assert_true(h.checked_of(".row-bool"))
+  // ...and a list has no control at all, only its rendering
+  inspect(
+    h.text(".row-readonly"),
+    content=(
+      #|["a","b"]
+    ),
+  )
+  // edit the text field: the row bubbles, the editor calls `setTitle`
+  h.type_into(".row-text", "Edited")
+  inspect(h.value_of(".row-text"), content="Edited")
+  // the instance itself changed, not just the control
+  let target = h.drive_value().field("target")
+  assert_true(target.field("title") is Str("Edited"))
+  // a checkbox writes a Bool through `setOpen`
+  h.check(".row-bool", false)
+  assert_true(h.drive_value().field("target").field("open") is Bool(false))
+  // and the untouched fields came along unchanged
+  assert_true(h.drive_value().field("target").field("count") is Num(3.0))
+}

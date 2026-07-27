@@ -32,11 +32,13 @@ pub(all) enum ObserveKind {
   Response
   Request
 } derive(Eq, @debug.Debug)
+pub fn ObserveKind::label(Self) -> String
 
 pub(all) enum ObserveMatch {
   Exact
   NoHandler
 } derive(Eq, @debug.Debug)
+pub fn ObserveMatch::label(Self) -> String
 
 pub(all) struct ObserveRecord {
   kind : ObserveKind
@@ -50,6 +52,7 @@ pub(all) struct ObserveRecord {
   after : @core.Value?
   seq : Int
 }
+pub fn ObserveRecord::to_json(Self) -> Json
 
 pub(all) struct RequestHandler((Array[@core.Value], (Result[@core.Value, @core.Value]) -> Unit) -> Unit)
 

@@ -193,3 +193,77 @@ test "on_drained fires once per outermost settle that did work" {
   tx.settle()
   assert_eq(drains.val, 2)
 }
+
+///|
+/// A described instance, so `before`/`after` have a JSON form. `OSheet` above
+/// declares nothing on purpose — it is the older fixture, and what it pins is
+/// that a record still SERIALIZES when its leaf cannot.
+priv struct DSheet {
+  title : String
+}
+
+///|
+fn dsheet(title : String) -> &@tutuca.PathNode {
+  (Obj(DSheet::{ title, }) : @tutuca.Value) as &@tutuca.PathNode
+}
+
+///|
+impl @tutuca.Obj for DSheet with fn obj_schema(_self) {
+  @tutuca.SchemaInfo::new(name="DSheet", fingerprint="dsheet", fields=[
+    @tutuca.FieldInfo::new("title", "string", FText),
+  ])
+  |> Some
+}
+
+///|
+impl @tutuca.Obj for DSheet with fn obj_field(self, name) {
+  match name {
+    "title" => Some(Str(self.title))
+    _ => None
+  }
+}
+
+///|
+impl @tutuca.Obj for DSheet with fn obj_handler(_self, bucket, name) {
+  match (bucket, name) {
+    (Receive, "rename") =>
+      Some(
+        Handler((args, _ctx) => {
+          match args {
+            [Str(s)] => Some(dsheet(s))
+            _ => None
+          }
+        }),
+      )
+    _ => None
+  }
+}
+
+///|
+/// A record as JSON — the shape a devtools panel reads.
+///
+/// This is what could not be written before: `before` and `after` are the leaf
+/// the handler read and returned, which for every component in the tree is an
+/// instance, and an instance flattened to `null`. The record serialized to
+/// everything EXCEPT the state change it exists to describe.
+test "observe: a record serializes, state change and all" {
+  let root : @tutuca.Value = Map({ "sheet": Obj(DSheet::{ title: "a" }) })
+  let tx = @transactor.Transactor::new(root as &@tutuca.PathNode)
+  let records : Array[@transactor.ObserveRecord] = []
+  let _un = tx.observe(r => records.push(r))
+  let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
+  let _ = tx.push_send(p, "rename", [Str("b")])
+  let _ = tx.push_send(p, "no-such", [])
+  tx.settle()
+  inspect(
+    records[0].to_json().stringify(),
+    content=(
+      #|{"kind":"receive","name":"rename","matched":"exact","path":"sheet","seq":1,"args":["b"],"before":{"title":"a"},"after":{"title":"b"}}
+    ),
+  )
+  // A handler that answered nothing has NO `after` key — absent, not null,
+  // which is the distinction the whole no-op path turns on.
+  let miss = records[1].to_json().stringify()
+  assert_true(miss.contains("\"matched\":\"none\""))
+  assert_false(miss.contains("\"after\""))
+}

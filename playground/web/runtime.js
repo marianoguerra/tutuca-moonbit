@@ -102,10 +102,16 @@ export function mount(container, jsText, { onState, margaui = true } = {}) {
   let last = null;
   const readState = () => {
     try {
-      const s = win.__tutuca && win.__tutuca.state ? win.__tutuca.state() : null;
+      const t = win.__tutuca;
+      const s = t && t.state ? t.state() : null;
       if (s == null || s === last) return;
       last = s;
-      onState?.(s);
+      // The activity log is read with the state so the two panels always show
+      // the same moment: it is the transactor's observer stream, one entry per
+      // handler invocation, and the last of them is what produced this state.
+      let a = null;
+      try { a = t && t.activity ? t.activity() : null; } catch {}
+      onState?.(s, a);
     } catch {}
   };
   // Compile + inject the app's margaui class set (retry briefly: module scripts
@@ -247,7 +253,9 @@ export async function mountWasm(container, wasmBytes, { onState } = {}) {
       const s = exports.state_json ? exports.state_json() : null;
       if (s == null || s === last) return;
       last = s;
-      onState?.(s);
+      let a = null;
+      try { a = exports.activity_json ? exports.activity_json() : null; } catch {}
+      onState?.(s, a);
     } catch {}
   };
   iframe.addEventListener("load", () => setTimeout(readState, 30));
