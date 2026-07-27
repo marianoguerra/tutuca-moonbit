@@ -96,7 +96,7 @@ pub fn Inspector::edit_instance(
 /// A number input hands back a `Num` and a checkbox a `Bool`, which already
 /// match; the reason this exists is the text control, whose `String` is the
 /// right answer for `FText` and the wrong one for everything else. The write
-/// itself is coerced again by the component's own `FieldSpec`, so this is
+/// itself is coerced again against the component's declared field, so this is
 /// about sending the right shape rather than about safety.
 fn coerce_edit(kind : @component.FieldKind, v : @tutuca.Value) -> @tutuca.Value {
   match (kind, v) {
@@ -136,11 +136,7 @@ fn state_editor_row_comp() -> @component.Component {
 /// only reads it at dispatch time — the `reg` pattern examples/json.mbt uses
 /// for the same reason.
 fn state_editor_comp(insp : Inspector) -> @component.Component {
-  state_editor_component(specs={ "target": @component.FieldSpec::comp("") }, update=(
-    s,
-    msg,
-    _ctx,
-  ) => {
+  state_editor_component(update=(s, msg, _ctx) => {
     match msg {
       Bubble("onEdit", [Str(field), v]) => {
         // The declared kind decides what shape to send...

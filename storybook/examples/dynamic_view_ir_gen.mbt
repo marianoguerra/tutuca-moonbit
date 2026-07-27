@@ -87,7 +87,8 @@ pub fn selector_entry_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -107,7 +108,8 @@ pub fn selector_entry_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -176,7 +178,8 @@ pub fn selector_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -196,7 +199,8 @@ pub fn selector_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -287,7 +291,8 @@ pub fn entry_editor_and_selector_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -307,7 +312,8 @@ pub fn entry_editor_and_selector_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -372,7 +378,8 @@ pub fn sheet_component(
   global_style? : String = sheet_global_style,
   update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> SheetState?,
   swap? : (SheetInput) -> ((SheetState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -392,7 +399,8 @@ pub fn sheet_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -446,7 +454,8 @@ pub fn toolbar_component(
   common_style? : String = toolbar_common_style,
   global_style? : String = toolbar_global_style,
   update? : (ToolbarState, @component.Dispatch, &@tutuca.Ctx) -> ToolbarState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -457,7 +466,8 @@ pub fn toolbar_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -511,7 +521,8 @@ pub fn panel_component(
   common_style? : String = panel_common_style,
   global_style? : String = panel_global_style,
   update? : (PanelState, @component.Dispatch, &@tutuca.Ctx) -> PanelState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -522,7 +533,8 @@ pub fn panel_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -574,7 +586,8 @@ pub fn workspace_component(
   global_style? : String = workspace_global_style,
   update? : (WorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> WorkspaceState?,
   compute? : (WorkspaceMethod) -> ((WorkspaceState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -594,7 +607,8 @@ pub fn workspace_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

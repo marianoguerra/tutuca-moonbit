@@ -61,7 +61,8 @@ pub fn table_row_component(
   common_style? : String = table_row_common_style,
   global_style? : String = table_row_global_style,
   update? : (TableRowState, @component.Dispatch, &@tutuca.Ctx) -> TableRowState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -72,7 +73,8 @@ pub fn table_row_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -128,7 +130,8 @@ pub fn item_table_component(
   common_style? : String = item_table_common_style,
   global_style? : String = item_table_global_style,
   update? : (ItemTableState, @component.Dispatch, &@tutuca.Ctx) -> ItemTableState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -139,7 +142,8 @@ pub fn item_table_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -181,7 +185,8 @@ pub fn select_option_component(
   common_style? : String = select_option_common_style,
   global_style? : String = select_option_global_style,
   update? : (SelectOptionState, @component.Dispatch, &@tutuca.Ctx) -> SelectOptionState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -192,7 +197,8 @@ pub fn select_option_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -258,7 +264,8 @@ pub fn item_select_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -278,7 +285,8 @@ pub fn item_select_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -322,7 +330,8 @@ pub fn pseudo_x_demo_component(
   common_style? : String = pseudo_x_demo_common_style,
   global_style? : String = pseudo_x_demo_global_style,
   update? : (PseudoXDemoState, @component.Dispatch, &@tutuca.Ctx) -> PseudoXDemoState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -333,7 +342,8 @@ pub fn pseudo_x_demo_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

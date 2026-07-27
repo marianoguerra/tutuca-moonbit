@@ -28,28 +28,14 @@ pub using @tutuca {
 }
 
 ///|
-pub(all) struct FieldSpec {
+/// A field's runtime handling, DERIVED from the schema — its declared kind and
+/// its type's zero. Not `pub` and not a parameter any more: `component()` used
+/// to take a `specs~` map that could restate a kind the block had already
+/// declared, and could disagree with it.
+priv struct FieldSpec {
   kind : FieldKind
   default : @tutuca.Value
-} derive(Debug)
-
-///|
-/// A component-typed slot field: default instance made via the scope at make
-/// time.
-declare pub fn FieldSpec::comp(
-  name : String,
-  args? : Map[String, @tutuca.Value],
-) -> FieldSpec
-
-///|
-/// A Map-backed set field (JS FieldSet): default is the set of `members`.
-declare pub fn FieldSpec::set(members? : Array[String]) -> FieldSpec
-
-///|
-/// An ordered-map field (JS FieldOMap), backed by @tutuca.Value::Map.
-declare pub fn FieldSpec::omap(
-  default? : Map[String, @tutuca.Value],
-) -> FieldSpec
+}
 
 ///|
 /// Coerce a write: a value of the matching shape passes through; anything
@@ -209,7 +195,7 @@ pub struct Component {
   views : Map[String, @anode.View]
   common_style : String
   global_style : String
-  specs : Map[String, FieldSpec] // empty for for_type components
+  priv specs : Map[String, FieldSpec] // empty for for_type components
   // What the AUTHOR wired, which the schema does not know: the schema lists
   // the names the VIEWS use, and these two say which of them this component
   // answered in the swap and alter buckets rather than in `update`. The other
@@ -263,7 +249,8 @@ declare pub fn[S : @tutuca.Fields] component(
   ],
   enrich_scope? : Map[String, (S) -> Map[String, @tutuca.Value]],
   loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith],
-  specs? : Map[String, FieldSpec],
+  slots? : Map[String, String],
+  slot_args? : Map[String, Map[String, @tutuca.Value]],
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
 ) -> Component

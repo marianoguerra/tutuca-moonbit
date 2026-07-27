@@ -145,7 +145,11 @@ impl @component.Fields for PersonState with fn schema() {
 /// Declared as `interface strategies` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct StrategiesState {}
+pub(all) struct StrategiesState {
+  naive : @tutuca.Value
+  shared : @tutuca.Value
+  coupled : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -155,7 +159,7 @@ pub(all) struct StrategiesState {}
 ///
 ///   init={ ..StrategiesState::zero(), label: "Counter" }
 pub fn StrategiesState::zero() -> StrategiesState {
-  StrategiesState::{  }
+  StrategiesState::{ naive: Null, shared: Null, coupled: Null }
 }
 
 ///|
@@ -165,15 +169,18 @@ pub fn StrategiesState::zero() -> StrategiesState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for StrategiesState with fn encode(_s) {
-  Map([])
+impl @component.Fields for StrategiesState with fn encode(s) {
+  { "naive": s.naive, "shared": s.shared, "coupled": s.coupled }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for StrategiesState with fn decode(_f) {
-  Some(StrategiesState::{  })
+impl @component.Fields for StrategiesState with fn decode(f) {
+  let v_naive = f.get("naive").unwrap_or(Null)
+  let v_shared = f.get("shared").unwrap_or(Null)
+  let v_coupled = f.get("coupled").unwrap_or(Null)
+  Some(StrategiesState::{ naive: v_naive, shared: v_shared, coupled: v_coupled })
 }
 
 ///|
@@ -194,9 +201,9 @@ pub let strategies_global_style : String = ""
 impl @component.Fields for StrategiesState with fn schema() {
   @component.SchemaInfo::new(
     name="Strategies",
-    fingerprint="9acd1d9048355c06",
+    fingerprint="f8994dd483337af3",
     fields=[
-      @component.FieldInfo::new("naive", TyComp(None)),
+      @component.FieldInfo::new("naive", TyComp(Some("NaivePeople"))),
       @component.FieldInfo::new("shared", TyComp(Some("SharedPeople"))),
       @component.FieldInfo::new("coupled", TyComp(Some("CoupledPeople"))),
     ],

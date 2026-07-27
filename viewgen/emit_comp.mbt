@@ -87,8 +87,17 @@ fn emit_wrapper(
     // nothing", which is a different statement from "there is nothing here".
     out.write_string("  \{b.param}? : (\{b.enum_}) -> (\{b.handler})?,\n")
   }
+  // What is left of `specs~`, split into the two things it actually did. The
+  // component a slot holds is part of the field's TYPE now — a sibling
+  // interface, or a `resource` for one from another module — and the kind it
+  // could also restate is declared. These two are what a type cannot say:
+  // `slots~` for a component whose name kebab-case cannot round-trip, and
+  // `slot_args~` for the arguments a child is built with, which are a value.
+  out.write_string(wrapper_opt("slots", "Map[String, String]", "Map([])"))
   out.write_string(
-    wrapper_opt("specs", "Map[String, @component.FieldSpec]", "Map([])"),
+    wrapper_opt(
+      "slot_args", "Map[String, Map[String, @tutuca.Value]]", "Map([])",
+    ),
   )
   out.write_string(wrapper_opt("provide", "Map[String, String]", "Map([])"))
   out.write_string(
@@ -113,7 +122,9 @@ fn emit_wrapper(
       "    },\n",
     )
   }
-  out.write_string("    specs~,\n    provide~,\n    lookup~,\n")
+  out.write_string(
+    "    slots~,\n    slot_args~,\n    provide~,\n    lookup~,\n",
+  )
   out.write_string("  )\n}\n\n")
 }
 

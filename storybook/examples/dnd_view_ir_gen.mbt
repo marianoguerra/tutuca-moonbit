@@ -115,7 +115,8 @@ pub fn dn_d_example_component(
     @tutuca.Value,
     @tutuca.Value,
   ) -> Bool)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -144,7 +145,8 @@ pub fn dn_d_example_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

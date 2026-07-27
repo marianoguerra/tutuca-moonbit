@@ -13,6 +13,11 @@ pub fn FieldInfo::kind(self : FieldInfo) -> FieldKind {
 }
 
 ///|
+pub fn FieldInfo::default(self : FieldInfo) -> Value {
+  self.ty.zero()
+}
+
+///|
 pub fn SchemaInfo::new(
   name? : String = "",
   fingerprint~ : String,

@@ -64,7 +64,8 @@ pub fn alt_url_component(
   common_style? : String = alt_url_common_style,
   global_style? : String = alt_url_global_style,
   update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> AltUrlState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -75,7 +76,8 @@ pub fn alt_url_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -222,7 +224,8 @@ pub fn ps_entry_component(
     @tutuca.Value,
     @tutuca.Value,
   ) -> Unit)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -251,7 +254,8 @@ pub fn ps_entry_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -516,7 +520,8 @@ pub fn root_component(
     @tutuca.Value,
     @tutuca.Value,
   ) -> Unit)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -571,7 +576,8 @@ pub fn root_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

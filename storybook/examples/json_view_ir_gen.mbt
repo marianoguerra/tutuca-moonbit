@@ -125,7 +125,8 @@ pub fn json_selector_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -153,7 +154,8 @@ pub fn json_selector_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -197,7 +199,8 @@ pub fn json_null_component(
   common_style? : String = json_null_common_style,
   global_style? : String = json_null_global_style,
   update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -208,7 +211,8 @@ pub fn json_null_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -277,7 +281,8 @@ pub fn json_bool_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -297,7 +302,8 @@ pub fn json_bool_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -358,7 +364,8 @@ pub fn json_string_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -378,7 +385,8 @@ pub fn json_string_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -441,7 +449,8 @@ pub fn json_number_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -461,7 +470,8 @@ pub fn json_number_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -570,7 +580,8 @@ pub fn json_array_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -590,7 +601,8 @@ pub fn json_array_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -665,7 +677,8 @@ pub fn json_object_key_val_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -685,7 +698,8 @@ pub fn json_object_key_val_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -796,7 +810,8 @@ pub fn json_object_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -816,7 +831,8 @@ pub fn json_object_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

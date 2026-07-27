@@ -79,10 +79,16 @@ test "a schema-backed component gets a wrapper over component()" {
   // An absent update stays absent: component() takes it as an Option and the
   // wrapper forwards one rather than inventing a no-op.
   assert_true(ir.contains("    update?=update,"))
-  // Pass-through, unmerged: component() already applies user specs over the
-  // ones it derives from the schema.
+  // What is left of `specs~`, and only what a TYPE cannot say. The kind a
+  // field carries and the component a slot holds are both declared in the
+  // block, so neither is a parameter any more; a component name kebab-case
+  // cannot round-trip, and the arguments a child is built with, are.
+  assert_false(ir.contains("specs?"))
+  assert_true(ir.contains("  slots? : Map[String, String] = Map([]),"))
   assert_true(
-    ir.contains("  specs? : Map[String, @component.FieldSpec] = Map([]),"),
+    ir.contains(
+      "  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),",
+    ),
   )
 }
 

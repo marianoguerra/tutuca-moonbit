@@ -103,7 +103,8 @@ pub fn emoji_picker_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -123,7 +124,8 @@ pub fn emoji_picker_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

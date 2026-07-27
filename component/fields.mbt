@@ -6,27 +6,11 @@
 // arrive without a schema to state the kind instead. None does.
 
 ///|
-pub fn FieldSpec::comp(
+fn FieldSpec::comp(
   name : String,
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> FieldSpec {
   { kind: FComp(comp=name, args~), default: Null }
-}
-
-///|
-/// A Map-backed set field (JS FieldSet). Default is the set of `members`
-/// (keyed by member, value Bool(true) — the ps_set_of shape). Coercion turns
-/// a List into a set and dedups; a Map is kept as-is.
-pub fn FieldSpec::set(members? : Array[String] = []) -> FieldSpec {
-  { kind: FSet, default: set_value(members.map(m => Str(m))) }
-}
-
-///|
-/// An ordered-map field (JS FieldOMap), backed by @tutuca.Value::Map.
-pub fn FieldSpec::omap(
-  default? : Map[String, @tutuca.Value] = Map([]),
-) -> FieldSpec {
-  { kind: FOMap, default: Map(default) }
 }
 
 ///|

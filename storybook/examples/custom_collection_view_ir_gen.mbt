@@ -76,7 +76,8 @@ pub fn playlist_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -96,7 +97,8 @@ pub fn playlist_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -138,7 +140,8 @@ pub fn song_component(
   common_style? : String = song_common_style,
   global_style? : String = song_global_style,
   update? : (SongState, @component.Dispatch, &@tutuca.Ctx) -> SongState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -149,7 +152,8 @@ pub fn song_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

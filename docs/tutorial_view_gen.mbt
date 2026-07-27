@@ -648,7 +648,9 @@ impl @component.Fields for GreetingState with fn schema() {
 /// Declared as `interface page` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct PageState {}
+pub(all) struct PageState {
+  greeting : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -658,7 +660,7 @@ pub(all) struct PageState {}
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
-  PageState::{  }
+  PageState::{ greeting: Null }
 }
 
 ///|
@@ -668,15 +670,16 @@ pub fn PageState::zero() -> PageState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for PageState with fn encode(_s) {
-  Map([])
+impl @component.Fields for PageState with fn encode(s) {
+  { "greeting": s.greeting }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for PageState with fn decode(_f) {
-  Some(PageState::{  })
+impl @component.Fields for PageState with fn decode(f) {
+  let v_greeting = f.get("greeting").unwrap_or(Null)
+  Some(PageState::{ greeting: v_greeting })
 }
 
 ///|
@@ -697,8 +700,8 @@ pub let page_global_style : String = ""
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
-    fingerprint="db02b6e5e92c5199",
-    fields=[@component.FieldInfo::new("greeting", TyComp(None))],
+    fingerprint="e030e42686ce0fa5",
+    fields=[@component.FieldInfo::new("greeting", TyComp(Some("Greeting")))],
     view_names=["main"],
   )
 }
@@ -826,6 +829,7 @@ impl @component.Fields for StatusState with fn schema() {
 /// that reads a name this struct lacks fails generation.
 pub(all) struct ChatState {
   draft : String
+  status : @tutuca.Value
 }
 
 ///|
@@ -836,7 +840,7 @@ pub(all) struct ChatState {
 ///
 ///   init={ ..ChatState::zero(), label: "Counter" }
 pub fn ChatState::zero() -> ChatState {
-  ChatState::{ draft: "" }
+  ChatState::{ draft: "", status: Null }
 }
 
 ///|
@@ -847,7 +851,7 @@ pub fn ChatState::zero() -> ChatState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ChatState with fn encode(s) {
-  { "draft": Str(s.draft) }
+  { "draft": Str(s.draft), "status": s.status }
 }
 
 ///|
@@ -855,7 +859,8 @@ impl @component.Fields for ChatState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ChatState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
-  Some(ChatState::{ draft: v_draft })
+  let v_status = f.get("status").unwrap_or(Null)
+  Some(ChatState::{ draft: v_draft, status: v_status })
 }
 
 ///|
@@ -929,10 +934,10 @@ pub fn ChatMsg::from_dispatch(d : @component.Dispatch) -> ChatMsg? {
 impl @component.Fields for ChatState with fn schema() {
   @component.SchemaInfo::new(
     name="Chat",
-    fingerprint="e9c91ee756980c30",
+    fingerprint="25fa415b8ab170d1",
     fields=[
       @component.FieldInfo::new("draft", TyText),
-      @component.FieldInfo::new("status", TyComp(None)),
+      @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
     inputs=["setDraft", "submit"],
     view_names=["main"],

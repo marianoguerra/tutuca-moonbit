@@ -309,13 +309,9 @@ namespace — the parent's bindings do not leak in.
 ///|
 fn page_module() -> @component.ModuleDef {
   let greeting = greeting_component(init={ name: "world" })
-  // The `greeting: component` field in the state block declares the slot; the
-  // args it is made with are the one thing the schema does not state.
-  let page = page_component(specs={
-    "greeting": @component.FieldSpec::comp("Greeting", args={
-      "name": Str("reader"),
-    }),
-  })
+  // The state block declares the slot AND the component it holds; the args it
+  // is made with are the one thing no type states.
+  let page = page_component(slot_args={ "greeting": { "name": Str("reader") } })
   @component.ModuleDef::new(name="page", components=[page, greeting])
 }
 
@@ -370,22 +366,19 @@ fn chat_module() -> @component.ModuleDef {
       }
     },
   )
-  let chat = chat_component(
-    specs={ "status": @component.FieldSpec::comp("Status") },
-    update=(s, msg, ctx) => {
-      match msg {
-        Input("submit", _) => {
-          guard s.draft != "" else { None }
-          // message the child at .status — the path is the only coupling
-          ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
-            Str(s.draft),
-          ])
-          Some({ draft: "" })
-        }
-        _ => None
+  let chat = chat_component(update=(s, msg, ctx) => {
+    match msg {
+      Input("submit", _) => {
+        guard s.draft != "" else { None }
+        // message the child at .status — the path is the only coupling
+        ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "flash", [
+          Str(s.draft),
+        ])
+        Some({ ..s, draft: "" })
       }
-    },
-  )
+      _ => None
+    }
+  })
   @component.ModuleDef::new(name="chat", components=[chat, status])
 }
 

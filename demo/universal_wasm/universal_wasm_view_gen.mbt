@@ -15,6 +15,7 @@
 /// that reads a name this struct lacks fails generation.
 pub(all) struct UniversalWasmState {
   status : String
+  list : @tutuca.Value
 }
 
 ///|
@@ -25,7 +26,7 @@ pub(all) struct UniversalWasmState {
 ///
 ///   init={ ..UniversalWasmState::zero(), label: "Counter" }
 pub fn UniversalWasmState::zero() -> UniversalWasmState {
-  UniversalWasmState::{ status: "" }
+  UniversalWasmState::{ status: "", list: Null }
 }
 
 ///|
@@ -36,7 +37,7 @@ pub fn UniversalWasmState::zero() -> UniversalWasmState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for UniversalWasmState with fn encode(s) {
-  { "status": Str(s.status) }
+  { "status": Str(s.status), "list": s.list }
 }
 
 ///|
@@ -44,7 +45,8 @@ impl @component.Fields for UniversalWasmState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for UniversalWasmState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
-  Some(UniversalWasmState::{ status: v_status })
+  let v_list = f.get("list").unwrap_or(Null)
+  Some(UniversalWasmState::{ status: v_status, list: v_list })
 }
 
 ///|
@@ -65,10 +67,10 @@ pub let universal_wasm_global_style : String = ""
 impl @component.Fields for UniversalWasmState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalWasm",
-    fingerprint="027396975b37b745",
+    fingerprint="7b662766038025d1",
     fields=[
       @component.FieldInfo::new("status", TyText),
-      @component.FieldInfo::new("list", TyComp(None)),
+      @component.FieldInfo::new("list", TyComp(Some("ComponentList"))),
     ],
     view_names=["main"],
   )

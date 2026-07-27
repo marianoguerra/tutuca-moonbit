@@ -15,6 +15,12 @@
 /// that reads a name this struct lacks fails generation.
 pub(all) struct ComposabilityState {
   activeSection : String
+  todo : @tutuca.Value
+  json : @tutuca.Value
+  tree : @tutuca.Value
+  personalSite : @tutuca.Value
+  visualWasm : @tutuca.Value
+  dnd : @tutuca.Value
 }
 
 ///|
@@ -25,7 +31,15 @@ pub(all) struct ComposabilityState {
 ///
 ///   init={ ..ComposabilityState::zero(), label: "Counter" }
 pub fn ComposabilityState::zero() -> ComposabilityState {
-  ComposabilityState::{ activeSection: "" }
+  ComposabilityState::{
+    activeSection: "",
+    todo: Null,
+    json: Null,
+    tree: Null,
+    personalSite: Null,
+    visualWasm: Null,
+    dnd: Null,
+  }
 }
 
 ///|
@@ -36,7 +50,15 @@ pub fn ComposabilityState::zero() -> ComposabilityState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ComposabilityState with fn encode(s) {
-  { "activeSection": Str(s.activeSection) }
+  {
+    "activeSection": Str(s.activeSection),
+    "todo": s.todo,
+    "json": s.json,
+    "tree": s.tree,
+    "personalSite": s.personalSite,
+    "visualWasm": s.visualWasm,
+    "dnd": s.dnd,
+  }
 }
 
 ///|
@@ -46,7 +68,21 @@ impl @component.Fields for ComposabilityState with fn decode(f) {
   guard f.get("activeSection") is Some(Str(v_activeSection)) else {
     return None
   }
-  Some(ComposabilityState::{ activeSection: v_activeSection })
+  let v_todo = f.get("todo").unwrap_or(Null)
+  let v_json = f.get("json").unwrap_or(Null)
+  let v_tree = f.get("tree").unwrap_or(Null)
+  let v_personalSite = f.get("personalSite").unwrap_or(Null)
+  let v_visualWasm = f.get("visualWasm").unwrap_or(Null)
+  let v_dnd = f.get("dnd").unwrap_or(Null)
+  Some(ComposabilityState::{
+    activeSection: v_activeSection,
+    todo: v_todo,
+    json: v_json,
+    tree: v_tree,
+    personalSite: v_personalSite,
+    visualWasm: v_visualWasm,
+    dnd: v_dnd,
+  })
 }
 
 ///|

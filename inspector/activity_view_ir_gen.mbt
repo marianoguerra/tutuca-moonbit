@@ -171,7 +171,8 @@ pub fn activity_entry_component(
   common_style? : String = activity_entry_common_style,
   global_style? : String = activity_entry_global_style,
   update? : (ActivityEntryState, @component.Dispatch, &@tutuca.Ctx) -> ActivityEntryState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -182,7 +183,8 @@ pub fn activity_entry_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -250,7 +252,8 @@ pub fn activity_log_component(
   common_style? : String = activity_log_common_style,
   global_style? : String = activity_log_global_style,
   update? : (ActivityLogState, @component.Dispatch, &@tutuca.Ctx) -> ActivityLogState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -261,7 +264,8 @@ pub fn activity_log_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

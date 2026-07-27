@@ -111,7 +111,8 @@ test "the component takes its kinds from the schema, not the seed value" {
   assert_eq(hf.ty.show_wit(), "list<s32>")
   assert_true(hf.kind() is FList)
   assert_eq(hf.ty.elem(), Some(TyInt))
-  // The specs the runtime actually built agree with it.
-  guard comp.specs.get("count") is Some(sp)
-  assert_true(sp.kind is FInt)
+  // ...and the default the inspector shows is the type's zero, reachable
+  // without a component registry.
+  assert_eq(fi.default(), Num(0.0))
+  assert_eq(hf.default(), List([]))
 }

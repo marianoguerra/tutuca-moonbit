@@ -85,7 +85,8 @@ pub fn item_component(
   global_style? : String = item_global_style,
   update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> ItemState?,
   swap? : (ItemInput) -> ((ItemState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -105,7 +106,8 @@ pub fn item_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -188,7 +190,8 @@ pub fn items_component(
   global_style? : String = items_global_style,
   update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> ItemsState?,
   swap? : (ItemsInput) -> ((ItemsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -208,7 +211,8 @@ pub fn items_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

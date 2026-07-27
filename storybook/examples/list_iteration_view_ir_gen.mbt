@@ -65,7 +65,8 @@ pub fn list_iteration_component(
   common_style? : String = list_iteration_common_style,
   global_style? : String = list_iteration_global_style,
   update? : (ListIterationState, @component.Dispatch, &@tutuca.Ctx) -> ListIterationState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -76,7 +77,8 @@ pub fn list_iteration_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

@@ -210,7 +210,8 @@ pub fn schema_scalar_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -258,7 +259,8 @@ pub fn schema_scalar_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -457,7 +459,8 @@ pub fn schema_object_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -505,7 +508,8 @@ pub fn schema_object_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -704,7 +708,8 @@ pub fn schema_array_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -752,7 +757,8 @@ pub fn schema_array_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -946,7 +952,8 @@ pub fn schema_enum_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -994,7 +1001,8 @@ pub fn schema_enum_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1195,7 +1203,8 @@ pub fn schema_combinator_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1243,7 +1252,8 @@ pub fn schema_combinator_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1301,7 +1311,8 @@ pub fn schema_const_component(
   common_style? : String = schema_const_common_style,
   global_style? : String = schema_const_global_style,
   update? : (SchemaConstState, @component.Dispatch, &@tutuca.Ctx) -> SchemaConstState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1312,7 +1323,8 @@ pub fn schema_const_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1491,7 +1503,8 @@ pub fn schema_conditional_component(
   common_style? : String = schema_conditional_common_style,
   global_style? : String = schema_conditional_global_style,
   update? : (SchemaConditionalState, @component.Dispatch, &@tutuca.Ctx) -> SchemaConditionalState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1502,7 +1515,8 @@ pub fn schema_conditional_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1560,7 +1574,8 @@ pub fn schema_not_component(
   common_style? : String = schema_not_common_style,
   global_style? : String = schema_not_global_style,
   update? : (SchemaNotState, @component.Dispatch, &@tutuca.Ctx) -> SchemaNotState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1571,7 +1586,8 @@ pub fn schema_not_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1630,7 +1646,8 @@ pub fn schema_boolean_component(
     SchemaBooleanState,
     Array[@tutuca.Value],
   ) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1650,7 +1667,8 @@ pub fn schema_boolean_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -1701,7 +1719,8 @@ pub fn schema_ref_component(
   common_style? : String = schema_ref_common_style,
   global_style? : String = schema_ref_global_style,
   update? : (SchemaRefState, @component.Dispatch, &@tutuca.Ctx) -> SchemaRefState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -1712,7 +1731,8 @@ pub fn schema_ref_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

@@ -402,10 +402,7 @@ fn vw_block_type_comp() -> @component.Component {
     },
     name="BlockType",
     init=VwEmptyState::{  },
-    specs={
-      "args": @component.FieldSpec::comp("Types"),
-      "returns": @component.FieldSpec::comp("Types"),
-    },
+    slots={ "args": "Types", "returns": "Types" },
   )
 }
 
@@ -469,7 +466,7 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
     },
     name="Block",
     init=vw_container_init(),
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    slots={ "blockType": "BlockType" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
@@ -487,7 +484,7 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
     },
     name="Loop",
     init=vw_container_init(),
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    slots={ "blockType": "BlockType" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
@@ -521,10 +518,7 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
     },
     name="Func",
     init=vw_container_init(),
-    specs={
-      "blockType": @component.FieldSpec::comp("BlockType"),
-      "locals": @component.FieldSpec::comp("Types"),
-    },
+    slots={ "blockType": "BlockType", "locals": "Types" },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
   )
@@ -577,7 +571,7 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
       editingThn: false,
       editingElse: false,
     },
-    specs={ "blockType": @component.FieldSpec::comp("BlockType") },
+    slots={ "blockType": "BlockType" },
     update=(s : VwIfState, msg, _ctx) => {
       match msg {
         Input("addThnAt", args) =>
@@ -694,15 +688,10 @@ fn vw_module_comp() -> @component.Component {
     },
     name="Module",
     init=VwEmptyState::{  },
-    specs={
-      "mem": @component.FieldSpec::comp("Section", args={
-        "id": Num(5),
-        "name": Str("Memory"),
-      }),
-      "func": @component.FieldSpec::comp("Section", args={
-        "id": Num(3),
-        "name": Str("Functions"),
-      }),
+    slots={ "mem": "Section", "func": "Section" },
+    slot_args={
+      "mem": { "id": Num(5), "name": Str("Memory") },
+      "func": { "id": Num(3), "name": Str("Functions") },
     },
   )
 }

@@ -31,7 +31,7 @@ fn dse_editor_comp() -> @component.Component {
 fn dse_root_comp() -> @component.Component {
   dse_root_component(
     name="Root",
-    init={ items: Map([]), selectedKey: "" },
+    init={ ..DseRootState::zero(), items: Map([]), selectedKey: "" },
     // Producer: the whole sequence, plus a seq-access to the selected entry.
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
     update=(s, msg, _ctx) => {

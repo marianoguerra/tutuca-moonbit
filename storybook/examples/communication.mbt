@@ -37,7 +37,11 @@ fn status_comp() -> @component.Component {
 /// `ctx.send(name, args)` dispatches a `Receive` arm on SELF (so several call
 /// sites can share one handler body without duplicating it).
 fn send_receive_comp() -> @component.Component {
-  send_receive_component(init={ draft: "" }, update=(s, msg, ctx) => {
+  send_receive_component(init={ ..SendReceiveState::zero(), draft: "" }, update=(
+    s,
+    msg,
+    ctx,
+  ) => {
     match msg {
       Input("submit", _) => {
         let text = s.draft.trim().to_owned()
@@ -56,7 +60,7 @@ fn send_receive_comp() -> @component.Component {
         ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
         None
       }
-      Receive("clearDraft", _) => Some({ draft: "" })
+      Receive("clearDraft", _) => Some({ ..s, draft: "" })
       _ => None
     }
   })
@@ -118,7 +122,11 @@ fn tree_item_comp() -> @component.Component {
 /// The root catches the bubbled event and records it — aggregate state kept
 /// without threading callbacks down the tree.
 fn tree_root_comp() -> @component.Component {
-  tree_root_component(init={ log: [] }, update=(s, msg, _ctx) => {
+  tree_root_component(init={ ..TreeRootState::zero(), log: [] }, update=(
+    s,
+    msg,
+    _ctx,
+  ) => {
     match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
@@ -131,7 +139,7 @@ fn tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ log, })
+        Some({ ..s, log, })
       }
       _ => None
     }

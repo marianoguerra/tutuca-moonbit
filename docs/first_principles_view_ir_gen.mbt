@@ -51,7 +51,8 @@ pub fn fp_greeting_component(
   common_style? : String = fp_greeting_common_style,
   global_style? : String = fp_greeting_global_style,
   update? : (FpGreetingState, @component.Dispatch, &@tutuca.Ctx) -> FpGreetingState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -62,7 +63,8 @@ pub fn fp_greeting_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -104,7 +106,8 @@ pub fn note_component(
   common_style? : String = note_common_style,
   global_style? : String = note_global_style,
   update? : (NoteState, @component.Dispatch, &@tutuca.Ctx) -> NoteState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -115,7 +118,8 @@ pub fn note_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -155,7 +159,8 @@ pub fn mailbox_component(
   common_style? : String = mailbox_common_style,
   global_style? : String = mailbox_global_style,
   update? : (MailboxState, @component.Dispatch, &@tutuca.Ctx) -> MailboxState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -166,7 +171,8 @@ pub fn mailbox_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

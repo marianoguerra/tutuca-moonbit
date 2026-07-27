@@ -81,7 +81,8 @@ pub fn counter_component(
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,
   swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -101,7 +102,8 @@ pub fn counter_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

@@ -85,6 +85,7 @@ impl @component.Fields for StatusState with fn schema() {
 /// that reads a name this struct lacks fails generation.
 pub(all) struct SendReceiveState {
   draft : String
+  status : @tutuca.Value
 }
 
 ///|
@@ -95,7 +96,7 @@ pub(all) struct SendReceiveState {
 ///
 ///   init={ ..SendReceiveState::zero(), label: "Counter" }
 pub fn SendReceiveState::zero() -> SendReceiveState {
-  SendReceiveState::{ draft: "" }
+  SendReceiveState::{ draft: "", status: Null }
 }
 
 ///|
@@ -106,7 +107,7 @@ pub fn SendReceiveState::zero() -> SendReceiveState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for SendReceiveState with fn encode(s) {
-  { "draft": Str(s.draft) }
+  { "draft": Str(s.draft), "status": s.status }
 }
 
 ///|
@@ -114,7 +115,8 @@ impl @component.Fields for SendReceiveState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SendReceiveState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
-  Some(SendReceiveState::{ draft: v_draft })
+  let v_status = f.get("status").unwrap_or(Null)
+  Some(SendReceiveState::{ draft: v_draft, status: v_status })
 }
 
 ///|
@@ -367,6 +369,7 @@ impl @component.Fields for TreeItemState with fn schema() {
 /// that reads a name this struct lacks fails generation.
 pub(all) struct TreeRootState {
   log : Array[@tutuca.Value]
+  root : @tutuca.Value
 }
 
 ///|
@@ -377,7 +380,7 @@ pub(all) struct TreeRootState {
 ///
 ///   init={ ..TreeRootState::zero(), label: "Counter" }
 pub fn TreeRootState::zero() -> TreeRootState {
-  TreeRootState::{ log: [] }
+  TreeRootState::{ log: [], root: Null }
 }
 
 ///|
@@ -388,7 +391,7 @@ pub fn TreeRootState::zero() -> TreeRootState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for TreeRootState with fn encode(s) {
-  { "log": (List(s.log.map(x => x)) : @tutuca.Value) }
+  { "log": (List(s.log.map(x => x)) : @tutuca.Value), "root": s.root }
 }
 
 ///|
@@ -402,7 +405,8 @@ impl @component.Fields for TreeRootState with fn decode(f) {
     let x1_log = e1_log
     v_log.push(x1_log)
   }
-  Some(TreeRootState::{ log: v_log })
+  let v_root = f.get("root").unwrap_or(Null)
+  Some(TreeRootState::{ log: v_log, root: v_root })
 }
 
 ///|

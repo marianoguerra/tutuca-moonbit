@@ -480,23 +480,16 @@ fn mailbox_module() -> @component.ModuleDef {
       Some(Unknown(_, _)) | None => None
     }
   })
-  let mailbox = mailbox_component(
-    specs={ "note": @component.FieldSpec::comp("Note") },
-    update=(_s, msg, ctx) => {
-      match msg {
-        // forward to the child by path — used from the host in section 9
-        Receive("write", args) => {
-          ctx.send_at_path(
-            ctx.path().concat([FieldStep("note")]),
-            "write",
-            args,
-          )
-          None
-        }
-        _ => None
+  let mailbox = mailbox_component(update=(_s, msg, ctx) => {
+    match msg {
+      // forward to the child by path — used from the host in section 9
+      Receive("write", args) => {
+        ctx.send_at_path(ctx.path().concat([FieldStep("note")]), "write", args)
+        None
       }
-    },
-  )
+      _ => None
+    }
+  })
   @component.ModuleDef::new(name="mailbox", components=[mailbox, note])
 }
 

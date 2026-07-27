@@ -95,7 +95,8 @@ pub fn dse_root_component(
   global_style? : String = dse_root_global_style,
   update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> DseRootState?,
   swap? : (DseRootInput) -> ((DseRootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -115,7 +116,8 @@ pub fn dse_root_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -186,7 +188,8 @@ pub fn dse_editor_component(
   common_style? : String = dse_editor_common_style,
   global_style? : String = dse_editor_global_style,
   update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> DseEditorState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -197,7 +200,8 @@ pub fn dse_editor_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -269,7 +273,8 @@ pub fn dse_entry_component(
     Array[@tutuca.Value],
     &@tutuca.Ctx,
   ) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -289,7 +294,8 @@ pub fn dse_entry_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

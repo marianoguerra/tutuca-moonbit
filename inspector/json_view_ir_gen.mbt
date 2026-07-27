@@ -59,7 +59,8 @@ pub fn json_null_component(
   common_style? : String = json_null_common_style,
   global_style? : String = json_null_global_style,
   update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -70,7 +71,8 @@ pub fn json_null_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -126,7 +128,8 @@ pub fn json_boolean_component(
   global_style? : String = json_boolean_global_style,
   update? : (JsonBooleanState, @component.Dispatch, &@tutuca.Ctx) -> JsonBooleanState?,
   compute? : (JsonBooleanMethod) -> ((JsonBooleanState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -146,7 +149,8 @@ pub fn json_boolean_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -195,7 +199,8 @@ pub fn json_number_component(
   global_style? : String = json_number_global_style,
   update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> JsonNumberState?,
   compute? : (JsonNumberMethod) -> ((JsonNumberState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -215,7 +220,8 @@ pub fn json_number_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -265,7 +271,8 @@ pub fn json_string_component(
   global_style? : String = json_string_global_style,
   update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> JsonStringState?,
   compute? : (JsonStringMethod) -> ((JsonStringState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -285,7 +292,8 @@ pub fn json_string_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -333,7 +341,8 @@ pub fn value_fn_component(
   common_style? : String = value_fn_common_style,
   global_style? : String = value_fn_global_style,
   update? : (ValueFnState, @component.Dispatch, &@tutuca.Ctx) -> ValueFnState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -344,7 +353,8 @@ pub fn value_fn_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -393,7 +403,8 @@ pub fn value_obj_component(
   common_style? : String = value_obj_common_style,
   global_style? : String = value_obj_global_style,
   update? : (ValueObjState, @component.Dispatch, &@tutuca.Ctx) -> ValueObjState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -404,7 +415,8 @@ pub fn value_obj_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -548,7 +560,8 @@ pub fn json_array_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -596,7 +609,8 @@ pub fn json_array_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -740,7 +754,8 @@ pub fn json_object_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -788,7 +803,8 @@ pub fn json_object_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -848,7 +864,8 @@ pub fn json_property_component(
   common_style? : String = json_property_common_style,
   global_style? : String = json_property_global_style,
   update? : (JsonPropertyState, @component.Dispatch, &@tutuca.Ctx) -> JsonPropertyState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -859,7 +876,8 @@ pub fn json_property_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -901,7 +919,8 @@ pub fn data_inspector_component(
   common_style? : String = data_inspector_common_style,
   global_style? : String = data_inspector_global_style,
   update? : (DataInspectorState, @component.Dispatch, &@tutuca.Ctx) -> DataInspectorState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -912,7 +931,8 @@ pub fn data_inspector_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

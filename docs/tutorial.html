@@ -27,7 +27,7 @@
     record state { name: string }
   }
   interface page {
-    record state { greeting: component }
+    record state { greeting: greeting }
   }
   interface status {
     record state { message: string }
@@ -36,7 +36,7 @@
   interface chat {
     record state {
       draft: string,
-      status: component,
+      status: status,
     }
   }
   interface quotes {

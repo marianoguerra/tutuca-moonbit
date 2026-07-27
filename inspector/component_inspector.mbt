@@ -60,10 +60,10 @@ fn summary_from_schema(
       // The WIT spelling the author wrote, not a label reconstructed from
       // the runtime kind: `list<card>`, not `list`.
       "type": Str(f.ty.show_wit()),
-      "default": match comp.specs.get(f.name) {
-        Some(sp) => sp.default
-        None => Null
-      },
+      // Its type's zero, off the SCHEMA. This used to read `Component.specs`,
+      // which a holder of an instance and no registry could not get to — so
+      // the column existed only for a caller that already had the component.
+      "default": f.default(),
     }
     // What it CONTAINS, which is now a different question from "may a view
     // `@each` over it?" — that one has to answer yes for `any` and for a child

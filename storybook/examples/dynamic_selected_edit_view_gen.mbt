@@ -16,6 +16,7 @@
 pub(all) struct DseRootState {
   items : Map[String, @tutuca.Value]
   selectedKey : String
+  editor : @tutuca.Value
 }
 
 ///|
@@ -26,7 +27,7 @@ pub(all) struct DseRootState {
 ///
 ///   init={ ..DseRootState::zero(), label: "Counter" }
 pub fn DseRootState::zero() -> DseRootState {
-  DseRootState::{ items: Map([]), selectedKey: "" }
+  DseRootState::{ items: Map([]), selectedKey: "", editor: Null }
 }
 
 ///|
@@ -46,6 +47,7 @@ impl @component.Fields for DseRootState with fn encode(s) {
       (Map(m) : @tutuca.Value)
     },
     "selectedKey": Str(s.selectedKey),
+    "editor": s.editor,
   }
 }
 
@@ -61,7 +63,12 @@ impl @component.Fields for DseRootState with fn decode(f) {
     v_items[k] = x1_items
   }
   guard f.get("selectedKey") is Some(Str(v_selectedKey)) else { return None }
-  Some(DseRootState::{ items: v_items, selectedKey: v_selectedKey })
+  let v_editor = f.get("editor").unwrap_or(Null)
+  Some(DseRootState::{
+    items: v_items,
+    selectedKey: v_selectedKey,
+    editor: v_editor,
+  })
 }
 
 ///|

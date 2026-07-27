@@ -93,6 +93,10 @@ declare pub fn FieldInfo::new(name : String, ty : TyInfo) -> FieldInfo
 declare pub fn FieldInfo::kind(self : FieldInfo) -> FieldKind
 
 ///|
+/// The empty value this field starts at — its type's zero.
+declare pub fn FieldInfo::default(self : FieldInfo) -> Value
+
+///|
 /// A component's declared schema, with the channels it does not use defaulted
 /// to empty.
 ///

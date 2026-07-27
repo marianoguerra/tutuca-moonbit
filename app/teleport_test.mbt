@@ -33,6 +33,27 @@ fn sheet_comp() -> @component.Component {
   )
 }
 
+// One state type per component, because a schema describes a TYPE and these
+// components hold DIFFERENT child slots. Sharing `SeenState` was only possible
+// while the slots were declared out of band, in a `specs~` map beside the
+// component rather than in what its state says about itself.
+
+///|
+priv struct TelePanelState {
+  seen : Bool
+}
+
+///|
+priv struct TeleWorkspaceState {
+  seen : Bool
+}
+
+///|
+priv struct TeleSoloState {}
+
+///|
+priv struct TeleLonelyState {}
+
 ///|
 priv struct SeenState {
   seen : Bool
@@ -71,9 +92,13 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Panel",
-    init=SeenState::{ seen: false },
-    specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
-    update=seen_update(),
+    init=TelePanelState::{ seen: false },
+    update=(_s, msg, _ctx) => {
+      match msg {
+        Bubble("sheet-poked", _) => Some(TelePanelState::{ seen: true })
+        _ => None
+      }
+    },
   )
   let workspace = @component.component(
     views={
@@ -83,13 +108,14 @@ fn teleport_scope() -> @component.ComponentStack raise {
       ),
     },
     name="Workspace",
-    init=SeenState::{ seen: false },
-    specs={
-      "sheet": @component.FieldSpec::comp("Sheet"),
-      "panel": @component.FieldSpec::comp("Panel"),
-    },
+    init=TeleWorkspaceState::{ seen: false },
     provide={ "active": ".sheet" },
-    update=seen_update(),
+    update=(_s, msg, _ctx) => {
+      match msg {
+        Bubble("sheet-poked", _) => Some(TeleWorkspaceState::{ seen: true })
+        _ => None
+      }
+    },
   )
   scope.register_components([sheet_comp(), toolbar, panel, workspace])
   scope.compile_all()
@@ -196,8 +222,7 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
       ),
     },
     name="Solo",
-    init=NoState::{  },
-    specs={ "sheet": @component.FieldSpec::comp("Sheet") },
+    init=TeleSoloState::{  },
     provide={ "active": ".sheet" },
   )
   scope.register_components([sheet_comp(), solo])
@@ -239,7 +264,6 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     },
     name="Grid",
     init=RowsState::{ rows: Map([]) },
-    specs={ "list": @component.FieldSpec::comp("RowList") },
     provide={ "rows": ".rows" },
   )
   scope.register_components([sheet_comp(), list, grid])
@@ -303,7 +327,6 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     },
     name="Deck",
     init=DeckState::{ sheets: Map([]), selId: "b" },
-    specs={ "viewer": @component.FieldSpec::comp("Viewer") },
     provide={ "sel": ".sheets[.selId]" },
   )
   scope.register_components([sheet_comp(), viewer, deck])
@@ -352,8 +375,7 @@ test "lookup default: a consumer without its producer falls back" {
       ),
     },
     name="Lonely",
-    init=NoState::{  },
-    specs={ "backup": @component.FieldSpec::comp("Sheet") },
+    init=TeleLonelyState::{  },
     lookup={
       "active": { source: "Workspace.active", default: Some(".backup") },
     },
@@ -453,6 +475,79 @@ impl @component.Fields for SeenState with fn schema() {
 }
 
 ///|
+impl @component.Fields for TelePanelState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="tele_panel_state", fields=[
+    @component.FieldInfo::new("seen", TyBool),
+    @component.FieldInfo::new("toolbar", TyComp(Some("Toolbar"))),
+  ])
+}
+
+///|
+impl @component.Fields for TelePanelState with fn encode(s) {
+  { "seen": Bool(s.seen) }
+}
+
+///|
+impl @component.Fields for TelePanelState with fn decode(f) {
+  guard f.get("seen") is Some(Bool(v)) else { return None }
+  Some(TelePanelState::{ seen: v })
+}
+
+///|
+impl @component.Fields for TeleWorkspaceState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="tele_workspace_state", fields=[
+    @component.FieldInfo::new("seen", TyBool),
+    @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
+    @component.FieldInfo::new("panel", TyComp(Some("Panel"))),
+  ])
+}
+
+///|
+impl @component.Fields for TeleWorkspaceState with fn encode(s) {
+  { "seen": Bool(s.seen) }
+}
+
+///|
+impl @component.Fields for TeleWorkspaceState with fn decode(f) {
+  guard f.get("seen") is Some(Bool(v)) else { return None }
+  Some(TeleWorkspaceState::{ seen: v })
+}
+
+///|
+impl @component.Fields for TeleSoloState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="tele_solo_state", fields=[
+    @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
+  ])
+}
+
+///|
+impl @component.Fields for TeleSoloState with fn encode(_s) {
+  Map([])
+}
+
+///|
+impl @component.Fields for TeleSoloState with fn decode(_f) {
+  Some(TeleSoloState::{  })
+}
+
+///|
+impl @component.Fields for TeleLonelyState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="tele_lonely_state", fields=[
+    @component.FieldInfo::new("backup", TyComp(Some("Sheet"))),
+  ])
+}
+
+///|
+impl @component.Fields for TeleLonelyState with fn encode(_s) {
+  Map([])
+}
+
+///|
+impl @component.Fields for TeleLonelyState with fn decode(_f) {
+  Some(TeleLonelyState::{  })
+}
+
+///|
 impl @component.Fields for NoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="no_state", fields=[])
 }
@@ -461,6 +556,7 @@ impl @component.Fields for NoState with fn schema() {
 impl @component.Fields for RowsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="rows_state", fields=[
     @component.FieldInfo::new("rows", TyOMap(TyAny)),
+    @component.FieldInfo::new("list", TyComp(Some("RowList"))),
   ])
 }
 
@@ -469,5 +565,6 @@ impl @component.Fields for DeckState with fn schema() {
   @component.SchemaInfo::new(fingerprint="deck_state", fields=[
     @component.FieldInfo::new("sheets", TyOMap(TyAny)),
     @component.FieldInfo::new("selId", TyText),
+    @component.FieldInfo::new("viewer", TyComp(Some("Viewer"))),
   ])
 }

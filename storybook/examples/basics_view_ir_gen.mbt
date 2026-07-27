@@ -47,7 +47,8 @@ pub fn minimum_viable_component_component(
   common_style? : String = minimum_viable_component_common_style,
   global_style? : String = minimum_viable_component_global_style,
   update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> MinimumViableComponentState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -58,7 +59,8 @@ pub fn minimum_viable_component_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -98,7 +100,8 @@ pub fn static_view_component_component(
   common_style? : String = static_view_component_common_style,
   global_style? : String = static_view_component_global_style,
   update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> StaticViewComponentState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -109,7 +112,8 @@ pub fn static_view_component_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -190,7 +194,8 @@ pub fn text_directive_component(
     TextDirectiveState,
     Array[@tutuca.Value],
   ) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -210,7 +215,8 @@ pub fn text_directive_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -256,7 +262,8 @@ pub fn danger_set_inner_html_component(
   common_style? : String = danger_set_inner_html_common_style,
   global_style? : String = danger_set_inner_html_global_style,
   update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> DangerSetInnerHtmlState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -267,7 +274,8 @@ pub fn danger_set_inner_html_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

@@ -218,10 +218,10 @@ fn component_list_comp() -> @component.Component {
 fn universal_shell_comp() -> @component.Component {
   universal_wasm_component(
     init={
+      ..UniversalWasmState::zero(),
       status: "drop a .tutuca.tar.gz bundle, then “+ Add component” to place it",
     },
-    specs={ "list": @component.FieldSpec::comp("ComponentList") },
-    update=(_s, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         Receive("dyncompLoaded", args) => {
           let module_name = match args {
@@ -230,6 +230,7 @@ fn universal_shell_comp() -> @component.Component {
           }
           ctx.send_at_path(ctx.path().concat([FieldStep("list")]), "refresh", [])
           Some({
+            ..s,
             status: "loaded \{module_name} — add a component to place it",
           })
         }
@@ -238,7 +239,7 @@ fn universal_shell_comp() -> @component.Component {
             [Str(m)] => m
             _ => "unknown error"
           }
-          Some({ status: "load failed: \{msg2}" })
+          Some({ ..s, status: "load failed: \{msg2}" })
         }
         _ => None
       }

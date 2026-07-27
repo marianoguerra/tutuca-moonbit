@@ -104,7 +104,8 @@ pub fn styles_example_component(
   common_style? : String = styles_example_common_style,
   global_style? : String = styles_example_global_style,
   update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -115,7 +116,8 @@ pub fn styles_example_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -161,7 +163,8 @@ pub fn styles_example_root_component(
   common_style? : String = styles_example_root_common_style,
   global_style? : String = styles_example_root_global_style,
   update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleRootState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -172,7 +175,8 @@ pub fn styles_example_root_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

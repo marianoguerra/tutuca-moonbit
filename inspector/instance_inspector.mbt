@@ -32,14 +32,11 @@ pub fn instance_snapshot(
       }
   }
   let names = match (v.field_names(), comp) {
-    // nothing declared: the descriptor's runtime specs are all that is left
-    ([], Some(c)) => {
-      let out : Array[String] = []
-      for n, _spec in c.specs {
-        out.push(n)
-      }
-      out
-    }
+    // An instance that declares nothing has nothing to enumerate. There used
+    // to be a fallback to the component's runtime specs here; those are built
+    // FROM the schema now, so it could only ever repeat what the first arm
+    // already answered.
+    ([], Some(_)) => []
     (declared, _) => declared
   }
   let fields : Map[String, @tutuca.Value] = Map([])

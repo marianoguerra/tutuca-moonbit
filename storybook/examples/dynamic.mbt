@@ -30,7 +30,7 @@ fn selector_comp() -> @component.Component {
 /// component is entered during render — there is no hook to opt in.
 fn entry_editor_comp(entry : @component.Component) -> @component.Component {
   entry_editor_and_selector_component(
-    init={ items: [] },
+    init={ ..EntryEditorAndSelectorState::zero(), items: [] },
     provide={ "entries": ".items" },
     update=(s, msg, _ctx) => {
       match EntryEditorAndSelectorMsg::from_dispatch(msg) {
@@ -41,6 +41,7 @@ fn entry_editor_comp(entry : @component.Component) -> @component.Component {
         Some(OnAddItem) => {
           let num = s.items.length() + 1
           Some({
+            ..s,
             items: s.items +
             [
               entry.make({
@@ -111,22 +112,17 @@ fn panel_comp() -> @component.Component {
 /// transaction lands on `Workspace.sheet`. The echoed title at the top is the
 /// proof; it updates in lock-step.
 fn workspace_comp() -> @component.Component {
-  workspace_component(
-    init={ sheet: Null },
-    specs={ "sheet": @component.FieldSpec::comp("Sheet") },
-    provide={ "active": ".sheet" },
-    compute=m => {
-      match m {
-        SheetTitle =>
-          Some((s, _args) => {
-            match s.sheet {
-              Obj(o) => o.obj_field("title").unwrap_or(Str(""))
-              _ => Str("")
-            }
-          })
-      }
-    },
-  )
+  workspace_component(provide={ "active": ".sheet" }, compute=m => {
+    match m {
+      SheetTitle =>
+        Some((s, _args) => {
+          match s.sheet {
+            Obj(o) => o.obj_field("title").unwrap_or(Str(""))
+            _ => Str("")
+          }
+        })
+    }
+  })
 }
 
 ///|

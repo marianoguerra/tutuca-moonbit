@@ -1,7 +1,7 @@
 // All Together Now — compose independent example components as fields of one
 // root. Each sub-component (Counter, the to-do list, the tree) is defined with
 // no knowledge of being composed; the root embeds each with
-// `FieldSpec::comp(name)` and renders it in its own tab with `<x render=".field">`.
+// a declared child slot and renders it in its own tab with `<x render=".field">`.
 // (The full docs example also folds in the JSON editor, personal site and
 // drag-and-drop — see those playgrounds above; the mechanism is identical.)
 //
@@ -83,7 +83,7 @@ fn cx_tree_item_comp() -> @component.Component {
 
 fn cx_tree_root_comp() -> @component.Component {
   tree_root_component(
-    init=TreeRootState::{ log: [] },
+    init={ ..TreeRootState::zero(), log: [] },
     update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
@@ -96,7 +96,7 @@ fn cx_tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ log, })
+        Some({ ..s, log, })
       }
       _ => None
     },
@@ -130,10 +130,8 @@ fn cx_tree_sample(item : @component.Component) -> @tutuca.Value {
 
 fn composability_comp(tree_args : Map[String, @tutuca.Value]) -> @component.Component {
   composability_component(
-    init=ComposabilityState::{ activeSection: "counter" },
-    specs={
-      "tree": @component.FieldSpec::comp("TreeRoot", args=tree_args),
-    },
+    init={ ..ComposabilityState::zero(), activeSection: "counter" },
+    slot_args={ "tree": tree_args },
   )
 }
 

@@ -26,15 +26,15 @@
   interface tree-root {
     record state {
     log: values,
-    root: component,
+    root: tree-item,
     }
   }
   interface composability {
     resource tree-root;
     record state {
     active-section: string,
-    counter: component,
-    todo: component,
+    counter: counter,
+    todo: items,
     tree: tree-root,
     }
   }

@@ -266,6 +266,7 @@ impl @component.Fields for SelectorState with fn schema() {
 /// that reads a name this struct lacks fails generation.
 pub(all) struct EntryEditorAndSelectorState {
   items : Array[@tutuca.Value]
+  selector : @tutuca.Value
 }
 
 ///|
@@ -276,7 +277,7 @@ pub(all) struct EntryEditorAndSelectorState {
 ///
 ///   init={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
 pub fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
-  EntryEditorAndSelectorState::{ items: [] }
+  EntryEditorAndSelectorState::{ items: [], selector: Null }
 }
 
 ///|
@@ -287,7 +288,10 @@ pub fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for EntryEditorAndSelectorState with fn encode(s) {
-  { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
+  {
+    "items": (List(s.items.map(x => x)) : @tutuca.Value),
+    "selector": s.selector,
+  }
 }
 
 ///|
@@ -301,7 +305,8 @@ impl @component.Fields for EntryEditorAndSelectorState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some(EntryEditorAndSelectorState::{ items: v_items })
+  let v_selector = f.get("selector").unwrap_or(Null)
+  Some(EntryEditorAndSelectorState::{ items: v_items, selector: v_selector })
 }
 
 ///|
@@ -567,7 +572,9 @@ impl @component.Fields for ToolbarState with fn schema() {
 /// Declared as `interface panel` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct PanelState {}
+pub(all) struct PanelState {
+  toolbar : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -577,7 +584,7 @@ pub(all) struct PanelState {}
 ///
 ///   init={ ..PanelState::zero(), label: "Counter" }
 pub fn PanelState::zero() -> PanelState {
-  PanelState::{  }
+  PanelState::{ toolbar: Null }
 }
 
 ///|
@@ -587,15 +594,16 @@ pub fn PanelState::zero() -> PanelState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for PanelState with fn encode(_s) {
-  Map([])
+impl @component.Fields for PanelState with fn encode(s) {
+  { "toolbar": s.toolbar }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for PanelState with fn decode(_f) {
-  Some(PanelState::{  })
+impl @component.Fields for PanelState with fn decode(f) {
+  let v_toolbar = f.get("toolbar").unwrap_or(Null)
+  Some(PanelState::{ toolbar: v_toolbar })
 }
 
 ///|
@@ -630,6 +638,7 @@ impl @component.Fields for PanelState with fn schema() {
 /// that reads a name this struct lacks fails generation.
 pub(all) struct WorkspaceState {
   sheet : @tutuca.Value
+  panel : @tutuca.Value
 }
 
 ///|
@@ -640,7 +649,7 @@ pub(all) struct WorkspaceState {
 ///
 ///   init={ ..WorkspaceState::zero(), label: "Counter" }
 pub fn WorkspaceState::zero() -> WorkspaceState {
-  WorkspaceState::{ sheet: Null }
+  WorkspaceState::{ sheet: Null, panel: Null }
 }
 
 ///|
@@ -651,7 +660,7 @@ pub fn WorkspaceState::zero() -> WorkspaceState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for WorkspaceState with fn encode(s) {
-  { "sheet": s.sheet }
+  { "sheet": s.sheet, "panel": s.panel }
 }
 
 ///|
@@ -659,7 +668,8 @@ impl @component.Fields for WorkspaceState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for WorkspaceState with fn decode(f) {
   let v_sheet = f.get("sheet").unwrap_or(Null)
-  Some(WorkspaceState::{ sheet: v_sheet })
+  let v_panel = f.get("panel").unwrap_or(Null)
+  Some(WorkspaceState::{ sheet: v_sheet, panel: v_panel })
 }
 
 ///|
@@ -693,9 +703,9 @@ pub fn WorkspaceMethod::name(self : WorkspaceMethod) -> String {
 impl @component.Fields for WorkspaceState with fn schema() {
   @component.SchemaInfo::new(
     name="Workspace",
-    fingerprint="09e5da0dd17987cb",
+    fingerprint="cc5f2c08d14c8218",
     fields=[
-      @component.FieldInfo::new("sheet", TyAny),
+      @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
       @component.FieldInfo::new("panel", TyComp(Some("Panel"))),
     ],
     methods=["sheetTitle"],

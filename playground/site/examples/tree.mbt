@@ -45,7 +45,7 @@ fn tree_item_comp() -> @component.Component {
 ///|
 fn tree_root_comp() -> @component.Component {
   tree_root_component(
-    init=TreeRootState::{ log: [] },
+    init={ ..TreeRootState::zero(), log: [] },
     update=(s, msg, _ctx) => match msg {
       Bubble("treeItemSelected", args) => {
         let label = match args {
@@ -58,7 +58,7 @@ fn tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ log, })
+        Some({ ..s, log, })
       }
       _ => None
     },

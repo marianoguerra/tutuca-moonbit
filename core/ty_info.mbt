@@ -142,3 +142,38 @@ pub fn TyInfo::kind(self : TyInfo) -> FieldKind {
     TyOption(_) | TyAny => FAny
   }
 }
+
+///|
+/// The empty value of this type, as the runtime carries it.
+///
+/// Type-directed, like the generated `<T>State::zero()` — which is the point:
+/// a default is not an independent fact about a field, so storing one beside
+/// the type would be a second thing to keep true. The one default a TYPE cannot
+/// give is a child slot's construction arguments, and those are a value the
+/// author chooses rather than anything the schema knows.
+///
+/// This is what an inspector shows in a field's "default" column, reachable
+/// from a bare `Value` — it used to come off `Component.specs`, which a holder
+/// of an instance and no registry could not get to.
+pub fn TyInfo::zero(self : TyInfo) -> Value {
+  match self {
+    TyBool => Bool(false)
+    TyInt | TyFloat => Num(0.0)
+    TyText | TyEnum(_) => Str("")
+    TyList(_) | TyTuple(_) => List([])
+    TyRecord(_) | TyOMap(_) => Map(Map([]))
+    // A closed set starts as its declared membership — the one thing about a
+    // set that only the schema knows, since the encoded value is just a Map.
+    TyFlags(_, ms) => {
+      let m : Map[String, Value] = Map([])
+      for name in ms {
+        m[name] = Bool(true)
+      }
+      Map(m)
+    }
+    TySet => Map(Map([]))
+    // A variant's zero is its first case, which this cannot name; an option
+    // is absent; a slot is filled by the registration scope at make time.
+    TyVariant(_) | TyOption(_) | TyComp(_) | TyAny => Null
+  }
+}

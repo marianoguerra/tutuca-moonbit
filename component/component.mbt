@@ -54,47 +54,6 @@ impl @anode.MacroScope for EmptyScope with fn lookup_macro(_self, _name) {
 }
 
 ///|
-/// The schema extended with any field the runtime specs carry but it does not
-/// name — a `specs~` child slot, above all, which is declared out of band and
-/// so never appears in the state block.
-///
-/// The schema is what an instance answers `obj_schema()` with, and what the
-/// generic layer above reads: field enumeration, the snapshot an inspector
-/// shows, structural equality, the JSON projection. A field missing from it is
-/// a field that does not exist as far as any of those are concerned — and for
-/// equality that is not merely incomplete, it is wrong: two instances
-/// differing only in an undeclared child slot would compare equal, and the
-/// transactor would read the write that changed one as "nothing happened".
-///
-/// So the descriptor an instance carries describes EVERY field it has. What a
-/// runtime spec can say about the extra one is thin — the kind, and the
-/// component a slot holds — which is exactly the gap `specs~` exists to fill
-/// and the reason declaring the slot in the state block is better.
-fn complete_schema(
-  schema : SchemaInfo,
-  specs : Map[String, FieldSpec],
-) -> SchemaInfo {
-  let extra : Array[FieldInfo] = []
-  for name, sp in specs {
-    if schema.field(name) is Some(_) {
-      continue
-    }
-    // What a runtime spec can say about a field the schema never named is
-    // thin — that it is a slot, and which component it holds — which is
-    // exactly the gap `specs~` exists to fill.
-    let ty : @tutuca.TyInfo = match sp.kind {
-      FComp(comp~, ..) => TyComp(if comp == "" { None } else { Some(comp) })
-      _ => TyAny
-    }
-    extra.push(@tutuca.FieldInfo::new(name, ty))
-  }
-  if extra.is_empty() {
-    return schema
-  }
-  { ..schema, fields: schema.fields + extra }
-}
-
-///|
 /// Shared Component construction: views, styles, provide/lookup — everything
 /// except field specs and the make closure.
 fn new_component(
@@ -179,7 +138,8 @@ pub fn[S : @tutuca.Fields] component(
   ] = Map([]),
   enrich_scope? : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([]),
   loop_with? : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith] = Map([]),
-  specs? : Map[String, FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
 ) -> Component {
@@ -197,38 +157,55 @@ pub fn[S : @tutuca.Fields] component(
   for k, _ in init_fields {
     s_fields.push(k)
   }
+  // Every spec comes from the SCHEMA now. The kind is `fi.kind()` and the
+  // default `fi.ty.zero()`, both projections of the declared type, so there is
+  // nothing here a caller could state differently from what the block says.
+  //
+  // `specs~` used to sit on top of this doing three jobs. Two are gone: a
+  // field's kind is declared, and a slot's component is declared (a sibling
+  // interface, or a `resource` for one from another module). The third — a
+  // child's construction ARGUMENTS — is a value the author picks, which no type
+  // can express, and it is all `slot_args~` carries.
+  // A slot the STATE TYPE cannot declare, because several components share that
+  // type and hold different children. A view file gives each component its own
+  // interface and so never needs this; a component built by hand does, and
+  // there is nowhere else for it to say so. Folded INTO the schema rather than
+  // kept beside it, so the descriptor still names every field an instance has —
+  // which is what the inspector and structural equality read.
+  let schema = if slots.is_empty() {
+    schema
+  } else {
+    let extra : Array[@tutuca.FieldInfo] = []
+    for name, comp in slots {
+      if schema.field(name) is None {
+        extra.push(@tutuca.FieldInfo::new(name, TyComp(Some(comp))))
+      }
+    }
+    { ..schema, fields: schema.fields + extra }
+  }
+  // Every declared field, from the schema. The kind is `fi.kind()` and the
+  // default the encoded seed where there is one, `fi.ty.zero()` otherwise, so
+  // nothing here can say something different from what the block declared.
   let all_specs : Map[String, FieldSpec] = Map([])
-  // The schema DECLARES each field's kind, and is the only thing consulted for
-  // it. There used to be a fallback that read the seed value instead, which is
-  // why `FInt` vs `FFloat` depended on whether a double happened to be
-  // integral. A field the schema does not mention gets `FAny`: the encoder
-  // produced it, so it exists, but nothing declared what it is.
-  for k, v in init_fields {
-    all_specs[k] = match schema.field(k) {
-      Some(fi) => { kind: fi.kind(), default: v }
-      None => { kind: FAny, default: v }
-    }
-  }
   for fi in schema.fields {
-    // A slot carries no init value, so it is not in `init_fields` at all.
-    if fi.ty.slot() is Some(comp) && !all_specs.contains(fi.name) {
-      all_specs[fi.name] = FieldSpec::comp(comp)
-    }
-    // A `flags` set's declared membership seeds its default.
-    let members = fi.ty.members()
-    if !members.is_empty() {
-      all_specs[fi.name] = FieldSpec::set(members~)
-    }
-  }
-  for k, sp in specs {
-    match (all_specs.get(k), sp.kind) {
-      // kind override for an S field: the typed default stays authoritative
-      (Some(base), FSet | FOMap) =>
-        all_specs[k] = { kind: sp.kind, default: base.default }
-      _ => all_specs[k] = sp
+    all_specs[fi.name] = match fi.ty.slot() {
+      // The one thing no type states: which arguments this child is built with.
+      Some(comp) =>
+        FieldSpec::comp(comp, args=slot_args.get(fi.name).unwrap_or(Map([])))
+      None =>
+        {
+          kind: fi.kind(),
+          default: init_fields.get(fi.name).unwrap_or(fi.ty.zero()),
+        }
     }
   }
-  let schema = complete_schema(schema, all_specs)
+  // ...and anything the encoder produced that the schema does not name. It
+  // exists, but nothing declared what it is.
+  for k, v in init_fields {
+    if !all_specs.contains(k) {
+      all_specs[k] = { kind: FAny, default: v }
+    }
+  }
   let tspec : TypedSpec[S] = {
     comp: None,
     init,

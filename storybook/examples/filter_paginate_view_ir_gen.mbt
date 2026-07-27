@@ -112,7 +112,8 @@ pub fn person_component(
   global_style? : String = person_global_style,
   update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> PersonState?,
   swap? : (PersonInput) -> ((PersonState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -132,7 +133,8 @@ pub fn person_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -193,7 +195,8 @@ pub fn strategies_component(
   common_style? : String = strategies_common_style,
   global_style? : String = strategies_global_style,
   update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> StrategiesState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -204,7 +207,8 @@ pub fn strategies_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -360,7 +364,8 @@ pub fn naive_people_component(
     @tutuca.Value,
     @component.LoopCtx,
   ) -> @component.LoopWith)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -407,7 +412,8 @@ pub fn naive_people_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

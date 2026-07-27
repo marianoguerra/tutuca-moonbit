@@ -67,7 +67,8 @@ pub fn counter_component(
   global_style? : String = counter_global_style,
   update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,
   swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -87,7 +88,8 @@ pub fn counter_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -163,7 +165,8 @@ pub fn profile_component(
   global_style? : String = profile_global_style,
   update? : (ProfileState, @component.Dispatch, &@tutuca.Ctx) -> ProfileState?,
   swap? : (ProfileInput) -> ((ProfileState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -183,7 +186,8 @@ pub fn profile_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -253,7 +257,8 @@ pub fn search_component(
   global_style? : String = search_global_style,
   update? : (SearchState, @component.Dispatch, &@tutuca.Ctx) -> SearchState?,
   swap? : (SearchInput) -> ((SearchState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -273,7 +278,8 @@ pub fn search_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -346,7 +352,8 @@ pub fn toggle_component(
   global_style? : String = toggle_global_style,
   update? : (ToggleState, @component.Dispatch, &@tutuca.Ctx) -> ToggleState?,
   swap? : (ToggleInput) -> ((ToggleState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -366,7 +373,8 @@ pub fn toggle_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -425,7 +433,8 @@ pub fn fruits_component(
     @tutuca.Value,
     @tutuca.Value,
   ) -> Bool)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -445,7 +454,8 @@ pub fn fruits_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -503,7 +513,8 @@ pub fn greeting_component(
   common_style? : String = greeting_common_style,
   global_style? : String = greeting_global_style,
   update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> GreetingState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -514,7 +525,8 @@ pub fn greeting_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -558,7 +570,8 @@ pub fn page_component(
   common_style? : String = page_common_style,
   global_style? : String = page_global_style,
   update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> PageState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -569,7 +582,8 @@ pub fn page_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -614,7 +628,8 @@ pub fn status_component(
   common_style? : String = status_common_style,
   global_style? : String = status_global_style,
   update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> StatusState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -625,7 +640,8 @@ pub fn status_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -689,7 +705,8 @@ pub fn chat_component(
   global_style? : String = chat_global_style,
   update? : (ChatState, @component.Dispatch, &@tutuca.Ctx) -> ChatState?,
   swap? : (ChatInput) -> ((ChatState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -709,7 +726,8 @@ pub fn chat_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -764,7 +782,8 @@ pub fn quotes_component(
   common_style? : String = quotes_common_style,
   global_style? : String = quotes_global_style,
   update? : (QuotesState, @component.Dispatch, &@tutuca.Ctx) -> QuotesState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -775,7 +794,8 @@ pub fn quotes_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -833,7 +853,8 @@ pub fn features_component(
   common_style? : String = features_common_style,
   global_style? : String = features_global_style,
   update? : (FeaturesState, @component.Dispatch, &@tutuca.Ctx) -> FeaturesState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -844,7 +865,8 @@ pub fn features_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

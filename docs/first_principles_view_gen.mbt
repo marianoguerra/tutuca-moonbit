@@ -192,7 +192,9 @@ impl @component.Fields for NoteState with fn schema() {
 /// Declared as `interface mailbox` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct MailboxState {}
+pub(all) struct MailboxState {
+  note : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -202,7 +204,7 @@ pub(all) struct MailboxState {}
 ///
 ///   init={ ..MailboxState::zero(), label: "Counter" }
 pub fn MailboxState::zero() -> MailboxState {
-  MailboxState::{  }
+  MailboxState::{ note: Null }
 }
 
 ///|
@@ -212,15 +214,16 @@ pub fn MailboxState::zero() -> MailboxState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for MailboxState with fn encode(_s) {
-  Map([])
+impl @component.Fields for MailboxState with fn encode(s) {
+  { "note": s.note }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for MailboxState with fn decode(_f) {
-  Some(MailboxState::{  })
+impl @component.Fields for MailboxState with fn decode(f) {
+  let v_note = f.get("note").unwrap_or(Null)
+  Some(MailboxState::{ note: v_note })
 }
 
 ///|
@@ -241,8 +244,8 @@ pub let mailbox_global_style : String = ""
 impl @component.Fields for MailboxState with fn schema() {
   @component.SchemaInfo::new(
     name="Mailbox",
-    fingerprint="44b8998831569bcf",
-    fields=[@component.FieldInfo::new("note", TyComp(None))],
+    fingerprint="ca33e6c0663f4af6",
+    fields=[@component.FieldInfo::new("note", TyComp(Some("Note")))],
     view_names=["main"],
   )
 }

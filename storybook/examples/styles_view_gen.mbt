@@ -77,7 +77,9 @@ impl @component.Fields for StylesExampleState with fn schema() {
 /// Declared as `interface styles-example-root` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct StylesExampleRootState {}
+pub(all) struct StylesExampleRootState {
+  value : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -87,7 +89,7 @@ pub(all) struct StylesExampleRootState {}
 ///
 ///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
 pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
-  StylesExampleRootState::{  }
+  StylesExampleRootState::{ value: Null }
 }
 
 ///|
@@ -97,15 +99,16 @@ pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for StylesExampleRootState with fn encode(_s) {
-  Map([])
+impl @component.Fields for StylesExampleRootState with fn encode(s) {
+  { "value": s.value }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for StylesExampleRootState with fn decode(_f) {
-  Some(StylesExampleRootState::{  })
+impl @component.Fields for StylesExampleRootState with fn decode(f) {
+  let v_value = f.get("value").unwrap_or(Null)
+  Some(StylesExampleRootState::{ value: v_value })
 }
 
 ///|

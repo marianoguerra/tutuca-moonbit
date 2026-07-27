@@ -12,16 +12,14 @@ fn greeting_comp() -> @component.Component {
 }
 
 ///|
-/// MoonBit divergence from JS: the child default is `FieldSpec::comp("Greeting",
-/// args=...)` — a name resolved through the registration scope at make() time,
-/// rather than JS's eagerly-built `Greeting.make({...})`. Same result, and it
-/// keeps the component definitions order-independent.
+/// MoonBit divergence from JS: the child is a DECLARED slot — the state block
+/// says `greeting: greeting`, naming the sibling interface, and the name is
+/// resolved through the registration scope at make() time rather than eagerly
+/// built the way JS's `Greeting.make({...})` is. Same result, and it keeps the
+/// component definitions order-independent. The arguments it is built with are
+/// the one part no type states, so they stay here.
 fn page_comp() -> @component.Component {
-  page_component(specs={
-    "greeting": @component.FieldSpec::comp("Greeting", args={
-      "name": Str("tutorial reader"),
-    }),
-  })
+  page_component(slot_args={ "greeting": { "name": Str("tutorial reader") } })
 }
 
 ///|

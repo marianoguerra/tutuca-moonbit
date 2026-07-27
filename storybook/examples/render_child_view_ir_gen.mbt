@@ -55,7 +55,8 @@ pub fn greeting_component(
   common_style? : String = greeting_common_style,
   global_style? : String = greeting_global_style,
   update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> GreetingState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -66,7 +67,8 @@ pub fn greeting_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -116,7 +118,8 @@ pub fn page_component(
   common_style? : String = page_common_style,
   global_style? : String = page_global_style,
   update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> PageState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -127,7 +130,8 @@ pub fn page_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -223,7 +227,8 @@ pub fn entry_component(
   update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> EntryState?,
   compute? : (EntryMethod) -> ((EntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (EntryInput) -> ((EntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -252,7 +257,8 @@ pub fn entry_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -296,7 +302,8 @@ pub fn multiple_views_component(
   common_style? : String = multiple_views_common_style,
   global_style? : String = multiple_views_global_style,
   update? : (MultipleViewsState, @component.Dispatch, &@tutuca.Ctx) -> MultipleViewsState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -307,7 +314,8 @@ pub fn multiple_views_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

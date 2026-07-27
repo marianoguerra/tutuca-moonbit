@@ -80,7 +80,6 @@ fn panel_comp() -> @component.Component {
     },
     name="Panel",
     init=PanelState::{ title: "panel" },
-    specs={ "item": @component.FieldSpec::comp("Item") },
   )
 }
 
@@ -202,5 +201,6 @@ impl @component.Fields for ItemState with fn schema() {
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(fingerprint="panel_state", fields=[
     @component.FieldInfo::new("title", TyText),
+    @component.FieldInfo::new("item", TyComp(Some("Item"))),
   ])
 }

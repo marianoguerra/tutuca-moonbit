@@ -2,7 +2,7 @@
 //
 // Teaches: composing independent example apps as fields of one root. The JS
 // module seeds each field with the sub-app's getRoot() instance; the port
-// leans on the designed mechanism instead — `FieldSpec::comp(name, args~)`
+// leans on the designed mechanism instead — a declared slot plus `slot_args~`
 // builds each child through the registration scope at make() time, with the
 // args taken from the sub-module's own ExampleDef (the same seed the
 // standalone example mounts with).
@@ -26,11 +26,14 @@ fn composability_comp(
   dnd_args : Map[String, @tutuca.Value],
 ) -> @component.Component {
   composability_component(
-    init={ activeSection: "todo" },
-    specs={
-      "json": @component.FieldSpec::comp("JsonArray", args=json_args),
-      "dnd": @component.FieldSpec::comp("DnDExample", args=dnd_args),
-    },
+    init={ ..ComposabilityState::zero(), activeSection: "todo" },
+    // The component each slot holds is part of its declared type; the
+    // arguments it is BUILT with are a value, which no type states.
+    // `DnDExample` has adjacent capitals, which kebab-case cannot round-trip
+    // (`d-n-d-example` comes back as `DNDExample`), so this one slot names its
+    // component here rather than in the block.
+    slots={ "dnd": "DnDExample" },
+    slot_args={ "json": json_args, "dnd": dnd_args },
     update=(s, msg, ctx) => {
       match msg {
         // forward the host's init to the personal-site sub-app, which loads

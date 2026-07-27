@@ -69,15 +69,16 @@ pub fn StateDef::field_of(
 }
 
 ///|
-/// True when this field lives in the state STRUCT.
+/// True when this field lives in the state STRUCT — which is now every field.
 ///
-/// A child-component slot does not: the runtime creates it through the
-/// registration scope from the `specs~` entry, which is exactly why slots
-/// had to be declared out-of-band before the schema. Declaring one here
-/// still buys the view check and the generated spec — it just does not
-/// become a struct field.
-pub fn StateTy::in_struct(self : StateTy) -> Bool {
-  !(self is TComp(_))
+/// A child-component slot used to be excluded: the runtime made it through the
+/// registration scope and kept it in a side map, so `update` and `compute` could
+/// not see it at all. That is why a component wanting to READ its child wrote
+/// the field as `any` instead, giving up the slot's declared component to get a
+/// struct field. A slot is a `@tutuca.Value` field like any other now, seeded
+/// with `Null` and filled at make time, so the two spellings stop competing.
+pub fn StateTy::in_struct(_self : StateTy) -> Bool {
+  true
 }
 
 ///|

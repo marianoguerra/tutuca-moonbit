@@ -77,7 +77,9 @@ impl @component.Fields for GreetingState with fn schema() {
 /// Declared as `interface page` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct PageState {}
+pub(all) struct PageState {
+  greeting : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -87,7 +89,7 @@ pub(all) struct PageState {}
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
-  PageState::{  }
+  PageState::{ greeting: Null }
 }
 
 ///|
@@ -97,15 +99,16 @@ pub fn PageState::zero() -> PageState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for PageState with fn encode(_s) {
-  Map([])
+impl @component.Fields for PageState with fn encode(s) {
+  { "greeting": s.greeting }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for PageState with fn decode(_f) {
-  Some(PageState::{  })
+impl @component.Fields for PageState with fn decode(f) {
+  let v_greeting = f.get("greeting").unwrap_or(Null)
+  Some(PageState::{ greeting: v_greeting })
 }
 
 ///|
@@ -126,8 +129,8 @@ pub let page_global_style : String = ""
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
-    fingerprint="db02b6e5e92c5199",
-    fields=[@component.FieldInfo::new("greeting", TyComp(None))],
+    fingerprint="e030e42686ce0fa5",
+    fields=[@component.FieldInfo::new("greeting", TyComp(Some("Greeting")))],
     view_names=["main"],
   )
 }
@@ -275,7 +278,9 @@ impl @component.Fields for EntryState with fn schema() {
 /// Declared as `interface multiple-views` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct MultipleViewsState {}
+pub(all) struct MultipleViewsState {
+  value : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -285,7 +290,7 @@ pub(all) struct MultipleViewsState {}
 ///
 ///   init={ ..MultipleViewsState::zero(), label: "Counter" }
 pub fn MultipleViewsState::zero() -> MultipleViewsState {
-  MultipleViewsState::{  }
+  MultipleViewsState::{ value: Null }
 }
 
 ///|
@@ -295,15 +300,16 @@ pub fn MultipleViewsState::zero() -> MultipleViewsState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for MultipleViewsState with fn encode(_s) {
-  Map([])
+impl @component.Fields for MultipleViewsState with fn encode(s) {
+  { "value": s.value }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for MultipleViewsState with fn decode(_f) {
-  Some(MultipleViewsState::{  })
+impl @component.Fields for MultipleViewsState with fn decode(f) {
+  let v_value = f.get("value").unwrap_or(Null)
+  Some(MultipleViewsState::{ value: v_value })
 }
 
 ///|

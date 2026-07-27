@@ -104,14 +104,27 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
 priv struct NoFields {}
 
 ///|
+/// A component whose only field is a closed set the STRUCT does not hold —
+/// declared, so its members are its default.
+priv struct FacetsOnly {}
+
+///|
+priv struct OMapInState {
+  m : Map[String, @tutuca.Value]
+}
+
+///|
+/// A parent whose only field is a child-component slot.
+priv struct ParentWithKid {}
+
+///|
 test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Facets",
-    init=NoFields::{  },
-    // default set of two members; a List arg coerces (and dedups) into the
-    // Map-backed set, Bool(true) values keyed by member.
-    specs={ "sel": @component.FieldSpec::set(members=["a", "b"]) },
+    // Declared, not bolted on: a closed set's members ARE its default, which
+    // is the one thing about a set only the schema knows.
+    init=FacetsOnly::{  },
   )
   // default
   let t = comp.make(Map([]))
@@ -157,17 +170,16 @@ priv struct SetInState {
 }
 
 ///|
-test "FSet kind override for a typed S field keeps the typed default" {
+test "a declared set keeps the typed default and gets set mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="TypedFacets",
     init=SetInState::{ sel: { "a": true } },
-    specs={ "sel": @component.FieldSpec::set() },
   )
   let t = comp.make(Map([]))
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
   guard t is Obj(o)
-  // set-kind mutators exist because the kind was overridden
+  // set-kind mutators exist because the SCHEMA declares `sel` a set
   guard o.obj_field("addInSel") is Some(Fn(add))
   guard add([Null, Str("b")]) is Obj(o2)
   assert_true(
@@ -180,8 +192,9 @@ test "omap slot field: keyed mutators over an ordered Map" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Ordered",
-    init=NoFields::{  },
-    specs={ "m": @component.FieldSpec::omap(default={ "x": Num(1) }) },
+    // A non-empty default is a VALUE, so it comes from `init` rather than from
+    // a spec beside the type.
+    init=OMapInState::{ m: { "x": Num(1) } },
   )
   let t = comp.make(Map([]))
   assert_true(t.field("m") == Map({ "x": Num(1) }))
@@ -417,8 +430,9 @@ test "FComp slot fields default through the registration scope" {
       ),
     },
     name="Parent",
-    init=NoFields::{  },
-    specs={ "kid": @component.FieldSpec::comp("Child") },
+    // The slot is DECLARED, the way a state block declares one; the component
+    // it holds is part of the field's type.
+    init=ParentWithKid::{  },
   )
   scope.register_components([child, parent])
   let p = parent.make(Map([]))
@@ -820,6 +834,58 @@ impl @component.Fields for TodoState with fn schema() {
 ///|
 impl @component.Fields for NoFields with fn schema() {
   @component.SchemaInfo::new(fingerprint="no_fields", fields=[])
+}
+
+///|
+impl @component.Fields for ParentWithKid with fn schema() {
+  @component.SchemaInfo::new(fingerprint="parent_with_kid", fields=[
+    @component.FieldInfo::new("kid", TyComp(Some("Child"))),
+  ])
+}
+
+///|
+impl @component.Fields for ParentWithKid with fn encode(_s) {
+  Map([])
+}
+
+///|
+impl @component.Fields for ParentWithKid with fn decode(_f) {
+  Some(ParentWithKid::{  })
+}
+
+///|
+impl @component.Fields for FacetsOnly with fn schema() {
+  @component.SchemaInfo::new(fingerprint="facets_only", fields=[
+    @component.FieldInfo::new("sel", TyFlags("sel", ["a", "b"])),
+  ])
+}
+
+///|
+impl @component.Fields for FacetsOnly with fn encode(_s) {
+  Map([])
+}
+
+///|
+impl @component.Fields for FacetsOnly with fn decode(_f) {
+  Some(FacetsOnly::{  })
+}
+
+///|
+impl @component.Fields for OMapInState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="omap_in_state", fields=[
+    @component.FieldInfo::new("m", TyOMap(TyAny)),
+  ])
+}
+
+///|
+impl @component.Fields for OMapInState with fn encode(s) {
+  { "m": Map(s.m) }
+}
+
+///|
+impl @component.Fields for OMapInState with fn decode(f) {
+  guard f.get("m") is Some(Map(m)) else { return None }
+  Some(OMapInState::{ m, })
 }
 
 ///|

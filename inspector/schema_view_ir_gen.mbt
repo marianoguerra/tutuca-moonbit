@@ -85,7 +85,8 @@ pub fn schema_property_component(
   common_style? : String = schema_property_common_style,
   global_style? : String = schema_property_global_style,
   update? : (SchemaPropertyState, @component.Dispatch, &@tutuca.Ctx) -> SchemaPropertyState?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -96,7 +97,8 @@ pub fn schema_property_component(
     common_style~,
     global_style~,
     update?,
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )
@@ -172,7 +174,8 @@ pub fn schema_branch_component(
   global_style? : String = schema_branch_global_style,
   update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> SchemaBranchState?,
   compute? : (SchemaBranchMethod) -> ((SchemaBranchState, Array[@tutuca.Value]) -> @tutuca.Value)?,
-  specs? : Map[String, @component.FieldSpec] = Map([]),
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, @component.LookupSpec] = Map([]),
 ) -> @component.Component {
@@ -192,7 +195,8 @@ pub fn schema_branch_component(
         )
       None => Map([])
     },
-    specs~,
+    slots~,
+    slot_args~,
     provide~,
     lookup~,
   )

@@ -351,7 +351,10 @@ impl @component.Fields for ItemSelectState with fn schema() {
 /// Declared as `interface pseudo-x-demo` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct PseudoXDemoState {}
+pub(all) struct PseudoXDemoState {
+  table : @tutuca.Value
+  select : @tutuca.Value
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -361,7 +364,7 @@ pub(all) struct PseudoXDemoState {}
 ///
 ///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
 pub fn PseudoXDemoState::zero() -> PseudoXDemoState {
-  PseudoXDemoState::{  }
+  PseudoXDemoState::{ table: Null, select: Null }
 }
 
 ///|
@@ -371,15 +374,17 @@ pub fn PseudoXDemoState::zero() -> PseudoXDemoState {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-impl @component.Fields for PseudoXDemoState with fn encode(_s) {
-  Map([])
+impl @component.Fields for PseudoXDemoState with fn encode(s) {
+  { "table": s.table, "select": s.select }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-impl @component.Fields for PseudoXDemoState with fn decode(_f) {
-  Some(PseudoXDemoState::{  })
+impl @component.Fields for PseudoXDemoState with fn decode(f) {
+  let v_table = f.get("table").unwrap_or(Null)
+  let v_select = f.get("select").unwrap_or(Null)
+  Some(PseudoXDemoState::{ table: v_table, select: v_select })
 }
 
 ///|
