@@ -33,7 +33,7 @@ fn DseRootState::zero() -> DseRootState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_root_zero_args() -> Map[String, @tutuca.Value] {
-  dse_root_encode(DseRootState::zero())
+  @component.Fields::encode(DseRootState::zero())
 }
 
 ///|
@@ -59,9 +59,9 @@ pub fn DseRootField::name(self : DseRootField) -> String {
 /// happened to be integral.
 pub fn DseRootField::kind(self : DseRootField) -> @component.FieldKind {
   match self {
-    Items => @component.FOMap
-    SelectedKey => @component.FText
-    Editor => @component.FComp(comp="", args=Map([]))
+    Items => FOMap
+    SelectedKey => FText
+    Editor => FComp(comp="", args=Map([]))
   }
 }
 
@@ -84,7 +84,7 @@ pub let dse_root_schema_fingerprint : String = "1e0db39e41167c58"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn dse_root_encode(s : DseRootState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DseRootState with fn encode(s) {
   {
     "items": {
       let m : Map[String, @tutuca.Value] = Map([])
@@ -100,7 +100,7 @@ fn dse_root_encode(s : DseRootState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn dse_root_decode(f : Map[String, @tutuca.Value]) -> DseRootState? {
+impl @component.Fields for DseRootState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is Map(u1_items) else { return None }
   let v_items : Map[String, @tutuca.Value] = Map([])
@@ -203,46 +203,33 @@ pub fn[S] dse_root_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn dse_root_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "1e0db39e41167c58",
-    fields: [
-      {
-        name: "items",
-        ty: "an ordered map of any",
-        kind: @component.FOMap,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "selectedKey",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "editor",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for DseRootState with fn schema() {
+  @component.SchemaInfo::new(
+    name="DseRoot",
+    fingerprint="1e0db39e41167c58",
+    fields=[
+      @component.FieldInfo::new(
+        "items",
+        "an ordered map of any",
+        FOMap,
+        elem="any",
+      ),
+      @component.FieldInfo::new("selectedKey", "string", FText),
+      @component.FieldInfo::new(
+        "editor",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
     ],
-    inputs: ["selectItem"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["selectItem"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -270,7 +257,7 @@ fn DseEditorState::zero() -> DseEditorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_editor_zero_args() -> Map[String, @tutuca.Value] {
-  dse_editor_encode(DseEditorState::zero())
+  @component.Fields::encode(DseEditorState::zero())
 }
 
 ///|
@@ -292,7 +279,7 @@ pub fn DseEditorField::name(self : DseEditorField) -> String {
 /// happened to be integral.
 pub fn DseEditorField::kind(self : DseEditorField) -> @component.FieldKind {
   match self {
-    Missing => @component.FAny
+    Missing => FAny
   }
 }
 
@@ -313,14 +300,14 @@ pub let dse_editor_schema_fingerprint : String = "6d6412be74f3d0b4"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn dse_editor_encode(s : DseEditorState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DseEditorState with fn encode(s) {
   { "missing": s.missing }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn dse_editor_decode(f : Map[String, @tutuca.Value]) -> DseEditorState? {
+impl @component.Fields for DseEditorState with fn decode(f) {
   let v_missing = f.get("missing").unwrap_or(Null)
   Some(DseEditorState::{ missing: v_missing })
 }
@@ -349,30 +336,17 @@ pub let dse_editor_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn dse_editor_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "6d6412be74f3d0b4",
-    fields: [
-      {
-        name: "missing",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for DseEditorState with fn schema() {
+  @component.SchemaInfo::new(
+    name="DseEditor",
+    fingerprint="6d6412be74f3d0b4",
+    fields=[@component.FieldInfo::new("missing", "any", FAny, elem="any")],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -400,7 +374,7 @@ fn DseEntryState::zero() -> DseEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_entry_zero_args() -> Map[String, @tutuca.Value] {
-  dse_entry_encode(DseEntryState::zero())
+  @component.Fields::encode(DseEntryState::zero())
 }
 
 ///|
@@ -422,7 +396,7 @@ pub fn DseEntryField::name(self : DseEntryField) -> String {
 /// happened to be integral.
 pub fn DseEntryField::kind(self : DseEntryField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
+    Name => FText
   }
 }
 
@@ -443,14 +417,14 @@ pub let dse_entry_schema_fingerprint : String = "2184b70b210b0dff"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn dse_entry_encode(s : DseEntryState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DseEntryState with fn encode(s) {
   { "name": Str(s.name) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn dse_entry_decode(f : Map[String, @tutuca.Value]) -> DseEntryState? {
+impl @component.Fields for DseEntryState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(DseEntryState::{ name: v_name })
 }
@@ -548,28 +522,16 @@ pub fn[S] dse_entry_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn dse_entry_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "2184b70b210b0dff",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["setName"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main", "edit"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for DseEntryState with fn schema() {
+  @component.SchemaInfo::new(
+    name="DseEntry",
+    fingerprint="2184b70b210b0dff",
+    fields=[@component.FieldInfo::new("name", "string", FText)],
+    inputs=["setName"],
+    view_names=["main", "edit"],
+  )
 }

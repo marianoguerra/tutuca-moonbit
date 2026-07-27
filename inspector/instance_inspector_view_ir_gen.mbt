@@ -184,9 +184,6 @@ pub fn instance_fields_component(
     specs~,
     provide~,
     lookup~,
-    encode=instance_fields_encode,
-    decode=instance_fields_decode,
-    schema=instance_fields_schema(),
   )
 }
 
@@ -238,9 +235,6 @@ pub fn instance_inspector_component(
     specs~,
     provide~,
     lookup~,
-    encode=instance_inspector_encode,
-    decode=instance_inspector_decode,
-    schema=instance_inspector_schema(),
   )
 }
 
@@ -397,8 +391,5 @@ pub fn instance_explorer_component(
     specs~,
     provide~,
     lookup~,
-    encode=instance_explorer_encode,
-    decode=instance_explorer_decode,
-    schema=instance_explorer_schema(),
   )
 }

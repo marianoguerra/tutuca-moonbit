@@ -34,6 +34,8 @@ pub fn size_of(Value) -> Int?
 
 pub fn step_get(&PathNode, Step) -> &PathNode?
 
+pub fn step_keys_label(Array[StepKey]) -> String
+
 pub fn step_with_key(Step, PathKey) -> Step
 
 pub fn tokenize_value(String) -> Array[String]
@@ -41,8 +43,6 @@ pub fn tokenize_value(String) -> Array[String]
 pub fn warn(String) -> Unit
 
 pub let warn_hook : @ref.Ref[(String) -> Unit]
-
-pub fn[T] with_value_stash(() -> T) -> T
 
 // Errors
 
@@ -62,6 +62,29 @@ pub(all) enum DispatchStep {
   Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int])
   DynEach(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey)
 } derive(Eq, @debug.Debug)
+
+pub(all) struct FieldInfo {
+  name : String
+  ty : String
+  kind : FieldKind
+  elem : String?
+  slot : String?
+  members : Array[String]
+}
+pub fn FieldInfo::new(String, String, FieldKind, elem? : String, slot? : String, members? : Array[String]) -> Self
+
+pub(all) enum FieldKind {
+  FBool
+  FText
+  FInt
+  FFloat
+  FList
+  FMap
+  FAny
+  FComp(comp~ : String, args~ : Map[String, Value])
+  FSet
+  FOMap
+} derive(@debug.Debug)
 
 pub(all) struct Handler((Array[Value], &Ctx) -> &PathNode?)
 
@@ -127,6 +150,9 @@ pub(all) struct Path {
 } derive(Eq, @debug.Debug)
 pub fn Path::compact(Self) -> Self
 pub fn Path::concat(Self, Array[Step]) -> Self
+pub fn Path::field(Self, String) -> Self
+pub fn Path::index(Self, String, Int) -> Self
+pub fn Path::key(Self, String, String) -> Self
 pub fn Path::lookup(Self, &PathNode) -> &PathNode?
 pub fn Path::new(steps? : Array[Step]) -> Self
 pub fn Path::pin_keys(Self, &PathNode) -> Self
@@ -134,7 +160,9 @@ pub fn Path::pop_step(Self) -> Self
 pub fn Path::resolve_chain(Self, &PathNode) -> Array[&PathNode]
 pub fn Path::set_value(Self, &PathNode, &PathNode) -> &PathNode
 pub fn Path::to_keys(Self) -> Array[StepKey]
+pub fn Path::to_label(Self) -> String
 pub fn Path::update(Self, &PathNode, HandlerBucket, String, Array[Value]) -> &PathNode
+pub impl Show for Path
 
 pub struct PathChanges {
   ctx : &Ctx
@@ -151,6 +179,8 @@ pub(all) enum PathKey {
   KInt(Int)
   KStr(String)
 } derive(Eq, @debug.Debug)
+pub fn PathKey::to_label(Self) -> String
+pub fn PathKey::to_value(Self) -> Value
 
 pub(all) enum Pred {
   IsEmpty
@@ -168,6 +198,23 @@ pub(all) struct RequestOpts {
   live_path : Bool
 } derive(Eq, @debug.Debug)
 pub fn RequestOpts::new(on_ok_name? : String, on_error_name? : String, on_res_name? : String, live_path? : Bool) -> Self
+
+pub(all) struct SchemaInfo {
+  name : String
+  fingerprint : String
+  fields : Array[FieldInfo]
+  inputs : Array[String]
+  receives : Array[String]
+  bubbles : Array[String]
+  responses : Array[String]
+  methods : Array[String]
+  ids : Array[String]
+  view_names : Array[String]
+  init_names : Array[String]
+}
+pub fn SchemaInfo::field(Self, String) -> FieldInfo?
+pub fn SchemaInfo::field_names(Self) -> Array[String]
+pub fn SchemaInfo::new(name? : String, fingerprint~ : String, fields? : Array[FieldInfo], inputs? : Array[String], receives? : Array[String], bubbles? : Array[String], responses? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> Self
 
 pub(all) enum Step {
   FieldStep(String)
@@ -214,16 +261,41 @@ pub(all) enum Value {
   Fn((Array[Value]) -> Value)
   Obj(&Obj)
 }
+pub fn Value::at(Self, Path) -> Self
+pub fn Value::at_opt(Self, Path) -> Self?
 pub fn Value::bool(Self, default? : Bool) -> Bool
+pub fn Value::bool_opt(Self) -> Bool?
+pub fn Value::call(Self, Array[Self], this? : Self) -> Self
+pub fn Value::call_field(Self, String, Array[Self]) -> Self
+pub fn Value::entries(Self) -> Array[(PathKey, Self)]
 pub fn Value::field(Self, String) -> Self
+pub fn Value::field_info(Self, String) -> FieldInfo?
+pub fn Value::field_names(Self) -> Array[String]
+pub fn Value::field_opt(Self, String) -> Self?
 pub fn Value::from_json(Json) -> Self
+pub fn Value::index(Self, Int, default? : Self) -> Self
 pub fn Value::int(Self, default? : Int) -> Int
+pub fn Value::int_opt(Self) -> Int?
 pub fn Value::is_truthy(Self) -> Bool
+pub fn Value::item(Self, PathKey, default? : Self) -> Self
+pub fn Value::item_opt(Self, PathKey) -> Self?
+pub fn Value::key(Self, String, default? : Self) -> Self
 pub fn Value::list(Self) -> Array[Self]
+pub fn Value::list_opt(Self) -> Array[Self]?
+pub fn Value::map(Self) -> Map[String, Self]
+pub fn Value::map_opt(Self) -> Map[String, Self]?
 pub fn Value::num(Self, default? : Double) -> Double
+pub fn Value::num_opt(Self) -> Double?
+pub fn Value::schema(Self) -> SchemaInfo?
+pub fn Value::size(Self, default? : Int) -> Int
+pub fn Value::snapshot(Self) -> Map[String, Self]
 pub fn Value::str(Self, default? : String) -> String
+pub fn Value::str_opt(Self) -> String?
 pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
+pub fn Value::with_at(Self, Path, Self) -> Self
+pub fn Value::with_field(Self, String, Self) -> Self
+pub fn Value::with_item(Self, PathKey, Self) -> Self
 pub impl PathNode for Value
 pub impl Eq for Value
 pub impl ToJson for Value
@@ -247,6 +319,12 @@ pub(open) trait Ctx {
   fn walk_path(Self, (Int, Value) -> Bool) -> Unit = _
 }
 
+pub(open) trait Fields {
+  fn schema() -> SchemaInfo
+  fn encode(Self) -> Map[String, Value]
+  fn decode(Map[String, Value]) -> Self?
+}
+
 pub(open) trait Obj {
   fn component_id(Self) -> Int? = _
   fn obj_field(Self, String) -> Value? = _
@@ -256,6 +334,8 @@ pub(open) trait Obj {
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
   fn obj_render_handler(Self, String, HandlerNamespace) -> Value = _
   fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
+  fn obj_schema(Self) -> SchemaInfo? = _
+  fn obj_size(Self) -> Int? = _
   fn obj_eq(Self, &Obj) -> Bool = _
   fn obj_debug(Self) -> String = _
 }

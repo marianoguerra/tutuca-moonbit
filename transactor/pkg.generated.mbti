@@ -35,7 +35,6 @@ pub(all) enum ObserveKind {
 
 pub(all) enum ObserveMatch {
   Exact
-  Unknown
   NoHandler
 } derive(Eq, @debug.Debug)
 

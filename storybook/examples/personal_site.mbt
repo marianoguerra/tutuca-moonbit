@@ -52,9 +52,9 @@ fn ps_sort(
 ) -> Array[@tutuca.Value] {
   let out = entries.copy()
   let year = (e : @tutuca.Value) => {
-    let start = obj_int(e, "startYear")
+    let start = e.field("startYear").int()
     if by_end {
-      let end = obj_int(e, "endYear")
+      let end = e.field("endYear").int()
       if end != 0 {
         end
       } else {
@@ -66,8 +66,8 @@ fn ps_sort(
   }
   out.sort_by((a, b) => {
     if feat {
-      let fa = obj_bool(a, "featured")
-      let fb = obj_bool(b, "featured")
+      let fa = a.field("featured").bool()
+      let fb = b.field("featured").bool()
       if fa && !fb {
         return -1
       }
@@ -435,7 +435,7 @@ fn root_comp() -> @component.Component {
 /// its categories are selected.
 fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
   if s.selectedRoles.length() > 0 {
-    let r = obj_str(entry, "role")
+    let r = entry.field("role").str()
     if !s.selectedRoles.contains(r) {
       return false
     }

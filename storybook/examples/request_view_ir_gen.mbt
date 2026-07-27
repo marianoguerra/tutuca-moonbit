@@ -168,8 +168,5 @@ pub fn request_example_component(
     specs~,
     provide~,
     lookup~,
-    encode=request_example_encode,
-    decode=request_example_decode,
-    schema=request_example_schema(),
   )
 }

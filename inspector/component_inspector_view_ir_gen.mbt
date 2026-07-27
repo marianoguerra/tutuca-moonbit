@@ -71,9 +71,6 @@ pub fn comp_name_component(
     specs~,
     provide~,
     lookup~,
-    encode=comp_name_encode,
-    decode=comp_name_decode,
-    schema=comp_name_schema(),
   )
 }
 
@@ -149,9 +146,6 @@ pub fn comp_field_component(
     specs~,
     provide~,
     lookup~,
-    encode=comp_field_encode,
-    decode=comp_field_decode,
-    schema=comp_field_schema(),
   )
 }
 
@@ -280,9 +274,6 @@ pub fn comp_view_component(
     specs~,
     provide~,
     lookup~,
-    encode=comp_view_encode,
-    decode=comp_view_decode,
-    schema=comp_view_schema(),
   )
 }
 
@@ -454,9 +445,6 @@ pub fn comp_section_component(
     specs~,
     provide~,
     lookup~,
-    encode=comp_section_encode,
-    decode=comp_section_decode,
-    schema=comp_section_schema(),
   )
 }
 
@@ -547,8 +535,5 @@ pub fn component_inspector_component(
     specs~,
     provide~,
     lookup~,
-    encode=component_inspector_encode,
-    decode=component_inspector_decode,
-    schema=component_inspector_schema(),
   )
 }

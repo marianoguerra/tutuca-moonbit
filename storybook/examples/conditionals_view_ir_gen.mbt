@@ -111,9 +111,6 @@ pub fn traffic_light_component(
     specs~,
     provide~,
     lookup~,
-    encode=traffic_light_encode,
-    decode=traffic_light_decode,
-    schema=traffic_light_schema(),
   )
 }
 
@@ -282,9 +279,6 @@ pub fn tabbed_u_i_component(
     specs~,
     provide~,
     lookup~,
-    encode=tabbed_u_i_encode,
-    decode=tabbed_u_i_decode,
-    schema=tabbed_u_i_schema(),
   )
 }
 
@@ -387,8 +381,5 @@ pub fn list_and_filter_component(
     specs~,
     provide~,
     lookup~,
-    encode=list_and_filter_encode,
-    decode=list_and_filter_decode,
-    schema=list_and_filter_schema(),
   )
 }

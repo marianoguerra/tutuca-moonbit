@@ -97,9 +97,6 @@ pub fn schema_property_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_property_encode,
-    decode=schema_property_decode,
-    schema=schema_property_schema(),
   )
 }
 
@@ -189,8 +186,5 @@ pub fn schema_branch_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_branch_encode,
-    decode=schema_branch_decode,
-    schema=schema_branch_schema(),
   )
 }

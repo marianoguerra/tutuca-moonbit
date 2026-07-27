@@ -11,62 +11,27 @@
 // Obj/Fn values held by S survive the Json round-trip losslessly.
 
 ///|
-/// Field kinds, inferred from the encoded init state (plus explicit `specs`
-/// entries). FComp fields hold a child component instance created through
-/// the registration scope; FSet/FOMap override mutator generation for
-/// Map-backed set / ordered-map fields.
-pub(all) enum FieldKind {
-  FBool
-  FText
-  FInt
-  FFloat
-  FList
-  FMap
-  FAny
-  FComp(comp~ : String, args~ : Map[String, @tutuca.Value])
-  FSet
-  FOMap
-} derive(Debug)
+/// The declared-description types live in `@tutuca` now, so that a holder of a
+/// bare `Value` can reach them (`Obj::obj_schema`). Re-exported here because
+/// `@component.SchemaInfo` is what 143 generated modules and every
+/// hand-written descriptor already say.
+///
+/// One caveat this does NOT cover: an enum CONSTRUCTOR does not resolve
+/// through a re-export, so `@component.FBool` is gone — write `@tutuca.FBool`,
+/// or bare `FBool` wherever the expected type is known (a `FieldInfo` literal,
+/// a `FieldInfo::new` argument).
+pub using @tutuca {
+  type FieldKind,
+  type FieldInfo,
+  type SchemaInfo,
+  trait Fields,
+}
 
 ///|
 pub(all) struct FieldSpec {
   kind : FieldKind
   default : @tutuca.Value
 } derive(Debug)
-
-///|
-/// One declared field, with the parts most fields do not use defaulted.
-/// Shorthand for writing `elem`/`slot`/`members` empty, not a way to leave
-/// them unsaid.
-declare pub fn FieldInfo::new(
-  name : String,
-  ty : String,
-  kind : FieldKind,
-  elem? : String,
-  slot? : String,
-  members? : Array[String],
-) -> FieldInfo
-
-///|
-/// A component's declared schema, with the channels it does not use defaulted
-/// to empty. Empty is a real answer and a different one from absent: it says
-/// the component raises no `bubble`, not that nobody looked.
-declare pub fn SchemaInfo::new(
-  fingerprint~ : String,
-  fields? : Array[FieldInfo],
-  inputs? : Array[String],
-  receives? : Array[String],
-  bubbles? : Array[String],
-  responses? : Array[String],
-  methods? : Array[String],
-  ids? : Array[String],
-  view_names? : Array[String],
-  init_names? : Array[String],
-) -> SchemaInfo
-
-///|
-/// The declared description of a field, by runtime name.
-declare pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo?
 
 ///|
 /// A component-typed slot field: default instance made via the scope at make
@@ -235,60 +200,6 @@ pub(all) struct RequestFn(
 )
 
 ///|
-/// A compiled component: views + field specs + provide/lookup + styles, with
-/// One state field, as the schema DECLARES it.
-///
-/// The runtime's own `FieldSpec` is recovered from the encoded init value and
-/// can only say as much as a value can — `FInt` or `FFloat` depending on
-/// whether a seed double happened to be integral, `FList` with no element
-/// type. This carries what the author wrote instead.
-pub(all) struct FieldInfo {
-  name : String
-  /// The WIT spelling verbatim — `list<card>`, `option<string>`, `text-set`.
-  /// Carried rather than reconstructed, so an inspector shows what is in the
-  /// file.
-  ty : String
-  kind : FieldKind
-  /// A collection's element type, so a viewer can descend rather than stop
-  /// at "list". None for a scalar.
-  elem : String?
-  /// The component a child slot holds; None for a data field.
-  slot : String?
-  /// A `flags` field's declared members — the one thing about a set that
-  /// only the schema knows, since the encoded init value is just a Map.
-  /// Empty for every other field, and for a set with open membership.
-  members : Array[String]
-}
-
-///|
-/// What a component's schema declares, as static metadata.
-///
-/// Absent for a component with no `<script type="tutuca/state">` block —
-/// those keep the reflection path, which is all a runtime descriptor could
-/// ever offer.
-///
-/// `inputs` is the one that matters most: the names `update` answers are
-/// UNKNOWABLE at runtime (it is one opaque pattern match), so introspection
-/// could only ever report THAT an update exists. The generator knows them.
-pub(all) struct SchemaInfo {
-  /// Structural identity of the schema — over shape, not source text.
-  fingerprint : String
-  fields : Array[FieldInfo]
-  /// The `@on` handler names the views raise.
-  inputs : Array[String]
-  receives : Array[String]
-  bubbles : Array[String]
-  responses : Array[String]
-  /// `$name` callables in VALUE positions.
-  methods : Array[String]
-  /// Constant element ids — the selectors a test addresses.
-  ids : Array[String]
-  view_names : Array[String]
-  /// Named fixtures from the `tutuca/init` block.
-  init_names : Array[String]
-}
-
-///|
 /// the typed-state half (S, handlers) erased behind the make closure.
 /// `id` comes from a process-global counter (JS _compId) — tests must not
 /// assert absolute ids.
@@ -331,7 +242,12 @@ pub struct Component {
 /// Generated per-field mutators (setX/updateX/...) stay; user entries win.
 /// `specs` declares Value-level slots (FieldSpec::comp children) and
 /// FSet/FOMap kind overrides.
-declare pub fn[S] component(
+///
+/// `S` states its own schema and codec through `@tutuca.Fields`. Those were
+/// three required PARAMETERS, which meant three lines at every call site
+/// restating what the state type already determines — and a state type that
+/// could be passed here with somebody else's codec.
+declare pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
   init~ : S,
@@ -350,13 +266,6 @@ declare pub fn[S] component(
   specs? : Map[String, FieldSpec],
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
-  /// Direct state <-> fields conversion, field by field. REQUIRED: there is no
-  /// JSON bridge behind it any more to fall back to.
-  encode~ : (S) -> Map[String, @tutuca.Value],
-  decode~ : (Map[String, @tutuca.Value]) -> S?,
-  /// This component's declared schema. REQUIRED: it is the only thing consulted
-  /// for a field's kind, so there is nothing to infer it from instead.
-  schema~ : SchemaInfo,
 ) -> Component
 
 ///|

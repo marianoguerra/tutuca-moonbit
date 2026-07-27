@@ -5,43 +5,23 @@
 // component-instance trait (the hybrid seam): plain data carries no handlers,
 // instances answer handler() through Obj::obj_handler.
 
+// Traversal delegates to the shared lookups in value_dyn.mbt; only the boxing
+// into &PathNode is this file's business. The container match used to be
+// written out here AND at three call sites, and the copies drifted.
+
 ///|
 pub impl PathNode for Value with fn field(self, name) {
-  match self {
-    Map(m) =>
-      match m.get(name) {
-        Some(v) => Some(v as &PathNode)
-        None => None
-      }
-    Obj(o) =>
-      match o.obj_field(name) {
-        Some(v) => Some(v as &PathNode)
-        None => None
-      }
-    _ => None
+  match self.field_opt(name) {
+    Some(v) => Some(v as &PathNode)
+    None => None
   }
 }
 
 ///|
 pub impl PathNode for Value with fn item(self, key) {
-  match (self, key) {
-    (List(a), KInt(i)) =>
-      if i >= 0 && i < a.length() {
-        Some(a[i] as &PathNode)
-      } else {
-        None
-      }
-    (Map(m), KStr(s)) =>
-      match m.get(s) {
-        Some(v) => Some(v as &PathNode)
-        None => None
-      }
-    (Obj(o), key) =>
-      match o.obj_item(key) {
-        Some(v) => Some(v as &PathNode)
-        None => None
-      }
-    _ => None
+  match self.item_opt(key) {
+    Some(v) => Some(v as &PathNode)
+    None => None
   }
 }
 

@@ -59,9 +59,6 @@ pub fn minimum_viable_component_component(
     specs~,
     provide~,
     lookup~,
-    encode=minimum_viable_component_encode,
-    decode=minimum_viable_component_decode,
-    schema=minimum_viable_component_schema(),
   )
 }
 
@@ -111,9 +108,6 @@ pub fn static_view_component_component(
     specs~,
     provide~,
     lookup~,
-    encode=static_view_component_encode,
-    decode=static_view_component_decode,
-    schema=static_view_component_schema(),
   )
 }
 
@@ -208,9 +202,6 @@ pub fn text_directive_component(
     specs~,
     provide~,
     lookup~,
-    encode=text_directive_encode,
-    decode=text_directive_decode,
-    schema=text_directive_schema(),
   )
 }
 
@@ -266,8 +257,5 @@ pub fn danger_set_inner_html_component(
     specs~,
     provide~,
     lookup~,
-    encode=danger_set_inner_html_encode,
-    decode=danger_set_inner_html_decode,
-    schema=danger_set_inner_html_schema(),
   )
 }

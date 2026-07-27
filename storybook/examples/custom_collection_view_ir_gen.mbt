@@ -92,9 +92,6 @@ pub fn playlist_component(
     specs~,
     provide~,
     lookup~,
-    encode=playlist_encode,
-    decode=playlist_decode,
-    schema=playlist_schema(),
   )
 }
 
@@ -146,8 +143,5 @@ pub fn song_component(
     specs~,
     provide~,
     lookup~,
-    encode=song_encode,
-    decode=song_decode,
-    schema=song_schema(),
   )
 }

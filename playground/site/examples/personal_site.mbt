@@ -7,19 +7,10 @@
 // `update` keeps a raw `match msg`: it also answers Receive/Response, which a
 // view cannot declare, so the generated RootMsg cannot type them.
 
-// --- shared field helpers (inlined from examples/fields.mbt) ---
-
-fn obj_str(v : @tutuca.Value, field : String) -> String {
-  v.field(field).str()
-}
-
-fn obj_int(v : @tutuca.Value, field : String) -> Int {
-  v.field(field).int()
-}
-
-fn obj_bool(v : @tutuca.Value, field : String) -> Bool {
-  v.field(field).bool()
-}
+// Reads of an entry's fields go straight through `@tutuca.Value::field` plus a
+// coercer — `e.field("startYear").int()`. The three `obj_str`/`obj_int`/
+// `obj_bool` aliases that used to be inlined here from examples/fields.mbt are
+// gone; they were a second name for the same call.
 
 // --- personal_site (adapted from examples/personal_site.mbt) ---
 
@@ -58,9 +49,9 @@ fn ps_sort(
 ) -> Array[@tutuca.Value] {
   let out = entries.copy()
   let year = (e : @tutuca.Value) => {
-    let start = obj_int(e, "startYear")
+    let start = e.field("startYear").int()
     if by_end {
-      let end = obj_int(e, "endYear")
+      let end = e.field("endYear").int()
       if end != 0 {
         end
       } else {
@@ -72,8 +63,8 @@ fn ps_sort(
   }
   out.sort_by((a, b) => {
     if feat {
-      let fa = obj_bool(a, "featured")
-      let fb = obj_bool(b, "featured")
+      let fa = a.field("featured").bool()
+      let fb = b.field("featured").bool()
       if fa && !fb {
         return -1
       }
@@ -282,9 +273,6 @@ fn root_views_with_decoy() -> Map[String, @anode.View] {
 fn root_comp() -> @component.Component {
   @component.component(
     views=root_views_with_decoy(),
-    encode=root_encode,
-    decode=root_decode,
-    schema=root_schema(),
     name="Root",
     init=RootState::{
         allEntries: [],
@@ -418,7 +406,7 @@ fn root_comp() -> @component.Component {
 /// its categories are selected.
 fn ps_filter_entry(s : RootState, entry : @tutuca.Value) -> Bool {
   if s.selectedRoles.length() > 0 {
-    let r = obj_str(entry, "role")
+    let r = entry.field("role").str()
     if !s.selectedRoles.contains(r) {
       return false
     }

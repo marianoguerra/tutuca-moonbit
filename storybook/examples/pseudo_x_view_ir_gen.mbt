@@ -73,9 +73,6 @@ pub fn table_row_component(
     specs~,
     provide~,
     lookup~,
-    encode=table_row_encode,
-    decode=table_row_decode,
-    schema=table_row_schema(),
   )
 }
 
@@ -141,9 +138,6 @@ pub fn item_table_component(
     specs~,
     provide~,
     lookup~,
-    encode=item_table_encode,
-    decode=item_table_decode,
-    schema=item_table_schema(),
   )
 }
 
@@ -195,9 +189,6 @@ pub fn select_option_component(
     specs~,
     provide~,
     lookup~,
-    encode=select_option_encode,
-    decode=select_option_decode,
-    schema=select_option_schema(),
   )
 }
 
@@ -277,9 +268,6 @@ pub fn item_select_component(
     specs~,
     provide~,
     lookup~,
-    encode=item_select_encode,
-    decode=item_select_decode,
-    schema=item_select_schema(),
   )
 }
 
@@ -333,8 +321,5 @@ pub fn pseudo_x_demo_component(
     specs~,
     provide~,
     lookup~,
-    encode=pseudo_x_demo_encode,
-    decode=pseudo_x_demo_decode,
-    schema=pseudo_x_demo_schema(),
   )
 }

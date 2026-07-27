@@ -30,11 +30,6 @@ fn sheet_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=sheet_state_encode,
-    decode=sheet_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="sheet_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-    ]),
   )
 }
 
@@ -67,11 +62,6 @@ fn teleport_scope() -> @component.ComponentStack raise {
     init=SeenState::{ seen: false },
     lookup={ "active": { source: "Workspace.active", default: None } },
     update=seen_update(),
-    encode=seen_state_encode,
-    decode=seen_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="seen_state", fields=[
-      @component.FieldInfo::new("seen", "bool", FBool),
-    ]),
   )
   let panel = @component.component(
     views={
@@ -84,11 +74,6 @@ fn teleport_scope() -> @component.ComponentStack raise {
     init=SeenState::{ seen: false },
     specs={ "toolbar": @component.FieldSpec::comp("Toolbar") },
     update=seen_update(),
-    encode=seen_state_encode,
-    decode=seen_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="seen_state", fields=[
-      @component.FieldInfo::new("seen", "bool", FBool),
-    ]),
   )
   let workspace = @component.component(
     views={
@@ -105,11 +90,6 @@ fn teleport_scope() -> @component.ComponentStack raise {
     },
     provide={ "active": ".sheet" },
     update=seen_update(),
-    encode=seen_state_encode,
-    decode=seen_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="seen_state", fields=[
-      @component.FieldInfo::new("seen", "bool", FBool),
-    ]),
   )
   scope.register_components([sheet_comp(), toolbar, panel, workspace])
   scope.compile_all()
@@ -219,9 +199,6 @@ test "own-provide: a component rendering its own dynamic teleports to itself" {
     init=NoState::{  },
     specs={ "sheet": @component.FieldSpec::comp("Sheet") },
     provide={ "active": ".sheet" },
-    encode=no_state_encode,
-    decode=no_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="no_state", fields=[]),
   )
   scope.register_components([sheet_comp(), solo])
   scope.compile_all()
@@ -252,9 +229,6 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     name="RowList",
     init=NoState::{  },
     lookup={ "rows": { source: "Grid.rows", default: None } },
-    encode=no_state_encode,
-    decode=no_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="no_state", fields=[]),
   )
   let grid = @component.component(
     views={
@@ -267,11 +241,6 @@ test "iterated dynamic (@each *rows + render-it) teleports to the keyed item" {
     init=RowsState::{ rows: Map([]) },
     specs={ "list": @component.FieldSpec::comp("RowList") },
     provide={ "rows": ".rows" },
-    encode=rows_state_encode,
-    decode=rows_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="rows_state", fields=[
-      @component.FieldInfo::new("rows", "value-omap", FMap),
-    ]),
   )
   scope.register_components([sheet_comp(), list, grid])
   scope.compile_all()
@@ -324,9 +293,6 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     name="Viewer",
     init=NoState::{  },
     lookup={ "sel": { source: "Deck.sel", default: None } },
-    encode=no_state_encode,
-    decode=no_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="no_state", fields=[]),
   )
   let deck = @component.component(
     views={
@@ -339,12 +305,6 @@ test "seq-access dynamic (.sheets[.selId]) teleports to the live-keyed item" {
     init=DeckState::{ sheets: Map([]), selId: "b" },
     specs={ "viewer": @component.FieldSpec::comp("Viewer") },
     provide={ "sel": ".sheets[.selId]" },
-    encode=deck_state_encode,
-    decode=deck_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="deck_state", fields=[
-      @component.FieldInfo::new("sheets", "value-omap", FMap),
-      @component.FieldInfo::new("selId", "string", FText),
-    ]),
   )
   scope.register_components([sheet_comp(), viewer, deck])
   scope.compile_all()
@@ -397,9 +357,6 @@ test "lookup default: a consumer without its producer falls back" {
     lookup={
       "active": { source: "Workspace.active", default: Some(".backup") },
     },
-    encode=no_state_encode,
-    decode=no_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="no_state", fields=[]),
   )
   scope.register_components([sheet_comp(), lonely])
   scope.compile_all()
@@ -427,56 +384,90 @@ priv struct DeckState {
 }
 
 ///|
-fn sheet_state_encode(s : SheetState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SheetState with fn encode(s) {
   { "title": Str(s.title) }
 }
 
 ///|
-fn sheet_state_decode(f : Map[String, @tutuca.Value]) -> SheetState? {
+impl @component.Fields for SheetState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   Some(SheetState::{ title: v_title })
 }
 
 ///|
-fn seen_state_encode(s : SeenState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SeenState with fn encode(s) {
   { "seen": Bool(s.seen) }
 }
 
 ///|
-fn seen_state_decode(f : Map[String, @tutuca.Value]) -> SeenState? {
+impl @component.Fields for SeenState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v_seen)) else { return None }
   Some(SeenState::{ seen: v_seen })
 }
 
 ///|
-fn no_state_encode(_s : NoState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for NoState with fn encode(_s) {
   Map([])
 }
 
 ///|
-fn no_state_decode(_f : Map[String, @tutuca.Value]) -> NoState? {
+impl @component.Fields for NoState with fn decode(_f) {
   Some(NoState::{  })
 }
 
 ///|
-fn rows_state_encode(s : RowsState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for RowsState with fn encode(s) {
   { "rows": (Map(s.rows) : @tutuca.Value) }
 }
 
 ///|
-fn rows_state_decode(f : Map[String, @tutuca.Value]) -> RowsState? {
+impl @component.Fields for RowsState with fn decode(f) {
   guard f.get("rows") is Some(Map(v_rows)) else { return None }
   Some(RowsState::{ rows: v_rows })
 }
 
 ///|
-fn deck_state_encode(s : DeckState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DeckState with fn encode(s) {
   { "sheets": (Map(s.sheets) : @tutuca.Value), "selId": Str(s.selId) }
 }
 
 ///|
-fn deck_state_decode(f : Map[String, @tutuca.Value]) -> DeckState? {
+impl @component.Fields for DeckState with fn decode(f) {
   guard f.get("sheets") is Some(Map(v_sheets)) else { return None }
   guard f.get("selId") is Some(Str(v_selId)) else { return None }
   Some(DeckState::{ sheets: v_sheets, selId: v_selId })
+}
+
+///|
+impl @component.Fields for SheetState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="sheet_state", fields=[
+    @component.FieldInfo::new("title", "string", FText),
+  ])
+}
+
+///|
+impl @component.Fields for SeenState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="seen_state", fields=[
+    @component.FieldInfo::new("seen", "bool", FBool),
+  ])
+}
+
+///|
+impl @component.Fields for NoState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="no_state", fields=[])
+}
+
+///|
+impl @component.Fields for RowsState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="rows_state", fields=[
+    @component.FieldInfo::new("rows", "value-omap", FMap),
+  ])
+}
+
+///|
+impl @component.Fields for DeckState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="deck_state", fields=[
+    @component.FieldInfo::new("sheets", "value-omap", FMap),
+    @component.FieldInfo::new("selId", "string", FText),
+  ])
 }

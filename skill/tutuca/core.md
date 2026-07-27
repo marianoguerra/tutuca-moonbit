@@ -421,22 +421,25 @@ my_comp_component(
 )
 ```
 
-`name`, `views`, `common_style`, `global_style`, `encode`, `decode` and
-`schema` are not written here: the view file states them and the wrapper
-passes them. Do **not** restate them — that is how a fact the generator learns
-fails to reach the component. `name`, `views`, `init` and the two styles are
-still parameters, so override one when a component genuinely differs;
-`encode`/`decode`/`schema` are not parameters at all.
+`name`, `views`, `common_style` and `global_style` are not written here: the
+view file states them and the wrapper passes them. Do **not** restate them —
+that is how a fact the generator learns fails to reach the component. They are
+still parameters, so override one when a component genuinely differs.
+
+The codec and the schema are not parameters of anything: `MyCompState`
+implements `@component.Fields` (`schema` / `encode` / `decode`), which
+`component()` is bounded on and reads off the type. The generator writes that
+impl. Note the consequence — a schema belongs to a TYPE, so two components
+sharing a state struct share its description.
 
 `init` defaults to `MyCompState::zero()` — omit it when the zero state is what
 you want, and pass a `tutuca/init` fixture (`MyCompState::fresh()`) or a
 literal otherwise.
 
 Call `@component.component(...)` directly only when there is no wrapper —
-views built in MoonBit, so there is nothing to default `views~` to. It takes
-the same `encode`, `decode` and `schema` the wrapper would have passed, and
-they are REQUIRED: a component that declares less does not get a runtime that
-infers the difference.
+views built in MoonBit, so there is nothing to default `views~` to. The state
+type still has to implement `@component.Fields`; a component that declares
+less does not get a runtime that infers the difference.
 
 `comp.make({...})` builds an instance from a `Map[String, Value]` of
 args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
@@ -913,16 +916,18 @@ pub(all) enum Value {
 }
 ```
 
-- The state struct is encoded to / decoded from this layer by the generated
-  `<c>_encode` / `<c>_decode`, field by field. A `@tutuca.Value` field is
+- The state struct is encoded to / decoded from this layer by its generated
+  `@component.Fields` impl, field by field. A `@tutuca.Value` field is
   passed straight through, which is why an `Obj` or an `Fn` held in one
   survives — a JSON round trip could not carry either.
 - `Value` derives `Eq` (deep structural equality) and `Debug`, so
   `assert_eq` and `debug_inspect` work on values directly.
 - `v.is_truthy()` gives JS-style truthiness; `v.to_display_string()`
   the display form. The coercers `v.int()`, `v.num()`, `v.str()`,
-  `v.bool()`, `v.list()`, `v.entries()`, and `v.field("name")` (works on
-  `Map` **and** `Obj`) read `Value`s in handler args and
+  `v.bool()`, `v.list()`, `v.map()`, `v.entries()`, `v.item(key)` /
+  `v.index(i)` / `v.key(k)`, `v.size()`, `v.call_field(name, args)`, and
+  `v.field("name")` (works on `Map` **and** `Obj`) read `Value`s in handler
+  args and
   `@tutuca.Value` fields.
 - **Immutability is by discipline**: `Array` / `Map` payloads are
   ordinary mutable containers — handlers must **copy before changing**

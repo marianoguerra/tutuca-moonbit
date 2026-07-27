@@ -72,9 +72,6 @@ fn tm_item_comp() -> @component.Component {
     },
     name="Item",
     init=TmItemState::{ completed: false, text: "do the thing" },
-    encode=tm_item_encode,
-    decode=tm_item_decode,
-    schema=tm_item_schema(),
   )
 }
 
@@ -118,9 +115,6 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
         _ => None
       }
     },
-    encode=tm_items_encode,
-    decode=tm_items_decode,
-    schema=tm_items_schema(),
   )
 }
 

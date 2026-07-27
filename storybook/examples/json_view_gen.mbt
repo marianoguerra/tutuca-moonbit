@@ -30,7 +30,7 @@ fn JsonSelectorState::zero() -> JsonSelectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_selector_zero_args() -> Map[String, @tutuca.Value] {
-  json_selector_encode(JsonSelectorState::zero())
+  @component.Fields::encode(JsonSelectorState::zero())
 }
 
 ///|
@@ -46,14 +46,14 @@ pub let json_selector_schema_fingerprint : String = "823721696e1e4913"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_selector_encode(_s : JsonSelectorState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonSelectorState with fn encode(_s) {
   Map([])
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_selector_decode(_f : Map[String, @tutuca.Value]) -> JsonSelectorState? {
+impl @component.Fields for JsonSelectorState with fn decode(_f) {
   Some(JsonSelectorState::{  })
 }
 
@@ -183,23 +183,19 @@ pub fn[S] json_selector_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_selector_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "823721696e1e4913",
-    fields: [],
-    inputs: [
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonSelectorState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonSelector",
+    fingerprint="823721696e1e4913",
+    inputs=[
       "setToArray", "setToBool", "setToNull", "setToNumber", "setToObject", "setToString",
     ],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -225,7 +221,7 @@ fn JsonNullState::zero() -> JsonNullState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_null_zero_args() -> Map[String, @tutuca.Value] {
-  json_null_encode(JsonNullState::zero())
+  @component.Fields::encode(JsonNullState::zero())
 }
 
 ///|
@@ -241,14 +237,14 @@ pub let json_null_schema_fingerprint : String = "28cebc724be3edcf"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_null_encode(_s : JsonNullState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonNullState with fn encode(_s) {
   Map([])
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_null_decode(_f : Map[String, @tutuca.Value]) -> JsonNullState? {
+impl @component.Fields for JsonNullState with fn decode(_f) {
   Some(JsonNullState::{  })
 }
 
@@ -276,21 +272,14 @@ pub let json_null_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_null_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "28cebc724be3edcf",
-    fields: [],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonNullState with fn schema() {
+  @component.SchemaInfo::new(name="JsonNull", fingerprint="28cebc724be3edcf", view_names=[
+    "main",
+  ])
 }
 
 ///|
@@ -318,7 +307,7 @@ fn JsonBoolState::zero() -> JsonBoolState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_bool_zero_args() -> Map[String, @tutuca.Value] {
-  json_bool_encode(JsonBoolState::zero())
+  @component.Fields::encode(JsonBoolState::zero())
 }
 
 ///|
@@ -340,7 +329,7 @@ pub fn JsonBoolField::name(self : JsonBoolField) -> String {
 /// happened to be integral.
 pub fn JsonBoolField::kind(self : JsonBoolField) -> @component.FieldKind {
   match self {
-    Value => @component.FBool
+    Value => FBool
   }
 }
 
@@ -361,14 +350,14 @@ pub let json_bool_schema_fingerprint : String = "d4b8a46eb24ceada"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_bool_encode(s : JsonBoolState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonBoolState with fn encode(s) {
   { "value": Bool(s.value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_bool_decode(f : Map[String, @tutuca.Value]) -> JsonBoolState? {
+impl @component.Fields for JsonBoolState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
   Some(JsonBoolState::{ value: v_value })
 }
@@ -464,30 +453,18 @@ pub fn[S] json_bool_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_bool_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "d4b8a46eb24ceada",
-    fields: [
-      {
-        name: "value",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["toggleValue"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonBoolState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonBool",
+    fingerprint="d4b8a46eb24ceada",
+    fields=[@component.FieldInfo::new("value", "bool", FBool)],
+    inputs=["toggleValue"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -515,7 +492,7 @@ fn JsonStringState::zero() -> JsonStringState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_string_zero_args() -> Map[String, @tutuca.Value] {
-  json_string_encode(JsonStringState::zero())
+  @component.Fields::encode(JsonStringState::zero())
 }
 
 ///|
@@ -537,7 +514,7 @@ pub fn JsonStringField::name(self : JsonStringField) -> String {
 /// happened to be integral.
 pub fn JsonStringField::kind(self : JsonStringField) -> @component.FieldKind {
   match self {
-    Value => @component.FText
+    Value => FText
   }
 }
 
@@ -558,14 +535,14 @@ pub let json_string_schema_fingerprint : String = "56e6fad878f71b0c"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_string_encode(s : JsonStringState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonStringState with fn encode(s) {
   { "value": Str(s.value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_string_decode(f : Map[String, @tutuca.Value]) -> JsonStringState? {
+impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   Some(JsonStringState::{ value: v_value })
 }
@@ -661,30 +638,18 @@ pub fn[S] json_string_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_string_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "56e6fad878f71b0c",
-    fields: [
-      {
-        name: "value",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["setValue"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonStringState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonString",
+    fingerprint="56e6fad878f71b0c",
+    fields=[@component.FieldInfo::new("value", "string", FText)],
+    inputs=["setValue"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -713,7 +678,7 @@ fn JsonNumberState::zero() -> JsonNumberState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_number_zero_args() -> Map[String, @tutuca.Value] {
-  json_number_encode(JsonNumberState::zero())
+  @component.Fields::encode(JsonNumberState::zero())
 }
 
 ///|
@@ -737,8 +702,8 @@ pub fn JsonNumberField::name(self : JsonNumberField) -> String {
 /// happened to be integral.
 pub fn JsonNumberField::kind(self : JsonNumberField) -> @component.FieldKind {
   match self {
-    StrValue => @component.FText
-    Value => @component.FFloat
+    StrValue => FText
+    Value => FFloat
   }
 }
 
@@ -759,14 +724,14 @@ pub let json_number_schema_fingerprint : String = "f0f29389d0ef3ee2"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_number_encode(s : JsonNumberState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonNumberState with fn encode(s) {
   { "strValue": Str(s.strValue), "value": Num(s.value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_number_decode(f : Map[String, @tutuca.Value]) -> JsonNumberState? {
+impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("strValue") is Some(Str(v_strValue)) else { return None }
   guard f.get("value") is Some(Num(v_value)) else { return None }
   Some(JsonNumberState::{ strValue: v_strValue, value: v_value })
@@ -863,38 +828,21 @@ pub fn[S] json_number_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_number_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "f0f29389d0ef3ee2",
-    fields: [
-      {
-        name: "strValue",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "value",
-        ty: "f64",
-        kind: @component.FFloat,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonNumberState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonNumber",
+    fingerprint="f0f29389d0ef3ee2",
+    fields=[
+      @component.FieldInfo::new("strValue", "string", FText),
+      @component.FieldInfo::new("value", "f64", FFloat),
     ],
-    inputs: ["setRawValue"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setRawValue"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -922,7 +870,7 @@ fn JsonArrayState::zero() -> JsonArrayState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_array_zero_args() -> Map[String, @tutuca.Value] {
-  json_array_encode(JsonArrayState::zero())
+  @component.Fields::encode(JsonArrayState::zero())
 }
 
 ///|
@@ -944,7 +892,7 @@ pub fn JsonArrayField::name(self : JsonArrayField) -> String {
 /// happened to be integral.
 pub fn JsonArrayField::kind(self : JsonArrayField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
+    Items => FList
   }
 }
 
@@ -965,14 +913,14 @@ pub let json_array_schema_fingerprint : String = "52ac0f26bb122de2"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_array_encode(s : JsonArrayState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonArrayState with fn encode(s) {
   { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_array_decode(f : Map[String, @tutuca.Value]) -> JsonArrayState? {
+impl @component.Fields for JsonArrayState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -1086,30 +1034,18 @@ pub fn[S] json_array_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_array_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "52ac0f26bb122de2",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["addItem", "onDropOnItem", "removeInItemsAt"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonArrayState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonArray",
+    fingerprint="52ac0f26bb122de2",
+    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -1138,7 +1074,7 @@ fn JsonObjectKeyValState::zero() -> JsonObjectKeyValState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_object_key_val_zero_args() -> Map[String, @tutuca.Value] {
-  json_object_key_val_encode(JsonObjectKeyValState::zero())
+  @component.Fields::encode(JsonObjectKeyValState::zero())
 }
 
 ///|
@@ -1164,8 +1100,8 @@ pub fn JsonObjectKeyValField::kind(
   self : JsonObjectKeyValField,
 ) -> @component.FieldKind {
   match self {
-    Key => @component.FText
-    Value => @component.FAny
+    Key => FText
+    Value => FAny
   }
 }
 
@@ -1186,18 +1122,14 @@ pub let json_object_key_val_schema_fingerprint : String = "f20288305b90ddee"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_object_key_val_encode(
-  s : JsonObjectKeyValState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonObjectKeyValState with fn encode(s) {
   { "key": Str(s.key), "value": s.value }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_object_key_val_decode(
-  f : Map[String, @tutuca.Value],
-) -> JsonObjectKeyValState? {
+impl @component.Fields for JsonObjectKeyValState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_value = f.get("value").unwrap_or(Null)
   Some(JsonObjectKeyValState::{ key: v_key, value: v_value })
@@ -1296,38 +1228,21 @@ pub fn[S] json_object_key_val_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_object_key_val_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "f20288305b90ddee",
-    fields: [
-      {
-        name: "key",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "value",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonObjectKeyValState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonObjectKeyVal",
+    fingerprint="f20288305b90ddee",
+    fields=[
+      @component.FieldInfo::new("key", "string", FText),
+      @component.FieldInfo::new("value", "any", FAny, elem="any"),
     ],
-    inputs: ["setKey"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setKey"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -1355,7 +1270,7 @@ fn JsonObjectState::zero() -> JsonObjectState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn json_object_zero_args() -> Map[String, @tutuca.Value] {
-  json_object_encode(JsonObjectState::zero())
+  @component.Fields::encode(JsonObjectState::zero())
 }
 
 ///|
@@ -1377,7 +1292,7 @@ pub fn JsonObjectField::name(self : JsonObjectField) -> String {
 /// happened to be integral.
 pub fn JsonObjectField::kind(self : JsonObjectField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
+    Items => FList
   }
 }
 
@@ -1398,14 +1313,14 @@ pub let json_object_schema_fingerprint : String = "25415f50b72a94c2"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn json_object_encode(s : JsonObjectState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for JsonObjectState with fn encode(s) {
   { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn json_object_decode(f : Map[String, @tutuca.Value]) -> JsonObjectState? {
+impl @component.Fields for JsonObjectState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -1519,28 +1434,16 @@ pub fn[S] json_object_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn json_object_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "25415f50b72a94c2",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["addItem", "onDropOnItem", "removeInItemsAt"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for JsonObjectState with fn schema() {
+  @component.SchemaInfo::new(
+    name="JsonObject",
+    fingerprint="25415f50b72a94c2",
+    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
+    view_names=["main"],
+  )
 }

@@ -13,19 +13,37 @@ pub let counter_common_style : String
 
 pub fn counter_comp() -> @component.Component
 
-pub let counter_fields : Array[String]
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let counter_field_names : Array[String]
 
 pub let counter_global_style : String
 
-pub fn[S : ToJson] counter_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub fn counter_init_args(String) -> Map[String, @core.Value]?
+
+pub let counter_init_names : Array[String]
+
+pub let counter_schema_fingerprint : String
+
+pub fn[S] counter_swap((CounterInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn counter_views() -> Map[String, @anode.View]
+
+pub fn counter_zero_args() -> Map[String, @core.Value]
 
 pub fn module_def() -> @component.ModuleDef
 
 // Errors
 
 // Types and methods
+pub(all) enum CounterField {
+  Label
+  Count
+  History
+} derive(Eq, @debug.Debug)
+pub fn CounterField::kind(Self) -> @core.FieldKind
+pub fn CounterField::name(Self) -> String
+
 pub(all) enum CounterId {
   Count
   Dec
@@ -52,6 +70,20 @@ pub(all) enum CounterMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CounterReceive {
+  ResetTo(Int)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CounterReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CounterReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CounterReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct CounterState {
+  label : String
+  count : Int
+  history : Array[Int]
+}
 
 pub(all) enum CounterView {
   Main

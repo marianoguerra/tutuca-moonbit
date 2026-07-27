@@ -286,8 +286,5 @@ pub fn composability_component(
     specs~,
     provide~,
     lookup~,
-    encode=composability_encode,
-    decode=composability_decode,
-    schema=composability_schema(),
   )
 }

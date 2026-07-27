@@ -160,9 +160,6 @@ fn icon_gallery_comp() -> @component.Component {
     },
     name="IconGallery",
     init=IconGalleryState::{ size: 40 },
-    encode=icon_gallery_encode,
-    decode=icon_gallery_decode,
-    schema=icon_gallery_schema(),
   )
 }
 

@@ -33,7 +33,7 @@ fn EmojiPickerState::zero() -> EmojiPickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn emoji_picker_zero_args() -> Map[String, @tutuca.Value] {
-  emoji_picker_encode(EmojiPickerState::zero())
+  @component.Fields::encode(EmojiPickerState::zero())
 }
 
 ///|
@@ -57,8 +57,8 @@ pub fn EmojiPickerField::name(self : EmojiPickerField) -> String {
 /// happened to be integral.
 pub fn EmojiPickerField::kind(self : EmojiPickerField) -> @component.FieldKind {
   match self {
-    Current => @component.FAny
-    IsPickerVisible => @component.FBool
+    Current => FAny
+    IsPickerVisible => FBool
   }
 }
 
@@ -81,14 +81,14 @@ pub let emoji_picker_schema_fingerprint : String = "4ae49bac65c482b5"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn emoji_picker_encode(s : EmojiPickerState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for EmojiPickerState with fn encode(s) {
   { "current": s.current, "isPickerVisible": Bool(s.isPickerVisible) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn emoji_picker_decode(f : Map[String, @tutuca.Value]) -> EmojiPickerState? {
+impl @component.Fields for EmojiPickerState with fn decode(f) {
   let v_current = f.get("current").unwrap_or(Null)
   guard f.get("isPickerVisible") is Some(Bool(v_isPickerVisible)) else {
     return None
@@ -198,36 +198,19 @@ pub fn[S] emoji_picker_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn emoji_picker_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "4ae49bac65c482b5",
-    fields: [
-      {
-        name: "current",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isPickerVisible",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for EmojiPickerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="EmojiPicker",
+    fingerprint="4ae49bac65c482b5",
+    fields=[
+      @component.FieldInfo::new("current", "any", FAny, elem="any"),
+      @component.FieldInfo::new("isPickerVisible", "bool", FBool),
     ],
-    inputs: ["onEmojiClick", "toggleIsPickerVisible"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["onEmojiClick", "toggleIsPickerVisible"],
+    view_names=["main"],
+  )
 }

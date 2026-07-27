@@ -32,7 +32,7 @@ fn CounterState::zero() -> CounterState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
-  counter_encode(CounterState::zero())
+  @component.Fields::encode(CounterState::zero())
 }
 
 ///|
@@ -54,7 +54,7 @@ pub fn CounterField::name(self : CounterField) -> String {
 /// happened to be integral.
 pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
+    Count => FInt
   }
 }
 
@@ -75,14 +75,14 @@ pub let counter_schema_fingerprint : String = "a0fd8e55e2e67751"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CounterState with fn encode(s) {
   { "count": Num(s.count.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(CounterState::{ count: v_count })
@@ -185,28 +185,16 @@ pub fn[S] counter_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn counter_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "a0fd8e55e2e67751",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["dec", "inc"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CounterState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Counter",
+    fingerprint="a0fd8e55e2e67751",
+    fields=[@component.FieldInfo::new("count", "s32", FInt)],
+    inputs=["dec", "inc"],
+    view_names=["main"],
+  )
 }

@@ -231,22 +231,13 @@ pub fn render_root(
 }
 
 ///|
-/// PathKey -> the loop `@key` value (KInt -> Num, KStr -> Str).
-fn seq_key_value(pk : @tutuca.PathKey) -> @tutuca.Value {
-  match pk {
-    KInt(i) => Num(i.to_double())
-    KStr(s) => Str(s)
-  }
-}
-
-///|
-/// A loop key value -> PathKey for a custom-seq obj_item lookup.
+/// A loop key value -> PathKey, for the item lookup and the §Each§ meta.
+///
+/// `as_key` refuses a non-integral number, where this must still produce a
+/// key: the meta is a breadcrumb, and one that says KInt(-1) is how a key the
+/// renderer could not name has always been recorded.
 fn value_seq_key(v : @tutuca.Value) -> @tutuca.PathKey {
-  match v {
-    Num(n) => KInt(n.to_int())
-    Str(s) => KStr(s)
-    _ => KInt(-1)
-  }
+  v.as_key().unwrap_or(KInt(-1))
 }
 
 ///|
@@ -295,12 +286,7 @@ fn render_each(
       Some(v) => {
         // One §Each§ meta precedes each visible item (JS pushEachEntry); a
         // hidden item leaves neither entry nor dangling meta.
-        let pk : @tutuca.PathKey = match key {
-          Num(n) => KInt(n.to_int())
-          Str(s) => KStr(s)
-          _ => KInt(-1)
-        }
-        out.push(Meta::Each(nid=d.node_id, key=pk).to_comment())
+        out.push(Meta::Each(nid=d.node_id, key=value_seq_key(key)).to_comment())
         out.push(v)
       }
       None => ()
@@ -309,26 +295,11 @@ fn render_each(
 
   match plan.keys {
     Some(ks) =>
+      // An explicit key list addresses List, Map and a custom-collection Obj
+      // through the one lookup (@tutuca), so the three used to be spelled out
+      // here and the copies could disagree about what a key resolves to.
       for k in ks {
-        match (seq, k) {
-          (List(items), Num(n)) => {
-            let i = n.to_int()
-            visit(
-              k,
-              if i >= 0 && i < items.length() {
-                items[i]
-              } else {
-                Null
-              },
-              false,
-            )
-          }
-          (Map(m), Str(mk)) => visit(k, m.get(mk).unwrap_or(Null), false)
-          // custom seq (JS SEQ_INFO): resolve the key through obj_item
-          (Obj(o), _) =>
-            visit(k, o.obj_item(value_seq_key(k)).unwrap_or(Null), false)
-          _ => ()
-        }
+        visit(k, seq.item(value_seq_key(k)), false)
       }
     None =>
       match seq {
@@ -360,7 +331,7 @@ fn render_each(
               )
               for i in s..<e {
                 let (pk, v) = entries[i]
-                visit(seq_key_value(pk), v, true)
+                visit(pk.to_value(), v, true)
               }
             }
             None => () // not a sequence -> empty (unkIter)

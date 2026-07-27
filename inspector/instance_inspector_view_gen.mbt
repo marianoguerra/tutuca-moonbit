@@ -42,7 +42,7 @@ fn InstanceFieldsState::zero() -> InstanceFieldsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_fields_zero_args() -> Map[String, @tutuca.Value] {
-  instance_fields_encode(InstanceFieldsState::zero())
+  @component.Fields::encode(InstanceFieldsState::zero())
 }
 
 ///|
@@ -74,11 +74,11 @@ pub fn InstanceFieldsField::kind(
   self : InstanceFieldsField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    IsExpanded => @component.FBool
-    ItemsPerPage => @component.FInt
-    CurrentPage => @component.FInt
-    TypeName => @component.FText
+    Items => FList
+    IsExpanded => FBool
+    ItemsPerPage => FInt
+    CurrentPage => FInt
+    TypeName => FText
   }
 }
 
@@ -101,9 +101,7 @@ pub let instance_fields_schema_fingerprint : String = "b02c70c78c681361"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn instance_fields_encode(
-  s : InstanceFieldsState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for InstanceFieldsState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "isExpanded": Bool(s.isExpanded),
@@ -116,9 +114,7 @@ fn instance_fields_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn instance_fields_decode(
-  f : Map[String, @tutuca.Value],
-) -> InstanceFieldsState? {
+impl @component.Fields for InstanceFieldsState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -334,65 +330,28 @@ pub fn[S] instance_fields_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn instance_fields_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "b02c70c78c681361",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isExpanded",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "itemsPerPage",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "currentPage",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "typeName",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for InstanceFieldsState with fn schema() {
+  @component.SchemaInfo::new(
+    name="InstanceFields",
+    fingerprint="b02c70c78c681361",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("isExpanded", "bool", FBool),
+      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
+      @component.FieldInfo::new("currentPage", "s32", FInt),
+      @component.FieldInfo::new("typeName", "string", FText),
     ],
-    inputs: ["nextPage", "prevPage", "toggleIsExpanded"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [
+    inputs=["nextPage", "prevPage", "toggleIsExpanded"],
+    methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
     ],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -420,7 +379,7 @@ fn InstanceInspectorState::zero() -> InstanceInspectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  instance_inspector_encode(InstanceInspectorState::zero())
+  @component.Fields::encode(InstanceInspectorState::zero())
 }
 
 ///|
@@ -444,7 +403,7 @@ pub fn InstanceInspectorField::kind(
   self : InstanceInspectorField,
 ) -> @component.FieldKind {
   match self {
-    Value => @component.FAny
+    Value => FAny
   }
 }
 
@@ -465,18 +424,14 @@ pub let instance_inspector_schema_fingerprint : String = "dc6d2f180419a084"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn instance_inspector_encode(
-  s : InstanceInspectorState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for InstanceInspectorState with fn encode(s) {
   { "value": s.value }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn instance_inspector_decode(
-  f : Map[String, @tutuca.Value],
-) -> InstanceInspectorState? {
+impl @component.Fields for InstanceInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
   Some(InstanceInspectorState::{ value: v_value })
 }
@@ -505,30 +460,17 @@ pub let instance_inspector_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn instance_inspector_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "dc6d2f180419a084",
-    fields: [
-      {
-        name: "value",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for InstanceInspectorState with fn schema() {
+  @component.SchemaInfo::new(
+    name="InstanceInspector",
+    fingerprint="dc6d2f180419a084",
+    fields=[@component.FieldInfo::new("value", "any", FAny, elem="any")],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -564,7 +506,7 @@ fn InstanceExplorerState::zero() -> InstanceExplorerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_explorer_zero_args() -> Map[String, @tutuca.Value] {
-  instance_explorer_encode(InstanceExplorerState::zero())
+  @component.Fields::encode(InstanceExplorerState::zero())
 }
 
 ///|
@@ -594,10 +536,10 @@ pub fn InstanceExplorerField::kind(
   self : InstanceExplorerField,
 ) -> @component.FieldKind {
   match self {
-    ActiveTab => @component.FText
-    InstanceView => @component.FAny
-    ComponentView => @component.FAny
-    HasComponent => @component.FBool
+    ActiveTab => FText
+    InstanceView => FAny
+    ComponentView => FAny
+    HasComponent => FBool
   }
 }
 
@@ -620,9 +562,7 @@ pub let instance_explorer_schema_fingerprint : String = "7b0fa55820264791"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn instance_explorer_encode(
-  s : InstanceExplorerState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for InstanceExplorerState with fn encode(s) {
   {
     "activeTab": Str(s.activeTab),
     "instanceView": s.instanceView,
@@ -634,9 +574,7 @@ fn instance_explorer_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn instance_explorer_decode(
-  f : Map[String, @tutuca.Value],
-) -> InstanceExplorerState? {
+impl @component.Fields for InstanceExplorerState with fn decode(f) {
   guard f.get("activeTab") is Some(Str(v_activeTab)) else { return None }
   let v_instanceView = f.get("instanceView").unwrap_or(Null)
   let v_componentView = f.get("componentView").unwrap_or(Null)
@@ -742,52 +680,21 @@ pub fn[S] instance_explorer_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn instance_explorer_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "7b0fa55820264791",
-    fields: [
-      {
-        name: "activeTab",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "instanceView",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "componentView",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "hasComponent",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for InstanceExplorerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="InstanceExplorer",
+    fingerprint="7b0fa55820264791",
+    fields=[
+      @component.FieldInfo::new("activeTab", "string", FText),
+      @component.FieldInfo::new("instanceView", "any", FAny, elem="any"),
+      @component.FieldInfo::new("componentView", "any", FAny, elem="any"),
+      @component.FieldInfo::new("hasComponent", "bool", FBool),
     ],
-    inputs: ["setActiveTab"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setActiveTab"],
+    view_names=["main"],
+  )
 }

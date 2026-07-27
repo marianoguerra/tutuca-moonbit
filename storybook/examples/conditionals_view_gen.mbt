@@ -32,7 +32,7 @@ fn TrafficLightState::zero() -> TrafficLightState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn traffic_light_zero_args() -> Map[String, @tutuca.Value] {
-  traffic_light_encode(TrafficLightState::zero())
+  @component.Fields::encode(TrafficLightState::zero())
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn TrafficLightField::kind(
   self : TrafficLightField,
 ) -> @component.FieldKind {
   match self {
-    LightIndex => @component.FInt
+    LightIndex => FInt
   }
 }
 
@@ -77,14 +77,14 @@ pub let traffic_light_schema_fingerprint : String = "641f8260005d94a3"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn traffic_light_encode(s : TrafficLightState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for TrafficLightState with fn encode(s) {
   { "lightIndex": Num(s.lightIndex.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn traffic_light_decode(f : Map[String, @tutuca.Value]) -> TrafficLightState? {
+impl @component.Fields for TrafficLightState with fn decode(f) {
   guard f.get("lightIndex") is Some(Num(t1_lightIndex)) else { return None }
   let v_lightIndex = t1_lightIndex.to_int()
   Some(TrafficLightState::{ lightIndex: v_lightIndex })
@@ -213,30 +213,19 @@ pub fn[S] traffic_light_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn traffic_light_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "641f8260005d94a3",
-    fields: [
-      {
-        name: "lightIndex",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["nextLight"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["light"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for TrafficLightState with fn schema() {
+  @component.SchemaInfo::new(
+    name="TrafficLight",
+    fingerprint="641f8260005d94a3",
+    fields=[@component.FieldInfo::new("lightIndex", "s32", FInt)],
+    inputs=["nextLight"],
+    methods=["light"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -264,7 +253,7 @@ fn TabbedUIState::zero() -> TabbedUIState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tabbed_u_i_zero_args() -> Map[String, @tutuca.Value] {
-  tabbed_u_i_encode(TabbedUIState::zero())
+  @component.Fields::encode(TabbedUIState::zero())
 }
 
 ///|
@@ -286,7 +275,7 @@ pub fn TabbedUIField::name(self : TabbedUIField) -> String {
 /// happened to be integral.
 pub fn TabbedUIField::kind(self : TabbedUIField) -> @component.FieldKind {
   match self {
-    Tab => @component.FText
+    Tab => FText
   }
 }
 
@@ -307,14 +296,14 @@ pub let tabbed_u_i_schema_fingerprint : String = "91f1c8c673117b38"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn tabbed_u_i_encode(s : TabbedUIState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for TabbedUIState with fn encode(s) {
   { "tab": Str(s.tab) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn tabbed_u_i_decode(f : Map[String, @tutuca.Value]) -> TabbedUIState? {
+impl @component.Fields for TabbedUIState with fn decode(f) {
   guard f.get("tab") is Some(Str(v_tab)) else { return None }
   Some(TabbedUIState::{ tab: v_tab })
 }
@@ -433,30 +422,19 @@ pub fn TabbedUIId::selector(self : TabbedUIId) -> String {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn tabbed_u_i_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "91f1c8c673117b38",
-    fields: [
-      {
-        name: "tab",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["setTab"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: ["t-features", "t-overview", "t-pricing"],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for TabbedUIState with fn schema() {
+  @component.SchemaInfo::new(
+    name="TabbedUI",
+    fingerprint="91f1c8c673117b38",
+    fields=[@component.FieldInfo::new("tab", "string", FText)],
+    inputs=["setTab"],
+    ids=["t-features", "t-overview", "t-pricing"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -485,7 +463,7 @@ fn ListAndFilterState::zero() -> ListAndFilterState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_and_filter_zero_args() -> Map[String, @tutuca.Value] {
-  list_and_filter_encode(ListAndFilterState::zero())
+  @component.Fields::encode(ListAndFilterState::zero())
 }
 
 ///|
@@ -511,8 +489,8 @@ pub fn ListAndFilterField::kind(
   self : ListAndFilterField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
+    Items => FList
+    Query => FText
   }
 }
 
@@ -533,7 +511,7 @@ pub let list_and_filter_schema_fingerprint : String = "80f3b6c5cd0e5b4d"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn list_and_filter_encode(s : ListAndFilterState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ListAndFilterState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -543,9 +521,7 @@ fn list_and_filter_encode(s : ListAndFilterState) -> Map[String, @tutuca.Value] 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn list_and_filter_decode(
-  f : Map[String, @tutuca.Value],
-) -> ListAndFilterState? {
+impl @component.Fields for ListAndFilterState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -689,36 +665,19 @@ pub fn[S] list_and_filter_when(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn list_and_filter_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "80f3b6c5cd0e5b4d",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ListAndFilterState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ListAndFilter",
+    fingerprint="80f3b6c5cd0e5b4d",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
     ],
-    inputs: ["resetQuery", "setQuery"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["resetQuery", "setQuery"],
+    view_names=["main"],
+  )
 }

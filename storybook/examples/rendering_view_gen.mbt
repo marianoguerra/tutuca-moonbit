@@ -34,7 +34,7 @@ fn PushViewState::zero() -> PushViewState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn push_view_zero_args() -> Map[String, @tutuca.Value] {
-  push_view_encode(PushViewState::zero())
+  @component.Fields::encode(PushViewState::zero())
 }
 
 ///|
@@ -60,9 +60,9 @@ pub fn PushViewField::name(self : PushViewField) -> String {
 /// happened to be integral.
 pub fn PushViewField::kind(self : PushViewField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
-    View => @component.FText
+    Items => FList
+    Query => FText
+    View => FText
   }
 }
 
@@ -83,7 +83,7 @@ pub let push_view_schema_fingerprint : String = "59de8df8ec76d36f"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn push_view_encode(s : PushViewState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for PushViewState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -94,7 +94,7 @@ fn push_view_encode(s : PushViewState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn push_view_decode(f : Map[String, @tutuca.Value]) -> PushViewState? {
+impl @component.Fields for PushViewState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -273,46 +273,23 @@ pub fn[S] push_view_when(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn push_view_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "59de8df8ec76d36f",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "view",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for PushViewState with fn schema() {
+  @component.SchemaInfo::new(
+    name="PushView",
+    fingerprint="59de8df8ec76d36f",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("view", "string", FText),
     ],
-    inputs: ["resetQuery", "setQuery", "toggleView"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["getToggleLabel"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["resetQuery", "setQuery", "toggleView"],
+    methods=["getToggleLabel"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -348,7 +325,7 @@ fn SeqItemAccessState::zero() -> SeqItemAccessState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn seq_item_access_zero_args() -> Map[String, @tutuca.Value] {
-  seq_item_access_encode(SeqItemAccessState::zero())
+  @component.Fields::encode(SeqItemAccessState::zero())
 }
 
 ///|
@@ -378,10 +355,10 @@ pub fn SeqItemAccessField::kind(
   self : SeqItemAccessField,
 ) -> @component.FieldKind {
   match self {
-    ByKey => @component.FOMap
-    ByIndex => @component.FList
-    CurrentKey => @component.FAny
-    CurrentIndex => @component.FInt
+    ByKey => FOMap
+    ByIndex => FList
+    CurrentKey => FAny
+    CurrentIndex => FInt
   }
 }
 
@@ -404,7 +381,7 @@ pub let seq_item_access_schema_fingerprint : String = "3d8aff68ab0f9efc"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn seq_item_access_encode(s : SeqItemAccessState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SeqItemAccessState with fn encode(s) {
   {
     "byKey": {
       let m : Map[String, @tutuca.Value] = Map([])
@@ -422,9 +399,7 @@ fn seq_item_access_encode(s : SeqItemAccessState) -> Map[String, @tutuca.Value] 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn seq_item_access_decode(
-  f : Map[String, @tutuca.Value],
-) -> SeqItemAccessState? {
+impl @component.Fields for SeqItemAccessState with fn decode(f) {
   guard f.get("byKey") is Some(t1_byKey) else { return None }
   guard t1_byKey is Map(u1_byKey) else { return None }
   let v_byKey : Map[String, @tutuca.Value] = Map([])
@@ -579,54 +554,29 @@ pub fn[S] seq_item_access_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn seq_item_access_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "3d8aff68ab0f9efc",
-    fields: [
-      {
-        name: "byKey",
-        ty: "an ordered map of any",
-        kind: @component.FOMap,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "byIndex",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "currentKey",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "currentIndex",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SeqItemAccessState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SeqItemAccess",
+    fingerprint="3d8aff68ab0f9efc",
+    fields=[
+      @component.FieldInfo::new(
+        "byKey",
+        "an ordered map of any",
+        FOMap,
+        elem="any",
+      ),
+      @component.FieldInfo::new("byIndex", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("currentKey", "any", FAny, elem="any"),
+      @component.FieldInfo::new("currentIndex", "s32", FInt),
     ],
-    inputs: ["setCurrentIndex", "setCurrentKey"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["getMaxIndex"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setCurrentIndex", "setCurrentKey"],
+    methods=["getMaxIndex"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -656,7 +606,7 @@ fn PaginationState::zero() -> PaginationState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn pagination_zero_args() -> Map[String, @tutuca.Value] {
-  pagination_encode(PaginationState::zero())
+  @component.Fields::encode(PaginationState::zero())
 }
 
 ///|
@@ -682,9 +632,9 @@ pub fn PaginationField::name(self : PaginationField) -> String {
 /// happened to be integral.
 pub fn PaginationField::kind(self : PaginationField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Page => @component.FInt
-    PageSize => @component.FInt
+    Items => FList
+    Page => FInt
+    PageSize => FInt
   }
 }
 
@@ -705,7 +655,7 @@ pub let pagination_schema_fingerprint : String = "c2aa11aab6bf6478"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn pagination_encode(s : PaginationState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for PaginationState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "page": Num(s.page.to_double()),
@@ -716,7 +666,7 @@ fn pagination_encode(s : PaginationState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn pagination_decode(f : Map[String, @tutuca.Value]) -> PaginationState? {
+impl @component.Fields for PaginationState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -895,44 +845,21 @@ pub fn[S] pagination_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn pagination_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "c2aa11aab6bf6478",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "page",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "pageSize",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for PaginationState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Pagination",
+    fingerprint="c2aa11aab6bf6478",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("page", "s32", FInt),
+      @component.FieldInfo::new("pageSize", "s32", FInt),
     ],
-    inputs: ["next", "prev"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["isFirstPage", "isLastPage", "pageLabel"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["next", "prev"],
+    methods=["isFirstPage", "isLastPage", "pageLabel"],
+    view_names=["main"],
+  )
 }

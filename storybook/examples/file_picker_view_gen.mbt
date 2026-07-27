@@ -42,7 +42,7 @@ fn FilePickerState::zero() -> FilePickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn file_picker_zero_args() -> Map[String, @tutuca.Value] {
-  file_picker_encode(FilePickerState::zero())
+  @component.Fields::encode(FilePickerState::zero())
 }
 
 ///|
@@ -72,11 +72,11 @@ pub fn FilePickerField::name(self : FilePickerField) -> String {
 /// happened to be integral.
 pub fn FilePickerField::kind(self : FilePickerField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
-    Size => @component.FFloat
-    Type => @component.FText
-    LastModified => @component.FFloat
-    HasFile => @component.FBool
+    Name => FText
+    Size => FFloat
+    Type => FText
+    LastModified => FFloat
+    HasFile => FBool
   }
 }
 
@@ -99,7 +99,7 @@ pub let file_picker_schema_fingerprint : String = "9d3c25a65f5d9e0a"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn file_picker_encode(s : FilePickerState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for FilePickerState with fn encode(s) {
   {
     "name": Str(s.name),
     "size": Num(s.size),
@@ -112,7 +112,7 @@ fn file_picker_encode(s : FilePickerState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn file_picker_decode(f : Map[String, @tutuca.Value]) -> FilePickerState? {
+impl @component.Fields for FilePickerState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("size") is Some(Num(v_size)) else { return None }
   guard f.get("type") is Some(Str(v_type_)) else { return None }
@@ -252,60 +252,23 @@ pub fn[S] file_picker_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn file_picker_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "9d3c25a65f5d9e0a",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "size",
-        ty: "f64",
-        kind: @component.FFloat,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "type",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "lastModified",
-        ty: "f64",
-        kind: @component.FFloat,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "hasFile",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for FilePickerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="FilePicker",
+    fingerprint="9d3c25a65f5d9e0a",
+    fields=[
+      @component.FieldInfo::new("name", "string", FText),
+      @component.FieldInfo::new("size", "f64", FFloat),
+      @component.FieldInfo::new("type", "string", FText),
+      @component.FieldInfo::new("lastModified", "f64", FFloat),
+      @component.FieldInfo::new("hasFile", "bool", FBool),
     ],
-    inputs: ["onPickFile"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["lastModifiedLabel", "sizeLabel", "typeLabel"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["onPickFile"],
+    methods=["lastModifiedLabel", "sizeLabel", "typeLabel"],
+    view_names=["main"],
+  )
 }

@@ -19,6 +19,28 @@ pub fn Path::concat(self : Path, steps : Array[Step]) -> Path {
 }
 
 ///|
+/// `Path::new().field("rows").index("rows", 2)` — the absolute twin of the
+/// relative `PathChanges` builder, which delegates to these so the two spell
+/// a step the same way. Each returns a fresh Path, so a base is reusable.
+pub fn Path::field(self : Path, name : String) -> Path {
+  self.concat([FieldStep(name)])
+}
+
+///|
+/// A positional item of a sequence FIELD. There is no bare-index step: a Path
+/// addresses field-then-key, so a nested `.a[0][1]` is not expressible and the
+/// value-level `item`/`index` are what read one.
+pub fn Path::index(self : Path, name : String, i : Int) -> Path {
+  self.concat([SeqStep(field=name, key=KInt(i))])
+}
+
+///|
+/// A keyed item of a sequence field.
+pub fn Path::key(self : Path, name : String, k : String) -> Path {
+  self.concat([SeqStep(field=name, key=KStr(k))])
+}
+
+///|
 pub fn Path::pop_step(self : Path) -> Path {
   let n = self.steps.length()
   if n == 0 {
@@ -142,6 +164,56 @@ pub fn Path::to_keys(self : Path) -> Array[StepKey] {
     }
   }
   out
+}
+
+///|
+/// A key as its addressing text: `2` or `title`.
+pub fn PathKey::to_label(self : PathKey) -> String {
+  match self {
+    KInt(i) => i.to_string()
+    KStr(s) => s
+  }
+}
+
+///|
+/// A key as a Value — what `@key` binds to inside a loop, and what a
+/// seq-access read compares against.
+pub fn PathKey::to_value(self : PathKey) -> Value {
+  match self {
+    KInt(i) => Num(i.to_double())
+    KStr(s) => Str(s)
+  }
+}
+
+///|
+/// Addressing steps as readable text: `value.rows[1].title`.
+///
+/// Over `StepKey` rather than `Step`, because that is the projection a
+/// transaction is RECORDED as (`ObserveRecord.path_keys`) — so a log line and
+/// a `Path` print the same way without the log having to keep the Path.
+pub fn step_keys_label(keys : Array[StepKey]) -> String {
+  keys
+  .map(k => {
+    match k.key {
+      Some(pk) => "\{k.field}[\{pk.to_label()}]"
+      None => k.field
+    }
+  })
+  .join(".")
+}
+
+///|
+/// The addressing steps as readable text.
+///
+/// Over `to_keys`, so the frame-only steps (which address nothing) are absent
+/// and a seq-access step shows as its field.
+pub fn Path::to_label(self : Path) -> String {
+  step_keys_label(self.to_keys())
+}
+
+///|
+pub impl Show for Path with fn output(self, logger) {
+  logger.write_string(self.to_label())
 }
 
 ///|

@@ -259,7 +259,7 @@ pub(all) struct View {
   style : String
   mut anode : ANode?
   mut ctx : ParseContext?
-  ir : Bool
+  parse : ((View, ParseContext, &MacroScope, @core.Lit?) -> Unit raise MacroError)?
 }
 pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @core.Lit) -> Unit raise MacroError
 pub fn View::from_ir(String, ANode, Array[Array[NodeEvent]], style? : String) -> Self

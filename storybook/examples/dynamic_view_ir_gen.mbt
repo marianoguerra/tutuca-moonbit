@@ -103,9 +103,6 @@ pub fn selector_entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=selector_entry_encode,
-    decode=selector_entry_decode,
-    schema=selector_entry_schema(),
   )
 }
 
@@ -188,9 +185,6 @@ pub fn selector_component(
     specs~,
     provide~,
     lookup~,
-    encode=selector_encode,
-    decode=selector_decode,
-    schema=selector_schema(),
   )
 }
 
@@ -295,9 +289,6 @@ pub fn entry_editor_and_selector_component(
     specs~,
     provide~,
     lookup~,
-    encode=entry_editor_and_selector_encode,
-    decode=entry_editor_and_selector_decode,
-    schema=entry_editor_and_selector_schema(),
   )
 }
 
@@ -376,9 +367,6 @@ pub fn sheet_component(
     specs~,
     provide~,
     lookup~,
-    encode=sheet_encode,
-    decode=sheet_decode,
-    schema=sheet_schema(),
   )
 }
 
@@ -442,9 +430,6 @@ pub fn toolbar_component(
     specs~,
     provide~,
     lookup~,
-    encode=toolbar_encode,
-    decode=toolbar_decode,
-    schema=toolbar_schema(),
   )
 }
 
@@ -508,9 +493,6 @@ pub fn panel_component(
     specs~,
     provide~,
     lookup~,
-    encode=panel_encode,
-    decode=panel_decode,
-    schema=panel_schema(),
   )
 }
 
@@ -576,8 +558,5 @@ pub fn workspace_component(
     specs~,
     provide~,
     lookup~,
-    encode=workspace_encode,
-    decode=workspace_decode,
-    schema=workspace_schema(),
   )
 }

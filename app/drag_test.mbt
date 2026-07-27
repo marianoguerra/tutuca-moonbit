@@ -59,14 +59,6 @@ fn board_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=board_state_encode,
-    decode=board_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="board_state", fields=[
-      @component.FieldInfo::new("cards", "text-omap", FMap),
-      @component.FieldInfo::new("received", "string", FText),
-      @component.FieldInfo::new("from", "string", FText),
-      @component.FieldInfo::new("kind", "string", FText),
-    ]),
   )
 }
 
@@ -112,7 +104,7 @@ test "dragover from outside the app marks droptargets as _external" {
 }
 
 ///|
-fn board_state_encode(s : BoardState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for BoardState with fn encode(s) {
   {
     "cards": {
       let m : Map[String, @tutuca.Value] = Map([])
@@ -128,7 +120,7 @@ fn board_state_encode(s : BoardState) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-fn board_state_decode(f : Map[String, @tutuca.Value]) -> BoardState? {
+impl @component.Fields for BoardState with fn decode(f) {
   guard f.get("cards") is Some(Map(m_cards)) else { return None }
   let v_cards : Map[String, String] = Map([])
   for k2, x in m_cards {
@@ -144,4 +136,14 @@ fn board_state_decode(f : Map[String, @tutuca.Value]) -> BoardState? {
     from: v_from,
     kind: v_kind,
   })
+}
+
+///|
+impl @component.Fields for BoardState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="board_state", fields=[
+    @component.FieldInfo::new("cards", "text-omap", FMap),
+    @component.FieldInfo::new("received", "string", FText),
+    @component.FieldInfo::new("from", "string", FText),
+    @component.FieldInfo::new("kind", "string", FText),
+  ])
 }

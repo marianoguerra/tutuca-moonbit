@@ -39,6 +39,45 @@ impl @anode.MacroScope for EmptyScope with fn lookup_macro(_self, _name) {
 }
 
 ///|
+/// The schema extended with any field the runtime specs carry but it does not
+/// name — a `specs~` child slot, above all, which is declared out of band and
+/// so never appears in the state block.
+///
+/// The schema is what an instance answers `obj_schema()` with, and what the
+/// generic layer above reads: field enumeration, the snapshot an inspector
+/// shows, structural equality, the JSON projection. A field missing from it is
+/// a field that does not exist as far as any of those are concerned — and for
+/// equality that is not merely incomplete, it is wrong: two instances
+/// differing only in an undeclared child slot would compare equal, and the
+/// transactor would read the write that changed one as "nothing happened".
+///
+/// So the descriptor an instance carries describes EVERY field it has. What a
+/// runtime spec can say about the extra one is thin — the kind, and the
+/// component a slot holds — which is exactly the gap `specs~` exists to fill
+/// and the reason declaring the slot in the state block is better.
+fn complete_schema(
+  schema : SchemaInfo,
+  specs : Map[String, FieldSpec],
+) -> SchemaInfo {
+  let extra : Array[FieldInfo] = []
+  for name, sp in specs {
+    if schema.field(name) is Some(_) {
+      continue
+    }
+    let (ty, slot) = match sp.kind {
+      FComp(comp~, ..) =>
+        (if comp == "" { "component" } else { comp }, Some(comp))
+      _ => ("any", None)
+    }
+    extra.push(@tutuca.FieldInfo::new(name, ty, sp.kind, slot?))
+  }
+  if extra.is_empty() {
+    return schema
+  }
+  { ..schema, fields: schema.fields + extra }
+}
+
+///|
 /// Shared Component construction: views, styles, provide/lookup — everything
 /// except field specs and the make closure.
 fn new_component(
@@ -61,6 +100,12 @@ fn new_component(
   for vname, v in views {
     vs[vname] = v
   }
+  // A hand-written descriptor is already being passed to a `name~` that says
+  // the same thing, so `SchemaInfo::new` lets it go unstated and this fills it
+  // in. It matters because the schema, not the Component, is what an instance
+  // can reach: `obj_debug` and the JSON projection label themselves from it
+  // with no registry in hand.
+  let schema = if schema.name == "" { { ..schema, name, } } else { schema }
   {
     id: next_comp_id(),
     name,
@@ -99,7 +144,7 @@ fn new_component(
 /// xLen / pushInX / setInXAt / ...); a user `compute` entry wins over them.
 /// `specs` adds Value-level slot fields (child components via
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
-pub fn[S] component(
+pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
   init~ : S,
@@ -120,10 +165,16 @@ pub fn[S] component(
   specs? : Map[String, FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
-  encode~ : (S) -> Map[String, @tutuca.Value],
-  decode~ : (Map[String, @tutuca.Value]) -> S?,
-  schema~ : SchemaInfo,
 ) -> Component {
+  // The three facts only the author knows — the declared schema and the
+  // conversion to and from the fields map — arrive as ONE trait implemented on
+  // the state type rather than as three parameters threaded through every call
+  // site. `gen-views` writes the impl; a hand-written state writes three short
+  // methods, which is the same code in a place that cannot drift from the type
+  // it describes.
+  let schema = S::schema()
+  let encode = (s : S) => s.encode()
+  let decode = (f : Map[String, @tutuca.Value]) => S::decode(f)
   let init_fields = encode(init)
   let s_fields : Array[String] = []
   for k, _ in init_fields {
@@ -159,6 +210,7 @@ pub fn[S] component(
       _ => all_specs[k] = sp
     }
   }
+  let schema = complete_schema(schema, all_specs)
   let tspec : TypedSpec[S] = {
     comp: None,
     init,

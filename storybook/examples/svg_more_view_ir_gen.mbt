@@ -180,8 +180,5 @@ pub fn bar_chart_component(
     specs~,
     provide~,
     lookup~,
-    encode=bar_chart_encode,
-    decode=bar_chart_decode,
-    schema=bar_chart_schema(),
   )
 }

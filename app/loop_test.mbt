@@ -18,12 +18,6 @@ fn text_editor() -> @component.Component {
     },
     name="Editor",
     init=EditorState::{ text: "start", count: 0 },
-    encode=editor_state_encode,
-    decode=editor_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="editor_state", fields=[
-      @component.FieldInfo::new("text", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-    ]),
   )
 }
 
@@ -135,12 +129,6 @@ test "@each `value` bind shadows the DOM event's value" {
         _ => None
       }
     },
-    encode=picker_state_encode,
-    decode=picker_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="picker_state", fields=[
-      @component.FieldInfo::new("items", "list<string>", FList),
-      @component.FieldInfo::new("picked", "string", FText),
-    ]),
   )
   let (a, container) = mk_app(list, {
     "items": List([Str("alpha"), Str("beta")]),
@@ -201,11 +189,6 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
         _ => None
       }
     },
-    encode=chatty_state_encode,
-    decode=chatty_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="chatty_state", fields=[
-      @component.FieldInfo::new("n", "s32", FInt),
-    ]),
   )
   let (a, container) = mk_app(chatty, Map([]))
   assert_eq(a.render_count, 1) // the initial render
@@ -229,12 +212,12 @@ priv struct ChattyState {
 }
 
 ///|
-fn editor_state_encode(s : EditorState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for EditorState with fn encode(s) {
   { "text": Str(s.text), "count": Num(s.count.to_double()) }
 }
 
 ///|
-fn editor_state_decode(f : Map[String, @tutuca.Value]) -> EditorState? {
+impl @component.Fields for EditorState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
@@ -242,7 +225,7 @@ fn editor_state_decode(f : Map[String, @tutuca.Value]) -> EditorState? {
 }
 
 ///|
-fn picker_state_encode(s : PickerState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for PickerState with fn encode(s) {
   {
     "items": (List(s.items.map(x => (Str(x) : @tutuca.Value))) : @tutuca.Value),
     "picked": Str(s.picked),
@@ -250,7 +233,7 @@ fn picker_state_encode(s : PickerState) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-fn picker_state_decode(f : Map[String, @tutuca.Value]) -> PickerState? {
+impl @component.Fields for PickerState with fn decode(f) {
   guard f.get("items") is Some(List(l_items)) else { return None }
   let v_items : Array[String] = []
   for x in l_items {
@@ -262,13 +245,36 @@ fn picker_state_decode(f : Map[String, @tutuca.Value]) -> PickerState? {
 }
 
 ///|
-fn chatty_state_encode(s : ChattyState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ChattyState with fn encode(s) {
   { "n": Num(s.n.to_double()) }
 }
 
 ///|
-fn chatty_state_decode(f : Map[String, @tutuca.Value]) -> ChattyState? {
+impl @component.Fields for ChattyState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
   Some(ChattyState::{ n: v_n })
+}
+
+///|
+impl @component.Fields for EditorState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="editor_state", fields=[
+    @component.FieldInfo::new("text", "string", FText),
+    @component.FieldInfo::new("count", "s32", FInt),
+  ])
+}
+
+///|
+impl @component.Fields for PickerState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="picker_state", fields=[
+    @component.FieldInfo::new("items", "list<string>", FList),
+    @component.FieldInfo::new("picked", "string", FText),
+  ])
+}
+
+///|
+impl @component.Fields for ChattyState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="chatty_state", fields=[
+    @component.FieldInfo::new("n", "s32", FInt),
+  ])
 }

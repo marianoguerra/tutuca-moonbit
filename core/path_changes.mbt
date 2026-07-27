@@ -18,16 +18,21 @@ fn PathChanges::of(ctx : &Ctx) -> PathChanges {
 }
 
 ///|
-fn PathChanges::add(self : PathChanges, step : Step) -> PathChanges {
-  let steps = self.steps.copy()
-  steps.push(step)
-  { ctx: self.ctx, steps }
+/// Each builder method spells its step through the absolute `Path` builder, so
+/// the relative and absolute forms cannot disagree about what a step is.
+fn PathChanges::of_path(self : PathChanges, p : Path) -> PathChanges {
+  { ctx: self.ctx, steps: p.steps }
+}
+
+///|
+fn PathChanges::as_path(self : PathChanges) -> Path {
+  { steps: self.steps }
 }
 
 ///|
 /// Descend into field `name` (JS PathBuilder.field).
 pub fn PathChanges::field(self : PathChanges, name : String) -> PathChanges {
-  self.add(FieldStep(name))
+  self.of_path(self.as_path().field(name))
 }
 
 ///|
@@ -37,7 +42,7 @@ pub fn PathChanges::index(
   name : String,
   i : Int,
 ) -> PathChanges {
-  self.add(SeqStep(field=name, key=KInt(i)))
+  self.of_path(self.as_path().index(name, i))
 }
 
 ///|
@@ -47,7 +52,7 @@ pub fn PathChanges::key(
   name : String,
   key : String,
 ) -> PathChanges {
-  self.add(SeqStep(field=name, key=KStr(key)))
+  self.of_path(self.as_path().key(name, key))
 }
 
 ///|

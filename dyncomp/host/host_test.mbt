@@ -231,12 +231,6 @@ fn shell_module() -> @component.ModuleDef {
         _ => None
       }
     },
-    encode=test_shell_state_encode,
-    decode=test_shell_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="test_shell_state", fields=[
-      @component.FieldInfo::new("slot", "any", FAny),
-      @component.FieldInfo::new("note", "string", FText),
-    ]),
   )
   @component.ModuleDef::new(name="shelltest", components=[shell])
 }
@@ -428,13 +422,21 @@ test "manifest with wrong api version is rejected" {
 }
 
 ///|
-fn test_shell_state_encode(s : TestShellState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for TestShellState with fn encode(s) {
   { "slot": s.slot, "note": Str(s.note) }
 }
 
 ///|
-fn test_shell_state_decode(f : Map[String, @tutuca.Value]) -> TestShellState? {
+impl @component.Fields for TestShellState with fn decode(f) {
   let v_slot = f.get("slot").unwrap_or(Null)
   guard f.get("note") is Some(Str(v_note)) else { return None }
   Some(TestShellState::{ slot: v_slot, note: v_note })
+}
+
+///|
+impl @component.Fields for TestShellState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="test_shell_state", fields=[
+    @component.FieldInfo::new("slot", "any", FAny),
+    @component.FieldInfo::new("note", "string", FText),
+  ])
 }

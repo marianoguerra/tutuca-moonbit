@@ -137,18 +137,13 @@ pub fn Inspector::build_inspector_views(
 ///|
 /// Extract a built instance's fields back into an ExampleDef args map (an
 /// ExampleDef mounts a component by name + args, not a prebuilt instance).
-fn instance_args(
-  v : @tutuca.Value,
-  names : Array[String],
-) -> Map[String, @tutuca.Value] {
-  let args : Map[String, @tutuca.Value] = Map([])
-  for name in names {
-    match obj_get(v, name) {
-      Some(field_val) => args[name] = field_val
-      None => ()
-    }
-  }
-  args
+///
+/// The names come from the instance. Each of the eight call sites below used
+/// to spell them out — `["value", "raw", "rawSchema", "showRaw"]` and friends
+/// — and had to be edited whenever the component grew a field, because an
+/// instance could not say what it held.
+fn instance_args(v : @tutuca.Value) -> Map[String, @tutuca.Value] {
+  v.snapshot()
 }
 
 ///|
@@ -296,7 +291,7 @@ pub fn inspector_module() -> @component.ModuleDef {
 /// must resolve against the same registered components.
 pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
   let insp = self
-  let expand_top = (v : @tutuca.Value) => obj_set(v, "isExpanded", Bool(true))
+  let expand_top = (v : @tutuca.Value) => v.with_field("isExpanded", Bool(true))
   let sample_card = sample_card_comp()
   let card = sample_card.make({
     "title": Str("Hello"),
@@ -348,34 +343,25 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
     {
       component: "SchemaViewer",
       title: "Schema: Kitchen Sink (expanded)",
-      args: instance_args(
-        deep_expand(insp.schema_view(kitchen_sink_schema())),
-        ["value", "raw", "rawSchema", "showRaw"],
-      ),
+      args: instance_args(deep_expand(insp.schema_view(kitchen_sink_schema()))),
       view: None,
     },
     {
       component: "SchemaViewer",
       title: "Schema: Conditional",
-      args: instance_args(insp.schema_view(conditional_schema()), [
-        "value", "raw", "rawSchema", "showRaw",
-      ]),
+      args: instance_args(insp.schema_view(conditional_schema())),
       view: None,
     },
     {
       component: "SchemaViewer",
       title: "Schema: Boolean False",
-      args: instance_args(insp.schema_view(Bool(false)), [
-        "value", "raw", "rawSchema", "showRaw",
-      ]),
+      args: instance_args(insp.schema_view(Bool(false))),
       view: None,
     },
     {
       component: "ComponentInspector",
       title: "Component: Rich Sample",
-      args: instance_args(insp.inspect_component(rich_sample_comp()), [
-        "compName", "compId", "sections",
-      ]),
+      args: instance_args(insp.inspect_component(rich_sample_comp())),
       view: None,
     },
     {
@@ -383,22 +369,19 @@ pub fn Inspector::module_(self : Inspector) -> @component.ModuleDef {
       title: "Component: Rich Sample (expanded)",
       args: instance_args(
         deep_expand(insp.inspect_component(rich_sample_comp())),
-        ["compName", "compId", "sections"],
       ),
       view: None,
     },
     {
       component: "InstanceInspector",
       title: "Instance Inspector (expanded)",
-      args: instance_args(insp.inspect_instance(card, sample_card), ["value"]),
+      args: instance_args(insp.inspect_instance(card, sample_card)),
       view: None,
     },
     {
       component: "InstanceExplorer",
       title: "Instance Explorer",
-      args: instance_args(insp.explore_instance(card, sample_card), [
-        "activeTab", "instanceView", "componentView", "hasComponent",
-      ]),
+      args: instance_args(insp.explore_instance(card, sample_card)),
       view: None,
     },
     {

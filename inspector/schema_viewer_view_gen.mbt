@@ -35,7 +35,7 @@ fn SchemaViewerState::zero() -> SchemaViewerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_viewer_zero_args() -> Map[String, @tutuca.Value] {
-  schema_viewer_encode(SchemaViewerState::zero())
+  @component.Fields::encode(SchemaViewerState::zero())
 }
 
 ///|
@@ -65,10 +65,10 @@ pub fn SchemaViewerField::kind(
   self : SchemaViewerField,
 ) -> @component.FieldKind {
   match self {
-    Value => @component.FAny
-    Raw => @component.FAny
-    RawSchema => @component.FAny
-    ShowRaw => @component.FBool
+    Value => FAny
+    Raw => FAny
+    RawSchema => FAny
+    ShowRaw => FBool
   }
 }
 
@@ -91,7 +91,7 @@ pub let schema_viewer_schema_fingerprint : String = "ec51fa7271aa7a98"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn schema_viewer_encode(s : SchemaViewerState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SchemaViewerState with fn encode(s) {
   {
     "value": s.value,
     "raw": s.raw,
@@ -103,7 +103,7 @@ fn schema_viewer_encode(s : SchemaViewerState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn schema_viewer_decode(f : Map[String, @tutuca.Value]) -> SchemaViewerState? {
+impl @component.Fields for SchemaViewerState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
   let v_raw = f.get("raw").unwrap_or(Null)
   let v_rawSchema = f.get("rawSchema").unwrap_or(Null)
@@ -239,52 +239,22 @@ pub fn[S] schema_viewer_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn schema_viewer_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "ec51fa7271aa7a98",
-    fields: [
-      {
-        name: "value",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "raw",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "rawSchema",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "showRaw",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SchemaViewerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SchemaViewer",
+    fingerprint="ec51fa7271aa7a98",
+    fields=[
+      @component.FieldInfo::new("value", "any", FAny, elem="any"),
+      @component.FieldInfo::new("raw", "any", FAny, elem="any"),
+      @component.FieldInfo::new("rawSchema", "any", FAny, elem="any"),
+      @component.FieldInfo::new("showRaw", "bool", FBool),
     ],
-    inputs: ["toggleShowRaw"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["toggleLabel"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["toggleShowRaw"],
+    methods=["toggleLabel"],
+    view_names=["main"],
+  )
 }

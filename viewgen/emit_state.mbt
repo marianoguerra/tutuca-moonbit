@@ -104,7 +104,7 @@ fn emit_inits(
   )
   for st in inits {
     out.write_string(
-      "    \{quote(st.name)} => Some(\{v}_encode(\{t}State::\{st.ident}()))\n",
+      "    \{quote(st.name)} => Some(@component.Fields::encode(\{t}State::\{st.ident}()))\n",
     )
   }
   out.write_string("    _ => None\n  }\n}\n\n")
@@ -272,7 +272,7 @@ fn emit_zero(
     "/// The zero state as component arguments — the default a ModuleDef\n" +
     "/// example takes when it sets nothing of its own.\n" +
     "pub fn \{v}_zero_args() -> Map[String, @tutuca.Value] {\n" +
-    "  \{v}_encode(\{t}State::zero())\n}\n\n",
+    "  @component.Fields::encode(\{t}State::zero())\n}\n\n",
   )
 }
 
@@ -328,6 +328,7 @@ fn emit_field_enum(
 /// introspection could only ever report THAT an update exists.
 fn emit_schema(
   t : String,
+  name : String,
   v : String,
   def : @statedef.StateDef,
   surface : Surface,
@@ -335,59 +336,72 @@ fn emit_schema(
   inits : Array[@statedef.InitState],
   out : StringBuilder,
 ) -> Unit {
-  let strs = (xs : Array[String]) => "[" + xs.map(quote).join(", ") + "]"
+  // Written through `SchemaInfo::new` / `FieldInfo::new` rather than as record
+  // literals. The trimming constructors exist for exactly this, and a channel
+  // a component does not use now costs no line at all instead of a `[]` — the
+  // difference between a descriptor that STATES ten things and one where the
+  // two or three real answers are buried among seven empties.
+  let out_channel = (label : String, xs : Array[String]) => {
+    if xs.is_empty() {
+      ""
+    } else {
+      "    \{label}=[" + xs.map(quote).join(", ") + "],\n"
+    }
+  }
   out.write_string(
     "///|\n" +
     "/// What this component's schema declares, for `schema~`.\n" +
     "///\n" +
-    "/// Passing it to `component` also stops the runtime inferring field\n" +
-    "/// kinds from the init value — the schema states them.\n" +
-    "pub fn \{v}_schema() -> @component.SchemaInfo {\n" +
-    "  {\n" +
-    "    fingerprint: \{quote(@statedef.fingerprint([def]))},\n" +
-    "    fields: [\n",
+    "/// This is the only thing consulted for a field's KIND — there is no\n" +
+    "/// inference off the init value behind it — and it is what an instance\n" +
+    "/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`\n" +
+    "/// can name these fields without a component registry.\n" +
+    "impl @component.Fields for \{t}State with fn schema() {\n" +
+    "  @component.SchemaInfo::new(\n" +
+    // Empty for a schema-only file: there is no generated wrapper there, so
+    // the author's own `component(name~ = ...)` is the authority and
+    // `new_component` stamps it in. Stating a guess here would beat it.
+    (if name == "" { "" } else { "    name=\{quote(name)},\n" }) +
+    "    fingerprint=\{quote(@statedef.fingerprint([def]))},\n",
   )
-  for f in def.fields {
-    let elem = match f.ty.elem() {
-      Some(e) => "Some(\{quote(e.show_wit())})"
-      None => "None"
-    }
-    let slot = match f.ty {
-      TComp(Some(c)) => "Some(\{quote(c)})"
-      TComp(None) => "Some(\"\")"
-      _ => "None"
-    }
-    // Only a `flags` set has declared members; an open `text-set` does not.
-    let members = match f.ty {
-      TFlags(n) =>
-        match def.user_ty(n) {
-          Some({ kind: UFlags(ms), .. }) => ms.map(m => quote(m.1)).join(", ")
+  if !def.fields.is_empty() {
+    out.write_string("    fields=[\n")
+    for f in def.fields {
+      // Only a `flags` set has declared members; an open `text-set` does not.
+      let members = match f.ty {
+        TFlags(n) =>
+          match def.user_ty(n) {
+            Some({ kind: UFlags(ms), .. }) => ms.map(m => quote(m.1)).join(", ")
+            _ => ""
+          }
+        _ => ""
+      }
+      let mut extra = match f.ty.elem() {
+        Some(e) => ", elem=\{quote(e.show_wit())}"
+        None => ""
+      }
+      extra = extra +
+        (match f.ty {
+          TComp(Some(c)) => ", slot=\{quote(c)}"
+          TComp(None) => ", slot=\"\""
           _ => ""
-        }
-      _ => ""
+        })
+      if members != "" {
+        extra = extra + ", members=[\{members}]"
+      }
+      out.write_string(
+        "      @component.FieldInfo::new(\{quote(f.name)}, \{quote(f.ty.show_wit())}, \{f.ty.field_kind_src()}\{extra}),\n",
+      )
     }
-    out.write_string(
-      "      {\n" +
-      "        name: \{quote(f.name)},\n" +
-      "        ty: \{quote(f.ty.show_wit())},\n" +
-      "        kind: \{f.ty.field_kind_src()},\n" +
-      "        elem: \{elem},\n" +
-      "        slot: \{slot},\n" +
-      "        members: [\{members}],\n" +
-      "      },\n",
-    )
+    out.write_string("    ],\n")
   }
-  out.write_string(
-    "    ],\n" +
-    "    inputs: \{strs(surface.inputs.map(i => i.name))},\n" +
-    "    receives: \{strs(def.receive.map(m => m.name))},\n" +
-    "    bubbles: \{strs(def.bubble.map(m => m.name))},\n" +
-    "    responses: \{strs(def.response.map(m => m.name))},\n" +
-    "    methods: \{strs(declared_methods(surface, Some(def)))},\n" +
-    "    ids: \{strs(surface.ids)},\n" +
-    "    view_names: \{strs(views.views.map(vw => vw.name))},\n" +
-    "    init_names: \{strs(inits.map(st => st.name))},\n" +
-    "  }\n}\n\n",
-  )
-  t |> ignore
+  out.write_string(out_channel("inputs", surface.inputs.map(i => i.name)))
+  out.write_string(out_channel("receives", def.receive.map(m => m.name)))
+  out.write_string(out_channel("bubbles", def.bubble.map(m => m.name)))
+  out.write_string(out_channel("responses", def.response.map(m => m.name)))
+  out.write_string(out_channel("methods", declared_methods(surface, Some(def))))
+  out.write_string(out_channel("ids", surface.ids))
+  out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))
+  out.write_string(out_channel("init_names", inits.map(st => st.name)))
+  out.write_string("  )\n}\n\n")
 }

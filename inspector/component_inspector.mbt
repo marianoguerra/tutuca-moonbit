@@ -218,7 +218,7 @@ fn set_all_sections(
 ) -> ComponentInspectorState {
   {
     ..s,
-    sections: s.sections.map(sec => obj_set(sec, "isExpanded", Bool(state))),
+    sections: s.sections.map(sec => sec.with_field("isExpanded", Bool(state))),
   }
 }
 
@@ -230,13 +230,12 @@ fn set_all_views(
   {
     ..s,
     sections: s.sections.map(sec => {
-      if obj_get(sec, "label") is Some(Str("Views")) {
-        match obj_get(sec, "items") {
+      if sec.field_opt("label") is Some(Str("Views")) {
+        match sec.field_opt("items") {
           Some(List(views)) =>
-            obj_set(
-              sec,
+            sec.with_field(
               "items",
-              List(views.map(v => obj_set(v, "isExpanded", Bool(state)))),
+              List(views.map(v => v.with_field("isExpanded", Bool(state)))),
             )
           _ => sec
         }

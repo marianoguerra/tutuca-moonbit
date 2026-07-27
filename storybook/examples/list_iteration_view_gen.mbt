@@ -32,7 +32,7 @@ fn ListIterationState::zero() -> ListIterationState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_iteration_zero_args() -> Map[String, @tutuca.Value] {
-  list_iteration_encode(ListIterationState::zero())
+  @component.Fields::encode(ListIterationState::zero())
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn ListIterationField::kind(
   self : ListIterationField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
+    Items => FList
   }
 }
 
@@ -77,14 +77,14 @@ pub let list_iteration_schema_fingerprint : String = "4cb2b12ca13a0bfa"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn list_iteration_encode(s : ListIterationState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ListIterationState with fn encode(s) {
   { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn list_iteration_decode(f : Map[String, @tutuca.Value]) -> ListIterationState? {
+impl @component.Fields for ListIterationState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -119,28 +119,15 @@ pub let list_iteration_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn list_iteration_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "4cb2b12ca13a0bfa",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ListIterationState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ListIteration",
+    fingerprint="4cb2b12ca13a0bfa",
+    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    view_names=["main"],
+  )
 }

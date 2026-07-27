@@ -32,7 +32,7 @@ fn ComposabilityState::zero() -> ComposabilityState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn composability_zero_args() -> Map[String, @tutuca.Value] {
-  composability_encode(ComposabilityState::zero())
+  @component.Fields::encode(ComposabilityState::zero())
 }
 
 ///|
@@ -68,13 +68,13 @@ pub fn ComposabilityField::kind(
   self : ComposabilityField,
 ) -> @component.FieldKind {
   match self {
-    ActiveSection => @component.FText
-    Todo => @component.FComp(comp="", args=Map([]))
-    Json => @component.FComp(comp="", args=Map([]))
-    Tree => @component.FComp(comp="", args=Map([]))
-    PersonalSite => @component.FComp(comp="", args=Map([]))
-    VisualWasm => @component.FComp(comp="", args=Map([]))
-    Dnd => @component.FComp(comp="", args=Map([]))
+    ActiveSection => FText
+    Todo => FComp(comp="", args=Map([]))
+    Json => FComp(comp="", args=Map([]))
+    Tree => FComp(comp="", args=Map([]))
+    PersonalSite => FComp(comp="", args=Map([]))
+    VisualWasm => FComp(comp="", args=Map([]))
+    Dnd => FComp(comp="", args=Map([]))
   }
 }
 
@@ -97,14 +97,14 @@ pub let composability_schema_fingerprint : String = "a3b3ea198bfa01dd"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn composability_encode(s : ComposabilityState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ComposabilityState with fn encode(s) {
   { "activeSection": Str(s.activeSection) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn composability_decode(f : Map[String, @tutuca.Value]) -> ComposabilityState? {
+impl @component.Fields for ComposabilityState with fn decode(f) {
   guard f.get("activeSection") is Some(Str(v_activeSection)) else {
     return None
   }
@@ -233,78 +233,63 @@ pub fn ComposabilityId::selector(self : ComposabilityId) -> String {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn composability_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "a3b3ea198bfa01dd",
-    fields: [
-      {
-        name: "activeSection",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "todo",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "json",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "tree",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "personalSite",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "visualWasm",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "dnd",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ComposabilityState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Composability",
+    fingerprint="a3b3ea198bfa01dd",
+    fields=[
+      @component.FieldInfo::new("activeSection", "string", FText),
+      @component.FieldInfo::new(
+        "todo",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "json",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "tree",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "personalSite",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "visualWasm",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "dnd",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
     ],
-    inputs: ["setActiveSection"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [
+    inputs=["setActiveSection"],
+    ids=[
       "tab-dnd", "tab-json", "tab-personal-site", "tab-todo", "tab-tree", "tab-visual-wasm",
     ],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }

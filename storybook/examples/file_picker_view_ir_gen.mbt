@@ -136,8 +136,5 @@ pub fn file_picker_component(
     specs~,
     provide~,
     lookup~,
-    encode=file_picker_encode,
-    decode=file_picker_decode,
-    schema=file_picker_schema(),
   )
 }

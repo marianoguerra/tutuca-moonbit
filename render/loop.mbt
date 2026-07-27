@@ -41,26 +41,18 @@ fn make_loop_ctx(
 }
 
 ///|
+/// A `@loop-with` return, read back out of the Map it crossed the Fn boundary
+/// as. Each part is an OPTION — absent is what "the handler did not slice" and
+/// "the handler did not order" mean — so these are the partial coercers, not
+/// the defaulting ones. A result that is not a Map at all reads as all-absent
+/// through the same calls.
 fn unpack_loop_result(result : @tutuca.Value, seq : @tutuca.Value) -> LoopPlan {
   let dflt : @tutuca.Value = Map({ "seq": seq })
-  match result {
-    Map(m) => {
-      let iter_data = m.get("iterData").unwrap_or(dflt)
-      let start : Int? = match m.get("start") {
-        Some(Num(n)) => Some(n.to_int())
-        _ => None
-      }
-      let end : Int? = match m.get("end") {
-        Some(Num(n)) => Some(n.to_int())
-        _ => None
-      }
-      let keys : Array[@tutuca.Value]? = match m.get("keys") {
-        Some(List(a)) => Some(a)
-        _ => None
-      }
-      { iter_data, start, end, keys }
-    }
-    _ => { iter_data: dflt, start: None, end: None, keys: None }
+  {
+    iter_data: result.field_opt("iterData").unwrap_or(dflt),
+    start: result.field("start").int_opt(),
+    end: result.field("end").int_opt(),
+    keys: result.field("keys").list_opt(),
   }
 }
 

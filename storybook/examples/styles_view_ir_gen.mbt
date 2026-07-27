@@ -116,9 +116,6 @@ pub fn styles_example_component(
     specs~,
     provide~,
     lookup~,
-    encode=styles_example_encode,
-    decode=styles_example_decode,
-    schema=styles_example_schema(),
   )
 }
 
@@ -174,8 +171,5 @@ pub fn styles_example_root_component(
     specs~,
     provide~,
     lookup~,
-    encode=styles_example_root_encode,
-    decode=styles_example_root_decode,
-    schema=styles_example_root_schema(),
   )
 }

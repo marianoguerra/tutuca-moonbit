@@ -34,7 +34,7 @@ fn SchemaPropertyState::zero() -> SchemaPropertyState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_property_zero_args() -> Map[String, @tutuca.Value] {
-  schema_property_encode(SchemaPropertyState::zero())
+  @component.Fields::encode(SchemaPropertyState::zero())
 }
 
 ///|
@@ -62,9 +62,9 @@ pub fn SchemaPropertyField::kind(
   self : SchemaPropertyField,
 ) -> @component.FieldKind {
   match self {
-    Key => @component.FText
-    Child => @component.FAny
-    Required => @component.FBool
+    Key => FText
+    Child => FAny
+    Required => FBool
   }
 }
 
@@ -87,18 +87,14 @@ pub let schema_property_schema_fingerprint : String = "738c4fe1907764e4"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn schema_property_encode(
-  s : SchemaPropertyState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SchemaPropertyState with fn encode(s) {
   { "key": Str(s.key), "child": s.child, "required": Bool(s.required) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn schema_property_decode(
-  f : Map[String, @tutuca.Value],
-) -> SchemaPropertyState? {
+impl @component.Fields for SchemaPropertyState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   guard f.get("required") is Some(Bool(v_required)) else { return None }
@@ -129,46 +125,21 @@ pub let schema_property_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn schema_property_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "738c4fe1907764e4",
-    fields: [
-      {
-        name: "key",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "child",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "required",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SchemaPropertyState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SchemaProperty",
+    fingerprint="738c4fe1907764e4",
+    fields=[
+      @component.FieldInfo::new("key", "string", FText),
+      @component.FieldInfo::new("child", "any", FAny, elem="any"),
+      @component.FieldInfo::new("required", "bool", FBool),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -198,7 +169,7 @@ fn SchemaBranchState::zero() -> SchemaBranchState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_branch_zero_args() -> Map[String, @tutuca.Value] {
-  schema_branch_encode(SchemaBranchState::zero())
+  @component.Fields::encode(SchemaBranchState::zero())
 }
 
 ///|
@@ -226,9 +197,9 @@ pub fn SchemaBranchField::kind(
   self : SchemaBranchField,
 ) -> @component.FieldKind {
   match self {
-    Label => @component.FText
-    Child => @component.FAny
-    LabelClass => @component.FText
+    Label => FText
+    Child => FAny
+    LabelClass => FText
   }
 }
 
@@ -251,14 +222,14 @@ pub let schema_branch_schema_fingerprint : String = "b48cf0ecfc472225"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn schema_branch_encode(s : SchemaBranchState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SchemaBranchState with fn encode(s) {
   { "label": Str(s.label), "child": s.child, "labelClass": Str(s.labelClass) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn schema_branch_decode(f : Map[String, @tutuca.Value]) -> SchemaBranchState? {
+impl @component.Fields for SchemaBranchState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   guard f.get("labelClass") is Some(Str(v_labelClass)) else { return None }
@@ -325,44 +296,20 @@ pub fn[S] schema_branch_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn schema_branch_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "b48cf0ecfc472225",
-    fields: [
-      {
-        name: "label",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "child",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "labelClass",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SchemaBranchState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SchemaBranch",
+    fingerprint="b48cf0ecfc472225",
+    fields=[
+      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("child", "any", FAny, elem="any"),
+      @component.FieldInfo::new("labelClass", "string", FText),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["labelCssClass"],
-    ids: [],
-    view_names: ["main", "_margauiClasses"],
-    init_names: [],
-  }
+    methods=["labelCssClass"],
+    view_names=["main", "_margauiClasses"],
+  )
 }

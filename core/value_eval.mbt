@@ -52,11 +52,18 @@ pub impl Eq for Value with fn equal(self, other) {
 
 ///|
 /// JS sizeOf: `.size` (immutable collections) or `.length` (string/array).
+///
+/// A custom collection answers too, through `obj_size`. It used to be None —
+/// so an instance `@each` iterated happily had no length, `empty?` was always
+/// false for it and the generated `xLen` mutator returned Null. An instance
+/// that is NOT a sequence still answers None, which is the honest reading: a
+/// component has fields, not a size.
 pub fn size_of(v : Value) -> Int? {
   match v {
     Str(s) => Some(s.length())
     List(a) => Some(a.length())
     Map(m) => Some(m.length())
+    Obj(o) => o.obj_size()
     _ => None
   }
 }
@@ -240,14 +247,15 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
     Field(name) => stack.lookup_field_raw(name)
     // `$name` in a value slot: the stack invokes and returns the result.
     Method(name) => stack.lookup_method(name)
-    SeqAccess(seq~, key~) => {
-      let key_v = stack.lookup_field_raw(key)
-      match (stack.lookup_field_raw(seq), key_v) {
-        (Map(m), Str(k)) => m.get(k).unwrap_or(Null)
-        (List(a), Num(n)) => a.get(n.to_int()).unwrap_or(Null)
-        _ => Null
+    // `.seq[.key]`. Through the shared item lookup, which is what makes a
+    // custom collection readable here: this arm used to spell the container
+    // match out itself, and its copy had lost the `Obj` case — so a
+    // `KeyedList` that `@each` iterated fine answered Null through seq-access.
+    SeqAccess(seq~, key~) =>
+      match stack.lookup_field_raw(key).as_key() {
+        Some(k) => stack.lookup_field_raw(seq).item(k)
+        None => Null
       }
-    }
   }
 }
 

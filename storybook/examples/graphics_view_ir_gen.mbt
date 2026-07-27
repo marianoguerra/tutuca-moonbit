@@ -136,9 +136,6 @@ pub fn swatch_picker_component(
     specs~,
     provide~,
     lookup~,
-    encode=swatch_picker_encode,
-    decode=swatch_picker_decode,
-    schema=swatch_picker_schema(),
   )
 }
 
@@ -328,8 +325,5 @@ pub fn quadratic_component(
     specs~,
     provide~,
     lookup~,
-    encode=quadratic_encode,
-    decode=quadratic_decode,
-    schema=quadratic_schema(),
   )
 }

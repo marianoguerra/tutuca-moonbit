@@ -430,24 +430,17 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_eq(self, other) {
+/// The declared description, as the component was built with it — STORED, not
+/// rebuilt: `obj_eq`, `obj_debug` and the JSON projection all read it, in
+/// loops.
+///
+/// This one line is what an instance owes the generic-access layer. Everything
+/// downstream of it — naming the fields, reading one by kind, structural
+/// equality, the debug rendering, the JSON form — is a default in `@tutuca`,
+/// which is why `obj_eq` and `obj_debug` are no longer written here.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
   match self.spec.comp {
-    Some(c) => if other.component_id() != Some(c.id) { return false }
-    None => return false
+    Some(c) => Some(c.schema)
+    None => None
   }
-  for k, v in self.fields {
-    if other.obj_field(k) != Some(v) {
-      return false
-    }
-  }
-  true
-}
-
-///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_debug(self) {
-  let cname = match self.spec.comp {
-    Some(c) => c.name
-    None => "?"
-  }
-  "\{cname}\{to_repr(self.fields).to_string()}"
 }

@@ -76,9 +76,6 @@ pub fn status_component(
     specs~,
     provide~,
     lookup~,
-    encode=status_encode,
-    decode=status_decode,
-    schema=status_schema(),
   )
 }
 
@@ -175,9 +172,6 @@ pub fn send_receive_component(
     specs~,
     provide~,
     lookup~,
-    encode=send_receive_encode,
-    decode=send_receive_decode,
-    schema=send_receive_schema(),
   )
 }
 
@@ -279,9 +273,6 @@ pub fn tree_item_component(
     specs~,
     provide~,
     lookup~,
-    encode=tree_item_encode,
-    decode=tree_item_decode,
-    schema=tree_item_schema(),
   )
 }
 
@@ -349,8 +340,5 @@ pub fn tree_root_component(
     specs~,
     provide~,
     lookup~,
-    encode=tree_root_encode,
-    decode=tree_root_decode,
-    schema=tree_root_schema(),
   )
 }

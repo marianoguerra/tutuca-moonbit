@@ -106,8 +106,5 @@ pub fn nested_state_component(
     specs~,
     provide~,
     lookup~,
-    encode=nested_state_encode,
-    decode=nested_state_decode,
-    schema=nested_state_schema(),
   )
 }

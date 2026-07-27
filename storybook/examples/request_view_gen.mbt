@@ -42,7 +42,7 @@ fn RequestExampleState::zero() -> RequestExampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn request_example_zero_args() -> Map[String, @tutuca.Value] {
-  request_example_encode(RequestExampleState::zero())
+  @component.Fields::encode(RequestExampleState::zero())
 }
 
 ///|
@@ -74,11 +74,11 @@ pub fn RequestExampleField::kind(
   self : RequestExampleField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
-    View => @component.FText
-    IsLoading => @component.FBool
-    Error => @component.FAny
+    Items => FList
+    Query => FText
+    View => FText
+    IsLoading => FBool
+    Error => FAny
   }
 }
 
@@ -101,9 +101,7 @@ pub let request_example_schema_fingerprint : String = "fb42c79b675f798e"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn request_example_encode(
-  s : RequestExampleState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for RequestExampleState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -116,9 +114,7 @@ fn request_example_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn request_example_decode(
-  f : Map[String, @tutuca.Value],
-) -> RequestExampleState? {
+impl @component.Fields for RequestExampleState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -286,60 +282,22 @@ pub fn[S] request_example_when(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn request_example_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "fb42c79b675f798e",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "view",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isLoading",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "error",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for RequestExampleState with fn schema() {
+  @component.SchemaInfo::new(
+    name="RequestExample",
+    fingerprint="fb42c79b675f798e",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("view", "string", FText),
+      @component.FieldInfo::new("isLoading", "bool", FBool),
+      @component.FieldInfo::new("error", "any", FAny, elem="any"),
     ],
-    inputs: ["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
+    view_names=["main"],
+  )
 }

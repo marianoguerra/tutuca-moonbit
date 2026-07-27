@@ -101,9 +101,6 @@ fn vw_instr(name : String, label : String) -> @component.Component {
     },
     name~,
     init=VwEmptyState::{  },
-    encode=vw_empty_encode,
-    decode=vw_empty_decode,
-    schema=vw_empty_schema(),
   )
 }
 
@@ -145,9 +142,6 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
         Str("\{s.rawValue.length() + 2}em")
       },
     },
-    encode=vw_imm_encode,
-    decode=vw_imm_decode,
-    schema=vw_imm_schema(),
   )
 }
 
@@ -171,9 +165,6 @@ fn vw_type(reg : VwReg, name : String, label : String) -> @component.Component {
     },
     name~,
     init=VwEmptyState::{  },
-    encode=vw_empty_encode,
-    decode=vw_empty_decode,
-    schema=vw_empty_schema(),
     swap={
       "setType": (_s : VwEmptyState, args, _ctx) => {
         let id = match args {
@@ -383,9 +374,6 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
         _ => None
       }
     },
-    encode=vw_types_encode,
-    decode=vw_types_decode,
-    schema=vw_types_schema(),
   )
 }
 
@@ -414,9 +402,6 @@ fn vw_block_type_comp() -> @component.Component {
     },
     name="BlockType",
     init=VwEmptyState::{  },
-    encode=vw_empty_encode,
-    decode=vw_empty_decode,
-    schema=vw_empty_schema(),
     specs={
       "args": @component.FieldSpec::comp("Types"),
       "returns": @component.FieldSpec::comp("Types"),
@@ -484,9 +469,6 @@ fn vw_block_comp(reg : VwReg) -> @component.Component {
     },
     name="Block",
     init=vw_container_init(),
-    encode=vw_container_encode,
-    decode=vw_container_decode,
-    schema=vw_container_schema(),
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
@@ -505,9 +487,6 @@ fn vw_loop_comp(reg : VwReg) -> @component.Component {
     },
     name="Loop",
     init=vw_container_init(),
-    encode=vw_container_encode,
-    decode=vw_container_decode,
-    schema=vw_container_schema(),
     specs={ "blockType": @component.FieldSpec::comp("BlockType") },
     update=vw_container_update(reg),
     compute=vw_container_compute(),
@@ -542,9 +521,6 @@ fn vw_func_comp(reg : VwReg) -> @component.Component {
     },
     name="Func",
     init=vw_container_init(),
-    encode=vw_container_encode,
-    decode=vw_container_decode,
-    schema=vw_container_schema(),
     specs={
       "blockType": @component.FieldSpec::comp("BlockType"),
       "locals": @component.FieldSpec::comp("Types"),
@@ -618,9 +594,6 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
         _ => None
       }
     },
-    encode=vw_if_encode,
-    decode=vw_if_decode,
-    schema=vw_if_schema(),
   )
 }
 
@@ -657,9 +630,6 @@ fn vw_section_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=vw_section_encode,
-    decode=vw_section_decode,
-    schema=vw_section_schema(),
   )
 }
 
@@ -705,9 +675,6 @@ fn vw_memory_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=vw_memory_encode,
-    decode=vw_memory_decode,
-    schema=vw_memory_schema(),
   )
 }
 
@@ -727,9 +694,6 @@ fn vw_module_comp() -> @component.Component {
     },
     name="Module",
     init=VwEmptyState::{  },
-    encode=vw_empty_encode,
-    decode=vw_empty_decode,
-    schema=vw_empty_schema(),
     specs={
       "mem": @component.FieldSpec::comp("Section", args={
         "id": Num(5),
@@ -859,9 +823,6 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
         }
       },
     },
-    encode=vw_picker_encode,
-    decode=vw_picker_decode,
-    schema=vw_picker_schema(),
   )
 }
 

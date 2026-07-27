@@ -39,20 +39,6 @@ pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
     },
     name="DynShell",
     init=ShellState::{ status: "no bundle loaded", slot: Null, pair: Null },
-    encode=shell_state_encode,
-    decode=shell_state_decode,
-    schema=@component.SchemaInfo::new(
-      fingerprint="dyn-shell",
-      fields=[
-        @component.FieldInfo::new("status", "string", FText),
-        @component.FieldInfo::new("slot", "any", FAny),
-        @component.FieldInfo::new("pair", "any", FAny),
-      ],
-      inputs=["load"],
-      // raised by the JS glue once a bundle finishes loading
-      receives=["dyncompLoaded"],
-      view_names=["main"],
-    ),
     update=(s : ShellState, msg, ctx) => {
       match msg {
         Input("load", _) => {
@@ -117,14 +103,30 @@ pub fn shell_request_handlers() -> Map[String, @component.RequestFn] {
 }
 
 ///|
-fn shell_state_encode(s : ShellState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ShellState with fn encode(s) {
   { "status": Str(s.status), "slot": s.slot, "pair": s.pair }
 }
 
 ///|
-fn shell_state_decode(f : Map[String, @tutuca.Value]) -> ShellState? {
+impl @component.Fields for ShellState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   let v_slot = f.get("slot").unwrap_or(Null)
   let v_pair = f.get("pair").unwrap_or(Null)
   Some(ShellState::{ status: v_status, slot: v_slot, pair: v_pair })
+}
+
+///|
+impl @component.Fields for ShellState with fn schema() {
+  @component.SchemaInfo::new(
+    fingerprint="dyn-shell",
+    fields=[
+      @component.FieldInfo::new("status", "string", FText),
+      @component.FieldInfo::new("slot", "any", FAny),
+      @component.FieldInfo::new("pair", "any", FAny),
+    ],
+    inputs=["load"],
+    // raised by the JS glue once a bundle finishes loading
+    receives=["dyncompLoaded"],
+    view_names=["main"],
+  )
 }

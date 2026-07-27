@@ -128,9 +128,6 @@ pub fn person_component(
     specs~,
     provide~,
     lookup~,
-    encode=person_encode,
-    decode=person_decode,
-    schema=person_schema(),
   )
 }
 
@@ -201,9 +198,6 @@ pub fn strategies_component(
     specs~,
     provide~,
     lookup~,
-    encode=strategies_encode,
-    decode=strategies_decode,
-    schema=strategies_schema(),
   )
 }
 
@@ -385,9 +379,6 @@ pub fn naive_people_component(
     specs~,
     provide~,
     lookup~,
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-    schema=naive_people_schema(),
   )
 }
 

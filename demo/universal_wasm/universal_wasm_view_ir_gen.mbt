@@ -93,9 +93,6 @@ pub fn universal_wasm_component(
     specs~,
     provide~,
     lookup~,
-    encode=universal_wasm_encode,
-    decode=universal_wasm_decode,
-    schema=universal_wasm_schema(),
   )
 }
 
@@ -525,9 +522,6 @@ pub fn component_list_component(
     specs~,
     provide~,
     lookup~,
-    encode=component_list_encode,
-    decode=component_list_decode,
-    schema=component_list_schema(),
   )
 }
 
@@ -669,9 +663,6 @@ pub fn component_picker_component(
     specs~,
     provide~,
     lookup~,
-    encode=component_picker_encode,
-    decode=component_picker_decode,
-    schema=component_picker_schema(),
   )
 }
 
@@ -755,8 +746,5 @@ pub fn component_entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=component_entry_encode,
-    decode=component_entry_decode,
-    schema=component_entry_schema(),
   )
 }

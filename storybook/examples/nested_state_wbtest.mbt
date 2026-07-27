@@ -42,7 +42,7 @@ fn ns_empty() -> NestedStateState {
 /// The shapes, pinned — so a change to the codec is legible as a change in the
 /// data views read.
 test "nested state: the encoded shapes" {
-  let m = nested_state_encode(ns_full())
+  let m = @component.Fields::encode(ns_full())
   @debug.assert_eq(m.get("priority"), Some(Str("High")))
   @debug.assert_eq(m.get("due"), Some(List([Str("OnDay"), Num(3)])))
   @debug.assert_eq(m.get("size"), Some(List([Num(2), Num(5)])))
@@ -56,7 +56,7 @@ test "nested state: the encoded shapes" {
       ]),
     ),
   )
-  let e = nested_state_encode(ns_empty())
+  let e = @component.Fields::encode(ns_empty())
   // The payload-free variant case is a bare name, not a one-element list.
   @debug.assert_eq(e.get("due"), Some(Str("Unscheduled")))
   // `option` NONE is the absence of the key — the one shape whose encoding is
@@ -67,14 +67,15 @@ test "nested state: the encoded shapes" {
 ///|
 test "nested state: decode is the inverse of encode" {
   for s in [ns_full(), ns_empty()] {
-    guard nested_state_decode(nested_state_encode(s)) is Some(back) else {
-      fail("decode rejected its own encoding")
-    }
+    let round : NestedStateState? = @component.Fields::decode(
+      @component.Fields::encode(s),
+    )
+    guard round is Some(back) else { fail("decode rejected its own encoding") }
     // The state struct derives no Eq, so the round trip is compared through
     // the encoding — which is the representation that actually has to survive.
     @debug.assert_eq(
-      (Map(nested_state_encode(back)) : @tutuca.Value),
-      Map(nested_state_encode(s)),
+      (Map(@component.Fields::encode(back)) : @tutuca.Value),
+      Map(@component.Fields::encode(s)),
     )
   }
 }
@@ -85,9 +86,10 @@ test "nested state: decode is the inverse of encode" {
 /// that lost its payload, would survive the encode-comparison above and fail
 /// here.
 test "nested state: decode rebuilds the typed values" {
-  guard nested_state_decode(nested_state_encode(ns_full())) is Some(s) else {
-    fail("decode rejected its own encoding")
-  }
+  let round : NestedStateState? = @component.Fields::decode(
+    @component.Fields::encode(ns_full()),
+  )
+  guard round is Some(s) else { fail("decode rejected its own encoding") }
   @debug.assert_eq(s.labels, [
     NestedStateLabel::{ text: "a", done: true },
     NestedStateLabel::{ text: "b", done: false },
@@ -96,9 +98,10 @@ test "nested state: decode rebuilds the typed values" {
   @debug.assert_eq(s.due, NestedStateDue::OnDay(3))
   @debug.assert_eq(s.note, Some("n"))
   @debug.assert_eq(s.size, (2, 5))
-  guard nested_state_decode(nested_state_encode(ns_empty())) is Some(e) else {
-    fail("decode rejected the zero-ish encoding")
-  }
+  let empty : NestedStateState? = @component.Fields::decode(
+    @component.Fields::encode(ns_empty()),
+  )
+  guard empty is Some(e) else { fail("decode rejected the zero-ish encoding") }
   @debug.assert_eq(e.due, NestedStateDue::Unscheduled)
   @debug.assert_eq(e.note, None)
 }
@@ -113,8 +116,9 @@ test "nested state: decode rejects a value of the wrong shape" {
     ("labels", List([Str("not a record")])),
   ]
   for entry in bad {
-    let fields = nested_state_encode(ns_full())
+    let fields = @component.Fields::encode(ns_full())
     fields[entry.0] = entry.1
-    assert_true(nested_state_decode(fields) is None)
+    let bad : NestedStateState? = @component.Fields::decode(fields)
+    assert_true(bad is None)
   }
 }

@@ -123,15 +123,6 @@ fn RenderStack::lookup_bind_chain(
 }
 
 ///|
-fn RenderStack::it_field(self : RenderStack, name : String) -> @tutuca.Value {
-  match self.it {
-    Obj(o) => o.obj_field(name).unwrap_or(Null)
-    Map(m) => m.get(name).unwrap_or(Null)
-    _ => Null
-  }
-}
-
-///|
 pub impl @tutuca.Stack for RenderStack with fn lookup_name(self, name) {
   match self.lookup_bind_chain(name) {
     // binds shadow event fields (an @each `value` bind wins over the DOM
@@ -152,14 +143,14 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_bind(self, name) {
 
 ///|
 pub impl @tutuca.Stack for RenderStack with fn lookup_field_raw(self, name) {
-  self.it_field(name)
+  self.it.field(name)
 }
 
 ///|
 /// `$name` in value position is the RESULT of the no-arg method call, with
 /// the current item as `this` (Obj method Fns are pre-bound and drop it).
 pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {
-  match self.it_field(name) {
+  match self.it.field(name) {
     Fn(_) as f => call_handler(f, self.it, [])
     _ => Null
   }
@@ -172,7 +163,7 @@ pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
   match self.it {
     Obj(o) => o.obj_render_handler(name, ns)
     _ =>
-      match self.it_field(name) {
+      match self.it.field(name) {
         Fn(_) as f => f
         _ => Null
       }

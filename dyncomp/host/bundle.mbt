@@ -50,18 +50,19 @@ pub fn register_bundle(
     // nothing else. `fields` stays empty on purpose — guest state is opaque
     // by design (only views and handlers cross the boundary), and saying that
     // is different from having no descriptor at all.
-    let comp = @component.Component::for_type(name=def.name, views=cviews, schema={
-      fingerprint: manifest_fingerprint(def),
-      fields: [],
-      inputs: def.input_handlers,
-      receives: def.receive_handlers,
-      bubbles: [],
-      responses: def.response_handlers,
-      methods: def.method_names,
-      ids: [],
-      view_names: def.views.map(v => v.name),
-      init_names: [],
-    })
+    let comp = @component.Component::for_type(
+      name=def.name,
+      views=cviews,
+      schema=@component.SchemaInfo::new(
+        name=def.name,
+        fingerprint=manifest_fingerprint(def),
+        inputs=def.input_handlers,
+        receives=def.receive_handlers,
+        responses=def.response_handlers,
+        methods=def.method_names,
+        view_names=def.views.map(v => v.name),
+      ),
+    )
     synthesized.push(comp)
     comps[def.name] = (comp.id, def)
   }

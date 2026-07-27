@@ -71,6 +71,19 @@ priv struct ShellSpec {
 priv struct ShellInst {
   spec : ShellSpec
   fields : Map[String, @tutuca.Value]
+  // Memoized `Obj(self)`, for the same reason TypedInstance memoizes it: every
+  // seam downstream compares Values by IDENTITY, and each cast allocates a
+  // fresh box, so an unchanged instance handed out twice would look like two
+  // different ones to the render cache and the transactor's root-swap check.
+  mut boxed : @tutuca.Value?
+}
+
+///|
+fn ShellInst::make(
+  spec : ShellSpec,
+  fields : Map[String, @tutuca.Value],
+) -> ShellInst {
+  { spec, fields, boxed: None }
 }
 
 ///|
@@ -86,12 +99,20 @@ fn ShellInst::set(
 ) -> ShellInst {
   let fields = self.fields.copy()
   fields[name] = v
-  { spec: self.spec, fields }
+  ShellInst::make(self.spec, fields)
 }
 
 ///|
+/// The instance as a Value — the SAME Value every time (see `boxed`).
 fn ShellInst::to_value(self : ShellInst) -> @tutuca.Value {
-  Obj(self)
+  match self.boxed {
+    Some(v) => v
+    None => {
+      let v : @tutuca.Value = Obj(self)
+      self.boxed = Some(v)
+      v
+    }
+  }
 }
 
 ///|
@@ -227,25 +248,15 @@ impl @tutuca.Obj for ShellInst with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl @tutuca.Obj for ShellInst with fn obj_eq(self, other) {
-  let my_id = match self.spec.comp {
-    Some(c) => Some(c.id)
+/// The descriptor built alongside the view — STORED on the Component, so this
+/// is a read and not a rebuild. It carries every `sN`/`vN`/`cK`/`gvK` name the
+/// shell computed, which is what lets `obj_eq` and `obj_debug` come from
+/// `@tutuca`'s schema-ranged defaults instead of being written here.
+impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
+  match self.spec.comp {
+    Some(c) => Some(c.schema)
     None => None
   }
-  if other.component_id() != my_id {
-    return false
-  }
-  for k, v in self.fields {
-    if other.obj_field(k) != Some(v) {
-      return false
-    }
-  }
-  true
-}
-
-///|
-impl @tutuca.Obj for ShellInst with fn obj_debug(self) {
-  "Storybook{active: \{str_field(self, "active")}}"
 }
 
 ///|
@@ -610,32 +621,19 @@ fn build_shell(
   let comp = @component.Component::for_type(
     views={ "main": @anode.View::new("main", raw_view=sb.to_string()) },
     name="Storybook",
-    schema={
+    schema=@component.SchemaInfo::new(
+      name="Storybook",
       // The section list IS the shape, so it is what the fingerprint hashes.
-      fingerprint: "shell\{num_sections}x\{filter_text.length()}",
-      fields: field_names.map(n => {
-        (
-          {
-            name: n,
-            ty: "any",
-            kind: @component.FAny,
-            elem: None,
-            slot: None,
-            members: [],
-          } : @component.FieldInfo)
+      fingerprint="shell\{num_sections}x\{filter_text.length()}",
+      fields=field_names.map(n => {
+        @component.FieldInfo::new(n, "any", @tutuca.FAny)
       }),
-      inputs: [
+      inputs=[
         "onClearFilter", "onFilter", "onFocusClose", "onFocusStory", "onSelect",
         "onSelectTheme", "onToggleSection",
       ],
-      receives: [],
-      bubbles: [],
-      responses: [],
-      methods: [],
-      ids: [],
-      view_names: ["main"],
-      init_names: [],
-    },
+      view_names=["main"],
+    ),
   )
   spec.comp = Some(comp)
   (comp, spec, defaults)
@@ -692,7 +690,7 @@ pub fn[N : @vdom.DomWalk] mount(
       idx = idx + 1
     }
   }
-  let root_value = ShellInst::{ spec, fields }.to_value()
+  let root_value = ShellInst::make(spec, fields).to_value()
   let app = @app.App::new(root_scope, root_value, root_node, opts)
   app.start()
   // tutuca has no lifecycle: the host dispatches `init`, which the shell uses

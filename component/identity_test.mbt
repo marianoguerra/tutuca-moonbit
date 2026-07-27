@@ -37,14 +37,6 @@ fn id_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=id_state_encode,
-    decode=id_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("items", "values", FList),
-      @component.FieldInfo::new("tags", "value-omap", FMap),
-    ]),
   )
 }
 
@@ -150,14 +142,6 @@ test "identity is preserved through a nested list, not just at the top" {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
     init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
-    encode=id_state_encode,
-    decode=id_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("items", "values", FList),
-      @component.FieldInfo::new("tags", "value-omap", FMap),
-    ]),
   )
   let kids = [
     child.make({ "title": Str("one") }),
@@ -189,14 +173,6 @@ test "writing a list back unchanged leaves the parent instance alone" {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
     init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
-    encode=id_state_encode,
-    decode=id_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("items", "values", FList),
-      @component.FieldInfo::new("tags", "value-omap", FMap),
-    ]),
   )
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
@@ -208,7 +184,7 @@ test "writing a list back unchanged leaves the parent instance alone" {
 }
 
 ///|
-fn id_state_encode(s : IdState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for IdState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
@@ -218,11 +194,21 @@ fn id_state_encode(s : IdState) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-fn id_state_decode(f : Map[String, @tutuca.Value]) -> IdState? {
+impl @component.Fields for IdState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
   guard f.get("items") is Some(List(v_items)) else { return None }
   guard f.get("tags") is Some(Map(v_tags)) else { return None }
   Some(IdState::{ title: v_title, count: v_count, items: v_items, tags: v_tags })
+}
+
+///|
+impl @component.Fields for IdState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="id_state", fields=[
+    @component.FieldInfo::new("title", "string", FText),
+    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("items", "values", FList),
+    @component.FieldInfo::new("tags", "value-omap", FMap),
+  ])
 }

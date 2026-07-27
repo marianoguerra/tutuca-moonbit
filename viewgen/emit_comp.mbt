@@ -104,9 +104,9 @@ fn emit_wrapper(
   // Without it `component()` uses the JSON bridge, which is what such a state
   // needs anyway.
   if has_direct_codec(def) {
-    out.write_string("    encode=\{v}_encode,\n    decode=\{v}_decode,\n")
+
   }
-  out.write_string("    schema=\{v}_schema(),\n  )\n}\n\n")
+  out.write_string("  )\n}\n\n")
 }
 
 ///|

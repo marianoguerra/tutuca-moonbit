@@ -234,9 +234,6 @@ pub fn schema_scalar_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_scalar_encode,
-    decode=schema_scalar_decode,
-    schema=schema_scalar_schema(),
   )
 }
 
@@ -457,9 +454,6 @@ pub fn schema_object_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_object_encode,
-    decode=schema_object_decode,
-    schema=schema_object_schema(),
   )
 }
 
@@ -680,9 +674,6 @@ pub fn schema_array_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_array_encode,
-    decode=schema_array_decode,
-    schema=schema_array_schema(),
   )
 }
 
@@ -898,9 +889,6 @@ pub fn schema_enum_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_enum_encode,
-    decode=schema_enum_decode,
-    schema=schema_enum_schema(),
   )
 }
 
@@ -1123,9 +1111,6 @@ pub fn schema_combinator_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_combinator_encode,
-    decode=schema_combinator_decode,
-    schema=schema_combinator_schema(),
   )
 }
 
@@ -1193,9 +1178,6 @@ pub fn schema_const_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_const_encode,
-    decode=schema_const_decode,
-    schema=schema_const_schema(),
   )
 }
 
@@ -1384,9 +1366,6 @@ pub fn schema_conditional_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_conditional_encode,
-    decode=schema_conditional_decode,
-    schema=schema_conditional_schema(),
   )
 }
 
@@ -1454,9 +1433,6 @@ pub fn schema_not_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_not_encode,
-    decode=schema_not_decode,
-    schema=schema_not_schema(),
   )
 }
 
@@ -1529,9 +1505,6 @@ pub fn schema_boolean_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_boolean_encode,
-    decode=schema_boolean_decode,
-    schema=schema_boolean_schema(),
   )
 }
 
@@ -1592,8 +1565,5 @@ pub fn schema_ref_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_ref_encode,
-    decode=schema_ref_decode,
-    schema=schema_ref_schema(),
   )
 }

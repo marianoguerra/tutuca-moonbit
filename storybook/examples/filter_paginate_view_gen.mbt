@@ -34,7 +34,7 @@ fn PersonState::zero() -> PersonState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn person_zero_args() -> Map[String, @tutuca.Value] {
-  person_encode(PersonState::zero())
+  @component.Fields::encode(PersonState::zero())
 }
 
 ///|
@@ -60,9 +60,9 @@ pub fn PersonField::name(self : PersonField) -> String {
 /// happened to be integral.
 pub fn PersonField::kind(self : PersonField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
-    Email => @component.FText
-    Active => @component.FBool
+    Name => FText
+    Email => FText
+    Active => FBool
   }
 }
 
@@ -83,14 +83,14 @@ pub let person_schema_fingerprint : String = "e2e8301a252a8190"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn person_encode(s : PersonState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for PersonState with fn encode(s) {
   { "name": Str(s.name), "email": Str(s.email), "active": Bool(s.active) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn person_decode(f : Map[String, @tutuca.Value]) -> PersonState? {
+impl @component.Fields for PersonState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("email") is Some(Str(v_email)) else { return None }
   guard f.get("active") is Some(Bool(v_active)) else { return None }
@@ -200,46 +200,22 @@ pub fn[S] person_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn person_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "e2e8301a252a8190",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "email",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "active",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for PersonState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Person",
+    fingerprint="e2e8301a252a8190",
+    fields=[
+      @component.FieldInfo::new("name", "string", FText),
+      @component.FieldInfo::new("email", "string", FText),
+      @component.FieldInfo::new("active", "bool", FBool),
     ],
-    inputs: ["setActive", "setEmail", "setName"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setActive", "setEmail", "setName"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -265,7 +241,7 @@ fn StrategiesState::zero() -> StrategiesState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn strategies_zero_args() -> Map[String, @tutuca.Value] {
-  strategies_encode(StrategiesState::zero())
+  @component.Fields::encode(StrategiesState::zero())
 }
 
 ///|
@@ -291,9 +267,9 @@ pub fn StrategiesField::name(self : StrategiesField) -> String {
 /// happened to be integral.
 pub fn StrategiesField::kind(self : StrategiesField) -> @component.FieldKind {
   match self {
-    Naive => @component.FComp(comp="", args=Map([]))
-    Shared => @component.FComp(comp="", args=Map([]))
-    Coupled => @component.FComp(comp="", args=Map([]))
+    Naive => FComp(comp="", args=Map([]))
+    Shared => FComp(comp="", args=Map([]))
+    Coupled => FComp(comp="", args=Map([]))
   }
 }
 
@@ -314,14 +290,14 @@ pub let strategies_schema_fingerprint : String = "6bace7a4dde1b354"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn strategies_encode(_s : StrategiesState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for StrategiesState with fn encode(_s) {
   Map([])
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn strategies_decode(_f : Map[String, @tutuca.Value]) -> StrategiesState? {
+impl @component.Fields for StrategiesState with fn decode(_f) {
   Some(StrategiesState::{  })
 }
 
@@ -349,46 +325,39 @@ pub let strategies_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn strategies_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "6bace7a4dde1b354",
-    fields: [
-      {
-        name: "naive",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "shared",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
-      {
-        name: "coupled",
-        ty: "component",
-        kind: @component.FComp(comp="", args=Map([])),
-        elem: Some("any"),
-        slot: Some(""),
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for StrategiesState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Strategies",
+    fingerprint="6bace7a4dde1b354",
+    fields=[
+      @component.FieldInfo::new(
+        "naive",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "shared",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
+      @component.FieldInfo::new(
+        "coupled",
+        "component",
+        FComp(comp="", args=Map([])),
+        elem="any",
+        slot="",
+      ),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -423,7 +392,7 @@ fn NaivePeopleState::zero() -> NaivePeopleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn naive_people_zero_args() -> Map[String, @tutuca.Value] {
-  naive_people_encode(NaivePeopleState::zero())
+  @component.Fields::encode(NaivePeopleState::zero())
 }
 
 ///|
@@ -451,10 +420,10 @@ pub fn NaivePeopleField::name(self : NaivePeopleField) -> String {
 /// happened to be integral.
 pub fn NaivePeopleField::kind(self : NaivePeopleField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
-    Page => @component.FInt
-    PageSize => @component.FInt
+    Items => FList
+    Query => FText
+    Page => FInt
+    PageSize => FInt
   }
 }
 
@@ -477,7 +446,7 @@ pub let naive_people_schema_fingerprint : String = "1a6e19dbb5fd3c45"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn naive_people_encode(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for NaivePeopleState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -489,7 +458,7 @@ fn naive_people_encode(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn naive_people_decode(f : Map[String, @tutuca.Value]) -> NaivePeopleState? {
+impl @component.Fields for NaivePeopleState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -717,54 +686,23 @@ pub fn[S] naive_people_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn naive_people_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "1a6e19dbb5fd3c45",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "page",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "pageSize",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for NaivePeopleState with fn schema() {
+  @component.SchemaInfo::new(
+    name="NaivePeople",
+    fingerprint="1a6e19dbb5fd3c45",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("page", "s32", FInt),
+      @component.FieldInfo::new("pageSize", "s32", FInt),
     ],
-    inputs: ["next", "prev", "removeInItemsAt", "search"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["next", "prev", "removeInItemsAt", "search"],
+    view_names=["main"],
+  )
 }
 
 ///|

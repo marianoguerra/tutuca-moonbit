@@ -99,8 +99,5 @@ pub fn schema_viewer_component(
     specs~,
     provide~,
     lookup~,
-    encode=schema_viewer_encode,
-    decode=schema_viewer_decode,
-    schema=schema_viewer_schema(),
   )
 }

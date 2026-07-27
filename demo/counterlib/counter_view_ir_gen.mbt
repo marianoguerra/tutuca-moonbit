@@ -130,8 +130,5 @@ pub fn counter_component(
     specs~,
     provide~,
     lookup~,
-    encode=counter_encode,
-    decode=counter_decode,
-    schema=counter_schema(),
   )
 }

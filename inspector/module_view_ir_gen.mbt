@@ -108,9 +108,6 @@ pub fn rich_sample_component(
     specs~,
     provide~,
     lookup~,
-    encode=rich_sample_encode,
-    decode=rich_sample_decode,
-    schema=rich_sample_schema(),
   )
 }
 
@@ -176,8 +173,5 @@ pub fn sample_card_component(
     specs~,
     provide~,
     lookup~,
-    encode=sample_card_encode,
-    decode=sample_card_decode,
-    schema=sample_card_schema(),
   )
 }

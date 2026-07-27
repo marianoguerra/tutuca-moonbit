@@ -101,9 +101,6 @@ pub fn item_component(
     specs~,
     provide~,
     lookup~,
-    encode=item_encode,
-    decode=item_decode,
-    schema=item_schema(),
   )
 }
 
@@ -200,8 +197,5 @@ pub fn items_component(
     specs~,
     provide~,
     lookup~,
-    encode=items_encode,
-    decode=items_decode,
-    schema=items_schema(),
   )
 }

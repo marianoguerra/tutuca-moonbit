@@ -67,9 +67,6 @@ pub fn greeting_component(
     specs~,
     provide~,
     lookup~,
-    encode=greeting_encode,
-    decode=greeting_decode,
-    schema=greeting_schema(),
   )
 }
 
@@ -129,9 +126,6 @@ pub fn page_component(
     specs~,
     provide~,
     lookup~,
-    encode=page_encode,
-    decode=page_decode,
-    schema=page_schema(),
   )
 }
 
@@ -245,9 +239,6 @@ pub fn entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=entry_encode,
-    decode=entry_decode,
-    schema=entry_schema(),
   )
 }
 
@@ -301,8 +292,5 @@ pub fn multiple_views_component(
     specs~,
     provide~,
     lookup~,
-    encode=multiple_views_encode,
-    decode=multiple_views_decode,
-    schema=multiple_views_schema(),
   )
 }

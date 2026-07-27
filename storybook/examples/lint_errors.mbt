@@ -180,9 +180,6 @@ fn lint_demo_comp() -> @component.Component {
       // LOOKUP_TARGET_MALFORMED: target must be "Producer.provideName"
       "badTarget": { source: "NoDotHere", default: None },
     },
-    encode=lint_demo_encode,
-    decode=lint_demo_decode,
-    schema=lint_demo_schema(),
   )
 }
 
@@ -221,9 +218,6 @@ fn html_lint_demo_comp() -> @component.Component {
     },
     name="HtmlLintDemo",
     init=HtmlLintDemoState::{ count: 0 },
-    encode=html_lint_demo_encode,
-    decode=html_lint_demo_decode,
-    schema=html_lint_demo_schema(),
   )
 }
 
@@ -244,9 +238,6 @@ fn scoped_style_demo_comp() -> @component.Component {
       #|/* GLOBAL_SELECTOR_IN_SCOPED_STYLE: leading body becomes a dead descendant */
       #|body { margin: 0; }
     ),
-    encode=scoped_style_demo_encode,
-    decode=scoped_style_demo_decode,
-    schema=scoped_style_demo_schema(),
   )
 }
 

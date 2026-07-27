@@ -39,9 +39,11 @@ test "a schema-backed component gets a wrapper over component()" {
   assert_true(ir.contains("  init? : CounterState = CounterState::zero(),"))
   assert_true(ir.contains("  common_style? : String = counter_common_style,"))
   assert_true(ir.contains("  global_style? : String = counter_global_style,"))
-  assert_true(ir.contains("    encode=counter_encode,"))
-  assert_true(ir.contains("    decode=counter_decode,"))
-  assert_true(ir.contains("    schema=counter_schema(),"))
+  // The schema and the codec are NOT arguments: `CounterState` states them
+  // through `@component.Fields`, and `component()` reads them off the bound.
+  assert_false(ir.contains("encode="))
+  assert_false(ir.contains("decode="))
+  assert_false(ir.contains("schema="))
   // The handlers, typed on the state rather than on a type variable — which
   // is what lets the call site write `(s, msg, _ctx)` with no annotation.
   assert_true(
@@ -93,10 +95,10 @@ test "a nested record still gets a direct codec, named by the wrapper" {
   )
   let ir = @viewgen.emit_ir_module("Card", "card.html", f)
   assert_true(ir.contains("\npub fn card_component(\n"))
-  assert_true(ir.contains("    encode=card_encode,"))
-  assert_true(ir.contains("    decode=card_decode,"))
-  // The schema reaches component() too: it is what declares the kinds.
-  assert_true(ir.contains("    schema=card_schema(),"))
+  // Neither the codec nor the schema is passed: the state type states both.
+  assert_false(ir.contains("encode="))
+  assert_false(ir.contains("decode="))
+  assert_false(ir.contains("schema="))
   assert_true(ir.contains("its schema\n/// and its direct codec."))
 }
 

@@ -38,7 +38,7 @@ fn RichSampleState::zero() -> RichSampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn rich_sample_zero_args() -> Map[String, @tutuca.Value] {
-  rich_sample_encode(RichSampleState::zero())
+  @component.Fields::encode(RichSampleState::zero())
 }
 
 ///|
@@ -66,10 +66,10 @@ pub fn RichSampleField::name(self : RichSampleField) -> String {
 /// happened to be integral.
 pub fn RichSampleField::kind(self : RichSampleField) -> @component.FieldKind {
   match self {
-    Title => @component.FText
-    Count => @component.FInt
-    Tags => @component.FList
-    Open => @component.FBool
+    Title => FText
+    Count => FInt
+    Tags => FList
+    Open => FBool
   }
 }
 
@@ -92,7 +92,7 @@ pub let rich_sample_schema_fingerprint : String = "98c5770c79268b31"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn rich_sample_encode(s : RichSampleState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for RichSampleState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
@@ -104,7 +104,7 @@ fn rich_sample_encode(s : RichSampleState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn rich_sample_decode(f : Map[String, @tutuca.Value]) -> RichSampleState? {
+impl @component.Fields for RichSampleState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
@@ -440,54 +440,27 @@ pub fn[S] rich_sample_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn rich_sample_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "98c5770c79268b31",
-    fields: [
-      {
-        name: "title",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "tags",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "open",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for RichSampleState with fn schema() {
+  @component.SchemaInfo::new(
+    name="RichSample",
+    fingerprint="98c5770c79268b31",
+    fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("tags", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("open", "bool", FBool),
     ],
-    inputs: ["inc", "reset"],
-    receives: ["ping"],
-    bubbles: ["onChild"],
-    responses: ["onData"],
-    methods: ["double", "label"],
-    ids: [],
-    view_names: ["main", "compact"],
-    init_names: [],
-  }
+    inputs=["inc", "reset"],
+    receives=["ping"],
+    bubbles=["onChild"],
+    responses=["onData"],
+    methods=["double", "label"],
+    view_names=["main", "compact"],
+  )
 }
 
 ///|
@@ -518,7 +491,7 @@ fn SampleCardState::zero() -> SampleCardState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn sample_card_zero_args() -> Map[String, @tutuca.Value] {
-  sample_card_encode(SampleCardState::zero())
+  @component.Fields::encode(SampleCardState::zero())
 }
 
 ///|
@@ -546,10 +519,10 @@ pub fn SampleCardField::name(self : SampleCardField) -> String {
 /// happened to be integral.
 pub fn SampleCardField::kind(self : SampleCardField) -> @component.FieldKind {
   match self {
-    Title => @component.FText
-    Count => @component.FInt
-    Tags => @component.FList
-    Open => @component.FBool
+    Title => FText
+    Count => FInt
+    Tags => FList
+    Open => FBool
   }
 }
 
@@ -572,7 +545,7 @@ pub let sample_card_schema_fingerprint : String = "33fd8877c57069f1"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn sample_card_encode(s : SampleCardState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SampleCardState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
@@ -584,7 +557,7 @@ fn sample_card_encode(s : SampleCardState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn sample_card_decode(f : Map[String, @tutuca.Value]) -> SampleCardState? {
+impl @component.Fields for SampleCardState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
@@ -725,52 +698,22 @@ pub fn[S] sample_card_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn sample_card_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "33fd8877c57069f1",
-    fields: [
-      {
-        name: "title",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "tags",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "open",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SampleCardState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SampleCard",
+    fingerprint="33fd8877c57069f1",
+    fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("tags", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("open", "bool", FBool),
     ],
-    inputs: ["bump"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["label"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["bump"],
+    methods=["label"],
+    view_names=["main"],
+  )
 }

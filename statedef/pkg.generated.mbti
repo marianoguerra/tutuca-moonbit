@@ -1,0 +1,147 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/statedef"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn binding_name(String) -> String
+
+pub fn camel_name(String) -> String
+
+pub fn fingerprint(Array[StateDef]) -> String
+
+pub fn nearest(String, Array[String]) -> String?
+
+pub fn parse_init(String, StateDef) -> Array[InitState] raise InitError
+
+pub fn parse_state(String) -> Array[StateDef] raise DefError
+
+pub fn str_cmp(String, String) -> Int
+
+pub fn to_guest(StateDef, trait_name? : String, values? : String) -> String
+
+pub fn to_wit(Array[StateDef], pkg? : String) -> String
+
+pub fn upper_name(String) -> String
+
+// Errors
+pub suberror DefError {
+  WitSyntax(msg~ : String, offset~ : Int)
+  UnexpectedPackage(String)
+  UnsupportedItem(iface~ : String, item~ : String, why~ : String)
+  NoStateRecord(String)
+  StateNotRecord(String)
+  UnsupportedType(where_~ : String, ty~ : String, why~ : String)
+  UnknownTypeRef(where_~ : String, name~ : String)
+  CyclicType(String)
+  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String)
+  DuplicateInterface(String)
+  BadInterfaceName(String)
+  ReservedName(String)
+}
+pub fn DefError::locus(Self) -> String?
+pub fn DefError::message(Self) -> String
+pub impl Show for DefError
+
+pub suberror InitError {
+  NotJson(String)
+  NotStates
+  StateNotObject(String)
+  NoSuchField(state~ : String, field~ : String, suggestion~ : String?)
+  BadValue(state~ : String, field~ : String, want~ : String, got~ : String)
+}
+pub fn InitError::message(Self) -> String
+pub impl Show for InitError
+
+// Types and methods
+pub(all) struct FieldDef {
+  wit_name : String
+  name : String
+  binding : String
+  ty : StateTy
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct InitState {
+  name : String
+  ident : String
+  fields : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MethodDef {
+  wit_name : String
+  name : String
+  params : Array[StateTy]
+  result : StateTy?
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MsgDef {
+  wit_name : String
+  name : String
+  variant : String
+  payload : Array[StateTy]
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct StateDef {
+  wit_name : String
+  component : String
+  fields : Array[FieldDef]
+  receive : Array[MsgDef]
+  bubble : Array[MsgDef]
+  response : Array[MsgDef]
+  methods : Array[MethodDef]
+  types : Array[UserTy]
+  doc : String?
+} derive(Eq, @debug.Debug)
+pub fn StateDef::field(Self, String) -> FieldDef?
+pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
+pub fn StateDef::moonbit_ty(Self, StateTy) -> String
+pub fn StateDef::user_ty(Self, String) -> UserTy?
+pub fn StateDef::zero_expr(Self, StateTy) -> String
+
+pub(all) enum StateTy {
+  TBool
+  TInt(width~ : Int, signed~ : Bool)
+  TFloat
+  TText
+  TList(StateTy)
+  TTuple(Array[StateTy])
+  TOption(StateTy)
+  TRecord(String)
+  TEnum(String)
+  TVariant(String)
+  TFlags(String)
+  TSet
+  TOMap(StateTy)
+  TComp(String?)
+  TAny
+} derive(Eq, @debug.Debug)
+pub fn StateTy::elem(Self) -> Self?
+pub fn StateTy::field_kind_src(Self) -> String
+pub fn StateTy::in_struct(Self) -> Bool
+pub fn StateTy::is_boolish(Self) -> Bool
+pub fn StateTy::is_renderable(Self) -> Bool
+pub fn StateTy::show_wit(Self) -> String
+
+pub(all) struct UserTy {
+  wit_name : String
+  name : String
+  kind : UserTyKind
+  doc : String?
+} derive(Eq, @debug.Debug)
+
+pub(all) enum UserTyKind {
+  URecord(Array[FieldDef])
+  UEnum(Array[(String, String)])
+  UVariant(Array[MsgDef])
+  UFlags(Array[(String, String)])
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -61,11 +61,6 @@ fn item_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=item_state_encode,
-    decode=item_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="item_state", fields=[
-      @component.FieldInfo::new("label", "string", FText),
-    ]),
   )
 }
 
@@ -86,11 +81,6 @@ fn panel_comp() -> @component.Component {
     name="Panel",
     init=PanelState::{ title: "panel" },
     specs={ "item": @component.FieldSpec::comp("Item") },
-    encode=panel_state_encode,
-    decode=panel_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="panel_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-    ]),
   )
 }
 
@@ -180,23 +170,37 @@ test "requests resolve through the component's registration scope" {
 }
 
 ///|
-fn item_state_encode(s : ItemState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ItemState with fn encode(s) {
   { "label": Str(s.label) }
 }
 
 ///|
-fn item_state_decode(f : Map[String, @tutuca.Value]) -> ItemState? {
+impl @component.Fields for ItemState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   Some(ItemState::{ label: v_label })
 }
 
 ///|
-fn panel_state_encode(s : PanelState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for PanelState with fn encode(s) {
   { "title": Str(s.title) }
 }
 
 ///|
-fn panel_state_decode(f : Map[String, @tutuca.Value]) -> PanelState? {
+impl @component.Fields for PanelState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   Some(PanelState::{ title: v_title })
+}
+
+///|
+impl @component.Fields for ItemState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="item_state", fields=[
+    @component.FieldInfo::new("label", "string", FText),
+  ])
+}
+
+///|
+impl @component.Fields for PanelState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="panel_state", fields=[
+    @component.FieldInfo::new("title", "string", FText),
+  ])
 }

@@ -51,16 +51,10 @@ fn activity_log_comp() -> @component.Component {
 
 ///|
 /// Join a record's path keys into a readable label, e.g. "value.rows[1]".
-/// A host may slice the prefix first.
+/// A host may slice the prefix first. The rendering itself is `@tutuca`'s, so
+/// a log line and a printed `Path` agree.
 pub fn path_keys_label(path_keys : Array[@tutuca.StepKey]) -> String {
-  path_keys
-  .map(k => {
-    match k.key {
-      Some(pk) => "\{k.field}[\{fmt_path_key(pk)}]"
-      None => k.field
-    }
-  })
-  .join(".")
+  @tutuca.step_keys_label(path_keys)
 }
 
 ///|

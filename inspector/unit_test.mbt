@@ -94,11 +94,38 @@ test "classify: composites build keyed rows and count them" {
 }
 
 ///|
-test "classify: an instance Value without seq entries is an opaque leaf" {
+/// An Obj that declares nothing — the only shape left that the inspector
+/// cannot open. It stands for a guest instance, whose fields genuinely do not
+/// cross the boundary.
+priv struct Undescribed {}
+
+///|
+impl @tutuca.Obj for Undescribed with fn obj_debug(_self) {
+  "Undescribed{}"
+}
+
+///|
+/// An instance shows its DECLARED fields. It used to render as one line of
+/// `obj_debug` text no matter what it carried, because nothing could ask an
+/// `Obj` what its fields were — the inspector's headline limitation.
+test "classify: a described instance opens into its fields" {
   let insp = @inspector.Inspector::new()
   let card = sample_comp().make({ "title": Str("Hello") })
-  let leaf = insp.classify(card)
-  assert_true(oget(leaf, "text") is Str(s) && s.contains("Sample"))
+  let obj = insp.classify(card)
+  inspect(otext(obj, "typeText"), content="Object")
+  let rows = olist(obj, "items")
+  assert_true(rows.length() > 0)
+  assert_true(oget(rows[0], "key") is Str("title"))
+  // ...and the field's VALUE is classified too, not stringified
+  inspect(otext(oget(rows[0], "child"), "text"), content="\"Hello\"")
+}
+
+///|
+/// The fallback survives for the one case that still needs it.
+test "classify: an instance that declares nothing is still an opaque leaf" {
+  let insp = @inspector.Inspector::new()
+  let leaf = insp.classify(Obj(Undescribed::{  }))
+  assert_true(oget(leaf, "text") is Str(s) && s.contains("Undescribed"))
 }
 
 ///|
@@ -182,26 +209,6 @@ fn sample_comp() -> @component.Component {
         @component.LoopWith::new(start=0, end=0)
       },
     },
-    encode=rich_state_encode,
-    decode=rich_state_decode,
-    // Hand-written and COMPLETE: this fixture exists to make every panel of
-    // the component inspector have something to show, so it declares one of
-    // everything — which is also what `component()` now requires of it.
-    schema=@component.SchemaInfo::new(
-      fingerprint="rich_state",
-      fields=[
-        @component.FieldInfo::new("title", "string", FText),
-        @component.FieldInfo::new("count", "s32", FInt),
-        @component.FieldInfo::new("tags", "values", FList, elem="any"),
-        @component.FieldInfo::new("open", "bool", FBool),
-      ],
-      inputs=["inc", "reset"],
-      receives=["ping"],
-      bubbles=["onChild"],
-      responses=["onData"],
-      methods=["double", "label"],
-      view_names=["main", "compact"],
-    ),
   )
 }
 
@@ -282,7 +289,8 @@ test "instance_snapshot + inspect_instance expose the field rows" {
     "tags": List([Str("a"), Str("b")]),
     "open": Bool(true),
   })
-  guard @inspector.instance_snapshot(card, comp) is Map(d) else {
+  // No descriptor passed: the instance names its own fields now.
+  guard @inspector.instance_snapshot(card) is Map(d) else {
     fail("snapshot is not a Map")
   }
   assert_true(d.get("name") is Some(Str("RichSample")))
@@ -427,47 +435,8 @@ fn schema_sample_comp() -> @component.Component {
   @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Described",
-    init=RichState::{ title: "", count: 0, tags: [], open: false },
-    update=(_s : RichState, _msg, _ctx) => None,
-    encode=rich_state_encode,
-    decode=rich_state_decode,
-    schema={
-      fingerprint: "deadbeefcafe0001",
-      fields: [
-        {
-          name: "title",
-          ty: "string",
-          kind: FText,
-          elem: None,
-          slot: None,
-          members: [],
-        },
-        {
-          name: "count",
-          ty: "s32",
-          kind: FInt,
-          elem: None,
-          slot: None,
-          members: [],
-        },
-        {
-          name: "tags",
-          ty: "list<string>",
-          kind: FList,
-          elem: Some("string"),
-          slot: None,
-          members: [],
-        },
-      ],
-      inputs: ["inc", "reset"],
-      receives: ["ping"],
-      bubbles: ["onChild"],
-      responses: ["onData"],
-      methods: ["label"],
-      ids: ["counter", "resetBtn"],
-      view_names: ["main"],
-      init_names: ["fresh"],
-    },
+    init=DescribedState::{ title: "", count: 0, tags: [], open: false },
+    update=(_s : DescribedState, _msg, _ctx) => None,
   )
 }
 
@@ -515,7 +484,7 @@ test "the summary is the declaration, not a reconstruction" {
 }
 
 ///|
-fn rich_state_encode(s : RichState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for RichState with fn encode(s) {
   {
     "title": Str(s.title),
     "count": Num(s.count.to_double()),
@@ -525,11 +494,92 @@ fn rich_state_encode(s : RichState) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-fn rich_state_decode(f : Map[String, @tutuca.Value]) -> RichState? {
+impl @component.Fields for RichState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
   guard f.get("tags") is Some(List(v_tags)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
   Some(RichState::{ title: v_title, count: v_count, tags: v_tags, open: v_open })
+}
+
+///|
+/// Hand-written and COMPLETE: this fixture exists to make every panel of the
+/// component inspector have something to show, so it declares one of
+/// everything.
+impl @component.Fields for RichState with fn schema() {
+  @component.SchemaInfo::new(
+    fingerprint="rich_state",
+    fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("tags", "values", FList, elem="any"),
+      @component.FieldInfo::new("open", "bool", FBool),
+    ],
+    inputs=["inc", "reset"],
+    receives=["ping"],
+    bubbles=["onChild"],
+    responses=["onData"],
+    methods=["double", "label"],
+    view_names=["main", "compact"],
+  )
+}
+
+///|
+/// The `Described` fixture's own state.
+///
+/// It used to reuse `RichState` and pass a DIFFERENT schema alongside it —
+/// two descriptions of one struct, which the two tests below then asserted
+/// against separately. A schema belongs to the type that has the fields now,
+/// so a second description needs a second type; the disagreement was never
+/// meaningful, only unexpressible before.
+priv struct DescribedState {
+  title : String
+  count : Int
+  tags : Array[@tutuca.Value]
+  open : Bool
+}
+
+///|
+impl @component.Fields for DescribedState with fn encode(s) {
+  {
+    "title": Str(s.title),
+    "count": Num(s.count.to_double()),
+    "tags": (List(s.tags) : @tutuca.Value),
+    "open": Bool(s.open),
+  }
+}
+
+///|
+impl @component.Fields for DescribedState with fn decode(f) {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  guard f.get("tags") is Some(List(v_tags)) else { return None }
+  guard f.get("open") is Some(Bool(v_open)) else { return None }
+  Some(DescribedState::{
+    title: v_title,
+    count: n_count.to_int(),
+    tags: v_tags,
+    open: v_open,
+  })
+}
+
+///|
+impl @component.Fields for DescribedState with fn schema() {
+  @component.SchemaInfo::new(
+    fingerprint="deadbeefcafe0001",
+    fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("tags", "list<string>", FList, elem="string"),
+    ],
+    inputs=["inc", "reset"],
+    receives=["ping"],
+    bubbles=["onChild"],
+    responses=["onData"],
+    methods=["label"],
+    ids=["counter", "resetBtn"],
+    view_names=["main"],
+    init_names=["fresh"],
+  )
 }

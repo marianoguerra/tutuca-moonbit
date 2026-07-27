@@ -33,7 +33,7 @@ fn MacrosNoState::zero() -> MacrosNoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macros_no_zero_args() -> Map[String, @tutuca.Value] {
-  macros_no_encode(MacrosNoState::zero())
+  @component.Fields::encode(MacrosNoState::zero())
 }
 
 ///|
@@ -49,35 +49,26 @@ pub let macros_no_schema_fingerprint : String = "d913a4b9e7d1c76a"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn macros_no_encode(_s : MacrosNoState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for MacrosNoState with fn encode(_s) {
   Map([])
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn macros_no_decode(_f : Map[String, @tutuca.Value]) -> MacrosNoState? {
+impl @component.Fields for MacrosNoState with fn decode(_f) {
   Some(MacrosNoState::{  })
 }
 
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn macros_no_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "d913a4b9e7d1c76a",
-    fields: [],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for MacrosNoState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="d913a4b9e7d1c76a")
 }
 
 ///|
@@ -105,7 +96,7 @@ fn MacroParamsState::zero() -> MacroParamsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_params_zero_args() -> Map[String, @tutuca.Value] {
-  macro_params_encode(MacroParamsState::zero())
+  @component.Fields::encode(MacroParamsState::zero())
 }
 
 ///|
@@ -127,7 +118,7 @@ pub fn MacroParamsField::name(self : MacroParamsField) -> String {
 /// happened to be integral.
 pub fn MacroParamsField::kind(self : MacroParamsField) -> @component.FieldKind {
   match self {
-    Status => @component.FText
+    Status => FText
   }
 }
 
@@ -148,14 +139,14 @@ pub let macro_params_schema_fingerprint : String = "e24255b8b42d4192"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn macro_params_encode(s : MacroParamsState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for MacroParamsState with fn encode(s) {
   { "status": Str(s.status) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn macro_params_decode(f : Map[String, @tutuca.Value]) -> MacroParamsState? {
+impl @component.Fields for MacroParamsState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   Some(MacroParamsState::{ status: v_status })
 }
@@ -163,30 +154,14 @@ fn macro_params_decode(f : Map[String, @tutuca.Value]) -> MacroParamsState? {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn macro_params_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "e24255b8b42d4192",
-    fields: [
-      {
-        name: "status",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for MacroParamsState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="e24255b8b42d4192", fields=[
+    @component.FieldInfo::new("status", "string", FText),
+  ])
 }
 
 ///|
@@ -214,7 +189,7 @@ fn MacroSlotsState::zero() -> MacroSlotsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_slots_zero_args() -> Map[String, @tutuca.Value] {
-  macro_slots_encode(MacroSlotsState::zero())
+  @component.Fields::encode(MacroSlotsState::zero())
 }
 
 ///|
@@ -236,7 +211,7 @@ pub fn MacroSlotsField::name(self : MacroSlotsField) -> String {
 /// happened to be integral.
 pub fn MacroSlotsField::kind(self : MacroSlotsField) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
+    Count => FInt
   }
 }
 
@@ -257,14 +232,14 @@ pub let macro_slots_schema_fingerprint : String = "29f5d9126343b9a9"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn macro_slots_encode(s : MacroSlotsState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for MacroSlotsState with fn encode(s) {
   { "count": Num(s.count.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn macro_slots_decode(f : Map[String, @tutuca.Value]) -> MacroSlotsState? {
+impl @component.Fields for MacroSlotsState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(MacroSlotsState::{ count: v_count })
@@ -273,30 +248,14 @@ fn macro_slots_decode(f : Map[String, @tutuca.Value]) -> MacroSlotsState? {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn macro_slots_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "29f5d9126343b9a9",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for MacroSlotsState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="29f5d9126343b9a9", fields=[
+    @component.FieldInfo::new("count", "s32", FInt),
+  ])
 }
 
 ///|
@@ -324,7 +283,7 @@ fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_named_slots_zero_args() -> Map[String, @tutuca.Value] {
-  macro_named_slots_encode(MacroNamedSlotsState::zero())
+  @component.Fields::encode(MacroNamedSlotsState::zero())
 }
 
 ///|
@@ -348,7 +307,7 @@ pub fn MacroNamedSlotsField::kind(
   self : MacroNamedSlotsField,
 ) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
+    Count => FInt
   }
 }
 
@@ -369,18 +328,14 @@ pub let macro_named_slots_schema_fingerprint : String = "ef1c08d80888b3fd"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn macro_named_slots_encode(
-  s : MacroNamedSlotsState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for MacroNamedSlotsState with fn encode(s) {
   { "count": Num(s.count.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn macro_named_slots_decode(
-  f : Map[String, @tutuca.Value],
-) -> MacroNamedSlotsState? {
+impl @component.Fields for MacroNamedSlotsState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(MacroNamedSlotsState::{ count: v_count })
@@ -389,28 +344,12 @@ fn macro_named_slots_decode(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn macro_named_slots_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "ef1c08d80888b3fd",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for MacroNamedSlotsState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="ef1c08d80888b3fd", fields=[
+    @component.FieldInfo::new("count", "s32", FInt),
+  ])
 }

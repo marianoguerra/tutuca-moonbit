@@ -13,15 +13,40 @@
 ///|
 /// The pure snapshot of an instance value: its component name plus a
 /// field → value Map in declaration order.
+///
+/// Read off the INSTANCE. It used to need the `Component` handed in beside the
+/// value, because a value could not name its own fields — which is why every
+/// entry point below still threads one through, and why an instance whose
+/// registry was not at hand could not be shown at all. `comp` is now only a
+/// label for a value that declares nothing (an opaque guest instance).
 pub fn instance_snapshot(
   v : @tutuca.Value,
-  comp : @component.Component,
+  comp? : @component.Component,
 ) -> @tutuca.Value {
-  let fields : Map[String, @tutuca.Value] = Map([])
-  for name, _spec in comp.specs {
-    fields[name] = obj_get(v, name).unwrap_or(Null)
+  let name = match v.schema() {
+    Some(s) if s.name != "" => s.name
+    _ =>
+      match comp {
+        Some(c) => c.name
+        None => ""
+      }
   }
-  Map({ "name": Str(comp.name), "fields": Map(fields) })
+  let names = match (v.field_names(), comp) {
+    // nothing declared: the descriptor's runtime specs are all that is left
+    ([], Some(c)) => {
+      let out : Array[String] = []
+      for n, _spec in c.specs {
+        out.push(n)
+      }
+      out
+    }
+    (declared, _) => declared
+  }
+  let fields : Map[String, @tutuca.Value] = Map([])
+  for n in names {
+    fields[n] = v.field(n)
+  }
+  Map({ "name": Str(name), "fields": Map(fields) })
 }
 
 ///|
@@ -124,21 +149,27 @@ pub fn Inspector::inspect_instance(
   comp : @component.Component,
 ) -> @tutuca.Value {
   self.make_("InstanceInspector", args={
-    "value": self.instance_fields_from(instance_snapshot(v, comp)),
+    "value": self.instance_fields_from(instance_snapshot(v, comp~)),
   })
 }
 
 ///|
-/// The same for a plain Value + optional descriptor: with a comp it shows the
-/// field rows, without one it falls back to the data inspector.
+/// The same for a plain Value + optional descriptor.
+///
+/// The field rows no longer need the descriptor: an instance that declares
+/// itself shows them with no registry in hand, which is the case
+/// `build_inspector_views` is called in when the host has a value and nothing
+/// else. Only a value that declares nothing AND has no descriptor falls back
+/// to the data inspector.
 fn Inspector::inspect_value_as_instance(
   self : Inspector,
   v : @tutuca.Value,
   comp : @component.Component?,
 ) -> @tutuca.Value {
-  let value = match comp {
-    Some(c) => self.instance_fields_from(instance_snapshot(v, c))
-    None => self.classify(v)
+  let value = if v.schema() is Some(_) || comp is Some(_) {
+    self.instance_fields_from(instance_snapshot(v, comp?))
+  } else {
+    self.classify(v)
   }
   self.make_("InstanceInspector", args={ "value": value })
 }

@@ -171,9 +171,6 @@ fn shared_people_comp() -> @component.Component {
     views=shared_people_views(),
     name="SharedPeople",
     // The shared shape's codec: all three strategies seed from one state.
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-    schema=naive_people_schema(),
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     when=fp_only_matches(),
@@ -213,9 +210,6 @@ fn coupled_people_comp() -> @component.Component {
   @component.component(
     views=coupled_people_views(),
     name="CoupledPeople",
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-    schema=naive_people_schema(),
     init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     enrich_scope={

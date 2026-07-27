@@ -143,9 +143,6 @@ pub fn attribute_binding_component(
     specs~,
     provide~,
     lookup~,
-    encode=attribute_binding_encode,
-    decode=attribute_binding_decode,
-    schema=attribute_binding_schema(),
   )
 }
 
@@ -238,9 +235,6 @@ pub fn conditional_attributes_component(
     specs~,
     provide~,
     lookup~,
-    encode=conditional_attributes_encode,
-    decode=conditional_attributes_decode,
-    schema=conditional_attributes_schema(),
   )
 }
 
@@ -339,9 +333,6 @@ pub fn event_modifiers_component(
     specs~,
     provide~,
     lookup~,
-    encode=event_modifiers_encode,
-    decode=event_modifiers_decode,
-    schema=event_modifiers_schema(),
   )
 }
 
@@ -453,8 +444,5 @@ pub fn show_hide_component(
     specs~,
     provide~,
     lookup~,
-    encode=show_hide_encode,
-    decode=show_hide_decode,
-    schema=show_hide_schema(),
   )
 }

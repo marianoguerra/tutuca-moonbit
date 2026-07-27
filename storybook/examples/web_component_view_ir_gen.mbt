@@ -119,8 +119,5 @@ pub fn emoji_picker_component(
     specs~,
     provide~,
     lookup~,
-    encode=emoji_picker_encode,
-    decode=emoji_picker_decode,
-    schema=emoji_picker_schema(),
   )
 }

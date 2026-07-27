@@ -46,14 +46,14 @@ test "scalars, lists and options map onto the FieldKind lattice" {
   assert_eq(d.component, "Counter")
   assert_eq(d.fields.length(), 8)
   let kinds = d.fields.map(f => "\{f.name}:\{f.ty.field_kind_src()}")
-  assert_eq(kinds[0], "label:@component.FText")
-  assert_eq(kinds[1], "count:@component.FInt")
-  assert_eq(kinds[2], "ratio:@component.FFloat")
-  assert_eq(kinds[3], "ok:@component.FBool")
-  assert_eq(kinds[4], "small:@component.FInt")
-  assert_eq(kinds[5], "history:@component.FList")
-  assert_eq(kinds[6], "pick:@component.FAny")
-  assert_eq(kinds[7], "pair:@component.FList")
+  assert_eq(kinds[0], "label:FText")
+  assert_eq(kinds[1], "count:FInt")
+  assert_eq(kinds[2], "ratio:FFloat")
+  assert_eq(kinds[3], "ok:FBool")
+  assert_eq(kinds[4], "small:FInt")
+  assert_eq(kinds[5], "history:FList")
+  assert_eq(kinds[6], "pick:FAny")
+  assert_eq(kinds[7], "pair:FList")
   // Width survives even though every integer emits a MoonBit Int, because
   // decode range-checks against it.
   assert_eq(d.fields[4].ty, TInt(width=8, signed=false))
@@ -73,8 +73,8 @@ test "flags is a closed set, the text-set marker an open one" {
       #|}
     ),
   )
-  assert_eq(d.fields[0].ty.field_kind_src(), "@component.FSet")
-  assert_eq(d.fields[1].ty.field_kind_src(), "@component.FSet")
+  assert_eq(d.fields[0].ty.field_kind_src(), "FSet")
+  assert_eq(d.fields[1].ty.field_kind_src(), "FSet")
   assert_eq(d.fields[0].ty, TFlags("visibility"))
   assert_eq(d.fields[1].ty, TSet)
   // Both iterate their members, which are text either way.
@@ -102,13 +102,10 @@ test "markers cover the kinds WIT cannot spell" {
   assert_eq(d.fields[2].ty, TOMap(TAny))
   assert_eq(d.fields[3].ty, TOMap(TText))
   assert_eq(d.fields[4].ty, TComp(None))
-  assert_eq(d.fields[2].ty.field_kind_src(), "@component.FOMap")
+  assert_eq(d.fields[2].ty.field_kind_src(), "FOMap")
   // FComp carries the component it slots, so it cannot be written bare —
   // the untyped `component` marker slots one the schema does not name.
-  assert_eq(
-    d.fields[4].ty.field_kind_src(),
-    "@component.FComp(comp=\"\", args=Map([]))",
-  )
+  assert_eq(d.fields[4].ty.field_kind_src(), "FComp(comp=\"\", args=Map([]))")
   assert_eq(d.moonbit_ty(d.fields[1].ty), "Array[@tutuca.Value]")
   assert_eq(d.moonbit_ty(d.fields[3].ty), "Map[String, String]")
 }

@@ -33,19 +33,12 @@ fn lit_to_attr(lit : @tutuca.Lit) -> @vdom.AttrValue? {
 }
 
 ///|
-/// Call a handler value under the Fn convention: element 0 is the `this`
-/// value (JS handler.call(thisVal, ...args)), the rest are the arguments.
+/// Call a handler value under the Fn convention (`@tutuca.Value::call`): the
+/// `this` slot the callee ignores, then the arguments.
 fn call_handler(
   handler : @tutuca.Value,
   this_val : @tutuca.Value,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  match handler {
-    Fn(f) => {
-      let full = [this_val]
-      full.append(args)
-      f(full)
-    }
-    _ => Null
-  }
+  handler.call(args, this=this_val)
 }

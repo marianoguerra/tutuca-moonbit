@@ -46,8 +46,20 @@ pub impl @json.FromJson for Value with fn from_json(j, _path) {
 }
 
 ///|
-/// Json shape of a Value. `Fn`/`Obj` have no JSON form and become null (JS
-/// structured clone would throw on a function too).
+/// Json shape of a Value.
+///
+/// A DESCRIBED instance projects to its declared fields, recursively — which
+/// is what makes a state dump JSON rather than a debug string. It used to
+/// flatten to null along with `Fn`, because nothing could enumerate an `Obj`;
+/// the consequence was a `state_json()` that returned the `Show` rendering and
+/// said so in a comment, and a dyncomp migration path that parsed a
+/// `__dyncomp_state_json` pseudo-field instead.
+///
+/// An instance that declares nothing is still null: with no schema there is
+/// no field list to project, and inventing one is what the schema work
+/// removed. `Fn` stays null unconditionally (JS structured clone would throw
+/// on a function too), so a method or an unrendered handler inside a described
+/// instance projects as null rather than taking the whole object with it.
 pub fn Value::to_json(self : Value) -> Json {
   match self {
     Null => Json::null()
@@ -62,6 +74,20 @@ pub fn Value::to_json(self : Value) -> Json {
       }
       Json::object(obj)
     }
-    Fn(_) | Obj(_) => Json::null()
+    Obj(o) =>
+      match o.obj_schema() {
+        Some(schema) => {
+          let obj : Map[String, Json] = Map([])
+          for f in schema.fields {
+            obj[f.name] = match o.obj_field(f.name) {
+              Some(v) => v.to_json()
+              None => Json::null()
+            }
+          }
+          Json::object(obj)
+        }
+        None => Json::null()
+      }
+    Fn(_) => Json::null()
   }
 }

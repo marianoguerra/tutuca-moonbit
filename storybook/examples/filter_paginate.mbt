@@ -23,7 +23,7 @@ fn fp_matches(person : @tutuca.Value, query : String) -> Bool {
   if q == "" {
     return true
   }
-  "\{obj_str(person, "name")} \{obj_str(person, "email")}"
+  "\{person.field("name").str()} \{person.field("email").str()}"
   .to_lower()
   .contains(q)
 }
@@ -198,9 +198,6 @@ fn shared_people_comp() -> @component.Component {
         fp_num_keys(keys)
       },
     },
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-    schema=naive_people_schema(),
   )
 }
 
@@ -243,9 +240,6 @@ fn coupled_people_comp() -> @component.Component {
         }
       },
     },
-    encode=naive_people_encode,
-    decode=naive_people_decode,
-    schema=naive_people_schema(),
   )
 }
 

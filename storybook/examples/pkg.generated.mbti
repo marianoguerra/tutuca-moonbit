@@ -13,153 +13,209 @@ pub fn all_examples() -> Array[ExampleModule]
 
 pub let alt_url_common_style : String
 
-pub let alt_url_fields : Array[String]
+pub fn alt_url_component(name? : String, views? : Map[String, @anode.View], init? : AltUrlState, common_style? : String, global_style? : String, update? : (AltUrlState, @component.Dispatch, &@core.Ctx) -> AltUrlState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let alt_url_field_names : Array[String]
 
 pub let alt_url_global_style : String
 
-pub fn[S : ToJson] alt_url_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let alt_url_schema_fingerprint : String
 
 pub fn alt_url_views() -> Map[String, @anode.View]
 
+pub fn alt_url_zero_args() -> Map[String, @core.Value]
+
 pub let attribute_binding_common_style : String
 
-pub fn[S] attribute_binding_compute((AttributeBindingMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn attribute_binding_component(name? : String, views? : Map[String, @anode.View], init? : AttributeBindingState, common_style? : String, global_style? : String, update? : (AttributeBindingState, @component.Dispatch, &@core.Ctx) -> AttributeBindingState?, swap? : (AttributeBindingInput) -> ((AttributeBindingState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let attribute_binding_fields : Array[String]
+pub let attribute_binding_field_names : Array[String]
 
 pub let attribute_binding_global_style : String
 
-pub fn[S : ToJson] attribute_binding_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn attribute_binding_module() -> @component.ModuleDef
 
-pub fn[S] attribute_binding_mutate((AttributeBindingMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let attribute_binding_schema_fingerprint : String
 
-pub fn[S] attribute_binding_swap((AttributeBindingMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] attribute_binding_swap((AttributeBindingInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn attribute_binding_views() -> Map[String, @anode.View]
 
+pub fn attribute_binding_zero_args() -> Map[String, @core.Value]
+
+pub let bar_chart_common_style : String
+
+pub fn bar_chart_component(name? : String, views? : Map[String, @anode.View], init? : BarChartState, common_style? : String, global_style? : String, update? : (BarChartState, @component.Dispatch, &@core.Ctx) -> BarChartState?, swap? : (BarChartInput) -> ((BarChartState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, enrich? : (BarChartEnrich) -> ((BarChartState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, loop_with? : (BarChartLoopWith) -> ((BarChartState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub fn[S] bar_chart_enrich((BarChartEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let bar_chart_field_names : Array[String]
+
+pub let bar_chart_global_style : String
+
+pub fn[S] bar_chart_loop_with((BarChartLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
+
+pub let bar_chart_schema_fingerprint : String
+
+pub fn[S] bar_chart_swap((BarChartInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn bar_chart_views() -> Map[String, @anode.View]
+
+pub fn bar_chart_zero_args() -> Map[String, @core.Value]
+
 pub let composability_common_style : String
 
-pub fn[S] composability_compute((ComposabilityMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn composability_component(name? : String, views? : Map[String, @anode.View], init? : ComposabilityState, common_style? : String, global_style? : String, update? : (ComposabilityState, @component.Dispatch, &@core.Ctx) -> ComposabilityState?, swap? : (ComposabilityInput) -> ((ComposabilityState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let composability_fields : Array[String]
+pub let composability_field_names : Array[String]
 
 pub let composability_global_style : String
 
-pub fn[S : ToJson] composability_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn composability_module() -> @component.ModuleDef
 
-pub fn[S] composability_mutate((ComposabilityMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let composability_schema_fingerprint : String
 
-pub fn[S] composability_swap((ComposabilityMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] composability_swap((ComposabilityInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn composability_views() -> Map[String, @anode.View]
 
+pub fn composability_zero_args() -> Map[String, @core.Value]
+
 pub let conditional_attributes_common_style : String
 
-pub fn[S] conditional_attributes_compute((ConditionalAttributesMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn conditional_attributes_component(name? : String, views? : Map[String, @anode.View], init? : ConditionalAttributesState, common_style? : String, global_style? : String, update? : (ConditionalAttributesState, @component.Dispatch, &@core.Ctx) -> ConditionalAttributesState?, swap? : (ConditionalAttributesInput) -> ((ConditionalAttributesState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let conditional_attributes_fields : Array[String]
+pub let conditional_attributes_field_names : Array[String]
 
 pub let conditional_attributes_global_style : String
 
-pub fn[S : ToJson] conditional_attributes_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn conditional_attributes_module() -> @component.ModuleDef
 
-pub fn[S] conditional_attributes_mutate((ConditionalAttributesMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let conditional_attributes_schema_fingerprint : String
 
-pub fn[S] conditional_attributes_swap((ConditionalAttributesMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] conditional_attributes_swap((ConditionalAttributesInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn conditional_attributes_views() -> Map[String, @anode.View]
 
+pub fn conditional_attributes_zero_args() -> Map[String, @core.Value]
+
 pub let counter_common_style : String
 
-pub fn[S] counter_compute((CounterMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn counter_component(name? : String, views? : Map[String, @anode.View], init? : CounterState, common_style? : String, global_style? : String, update? : (CounterState, @component.Dispatch, &@core.Ctx) -> CounterState?, swap? : (CounterInput) -> ((CounterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let counter_fields : Array[String]
+pub let counter_field_names : Array[String]
 
 pub let counter_global_style : String
 
-pub fn[S : ToJson] counter_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn counter_module() -> @component.ModuleDef
 
-pub fn[S] counter_mutate((CounterMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let counter_schema_fingerprint : String
 
-pub fn[S] counter_swap((CounterMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] counter_swap((CounterInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn counter_views() -> Map[String, @anode.View]
+
+pub fn counter_zero_args() -> Map[String, @core.Value]
+
+pub let coupled_people_common_style : String
+
+pub fn[S] coupled_people_enrich_scope((CoupledPeopleEnrichScope) -> ((S) -> Map[String, @core.Value])?) -> Map[String, (S) -> Map[String, @core.Value]]
+
+pub let coupled_people_fields : Array[String]
+
+pub let coupled_people_global_style : String
+
+pub fn[S] coupled_people_loop_with((CoupledPeopleLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
+
+pub fn[S : ToJson] coupled_people_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] coupled_people_swap((CoupledPeopleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn coupled_people_views() -> Map[String, @anode.View]
 
 pub fn custom_collection_module() -> @component.ModuleDef
 
 pub let danger_set_inner_html_common_style : String
 
-pub let danger_set_inner_html_fields : Array[String]
+pub fn danger_set_inner_html_component(name? : String, views? : Map[String, @anode.View], init? : DangerSetInnerHtmlState, common_style? : String, global_style? : String, update? : (DangerSetInnerHtmlState, @component.Dispatch, &@core.Ctx) -> DangerSetInnerHtmlState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let danger_set_inner_html_field_names : Array[String]
 
 pub let danger_set_inner_html_global_style : String
 
-pub fn[S : ToJson] danger_set_inner_html_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn danger_set_inner_html_module() -> @component.ModuleDef
+
+pub let danger_set_inner_html_schema_fingerprint : String
 
 pub fn danger_set_inner_html_views() -> Map[String, @anode.View]
 
+pub fn danger_set_inner_html_zero_args() -> Map[String, @core.Value]
+
 pub let dn_d_example_common_style : String
 
-pub fn[S] dn_d_example_compute((DnDExampleMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn dn_d_example_component(name? : String, views? : Map[String, @anode.View], init? : DnDExampleState, common_style? : String, global_style? : String, update? : (DnDExampleState, @component.Dispatch, &@core.Ctx) -> DnDExampleState?, swap? : (DnDExampleInput) -> ((DnDExampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (DnDExampleWhen) -> ((DnDExampleState, @core.Value, @core.Value, @core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let dn_d_example_fields : Array[String]
+pub let dn_d_example_field_names : Array[String]
 
 pub let dn_d_example_global_style : String
 
-pub fn[S : ToJson] dn_d_example_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let dn_d_example_schema_fingerprint : String
 
-pub fn[S] dn_d_example_mutate((DnDExampleMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] dn_d_example_swap((DnDExampleMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] dn_d_example_swap((DnDExampleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn dn_d_example_views() -> Map[String, @anode.View]
+
+pub fn[S] dn_d_example_when((DnDExampleWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn dn_d_example_zero_args() -> Map[String, @core.Value]
 
 pub fn dnd_module() -> @component.ModuleDef
 
 pub let dse_editor_common_style : String
 
-pub let dse_editor_fields : Array[String]
+pub fn dse_editor_component(name? : String, views? : Map[String, @anode.View], init? : DseEditorState, common_style? : String, global_style? : String, update? : (DseEditorState, @component.Dispatch, &@core.Ctx) -> DseEditorState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let dse_editor_field_names : Array[String]
 
 pub let dse_editor_global_style : String
 
-pub fn[S : ToJson] dse_editor_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let dse_editor_schema_fingerprint : String
 
 pub fn dse_editor_views() -> Map[String, @anode.View]
 
+pub fn dse_editor_zero_args() -> Map[String, @core.Value]
+
 pub let dse_entry_common_style : String
 
-pub fn[S] dse_entry_compute((DseEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn dse_entry_component(name? : String, views? : Map[String, @anode.View], init? : DseEntryState, common_style? : String, global_style? : String, update? : (DseEntryState, @component.Dispatch, &@core.Ctx) -> DseEntryState?, swap? : (DseEntryInput) -> ((DseEntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let dse_entry_fields : Array[String]
+pub let dse_entry_field_names : Array[String]
 
 pub let dse_entry_global_style : String
 
-pub fn[S : ToJson] dse_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let dse_entry_schema_fingerprint : String
 
-pub fn[S] dse_entry_mutate((DseEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] dse_entry_swap((DseEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] dse_entry_swap((DseEntryInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn dse_entry_views() -> Map[String, @anode.View]
 
+pub fn dse_entry_zero_args() -> Map[String, @core.Value]
+
 pub let dse_root_common_style : String
 
-pub let dse_root_fields : Array[String]
+pub fn dse_root_component(name? : String, views? : Map[String, @anode.View], init? : DseRootState, common_style? : String, global_style? : String, update? : (DseRootState, @component.Dispatch, &@core.Ctx) -> DseRootState?, swap? : (DseRootInput) -> ((DseRootState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let dse_root_field_names : Array[String]
 
 pub let dse_root_global_style : String
 
-pub fn[S : ToJson] dse_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let dse_root_schema_fingerprint : String
+
+pub fn[S] dse_root_swap((DseRootInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn dse_root_views() -> Map[String, @anode.View]
+
+pub fn dse_root_zero_args() -> Map[String, @core.Value]
 
 pub fn dynamic_bindings_module() -> @component.ModuleDef
 
@@ -169,751 +225,951 @@ pub fn dynamic_selected_edit_module() -> @component.ModuleDef
 
 pub let emoji_picker_common_style : String
 
-pub fn[S] emoji_picker_compute((EmojiPickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn emoji_picker_component(name? : String, views? : Map[String, @anode.View], init? : EmojiPickerState, common_style? : String, global_style? : String, update? : (EmojiPickerState, @component.Dispatch, &@core.Ctx) -> EmojiPickerState?, swap? : (EmojiPickerInput) -> ((EmojiPickerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let emoji_picker_fields : Array[String]
+pub let emoji_picker_field_names : Array[String]
 
 pub let emoji_picker_global_style : String
 
-pub fn[S : ToJson] emoji_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let emoji_picker_schema_fingerprint : String
 
-pub fn[S] emoji_picker_mutate((EmojiPickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] emoji_picker_swap((EmojiPickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] emoji_picker_swap((EmojiPickerInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn emoji_picker_views() -> Map[String, @anode.View]
 
+pub fn emoji_picker_zero_args() -> Map[String, @core.Value]
+
 pub let entry_common_style : String
+
+pub fn entry_component(name? : String, views? : Map[String, @anode.View], init? : EntryState, common_style? : String, global_style? : String, update? : (EntryState, @component.Dispatch, &@core.Ctx) -> EntryState?, compute? : (EntryMethod) -> ((EntryState, Array[@core.Value]) -> @core.Value)?, swap? : (EntryInput) -> ((EntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] entry_compute((EntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
 pub let entry_editor_and_selector_common_style : String
 
-pub fn[S] entry_editor_and_selector_compute((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn entry_editor_and_selector_component(name? : String, views? : Map[String, @anode.View], init? : EntryEditorAndSelectorState, common_style? : String, global_style? : String, update? : (EntryEditorAndSelectorState, @component.Dispatch, &@core.Ctx) -> EntryEditorAndSelectorState?, swap? : (EntryEditorAndSelectorInput) -> ((EntryEditorAndSelectorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let entry_editor_and_selector_fields : Array[String]
+pub let entry_editor_and_selector_field_names : Array[String]
 
 pub let entry_editor_and_selector_global_style : String
 
-pub fn[S : ToJson] entry_editor_and_selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let entry_editor_and_selector_schema_fingerprint : String
 
-pub fn[S] entry_editor_and_selector_mutate((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] entry_editor_and_selector_swap((EntryEditorAndSelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] entry_editor_and_selector_swap((EntryEditorAndSelectorInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn entry_editor_and_selector_views() -> Map[String, @anode.View]
 
-pub let entry_fields : Array[String]
+pub fn entry_editor_and_selector_zero_args() -> Map[String, @core.Value]
+
+pub let entry_field_names : Array[String]
 
 pub let entry_global_style : String
 
-pub fn[S : ToJson] entry_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn entry_module() -> @component.ModuleDef
 
-pub fn[S] entry_mutate((EntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let entry_schema_fingerprint : String
 
-pub fn[S] entry_swap((EntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] entry_swap((EntryInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn entry_views() -> Map[String, @anode.View]
 
+pub fn entry_zero_args() -> Map[String, @core.Value]
+
 pub let event_modifiers_common_style : String
 
-pub fn[S] event_modifiers_compute((EventModifiersMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn event_modifiers_component(name? : String, views? : Map[String, @anode.View], init? : EventModifiersState, common_style? : String, global_style? : String, update? : (EventModifiersState, @component.Dispatch, &@core.Ctx) -> EventModifiersState?, swap? : (EventModifiersInput) -> ((EventModifiersState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let event_modifiers_fields : Array[String]
+pub let event_modifiers_field_names : Array[String]
 
 pub let event_modifiers_global_style : String
 
-pub fn[S : ToJson] event_modifiers_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn event_modifiers_module() -> @component.ModuleDef
 
-pub fn[S] event_modifiers_mutate((EventModifiersMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let event_modifiers_schema_fingerprint : String
 
-pub fn[S] event_modifiers_swap((EventModifiersMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] event_modifiers_swap((EventModifiersInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn event_modifiers_views() -> Map[String, @anode.View]
+
+pub fn event_modifiers_zero_args() -> Map[String, @core.Value]
 
 pub fn failing_request_handlers() -> Map[String, @component.RequestFn]
 
 pub let file_picker_common_style : String
 
+pub fn file_picker_component(name? : String, views? : Map[String, @anode.View], init? : FilePickerState, common_style? : String, global_style? : String, update? : (FilePickerState, @component.Dispatch, &@core.Ctx) -> FilePickerState?, compute? : (FilePickerMethod) -> ((FilePickerState, Array[@core.Value]) -> @core.Value)?, swap? : (FilePickerInput) -> ((FilePickerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
 pub fn[S] file_picker_compute((FilePickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let file_picker_fields : Array[String]
+pub let file_picker_field_names : Array[String]
 
 pub let file_picker_global_style : String
 
-pub fn[S : ToJson] file_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn file_picker_module() -> @component.ModuleDef
 
-pub fn[S] file_picker_mutate((FilePickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let file_picker_schema_fingerprint : String
 
-pub fn[S] file_picker_swap((FilePickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] file_picker_swap((FilePickerInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn file_picker_views() -> Map[String, @anode.View]
+
+pub fn file_picker_zero_args() -> Map[String, @core.Value]
 
 pub fn filter_paginate_module() -> @component.ModuleDef
 
 pub let greeting_common_style : String
 
-pub let greeting_fields : Array[String]
+pub fn greeting_component(name? : String, views? : Map[String, @anode.View], init? : GreetingState, common_style? : String, global_style? : String, update? : (GreetingState, @component.Dispatch, &@core.Ctx) -> GreetingState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let greeting_field_names : Array[String]
 
 pub let greeting_global_style : String
 
-pub fn[S : ToJson] greeting_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let greeting_schema_fingerprint : String
 
 pub fn greeting_views() -> Map[String, @anode.View]
 
+pub fn greeting_zero_args() -> Map[String, @core.Value]
+
+pub let html_lint_demo_field_names : Array[String]
+
+pub let html_lint_demo_schema_fingerprint : String
+
+pub fn html_lint_demo_zero_args() -> Map[String, @core.Value]
+
+pub let icon_gallery_field_names : Array[String]
+
+pub let icon_gallery_schema_fingerprint : String
+
+pub fn icon_gallery_zero_args() -> Map[String, @core.Value]
+
 pub let item_common_style : String
 
-pub fn[S] item_compute((ItemMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn item_component(name? : String, views? : Map[String, @anode.View], init? : ItemState, common_style? : String, global_style? : String, update? : (ItemState, @component.Dispatch, &@core.Ctx) -> ItemState?, swap? : (ItemInput) -> ((ItemState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let item_fields : Array[String]
+pub let item_field_names : Array[String]
 
 pub let item_global_style : String
 
-pub fn[S : ToJson] item_missing_fields(S, extra? : Array[String]) -> Array[String]
-
-pub fn[S] item_mutate((ItemMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let item_schema_fingerprint : String
 
 pub let item_select_common_style : String
 
-pub fn[S] item_select_compute((ItemSelectMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn item_select_component(name? : String, views? : Map[String, @anode.View], init? : ItemSelectState, common_style? : String, global_style? : String, update? : (ItemSelectState, @component.Dispatch, &@core.Ctx) -> ItemSelectState?, swap? : (ItemSelectInput) -> ((ItemSelectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let item_select_fields : Array[String]
+pub let item_select_field_names : Array[String]
 
 pub let item_select_global_style : String
 
-pub fn[S : ToJson] item_select_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let item_select_schema_fingerprint : String
 
-pub fn[S] item_select_mutate((ItemSelectMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] item_select_swap((ItemSelectMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] item_select_swap((ItemSelectInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn item_select_views() -> Map[String, @anode.View]
 
-pub fn[S] item_swap((ItemMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn item_select_zero_args() -> Map[String, @core.Value]
+
+pub fn[S] item_swap((ItemInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub let item_table_common_style : String
 
-pub let item_table_fields : Array[String]
+pub fn item_table_component(name? : String, views? : Map[String, @anode.View], init? : ItemTableState, common_style? : String, global_style? : String, update? : (ItemTableState, @component.Dispatch, &@core.Ctx) -> ItemTableState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let item_table_field_names : Array[String]
 
 pub let item_table_global_style : String
 
-pub fn[S : ToJson] item_table_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let item_table_schema_fingerprint : String
 
 pub fn item_table_views() -> Map[String, @anode.View]
 
+pub fn item_table_zero_args() -> Map[String, @core.Value]
+
 pub fn item_views() -> Map[String, @anode.View]
+
+pub fn item_zero_args() -> Map[String, @core.Value]
 
 pub fn items() -> Array[@core.Value]
 
 pub let items_common_style : String
 
-pub fn[S] items_compute((ItemsMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn items_component(name? : String, views? : Map[String, @anode.View], init? : ItemsState, common_style? : String, global_style? : String, update? : (ItemsState, @component.Dispatch, &@core.Ctx) -> ItemsState?, swap? : (ItemsInput) -> ((ItemsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let items_fields : Array[String]
+pub let items_field_names : Array[String]
 
 pub let items_global_style : String
 
-pub fn[S : ToJson] items_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let items_schema_fingerprint : String
 
-pub fn[S] items_mutate((ItemsMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] items_swap((ItemsMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] items_swap((ItemsInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn items_views() -> Map[String, @anode.View]
 
+pub fn items_zero_args() -> Map[String, @core.Value]
+
 pub let json_array_common_style : String
 
-pub fn[S] json_array_compute((JsonArrayMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_array_component(name? : String, views? : Map[String, @anode.View], init? : JsonArrayState, common_style? : String, global_style? : String, update? : (JsonArrayState, @component.Dispatch, &@core.Ctx) -> JsonArrayState?, swap? : (JsonArrayInput) -> ((JsonArrayState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_array_fields : Array[String]
+pub let json_array_field_names : Array[String]
 
 pub let json_array_global_style : String
 
-pub fn[S : ToJson] json_array_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_array_schema_fingerprint : String
 
-pub fn[S] json_array_mutate((JsonArrayMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_array_swap((JsonArrayMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_array_swap((JsonArrayInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_array_views() -> Map[String, @anode.View]
 
+pub fn json_array_zero_args() -> Map[String, @core.Value]
+
 pub let json_bool_common_style : String
 
-pub fn[S] json_bool_compute((JsonBoolMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_bool_component(name? : String, views? : Map[String, @anode.View], init? : JsonBoolState, common_style? : String, global_style? : String, update? : (JsonBoolState, @component.Dispatch, &@core.Ctx) -> JsonBoolState?, swap? : (JsonBoolInput) -> ((JsonBoolState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_bool_fields : Array[String]
+pub let json_bool_field_names : Array[String]
 
 pub let json_bool_global_style : String
 
-pub fn[S : ToJson] json_bool_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_bool_schema_fingerprint : String
 
-pub fn[S] json_bool_mutate((JsonBoolMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_bool_swap((JsonBoolMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_bool_swap((JsonBoolInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_bool_views() -> Map[String, @anode.View]
+
+pub fn json_bool_zero_args() -> Map[String, @core.Value]
 
 pub fn json_module() -> @component.ModuleDef
 
 pub let json_null_common_style : String
 
-pub let json_null_fields : Array[String]
+pub fn json_null_component(name? : String, views? : Map[String, @anode.View], init? : JsonNullState, common_style? : String, global_style? : String, update? : (JsonNullState, @component.Dispatch, &@core.Ctx) -> JsonNullState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let json_null_global_style : String
 
-pub fn[S : ToJson] json_null_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_null_schema_fingerprint : String
 
 pub fn json_null_views() -> Map[String, @anode.View]
 
+pub fn json_null_zero_args() -> Map[String, @core.Value]
+
 pub let json_number_common_style : String
 
-pub fn[S] json_number_compute((JsonNumberMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_number_component(name? : String, views? : Map[String, @anode.View], init? : JsonNumberState, common_style? : String, global_style? : String, update? : (JsonNumberState, @component.Dispatch, &@core.Ctx) -> JsonNumberState?, swap? : (JsonNumberInput) -> ((JsonNumberState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_number_fields : Array[String]
+pub let json_number_field_names : Array[String]
 
 pub let json_number_global_style : String
 
-pub fn[S : ToJson] json_number_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_number_schema_fingerprint : String
 
-pub fn[S] json_number_mutate((JsonNumberMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_number_swap((JsonNumberMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_number_swap((JsonNumberInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_number_views() -> Map[String, @anode.View]
 
+pub fn json_number_zero_args() -> Map[String, @core.Value]
+
 pub let json_object_common_style : String
 
-pub fn[S] json_object_compute((JsonObjectMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_object_component(name? : String, views? : Map[String, @anode.View], init? : JsonObjectState, common_style? : String, global_style? : String, update? : (JsonObjectState, @component.Dispatch, &@core.Ctx) -> JsonObjectState?, swap? : (JsonObjectInput) -> ((JsonObjectState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_object_fields : Array[String]
+pub let json_object_field_names : Array[String]
 
 pub let json_object_global_style : String
 
 pub let json_object_key_val_common_style : String
 
-pub fn[S] json_object_key_val_compute((JsonObjectKeyValMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_object_key_val_component(name? : String, views? : Map[String, @anode.View], init? : JsonObjectKeyValState, common_style? : String, global_style? : String, update? : (JsonObjectKeyValState, @component.Dispatch, &@core.Ctx) -> JsonObjectKeyValState?, swap? : (JsonObjectKeyValInput) -> ((JsonObjectKeyValState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_object_key_val_fields : Array[String]
+pub let json_object_key_val_field_names : Array[String]
 
 pub let json_object_key_val_global_style : String
 
-pub fn[S : ToJson] json_object_key_val_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_object_key_val_schema_fingerprint : String
 
-pub fn[S] json_object_key_val_mutate((JsonObjectKeyValMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_object_key_val_swap((JsonObjectKeyValMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_object_key_val_swap((JsonObjectKeyValInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_object_key_val_views() -> Map[String, @anode.View]
 
-pub fn[S : ToJson] json_object_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub fn json_object_key_val_zero_args() -> Map[String, @core.Value]
 
-pub fn[S] json_object_mutate((JsonObjectMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let json_object_schema_fingerprint : String
 
-pub fn[S] json_object_swap((JsonObjectMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_object_swap((JsonObjectInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_object_views() -> Map[String, @anode.View]
 
+pub fn json_object_zero_args() -> Map[String, @core.Value]
+
 pub let json_selector_common_style : String
 
-pub fn[S] json_selector_compute((JsonSelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
-
-pub let json_selector_fields : Array[String]
+pub fn json_selector_component(name? : String, views? : Map[String, @anode.View], init? : JsonSelectorState, common_style? : String, global_style? : String, update? : (JsonSelectorState, @component.Dispatch, &@core.Ctx) -> JsonSelectorState?, swap? : (JsonSelectorInput) -> ((JsonSelectorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let json_selector_global_style : String
 
-pub fn[S : ToJson] json_selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_selector_schema_fingerprint : String
 
-pub fn[S] json_selector_mutate((JsonSelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_selector_swap((JsonSelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_selector_swap((JsonSelectorInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_selector_views() -> Map[String, @anode.View]
 
+pub fn json_selector_zero_args() -> Map[String, @core.Value]
+
 pub let json_string_common_style : String
 
-pub fn[S] json_string_compute((JsonStringMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn json_string_component(name? : String, views? : Map[String, @anode.View], init? : JsonStringState, common_style? : String, global_style? : String, update? : (JsonStringState, @component.Dispatch, &@core.Ctx) -> JsonStringState?, swap? : (JsonStringInput) -> ((JsonStringState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let json_string_fields : Array[String]
+pub let json_string_field_names : Array[String]
 
 pub let json_string_global_style : String
 
-pub fn[S : ToJson] json_string_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let json_string_schema_fingerprint : String
 
-pub fn[S] json_string_mutate((JsonStringMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] json_string_swap((JsonStringMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] json_string_swap((JsonStringInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn json_string_views() -> Map[String, @anode.View]
+
+pub fn json_string_zero_args() -> Map[String, @core.Value]
+
+pub let lint_demo_field_names : Array[String]
+
+pub let lint_demo_schema_fingerprint : String
+
+pub fn lint_demo_zero_args() -> Map[String, @core.Value]
 
 pub fn lint_errors_module() -> @component.ModuleDef
 
 pub let list_and_filter_common_style : String
 
-pub fn[S] list_and_filter_compute((ListAndFilterMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn list_and_filter_component(name? : String, views? : Map[String, @anode.View], init? : ListAndFilterState, common_style? : String, global_style? : String, update? : (ListAndFilterState, @component.Dispatch, &@core.Ctx) -> ListAndFilterState?, swap? : (ListAndFilterInput) -> ((ListAndFilterState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (ListAndFilterWhen) -> ((ListAndFilterState, @core.Value, @core.Value, @core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let list_and_filter_fields : Array[String]
+pub let list_and_filter_field_names : Array[String]
 
 pub let list_and_filter_global_style : String
 
-pub fn[S : ToJson] list_and_filter_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn list_and_filter_module() -> @component.ModuleDef
 
-pub fn[S] list_and_filter_mutate((ListAndFilterMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let list_and_filter_schema_fingerprint : String
 
-pub fn[S] list_and_filter_swap((ListAndFilterMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] list_and_filter_swap((ListAndFilterInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn list_and_filter_views() -> Map[String, @anode.View]
 
+pub fn[S] list_and_filter_when((ListAndFilterWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn list_and_filter_zero_args() -> Map[String, @core.Value]
+
 pub let list_filter_enrich_common_style : String
 
-pub fn[S] list_filter_enrich_compute((ListFilterEnrichMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn list_filter_enrich_component(name? : String, views? : Map[String, @anode.View], init? : ListFilterEnrichState, common_style? : String, global_style? : String, update? : (ListFilterEnrichState, @component.Dispatch, &@core.Ctx) -> ListFilterEnrichState?, swap? : (ListFilterEnrichInput) -> ((ListFilterEnrichState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (ListFilterEnrichWhen) -> ((ListFilterEnrichState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich? : (ListFilterEnrichEnrich) -> ((ListFilterEnrichState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let list_filter_enrich_fields : Array[String]
+pub fn[S] list_filter_enrich_enrich((ListFilterEnrichEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let list_filter_enrich_field_names : Array[String]
 
 pub let list_filter_enrich_global_style : String
 
-pub fn[S : ToJson] list_filter_enrich_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn list_filter_enrich_module() -> @component.ModuleDef
 
-pub fn[S] list_filter_enrich_mutate((ListFilterEnrichMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let list_filter_enrich_schema_fingerprint : String
 
-pub fn[S] list_filter_enrich_swap((ListFilterEnrichMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] list_filter_enrich_swap((ListFilterEnrichInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn list_filter_enrich_views() -> Map[String, @anode.View]
 
+pub fn[S] list_filter_enrich_when((ListFilterEnrichWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
 pub let list_filter_enrich_with_common_style : String
 
-pub fn[S] list_filter_enrich_with_compute((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn list_filter_enrich_with_component(name? : String, views? : Map[String, @anode.View], init? : ListFilterEnrichWithState, common_style? : String, global_style? : String, update? : (ListFilterEnrichWithState, @component.Dispatch, &@core.Ctx) -> ListFilterEnrichWithState?, swap? : (ListFilterEnrichWithInput) -> ((ListFilterEnrichWithState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (ListFilterEnrichWithWhen) -> ((ListFilterEnrichWithState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich? : (ListFilterEnrichWithEnrich) -> ((ListFilterEnrichWithState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, loop_with? : (ListFilterEnrichWithLoopWith) -> ((ListFilterEnrichWithState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let list_filter_enrich_with_fields : Array[String]
+pub fn[S] list_filter_enrich_with_enrich((ListFilterEnrichWithEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let list_filter_enrich_with_field_names : Array[String]
 
 pub let list_filter_enrich_with_global_style : String
 
-pub fn[S : ToJson] list_filter_enrich_with_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub fn[S] list_filter_enrich_with_loop_with((ListFilterEnrichWithLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
 
 pub fn list_filter_enrich_with_module() -> @component.ModuleDef
 
-pub fn[S] list_filter_enrich_with_mutate((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let list_filter_enrich_with_schema_fingerprint : String
 
-pub fn[S] list_filter_enrich_with_swap((ListFilterEnrichWithMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] list_filter_enrich_with_swap((ListFilterEnrichWithInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn list_filter_enrich_with_views() -> Map[String, @anode.View]
 
+pub fn[S] list_filter_enrich_with_when((ListFilterEnrichWithWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn list_filter_enrich_with_zero_args() -> Map[String, @core.Value]
+
+pub fn list_filter_enrich_zero_args() -> Map[String, @core.Value]
+
 pub let list_iteration_common_style : String
 
-pub let list_iteration_fields : Array[String]
+pub fn list_iteration_component(name? : String, views? : Map[String, @anode.View], init? : ListIterationState, common_style? : String, global_style? : String, update? : (ListIterationState, @component.Dispatch, &@core.Ctx) -> ListIterationState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let list_iteration_field_names : Array[String]
 
 pub let list_iteration_global_style : String
 
-pub fn[S : ToJson] list_iteration_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn list_iteration_module() -> @component.ModuleDef
+
+pub let list_iteration_schema_fingerprint : String
 
 pub fn list_iteration_views() -> Map[String, @anode.View]
 
+pub fn list_iteration_zero_args() -> Map[String, @core.Value]
+
+pub let macro_named_slots_field_names : Array[String]
+
 pub fn macro_named_slots_module() -> @component.ModuleDef
+
+pub let macro_named_slots_schema_fingerprint : String
+
+pub fn macro_named_slots_zero_args() -> Map[String, @core.Value]
+
+pub let macro_params_field_names : Array[String]
 
 pub fn macro_params_module() -> @component.ModuleDef
 
+pub let macro_params_schema_fingerprint : String
+
+pub fn macro_params_zero_args() -> Map[String, @core.Value]
+
+pub let macro_slots_field_names : Array[String]
+
 pub fn macro_slots_module() -> @component.ModuleDef
 
+pub let macro_slots_schema_fingerprint : String
+
+pub fn macro_slots_zero_args() -> Map[String, @core.Value]
+
 pub fn macro_static_module() -> @component.ModuleDef
+
+pub let macros_no_schema_fingerprint : String
+
+pub fn macros_no_zero_args() -> Map[String, @core.Value]
 
 pub fn mathml_formula_module() -> @component.ModuleDef
 
 pub let minimum_viable_component_common_style : String
 
-pub let minimum_viable_component_fields : Array[String]
+pub fn minimum_viable_component_component(name? : String, views? : Map[String, @anode.View], init? : MinimumViableComponentState, common_style? : String, global_style? : String, update? : (MinimumViableComponentState, @component.Dispatch, &@core.Ctx) -> MinimumViableComponentState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let minimum_viable_component_global_style : String
 
-pub fn[S : ToJson] minimum_viable_component_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let minimum_viable_component_schema_fingerprint : String
 
 pub fn minimum_viable_component_views() -> Map[String, @anode.View]
+
+pub fn minimum_viable_component_zero_args() -> Map[String, @core.Value]
 
 pub fn minimum_viable_module() -> @component.ModuleDef
 
 pub let multiple_views_common_style : String
 
-pub let multiple_views_fields : Array[String]
+pub fn multiple_views_component(name? : String, views? : Map[String, @anode.View], init? : MultipleViewsState, common_style? : String, global_style? : String, update? : (MultipleViewsState, @component.Dispatch, &@core.Ctx) -> MultipleViewsState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let multiple_views_field_names : Array[String]
 
 pub let multiple_views_global_style : String
 
-pub fn[S : ToJson] multiple_views_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn multiple_views_module() -> @component.ModuleDef
+
+pub let multiple_views_schema_fingerprint : String
 
 pub fn multiple_views_views() -> Map[String, @anode.View]
 
+pub fn multiple_views_zero_args() -> Map[String, @core.Value]
+
+pub let naive_people_common_style : String
+
+pub fn naive_people_component(name? : String, views? : Map[String, @anode.View], init? : NaivePeopleState, common_style? : String, global_style? : String, update? : (NaivePeopleState, @component.Dispatch, &@core.Ctx) -> NaivePeopleState?, swap? : (NaivePeopleInput) -> ((NaivePeopleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (NaivePeopleWhen) -> ((NaivePeopleState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich_scope? : (NaivePeopleEnrichScope) -> ((NaivePeopleState) -> Map[String, @core.Value])?, loop_with? : (NaivePeopleLoopWith) -> ((NaivePeopleState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub fn[S] naive_people_enrich_scope((NaivePeopleEnrichScope) -> ((S) -> Map[String, @core.Value])?) -> Map[String, (S) -> Map[String, @core.Value]]
+
+pub let naive_people_field_names : Array[String]
+
+pub let naive_people_global_style : String
+
+pub fn[S] naive_people_loop_with((NaivePeopleLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
+
+pub let naive_people_schema_fingerprint : String
+
+pub fn[S] naive_people_swap((NaivePeopleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn naive_people_views() -> Map[String, @anode.View]
+
+pub fn[S] naive_people_when((NaivePeopleWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn naive_people_zero_args() -> Map[String, @core.Value]
+
+pub let nested_state_common_style : String
+
+pub fn nested_state_component(name? : String, views? : Map[String, @anode.View], init? : NestedStateState, common_style? : String, global_style? : String, update? : (NestedStateState, @component.Dispatch, &@core.Ctx) -> NestedStateState?, swap? : (NestedStateInput) -> ((NestedStateState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let nested_state_field_names : Array[String]
+
+pub let nested_state_global_style : String
+
+pub fn nested_state_module() -> @component.ModuleDef
+
+pub let nested_state_schema_fingerprint : String
+
+pub fn[S] nested_state_swap((NestedStateInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn nested_state_views() -> Map[String, @anode.View]
+
+pub fn nested_state_zero_args() -> Map[String, @core.Value]
+
 pub let page_common_style : String
 
-pub let page_fields : Array[String]
+pub fn page_component(name? : String, views? : Map[String, @anode.View], init? : PageState, common_style? : String, global_style? : String, update? : (PageState, @component.Dispatch, &@core.Ctx) -> PageState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let page_field_names : Array[String]
 
 pub let page_global_style : String
 
-pub fn[S : ToJson] page_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let page_schema_fingerprint : String
 
 pub fn page_views() -> Map[String, @anode.View]
 
+pub fn page_zero_args() -> Map[String, @core.Value]
+
 pub let pagination_common_style : String
+
+pub fn pagination_component(name? : String, views? : Map[String, @anode.View], init? : PaginationState, common_style? : String, global_style? : String, update? : (PaginationState, @component.Dispatch, &@core.Ctx) -> PaginationState?, compute? : (PaginationMethod) -> ((PaginationState, Array[@core.Value]) -> @core.Value)?, swap? : (PaginationInput) -> ((PaginationState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, loop_with? : (PaginationLoopWith) -> ((PaginationState, @core.Value, @component.LoopCtx) -> @component.LoopWith)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] pagination_compute((PaginationMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let pagination_fields : Array[String]
+pub let pagination_field_names : Array[String]
 
 pub let pagination_global_style : String
 
-pub fn[S : ToJson] pagination_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub fn[S] pagination_loop_with((PaginationLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
 
 pub fn pagination_module() -> @component.ModuleDef
 
-pub fn[S] pagination_mutate((PaginationMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let pagination_schema_fingerprint : String
 
-pub fn[S] pagination_swap((PaginationMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] pagination_swap((PaginationInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn pagination_views() -> Map[String, @anode.View]
 
+pub fn pagination_zero_args() -> Map[String, @core.Value]
+
 pub let panel_common_style : String
 
-pub let panel_fields : Array[String]
+pub fn panel_component(name? : String, views? : Map[String, @anode.View], init? : PanelState, common_style? : String, global_style? : String, update? : (PanelState, @component.Dispatch, &@core.Ctx) -> PanelState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let panel_field_names : Array[String]
 
 pub let panel_global_style : String
 
-pub fn[S : ToJson] panel_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let panel_schema_fingerprint : String
 
 pub fn panel_views() -> Map[String, @anode.View]
 
+pub fn panel_zero_args() -> Map[String, @core.Value]
+
 pub let person_common_style : String
 
-pub fn[S] person_compute((PersonMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn person_component(name? : String, views? : Map[String, @anode.View], init? : PersonState, common_style? : String, global_style? : String, update? : (PersonState, @component.Dispatch, &@core.Ctx) -> PersonState?, swap? : (PersonInput) -> ((PersonState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let person_fields : Array[String]
+pub let person_field_names : Array[String]
 
 pub let person_global_style : String
 
-pub fn[S : ToJson] person_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let person_schema_fingerprint : String
 
-pub fn[S] person_mutate((PersonMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] person_swap((PersonMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] person_swap((PersonInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn person_views() -> Map[String, @anode.View]
+
+pub fn person_zero_args() -> Map[String, @core.Value]
 
 pub fn personal_site_module() -> @component.ModuleDef
 
 pub let playlist_common_style : String
 
-pub fn[S] playlist_compute((PlaylistMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn playlist_component(name? : String, views? : Map[String, @anode.View], init? : PlaylistState, common_style? : String, global_style? : String, update? : (PlaylistState, @component.Dispatch, &@core.Ctx) -> PlaylistState?, swap? : (PlaylistInput) -> ((PlaylistState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let playlist_fields : Array[String]
+pub let playlist_field_names : Array[String]
 
 pub let playlist_global_style : String
 
-pub fn[S : ToJson] playlist_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let playlist_schema_fingerprint : String
 
-pub fn[S] playlist_mutate((PlaylistMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] playlist_swap((PlaylistMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] playlist_swap((PlaylistInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn playlist_views() -> Map[String, @anode.View]
 
+pub fn playlist_zero_args() -> Map[String, @core.Value]
+
 pub let ps_entry_common_style : String
+
+pub fn ps_entry_component(name? : String, views? : Map[String, @anode.View], init? : PsEntryState, common_style? : String, global_style? : String, update? : (PsEntryState, @component.Dispatch, &@core.Ctx) -> PsEntryState?, compute? : (PsEntryMethod) -> ((PsEntryState, Array[@core.Value]) -> @core.Value)?, enrich? : (PsEntryEnrich) -> ((PsEntryState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] ps_entry_compute((PsEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let ps_entry_fields : Array[String]
+pub fn[S] ps_entry_enrich((PsEntryEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let ps_entry_field_names : Array[String]
 
 pub let ps_entry_global_style : String
 
-pub fn[S : ToJson] ps_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
-
-pub fn[S] ps_entry_mutate((PsEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] ps_entry_swap((PsEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub let ps_entry_schema_fingerprint : String
 
 pub fn ps_entry_views() -> Map[String, @anode.View]
 
+pub fn ps_entry_zero_args() -> Map[String, @core.Value]
+
 pub let pseudo_x_demo_common_style : String
 
-pub let pseudo_x_demo_fields : Array[String]
+pub fn pseudo_x_demo_component(name? : String, views? : Map[String, @anode.View], init? : PseudoXDemoState, common_style? : String, global_style? : String, update? : (PseudoXDemoState, @component.Dispatch, &@core.Ctx) -> PseudoXDemoState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let pseudo_x_demo_field_names : Array[String]
 
 pub let pseudo_x_demo_global_style : String
 
-pub fn[S : ToJson] pseudo_x_demo_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let pseudo_x_demo_schema_fingerprint : String
 
 pub fn pseudo_x_demo_views() -> Map[String, @anode.View]
+
+pub fn pseudo_x_demo_zero_args() -> Map[String, @core.Value]
 
 pub fn pseudo_x_module() -> @component.ModuleDef
 
 pub let push_view_common_style : String
 
+pub fn push_view_component(name? : String, views? : Map[String, @anode.View], init? : PushViewState, common_style? : String, global_style? : String, update? : (PushViewState, @component.Dispatch, &@core.Ctx) -> PushViewState?, compute? : (PushViewMethod) -> ((PushViewState, Array[@core.Value]) -> @core.Value)?, swap? : (PushViewInput) -> ((PushViewState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (PushViewWhen) -> ((PushViewState, @core.Value, @core.Value, @core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
 pub fn[S] push_view_compute((PushViewMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let push_view_fields : Array[String]
+pub let push_view_field_names : Array[String]
 
 pub let push_view_global_style : String
 
-pub fn[S : ToJson] push_view_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn push_view_module() -> @component.ModuleDef
 
-pub fn[S] push_view_mutate((PushViewMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let push_view_schema_fingerprint : String
 
-pub fn[S] push_view_swap((PushViewMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] push_view_swap((PushViewInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn push_view_views() -> Map[String, @anode.View]
 
+pub fn[S] push_view_when((PushViewWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn push_view_zero_args() -> Map[String, @core.Value]
+
 pub let quadratic_common_style : String
+
+pub fn quadratic_component(name? : String, views? : Map[String, @anode.View], init? : QuadraticState, common_style? : String, global_style? : String, update? : (QuadraticState, @component.Dispatch, &@core.Ctx) -> QuadraticState?, compute? : (QuadraticMethod) -> ((QuadraticState, Array[@core.Value]) -> @core.Value)?, swap? : (QuadraticInput) -> ((QuadraticState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] quadratic_compute((QuadraticMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let quadratic_fields : Array[String]
+pub let quadratic_field_names : Array[String]
 
 pub let quadratic_global_style : String
 
-pub fn[S : ToJson] quadratic_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let quadratic_schema_fingerprint : String
 
-pub fn[S] quadratic_mutate((QuadraticMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] quadratic_swap((QuadraticMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] quadratic_swap((QuadraticInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn quadratic_views() -> Map[String, @anode.View]
+
+pub fn quadratic_zero_args() -> Map[String, @core.Value]
 
 pub fn render_child_module() -> @component.ModuleDef
 
 pub let render_with_scope_common_style : String
 
-pub fn[S] render_with_scope_compute((RenderWithScopeMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn render_with_scope_component(name? : String, views? : Map[String, @anode.View], init? : RenderWithScopeState, common_style? : String, global_style? : String, update? : (RenderWithScopeState, @component.Dispatch, &@core.Ctx) -> RenderWithScopeState?, swap? : (RenderWithScopeInput) -> ((RenderWithScopeState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, enrich_scope? : (RenderWithScopeEnrichScope) -> ((RenderWithScopeState) -> Map[String, @core.Value])?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let render_with_scope_fields : Array[String]
+pub fn[S] render_with_scope_enrich_scope((RenderWithScopeEnrichScope) -> ((S) -> Map[String, @core.Value])?) -> Map[String, (S) -> Map[String, @core.Value]]
+
+pub let render_with_scope_field_names : Array[String]
 
 pub let render_with_scope_global_style : String
 
-pub fn[S : ToJson] render_with_scope_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn render_with_scope_module() -> @component.ModuleDef
 
-pub fn[S] render_with_scope_mutate((RenderWithScopeMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let render_with_scope_schema_fingerprint : String
 
-pub fn[S] render_with_scope_swap((RenderWithScopeMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] render_with_scope_swap((RenderWithScopeInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn render_with_scope_views() -> Map[String, @anode.View]
 
+pub fn render_with_scope_zero_args() -> Map[String, @core.Value]
+
 pub let request_example_common_style : String
 
-pub fn[S] request_example_compute((RequestExampleMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn request_example_component(name? : String, views? : Map[String, @anode.View], init? : RequestExampleState, common_style? : String, global_style? : String, update? : (RequestExampleState, @component.Dispatch, &@core.Ctx) -> RequestExampleState?, swap? : (RequestExampleInput) -> ((RequestExampleState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (RequestExampleWhen) -> ((RequestExampleState, @core.Value, @core.Value, @core.Value) -> Bool)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let request_example_fields : Array[String]
+pub let request_example_field_names : Array[String]
 
 pub let request_example_global_style : String
 
-pub fn[S : ToJson] request_example_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let request_example_schema_fingerprint : String
 
-pub fn[S] request_example_mutate((RequestExampleMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] request_example_swap((RequestExampleMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] request_example_swap((RequestExampleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn request_example_views() -> Map[String, @anode.View]
+
+pub fn[S] request_example_when((RequestExampleWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn request_example_zero_args() -> Map[String, @core.Value]
 
 pub fn request_module(requests? : Map[String, @component.RequestFn]) -> @component.ModuleDef
 
 pub let root_common_style : String
 
+pub fn root_component(name? : String, views? : Map[String, @anode.View], init? : RootState, common_style? : String, global_style? : String, update? : (RootState, @component.Dispatch, &@core.Ctx) -> RootState?, compute? : (RootMethod) -> ((RootState, Array[@core.Value]) -> @core.Value)?, swap? : (RootInput) -> ((RootState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (RootWhen) -> ((RootState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich? : (RootEnrich) -> ((RootState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
 pub fn[S] root_compute((RootMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let root_fields : Array[String]
+pub fn[S] root_enrich((RootEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let root_field_names : Array[String]
 
 pub let root_global_style : String
 
-pub fn[S : ToJson] root_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let root_schema_fingerprint : String
 
-pub fn[S] root_mutate((RootMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] root_swap((RootMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] root_swap((RootInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn root_views() -> Map[String, @anode.View]
 
+pub fn[S] root_when((RootWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
+pub fn root_zero_args() -> Map[String, @core.Value]
+
+pub let scoped_style_demo_field_names : Array[String]
+
+pub let scoped_style_demo_schema_fingerprint : String
+
+pub fn scoped_style_demo_zero_args() -> Map[String, @core.Value]
+
 pub let select_option_common_style : String
 
-pub let select_option_fields : Array[String]
+pub fn select_option_component(name? : String, views? : Map[String, @anode.View], init? : SelectOptionState, common_style? : String, global_style? : String, update? : (SelectOptionState, @component.Dispatch, &@core.Ctx) -> SelectOptionState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let select_option_field_names : Array[String]
 
 pub let select_option_global_style : String
 
-pub fn[S : ToJson] select_option_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let select_option_schema_fingerprint : String
 
 pub fn select_option_views() -> Map[String, @anode.View]
 
+pub fn select_option_zero_args() -> Map[String, @core.Value]
+
 pub let selector_common_style : String
 
-pub fn[S] selector_compute((SelectorMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn selector_component(name? : String, views? : Map[String, @anode.View], init? : SelectorState, common_style? : String, global_style? : String, update? : (SelectorState, @component.Dispatch, &@core.Ctx) -> SelectorState?, swap? : (SelectorInput) -> ((SelectorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let selector_entry_common_style : String
 
-pub fn[S] selector_entry_compute((SelectorEntryMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn selector_entry_component(name? : String, views? : Map[String, @anode.View], init? : SelectorEntryState, common_style? : String, global_style? : String, update? : (SelectorEntryState, @component.Dispatch, &@core.Ctx) -> SelectorEntryState?, swap? : (SelectorEntryInput) -> ((SelectorEntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let selector_entry_fields : Array[String]
+pub let selector_entry_field_names : Array[String]
 
 pub let selector_entry_global_style : String
 
-pub fn[S : ToJson] selector_entry_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let selector_entry_schema_fingerprint : String
 
-pub fn[S] selector_entry_mutate((SelectorEntryMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] selector_entry_swap((SelectorEntryMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] selector_entry_swap((SelectorEntryInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn selector_entry_views() -> Map[String, @anode.View]
 
-pub let selector_fields : Array[String]
+pub fn selector_entry_zero_args() -> Map[String, @core.Value]
+
+pub let selector_field_names : Array[String]
 
 pub let selector_global_style : String
 
-pub fn[S : ToJson] selector_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let selector_schema_fingerprint : String
 
-pub fn[S] selector_mutate((SelectorMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] selector_swap((SelectorMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] selector_swap((SelectorInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn selector_views() -> Map[String, @anode.View]
 
+pub fn selector_zero_args() -> Map[String, @core.Value]
+
 pub let send_receive_common_style : String
 
-pub fn[S] send_receive_compute((SendReceiveMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn send_receive_component(name? : String, views? : Map[String, @anode.View], init? : SendReceiveState, common_style? : String, global_style? : String, update? : (SendReceiveState, @component.Dispatch, &@core.Ctx) -> SendReceiveState?, swap? : (SendReceiveInput) -> ((SendReceiveState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let send_receive_fields : Array[String]
+pub let send_receive_field_names : Array[String]
 
 pub let send_receive_global_style : String
 
-pub fn[S : ToJson] send_receive_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn send_receive_module() -> @component.ModuleDef
 
-pub fn[S] send_receive_mutate((SendReceiveMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let send_receive_schema_fingerprint : String
 
-pub fn[S] send_receive_swap((SendReceiveMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] send_receive_swap((SendReceiveInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn send_receive_views() -> Map[String, @anode.View]
 
+pub fn send_receive_zero_args() -> Map[String, @core.Value]
+
 pub let seq_item_access_common_style : String
+
+pub fn seq_item_access_component(name? : String, views? : Map[String, @anode.View], init? : SeqItemAccessState, common_style? : String, global_style? : String, update? : (SeqItemAccessState, @component.Dispatch, &@core.Ctx) -> SeqItemAccessState?, compute? : (SeqItemAccessMethod) -> ((SeqItemAccessState, Array[@core.Value]) -> @core.Value)?, swap? : (SeqItemAccessInput) -> ((SeqItemAccessState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] seq_item_access_compute((SeqItemAccessMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let seq_item_access_fields : Array[String]
+pub let seq_item_access_field_names : Array[String]
 
 pub let seq_item_access_global_style : String
 
-pub fn[S : ToJson] seq_item_access_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn seq_item_access_module() -> @component.ModuleDef
 
-pub fn[S] seq_item_access_mutate((SeqItemAccessMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let seq_item_access_schema_fingerprint : String
 
-pub fn[S] seq_item_access_swap((SeqItemAccessMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] seq_item_access_swap((SeqItemAccessInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn seq_item_access_views() -> Map[String, @anode.View]
 
+pub fn seq_item_access_zero_args() -> Map[String, @core.Value]
+
+pub let shared_people_common_style : String
+
+pub fn[S] shared_people_enrich_scope((SharedPeopleEnrichScope) -> ((S) -> Map[String, @core.Value])?) -> Map[String, (S) -> Map[String, @core.Value]]
+
+pub let shared_people_fields : Array[String]
+
+pub let shared_people_global_style : String
+
+pub fn[S] shared_people_loop_with((SharedPeopleLoopWith) -> ((S, @core.Value, @component.LoopCtx) -> @component.LoopWith)?) -> Map[String, (S, @core.Value, @component.LoopCtx) -> @component.LoopWith]
+
+pub fn[S : ToJson] shared_people_missing_fields(S, extra? : Array[String]) -> Array[String]
+
+pub fn[S] shared_people_swap((SharedPeopleInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+
+pub fn shared_people_views() -> Map[String, @anode.View]
+
+pub fn[S] shared_people_when((SharedPeopleWhen) -> ((S, @core.Value, @core.Value, @core.Value) -> Bool)?) -> Map[String, (S, @core.Value, @core.Value, @core.Value) -> Bool]
+
 pub let sheet_common_style : String
 
-pub fn[S] sheet_compute((SheetMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn sheet_component(name? : String, views? : Map[String, @anode.View], init? : SheetState, common_style? : String, global_style? : String, update? : (SheetState, @component.Dispatch, &@core.Ctx) -> SheetState?, swap? : (SheetInput) -> ((SheetState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let sheet_fields : Array[String]
+pub let sheet_field_names : Array[String]
 
 pub let sheet_global_style : String
 
-pub fn[S : ToJson] sheet_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let sheet_schema_fingerprint : String
 
-pub fn[S] sheet_mutate((SheetMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] sheet_swap((SheetMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] sheet_swap((SheetInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn sheet_views() -> Map[String, @anode.View]
 
+pub fn sheet_zero_args() -> Map[String, @core.Value]
+
 pub let show_hide_common_style : String
+
+pub fn show_hide_component(name? : String, views? : Map[String, @anode.View], init? : ShowHideState, common_style? : String, global_style? : String, update? : (ShowHideState, @component.Dispatch, &@core.Ctx) -> ShowHideState?, compute? : (ShowHideMethod) -> ((ShowHideState, Array[@core.Value]) -> @core.Value)?, swap? : (ShowHideInput) -> ((ShowHideState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] show_hide_compute((ShowHideMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let show_hide_fields : Array[String]
+pub let show_hide_field_names : Array[String]
 
 pub let show_hide_global_style : String
 
-pub fn[S : ToJson] show_hide_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn show_hide_module() -> @component.ModuleDef
 
-pub fn[S] show_hide_mutate((ShowHideMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let show_hide_schema_fingerprint : String
 
-pub fn[S] show_hide_swap((ShowHideMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] show_hide_swap((ShowHideInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn show_hide_views() -> Map[String, @anode.View]
 
+pub fn show_hide_zero_args() -> Map[String, @core.Value]
+
 pub let song_common_style : String
 
-pub let song_fields : Array[String]
+pub fn song_component(name? : String, views? : Map[String, @anode.View], init? : SongState, common_style? : String, global_style? : String, update? : (SongState, @component.Dispatch, &@core.Ctx) -> SongState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let song_field_names : Array[String]
 
 pub let song_global_style : String
 
-pub fn[S : ToJson] song_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let song_schema_fingerprint : String
 
 pub fn song_views() -> Map[String, @anode.View]
 
+pub fn song_zero_args() -> Map[String, @core.Value]
+
 pub let static_view_component_common_style : String
 
-pub let static_view_component_fields : Array[String]
+pub fn static_view_component_component(name? : String, views? : Map[String, @anode.View], init? : StaticViewComponentState, common_style? : String, global_style? : String, update? : (StaticViewComponentState, @component.Dispatch, &@core.Ctx) -> StaticViewComponentState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let static_view_component_global_style : String
 
-pub fn[S : ToJson] static_view_component_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let static_view_component_schema_fingerprint : String
 
 pub fn static_view_component_views() -> Map[String, @anode.View]
+
+pub fn static_view_component_zero_args() -> Map[String, @core.Value]
 
 pub fn static_view_module() -> @component.ModuleDef
 
 pub let status_common_style : String
 
-pub let status_fields : Array[String]
+pub fn status_component(name? : String, views? : Map[String, @anode.View], init? : StatusState, common_style? : String, global_style? : String, update? : (StatusState, @component.Dispatch, &@core.Ctx) -> StatusState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let status_field_names : Array[String]
 
 pub let status_global_style : String
 
-pub fn[S : ToJson] status_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let status_schema_fingerprint : String
 
 pub fn status_views() -> Map[String, @anode.View]
 
+pub fn status_zero_args() -> Map[String, @core.Value]
+
 pub let strategies_common_style : String
 
-pub let strategies_fields : Array[String]
+pub fn strategies_component(name? : String, views? : Map[String, @anode.View], init? : StrategiesState, common_style? : String, global_style? : String, update? : (StrategiesState, @component.Dispatch, &@core.Ctx) -> StrategiesState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let strategies_field_names : Array[String]
 
 pub let strategies_global_style : String
 
-pub fn[S : ToJson] strategies_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let strategies_schema_fingerprint : String
 
 pub fn strategies_views() -> Map[String, @anode.View]
 
+pub fn strategies_zero_args() -> Map[String, @core.Value]
+
 pub let styles_example_common_style : String
 
-pub let styles_example_fields : Array[String]
+pub fn styles_example_component(name? : String, views? : Map[String, @anode.View], init? : StylesExampleState, common_style? : String, global_style? : String, update? : (StylesExampleState, @component.Dispatch, &@core.Ctx) -> StylesExampleState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let styles_example_global_style : String
 
-pub fn[S : ToJson] styles_example_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub let styles_example_root_common_style : String
 
-pub let styles_example_root_fields : Array[String]
+pub fn styles_example_root_component(name? : String, views? : Map[String, @anode.View], init? : StylesExampleRootState, common_style? : String, global_style? : String, update? : (StylesExampleRootState, @component.Dispatch, &@core.Ctx) -> StylesExampleRootState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let styles_example_root_field_names : Array[String]
 
 pub let styles_example_root_global_style : String
 
-pub fn[S : ToJson] styles_example_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let styles_example_root_schema_fingerprint : String
 
 pub fn styles_example_root_views() -> Map[String, @anode.View]
 
+pub fn styles_example_root_zero_args() -> Map[String, @core.Value]
+
+pub let styles_example_schema_fingerprint : String
+
 pub fn styles_example_views() -> Map[String, @anode.View]
+
+pub fn styles_example_zero_args() -> Map[String, @core.Value]
 
 pub fn styles_module() -> @component.ModuleDef
 
@@ -925,65 +1181,83 @@ pub fn svg_interactive_module() -> @component.ModuleDef
 
 pub let swatch_picker_common_style : String
 
-pub fn[S] swatch_picker_compute((SwatchPickerMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn swatch_picker_component(name? : String, views? : Map[String, @anode.View], init? : SwatchPickerState, common_style? : String, global_style? : String, update? : (SwatchPickerState, @component.Dispatch, &@core.Ctx) -> SwatchPickerState?, swap? : (SwatchPickerInput) -> ((SwatchPickerState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, enrich? : (SwatchPickerEnrich) -> ((SwatchPickerState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let swatch_picker_fields : Array[String]
+pub fn[S] swatch_picker_enrich((SwatchPickerEnrich) -> ((S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?) -> Map[String, (S, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit]
+
+pub let swatch_picker_field_names : Array[String]
 
 pub let swatch_picker_global_style : String
 
-pub fn[S : ToJson] swatch_picker_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let swatch_picker_schema_fingerprint : String
 
-pub fn[S] swatch_picker_mutate((SwatchPickerMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] swatch_picker_swap((SwatchPickerMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] swatch_picker_swap((SwatchPickerInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn swatch_picker_views() -> Map[String, @anode.View]
 
+pub fn swatch_picker_zero_args() -> Map[String, @core.Value]
+
 pub let tabbed_u_i_common_style : String
 
-pub fn[S] tabbed_u_i_compute((TabbedUIMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
+pub fn tabbed_u_i_component(name? : String, views? : Map[String, @anode.View], init? : TabbedUIState, common_style? : String, global_style? : String, update? : (TabbedUIState, @component.Dispatch, &@core.Ctx) -> TabbedUIState?, swap? : (TabbedUIInput) -> ((TabbedUIState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let tabbed_u_i_fields : Array[String]
+pub let tabbed_u_i_field_names : Array[String]
 
 pub let tabbed_u_i_global_style : String
 
-pub fn[S : ToJson] tabbed_u_i_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let tabbed_u_i_schema_fingerprint : String
 
-pub fn[S] tabbed_u_i_mutate((TabbedUIMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] tabbed_u_i_swap((TabbedUIMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] tabbed_u_i_swap((TabbedUIInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn tabbed_u_i_views() -> Map[String, @anode.View]
+
+pub fn tabbed_u_i_zero_args() -> Map[String, @core.Value]
 
 pub fn tabbed_ui_module() -> @component.ModuleDef
 
 pub let table_row_common_style : String
 
-pub let table_row_fields : Array[String]
+pub fn table_row_component(name? : String, views? : Map[String, @anode.View], init? : TableRowState, common_style? : String, global_style? : String, update? : (TableRowState, @component.Dispatch, &@core.Ctx) -> TableRowState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let table_row_field_names : Array[String]
 
 pub let table_row_global_style : String
 
-pub fn[S : ToJson] table_row_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let table_row_schema_fingerprint : String
 
 pub fn table_row_views() -> Map[String, @anode.View]
 
+pub fn table_row_zero_args() -> Map[String, @core.Value]
+
 pub let text_directive_common_style : String
+
+pub fn text_directive_component(name? : String, views? : Map[String, @anode.View], init? : TextDirectiveState, common_style? : String, global_style? : String, update? : (TextDirectiveState, @component.Dispatch, &@core.Ctx) -> TextDirectiveState?, compute? : (TextDirectiveMethod) -> ((TextDirectiveState, Array[@core.Value]) -> @core.Value)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] text_directive_compute((TextDirectiveMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let text_directive_fields : Array[String]
+pub let text_directive_field_names : Array[String]
 
 pub let text_directive_global_style : String
 
-pub fn[S : ToJson] text_directive_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn text_directive_module() -> @component.ModuleDef
 
-pub fn[S] text_directive_mutate((TextDirectiveMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] text_directive_swap((TextDirectiveMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub let text_directive_schema_fingerprint : String
 
 pub fn text_directive_views() -> Map[String, @anode.View]
+
+pub fn text_directive_zero_args() -> Map[String, @core.Value]
+
+pub let tm_item_field_names : Array[String]
+
+pub let tm_item_schema_fingerprint : String
+
+pub fn tm_item_zero_args() -> Map[String, @core.Value]
+
+pub let tm_items_field_names : Array[String]
+
+pub let tm_items_schema_fingerprint : String
+
+pub fn tm_items_zero_args() -> Map[String, @core.Value]
 
 pub fn todo_macros_module() -> @component.ModuleDef
 
@@ -991,99 +1265,245 @@ pub fn todo_module() -> @component.ModuleDef
 
 pub let toolbar_common_style : String
 
-pub let toolbar_fields : Array[String]
+pub fn toolbar_component(name? : String, views? : Map[String, @anode.View], init? : ToolbarState, common_style? : String, global_style? : String, update? : (ToolbarState, @component.Dispatch, &@core.Ctx) -> ToolbarState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let toolbar_global_style : String
 
-pub fn[S : ToJson] toolbar_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let toolbar_schema_fingerprint : String
 
 pub fn toolbar_views() -> Map[String, @anode.View]
 
+pub fn toolbar_zero_args() -> Map[String, @core.Value]
+
 pub let traffic_light_common_style : String
+
+pub fn traffic_light_component(name? : String, views? : Map[String, @anode.View], init? : TrafficLightState, common_style? : String, global_style? : String, update? : (TrafficLightState, @component.Dispatch, &@core.Ctx) -> TrafficLightState?, compute? : (TrafficLightMethod) -> ((TrafficLightState, Array[@core.Value]) -> @core.Value)?, swap? : (TrafficLightInput) -> ((TrafficLightState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] traffic_light_compute((TrafficLightMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let traffic_light_fields : Array[String]
+pub let traffic_light_field_names : Array[String]
 
 pub let traffic_light_global_style : String
 
-pub fn[S : ToJson] traffic_light_missing_fields(S, extra? : Array[String]) -> Array[String]
-
 pub fn traffic_light_module() -> @component.ModuleDef
 
-pub fn[S] traffic_light_mutate((TrafficLightMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
+pub let traffic_light_schema_fingerprint : String
 
-pub fn[S] traffic_light_swap((TrafficLightMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] traffic_light_swap((TrafficLightInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn traffic_light_views() -> Map[String, @anode.View]
 
+pub fn traffic_light_zero_args() -> Map[String, @core.Value]
+
 pub let tree_item_common_style : String
+
+pub fn tree_item_component(name? : String, views? : Map[String, @anode.View], init? : TreeItemState, common_style? : String, global_style? : String, update? : (TreeItemState, @component.Dispatch, &@core.Ctx) -> TreeItemState?, compute? : (TreeItemMethod) -> ((TreeItemState, Array[@core.Value]) -> @core.Value)?, swap? : (TreeItemInput) -> ((TreeItemState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub fn[S] tree_item_compute((TreeItemMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let tree_item_fields : Array[String]
+pub let tree_item_field_names : Array[String]
 
 pub let tree_item_global_style : String
 
-pub fn[S : ToJson] tree_item_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let tree_item_schema_fingerprint : String
 
-pub fn[S] tree_item_mutate((TreeItemMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] tree_item_swap((TreeItemMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub fn[S] tree_item_swap((TreeItemInput) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
 
 pub fn tree_item_views() -> Map[String, @anode.View]
+
+pub fn tree_item_zero_args() -> Map[String, @core.Value]
 
 pub fn tree_module() -> @component.ModuleDef
 
 pub let tree_root_common_style : String
 
-pub let tree_root_fields : Array[String]
+pub fn tree_root_component(name? : String, views? : Map[String, @anode.View], init? : TreeRootState, common_style? : String, global_style? : String, update? : (TreeRootState, @component.Dispatch, &@core.Ctx) -> TreeRootState?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let tree_root_field_names : Array[String]
 
 pub let tree_root_global_style : String
 
-pub fn[S : ToJson] tree_root_missing_fields(S, extra? : Array[String]) -> Array[String]
+pub let tree_root_schema_fingerprint : String
 
 pub fn tree_root_views() -> Map[String, @anode.View]
 
+pub fn tree_root_zero_args() -> Map[String, @core.Value]
+
 pub fn visual_wasm_module() -> @component.ModuleDef
+
+pub let vw_container_field_names : Array[String]
+
+pub let vw_container_schema_fingerprint : String
+
+pub fn vw_container_zero_args() -> Map[String, @core.Value]
+
+pub let vw_empty_schema_fingerprint : String
+
+pub fn vw_empty_zero_args() -> Map[String, @core.Value]
+
+pub let vw_if_field_names : Array[String]
+
+pub let vw_if_schema_fingerprint : String
+
+pub fn vw_if_zero_args() -> Map[String, @core.Value]
+
+pub let vw_imm_field_names : Array[String]
+
+pub let vw_imm_schema_fingerprint : String
+
+pub fn vw_imm_zero_args() -> Map[String, @core.Value]
+
+pub let vw_memory_field_names : Array[String]
+
+pub let vw_memory_schema_fingerprint : String
+
+pub fn vw_memory_zero_args() -> Map[String, @core.Value]
+
+pub let vw_picker_field_names : Array[String]
+
+pub let vw_picker_schema_fingerprint : String
+
+pub fn vw_picker_zero_args() -> Map[String, @core.Value]
+
+pub let vw_section_field_names : Array[String]
+
+pub let vw_section_schema_fingerprint : String
+
+pub fn vw_section_zero_args() -> Map[String, @core.Value]
+
+pub let vw_types_field_names : Array[String]
+
+pub let vw_types_schema_fingerprint : String
+
+pub fn vw_types_zero_args() -> Map[String, @core.Value]
 
 pub fn web_component_module() -> @component.ModuleDef
 
 pub let workspace_common_style : String
 
+pub fn workspace_component(name? : String, views? : Map[String, @anode.View], init? : WorkspaceState, common_style? : String, global_style? : String, update? : (WorkspaceState, @component.Dispatch, &@core.Ctx) -> WorkspaceState?, compute? : (WorkspaceMethod) -> ((WorkspaceState, Array[@core.Value]) -> @core.Value)?, specs? : Map[String, @component.FieldSpec], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
 pub fn[S] workspace_compute((WorkspaceMethod) -> ((S, Array[@core.Value]) -> @core.Value)?) -> Map[String, (S, Array[@core.Value]) -> @core.Value]
 
-pub let workspace_fields : Array[String]
+pub let workspace_field_names : Array[String]
 
 pub let workspace_global_style : String
 
-pub fn[S : ToJson] workspace_missing_fields(S, extra? : Array[String]) -> Array[String]
-
-pub fn[S] workspace_mutate((WorkspaceMethod) -> ((S, Array[@core.Value]) -> S)?) -> Map[String, (S, Array[@core.Value]) -> S]
-
-pub fn[S] workspace_swap((WorkspaceMethod) -> ((S, Array[@core.Value], &@core.Ctx) -> @core.Value?)?) -> Map[String, (S, Array[@core.Value], &@core.Ctx) -> @core.Value?]
+pub let workspace_schema_fingerprint : String
 
 pub fn workspace_views() -> Map[String, @anode.View]
+
+pub fn workspace_zero_args() -> Map[String, @core.Value]
 
 // Errors
 
 // Types and methods
+pub(all) enum AltUrlField {
+  Label
+  Url
+} derive(Eq, @debug.Debug)
+pub fn AltUrlField::kind(Self) -> @core.FieldKind
+pub fn AltUrlField::name(Self) -> String
+
+pub(all) struct AltUrlState {
+  label : String
+  url : String
+}
+
 pub(all) enum AltUrlView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn AltUrlView::name(Self) -> String
 
-pub(all) enum AttributeBindingMethod {
+pub(all) enum AttributeBindingField {
+  Str
+  Num
+  Bool
+  NotSet
+} derive(Eq, @debug.Debug)
+pub fn AttributeBindingField::kind(Self) -> @core.FieldKind
+pub fn AttributeBindingField::name(Self) -> String
+
+pub(all) enum AttributeBindingInput {
   SetBool
   SetRawNumber
   SetStr
 } derive(Eq, @debug.Debug)
-pub fn AttributeBindingMethod::name(Self) -> String
+pub fn AttributeBindingInput::name(Self) -> String
+pub fn AttributeBindingInput::parse(String) -> Self?
+
+pub(all) enum AttributeBindingMsg {
+  SetBool(String)
+  SetRawNumber(String)
+  SetStr(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn AttributeBindingMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct AttributeBindingState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @core.Value
+}
 
 pub(all) enum AttributeBindingView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn AttributeBindingView::name(Self) -> String
+
+pub(all) enum BarChartEnrich {
+  Bar
+} derive(Eq, @debug.Debug)
+pub fn BarChartEnrich::name(Self) -> String
+
+pub(all) enum BarChartField {
+  Values
+} derive(Eq, @debug.Debug)
+pub fn BarChartField::kind(Self) -> @core.FieldKind
+pub fn BarChartField::name(Self) -> String
+
+pub(all) enum BarChartInput {
+  AddBar
+  Randomize
+  RemoveBar
+} derive(Eq, @debug.Debug)
+pub fn BarChartInput::name(Self) -> String
+pub fn BarChartInput::parse(String) -> Self?
+
+pub(all) enum BarChartLoopWith {
+  Layout
+} derive(Eq, @debug.Debug)
+pub fn BarChartLoopWith::name(Self) -> String
+
+pub(all) enum BarChartMsg {
+  AddBar
+  Randomize
+  RemoveBar
+  Unknown(String, Array[@core.Value])
+}
+pub fn BarChartMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct BarChartState {
+  values : Array[@core.Value]
+}
+
+pub(all) enum BarChartView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn BarChartView::name(Self) -> String
+
+pub(all) enum ComposabilityField {
+  ActiveSection
+  Todo
+  Json
+  Tree
+  PersonalSite
+  VisualWasm
+  Dnd
+} derive(Eq, @debug.Debug)
+pub fn ComposabilityField::kind(Self) -> @core.FieldKind
+pub fn ComposabilityField::name(Self) -> String
 
 pub(all) enum ComposabilityId {
   TabDnd
@@ -1096,91 +1516,219 @@ pub(all) enum ComposabilityId {
 pub fn ComposabilityId::id(Self) -> String
 pub fn ComposabilityId::selector(Self) -> String
 
-pub(all) enum ComposabilityMethod {
+pub(all) enum ComposabilityInput {
   SetActiveSection
 } derive(Eq, @debug.Debug)
-pub fn ComposabilityMethod::name(Self) -> String
+pub fn ComposabilityInput::name(Self) -> String
+pub fn ComposabilityInput::parse(String) -> Self?
+
+pub(all) enum ComposabilityMsg {
+  SetActiveSection(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ComposabilityMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ComposabilityState {
+  activeSection : String
+}
 
 pub(all) enum ComposabilityView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ComposabilityView::name(Self) -> String
 
-pub(all) enum ConditionalAttributesMethod {
+pub(all) enum ConditionalAttributesField {
+  IsActive
+} derive(Eq, @debug.Debug)
+pub fn ConditionalAttributesField::kind(Self) -> @core.FieldKind
+pub fn ConditionalAttributesField::name(Self) -> String
+
+pub(all) enum ConditionalAttributesInput {
   ToggleIsActive
 } derive(Eq, @debug.Debug)
-pub fn ConditionalAttributesMethod::name(Self) -> String
+pub fn ConditionalAttributesInput::name(Self) -> String
+pub fn ConditionalAttributesInput::parse(String) -> Self?
+
+pub(all) enum ConditionalAttributesMsg {
+  ToggleIsActive
+  Unknown(String, Array[@core.Value])
+}
+pub fn ConditionalAttributesMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ConditionalAttributesState {
+  isActive : Bool
+}
 
 pub(all) enum ConditionalAttributesView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ConditionalAttributesView::name(Self) -> String
 
+pub(all) enum CounterField {
+  Count
+} derive(Eq, @debug.Debug)
+pub fn CounterField::kind(Self) -> @core.FieldKind
+pub fn CounterField::name(Self) -> String
+
 pub(all) enum CounterInput {
   Dec
+  Inc
 } derive(Eq, @debug.Debug)
 pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
-pub(all) enum CounterMethod {
-  Inc
-} derive(Eq, @debug.Debug)
-pub fn CounterMethod::name(Self) -> String
-
 pub(all) enum CounterMsg {
   Dec
+  Inc
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct CounterState {
+  count : Int
+}
 
 pub(all) enum CounterView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn CounterView::name(Self) -> String
 
+pub(all) enum CoupledPeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+pub fn CoupledPeopleEnrichScope::name(Self) -> String
+
+pub(all) enum CoupledPeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+pub fn CoupledPeopleInput::name(Self) -> String
+pub fn CoupledPeopleInput::parse(String) -> Self?
+
+pub(all) enum CoupledPeopleLoopWith {
+  ForwardKeys
+} derive(Eq, @debug.Debug)
+pub fn CoupledPeopleLoopWith::name(Self) -> String
+
+pub(all) enum CoupledPeopleMsg {
+  Next
+  Prev
+  RemoveInItemsAt(@core.Value)
+  Search(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CoupledPeopleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CoupledPeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn CoupledPeopleView::name(Self) -> String
+
+pub(all) enum DangerSetInnerHtmlField {
+  Content
+} derive(Eq, @debug.Debug)
+pub fn DangerSetInnerHtmlField::kind(Self) -> @core.FieldKind
+pub fn DangerSetInnerHtmlField::name(Self) -> String
+
+pub(all) struct DangerSetInnerHtmlState {
+  content : String
+}
+
 pub(all) enum DangerSetInnerHtmlView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn DangerSetInnerHtmlView::name(Self) -> String
 
+pub(all) enum DnDExampleField {
+  Items
+  Query
+} derive(Eq, @debug.Debug)
+pub fn DnDExampleField::kind(Self) -> @core.FieldKind
+pub fn DnDExampleField::name(Self) -> String
+
 pub(all) enum DnDExampleInput {
   OnDropOnItem
+  ResetQuery
+  SetQuery
 } derive(Eq, @debug.Debug)
 pub fn DnDExampleInput::name(Self) -> String
 pub fn DnDExampleInput::parse(String) -> Self?
 
-pub(all) enum DnDExampleMethod {
-  ResetQuery
-  SetQuery
-} derive(Eq, @debug.Debug)
-pub fn DnDExampleMethod::name(Self) -> String
-
 pub(all) enum DnDExampleMsg {
   OnDropOnItem(@core.Value, @core.Value)
+  ResetQuery
+  SetQuery(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn DnDExampleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct DnDExampleState {
+  items : Array[@core.Value]
+  query : String
+}
 
 pub(all) enum DnDExampleView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn DnDExampleView::name(Self) -> String
 
+pub(all) enum DnDExampleWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn DnDExampleWhen::name(Self) -> String
+
+pub(all) enum DseEditorField {
+  Missing
+} derive(Eq, @debug.Debug)
+pub fn DseEditorField::kind(Self) -> @core.FieldKind
+pub fn DseEditorField::name(Self) -> String
+
+pub(all) struct DseEditorState {
+  missing : @core.Value
+}
+
 pub(all) enum DseEditorView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn DseEditorView::name(Self) -> String
 
-pub(all) enum DseEntryMethod {
+pub(all) enum DseEntryField {
+  Name
+} derive(Eq, @debug.Debug)
+pub fn DseEntryField::kind(Self) -> @core.FieldKind
+pub fn DseEntryField::name(Self) -> String
+
+pub(all) enum DseEntryInput {
   SetName
 } derive(Eq, @debug.Debug)
-pub fn DseEntryMethod::name(Self) -> String
+pub fn DseEntryInput::name(Self) -> String
+pub fn DseEntryInput::parse(String) -> Self?
+
+pub(all) enum DseEntryMsg {
+  SetName(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DseEntryMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct DseEntryState {
+  name : String
+}
 
 pub(all) enum DseEntryView {
   Main
   Edit
 } derive(Eq, @debug.Debug)
 pub fn DseEntryView::name(Self) -> String
+
+pub(all) enum DseRootField {
+  Items
+  SelectedKey
+  Editor
+} derive(Eq, @debug.Debug)
+pub fn DseRootField::kind(Self) -> @core.FieldKind
+pub fn DseRootField::name(Self) -> String
 
 pub(all) enum DseRootInput {
   SelectItem
@@ -1194,60 +1742,107 @@ pub(all) enum DseRootMsg {
 }
 pub fn DseRootMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) struct DseRootState {
+  items : Map[String, @core.Value]
+  selectedKey : String
+}
+
 pub(all) enum DseRootView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn DseRootView::name(Self) -> String
 
+pub(all) enum EmojiPickerField {
+  Current
+  IsPickerVisible
+} derive(Eq, @debug.Debug)
+pub fn EmojiPickerField::kind(Self) -> @core.FieldKind
+pub fn EmojiPickerField::name(Self) -> String
+
 pub(all) enum EmojiPickerInput {
   OnEmojiClick
+  ToggleIsPickerVisible
 } derive(Eq, @debug.Debug)
 pub fn EmojiPickerInput::name(Self) -> String
 pub fn EmojiPickerInput::parse(String) -> Self?
 
-pub(all) enum EmojiPickerMethod {
-  ToggleIsPickerVisible
-} derive(Eq, @debug.Debug)
-pub fn EmojiPickerMethod::name(Self) -> String
-
 pub(all) enum EmojiPickerMsg {
   OnEmojiClick(String)
+  ToggleIsPickerVisible
   Unknown(String, Array[@core.Value])
 }
 pub fn EmojiPickerMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct EmojiPickerState {
+  current : @core.Value
+  isPickerVisible : Bool
+}
 
 pub(all) enum EmojiPickerView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn EmojiPickerView::name(Self) -> String
 
+pub(all) enum EntryEditorAndSelectorField {
+  Items
+  Selector
+} derive(Eq, @debug.Debug)
+pub fn EntryEditorAndSelectorField::kind(Self) -> @core.FieldKind
+pub fn EntryEditorAndSelectorField::name(Self) -> String
+
 pub(all) enum EntryEditorAndSelectorInput {
   OnAddItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 pub fn EntryEditorAndSelectorInput::name(Self) -> String
 pub fn EntryEditorAndSelectorInput::parse(String) -> Self?
 
-pub(all) enum EntryEditorAndSelectorMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-pub fn EntryEditorAndSelectorMethod::name(Self) -> String
-
 pub(all) enum EntryEditorAndSelectorMsg {
   OnAddItem
+  RemoveInItemsAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn EntryEditorAndSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct EntryEditorAndSelectorState {
+  items : Array[@core.Value]
+}
 
 pub(all) enum EntryEditorAndSelectorView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn EntryEditorAndSelectorView::name(Self) -> String
 
-pub(all) enum EntryMethod {
+pub(all) enum EntryField {
+  Title
+  Description
+} derive(Eq, @debug.Debug)
+pub fn EntryField::kind(Self) -> @core.FieldKind
+pub fn EntryField::name(Self) -> String
+
+pub(all) enum EntryInput {
   SetDescription
   SetTitle
 } derive(Eq, @debug.Debug)
+pub fn EntryInput::name(Self) -> String
+pub fn EntryInput::parse(String) -> Self?
+
+pub(all) enum EntryMethod {
+  ContainsText
+} derive(Eq, @debug.Debug)
 pub fn EntryMethod::name(Self) -> String
+
+pub(all) enum EntryMsg {
+  SetDescription(String)
+  SetTitle(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn EntryMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct EntryState {
+  title : String
+  description : String
+}
 
 pub(all) enum EntryView {
   Main
@@ -1255,23 +1850,33 @@ pub(all) enum EntryView {
 } derive(Eq, @debug.Debug)
 pub fn EntryView::name(Self) -> String
 
+pub(all) enum EventModifiersField {
+  Query
+  LastSentSearch
+} derive(Eq, @debug.Debug)
+pub fn EventModifiersField::kind(Self) -> @core.FieldKind
+pub fn EventModifiersField::name(Self) -> String
+
 pub(all) enum EventModifiersInput {
   OnInput
+  ResetQuery
+  SetLastSentSearch
 } derive(Eq, @debug.Debug)
 pub fn EventModifiersInput::name(Self) -> String
 pub fn EventModifiersInput::parse(String) -> Self?
 
-pub(all) enum EventModifiersMethod {
-  ResetQuery
-  SetLastSentSearch
-} derive(Eq, @debug.Debug)
-pub fn EventModifiersMethod::name(Self) -> String
-
 pub(all) enum EventModifiersMsg {
   OnInput(String)
+  ResetQuery
+  SetLastSentSearch(String)
   Unknown(String, Array[@core.Value])
 }
 pub fn EventModifiersMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct EventModifiersState {
+  query : String
+  lastSentSearch : @core.Value
+}
 
 pub(all) enum EventModifiersView {
   Main
@@ -1286,6 +1891,16 @@ pub struct ExampleModule {
   init : Bool
 }
 pub fn ExampleModule::root_args(Self) -> Map[String, @core.Value]
+
+pub(all) enum FilePickerField {
+  Name
+  Size
+  Type
+  LastModified
+  HasFile
+} derive(Eq, @debug.Debug)
+pub fn FilePickerField::kind(Self) -> @core.FieldKind
+pub fn FilePickerField::name(Self) -> String
 
 pub(all) enum FilePickerInput {
   OnPickFile
@@ -1306,31 +1921,118 @@ pub(all) enum FilePickerMsg {
 }
 pub fn FilePickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) struct FilePickerState {
+  name : String
+  size : Double
+  type_ : String
+  lastModified : Double
+  hasFile : Bool
+}
+
 pub(all) enum FilePickerView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn FilePickerView::name(Self) -> String
+
+pub(all) enum GreetingField {
+  Name
+} derive(Eq, @debug.Debug)
+pub fn GreetingField::kind(Self) -> @core.FieldKind
+pub fn GreetingField::name(Self) -> String
+
+pub(all) struct GreetingState {
+  name : String
+}
 
 pub(all) enum GreetingView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn GreetingView::name(Self) -> String
 
-pub(all) enum ItemMethod {
+pub(all) enum HtmlLintDemoField {
+  Count
+} derive(Eq, @debug.Debug)
+pub fn HtmlLintDemoField::kind(Self) -> @core.FieldKind
+pub fn HtmlLintDemoField::name(Self) -> String
+
+pub(all) struct HtmlLintDemoState {
+  count : Int
+}
+
+pub(all) enum IconGalleryField {
+  Size
+} derive(Eq, @debug.Debug)
+pub fn IconGalleryField::kind(Self) -> @core.FieldKind
+pub fn IconGalleryField::name(Self) -> String
+
+pub(all) struct IconGalleryState {
+  size : Int
+}
+
+pub(all) enum ItemField {
+  Completed
+  Text
+} derive(Eq, @debug.Debug)
+pub fn ItemField::kind(Self) -> @core.FieldKind
+pub fn ItemField::name(Self) -> String
+
+pub(all) enum ItemInput {
   SetCompleted
   SetText
 } derive(Eq, @debug.Debug)
-pub fn ItemMethod::name(Self) -> String
+pub fn ItemInput::name(Self) -> String
+pub fn ItemInput::parse(String) -> Self?
 
-pub(all) enum ItemSelectMethod {
+pub(all) enum ItemMsg {
+  SetCompleted(String)
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum ItemSelectField {
+  Options
+  Current
+} derive(Eq, @debug.Debug)
+pub fn ItemSelectField::kind(Self) -> @core.FieldKind
+pub fn ItemSelectField::name(Self) -> String
+
+pub(all) enum ItemSelectInput {
   SetCurrent
 } derive(Eq, @debug.Debug)
-pub fn ItemSelectMethod::name(Self) -> String
+pub fn ItemSelectInput::name(Self) -> String
+pub fn ItemSelectInput::parse(String) -> Self?
+
+pub(all) enum ItemSelectMsg {
+  SetCurrent(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ItemSelectMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ItemSelectState {
+  options : Array[@core.Value]
+  current : String
+}
 
 pub(all) enum ItemSelectView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ItemSelectView::name(Self) -> String
+
+pub(all) struct ItemState {
+  completed : Bool
+  text : String
+}
+
+pub(all) enum ItemTableField {
+  Rows
+} derive(Eq, @debug.Debug)
+pub fn ItemTableField::kind(Self) -> @core.FieldKind
+pub fn ItemTableField::name(Self) -> String
+
+pub(all) struct ItemTableState {
+  rows : Array[@core.Value]
+}
 
 pub(all) enum ItemTableView {
   Main
@@ -1342,112 +2044,191 @@ pub(all) enum ItemView {
 } derive(Eq, @debug.Debug)
 pub fn ItemView::name(Self) -> String
 
+pub(all) enum ItemsField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn ItemsField::kind(Self) -> @core.FieldKind
+pub fn ItemsField::name(Self) -> String
+
 pub(all) enum ItemsInput {
   OnAddItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 pub fn ItemsInput::name(Self) -> String
 pub fn ItemsInput::parse(String) -> Self?
 
-pub(all) enum ItemsMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-pub fn ItemsMethod::name(Self) -> String
-
 pub(all) enum ItemsMsg {
   OnAddItem
+  RemoveInItemsAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn ItemsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ItemsState {
+  items : Array[@core.Value]
+}
 
 pub(all) enum ItemsView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ItemsView::name(Self) -> String
 
+pub(all) enum JsonArrayField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn JsonArrayField::kind(Self) -> @core.FieldKind
+pub fn JsonArrayField::name(Self) -> String
+
 pub(all) enum JsonArrayInput {
   AddItem
   OnDropOnItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 pub fn JsonArrayInput::name(Self) -> String
 pub fn JsonArrayInput::parse(String) -> Self?
 
-pub(all) enum JsonArrayMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-pub fn JsonArrayMethod::name(Self) -> String
-
 pub(all) enum JsonArrayMsg {
   AddItem
   OnDropOnItem(@core.Value, @core.Value)
+  RemoveInItemsAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonArrayMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonArrayState {
+  items : Array[@core.Value]
+}
 
 pub(all) enum JsonArrayView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonArrayView::name(Self) -> String
 
-pub(all) enum JsonBoolMethod {
+pub(all) enum JsonBoolField {
+  Value
+} derive(Eq, @debug.Debug)
+pub fn JsonBoolField::kind(Self) -> @core.FieldKind
+pub fn JsonBoolField::name(Self) -> String
+
+pub(all) enum JsonBoolInput {
   ToggleValue
 } derive(Eq, @debug.Debug)
-pub fn JsonBoolMethod::name(Self) -> String
+pub fn JsonBoolInput::name(Self) -> String
+pub fn JsonBoolInput::parse(String) -> Self?
+
+pub(all) enum JsonBoolMsg {
+  ToggleValue
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonBoolMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonBoolState {
+  value : Bool
+}
 
 pub(all) enum JsonBoolView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonBoolView::name(Self) -> String
 
+pub(all) struct JsonNullState {
+}
+
 pub(all) enum JsonNullView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonNullView::name(Self) -> String
 
-pub(all) enum JsonNumberMethod {
+pub(all) enum JsonNumberField {
+  StrValue
+  Value
+} derive(Eq, @debug.Debug)
+pub fn JsonNumberField::kind(Self) -> @core.FieldKind
+pub fn JsonNumberField::name(Self) -> String
+
+pub(all) enum JsonNumberInput {
   SetRawValue
 } derive(Eq, @debug.Debug)
-pub fn JsonNumberMethod::name(Self) -> String
+pub fn JsonNumberInput::name(Self) -> String
+pub fn JsonNumberInput::parse(String) -> Self?
+
+pub(all) enum JsonNumberMsg {
+  SetRawValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonNumberMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonNumberState {
+  strValue : String
+  value : Double
+}
 
 pub(all) enum JsonNumberView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonNumberView::name(Self) -> String
 
+pub(all) enum JsonObjectField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectField::kind(Self) -> @core.FieldKind
+pub fn JsonObjectField::name(Self) -> String
+
 pub(all) enum JsonObjectInput {
   AddItem
   OnDropOnItem
+  RemoveInItemsAt
 } derive(Eq, @debug.Debug)
 pub fn JsonObjectInput::name(Self) -> String
 pub fn JsonObjectInput::parse(String) -> Self?
 
-pub(all) enum JsonObjectKeyValMethod {
+pub(all) enum JsonObjectKeyValField {
+  Key
+  Value
+} derive(Eq, @debug.Debug)
+pub fn JsonObjectKeyValField::kind(Self) -> @core.FieldKind
+pub fn JsonObjectKeyValField::name(Self) -> String
+
+pub(all) enum JsonObjectKeyValInput {
   SetKey
 } derive(Eq, @debug.Debug)
-pub fn JsonObjectKeyValMethod::name(Self) -> String
+pub fn JsonObjectKeyValInput::name(Self) -> String
+pub fn JsonObjectKeyValInput::parse(String) -> Self?
+
+pub(all) enum JsonObjectKeyValMsg {
+  SetKey(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonObjectKeyValMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonObjectKeyValState {
+  key : String
+  value : @core.Value
+}
 
 pub(all) enum JsonObjectKeyValView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonObjectKeyValView::name(Self) -> String
 
-pub(all) enum JsonObjectMethod {
-  RemoveInItemsAt
-} derive(Eq, @debug.Debug)
-pub fn JsonObjectMethod::name(Self) -> String
-
 pub(all) enum JsonObjectMsg {
   AddItem
   OnDropOnItem(@core.Value, @core.Value)
+  RemoveInItemsAt(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn JsonObjectMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonObjectState {
+  items : Array[@core.Value]
+}
 
 pub(all) enum JsonObjectView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonObjectView::name(Self) -> String
 
-pub(all) enum JsonSelectorMethod {
+pub(all) enum JsonSelectorInput {
   SetToArray
   SetToBool
   SetToNull
@@ -1455,75 +2236,395 @@ pub(all) enum JsonSelectorMethod {
   SetToObject
   SetToString
 } derive(Eq, @debug.Debug)
-pub fn JsonSelectorMethod::name(Self) -> String
+pub fn JsonSelectorInput::name(Self) -> String
+pub fn JsonSelectorInput::parse(String) -> Self?
+
+pub(all) enum JsonSelectorMsg {
+  SetToArray
+  SetToBool(Bool)
+  SetToNull
+  SetToNumber
+  SetToObject
+  SetToString
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonSelectorState {
+}
 
 pub(all) enum JsonSelectorView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonSelectorView::name(Self) -> String
 
-pub(all) enum JsonStringMethod {
+pub(all) enum JsonStringField {
+  Value
+} derive(Eq, @debug.Debug)
+pub fn JsonStringField::kind(Self) -> @core.FieldKind
+pub fn JsonStringField::name(Self) -> String
+
+pub(all) enum JsonStringInput {
   SetValue
 } derive(Eq, @debug.Debug)
-pub fn JsonStringMethod::name(Self) -> String
+pub fn JsonStringInput::name(Self) -> String
+pub fn JsonStringInput::parse(String) -> Self?
+
+pub(all) enum JsonStringMsg {
+  SetValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn JsonStringMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct JsonStringState {
+  value : String
+}
 
 pub(all) enum JsonStringView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn JsonStringView::name(Self) -> String
 
-pub(all) enum ListAndFilterMethod {
+pub(all) enum LintDemoField {
+  Count
+  Items
+  Kind
+  IsOpen
+  Child
+} derive(Eq, @debug.Debug)
+pub fn LintDemoField::kind(Self) -> @core.FieldKind
+pub fn LintDemoField::name(Self) -> String
+
+pub(all) struct LintDemoState {
+  count : Int
+  items : Array[@core.Value]
+  kind : String
+  isOpen : Bool
+  child : @core.Value
+}
+
+pub(all) enum ListAndFilterField {
+  Items
+  Query
+} derive(Eq, @debug.Debug)
+pub fn ListAndFilterField::kind(Self) -> @core.FieldKind
+pub fn ListAndFilterField::name(Self) -> String
+
+pub(all) enum ListAndFilterInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
-pub fn ListAndFilterMethod::name(Self) -> String
+pub fn ListAndFilterInput::name(Self) -> String
+pub fn ListAndFilterInput::parse(String) -> Self?
+
+pub(all) enum ListAndFilterMsg {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListAndFilterMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ListAndFilterState {
+  items : Array[@core.Value]
+  query : String
+}
 
 pub(all) enum ListAndFilterView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ListAndFilterView::name(Self) -> String
 
-pub(all) enum ListFilterEnrichMethod {
+pub(all) enum ListAndFilterWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn ListAndFilterWhen::name(Self) -> String
+
+pub(all) enum ListFilterEnrichEnrich {
+  EnrichItem
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichEnrich::name(Self) -> String
+
+pub(all) enum ListFilterEnrichField {
+  Items
+  Query
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichField::kind(Self) -> @core.FieldKind
+pub fn ListFilterEnrichField::name(Self) -> String
+
+pub(all) enum ListFilterEnrichInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
-pub fn ListFilterEnrichMethod::name(Self) -> String
+pub fn ListFilterEnrichInput::name(Self) -> String
+pub fn ListFilterEnrichInput::parse(String) -> Self?
+
+pub(all) enum ListFilterEnrichMsg {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListFilterEnrichMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ListFilterEnrichState {
+  items : Array[@core.Value]
+  query : String
+}
 
 pub(all) enum ListFilterEnrichView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ListFilterEnrichView::name(Self) -> String
 
-pub(all) enum ListFilterEnrichWithMethod {
+pub(all) enum ListFilterEnrichWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWhen::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithEnrich {
+  EnrichItem
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithEnrich::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithField {
+  Items
+  Query
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithField::kind(Self) -> @core.FieldKind
+pub fn ListFilterEnrichWithField::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithInput {
   ResetQuery
   SetQuery
 } derive(Eq, @debug.Debug)
-pub fn ListFilterEnrichWithMethod::name(Self) -> String
+pub fn ListFilterEnrichWithInput::name(Self) -> String
+pub fn ListFilterEnrichWithInput::parse(String) -> Self?
+
+pub(all) enum ListFilterEnrichWithLoopWith {
+  GetIterData
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithLoopWith::name(Self) -> String
+
+pub(all) enum ListFilterEnrichWithMsg {
+  ResetQuery
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ListFilterEnrichWithMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ListFilterEnrichWithState {
+  items : Array[@core.Value]
+  query : String
+}
 
 pub(all) enum ListFilterEnrichWithView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ListFilterEnrichWithView::name(Self) -> String
 
+pub(all) enum ListFilterEnrichWithWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn ListFilterEnrichWithWhen::name(Self) -> String
+
+pub(all) enum ListIterationField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn ListIterationField::kind(Self) -> @core.FieldKind
+pub fn ListIterationField::name(Self) -> String
+
+pub(all) struct ListIterationState {
+  items : Array[@core.Value]
+}
+
 pub(all) enum ListIterationView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ListIterationView::name(Self) -> String
+
+pub(all) enum MacroNamedSlotsField {
+  Count
+} derive(Eq, @debug.Debug)
+pub fn MacroNamedSlotsField::kind(Self) -> @core.FieldKind
+pub fn MacroNamedSlotsField::name(Self) -> String
+
+pub(all) struct MacroNamedSlotsState {
+  count : Int
+}
+
+pub(all) enum MacroParamsField {
+  Status
+} derive(Eq, @debug.Debug)
+pub fn MacroParamsField::kind(Self) -> @core.FieldKind
+pub fn MacroParamsField::name(Self) -> String
+
+pub(all) struct MacroParamsState {
+  status : String
+}
+
+pub(all) enum MacroSlotsField {
+  Count
+} derive(Eq, @debug.Debug)
+pub fn MacroSlotsField::kind(Self) -> @core.FieldKind
+pub fn MacroSlotsField::name(Self) -> String
+
+pub(all) struct MacroSlotsState {
+  count : Int
+}
+
+pub(all) struct MacrosNoState {
+}
+
+pub(all) struct MinimumViableComponentState {
+}
 
 pub(all) enum MinimumViableComponentView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn MinimumViableComponentView::name(Self) -> String
 
+pub(all) enum MultipleViewsField {
+  Value
+} derive(Eq, @debug.Debug)
+pub fn MultipleViewsField::kind(Self) -> @core.FieldKind
+pub fn MultipleViewsField::name(Self) -> String
+
+pub(all) struct MultipleViewsState {
+}
+
 pub(all) enum MultipleViewsView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn MultipleViewsView::name(Self) -> String
 
+pub(all) enum NaivePeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleEnrichScope::name(Self) -> String
+
+pub(all) enum NaivePeopleField {
+  Items
+  Query
+  Page
+  PageSize
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleField::kind(Self) -> @core.FieldKind
+pub fn NaivePeopleField::name(Self) -> String
+
+pub(all) enum NaivePeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleInput::name(Self) -> String
+pub fn NaivePeopleInput::parse(String) -> Self?
+
+pub(all) enum NaivePeopleLoopWith {
+  TablePage
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleLoopWith::name(Self) -> String
+
+pub(all) enum NaivePeopleMsg {
+  Next
+  Prev
+  RemoveInItemsAt(@core.Value)
+  Search(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NaivePeopleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct NaivePeopleState {
+  items : Array[@core.Value]
+  query : String
+  page : Int
+  pageSize : Int
+}
+
+pub(all) enum NaivePeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleView::name(Self) -> String
+
+pub(all) enum NaivePeopleWhen {
+  OnlyMatches
+} derive(Eq, @debug.Debug)
+pub fn NaivePeopleWhen::name(Self) -> String
+
+pub(all) enum NestedStateDue {
+  Unscheduled
+  OnDay(Int)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum NestedStateField {
+  Title
+  Labels
+  Priority
+  Due
+  Note
+  Size
+} derive(Eq, @debug.Debug)
+pub fn NestedStateField::kind(Self) -> @core.FieldKind
+pub fn NestedStateField::name(Self) -> String
+
+pub(all) enum NestedStateInput {
+  BumpPriority
+  ToggleLabel
+} derive(Eq, @debug.Debug)
+pub fn NestedStateInput::name(Self) -> String
+pub fn NestedStateInput::parse(String) -> Self?
+
+pub(all) struct NestedStateLabel {
+  text : String
+  done : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum NestedStateMsg {
+  BumpPriority
+  ToggleLabel(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NestedStateMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum NestedStatePriority {
+  Low
+  High
+} derive(Eq, @debug.Debug)
+
+pub(all) struct NestedStateState {
+  title : String
+  labels : Array[NestedStateLabel]
+  priority : NestedStatePriority
+  due : NestedStateDue
+  note : String?
+  size : (Int, Int)
+}
+
+pub(all) enum NestedStateView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn NestedStateView::name(Self) -> String
+
+pub(all) enum PageField {
+  Greeting
+} derive(Eq, @debug.Debug)
+pub fn PageField::kind(Self) -> @core.FieldKind
+pub fn PageField::name(Self) -> String
+
+pub(all) struct PageState {
+}
+
 pub(all) enum PageView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PageView::name(Self) -> String
+
+pub(all) enum PaginationField {
+  Items
+  Page
+  PageSize
+} derive(Eq, @debug.Debug)
+pub fn PaginationField::kind(Self) -> @core.FieldKind
+pub fn PaginationField::name(Self) -> String
 
 pub(all) enum PaginationInput {
   Next
@@ -1531,6 +2632,11 @@ pub(all) enum PaginationInput {
 } derive(Eq, @debug.Debug)
 pub fn PaginationInput::name(Self) -> String
 pub fn PaginationInput::parse(String) -> Self?
+
+pub(all) enum PaginationLoopWith {
+  Paginate
+} derive(Eq, @debug.Debug)
+pub fn PaginationLoopWith::name(Self) -> String
 
 pub(all) enum PaginationMethod {
   IsFirstPage
@@ -1546,37 +2652,112 @@ pub(all) enum PaginationMsg {
 }
 pub fn PaginationMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) struct PaginationState {
+  items : Array[@core.Value]
+  page : Int
+  pageSize : Int
+}
+
 pub(all) enum PaginationView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PaginationView::name(Self) -> String
+
+pub(all) enum PanelField {
+  Toolbar
+} derive(Eq, @debug.Debug)
+pub fn PanelField::kind(Self) -> @core.FieldKind
+pub fn PanelField::name(Self) -> String
+
+pub(all) struct PanelState {
+}
 
 pub(all) enum PanelView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PanelView::name(Self) -> String
 
-pub(all) enum PersonMethod {
+pub(all) enum PersonField {
+  Name
+  Email
+  Active
+} derive(Eq, @debug.Debug)
+pub fn PersonField::kind(Self) -> @core.FieldKind
+pub fn PersonField::name(Self) -> String
+
+pub(all) enum PersonInput {
   SetActive
   SetEmail
   SetName
 } derive(Eq, @debug.Debug)
-pub fn PersonMethod::name(Self) -> String
+pub fn PersonInput::name(Self) -> String
+pub fn PersonInput::parse(String) -> Self?
+
+pub(all) enum PersonMsg {
+  SetActive(String)
+  SetEmail(String)
+  SetName(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PersonMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct PersonState {
+  name : String
+  email : String
+  active : Bool
+}
 
 pub(all) enum PersonView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PersonView::name(Self) -> String
 
-pub(all) enum PlaylistMethod {
+pub(all) enum PlaylistField {
+  Songs
+} derive(Eq, @debug.Debug)
+pub fn PlaylistField::kind(Self) -> @core.FieldKind
+pub fn PlaylistField::name(Self) -> String
+
+pub(all) enum PlaylistInput {
   RemoveSong
 } derive(Eq, @debug.Debug)
-pub fn PlaylistMethod::name(Self) -> String
+pub fn PlaylistInput::name(Self) -> String
+pub fn PlaylistInput::parse(String) -> Self?
+
+pub(all) enum PlaylistMsg {
+  RemoveSong(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PlaylistMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct PlaylistState {
+  songs : @core.Value
+}
 
 pub(all) enum PlaylistView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PlaylistView::name(Self) -> String
+
+pub(all) enum PsEntryEnrich {
+  EnrichCategoryBadge
+} derive(Eq, @debug.Debug)
+pub fn PsEntryEnrich::name(Self) -> String
+
+pub(all) enum PsEntryField {
+  Title
+  Description
+  Lang
+  StartYear
+  EndYear
+  Role
+  Featured
+  Url
+  AltUrls
+  Categories
+} derive(Eq, @debug.Debug)
+pub fn PsEntryField::kind(Self) -> @core.FieldKind
+pub fn PsEntryField::name(Self) -> String
 
 pub(all) enum PsEntryMethod {
   IsSpanish
@@ -1585,78 +2766,224 @@ pub(all) enum PsEntryMethod {
 } derive(Eq, @debug.Debug)
 pub fn PsEntryMethod::name(Self) -> String
 
+pub(all) struct PsEntryState {
+  title : String
+  description : String
+  lang : String
+  startYear : @core.Value
+  endYear : @core.Value
+  role : @core.Value
+  featured : Bool
+  url : String
+  altUrls : Array[@core.Value]
+  categories : Array[@core.Value]
+}
+
 pub(all) enum PsEntryView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PsEntryView::name(Self) -> String
+
+pub(all) enum PseudoXDemoField {
+  Table
+  Select
+} derive(Eq, @debug.Debug)
+pub fn PseudoXDemoField::kind(Self) -> @core.FieldKind
+pub fn PseudoXDemoField::name(Self) -> String
+
+pub(all) struct PseudoXDemoState {
+}
 
 pub(all) enum PseudoXDemoView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PseudoXDemoView::name(Self) -> String
 
-pub(all) enum PushViewMethod {
-  GetToggleLabel
+pub(all) enum PushViewField {
+  Items
+  Query
+  View
+} derive(Eq, @debug.Debug)
+pub fn PushViewField::kind(Self) -> @core.FieldKind
+pub fn PushViewField::name(Self) -> String
+
+pub(all) enum PushViewInput {
   ResetQuery
   SetQuery
   ToggleView
 } derive(Eq, @debug.Debug)
+pub fn PushViewInput::name(Self) -> String
+pub fn PushViewInput::parse(String) -> Self?
+
+pub(all) enum PushViewMethod {
+  GetToggleLabel
+} derive(Eq, @debug.Debug)
 pub fn PushViewMethod::name(Self) -> String
+
+pub(all) enum PushViewMsg {
+  ResetQuery
+  SetQuery(String)
+  ToggleView
+  Unknown(String, Array[@core.Value])
+}
+pub fn PushViewMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct PushViewState {
+  items : Array[@core.Value]
+  query : String
+  view : String
+}
 
 pub(all) enum PushViewView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn PushViewView::name(Self) -> String
 
-pub(all) enum QuadraticMethod {
-  Classify
-  Discriminant
+pub(all) enum PushViewWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn PushViewWhen::name(Self) -> String
+
+pub(all) enum QuadraticField {
+  A
+  B
+  C
+} derive(Eq, @debug.Debug)
+pub fn QuadraticField::kind(Self) -> @core.FieldKind
+pub fn QuadraticField::name(Self) -> String
+
+pub(all) enum QuadraticInput {
   SetA
   SetB
   SetC
 } derive(Eq, @debug.Debug)
+pub fn QuadraticInput::name(Self) -> String
+pub fn QuadraticInput::parse(String) -> Self?
+
+pub(all) enum QuadraticMethod {
+  Classify
+  Discriminant
+} derive(Eq, @debug.Debug)
 pub fn QuadraticMethod::name(Self) -> String
+
+pub(all) enum QuadraticMsg {
+  SetA(Double)
+  SetB(Double)
+  SetC(Double)
+  Unknown(String, Array[@core.Value])
+}
+pub fn QuadraticMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct QuadraticState {
+  a : Int
+  b : Int
+  c : Int
+}
 
 pub(all) enum QuadraticView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn QuadraticView::name(Self) -> String
 
-pub(all) enum RenderWithScopeMethod {
+pub(all) enum RenderWithScopeEnrichScope {
+  EnrichScope
+} derive(Eq, @debug.Debug)
+pub fn RenderWithScopeEnrichScope::name(Self) -> String
+
+pub(all) enum RenderWithScopeField {
+  Text
+} derive(Eq, @debug.Debug)
+pub fn RenderWithScopeField::kind(Self) -> @core.FieldKind
+pub fn RenderWithScopeField::name(Self) -> String
+
+pub(all) enum RenderWithScopeInput {
   SetText
 } derive(Eq, @debug.Debug)
-pub fn RenderWithScopeMethod::name(Self) -> String
+pub fn RenderWithScopeInput::name(Self) -> String
+pub fn RenderWithScopeInput::parse(String) -> Self?
+
+pub(all) enum RenderWithScopeMsg {
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn RenderWithScopeMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct RenderWithScopeState {
+  text : String
+}
 
 pub(all) enum RenderWithScopeView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn RenderWithScopeView::name(Self) -> String
 
+pub(all) enum RequestExampleField {
+  Items
+  Query
+  View
+  IsLoading
+  Error
+} derive(Eq, @debug.Debug)
+pub fn RequestExampleField::kind(Self) -> @core.FieldKind
+pub fn RequestExampleField::name(Self) -> String
+
 pub(all) enum RequestExampleInput {
   LoadAnotherWay
-} derive(Eq, @debug.Debug)
-pub fn RequestExampleInput::name(Self) -> String
-pub fn RequestExampleInput::parse(String) -> Self?
-
-pub(all) enum RequestExampleMethod {
   ResetQuery
   SetQuery
   ToggleView
 } derive(Eq, @debug.Debug)
-pub fn RequestExampleMethod::name(Self) -> String
+pub fn RequestExampleInput::name(Self) -> String
+pub fn RequestExampleInput::parse(String) -> Self?
 
 pub(all) enum RequestExampleMsg {
   LoadAnotherWay
+  ResetQuery
+  SetQuery(String)
+  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn RequestExampleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct RequestExampleState {
+  items : Array[@core.Value]
+  query : String
+  view : String
+  isLoading : Bool
+  error : @core.Value
+}
 
 pub(all) enum RequestExampleView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn RequestExampleView::name(Self) -> String
 
+pub(all) enum RequestExampleWhen {
+  FilterItem
+} derive(Eq, @debug.Debug)
+pub fn RequestExampleWhen::name(Self) -> String
+
+pub(all) enum RootEnrich {
+  EnrichCategoryBindings
+  EnrichRoleBindings
+} derive(Eq, @debug.Debug)
+pub fn RootEnrich::name(Self) -> String
+
+pub(all) enum RootField {
+  AllEntries
+  AllCategories
+  AllRoles
+  SelectedCategories
+  SelectedRoles
+  FeaturedFirst
+  SortByEnd
+  SortAsc
+} derive(Eq, @debug.Debug)
+pub fn RootField::kind(Self) -> @core.FieldKind
+pub fn RootField::name(Self) -> String
+
 pub(all) enum RootInput {
+  ClearFilters
   OnCategoryToggle
   OnRoleToggle
   OnToggleFeaturedFirst
@@ -1667,12 +2994,12 @@ pub fn RootInput::name(Self) -> String
 pub fn RootInput::parse(String) -> Self?
 
 pub(all) enum RootMethod {
-  ClearFilters
   HasActiveFilters
 } derive(Eq, @debug.Debug)
 pub fn RootMethod::name(Self) -> String
 
 pub(all) enum RootMsg {
+  ClearFilters
   OnCategoryToggle(@core.Value, Bool)
   OnRoleToggle(@core.Value, Bool)
   OnToggleFeaturedFirst
@@ -1682,119 +3009,359 @@ pub(all) enum RootMsg {
 }
 pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) struct RootState {
+  allEntries : Array[@core.Value]
+  allCategories : Array[String]
+  allRoles : Array[String]
+  selectedCategories : Map[String, Bool]
+  selectedRoles : Map[String, Bool]
+  featuredFirst : Bool
+  sortByEnd : Bool
+  sortAsc : Bool
+}
+
 pub(all) enum RootView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn RootView::name(Self) -> String
+
+pub(all) enum RootWhen {
+  FilterEntry
+} derive(Eq, @debug.Debug)
+pub fn RootWhen::name(Self) -> String
+
+pub(all) enum ScopedStyleDemoField {
+  Count
+} derive(Eq, @debug.Debug)
+pub fn ScopedStyleDemoField::kind(Self) -> @core.FieldKind
+pub fn ScopedStyleDemoField::name(Self) -> String
+
+pub(all) struct ScopedStyleDemoState {
+  count : Int
+}
+
+pub(all) enum SelectOptionField {
+  Value
+  Label
+} derive(Eq, @debug.Debug)
+pub fn SelectOptionField::kind(Self) -> @core.FieldKind
+pub fn SelectOptionField::name(Self) -> String
+
+pub(all) struct SelectOptionState {
+  value : String
+  label : String
+}
 
 pub(all) enum SelectOptionView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SelectOptionView::name(Self) -> String
 
-pub(all) enum SelectorEntryMethod {
+pub(all) enum SelectorEntryField {
+  Value
+  Label
+} derive(Eq, @debug.Debug)
+pub fn SelectorEntryField::kind(Self) -> @core.FieldKind
+pub fn SelectorEntryField::name(Self) -> String
+
+pub(all) enum SelectorEntryInput {
   SetLabel
   SetValue
 } derive(Eq, @debug.Debug)
-pub fn SelectorEntryMethod::name(Self) -> String
+pub fn SelectorEntryInput::name(Self) -> String
+pub fn SelectorEntryInput::parse(String) -> Self?
+
+pub(all) enum SelectorEntryMsg {
+  SetLabel(String)
+  SetValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SelectorEntryMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SelectorEntryState {
+  value : String
+  label : String
+}
 
 pub(all) enum SelectorEntryView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SelectorEntryView::name(Self) -> String
 
-pub(all) enum SelectorMethod {
+pub(all) enum SelectorField {
+  Items
+  SelectedValue
+} derive(Eq, @debug.Debug)
+pub fn SelectorField::kind(Self) -> @core.FieldKind
+pub fn SelectorField::name(Self) -> String
+
+pub(all) enum SelectorInput {
   SetSelectedValue
 } derive(Eq, @debug.Debug)
-pub fn SelectorMethod::name(Self) -> String
+pub fn SelectorInput::name(Self) -> String
+pub fn SelectorInput::parse(String) -> Self?
+
+pub(all) enum SelectorMsg {
+  SetSelectedValue(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SelectorMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SelectorState {
+  items : Array[@core.Value]
+  selectedValue : @core.Value
+}
 
 pub(all) enum SelectorView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SelectorView::name(Self) -> String
 
+pub(all) enum SendReceiveField {
+  Draft
+  Status
+} derive(Eq, @debug.Debug)
+pub fn SendReceiveField::kind(Self) -> @core.FieldKind
+pub fn SendReceiveField::name(Self) -> String
+
 pub(all) enum SendReceiveInput {
   ClearStatus
+  SetDraft
   Submit
 } derive(Eq, @debug.Debug)
 pub fn SendReceiveInput::name(Self) -> String
 pub fn SendReceiveInput::parse(String) -> Self?
 
-pub(all) enum SendReceiveMethod {
-  SetDraft
-} derive(Eq, @debug.Debug)
-pub fn SendReceiveMethod::name(Self) -> String
-
 pub(all) enum SendReceiveMsg {
   ClearStatus
+  SetDraft(String)
   Submit
   Unknown(String, Array[@core.Value])
 }
 pub fn SendReceiveMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SendReceiveState {
+  draft : String
+}
 
 pub(all) enum SendReceiveView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SendReceiveView::name(Self) -> String
 
-pub(all) enum SeqItemAccessMethod {
-  GetMaxIndex
+pub(all) enum SeqItemAccessField {
+  ByKey
+  ByIndex
+  CurrentKey
+  CurrentIndex
+} derive(Eq, @debug.Debug)
+pub fn SeqItemAccessField::kind(Self) -> @core.FieldKind
+pub fn SeqItemAccessField::name(Self) -> String
+
+pub(all) enum SeqItemAccessInput {
   SetCurrentIndex
   SetCurrentKey
 } derive(Eq, @debug.Debug)
+pub fn SeqItemAccessInput::name(Self) -> String
+pub fn SeqItemAccessInput::parse(String) -> Self?
+
+pub(all) enum SeqItemAccessMethod {
+  GetMaxIndex
+} derive(Eq, @debug.Debug)
 pub fn SeqItemAccessMethod::name(Self) -> String
+
+pub(all) enum SeqItemAccessMsg {
+  SetCurrentIndex(Double)
+  SetCurrentKey(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SeqItemAccessMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SeqItemAccessState {
+  byKey : Map[String, @core.Value]
+  byIndex : Array[@core.Value]
+  currentKey : @core.Value
+  currentIndex : Int
+}
 
 pub(all) enum SeqItemAccessView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SeqItemAccessView::name(Self) -> String
 
-pub(all) enum SheetMethod {
+pub(all) enum SharedPeopleEnrichScope {
+  PagerInfo
+} derive(Eq, @debug.Debug)
+pub fn SharedPeopleEnrichScope::name(Self) -> String
+
+pub(all) enum SharedPeopleInput {
+  Next
+  Prev
+  RemoveInItemsAt
+  Search
+} derive(Eq, @debug.Debug)
+pub fn SharedPeopleInput::name(Self) -> String
+pub fn SharedPeopleInput::parse(String) -> Self?
+
+pub(all) enum SharedPeopleLoopWith {
+  Page
+} derive(Eq, @debug.Debug)
+pub fn SharedPeopleLoopWith::name(Self) -> String
+
+pub(all) enum SharedPeopleMsg {
+  Next
+  Prev
+  RemoveInItemsAt(@core.Value)
+  Search(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SharedPeopleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SharedPeopleView {
+  Main
+} derive(Eq, @debug.Debug)
+pub fn SharedPeopleView::name(Self) -> String
+
+pub(all) enum SharedPeopleWhen {
+  OnlyMatches
+} derive(Eq, @debug.Debug)
+pub fn SharedPeopleWhen::name(Self) -> String
+
+pub(all) enum SheetField {
+  Title
+} derive(Eq, @debug.Debug)
+pub fn SheetField::kind(Self) -> @core.FieldKind
+pub fn SheetField::name(Self) -> String
+
+pub(all) enum SheetInput {
   SetTitle
 } derive(Eq, @debug.Debug)
-pub fn SheetMethod::name(Self) -> String
+pub fn SheetInput::name(Self) -> String
+pub fn SheetInput::parse(String) -> Self?
+
+pub(all) enum SheetMsg {
+  SetTitle(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SheetMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SheetState {
+  title : String
+}
 
 pub(all) enum SheetView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SheetView::name(Self) -> String
 
-pub(all) enum ShowHideMethod {
+pub(all) enum ShowHideField {
+  IsOpen
+  Count
+} derive(Eq, @debug.Debug)
+pub fn ShowHideField::kind(Self) -> @core.FieldKind
+pub fn ShowHideField::name(Self) -> String
+
+pub(all) enum ShowHideInput {
   IncCount
-  Label
   ToggleIsOpen
 } derive(Eq, @debug.Debug)
+pub fn ShowHideInput::name(Self) -> String
+pub fn ShowHideInput::parse(String) -> Self?
+
+pub(all) enum ShowHideMethod {
+  Label
+} derive(Eq, @debug.Debug)
 pub fn ShowHideMethod::name(Self) -> String
+
+pub(all) enum ShowHideMsg {
+  IncCount
+  ToggleIsOpen
+  Unknown(String, Array[@core.Value])
+}
+pub fn ShowHideMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ShowHideState {
+  isOpen : Bool
+  count : Int
+}
 
 pub(all) enum ShowHideView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ShowHideView::name(Self) -> String
 
+pub(all) enum SongField {
+  Title
+} derive(Eq, @debug.Debug)
+pub fn SongField::kind(Self) -> @core.FieldKind
+pub fn SongField::name(Self) -> String
+
+pub(all) struct SongState {
+  title : String
+}
+
 pub(all) enum SongView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SongView::name(Self) -> String
+
+pub(all) struct StaticViewComponentState {
+}
 
 pub(all) enum StaticViewComponentView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn StaticViewComponentView::name(Self) -> String
 
+pub(all) enum StatusField {
+  Message
+  Count
+} derive(Eq, @debug.Debug)
+pub fn StatusField::kind(Self) -> @core.FieldKind
+pub fn StatusField::name(Self) -> String
+
+pub(all) struct StatusState {
+  message : String
+  count : Int
+}
+
 pub(all) enum StatusView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn StatusView::name(Self) -> String
+
+pub(all) enum StrategiesField {
+  Naive
+  Shared
+  Coupled
+} derive(Eq, @debug.Debug)
+pub fn StrategiesField::kind(Self) -> @core.FieldKind
+pub fn StrategiesField::name(Self) -> String
+
+pub(all) struct StrategiesState {
+}
 
 pub(all) enum StrategiesView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn StrategiesView::name(Self) -> String
 
+pub(all) enum StylesExampleRootField {
+  Value
+} derive(Eq, @debug.Debug)
+pub fn StylesExampleRootField::kind(Self) -> @core.FieldKind
+pub fn StylesExampleRootField::name(Self) -> String
+
+pub(all) struct StylesExampleRootState {
+}
+
 pub(all) enum StylesExampleRootView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn StylesExampleRootView::name(Self) -> String
+
+pub(all) struct StylesExampleState {
+}
 
 pub(all) enum StylesExampleView {
   Main
@@ -1803,15 +3370,45 @@ pub(all) enum StylesExampleView {
 } derive(Eq, @debug.Debug)
 pub fn StylesExampleView::name(Self) -> String
 
-pub(all) enum SwatchPickerMethod {
+pub(all) enum SwatchPickerEnrich {
+  Swatch
+} derive(Eq, @debug.Debug)
+pub fn SwatchPickerEnrich::name(Self) -> String
+
+pub(all) enum SwatchPickerField {
+  Color
+  Palette
+} derive(Eq, @debug.Debug)
+pub fn SwatchPickerField::kind(Self) -> @core.FieldKind
+pub fn SwatchPickerField::name(Self) -> String
+
+pub(all) enum SwatchPickerInput {
   SetColor
 } derive(Eq, @debug.Debug)
-pub fn SwatchPickerMethod::name(Self) -> String
+pub fn SwatchPickerInput::name(Self) -> String
+pub fn SwatchPickerInput::parse(String) -> Self?
+
+pub(all) enum SwatchPickerMsg {
+  SetColor(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SwatchPickerMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SwatchPickerState {
+  color : String
+  palette : Array[@core.Value]
+}
 
 pub(all) enum SwatchPickerView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn SwatchPickerView::name(Self) -> String
+
+pub(all) enum TabbedUIField {
+  Tab
+} derive(Eq, @debug.Debug)
+pub fn TabbedUIField::kind(Self) -> @core.FieldKind
+pub fn TabbedUIField::name(Self) -> String
 
 pub(all) enum TabbedUIId {
   TFeatures
@@ -1821,46 +3418,142 @@ pub(all) enum TabbedUIId {
 pub fn TabbedUIId::id(Self) -> String
 pub fn TabbedUIId::selector(Self) -> String
 
-pub(all) enum TabbedUIMethod {
+pub(all) enum TabbedUIInput {
   SetTab
 } derive(Eq, @debug.Debug)
-pub fn TabbedUIMethod::name(Self) -> String
+pub fn TabbedUIInput::name(Self) -> String
+pub fn TabbedUIInput::parse(String) -> Self?
+
+pub(all) enum TabbedUIMsg {
+  SetTab(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabbedUIMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct TabbedUIState {
+  tab : String
+}
 
 pub(all) enum TabbedUIView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TabbedUIView::name(Self) -> String
 
+pub(all) enum TableRowField {
+  Name
+  Qty
+  Price
+} derive(Eq, @debug.Debug)
+pub fn TableRowField::kind(Self) -> @core.FieldKind
+pub fn TableRowField::name(Self) -> String
+
+pub(all) struct TableRowState {
+  name : String
+  qty : Int
+  price : Double
+}
+
 pub(all) enum TableRowView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TableRowView::name(Self) -> String
+
+pub(all) enum TextDirectiveField {
+  Str
+  Num
+  Bool
+  NotSet
+} derive(Eq, @debug.Debug)
+pub fn TextDirectiveField::kind(Self) -> @core.FieldKind
+pub fn TextDirectiveField::name(Self) -> String
 
 pub(all) enum TextDirectiveMethod {
   GetStrUpper
 } derive(Eq, @debug.Debug)
 pub fn TextDirectiveMethod::name(Self) -> String
 
+pub(all) struct TextDirectiveState {
+  str : String
+  num : Int
+  bool : Bool
+  notSet : @core.Value
+}
+
 pub(all) enum TextDirectiveView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TextDirectiveView::name(Self) -> String
+
+pub(all) enum TmItemField {
+  Completed
+  Text
+} derive(Eq, @debug.Debug)
+pub fn TmItemField::kind(Self) -> @core.FieldKind
+pub fn TmItemField::name(Self) -> String
+
+pub(all) struct TmItemState {
+  completed : Bool
+  text : String
+}
+
+pub(all) enum TmItemsField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn TmItemsField::kind(Self) -> @core.FieldKind
+pub fn TmItemsField::name(Self) -> String
+
+pub(all) struct TmItemsState {
+  items : Array[@core.Value]
+}
+
+pub(all) struct ToolbarState {
+}
 
 pub(all) enum ToolbarView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn ToolbarView::name(Self) -> String
 
-pub(all) enum TrafficLightMethod {
-  Light
+pub(all) enum TrafficLightField {
+  LightIndex
+} derive(Eq, @debug.Debug)
+pub fn TrafficLightField::kind(Self) -> @core.FieldKind
+pub fn TrafficLightField::name(Self) -> String
+
+pub(all) enum TrafficLightInput {
   NextLight
 } derive(Eq, @debug.Debug)
+pub fn TrafficLightInput::name(Self) -> String
+pub fn TrafficLightInput::parse(String) -> Self?
+
+pub(all) enum TrafficLightMethod {
+  Light
+} derive(Eq, @debug.Debug)
 pub fn TrafficLightMethod::name(Self) -> String
+
+pub(all) enum TrafficLightMsg {
+  NextLight
+  Unknown(String, Array[@core.Value])
+}
+pub fn TrafficLightMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct TrafficLightState {
+  lightIndex : Int
+}
 
 pub(all) enum TrafficLightView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TrafficLightView::name(Self) -> String
+
+pub(all) enum TreeItemField {
+  Type
+  Label
+  IsOpen
+  Items
+} derive(Eq, @debug.Debug)
+pub fn TreeItemField::kind(Self) -> @core.FieldKind
+pub fn TreeItemField::name(Self) -> String
 
 pub(all) enum TreeItemInput {
   OnItemClick
@@ -1879,20 +3572,152 @@ pub(all) enum TreeItemMsg {
 }
 pub fn TreeItemMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) struct TreeItemState {
+  type_ : String
+  label : String
+  isOpen : Bool
+  items : Array[@core.Value]
+}
+
 pub(all) enum TreeItemView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TreeItemView::name(Self) -> String
+
+pub(all) enum TreeRootField {
+  Log
+  Root
+} derive(Eq, @debug.Debug)
+pub fn TreeRootField::kind(Self) -> @core.FieldKind
+pub fn TreeRootField::name(Self) -> String
+
+pub(all) struct TreeRootState {
+  log : Array[@core.Value]
+}
 
 pub(all) enum TreeRootView {
   Main
 } derive(Eq, @debug.Debug)
 pub fn TreeRootView::name(Self) -> String
 
+pub(all) enum VwContainerField {
+  Items
+  Expanded
+  Editing
+} derive(Eq, @debug.Debug)
+pub fn VwContainerField::kind(Self) -> @core.FieldKind
+pub fn VwContainerField::name(Self) -> String
+
+pub(all) struct VwContainerState {
+  items : Array[@core.Value]
+  expanded : Bool
+  editing : Bool
+}
+
+pub(all) struct VwEmptyState {
+}
+
+pub(all) enum VwIfField {
+  Thn
+  Else
+  Expanded
+  EditingIf
+  EditingThn
+  EditingElse
+} derive(Eq, @debug.Debug)
+pub fn VwIfField::kind(Self) -> @core.FieldKind
+pub fn VwIfField::name(Self) -> String
+
+pub(all) struct VwIfState {
+  thn : Array[@core.Value]
+  else_ : Array[@core.Value]
+  expanded : Bool
+  editingIf : Bool
+  editingThn : Bool
+  editingElse : Bool
+}
+
+pub(all) enum VwImmField {
+  Value
+  RawValue
+} derive(Eq, @debug.Debug)
+pub fn VwImmField::kind(Self) -> @core.FieldKind
+pub fn VwImmField::name(Self) -> String
+
+pub(all) struct VwImmState {
+  value : Int
+  rawValue : String
+}
+
+pub(all) enum VwMemoryField {
+  N
+  M
+} derive(Eq, @debug.Debug)
+pub fn VwMemoryField::kind(Self) -> @core.FieldKind
+pub fn VwMemoryField::name(Self) -> String
+
+pub(all) struct VwMemoryState {
+  n : Int
+  m : Int
+}
+
+pub(all) enum VwPickerField {
+  CurrentSection
+  Instructions
+  Filter
+} derive(Eq, @debug.Debug)
+pub fn VwPickerField::kind(Self) -> @core.FieldKind
+pub fn VwPickerField::name(Self) -> String
+
+pub(all) struct VwPickerState {
+  currentSection : String
+  instructions : Array[@core.Value]
+  filter : String
+}
+
+pub(all) enum VwSectionField {
+  Id
+  Name
+  Items
+  Expanded
+  DefaultItem
+} derive(Eq, @debug.Debug)
+pub fn VwSectionField::kind(Self) -> @core.FieldKind
+pub fn VwSectionField::name(Self) -> String
+
+pub(all) struct VwSectionState {
+  id : Int
+  name : String
+  items : Array[@core.Value]
+  expanded : Bool
+  defaultItem : @core.Value
+}
+
+pub(all) enum VwTypesField {
+  Items
+} derive(Eq, @debug.Debug)
+pub fn VwTypesField::kind(Self) -> @core.FieldKind
+pub fn VwTypesField::name(Self) -> String
+
+pub(all) struct VwTypesState {
+  items : Array[@core.Value]
+}
+
+pub(all) enum WorkspaceField {
+  Sheet
+  Panel
+} derive(Eq, @debug.Debug)
+pub fn WorkspaceField::kind(Self) -> @core.FieldKind
+pub fn WorkspaceField::name(Self) -> String
+
 pub(all) enum WorkspaceMethod {
   SheetTitle
 } derive(Eq, @debug.Debug)
 pub fn WorkspaceMethod::name(Self) -> String
+
+pub(all) struct WorkspaceState {
+  sheet : @core.Value
+}
 
 pub(all) enum WorkspaceView {
   Main

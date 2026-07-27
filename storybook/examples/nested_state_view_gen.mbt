@@ -65,7 +65,7 @@ fn NestedStateState::zero() -> NestedStateState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn nested_state_zero_args() -> Map[String, @tutuca.Value] {
-  nested_state_encode(NestedStateState::zero())
+  @component.Fields::encode(NestedStateState::zero())
 }
 
 ///|
@@ -97,12 +97,12 @@ pub fn NestedStateField::name(self : NestedStateField) -> String {
 /// happened to be integral.
 pub fn NestedStateField::kind(self : NestedStateField) -> @component.FieldKind {
   match self {
-    Title => @component.FText
-    Labels => @component.FList
-    Priority => @component.FText
-    Due => @component.FMap
-    Note => @component.FAny
-    Size => @component.FList
+    Title => FText
+    Labels => FList
+    Priority => FText
+    Due => FMap
+    Note => FAny
+    Size => FList
   }
 }
 
@@ -193,7 +193,7 @@ fn nested_state_priority_of_value(v : @tutuca.Value) -> NestedStatePriority? {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn nested_state_encode(s : NestedStateState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for NestedStateState with fn encode(s) {
   let out : Map[String, @tutuca.Value] = Map([])
   out["title"] = Str(s.title)
   out["labels"] = (
@@ -212,7 +212,7 @@ fn nested_state_encode(s : NestedStateState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn nested_state_decode(f : Map[String, @tutuca.Value]) -> NestedStateState? {
+impl @component.Fields for NestedStateState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("labels") is Some(t1_labels) else { return None }
   guard t1_labels is List(u1_labels) else { return None }
@@ -353,68 +353,23 @@ pub fn[S] nested_state_swap(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn nested_state_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "4718555fe446ae34",
-    fields: [
-      {
-        name: "title",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "labels",
-        ty: "list<label>",
-        kind: @component.FList,
-        elem: Some("label"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "priority",
-        ty: "priority",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "due",
-        ty: "due",
-        kind: @component.FMap,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "note",
-        ty: "option<string>",
-        kind: @component.FAny,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "size",
-        ty: "tuple<s32, s32>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for NestedStateState with fn schema() {
+  @component.SchemaInfo::new(
+    name="NestedState",
+    fingerprint="4718555fe446ae34",
+    fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("labels", "list<label>", FList, elem="label"),
+      @component.FieldInfo::new("priority", "priority", FText),
+      @component.FieldInfo::new("due", "due", FMap),
+      @component.FieldInfo::new("note", "option<string>", FAny),
+      @component.FieldInfo::new("size", "tuple<s32, s32>", FList, elem="any"),
     ],
-    inputs: ["bumpPriority", "toggleLabel"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["bumpPriority", "toggleLabel"],
+    view_names=["main"],
+  )
 }

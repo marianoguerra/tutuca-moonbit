@@ -33,7 +33,7 @@ fn SwatchPickerState::zero() -> SwatchPickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn swatch_picker_zero_args() -> Map[String, @tutuca.Value] {
-  swatch_picker_encode(SwatchPickerState::zero())
+  @component.Fields::encode(SwatchPickerState::zero())
 }
 
 ///|
@@ -59,8 +59,8 @@ pub fn SwatchPickerField::kind(
   self : SwatchPickerField,
 ) -> @component.FieldKind {
   match self {
-    Color => @component.FText
-    Palette => @component.FList
+    Color => FText
+    Palette => FList
   }
 }
 
@@ -81,7 +81,7 @@ pub let swatch_picker_schema_fingerprint : String = "30457ae742655759"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn swatch_picker_encode(s : SwatchPickerState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SwatchPickerState with fn encode(s) {
   {
     "color": Str(s.color),
     "palette": (List(s.palette.map(x => x)) : @tutuca.Value),
@@ -91,7 +91,7 @@ fn swatch_picker_encode(s : SwatchPickerState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn swatch_picker_decode(f : Map[String, @tutuca.Value]) -> SwatchPickerState? {
+impl @component.Fields for SwatchPickerState with fn decode(f) {
   guard f.get("color") is Some(Str(v_color)) else { return None }
   guard f.get("palette") is Some(t1_palette) else { return None }
   guard t1_palette is List(u1_palette) else { return None }
@@ -238,38 +238,21 @@ pub fn[S] swatch_picker_enrich(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn swatch_picker_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "30457ae742655759",
-    fields: [
-      {
-        name: "color",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "palette",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SwatchPickerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SwatchPicker",
+    fingerprint="30457ae742655759",
+    fields=[
+      @component.FieldInfo::new("color", "string", FText),
+      @component.FieldInfo::new("palette", "list<any>", FList, elem="any"),
     ],
-    inputs: ["setColor"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setColor"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -299,7 +282,7 @@ fn QuadraticState::zero() -> QuadraticState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn quadratic_zero_args() -> Map[String, @tutuca.Value] {
-  quadratic_encode(QuadraticState::zero())
+  @component.Fields::encode(QuadraticState::zero())
 }
 
 ///|
@@ -325,9 +308,9 @@ pub fn QuadraticField::name(self : QuadraticField) -> String {
 /// happened to be integral.
 pub fn QuadraticField::kind(self : QuadraticField) -> @component.FieldKind {
   match self {
-    A => @component.FInt
-    B => @component.FInt
-    C => @component.FInt
+    A => FInt
+    B => FInt
+    C => FInt
   }
 }
 
@@ -348,7 +331,7 @@ pub let quadratic_schema_fingerprint : String = "bb32e2a1638d9036"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn quadratic_encode(s : QuadraticState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for QuadraticState with fn encode(s) {
   {
     "a": Num(s.a.to_double()),
     "b": Num(s.b.to_double()),
@@ -359,7 +342,7 @@ fn quadratic_encode(s : QuadraticState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn quadratic_decode(f : Map[String, @tutuca.Value]) -> QuadraticState? {
+impl @component.Fields for QuadraticState with fn decode(f) {
   guard f.get("a") is Some(Num(t1_a)) else { return None }
   let v_a = t1_a.to_int()
   guard f.get("b") is Some(Num(t1_b)) else { return None }
@@ -504,44 +487,21 @@ pub fn[S] quadratic_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn quadratic_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "bb32e2a1638d9036",
-    fields: [
-      {
-        name: "a",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "b",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "c",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for QuadraticState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Quadratic",
+    fingerprint="bb32e2a1638d9036",
+    fields=[
+      @component.FieldInfo::new("a", "s32", FInt),
+      @component.FieldInfo::new("b", "s32", FInt),
+      @component.FieldInfo::new("c", "s32", FInt),
     ],
-    inputs: ["setA", "setB", "setC"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["classify", "discriminant"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["setA", "setB", "setC"],
+    methods=["classify", "discriminant"],
+    view_names=["main"],
+  )
 }

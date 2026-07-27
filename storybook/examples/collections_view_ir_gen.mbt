@@ -121,9 +121,6 @@ pub fn render_with_scope_component(
     specs~,
     provide~,
     lookup~,
-    encode=render_with_scope_encode,
-    decode=render_with_scope_decode,
-    schema=render_with_scope_schema(),
   )
 }
 
@@ -241,9 +238,6 @@ pub fn list_filter_enrich_component(
     specs~,
     provide~,
     lookup~,
-    encode=list_filter_enrich_encode,
-    decode=list_filter_enrich_decode,
-    schema=list_filter_enrich_schema(),
   )
 }
 
@@ -373,8 +367,5 @@ pub fn list_filter_enrich_with_component(
     specs~,
     provide~,
     lookup~,
-    encode=list_filter_enrich_with_encode,
-    decode=list_filter_enrich_with_decode,
-    schema=list_filter_enrich_with_schema(),
   )
 }

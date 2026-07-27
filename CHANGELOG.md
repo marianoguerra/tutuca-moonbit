@@ -6,7 +6,61 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A component instance can describe itself.** `@tutuca.Obj` gains
+  `obj_schema()`, and with it the whole generic-access layer in `@tutuca`:
+  `Value::field_opt` / `item` / `index` / `key` / `entries` / `size` /
+  `field_names` / `field_info` / `snapshot` / `call` / `call_field`, the `_opt`
+  coercers, total copy-on-write `with_field` / `with_item`, and the
+  Path-addressed `at` / `at_opt` / `with_at` with fluent `Path::field` /
+  `index` / `key` and a `Show` for `Path`.
+
+  Holding a bare `Value`, you can now ask what fields it has, what type each
+  one is, how long a sequence is and what its items are. Before, you could ask
+  for a NAMED field and nothing else, and every consumer worked around that
+  differently: the inspector took the field names from a `Components` registry
+  or a hardcoded literal list, the dyncomp host parsed a
+  `__dyncomp_state_json` pseudo-field, `state_json()` returned the `Show`
+  rendering and said so in a comment.
+
+  Concretely: the inspector opens a component instance into its fields instead
+  of one line of `obj_debug` text; `Value::to_json` projects a described
+  instance instead of flattening it to null; `size_of` answers for a custom
+  collection; `obj_eq` and `obj_debug` come off the schema rather than being
+  hand-written per implementor (`DynObj` had never implemented `obj_eq` at
+  all, so two guest instances never compared equal).
+
+### Fixed
+
+- **`.seq[.key]` on a custom collection.** The seq-access evaluator spelled the
+  container match out itself and its copy had lost the `Obj` arm, so a
+  collection that `@each` iterated fine answered `Null` through seq-access. All
+  four copies of that match are one lookup now.
+
 ### Changed (BREAKING)
+
+- **`component()` takes `encode`, `decode` and `schema` off the state type, not
+  as parameters.** They are the three methods of `@tutuca.Fields`, which the
+  state type implements; `component()` is bounded on it and the three
+  parameters are gone. `gen-views` writes the impl, so a component with a view
+  file changes nothing at its call site — it just stops passing three
+  arguments. A hand-written state writes three short methods instead, in a
+  place that cannot drift from the type they describe. One consequence is
+  deliberate: a schema now belongs to a TYPE, so two components sharing a state
+  struct share its description.
+
+- **`FieldKind`, `FieldInfo` and `SchemaInfo` moved to `@tutuca`.** They
+  mention only `Value`, and living in `component/` put them out of reach of
+  everything that has only a `Value` — which is what `obj_schema` needed. They
+  are re-exported, so `@component.SchemaInfo` still resolves; an enum
+  CONSTRUCTOR does not travel through a re-export, so `@component.FBool`
+  becomes `@tutuca.FBool` or bare `FBool` (the generator writes it bare).
+  `SchemaInfo` also gains `name`, which `component()` fills in from its own
+  `name~` when a hand-written descriptor leaves it unstated.
+
+- **`instance_snapshot(v, comp)` takes the descriptor as an option**, and
+  `instance_args(v, names)` drops its name list: both read the instance now.
 
 - **`component()` requires `schema~`, `encode~` and `decode~`; `for_type()`
   requires `schema~`.** They were optional, and omitting them was the normal

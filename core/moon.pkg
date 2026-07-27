@@ -7,4 +7,7 @@ import {
   "moonbitlang/quickcheck" @qc,
   "moonbitlang/quickcheck/gen",
   "moonbitlang/core/json",
+  // assert_same_object: the copy-on-write contract is about IDENTITY, so the
+  // tests that pin it need the identity assertion, not Eq.
+  "moonbitlang/core/test",
 } for "test"

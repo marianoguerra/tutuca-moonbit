@@ -111,9 +111,6 @@ pub fn dse_root_component(
     specs~,
     provide~,
     lookup~,
-    encode=dse_root_encode,
-    decode=dse_root_decode,
-    schema=dse_root_schema(),
   )
 }
 
@@ -194,9 +191,6 @@ pub fn dse_editor_component(
     specs~,
     provide~,
     lookup~,
-    encode=dse_editor_encode,
-    decode=dse_editor_decode,
-    schema=dse_editor_schema(),
   )
 }
 
@@ -282,8 +276,5 @@ pub fn dse_entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=dse_entry_encode,
-    decode=dse_entry_decode,
-    schema=dse_entry_schema(),
   )
 }

@@ -48,12 +48,6 @@ fn counter_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=smoke_counter_state_encode,
-    decode=smoke_counter_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="smoke_counter_state", fields=[
-      @component.FieldInfo::new("n", "s32", FInt),
-      @component.FieldInfo::new("label", "string", FText),
-    ]),
   )
 }
 
@@ -109,9 +103,6 @@ test "browser: styles are compiled into a head style element" {
     },
     name="Styled",
     init=SmokeEmptyState::{  },
-    encode=smoke_empty_state_encode,
-    decode=smoke_empty_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="smoke_empty_state", fields=[]),
   )
   scope.register_components([styled])
   let a = @app.App::new(
@@ -163,11 +154,6 @@ test "browser: real drag events run the drag lifecycle" {
         _ => None
       }
     },
-    encode=drop_board_state_encode,
-    decode=drop_board_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="drop_board_state", fields=[
-      @component.FieldInfo::new("landed_kind", "string", FText),
-    ]),
   )
   scope.register_components([board])
   guard scope.lookup_component("DropBoard") is Some(c) else {
@@ -194,16 +180,12 @@ priv struct DropBoardState {
 } derive(ToJson, FromJson)
 
 ///|
-fn smoke_counter_state_encode(
-  s : SmokeCounterState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SmokeCounterState with fn encode(s) {
   { "n": Num(s.n.to_double()), "label": Str(s.label) }
 }
 
 ///|
-fn smoke_counter_state_decode(
-  f : Map[String, @tutuca.Value],
-) -> SmokeCounterState? {
+impl @component.Fields for SmokeCounterState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
   guard f.get("label") is Some(Str(v_label)) else { return None }
@@ -211,24 +193,42 @@ fn smoke_counter_state_decode(
 }
 
 ///|
-fn smoke_empty_state_encode(_s : SmokeEmptyState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for SmokeEmptyState with fn encode(_s) {
   Map([])
 }
 
 ///|
-fn smoke_empty_state_decode(
-  _f : Map[String, @tutuca.Value],
-) -> SmokeEmptyState? {
+impl @component.Fields for SmokeEmptyState with fn decode(_f) {
   Some(SmokeEmptyState::{  })
 }
 
 ///|
-fn drop_board_state_encode(s : DropBoardState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DropBoardState with fn encode(s) {
   { "landed_kind": Str(s.landed_kind) }
 }
 
 ///|
-fn drop_board_state_decode(f : Map[String, @tutuca.Value]) -> DropBoardState? {
+impl @component.Fields for DropBoardState with fn decode(f) {
   guard f.get("landed_kind") is Some(Str(v_landed_kind)) else { return None }
   Some(DropBoardState::{ landed_kind: v_landed_kind })
+}
+
+///|
+impl @component.Fields for SmokeCounterState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="smoke_counter_state", fields=[
+    @component.FieldInfo::new("n", "s32", FInt),
+    @component.FieldInfo::new("label", "string", FText),
+  ])
+}
+
+///|
+impl @component.Fields for SmokeEmptyState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="smoke_empty_state", fields=[])
+}
+
+///|
+impl @component.Fields for DropBoardState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="drop_board_state", fields=[
+    @component.FieldInfo::new("landed_kind", "string", FText),
+  ])
 }

@@ -32,7 +32,7 @@ fn CompNameState::zero() -> CompNameState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn comp_name_zero_args() -> Map[String, @tutuca.Value] {
-  comp_name_encode(CompNameState::zero())
+  @component.Fields::encode(CompNameState::zero())
 }
 
 ///|
@@ -54,7 +54,7 @@ pub fn CompNameField::name(self : CompNameField) -> String {
 /// happened to be integral.
 pub fn CompNameField::kind(self : CompNameField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
+    Name => FText
   }
 }
 
@@ -75,14 +75,14 @@ pub let comp_name_schema_fingerprint : String = "57b45308f862e883"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn comp_name_encode(s : CompNameState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CompNameState with fn encode(s) {
   { "name": Str(s.name) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn comp_name_decode(f : Map[String, @tutuca.Value]) -> CompNameState? {
+impl @component.Fields for CompNameState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(CompNameState::{ name: v_name })
 }
@@ -111,30 +111,17 @@ pub let comp_name_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn comp_name_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "57b45308f862e883",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CompNameState with fn schema() {
+  @component.SchemaInfo::new(
+    name="CompName",
+    fingerprint="57b45308f862e883",
+    fields=[@component.FieldInfo::new("name", "string", FText)],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -164,7 +151,7 @@ fn CompFieldState::zero() -> CompFieldState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn comp_field_zero_args() -> Map[String, @tutuca.Value] {
-  comp_field_encode(CompFieldState::zero())
+  @component.Fields::encode(CompFieldState::zero())
 }
 
 ///|
@@ -190,9 +177,9 @@ pub fn CompFieldField::name(self : CompFieldField) -> String {
 /// happened to be integral.
 pub fn CompFieldField::kind(self : CompFieldField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
-    TypeName => @component.FText
-    Child => @component.FAny
+    Name => FText
+    TypeName => FText
+    Child => FAny
   }
 }
 
@@ -213,14 +200,14 @@ pub let comp_field_schema_fingerprint : String = "b1ab3e9e7437de19"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn comp_field_encode(s : CompFieldState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CompFieldState with fn encode(s) {
   { "name": Str(s.name), "typeName": Str(s.typeName), "child": s.child }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn comp_field_decode(f : Map[String, @tutuca.Value]) -> CompFieldState? {
+impl @component.Fields for CompFieldState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("typeName") is Some(Str(v_typeName)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
@@ -251,46 +238,21 @@ pub let comp_field_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn comp_field_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "b1ab3e9e7437de19",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "typeName",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "child",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CompFieldState with fn schema() {
+  @component.SchemaInfo::new(
+    name="CompField",
+    fingerprint="b1ab3e9e7437de19",
+    fields=[
+      @component.FieldInfo::new("name", "string", FText),
+      @component.FieldInfo::new("typeName", "string", FText),
+      @component.FieldInfo::new("child", "any", FAny, elem="any"),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -320,7 +282,7 @@ fn CompViewState::zero() -> CompViewState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn comp_view_zero_args() -> Map[String, @tutuca.Value] {
-  comp_view_encode(CompViewState::zero())
+  @component.Fields::encode(CompViewState::zero())
 }
 
 ///|
@@ -346,9 +308,9 @@ pub fn CompViewField::name(self : CompViewField) -> String {
 /// happened to be integral.
 pub fn CompViewField::kind(self : CompViewField) -> @component.FieldKind {
   match self {
-    Name => @component.FText
-    RawView => @component.FText
-    IsExpanded => @component.FBool
+    Name => FText
+    RawView => FText
+    IsExpanded => FBool
   }
 }
 
@@ -371,7 +333,7 @@ pub let comp_view_schema_fingerprint : String = "a2bb4d5d672ad06a"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn comp_view_encode(s : CompViewState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CompViewState with fn encode(s) {
   {
     "name": Str(s.name),
     "rawView": Str(s.rawView),
@@ -382,7 +344,7 @@ fn comp_view_encode(s : CompViewState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn comp_view_decode(f : Map[String, @tutuca.Value]) -> CompViewState? {
+impl @component.Fields for CompViewState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("rawView") is Some(Str(v_rawView)) else { return None }
   guard f.get("isExpanded") is Some(Bool(v_isExpanded)) else { return None }
@@ -514,46 +476,23 @@ pub fn[S] comp_view_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn comp_view_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "a2bb4d5d672ad06a",
-    fields: [
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "rawView",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isExpanded",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CompViewState with fn schema() {
+  @component.SchemaInfo::new(
+    name="CompView",
+    fingerprint="a2bb4d5d672ad06a",
+    fields=[
+      @component.FieldInfo::new("name", "string", FText),
+      @component.FieldInfo::new("rawView", "string", FText),
+      @component.FieldInfo::new("isExpanded", "bool", FBool),
     ],
-    inputs: ["toggle"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["arrowText"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["toggle"],
+    methods=["arrowText"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -591,7 +530,7 @@ fn CompSectionState::zero() -> CompSectionState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn comp_section_zero_args() -> Map[String, @tutuca.Value] {
-  comp_section_encode(CompSectionState::zero())
+  @component.Fields::encode(CompSectionState::zero())
 }
 
 ///|
@@ -621,11 +560,11 @@ pub fn CompSectionField::name(self : CompSectionField) -> String {
 /// happened to be integral.
 pub fn CompSectionField::kind(self : CompSectionField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    IsExpanded => @component.FBool
-    ItemsPerPage => @component.FInt
-    CurrentPage => @component.FInt
-    Label => @component.FText
+    Items => FList
+    IsExpanded => FBool
+    ItemsPerPage => FInt
+    CurrentPage => FInt
+    Label => FText
   }
 }
 
@@ -648,7 +587,7 @@ pub let comp_section_schema_fingerprint : String = "fac650bb4a858759"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn comp_section_encode(s : CompSectionState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CompSectionState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "isExpanded": Bool(s.isExpanded),
@@ -661,7 +600,7 @@ fn comp_section_encode(s : CompSectionState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn comp_section_decode(f : Map[String, @tutuca.Value]) -> CompSectionState? {
+impl @component.Fields for CompSectionState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -877,65 +816,28 @@ pub fn[S] comp_section_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn comp_section_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "fac650bb4a858759",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isExpanded",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "itemsPerPage",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "currentPage",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "label",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CompSectionState with fn schema() {
+  @component.SchemaInfo::new(
+    name="CompSection",
+    fingerprint="fac650bb4a858759",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("isExpanded", "bool", FBool),
+      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
+      @component.FieldInfo::new("currentPage", "s32", FInt),
+      @component.FieldInfo::new("label", "string", FText),
     ],
-    inputs: ["nextPage", "prevPage", "toggle"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [
+    inputs=["nextPage", "prevPage", "toggle"],
+    methods=[
       "arrowText", "cannotNextPage", "cannotPrevPage", "countText", "isItemsEmpty",
       "pageIndicatorText", "showPagination", "typeText",
     ],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -965,7 +867,7 @@ fn ComponentInspectorState::zero() -> ComponentInspectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn component_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  component_inspector_encode(ComponentInspectorState::zero())
+  @component.Fields::encode(ComponentInspectorState::zero())
 }
 
 ///|
@@ -993,9 +895,9 @@ pub fn ComponentInspectorField::kind(
   self : ComponentInspectorField,
 ) -> @component.FieldKind {
   match self {
-    CompName => @component.FText
-    CompId => @component.FInt
-    Sections => @component.FList
+    CompName => FText
+    CompId => FInt
+    Sections => FList
   }
 }
 
@@ -1018,9 +920,7 @@ pub let component_inspector_schema_fingerprint : String = "177c6b469255fb1e"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn component_inspector_encode(
-  s : ComponentInspectorState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ComponentInspectorState with fn encode(s) {
   {
     "compName": Str(s.compName),
     "compId": Num(s.compId.to_double()),
@@ -1031,9 +931,7 @@ fn component_inspector_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn component_inspector_decode(
-  f : Map[String, @tutuca.Value],
-) -> ComponentInspectorState? {
+impl @component.Fields for ComponentInspectorState with fn decode(f) {
   guard f.get("compName") is Some(Str(v_compName)) else { return None }
   guard f.get("compId") is Some(Num(t1_compId)) else { return None }
   let v_compId = t1_compId.to_int()
@@ -1165,44 +1063,21 @@ pub fn[S] component_inspector_compute(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn component_inspector_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "177c6b469255fb1e",
-    fields: [
-      {
-        name: "compName",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "compId",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "sections",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ComponentInspectorState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ComponentInspector",
+    fingerprint="177c6b469255fb1e",
+    fields=[
+      @component.FieldInfo::new("compName", "string", FText),
+      @component.FieldInfo::new("compId", "s32", FInt),
+      @component.FieldInfo::new("sections", "list<any>", FList, elem="any"),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: ["toggleAllSections", "toggleAllViews"],
-    responses: [],
-    methods: ["idText"],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    bubbles=["toggleAllSections", "toggleAllViews"],
+    methods=["idText"],
+    view_names=["main"],
+  )
 }

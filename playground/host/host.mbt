@@ -71,16 +71,15 @@ extern "js" fn publish_inspector(
   #|(state, classes) => { globalThis.__tutuca = { state, classes } }
 
 ///|
-/// Current root state for the inspector's "State" panel, as tutuca's own
-/// readable value syntax (e.g. `Counter{count: 1}`). A component instance is an
-/// `Obj`, which has no JSON form, so we use the Value's Show rendering — the
-/// same representation the CLI and tests print — rather than `to_json` (which
-/// would flatten the instance to null).
+/// Current root state for the inspector's "State" panel, as JSON — which the
+/// name has claimed all along and only now delivers. A component instance
+/// projects to its declared fields (`Value::to_json`), so the panel shows the
+/// state tree rather than the `Show` rendering the instance used to force.
 pub fn state_json() -> String {
   match current.val {
     Some(app) =>
       match app.root_value() {
-        Some(v) => v.to_display_string()
+        Some(v) => v.to_json().stringify()
         None => "—"
       }
     None => "—"

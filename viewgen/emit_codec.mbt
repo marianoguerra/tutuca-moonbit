@@ -266,7 +266,7 @@ fn emit_codec(
     "/// A field that already holds a `@tutuca.Value` is passed straight\n" +
     "/// through. That is the case a JSON round trip could not do at all: an\n" +
     "/// `Obj` or an `Fn` does not survive one.\n" +
-    "fn \{v}_encode(\{s_param} : \{t}State) -> Map[String, @tutuca.Value] {\n",
+    "impl @component.Fields for \{t}State with fn encode(\{s_param}) {\n",
   )
   if carried.is_empty() {
     // `{}` at this position reads as an empty STRUCT literal, not a map.
@@ -303,7 +303,7 @@ fn emit_codec(
     "///|\n" +
     "/// The fields map back into the state. None on a shape mismatch, which\n" +
     "/// callers treat as a no-op write — the same contract as the JSON path.\n" +
-    "fn \{v}_decode(\{f_param} : Map[String, @tutuca.Value]) -> \{t}State? {\n",
+    "impl @component.Fields for \{t}State with fn decode(\{f_param}) {\n",
   )
   for f in carried {
     out.write_string(

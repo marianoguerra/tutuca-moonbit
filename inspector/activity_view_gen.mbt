@@ -50,7 +50,7 @@ fn ActivityEntryState::zero() -> ActivityEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn activity_entry_zero_args() -> Map[String, @tutuca.Value] {
-  activity_entry_encode(ActivityEntryState::zero())
+  @component.Fields::encode(ActivityEntryState::zero())
 }
 
 ///|
@@ -90,15 +90,15 @@ pub fn ActivityEntryField::kind(
   self : ActivityEntryField,
 ) -> @component.FieldKind {
   match self {
-    Kind => @component.FText
-    Name => @component.FText
-    HandlerName => @component.FText
-    Matched => @component.FText
-    PathLabel => @component.FText
-    Time => @component.FText
-    Before => @component.FAny
-    After => @component.FAny
-    HasAfter => @component.FBool
+    Kind => FText
+    Name => FText
+    HandlerName => FText
+    Matched => FText
+    PathLabel => FText
+    Time => FText
+    Before => FAny
+    After => FAny
+    HasAfter => FBool
   }
 }
 
@@ -122,7 +122,7 @@ pub let activity_entry_schema_fingerprint : String = "d3dd8d6a5a69b8b2"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn activity_entry_encode(s : ActivityEntryState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ActivityEntryState with fn encode(s) {
   {
     "kind": Str(s.kind),
     "name": Str(s.name),
@@ -139,7 +139,7 @@ fn activity_entry_encode(s : ActivityEntryState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn activity_entry_decode(f : Map[String, @tutuca.Value]) -> ActivityEntryState? {
+impl @component.Fields for ActivityEntryState with fn decode(f) {
   guard f.get("kind") is Some(Str(v_kind)) else { return None }
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("handlerName") is Some(Str(v_handlerName)) else { return None }
@@ -186,94 +186,27 @@ pub let activity_entry_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn activity_entry_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "d3dd8d6a5a69b8b2",
-    fields: [
-      {
-        name: "kind",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "name",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "handlerName",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "matched",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "pathLabel",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "time",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "before",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "after",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "hasAfter",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ActivityEntryState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ActivityEntry",
+    fingerprint="d3dd8d6a5a69b8b2",
+    fields=[
+      @component.FieldInfo::new("kind", "string", FText),
+      @component.FieldInfo::new("name", "string", FText),
+      @component.FieldInfo::new("handlerName", "string", FText),
+      @component.FieldInfo::new("matched", "string", FText),
+      @component.FieldInfo::new("pathLabel", "string", FText),
+      @component.FieldInfo::new("time", "string", FText),
+      @component.FieldInfo::new("before", "any", FAny, elem="any"),
+      @component.FieldInfo::new("after", "any", FAny, elem="any"),
+      @component.FieldInfo::new("hasAfter", "bool", FBool),
     ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -302,7 +235,7 @@ fn ActivityLogState::zero() -> ActivityLogState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn activity_log_zero_args() -> Map[String, @tutuca.Value] {
-  activity_log_encode(ActivityLogState::zero())
+  @component.Fields::encode(ActivityLogState::zero())
 }
 
 ///|
@@ -326,8 +259,8 @@ pub fn ActivityLogField::name(self : ActivityLogField) -> String {
 /// happened to be integral.
 pub fn ActivityLogField::kind(self : ActivityLogField) -> @component.FieldKind {
   match self {
-    Events => @component.FList
-    HasEvents => @component.FBool
+    Events => FList
+    HasEvents => FBool
   }
 }
 
@@ -348,7 +281,7 @@ pub let activity_log_schema_fingerprint : String = "f3de3a72eae2fe61"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn activity_log_encode(s : ActivityLogState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ActivityLogState with fn encode(s) {
   {
     "events": (List(s.events.map(x => x)) : @tutuca.Value),
     "hasEvents": Bool(s.hasEvents),
@@ -358,7 +291,7 @@ fn activity_log_encode(s : ActivityLogState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn activity_log_decode(f : Map[String, @tutuca.Value]) -> ActivityLogState? {
+impl @component.Fields for ActivityLogState with fn decode(f) {
   guard f.get("events") is Some(t1_events) else { return None }
   guard t1_events is List(u1_events) else { return None }
   let v_events : Array[@tutuca.Value] = []
@@ -449,36 +382,19 @@ pub let activity_log_global_style : String = ""
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn activity_log_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "f3de3a72eae2fe61",
-    fields: [
-      {
-        name: "events",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "hasEvents",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ActivityLogState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ActivityLog",
+    fingerprint="f3de3a72eae2fe61",
+    fields=[
+      @component.FieldInfo::new("events", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("hasEvents", "bool", FBool),
     ],
-    inputs: [],
-    receives: ["appendEntry"],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    receives=["appendEntry"],
+    view_names=["main"],
+  )
 }

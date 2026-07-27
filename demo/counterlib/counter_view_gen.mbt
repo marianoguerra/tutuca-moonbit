@@ -34,7 +34,7 @@ fn CounterState::zero() -> CounterState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
-  counter_encode(CounterState::zero())
+  @component.Fields::encode(CounterState::zero())
 }
 
 ///|
@@ -60,9 +60,9 @@ pub fn CounterField::name(self : CounterField) -> String {
 /// happened to be integral.
 pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
   match self {
-    Label => @component.FText
-    Count => @component.FInt
-    History => @component.FList
+    Label => FText
+    Count => FInt
+    History => FList
   }
 }
 
@@ -105,8 +105,9 @@ pub let counter_init_names : Array[String] = ["fresh", "with-history"]
 /// encoded form anyway.
 pub fn counter_init_args(name : String) -> Map[String, @tutuca.Value]? {
   match name {
-    "fresh" => Some(counter_encode(CounterState::fresh()))
-    "with-history" => Some(counter_encode(CounterState::withHistory()))
+    "fresh" => Some(@component.Fields::encode(CounterState::fresh()))
+    "with-history" =>
+      Some(@component.Fields::encode(CounterState::withHistory()))
     _ => None
   }
 }
@@ -118,7 +119,7 @@ pub fn counter_init_args(name : String) -> Map[String, @tutuca.Value]? {
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CounterState with fn encode(s) {
   {
     "label": Str(s.label),
     "count": Num(s.count.to_double()),
@@ -129,7 +130,7 @@ fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn counter_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
@@ -330,44 +331,23 @@ pub fn CounterId::selector(self : CounterId) -> String {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn counter_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "3d30a5c1ebb6ea6f",
-    fields: [
-      {
-        name: "label",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "history",
-        ty: "list<s32>",
-        kind: @component.FList,
-        elem: Some("s32"),
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for CounterState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Counter",
+    fingerprint="3d30a5c1ebb6ea6f",
+    fields=[
+      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("history", "list<s32>", FList, elem="s32"),
     ],
-    inputs: ["add", "resetCount", "setLabel"],
-    receives: ["resetTo"],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: ["count", "dec", "history", "inc", "label", "reset"],
-    view_names: ["main"],
-    init_names: ["fresh", "with-history"],
-  }
+    inputs=["add", "resetCount", "setLabel"],
+    receives=["resetTo"],
+    ids=["count", "dec", "history", "inc", "label", "reset"],
+    view_names=["main"],
+    init_names=["fresh", "with-history"],
+  )
 }

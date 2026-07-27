@@ -183,9 +183,6 @@ pub fn activity_entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=activity_entry_encode,
-    decode=activity_entry_decode,
-    schema=activity_entry_schema(),
   )
 }
 
@@ -263,8 +260,5 @@ pub fn activity_log_component(
     specs~,
     provide~,
     lookup~,
-    encode=activity_log_encode,
-    decode=activity_log_decode,
-    schema=activity_log_schema(),
   )
 }

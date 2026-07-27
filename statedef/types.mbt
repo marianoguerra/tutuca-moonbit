@@ -170,20 +170,29 @@ fn edit_distance(a : String, b : String) -> Int {
 }
 
 ///|
+/// The `@component.FieldKind` constructor, as source text.
+///
+/// UNQUALIFIED, and it has to be: the type moved to `@tutuca` and an enum
+/// constructor does not resolve through the `pub using` re-export that keeps
+/// `@component.FieldKind` spelling correct — nor through the module-root
+/// facade the playground compiles examples against, which is a different
+/// package again. Bare works in both, because every position the generator
+/// writes one into (a `FieldInfo::new` argument, a `<T>Field::kind` return)
+/// already knows the type.
 pub fn StateTy::field_kind_src(self : StateTy) -> String {
   match self {
-    TBool => "@component.FBool"
-    TInt(..) => "@component.FInt"
-    TFloat => "@component.FFloat"
-    TText | TEnum(_) => "@component.FText"
-    TList(_) | TTuple(_) => "@component.FList"
-    TRecord(_) | TVariant(_) => "@component.FMap"
-    TSet | TFlags(_) => "@component.FSet"
-    TOMap(_) => "@component.FOMap"
+    TBool => "FBool"
+    TInt(..) => "FInt"
+    TFloat => "FFloat"
+    TText | TEnum(_) => "FText"
+    TList(_) | TTuple(_) => "FList"
+    TRecord(_) | TVariant(_) => "FMap"
+    TSet | TFlags(_) => "FSet"
+    TOMap(_) => "FOMap"
     // FComp carries the component it slots, so it cannot be written bare.
-    TComp(Some(c)) => "@component.FComp(comp=\"" + c + "\", args=Map([]))"
-    TComp(None) => "@component.FComp(comp=\"\", args=Map([]))"
-    TOption(_) | TAny => "@component.FAny"
+    TComp(Some(c)) => "FComp(comp=\"" + c + "\", args=Map([]))"
+    TComp(None) => "FComp(comp=\"\", args=Map([]))"
+    TOption(_) | TAny => "FAny"
   }
 }
 

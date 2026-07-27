@@ -76,25 +76,11 @@ test "a component built from the compiled tree renders identically" {
     },
     name="IrFromSource",
     init=ir_state(),
-    encode=ir_state_encode,
-    decode=ir_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("history", "list<s32>", FList),
-    ]),
   )
   let from_tree = @component.component(
     name="IrFromTree",
     views=@viewgen.build_views(views.components[0], macros=views.macros),
     init=ir_state(),
-    encode=ir_state_encode,
-    decode=ir_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("history", "list<s32>", FList),
-    ]),
   )
   let want = render_comp(from_source)
   let got = render_comp(from_tree)
@@ -119,13 +105,6 @@ test "handlers dispatch through a compiled tree" {
         _ => None
       }
     },
-    encode=ir_state_encode,
-    decode=ir_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("history", "list<s32>", FList),
-    ]),
   )
   let scope = @component.ComponentStack::new()
   scope.register_components([comp])
@@ -218,11 +197,6 @@ test "a file-declared macro renders like a MoonBit-registered one" {
     name="BadgeTree",
     views=@viewgen.build_views(vs.components[0], macros=vs.macros),
     init=BadgeState::{ title: "hi" },
-    encode=badge_state_encode,
-    decode=badge_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="badge_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-    ]),
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
@@ -234,11 +208,6 @@ test "a file-declared macro renders like a MoonBit-registered one" {
     },
     name="BadgeRuntime",
     init=BadgeState::{ title: "hi" },
-    encode=badge_state_encode,
-    decode=badge_state_decode,
-    schema=@component.SchemaInfo::new(fingerprint="badge_state", fields=[
-      @component.FieldInfo::new("title", "string", FText),
-    ]),
   )
   let scope = @component.ComponentStack::new()
   scope.register_macros({
@@ -276,7 +245,7 @@ fn to_html(v : @vdom.Vdom?) -> String {
 }
 
 ///|
-fn ir_state_encode(s : IrState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for IrState with fn encode(s) {
   {
     "label": Str(s.label),
     "count": Num(s.count.to_double()),
@@ -287,7 +256,7 @@ fn ir_state_encode(s : IrState) -> Map[String, @tutuca.Value] {
 }
 
 ///|
-fn ir_state_decode(f : Map[String, @tutuca.Value]) -> IrState? {
+impl @component.Fields for IrState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
@@ -301,12 +270,28 @@ fn ir_state_decode(f : Map[String, @tutuca.Value]) -> IrState? {
 }
 
 ///|
-fn badge_state_encode(s : BadgeState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for BadgeState with fn encode(s) {
   { "title": Str(s.title) }
 }
 
 ///|
-fn badge_state_decode(f : Map[String, @tutuca.Value]) -> BadgeState? {
+impl @component.Fields for BadgeState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   Some(BadgeState::{ title: v_title })
+}
+
+///|
+impl @component.Fields for IrState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="ir_state", fields=[
+    @component.FieldInfo::new("label", "string", FText),
+    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("history", "list<s32>", FList),
+  ])
+}
+
+///|
+impl @component.Fields for BadgeState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="badge_state", fields=[
+    @component.FieldInfo::new("title", "string", FText),
+  ])
 }

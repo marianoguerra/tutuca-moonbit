@@ -363,39 +363,12 @@ fn json_property_comp() -> @component.Component {
 // ---------------------------------------------------------------------------
 
 ///|
-/// Read a field of a component-instance Value through the Obj trait.
-fn obj_get(v : @tutuca.Value, name : String) -> @tutuca.Value? {
-  match v {
-    Obj(o) => o.obj_field(name)
-    _ => None
-  }
-}
-
-///|
-/// Write a field of a component-instance Value through the Obj trait;
-/// returns the value unchanged when the field does not exist.
-fn obj_set(
-  v : @tutuca.Value,
-  name : String,
-  field_val : @tutuca.Value,
-) -> @tutuca.Value {
-  match v {
-    Obj(o) =>
-      match o.obj_with_field(name, field_val) {
-        Some(nv) => nv
-        None => v
-      }
-    _ => v
-  }
-}
-
-///|
 /// JS valueWrapperMethods.toggleIsExpanded: delegate an expand/collapse toggle
 /// to the wrapped value when it supports one; leaf values have no
 /// `isExpanded` so the wrapper stays as-is.
 fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
-  match obj_get(value, "isExpanded") {
-    Some(cur) => obj_set(value, "isExpanded", Bool(!cur.is_truthy()))
+  match value.field_opt("isExpanded") {
+    Some(cur) => value.with_field("isExpanded", Bool(!cur.is_truthy()))
     None => value
   }
 }
@@ -415,10 +388,7 @@ fn data_inspector_comp() -> @component.Component {
 
 ///|
 fn fmt_path_key(k : @tutuca.PathKey) -> String {
-  match k {
-    KInt(i) => i.to_string()
-    KStr(s) => s
-  }
+  k.to_label()
 }
 
 ///|
@@ -449,6 +419,11 @@ pub fn Inspector::classify(
       }
       self.make_("JsonObject", args={ "items": List(rows) })
     }
+    // An instance is shown as its own structure, by whichever of the two
+    // things it says about itself it has: the sequence entries a custom
+    // collection iterates, else the fields it DECLARES. Only an instance that
+    // says neither falls back to the one opaque line of debug text — which
+    // every instance used to get, because nothing could enumerate an `Obj`.
     Obj(o) =>
       match o.obj_seq_entries() {
         Some(entries) => {
@@ -459,7 +434,17 @@ pub fn Inspector::classify(
           }
           self.make_("JsonObject", args={ "items": List(rows) })
         }
-        None => self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
+        None =>
+          match o.obj_schema() {
+            Some(schema) => {
+              let rows : Array[@tutuca.Value] = []
+              for f in schema.fields {
+                rows.push(self.property(f.name, self.classify(v.field(f.name))))
+              }
+              self.make_("JsonObject", args={ "items": List(rows) })
+            }
+            None => self.make_("ValueObj", args={ "text": Str(o.obj_debug()) })
+          }
       }
   }
 }
@@ -485,30 +470,30 @@ fn Inspector::inspect_value(
 ///|
 /// Recursively expand a classified tree so an example renders open (port of
 /// the .dev.js `deepExpand` helpers).
+///
+/// The child fields come from the instance's own declaration. They used to be
+/// two literal name lists — `["value", "raw", "child", "ifNode", "thenNode",
+/// "elseNode"]` and `["items", "sections", "components", "events"]` — because
+/// nothing could ask an `Obj` what it held, so every child field used anywhere
+/// in this library had to be enumerated here and a new one silently stopped
+/// expanding.
 pub fn deep_expand(v : @tutuca.Value) -> @tutuca.Value {
-  match v {
-    Obj(_) => {
-      let mut cur = v
-      if obj_get(cur, "isExpanded") is Some(_) {
-        cur = obj_set(cur, "isExpanded", Bool(true))
-      }
-      // single-child fields (wrapper value + raw, property child, not-child,
-      // if/then/else nodes)
-      for name in ["value", "raw", "child", "ifNode", "thenNode", "elseNode"] {
-        match obj_get(cur, name) {
-          Some(Obj(_) as inner) => cur = obj_set(cur, name, deep_expand(inner))
-          _ => ()
-        }
-      }
-      for name in ["items", "sections", "components", "events"] {
-        match obj_get(cur, name) {
-          Some(List(items)) =>
-            cur = obj_set(cur, name, List(items.map(deep_expand)))
-          _ => ()
-        }
-      }
-      cur
-    }
-    _ => v
+  guard v is Obj(_) else { return v }
+  let mut cur = v
+  if cur.field_opt("isExpanded") is Some(_) {
+    cur = cur.with_field("isExpanded", Bool(true))
   }
+  for name in cur.field_names() {
+    if name == "isExpanded" {
+      continue
+    }
+    match cur.field(name) {
+      // a nested wrapper: value / raw / child / ifNode / ...
+      Obj(_) as inner => cur = cur.with_field(name, deep_expand(inner))
+      // a list of them: items / sections / components / events
+      List(items) => cur = cur.with_field(name, List(items.map(deep_expand)))
+      _ => ()
+    }
+  }
+  cur
 }

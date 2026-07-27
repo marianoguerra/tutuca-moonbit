@@ -141,9 +141,6 @@ pub fn push_view_component(
     specs~,
     provide~,
     lookup~,
-    encode=push_view_encode,
-    decode=push_view_decode,
-    schema=push_view_schema(),
   )
 }
 
@@ -255,9 +252,6 @@ pub fn seq_item_access_component(
     specs~,
     provide~,
     lookup~,
-    encode=seq_item_access_encode,
-    decode=seq_item_access_decode,
-    schema=seq_item_access_schema(),
   )
 }
 
@@ -375,8 +369,5 @@ pub fn pagination_component(
     specs~,
     provide~,
     lookup~,
-    encode=pagination_encode,
-    decode=pagination_decode,
-    schema=pagination_schema(),
   )
 }

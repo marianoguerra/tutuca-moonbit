@@ -39,17 +39,6 @@ fn counter_module() -> @component.ModuleDef {
     // schema because the runtime should be told a component's shape rather
     // than reconstruct it, and that holds whether the shape came from
     // `gen-views` or from here.
-    encode=counter_state_encode,
-    decode=counter_state_decode,
-    schema=@component.SchemaInfo::new(
-      fingerprint="harness-counter",
-      fields=[
-        @component.FieldInfo::new("count", "s32", FInt),
-        @component.FieldInfo::new("label", "string", FText),
-      ],
-      inputs=["dec", "inc", "setLabel"],
-      view_names=["main"],
-    ),
     update=(s : CounterState, msg, _ctx) => {
       match msg {
         Input("inc", _) => Some({ ..s, count: s.count + 1 })
@@ -119,13 +108,26 @@ test "a no-op interaction re-renders nothing at all" {
 ///|
 /// The state <-> fields codec, written by hand the way a generated module
 /// writes it. A fixture is not exempt: there is no bridge to fall back to.
-fn counter_state_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for CounterState with fn encode(s) {
   { "count": Num(s.count.to_double()), "label": Str(s.label) }
 }
 
 ///|
-fn counter_state_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
   Some({ count: n_count.to_int(), label: v_label })
+}
+
+///|
+impl @component.Fields for CounterState with fn schema() {
+  @component.SchemaInfo::new(
+    fingerprint="harness-counter",
+    fields=[
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("label", "string", FText),
+    ],
+    inputs=["dec", "inc", "setLabel"],
+    view_names=["main"],
+  )
 }

@@ -12,14 +12,6 @@
 //   generic scope             enter(it, binds, false)        BindStep
 
 ///|
-fn key_value(k : @tutuca.PathKey) -> @tutuca.Value {
-  match k {
-    KInt(i) => Num(i.to_double())
-    KStr(s) => Str(s)
-  }
-}
-
-///|
 /// Rebuild the per-item binds for `key`, mirroring render_each: seed
 /// {key, value}, run @enrich-with against the iterData that @loop-with
 /// supplies (via loop_iter_data below), then restore the protected binds.
@@ -32,14 +24,9 @@ fn each_binds(
   key : @tutuca.PathKey,
 ) -> Map[String, @tutuca.Value] {
   let seq = val.eval(stack)
-  let k = key_value(key)
-  let value : @tutuca.Value = match (seq, key) {
-    (Map(m), KStr(s)) => m.get(s).unwrap_or(Null)
-    (List(a), KInt(i)) => if i >= 0 && i < a.length() { a[i] } else { Null }
-    // custom seq (JS SEQ_INFO): resolve the item through obj_item
-    (Obj(o), k) => o.obj_item(k).unwrap_or(Null)
-    _ => Null
-  }
+  let k = key.to_value()
+  // One lookup for List, Map and a custom-collection Obj alike (@tutuca).
+  let value = seq.item(key)
   let binds : Map[String, @tutuca.Value] = { "key": k, "value": value }
   match enrich_with_val {
     Some(ev) => {
@@ -66,11 +53,11 @@ fn step_enter_frame(
   match step {
     // component boundary: clean frame on the entered value
     FieldStep(_) | SeqAccessStep(..) => stack.enter(next, Map([]))
-    SeqStep(field=_, key~) => stack.enter(next, { "key": key_value(key) })
+    SeqStep(field=_, key~) => stack.enter(next, { "key": key.to_value() })
     // iterated render target: the @each item scope, then the component frame
     EachRenderItStep(field=_, key~) =>
       stack
-      .enter(next, { "key": key_value(key), "value": next }, is_frame=false)
+      .enter(next, { "key": key.to_value(), "value": next }, is_frame=false)
       .enter(next, Map([]))
     BindStep(binds~) => stack.enter(next, binds.copy(), is_frame=false)
     ScopeBindStep(val~) => {

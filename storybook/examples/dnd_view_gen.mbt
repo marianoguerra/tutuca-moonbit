@@ -33,7 +33,7 @@ fn DnDExampleState::zero() -> DnDExampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dn_d_example_zero_args() -> Map[String, @tutuca.Value] {
-  dn_d_example_encode(DnDExampleState::zero())
+  @component.Fields::encode(DnDExampleState::zero())
 }
 
 ///|
@@ -57,8 +57,8 @@ pub fn DnDExampleField::name(self : DnDExampleField) -> String {
 /// happened to be integral.
 pub fn DnDExampleField::kind(self : DnDExampleField) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
+    Items => FList
+    Query => FText
   }
 }
 
@@ -79,7 +79,7 @@ pub let dn_d_example_schema_fingerprint : String = "669b14463cd52e60"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn dn_d_example_encode(s : DnDExampleState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for DnDExampleState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -89,7 +89,7 @@ fn dn_d_example_encode(s : DnDExampleState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn dn_d_example_decode(f : Map[String, @tutuca.Value]) -> DnDExampleState? {
+impl @component.Fields for DnDExampleState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -237,36 +237,19 @@ pub fn[S] dn_d_example_when(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn dn_d_example_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "669b14463cd52e60",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for DnDExampleState with fn schema() {
+  @component.SchemaInfo::new(
+    name="DnDExample",
+    fingerprint="669b14463cd52e60",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
     ],
-    inputs: ["onDropOnItem", "resetQuery", "setQuery"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["onDropOnItem", "resetQuery", "setQuery"],
+    view_names=["main"],
+  )
 }

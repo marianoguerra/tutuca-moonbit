@@ -77,8 +77,5 @@ pub fn list_iteration_component(
     specs~,
     provide~,
     lookup~,
-    encode=list_iteration_encode,
-    decode=list_iteration_decode,
-    schema=list_iteration_schema(),
   )
 }

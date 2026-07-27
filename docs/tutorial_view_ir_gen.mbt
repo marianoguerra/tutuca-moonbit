@@ -83,9 +83,6 @@ pub fn counter_component(
     specs~,
     provide~,
     lookup~,
-    encode=counter_encode,
-    decode=counter_decode,
-    schema=counter_schema(),
   )
 }
 
@@ -175,9 +172,6 @@ pub fn profile_component(
     specs~,
     provide~,
     lookup~,
-    encode=profile_encode,
-    decode=profile_decode,
-    schema=profile_schema(),
   )
 }
 
@@ -261,9 +255,6 @@ pub fn search_component(
     specs~,
     provide~,
     lookup~,
-    encode=search_encode,
-    decode=search_decode,
-    schema=search_schema(),
   )
 }
 
@@ -350,9 +341,6 @@ pub fn toggle_component(
     specs~,
     provide~,
     lookup~,
-    encode=toggle_encode,
-    decode=toggle_decode,
-    schema=toggle_schema(),
   )
 }
 
@@ -425,9 +413,6 @@ pub fn fruits_component(
     specs~,
     provide~,
     lookup~,
-    encode=fruits_encode,
-    decode=fruits_decode,
-    schema=fruits_schema(),
   )
 }
 
@@ -495,9 +480,6 @@ pub fn greeting_component(
     specs~,
     provide~,
     lookup~,
-    encode=greeting_encode,
-    decode=greeting_decode,
-    schema=greeting_schema(),
   )
 }
 
@@ -551,9 +533,6 @@ pub fn page_component(
     specs~,
     provide~,
     lookup~,
-    encode=page_encode,
-    decode=page_decode,
-    schema=page_schema(),
   )
 }
 
@@ -608,9 +587,6 @@ pub fn status_component(
     specs~,
     provide~,
     lookup~,
-    encode=status_encode,
-    decode=status_decode,
-    schema=status_schema(),
   )
 }
 
@@ -688,9 +664,6 @@ pub fn chat_component(
     specs~,
     provide~,
     lookup~,
-    encode=chat_encode,
-    decode=chat_decode,
-    schema=chat_schema(),
   )
 }
 
@@ -755,9 +728,6 @@ pub fn quotes_component(
     specs~,
     provide~,
     lookup~,
-    encode=quotes_encode,
-    decode=quotes_decode,
-    schema=quotes_schema(),
   )
 }
 
@@ -825,8 +795,5 @@ pub fn features_component(
     specs~,
     provide~,
     lookup~,
-    encode=features_encode,
-    decode=features_decode,
-    schema=features_schema(),
   )
 }

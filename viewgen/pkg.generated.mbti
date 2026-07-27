@@ -3,11 +3,14 @@ package "marianoguerra/tutuca/viewgen"
 
 import {
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/statedef",
   "moonbitlang/core/debug",
 }
 
 // Values
 pub fn build_views(ViewSet, macros? : Array[MacroDef]) -> Map[String, @anode.View] raise GenError
+
+pub fn declared_components(ViewFile, String) -> Array[String]
 
 pub fn emit_ir_module(String, String, ViewFile) -> String raise GenError
 
@@ -38,6 +41,14 @@ pub suberror GenError {
   EmptyView(String)
   NameCollision(variant~ : String, first~ : String, second~ : String)
   BadComponentName(String)
+  BadStateBlock(line~ : Int, message~ : String)
+  DuplicateStateBlock
+  NoViewsToCompile
+  MethodInEventPosition(view~ : String, name~ : String, site~ : String)
+  BadInitBlock(line~ : Int, message~ : String)
+  UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
+  NotIterable(view~ : String, expr~ : String, ty~ : String)
+  NotRenderable(view~ : String, expr~ : String, ty~ : String)
 }
 pub fn GenError::message(Self) -> String
 
@@ -72,11 +83,17 @@ pub(all) struct Surface {
   methods : Array[String]
   fields : Array[String]
   ids : Array[String]
+  whens : Array[String]
+  enriches : Array[String]
+  enrich_scopes : Array[String]
+  loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ViewFile {
   components : Array[ViewSet]
   macros : Array[MacroDef]
+  state : Array[@statedef.StateDef]
+  init : Array[(String, @statedef.InitState)]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct ViewSet {

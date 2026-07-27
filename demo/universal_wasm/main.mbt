@@ -370,6 +370,12 @@ pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
 
 ///|
 /// Root state as display text, for inspection/automated verification.
+///
+/// Deliberately NOT `to_json`, unlike the playground's panel: this tree holds
+/// GUEST instances, and a guest declares no fields (the manifest carries none
+/// yet), so `to_json` would project them to null. `obj_debug` reaches the
+/// guest's own `to-json` projection instead. Once the manifest carries a field
+/// list this can move over with the rest.
 pub fn state_json() -> String {
   guard @dhw.app_root_value() is Some(v) else { return "null" }
   v.to_display_string()

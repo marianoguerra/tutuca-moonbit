@@ -35,9 +35,6 @@ fn static_macro_comp() -> @component.Component {
     },
     name="StaticMacro",
     init=MacrosNoState::{  },
-    encode=macros_no_encode,
-    decode=macros_no_decode,
-    schema=macros_no_schema(),
   )
 }
 
@@ -87,9 +84,6 @@ fn macro_params_comp() -> @component.Component {
     },
     name="MacroParams",
     init=MacroParamsState::{ status: "active" },
-    encode=macro_params_encode,
-    decode=macro_params_decode,
-    schema=macro_params_schema(),
   )
 }
 
@@ -158,9 +152,6 @@ fn macro_slots_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=macro_slots_encode,
-    decode=macro_slots_decode,
-    schema=macro_slots_schema(),
   )
 }
 
@@ -225,9 +216,6 @@ fn macro_named_slots_comp() -> @component.Component {
         _ => None
       }
     },
-    encode=macro_named_slots_encode,
-    decode=macro_named_slots_decode,
-    schema=macro_named_slots_schema(),
   )
 }
 

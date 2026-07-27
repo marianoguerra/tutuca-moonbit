@@ -32,7 +32,7 @@ fn RenderWithScopeState::zero() -> RenderWithScopeState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn render_with_scope_zero_args() -> Map[String, @tutuca.Value] {
-  render_with_scope_encode(RenderWithScopeState::zero())
+  @component.Fields::encode(RenderWithScopeState::zero())
 }
 
 ///|
@@ -56,7 +56,7 @@ pub fn RenderWithScopeField::kind(
   self : RenderWithScopeField,
 ) -> @component.FieldKind {
   match self {
-    Text => @component.FText
+    Text => FText
   }
 }
 
@@ -77,18 +77,14 @@ pub let render_with_scope_schema_fingerprint : String = "25c803b695d1cdde"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn render_with_scope_encode(
-  s : RenderWithScopeState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for RenderWithScopeState with fn encode(s) {
   { "text": Str(s.text) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn render_with_scope_decode(
-  f : Map[String, @tutuca.Value],
-) -> RenderWithScopeState? {
+impl @component.Fields for RenderWithScopeState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   Some(RenderWithScopeState::{ text: v_text })
 }
@@ -218,30 +214,18 @@ pub fn[S] render_with_scope_enrich_scope(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn render_with_scope_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "25c803b695d1cdde",
-    fields: [
-      {
-        name: "text",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: ["setText"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for RenderWithScopeState with fn schema() {
+  @component.SchemaInfo::new(
+    name="RenderWithScope",
+    fingerprint="25c803b695d1cdde",
+    fields=[@component.FieldInfo::new("text", "string", FText)],
+    inputs=["setText"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -270,7 +254,7 @@ fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_filter_enrich_zero_args() -> Map[String, @tutuca.Value] {
-  list_filter_enrich_encode(ListFilterEnrichState::zero())
+  @component.Fields::encode(ListFilterEnrichState::zero())
 }
 
 ///|
@@ -296,8 +280,8 @@ pub fn ListFilterEnrichField::kind(
   self : ListFilterEnrichField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
+    Items => FList
+    Query => FText
   }
 }
 
@@ -318,9 +302,7 @@ pub let list_filter_enrich_schema_fingerprint : String = "d9bbfb6a84864d29"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn list_filter_enrich_encode(
-  s : ListFilterEnrichState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ListFilterEnrichState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -330,9 +312,7 @@ fn list_filter_enrich_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn list_filter_enrich_decode(
-  f : Map[String, @tutuca.Value],
-) -> ListFilterEnrichState? {
+impl @component.Fields for ListFilterEnrichState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -523,38 +503,21 @@ pub fn[S] list_filter_enrich_enrich(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn list_filter_enrich_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "d9bbfb6a84864d29",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ListFilterEnrichState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ListFilterEnrich",
+    fingerprint="d9bbfb6a84864d29",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
     ],
-    inputs: ["resetQuery", "setQuery"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["resetQuery", "setQuery"],
+    view_names=["main"],
+  )
 }
 
 ///|
@@ -583,7 +546,7 @@ fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_filter_enrich_with_zero_args() -> Map[String, @tutuca.Value] {
-  list_filter_enrich_with_encode(ListFilterEnrichWithState::zero())
+  @component.Fields::encode(ListFilterEnrichWithState::zero())
 }
 
 ///|
@@ -611,8 +574,8 @@ pub fn ListFilterEnrichWithField::kind(
   self : ListFilterEnrichWithField,
 ) -> @component.FieldKind {
   match self {
-    Items => @component.FList
-    Query => @component.FText
+    Items => FList
+    Query => FText
   }
 }
 
@@ -633,9 +596,7 @@ pub let list_filter_enrich_with_schema_fingerprint : String = "4b8fcd058a698178"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn list_filter_enrich_with_encode(
-  s : ListFilterEnrichWithState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ListFilterEnrichWithState with fn encode(s) {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
     "query": Str(s.query),
@@ -645,9 +606,7 @@ fn list_filter_enrich_with_encode(
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn list_filter_enrich_with_decode(
-  f : Map[String, @tutuca.Value],
-) -> ListFilterEnrichWithState? {
+impl @component.Fields for ListFilterEnrichWithState with fn decode(f) {
   guard f.get("items") is Some(t1_items) else { return None }
   guard t1_items is List(u1_items) else { return None }
   let v_items : Array[@tutuca.Value] = []
@@ -883,36 +842,19 @@ pub fn[S] list_filter_enrich_with_loop_with(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn list_filter_enrich_with_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "4b8fcd058a698178",
-    fields: [
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "query",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ListFilterEnrichWithState with fn schema() {
+  @component.SchemaInfo::new(
+    name="ListFilterEnrichWith",
+    fingerprint="4b8fcd058a698178",
+    fields=[
+      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("query", "string", FText),
     ],
-    inputs: ["resetQuery", "setQuery"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: ["main"],
-    init_names: [],
-  }
+    inputs=["resetQuery", "setQuery"],
+    view_names=["main"],
+  )
 }

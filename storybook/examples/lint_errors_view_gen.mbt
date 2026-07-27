@@ -39,7 +39,7 @@ fn LintDemoState::zero() -> LintDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  lint_demo_encode(LintDemoState::zero())
+  @component.Fields::encode(LintDemoState::zero())
 }
 
 ///|
@@ -69,11 +69,11 @@ pub fn LintDemoField::name(self : LintDemoField) -> String {
 /// happened to be integral.
 pub fn LintDemoField::kind(self : LintDemoField) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
-    Items => @component.FList
-    Kind => @component.FText
-    IsOpen => @component.FBool
-    Child => @component.FAny
+    Count => FInt
+    Items => FList
+    Kind => FText
+    IsOpen => FBool
+    Child => FAny
   }
 }
 
@@ -96,7 +96,7 @@ pub let lint_demo_schema_fingerprint : String = "61623a4912326968"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn lint_demo_encode(s : LintDemoState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for LintDemoState with fn encode(s) {
   {
     "count": Num(s.count.to_double()),
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
@@ -109,7 +109,7 @@ fn lint_demo_encode(s : LintDemoState) -> Map[String, @tutuca.Value] {
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn lint_demo_decode(f : Map[String, @tutuca.Value]) -> LintDemoState? {
+impl @component.Fields for LintDemoState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   guard f.get("items") is Some(t1_items) else { return None }
@@ -134,62 +134,18 @@ fn lint_demo_decode(f : Map[String, @tutuca.Value]) -> LintDemoState? {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn lint_demo_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "61623a4912326968",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "items",
-        ty: "list<any>",
-        kind: @component.FList,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-      {
-        name: "kind",
-        ty: "string",
-        kind: @component.FText,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "isOpen",
-        ty: "bool",
-        kind: @component.FBool,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-      {
-        name: "child",
-        ty: "any",
-        kind: @component.FAny,
-        elem: Some("any"),
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for LintDemoState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="61623a4912326968", fields=[
+    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+    @component.FieldInfo::new("kind", "string", FText),
+    @component.FieldInfo::new("isOpen", "bool", FBool),
+    @component.FieldInfo::new("child", "any", FAny, elem="any"),
+  ])
 }
 
 ///|
@@ -217,7 +173,7 @@ fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn html_lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  html_lint_demo_encode(HtmlLintDemoState::zero())
+  @component.Fields::encode(HtmlLintDemoState::zero())
 }
 
 ///|
@@ -241,7 +197,7 @@ pub fn HtmlLintDemoField::kind(
   self : HtmlLintDemoField,
 ) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
+    Count => FInt
   }
 }
 
@@ -262,14 +218,14 @@ pub let html_lint_demo_schema_fingerprint : String = "5527f190b24e5ee0"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn html_lint_demo_encode(s : HtmlLintDemoState) -> Map[String, @tutuca.Value] {
+impl @component.Fields for HtmlLintDemoState with fn encode(s) {
   { "count": Num(s.count.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn html_lint_demo_decode(f : Map[String, @tutuca.Value]) -> HtmlLintDemoState? {
+impl @component.Fields for HtmlLintDemoState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(HtmlLintDemoState::{ count: v_count })
@@ -278,30 +234,14 @@ fn html_lint_demo_decode(f : Map[String, @tutuca.Value]) -> HtmlLintDemoState? {
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn html_lint_demo_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "5527f190b24e5ee0",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for HtmlLintDemoState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="5527f190b24e5ee0", fields=[
+    @component.FieldInfo::new("count", "s32", FInt),
+  ])
 }
 
 ///|
@@ -329,7 +269,7 @@ fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn scoped_style_demo_zero_args() -> Map[String, @tutuca.Value] {
-  scoped_style_demo_encode(ScopedStyleDemoState::zero())
+  @component.Fields::encode(ScopedStyleDemoState::zero())
 }
 
 ///|
@@ -353,7 +293,7 @@ pub fn ScopedStyleDemoField::kind(
   self : ScopedStyleDemoField,
 ) -> @component.FieldKind {
   match self {
-    Count => @component.FInt
+    Count => FInt
   }
 }
 
@@ -374,18 +314,14 @@ pub let scoped_style_demo_schema_fingerprint : String = "86b61c5fb0f1011d"
 /// A field that already holds a `@tutuca.Value` is passed straight
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
-fn scoped_style_demo_encode(
-  s : ScopedStyleDemoState,
-) -> Map[String, @tutuca.Value] {
+impl @component.Fields for ScopedStyleDemoState with fn encode(s) {
   { "count": Num(s.count.to_double()) }
 }
 
 ///|
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
-fn scoped_style_demo_decode(
-  f : Map[String, @tutuca.Value],
-) -> ScopedStyleDemoState? {
+impl @component.Fields for ScopedStyleDemoState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(ScopedStyleDemoState::{ count: v_count })
@@ -394,28 +330,12 @@ fn scoped_style_demo_decode(
 ///|
 /// What this component's schema declares, for `schema~`.
 ///
-/// Passing it to `component` also stops the runtime inferring field
-/// kinds from the init value — the schema states them.
-pub fn scoped_style_demo_schema() -> @component.SchemaInfo {
-  {
-    fingerprint: "86b61c5fb0f1011d",
-    fields: [
-      {
-        name: "count",
-        ty: "s32",
-        kind: @component.FInt,
-        elem: None,
-        slot: None,
-        members: [],
-      },
-    ],
-    inputs: [],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: [],
-    ids: [],
-    view_names: [],
-    init_names: [],
-  }
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for ScopedStyleDemoState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="86b61c5fb0f1011d", fields=[
+    @component.FieldInfo::new("count", "s32", FInt),
+  ])
 }

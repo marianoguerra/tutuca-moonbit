@@ -41,9 +41,9 @@ test "a state block emits the struct, its zero and its field table" {
   assert_true(src.contains("history: [],"))
   // The declared field kinds — `count` is FInt because the schema says s32,
   // not because the seed value happened to be integral.
-  assert_true(src.contains("Count => @component.FInt"))
-  assert_true(src.contains("History => @component.FList"))
-  assert_true(src.contains("Label => @component.FText"))
+  assert_true(src.contains("Count => FInt"))
+  assert_true(src.contains("History => FList"))
+  assert_true(src.contains("Label => FText"))
 }
 
 ///|
@@ -93,14 +93,16 @@ test "sets, ordered maps and child slots are described in the schema" {
   // Every field is described, with the things a runtime spec has no room
   // for: the WIT spelling, a collection's element type, the component a slot
   // holds, and a `flags` set's declared membership.
-  assert_true(src.contains("kind: @component.FSet"))
-  assert_true(src.contains("members: [\"done\", \"active\"]"))
-  assert_true(src.contains("ty: \"text-set\""))
-  assert_true(src.contains("kind: @component.FOMap"))
-  assert_true(src.contains("slot: Some(\"Card\")"))
+  // Each field is one `FieldInfo::new` call: the trimming constructor states
+  // the parts this field HAS and writes no line for the ones it does not.
+  assert_true(src.contains("\"vis\", \"visibility\", FSet"))
+  assert_true(src.contains("members=[\"done\", \"active\"]"))
+  assert_true(src.contains("\"tags\", \"text-set\", FSet"))
+  assert_true(src.contains("\"order\", \"an ordered map of any\", FOMap"))
+  assert_true(src.contains("slot=\"Card\""))
   // ...and a plain field is described too — the descriptor is the whole
   // schema, not only the parts the runtime would get wrong.
-  assert_true(src.contains("name: \"plain\""))
+  assert_true(src.contains("\"plain\", \"string\", FText"))
   // Two components, two states.
   assert_true(src.contains("pub(all) struct CardState {"))
   assert_true(src.contains("pub(all) struct BoardState {"))

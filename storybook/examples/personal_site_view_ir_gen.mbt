@@ -76,9 +76,6 @@ pub fn alt_url_component(
     specs~,
     provide~,
     lookup~,
-    encode=alt_url_encode,
-    decode=alt_url_decode,
-    schema=alt_url_schema(),
   )
 }
 
@@ -243,9 +240,6 @@ pub fn ps_entry_component(
     specs~,
     provide~,
     lookup~,
-    encode=ps_entry_encode,
-    decode=ps_entry_decode,
-    schema=ps_entry_schema(),
   )
 }
 
@@ -536,8 +530,5 @@ pub fn root_component(
     specs~,
     provide~,
     lookup~,
-    encode=root_encode,
-    decode=root_decode,
-    schema=root_schema(),
   )
 }

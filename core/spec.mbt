@@ -135,7 +135,27 @@ pub(open) trait Obj {
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
   fn obj_render_handler(Self, name : String, ns : HandlerNamespace) -> Value = _ // alter bucket
   fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
-  fn obj_eq(Self, other : &Obj) -> Bool = _ // structural; false by default (Fn precedent)
+  // What this instance DECLARES: the one method that makes the nine above
+  // describable. Without it a holder of a bare `Value` can ask for a NAMED
+  // field and nothing else — not which names exist, not what they hold — and
+  // every consumer worked around that differently (a `Components` registry, a
+  // hardcoded name list, a JSON projection).
+  //
+  // Answering `Some` is a claim that the schema names EVERY field this
+  // instance has, because the defaults below range over it: a field left out
+  // is a field that does not exist as far as equality, the debug rendering and
+  // the JSON form are concerned, and for equality that is not incomplete but
+  // wrong. None is the honest answer when the description is partial — an
+  // opaque guest instance, an ad-hoc Obj standing in for a record — and it
+  // costs only the defaults, which fall back to what they did before.
+  //
+  // MUST return a STORED value, never build one: the defaults read it in loops.
+  fn obj_schema(Self) -> SchemaInfo? = _
+  // The sized half of the obj_seq_entries hook, so `size_of` stops answering
+  // None for a custom collection. The default counts the entries; override
+  // when the length is known without materializing them.
+  fn obj_size(Self) -> Int? = _
+  fn obj_eq(Self, other : &Obj) -> Bool = _ // structural over the schema; false when there is none
   fn obj_debug(Self) -> String = _
 }
 
@@ -180,13 +200,67 @@ impl Obj with fn obj_handler(_self, _bucket, _name) {
 }
 
 ///|
-impl Obj with fn obj_eq(_self, _other) {
-  false
+impl Obj with fn obj_schema(_self) {
+  None
 }
 
 ///|
-impl Obj with fn obj_debug(_self) {
-  "<obj>"
+impl Obj with fn obj_size(self) {
+  match self.obj_seq_entries() {
+    Some(entries) => Some(entries.length())
+    None => None
+  }
+}
+
+///|
+/// Structural equality over the DECLARED fields, both directions.
+///
+/// This used to be `false`, and every implementor that wanted real equality
+/// wrote the same probe loop — over its OWN fields, so an `other` carrying
+/// extra ones compared equal, and an implementor that forgot (`DynObj`) got
+/// two instances that never compared equal at all. With a schema in hand the
+/// loop belongs here, once.
+///
+/// Still `false` without a schema: an Obj that declares nothing has not said
+/// what equality would even range over, and answering `true` for two opaque
+/// values is the worse mistake.
+impl Obj with fn obj_eq(self, other) {
+  guard self.obj_schema() is Some(schema) else { return false }
+  if self.component_id() != other.component_id() {
+    return false
+  }
+  for f in schema.fields {
+    if self.obj_field(f.name) != other.obj_field(f.name) {
+      return false
+    }
+  }
+  true
+}
+
+///|
+/// `Name{field: value, …}` from the schema; `<obj>` without one.
+impl Obj with fn obj_debug(self) {
+  guard self.obj_schema() is Some(schema) else { return "<obj>" }
+  let sb = StringBuilder()
+  sb.write_string(schema.name)
+  sb.write_string("{")
+  let mut first = true
+  for f in schema.fields {
+    if !first {
+      sb.write_string(", ")
+    }
+    first = false
+    sb.write_string(f.name)
+    sb.write_string(": ")
+    sb.write_string(
+      match self.obj_field(f.name) {
+        Some(v) => v.to_repr().to_string()
+        None => "_"
+      },
+    )
+  }
+  sb.write_string("}")
+  sb.to_string()
 }
 
 ///|

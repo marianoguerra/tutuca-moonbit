@@ -135,8 +135,5 @@ pub fn dn_d_example_component(
     specs~,
     provide~,
     lookup~,
-    encode=dn_d_example_encode,
-    decode=dn_d_example_decode,
-    schema=dn_d_example_schema(),
   )
 }

@@ -63,9 +63,6 @@ pub fn fp_greeting_component(
     specs~,
     provide~,
     lookup~,
-    encode=fp_greeting_encode,
-    decode=fp_greeting_decode,
-    schema=fp_greeting_schema(),
   )
 }
 
@@ -117,9 +114,6 @@ pub fn note_component(
     specs~,
     provide~,
     lookup~,
-    encode=note_encode,
-    decode=note_decode,
-    schema=note_schema(),
   )
 }
 
@@ -169,8 +163,5 @@ pub fn mailbox_component(
     specs~,
     provide~,
     lookup~,
-    encode=mailbox_encode,
-    decode=mailbox_decode,
-    schema=mailbox_schema(),
   )
 }

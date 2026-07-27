@@ -71,9 +71,6 @@ pub fn json_null_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_null_encode,
-    decode=json_null_decode,
-    schema=json_null_schema(),
   )
 }
 
@@ -143,9 +140,6 @@ pub fn json_boolean_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_boolean_encode,
-    decode=json_boolean_decode,
-    schema=json_boolean_schema(),
   )
 }
 
@@ -208,9 +202,6 @@ pub fn json_number_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_number_encode,
-    decode=json_number_decode,
-    schema=json_number_schema(),
   )
 }
 
@@ -274,9 +265,6 @@ pub fn json_string_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_string_encode,
-    decode=json_string_decode,
-    schema=json_string_schema(),
   )
 }
 
@@ -334,9 +322,6 @@ pub fn value_fn_component(
     specs~,
     provide~,
     lookup~,
-    encode=value_fn_encode,
-    decode=value_fn_decode,
-    schema=value_fn_schema(),
   )
 }
 
@@ -395,9 +380,6 @@ pub fn value_obj_component(
     specs~,
     provide~,
     lookup~,
-    encode=value_obj_encode,
-    decode=value_obj_decode,
-    schema=value_obj_schema(),
   )
 }
 
@@ -563,9 +545,6 @@ pub fn json_array_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_array_encode,
-    decode=json_array_decode,
-    schema=json_array_schema(),
   )
 }
 
@@ -731,9 +710,6 @@ pub fn json_object_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_object_encode,
-    decode=json_object_decode,
-    schema=json_object_schema(),
   )
 }
 
@@ -803,9 +779,6 @@ pub fn json_property_component(
     specs~,
     provide~,
     lookup~,
-    encode=json_property_encode,
-    decode=json_property_decode,
-    schema=json_property_schema(),
   )
 }
 
@@ -857,8 +830,5 @@ pub fn data_inspector_component(
     specs~,
     provide~,
     lookup~,
-    encode=data_inspector_encode,
-    decode=data_inspector_decode,
-    schema=data_inspector_schema(),
   )
 }
