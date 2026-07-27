@@ -66,7 +66,7 @@ impl @component.Fields for GreetingState with fn schema() {
   @component.SchemaInfo::new(
     name="Greeting",
     fingerprint="291131f40d1ed859",
-    fields=[@component.FieldInfo::new("name", "string", FText)],
+    fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
 }
@@ -127,15 +127,7 @@ impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
     fingerprint="db02b6e5e92c5199",
-    fields=[
-      @component.FieldInfo::new(
-        "greeting",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("greeting", TyComp(None))],
     view_names=["main"],
   )
 }
@@ -268,8 +260,8 @@ impl @component.Fields for EntryState with fn schema() {
     name="Entry",
     fingerprint="e63d2a9edab89eef",
     fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("description", "string", FText),
+      @component.FieldInfo::new("title", TyText),
+      @component.FieldInfo::new("description", TyText),
     ],
     inputs=["setDescription", "setTitle"],
     methods=["containsText"],
@@ -333,15 +325,7 @@ impl @component.Fields for MultipleViewsState with fn schema() {
   @component.SchemaInfo::new(
     name="MultipleViews",
     fingerprint="74788bd77ca3a59f",
-    fields=[
-      @component.FieldInfo::new(
-        "value",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )
 }

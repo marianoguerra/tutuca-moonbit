@@ -140,8 +140,8 @@ impl @component.Fields for SwatchPickerState with fn schema() {
     name="SwatchPicker",
     fingerprint="30457ae742655759",
     fields=[
-      @component.FieldInfo::new("color", "string", FText),
-      @component.FieldInfo::new("palette", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("color", TyText),
+      @component.FieldInfo::new("palette", TyList(TyAny)),
     ],
     inputs=["setColor"],
     view_names=["main"],
@@ -293,9 +293,9 @@ impl @component.Fields for QuadraticState with fn schema() {
     name="Quadratic",
     fingerprint="bb32e2a1638d9036",
     fields=[
-      @component.FieldInfo::new("a", "s32", FInt),
-      @component.FieldInfo::new("b", "s32", FInt),
-      @component.FieldInfo::new("c", "s32", FInt),
+      @component.FieldInfo::new("a", TyInt),
+      @component.FieldInfo::new("b", TyInt),
+      @component.FieldInfo::new("c", TyInt),
     ],
     inputs=["setA", "setB", "setC"],
     methods=["classify", "discriminant"],

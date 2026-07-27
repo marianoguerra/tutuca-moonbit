@@ -72,7 +72,7 @@ impl @component.Fields for ListIterationState with fn schema() {
   @component.SchemaInfo::new(
     name="ListIteration",
     fingerprint="4cb2b12ca13a0bfa",
-    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     view_names=["main"],
   )
 }

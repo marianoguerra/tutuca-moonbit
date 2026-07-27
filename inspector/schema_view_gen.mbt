@@ -71,9 +71,9 @@ impl @component.Fields for SchemaPropertyState with fn schema() {
     name="SchemaProperty",
     fingerprint="738c4fe1907764e4",
     fields=[
-      @component.FieldInfo::new("key", "string", FText),
-      @component.FieldInfo::new("child", "any", FAny, elem="any"),
-      @component.FieldInfo::new("required", "bool", FBool),
+      @component.FieldInfo::new("key", TyText),
+      @component.FieldInfo::new("child", TyAny),
+      @component.FieldInfo::new("required", TyBool),
     ],
     view_names=["main"],
   )
@@ -160,9 +160,9 @@ impl @component.Fields for SchemaBranchState with fn schema() {
     name="SchemaBranch",
     fingerprint="b48cf0ecfc472225",
     fields=[
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("child", "any", FAny, elem="any"),
-      @component.FieldInfo::new("labelClass", "string", FText),
+      @component.FieldInfo::new("label", TyText),
+      @component.FieldInfo::new("child", TyAny),
+      @component.FieldInfo::new("labelClass", TyText),
     ],
     methods=["labelCssClass"],
     view_names=["main", "_margauiClasses"],

@@ -130,7 +130,7 @@ impl @component.Fields for RenderWithScopeState with fn schema() {
   @component.SchemaInfo::new(
     name="RenderWithScope",
     fingerprint="25c803b695d1cdde",
-    fields=[@component.FieldInfo::new("text", "string", FText)],
+    fields=[@component.FieldInfo::new("text", TyText)],
     inputs=["setText"],
     view_names=["main"],
   )
@@ -288,8 +288,8 @@ impl @component.Fields for ListFilterEnrichState with fn schema() {
     name="ListFilterEnrich",
     fingerprint="d9bbfb6a84864d29",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("query", TyText),
     ],
     inputs=["resetQuery", "setQuery"],
     view_names=["main"],
@@ -471,8 +471,8 @@ impl @component.Fields for ListFilterEnrichWithState with fn schema() {
     name="ListFilterEnrichWith",
     fingerprint="4b8fcd058a698178",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("query", TyText),
     ],
     inputs=["resetQuery", "setQuery"],
     view_names=["main"],

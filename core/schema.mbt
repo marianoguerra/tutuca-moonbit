@@ -1,15 +1,15 @@
 // The declared-description constructors and queries (see schema_spec.mbt).
 
 ///|
-pub fn FieldInfo::new(
-  name : String,
-  ty : String,
-  kind : FieldKind,
-  elem? : String,
-  slot? : String,
-  members? : Array[String] = [],
-) -> FieldInfo {
-  { name, ty, kind, elem, slot, members }
+pub fn FieldInfo::new(name : String, ty : TyInfo) -> FieldInfo {
+  { name, ty }
+}
+
+///|
+/// The runtime kind this field carries — a projection of its type, never a
+/// second statement about it.
+pub fn FieldInfo::kind(self : FieldInfo) -> FieldKind {
+  self.ty.kind()
 }
 
 ///|

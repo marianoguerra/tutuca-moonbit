@@ -131,20 +131,9 @@ impl @component.Fields for DseRootState with fn schema() {
     name="DseRoot",
     fingerprint="1e0db39e41167c58",
     fields=[
-      @component.FieldInfo::new(
-        "items",
-        "an ordered map of any",
-        FOMap,
-        elem="any",
-      ),
-      @component.FieldInfo::new("selectedKey", "string", FText),
-      @component.FieldInfo::new(
-        "editor",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("items", TyOMap(TyAny)),
+      @component.FieldInfo::new("selectedKey", TyText),
+      @component.FieldInfo::new("editor", TyComp(None)),
     ],
     inputs=["selectItem"],
     view_names=["main"],
@@ -210,7 +199,7 @@ impl @component.Fields for DseEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="DseEditor",
     fingerprint="6d6412be74f3d0b4",
-    fields=[@component.FieldInfo::new("missing", "any", FAny, elem="any")],
+    fields=[@component.FieldInfo::new("missing", TyAny)],
     view_names=["main"],
   )
 }
@@ -321,7 +310,7 @@ impl @component.Fields for DseEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="DseEntry",
     fingerprint="2184b70b210b0dff",
-    fields=[@component.FieldInfo::new("name", "string", FText)],
+    fields=[@component.FieldInfo::new("name", TyText)],
     inputs=["setName"],
     view_names=["main", "edit"],
   )

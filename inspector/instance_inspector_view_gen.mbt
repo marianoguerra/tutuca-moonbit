@@ -202,11 +202,11 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
     name="InstanceFields",
     fingerprint="b02c70c78c681361",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("isExpanded", "bool", FBool),
-      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
-      @component.FieldInfo::new("currentPage", "s32", FInt),
-      @component.FieldInfo::new("typeName", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("isExpanded", TyBool),
+      @component.FieldInfo::new("itemsPerPage", TyInt),
+      @component.FieldInfo::new("currentPage", TyInt),
+      @component.FieldInfo::new("typeName", TyText),
     ],
     inputs=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
@@ -276,7 +276,7 @@ impl @component.Fields for InstanceInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceInspector",
     fingerprint="dc6d2f180419a084",
-    fields=[@component.FieldInfo::new("value", "any", FAny, elem="any")],
+    fields=[@component.FieldInfo::new("value", TyAny)],
     view_names=["main"],
   )
 }
@@ -411,10 +411,10 @@ impl @component.Fields for InstanceExplorerState with fn schema() {
     name="InstanceExplorer",
     fingerprint="7b0fa55820264791",
     fields=[
-      @component.FieldInfo::new("activeTab", "string", FText),
-      @component.FieldInfo::new("instanceView", "any", FAny, elem="any"),
-      @component.FieldInfo::new("componentView", "any", FAny, elem="any"),
-      @component.FieldInfo::new("hasComponent", "bool", FBool),
+      @component.FieldInfo::new("activeTab", TyText),
+      @component.FieldInfo::new("instanceView", TyAny),
+      @component.FieldInfo::new("componentView", TyAny),
+      @component.FieldInfo::new("hasComponent", TyBool),
     ],
     inputs=["setActiveTab"],
     view_names=["main"],

@@ -122,8 +122,8 @@ impl @component.Fields for ItemState with fn schema() {
     name="Item",
     fingerprint="1e66ddad592bcfff",
     fields=[
-      @component.FieldInfo::new("completed", "bool", FBool),
-      @component.FieldInfo::new("text", "string", FText),
+      @component.FieldInfo::new("completed", TyBool),
+      @component.FieldInfo::new("text", TyText),
     ],
     inputs=["setCompleted", "setText"],
     view_names=["main"],
@@ -248,7 +248,7 @@ impl @component.Fields for ItemsState with fn schema() {
   @component.SchemaInfo::new(
     name="Items",
     fingerprint="a499a33b72d011a0",
-    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     inputs=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
   )

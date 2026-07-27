@@ -194,13 +194,13 @@ impl @component.Fields for PanelState with fn decode(f) {
 ///|
 impl @component.Fields for ItemState with fn schema() {
   @component.SchemaInfo::new(fingerprint="item_state", fields=[
-    @component.FieldInfo::new("label", "string", FText),
+    @component.FieldInfo::new("label", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(fingerprint="panel_state", fields=[
-    @component.FieldInfo::new("title", "string", FText),
+    @component.FieldInfo::new("title", TyText),
   ])
 }

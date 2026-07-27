@@ -59,22 +59,27 @@ fn summary_from_schema(
       "name": Str(f.name),
       // The WIT spelling the author wrote, not a label reconstructed from
       // the runtime kind: `list<card>`, not `list`.
-      "type": Str(f.ty),
+      "type": Str(f.ty.show_wit()),
       "default": match comp.specs.get(f.name) {
         Some(sp) => sp.default
         None => Null
       },
     }
-    match f.elem {
-      Some(e) => row["elem"] = Str(e)
+    // What it CONTAINS, which is now a different question from "may a view
+    // `@each` over it?" — that one has to answer yes for `any` and for a child
+    // slot, and answering both with one method put a meaningless `elem: any`
+    // on this row for every dynamic field in the corpus.
+    match f.ty.elem() {
+      Some(e) => row["elem"] = Str(e.show_wit())
       None => ()
     }
-    match f.slot {
+    match f.ty.slot() {
       Some(c) => row["slot"] = Str(c)
       None => ()
     }
-    if !f.members.is_empty() {
-      row["members"] = name_list(f.members)
+    let members = f.ty.members()
+    if !members.is_empty() {
+      row["members"] = name_list(members)
     }
     fields.push(Map(row))
   }

@@ -139,7 +139,7 @@ impl @component.Fields for JsonBooleanState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonBoolean",
     fingerprint="b270c2ac6dd034f0",
-    fields=[@component.FieldInfo::new("value", "bool", FBool)],
+    fields=[@component.FieldInfo::new("value", TyBool)],
     methods=["cssClass", "text"],
     view_names=["main", "_margauiClasses"],
   )
@@ -217,7 +217,7 @@ impl @component.Fields for JsonNumberState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonNumber",
     fingerprint="73392a7a2fd55507",
-    fields=[@component.FieldInfo::new("value", "f64", FFloat)],
+    fields=[@component.FieldInfo::new("value", TyFloat)],
     methods=["text"],
     view_names=["main"],
   )
@@ -295,7 +295,7 @@ impl @component.Fields for JsonStringState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonString",
     fingerprint="56e6fad878f71b0c",
-    fields=[@component.FieldInfo::new("value", "string", FText)],
+    fields=[@component.FieldInfo::new("value", TyText)],
     methods=["text"],
     view_names=["main"],
   )
@@ -418,7 +418,7 @@ impl @component.Fields for ValueObjState with fn schema() {
   @component.SchemaInfo::new(
     name="ValueObj",
     fingerprint="aefeaa6a83e10b7f",
-    fields=[@component.FieldInfo::new("text", "string", FText)],
+    fields=[@component.FieldInfo::new("text", TyText)],
     view_names=["main"],
   )
 }
@@ -611,10 +611,10 @@ impl @component.Fields for JsonArrayState with fn schema() {
     name="JsonArray",
     fingerprint="caa6ec404b1842e6",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("isExpanded", "bool", FBool),
-      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
-      @component.FieldInfo::new("currentPage", "s32", FInt),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("isExpanded", TyBool),
+      @component.FieldInfo::new("itemsPerPage", TyInt),
+      @component.FieldInfo::new("currentPage", TyInt),
     ],
     inputs=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
@@ -813,10 +813,10 @@ impl @component.Fields for JsonObjectState with fn schema() {
     name="JsonObject",
     fingerprint="3bc7ffe3e271b846",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("isExpanded", "bool", FBool),
-      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
-      @component.FieldInfo::new("currentPage", "s32", FInt),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("isExpanded", TyBool),
+      @component.FieldInfo::new("itemsPerPage", TyInt),
+      @component.FieldInfo::new("currentPage", TyInt),
     ],
     inputs=["nextPage", "prevPage", "toggleIsExpanded"],
     methods=[
@@ -889,8 +889,8 @@ impl @component.Fields for JsonPropertyState with fn schema() {
     name="JsonProperty",
     fingerprint="3b1ac48212658a79",
     fields=[
-      @component.FieldInfo::new("key", "string", FText),
-      @component.FieldInfo::new("child", "any", FAny, elem="any"),
+      @component.FieldInfo::new("key", TyText),
+      @component.FieldInfo::new("child", TyAny),
     ],
     view_names=["main"],
   )
@@ -955,7 +955,7 @@ impl @component.Fields for DataInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="DataInspector",
     fingerprint="d5f8be83eb3069b1",
-    fields=[@component.FieldInfo::new("value", "any", FAny, elem="any")],
+    fields=[@component.FieldInfo::new("value", TyAny)],
     view_names=["main"],
   )
 }

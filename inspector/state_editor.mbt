@@ -55,12 +55,12 @@ pub fn Inspector::editor_rows(
   let rows : Array[@tutuca.Value] = []
   for f in schema.fields {
     let v = target.field(f.name)
-    let kind = control_for(f.kind)
+    let kind = control_for(f.kind())
     rows.push(
       self.make_("StateEditorRow", args={
         "name": Str(f.name),
         // the WIT spelling, so the row says `list<card>` and not `list`
-        "type": Str(f.ty),
+        "type": Str(f.ty.show_wit()),
         "kind": Str(kind),
         "text": Str(v.str()),
         "num": Num(v.num()),
@@ -146,7 +146,7 @@ fn state_editor_comp(insp : Inspector) -> @component.Component {
         // The declared kind decides what shape to send...
         guard s.target.field_info(field) is Some(info) else { return None }
         let next = s.target.call_field(setter_name(field), [
-          coerce_edit(info.kind, v),
+          coerce_edit(info.kind(), v),
         ])
         // ...and the mutator answers with the successor instance. A write
         // the component refused (a wrong shape, an unknown field) hands back

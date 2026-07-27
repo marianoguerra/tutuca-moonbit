@@ -86,11 +86,11 @@ impl @component.Fields for LintDemoState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for LintDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="61623a4912326968", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
-    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("kind", "string", FText),
-    @component.FieldInfo::new("isOpen", "bool", FBool),
-    @component.FieldInfo::new("child", "any", FAny, elem="any"),
+    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("items", TyList(TyAny)),
+    @component.FieldInfo::new("kind", TyText),
+    @component.FieldInfo::new("isOpen", TyBool),
+    @component.FieldInfo::new("child", TyAny),
   ])
 }
 
@@ -144,7 +144,7 @@ impl @component.Fields for HtmlLintDemoState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for HtmlLintDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="5527f190b24e5ee0", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }
 
@@ -198,6 +198,6 @@ impl @component.Fields for ScopedStyleDemoState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for ScopedStyleDemoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="86b61c5fb0f1011d", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }

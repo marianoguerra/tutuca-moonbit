@@ -70,8 +70,8 @@ impl @component.Fields for StatusState with fn schema() {
     name="Status",
     fingerprint="818952001ae7566e",
     fields=[
-      @component.FieldInfo::new("message", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("message", TyText),
+      @component.FieldInfo::new("count", TyInt),
     ],
     view_names=["main"],
   )
@@ -198,14 +198,8 @@ impl @component.Fields for SendReceiveState with fn schema() {
     name="SendReceive",
     fingerprint="af6010efd88e64f0",
     fields=[
-      @component.FieldInfo::new("draft", "string", FText),
-      @component.FieldInfo::new(
-        "status",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("draft", TyText),
+      @component.FieldInfo::new("status", TyComp(None)),
     ],
     inputs=["clearStatus", "setDraft", "submit"],
     view_names=["main"],
@@ -354,10 +348,10 @@ impl @component.Fields for TreeItemState with fn schema() {
     name="TreeItem",
     fingerprint="e6692133fe7c7e9a",
     fields=[
-      @component.FieldInfo::new("type", "string", FText),
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("isOpen", "bool", FBool),
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("type", TyText),
+      @component.FieldInfo::new("label", TyText),
+      @component.FieldInfo::new("isOpen", TyBool),
+      @component.FieldInfo::new("items", TyList(TyAny)),
     ],
     inputs=["onItemClick"],
     methods=["areChildsVisible"],
@@ -431,14 +425,8 @@ impl @component.Fields for TreeRootState with fn schema() {
     name="TreeRoot",
     fingerprint="956f1bda15ce4557",
     fields=[
-      @component.FieldInfo::new("log", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new(
-        "root",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("log", TyList(TyAny)),
+      @component.FieldInfo::new("root", TyComp(None)),
     ],
     view_names=["main"],
   )

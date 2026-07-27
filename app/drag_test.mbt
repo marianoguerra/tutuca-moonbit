@@ -141,9 +141,9 @@ impl @component.Fields for BoardState with fn decode(f) {
 ///|
 impl @component.Fields for BoardState with fn schema() {
   @component.SchemaInfo::new(fingerprint="board_state", fields=[
-    @component.FieldInfo::new("cards", "text-omap", FMap),
-    @component.FieldInfo::new("received", "string", FText),
-    @component.FieldInfo::new("from", "string", FText),
-    @component.FieldInfo::new("kind", "string", FText),
+    @component.FieldInfo::new("cards", TyOMap(TyText)),
+    @component.FieldInfo::new("received", TyText),
+    @component.FieldInfo::new("from", TyText),
+    @component.FieldInfo::new("kind", TyText),
   ])
 }

@@ -129,8 +129,8 @@ impl @component.Fields for EmojiPickerState with fn schema() {
     name="EmojiPicker",
     fingerprint="4ae49bac65c482b5",
     fields=[
-      @component.FieldInfo::new("current", "any", FAny, elem="any"),
-      @component.FieldInfo::new("isPickerVisible", "bool", FBool),
+      @component.FieldInfo::new("current", TyAny),
+      @component.FieldInfo::new("isPickerVisible", TyBool),
     ],
     inputs=["onEmojiClick", "toggleIsPickerVisible"],
     view_names=["main"],

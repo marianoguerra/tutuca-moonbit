@@ -259,22 +259,22 @@ impl @component.Fields for ChattyState with fn decode(f) {
 ///|
 impl @component.Fields for EditorState with fn schema() {
   @component.SchemaInfo::new(fingerprint="editor_state", fields=[
-    @component.FieldInfo::new("text", "string", FText),
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("text", TyText),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }
 
 ///|
 impl @component.Fields for PickerState with fn schema() {
   @component.SchemaInfo::new(fingerprint="picker_state", fields=[
-    @component.FieldInfo::new("items", "list<string>", FList),
-    @component.FieldInfo::new("picked", "string", FText),
+    @component.FieldInfo::new("items", TyList(TyText)),
+    @component.FieldInfo::new("picked", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for ChattyState with fn schema() {
   @component.SchemaInfo::new(fingerprint="chatty_state", fields=[
-    @component.FieldInfo::new("n", "s32", FInt),
+    @component.FieldInfo::new("n", TyInt),
   ])
 }

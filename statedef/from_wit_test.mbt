@@ -26,7 +26,7 @@ fn err_of(src : String) -> String {
 }
 
 ///|
-test "scalars, lists and options map onto the FieldKind lattice" {
+test "scalars, lists and options map onto the TyInfo lattice" {
   let d = one(
     (
       #|interface counter {
@@ -45,15 +45,15 @@ test "scalars, lists and options map onto the FieldKind lattice" {
   )
   assert_eq(d.component, "Counter")
   assert_eq(d.fields.length(), 8)
-  let kinds = d.fields.map(f => "\{f.name}:\{f.ty.field_kind_src()}")
-  assert_eq(kinds[0], "label:FText")
-  assert_eq(kinds[1], "count:FInt")
-  assert_eq(kinds[2], "ratio:FFloat")
-  assert_eq(kinds[3], "ok:FBool")
-  assert_eq(kinds[4], "small:FInt")
-  assert_eq(kinds[5], "history:FList")
-  assert_eq(kinds[6], "pick:FAny")
-  assert_eq(kinds[7], "pair:FList")
+  let kinds = d.fields.map(f => "\{f.name}:\{d.ty_info_src(f.ty)}")
+  assert_eq(kinds[0], "label:TyText")
+  assert_eq(kinds[1], "count:TyInt")
+  assert_eq(kinds[2], "ratio:TyFloat")
+  assert_eq(kinds[3], "ok:TyBool")
+  assert_eq(kinds[4], "small:TyInt")
+  assert_eq(kinds[5], "history:TyList(TyInt)")
+  assert_eq(kinds[6], "pick:TyOption(TyText)")
+  assert_eq(kinds[7], "pair:TyTuple([TyText, TyInt])")
   // Width survives even though every integer emits a MoonBit Int, because
   // decode range-checks against it.
   assert_eq(d.fields[4].ty, TInt(width=8, signed=false))
@@ -73,8 +73,12 @@ test "flags is a closed set, the text-set marker an open one" {
       #|}
     ),
   )
-  assert_eq(d.fields[0].ty.field_kind_src(), "FSet")
-  assert_eq(d.fields[1].ty.field_kind_src(), "FSet")
+  // A closed set inlines its members; an open one has none to inline.
+  assert_eq(
+    d.ty_info_src(d.fields[0].ty),
+    "TyFlags(\"visibility\", [\"done\", \"active\"])",
+  )
+  assert_eq(d.ty_info_src(d.fields[1].ty), "TySet")
   assert_eq(d.fields[0].ty, TFlags("visibility"))
   assert_eq(d.fields[1].ty, TSet)
   // Both iterate their members, which are text either way.
@@ -102,10 +106,9 @@ test "markers cover the kinds WIT cannot spell" {
   assert_eq(d.fields[2].ty, TOMap(TAny))
   assert_eq(d.fields[3].ty, TOMap(TText))
   assert_eq(d.fields[4].ty, TComp(None))
-  assert_eq(d.fields[2].ty.field_kind_src(), "FOMap")
-  // FComp carries the component it slots, so it cannot be written bare —
-  // the untyped `component` marker slots one the schema does not name.
-  assert_eq(d.fields[4].ty.field_kind_src(), "FComp(comp=\"\", args=Map([]))")
+  assert_eq(d.ty_info_src(d.fields[2].ty), "TyOMap(TyAny)")
+  // The untyped `component` marker slots one the schema does not name.
+  assert_eq(d.ty_info_src(d.fields[4].ty), "TyComp(None)")
   assert_eq(d.moonbit_ty(d.fields[1].ty), "Array[@tutuca.Value]")
   assert_eq(d.moonbit_ty(d.fields[3].ty), "Map[String, String]")
 }

@@ -441,14 +441,14 @@ impl @component.Fields for DeckState with fn decode(f) {
 ///|
 impl @component.Fields for SheetState with fn schema() {
   @component.SchemaInfo::new(fingerprint="sheet_state", fields=[
-    @component.FieldInfo::new("title", "string", FText),
+    @component.FieldInfo::new("title", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for SeenState with fn schema() {
   @component.SchemaInfo::new(fingerprint="seen_state", fields=[
-    @component.FieldInfo::new("seen", "bool", FBool),
+    @component.FieldInfo::new("seen", TyBool),
   ])
 }
 
@@ -460,14 +460,14 @@ impl @component.Fields for NoState with fn schema() {
 ///|
 impl @component.Fields for RowsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="rows_state", fields=[
-    @component.FieldInfo::new("rows", "value-omap", FMap),
+    @component.FieldInfo::new("rows", TyOMap(TyAny)),
   ])
 }
 
 ///|
 impl @component.Fields for DeckState with fn schema() {
   @component.SchemaInfo::new(fingerprint="deck_state", fields=[
-    @component.FieldInfo::new("sheets", "value-omap", FMap),
-    @component.FieldInfo::new("selId", "string", FText),
+    @component.FieldInfo::new("sheets", TyOMap(TyAny)),
+    @component.FieldInfo::new("selId", TyText),
   ])
 }

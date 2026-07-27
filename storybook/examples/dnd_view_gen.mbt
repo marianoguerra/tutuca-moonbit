@@ -150,8 +150,8 @@ impl @component.Fields for DnDExampleState with fn schema() {
     name="DnDExample",
     fingerprint="669b14463cd52e60",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("query", TyText),
     ],
     inputs=["onDropOnItem", "resetQuery", "setQuery"],
     view_names=["main"],

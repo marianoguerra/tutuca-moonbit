@@ -48,13 +48,10 @@ test "a state block emits the struct, its zero and its declared field kinds" {
   // exactly one home now, and it is the one an inspector holding a bare
   // `@tutuca.Value` can read.
   assert_false(src.contains("enum CounterField"))
-  assert_true(src.contains("FieldInfo::new(\"count\", \"s32\", FInt)"))
-  assert_true(src.contains("FieldInfo::new(\"label\", \"string\", FText)"))
-  assert_true(
-    src.contains(
-      "FieldInfo::new(\"history\", \"list<s32>\", FList, elem=\"s32\")",
-    ),
-  )
+  assert_true(src.contains("FieldInfo::new(\"count\", TyInt)"))
+  assert_true(src.contains("FieldInfo::new(\"label\", TyText)"))
+  // Structural, not two strings: a reader can descend into the list.
+  assert_true(src.contains("FieldInfo::new(\"history\", TyList(TyInt))"))
 }
 
 ///|
@@ -102,19 +99,22 @@ test "sets, ordered maps and child slots are described in the schema" {
     "board.html",
     @viewgen.split_file(html),
   )
-  // Every field is described, with the things a runtime spec has no room
-  // for: the WIT spelling, a collection's element type, the component a slot
-  // holds, and a `flags` set's declared membership.
-  // Each field is one `FieldInfo::new` call: the trimming constructor states
-  // the parts this field HAS and writes no line for the ones it does not.
-  assert_true(src.contains("\"vis\", \"visibility\", FSet"))
-  assert_true(src.contains("members=[\"done\", \"active\"]"))
-  assert_true(src.contains("\"tags\", \"text-set\", FSet"))
-  assert_true(src.contains("\"order\", \"an ordered map of any\", FOMap"))
-  assert_true(src.contains("slot=\"Card\""))
+  // Every field is described by its TYPE, and the things a runtime spec has
+  // no room for follow from it: the WIT spelling, a collection's element type,
+  // the component a slot holds, and a closed set's declared membership.
+  //
+  // A closed set inlines its members, because the declaration they name does
+  // not exist at runtime; an open one has none to inline, which is a real
+  // answer and a different one.
+  assert_true(
+    src.contains("\"vis\", TyFlags(\"visibility\", [\"done\", \"active\"])"),
+  )
+  assert_true(src.contains("\"tags\", TySet"))
+  assert_true(src.contains("\"order\", TyOMap(TyAny)"))
+  assert_true(src.contains("\"lead\", TyComp(Some(\"Card\"))"))
   // ...and a plain field is described too — the descriptor is the whole
   // schema, not only the parts the runtime would get wrong.
-  assert_true(src.contains("\"plain\", \"string\", FText"))
+  assert_true(src.contains("\"plain\", TyText"))
   // Two components, two states.
   assert_true(src.contains("pub(all) struct CardState {"))
   assert_true(src.contains("pub(all) struct BoardState {"))
@@ -251,7 +251,7 @@ test "a schema-only file declares state for views built at runtime" {
   assert_eq(file.state.length(), 1)
   let src = @viewgen.emit_module("BarChart", "bar_chart.html", file)
   assert_true(src.contains("pub(all) struct BarChartState {"))
-  assert_true(src.contains("FieldInfo::new(\"title\", \"string\", FText)"))
+  assert_true(src.contains("FieldInfo::new(\"title\", TyText)"))
   // ...and NO view surface: there are no views to describe, and the schema
   // block itself must not become one.
   assert_false(src.contains("bar_chart_common_style"))

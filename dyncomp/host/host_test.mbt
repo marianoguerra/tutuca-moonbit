@@ -436,7 +436,7 @@ impl @component.Fields for TestShellState with fn decode(f) {
 ///|
 impl @component.Fields for TestShellState with fn schema() {
   @component.SchemaInfo::new(fingerprint="test_shell_state", fields=[
-    @component.FieldInfo::new("slot", "any", FAny),
-    @component.FieldInfo::new("note", "string", FText),
+    @component.FieldInfo::new("slot", TyAny),
+    @component.FieldInfo::new("note", TyText),
   ])
 }

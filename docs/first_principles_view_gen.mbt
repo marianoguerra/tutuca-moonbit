@@ -66,7 +66,7 @@ impl @component.Fields for FpGreetingState with fn schema() {
   @component.SchemaInfo::new(
     name="FpGreeting",
     fingerprint="7fde5bb7d59361e6",
-    fields=[@component.FieldInfo::new("name", "string", FText)],
+    fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
 }
@@ -180,7 +180,7 @@ impl @component.Fields for NoteState with fn schema() {
   @component.SchemaInfo::new(
     name="Note",
     fingerprint="416c7af2c341fb4c",
-    fields=[@component.FieldInfo::new("text", "string", FText)],
+    fields=[@component.FieldInfo::new("text", TyText)],
     receives=["write"],
     view_names=["main"],
   )
@@ -242,15 +242,7 @@ impl @component.Fields for MailboxState with fn schema() {
   @component.SchemaInfo::new(
     name="Mailbox",
     fingerprint="44b8998831569bcf",
-    fields=[
-      @component.FieldInfo::new(
-        "note",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("note", TyComp(None))],
     view_names=["main"],
   )
 }

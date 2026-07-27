@@ -72,9 +72,9 @@ impl @component.Fields for TableRowState with fn schema() {
     name="TableRow",
     fingerprint="78cde2ca3599de8c",
     fields=[
-      @component.FieldInfo::new("name", "string", FText),
-      @component.FieldInfo::new("qty", "s32", FInt),
-      @component.FieldInfo::new("price", "f64", FFloat),
+      @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("qty", TyInt),
+      @component.FieldInfo::new("price", TyFloat),
     ],
     view_names=["main"],
   )
@@ -145,7 +145,7 @@ impl @component.Fields for ItemTableState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemTable",
     fingerprint="413b1cfe818d4bc7",
-    fields=[@component.FieldInfo::new("rows", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("rows", TyList(TyAny))],
     view_names=["main"],
   )
 }
@@ -212,8 +212,8 @@ impl @component.Fields for SelectOptionState with fn schema() {
     name="SelectOption",
     fingerprint="07ec6c7cf74c56fc",
     fields=[
-      @component.FieldInfo::new("value", "string", FText),
-      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("value", TyText),
+      @component.FieldInfo::new("label", TyText),
     ],
     view_names=["main"],
   )
@@ -337,8 +337,8 @@ impl @component.Fields for ItemSelectState with fn schema() {
     name="ItemSelect",
     fingerprint="c0c9027a3ae072e5",
     fields=[
-      @component.FieldInfo::new("options", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("current", "string", FText),
+      @component.FieldInfo::new("options", TyList(TyAny)),
+      @component.FieldInfo::new("current", TyText),
     ],
     inputs=["setCurrent"],
     view_names=["main"],
@@ -402,20 +402,8 @@ impl @component.Fields for PseudoXDemoState with fn schema() {
     name="PseudoXDemo",
     fingerprint="e785760a33d1bedc",
     fields=[
-      @component.FieldInfo::new(
-        "table",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-      @component.FieldInfo::new(
-        "select",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("table", TyComp(None)),
+      @component.FieldInfo::new("select", TyComp(None)),
     ],
     view_names=["main"],
   )

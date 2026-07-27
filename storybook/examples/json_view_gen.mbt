@@ -313,7 +313,7 @@ impl @component.Fields for JsonBoolState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonBool",
     fingerprint="d4b8a46eb24ceada",
-    fields=[@component.FieldInfo::new("value", "bool", FBool)],
+    fields=[@component.FieldInfo::new("value", TyBool)],
     inputs=["toggleValue"],
     view_names=["main"],
   )
@@ -425,7 +425,7 @@ impl @component.Fields for JsonStringState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonString",
     fingerprint="56e6fad878f71b0c",
-    fields=[@component.FieldInfo::new("value", "string", FText)],
+    fields=[@component.FieldInfo::new("value", TyText)],
     inputs=["setValue"],
     view_names=["main"],
   )
@@ -540,8 +540,8 @@ impl @component.Fields for JsonNumberState with fn schema() {
     name="JsonNumber",
     fingerprint="f0f29389d0ef3ee2",
     fields=[
-      @component.FieldInfo::new("strValue", "string", FText),
-      @component.FieldInfo::new("value", "f64", FFloat),
+      @component.FieldInfo::new("strValue", TyText),
+      @component.FieldInfo::new("value", TyFloat),
     ],
     inputs=["setRawValue"],
     view_names=["main"],
@@ -672,7 +672,7 @@ impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
     fingerprint="52ac0f26bb122de2",
-    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )
@@ -789,8 +789,8 @@ impl @component.Fields for JsonObjectKeyValState with fn schema() {
     name="JsonObjectKeyVal",
     fingerprint="f20288305b90ddee",
     fields=[
-      @component.FieldInfo::new("key", "string", FText),
-      @component.FieldInfo::new("value", "any", FAny, elem="any"),
+      @component.FieldInfo::new("key", TyText),
+      @component.FieldInfo::new("value", TyAny),
     ],
     inputs=["setKey"],
     view_names=["main"],
@@ -921,7 +921,7 @@ impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
     fingerprint="25415f50b72a94c2",
-    fields=[@component.FieldInfo::new("items", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
   )

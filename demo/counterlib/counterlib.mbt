@@ -100,15 +100,17 @@ test "the component takes its kinds from the schema, not the seed value" {
   // Matched rather than compared: FieldKind carries a Map[String, Value] in its
   // FComp arm, and Value holds Fn and &Obj, so it cannot derive Eq.
   guard si.field("count") is Some(fi)
-  assert_eq(fi.ty, "s32")
-  assert_true(fi.kind is FInt)
+  assert_eq(fi.ty, TyInt)
+  assert_true(fi.kind() is FInt)
   guard si.field("label") is Some(lf)
-  assert_true(lf.kind is FText)
-  // ...and an element type, which a runtime spec has no room for.
+  assert_true(lf.kind() is FText)
+  // ...and an element type, which a runtime spec has no room for. Structural,
+  // so a reader can descend rather than receive the string "s32" and stop.
   guard si.field("history") is Some(hf)
-  assert_eq(hf.ty, "list<s32>")
-  assert_true(hf.kind is FList)
-  assert_eq(hf.elem, Some("s32"))
+  assert_eq(hf.ty, TyList(TyInt))
+  assert_eq(hf.ty.show_wit(), "list<s32>")
+  assert_true(hf.kind() is FList)
+  assert_eq(hf.ty.elem(), Some(TyInt))
   // The specs the runtime actually built agree with it.
   guard comp.specs.get("count") is Some(sp)
   assert_true(sp.kind is FInt)

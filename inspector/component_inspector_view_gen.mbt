@@ -66,7 +66,7 @@ impl @component.Fields for CompNameState with fn schema() {
   @component.SchemaInfo::new(
     name="CompName",
     fingerprint="57b45308f862e883",
-    fields=[@component.FieldInfo::new("name", "string", FText)],
+    fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
 }
@@ -135,9 +135,9 @@ impl @component.Fields for CompFieldState with fn schema() {
     name="CompField",
     fingerprint="b1ab3e9e7437de19",
     fields=[
-      @component.FieldInfo::new("name", "string", FText),
-      @component.FieldInfo::new("typeName", "string", FText),
-      @component.FieldInfo::new("child", "any", FAny, elem="any"),
+      @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("typeName", TyText),
+      @component.FieldInfo::new("child", TyAny),
     ],
     view_names=["main"],
   )
@@ -275,9 +275,9 @@ impl @component.Fields for CompViewState with fn schema() {
     name="CompView",
     fingerprint="a2bb4d5d672ad06a",
     fields=[
-      @component.FieldInfo::new("name", "string", FText),
-      @component.FieldInfo::new("rawView", "string", FText),
-      @component.FieldInfo::new("isExpanded", "bool", FBool),
+      @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("rawView", TyText),
+      @component.FieldInfo::new("isExpanded", TyBool),
     ],
     inputs=["toggle"],
     methods=["arrowText"],
@@ -480,11 +480,11 @@ impl @component.Fields for CompSectionState with fn schema() {
     name="CompSection",
     fingerprint="fac650bb4a858759",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("isExpanded", "bool", FBool),
-      @component.FieldInfo::new("itemsPerPage", "s32", FInt),
-      @component.FieldInfo::new("currentPage", "s32", FInt),
-      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("isExpanded", TyBool),
+      @component.FieldInfo::new("itemsPerPage", TyInt),
+      @component.FieldInfo::new("currentPage", TyInt),
+      @component.FieldInfo::new("label", TyText),
     ],
     inputs=["nextPage", "prevPage", "toggle"],
     methods=[
@@ -647,9 +647,9 @@ impl @component.Fields for ComponentInspectorState with fn schema() {
     name="ComponentInspector",
     fingerprint="177c6b469255fb1e",
     fields=[
-      @component.FieldInfo::new("compName", "string", FText),
-      @component.FieldInfo::new("compId", "s32", FInt),
-      @component.FieldInfo::new("sections", "list<any>", FList, elem="any"),
+      @component.FieldInfo::new("compName", TyText),
+      @component.FieldInfo::new("compId", TyInt),
+      @component.FieldInfo::new("sections", TyList(TyAny)),
     ],
     bubbles=["toggleAllSections", "toggleAllViews"],
     methods=["idText"],

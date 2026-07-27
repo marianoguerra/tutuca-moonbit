@@ -61,8 +61,8 @@ impl @component.Fields for TmItemState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemState with fn schema() {
   @component.SchemaInfo::new(fingerprint="cd61ed8baa3d59fd", fields=[
-    @component.FieldInfo::new("completed", "bool", FBool),
-    @component.FieldInfo::new("text", "string", FText),
+    @component.FieldInfo::new("completed", TyBool),
+    @component.FieldInfo::new("text", TyText),
   ])
 }
 
@@ -121,6 +121,6 @@ impl @component.Fields for TmItemsState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="3e274b25537b213e", fields=[
-    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+    @component.FieldInfo::new("items", TyList(TyAny)),
   ])
 }

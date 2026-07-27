@@ -127,15 +127,7 @@ impl @component.Fields for StylesExampleRootState with fn schema() {
   @component.SchemaInfo::new(
     name="StylesExampleRoot",
     fingerprint="5407ac5b07426d2a",
-    fields=[
-      @component.FieldInfo::new(
-        "value",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("value", TyComp(None))],
     view_names=["main"],
   )
 }

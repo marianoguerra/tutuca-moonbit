@@ -110,8 +110,8 @@ impl @component.Fields for VwImmState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwImmState with fn schema() {
   @component.SchemaInfo::new(fingerprint="53f3484f60b3c75c", fields=[
-    @component.FieldInfo::new("value", "s32", FInt),
-    @component.FieldInfo::new("rawValue", "string", FText),
+    @component.FieldInfo::new("value", TyInt),
+    @component.FieldInfo::new("rawValue", TyText),
   ])
 }
 
@@ -170,7 +170,7 @@ impl @component.Fields for VwTypesState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwTypesState with fn schema() {
   @component.SchemaInfo::new(fingerprint="dd9e67b6f8d50b55", fields=[
-    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
+    @component.FieldInfo::new("items", TyList(TyAny)),
   ])
 }
 
@@ -241,9 +241,9 @@ impl @component.Fields for VwContainerState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwContainerState with fn schema() {
   @component.SchemaInfo::new(fingerprint="a94df03941e4c8f4", fields=[
-    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("expanded", "bool", FBool),
-    @component.FieldInfo::new("editing", "bool", FBool),
+    @component.FieldInfo::new("items", TyList(TyAny)),
+    @component.FieldInfo::new("expanded", TyBool),
+    @component.FieldInfo::new("editing", TyBool),
   ])
 }
 
@@ -339,12 +339,12 @@ impl @component.Fields for VwIfState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwIfState with fn schema() {
   @component.SchemaInfo::new(fingerprint="90972407f58ddfc3", fields=[
-    @component.FieldInfo::new("thn", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("else", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("expanded", "bool", FBool),
-    @component.FieldInfo::new("editingIf", "bool", FBool),
-    @component.FieldInfo::new("editingThn", "bool", FBool),
-    @component.FieldInfo::new("editingElse", "bool", FBool),
+    @component.FieldInfo::new("thn", TyList(TyAny)),
+    @component.FieldInfo::new("else", TyList(TyAny)),
+    @component.FieldInfo::new("expanded", TyBool),
+    @component.FieldInfo::new("editingIf", TyBool),
+    @component.FieldInfo::new("editingThn", TyBool),
+    @component.FieldInfo::new("editingElse", TyBool),
   ])
 }
 
@@ -430,11 +430,11 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
   @component.SchemaInfo::new(fingerprint="2bd9dd9147e15f1e", fields=[
-    @component.FieldInfo::new("id", "s32", FInt),
-    @component.FieldInfo::new("name", "string", FText),
-    @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("expanded", "bool", FBool),
-    @component.FieldInfo::new("defaultItem", "any", FAny, elem="any"),
+    @component.FieldInfo::new("id", TyInt),
+    @component.FieldInfo::new("name", TyText),
+    @component.FieldInfo::new("items", TyList(TyAny)),
+    @component.FieldInfo::new("expanded", TyBool),
+    @component.FieldInfo::new("defaultItem", TyAny),
   ])
 }
 
@@ -491,8 +491,8 @@ impl @component.Fields for VwMemoryState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwMemoryState with fn schema() {
   @component.SchemaInfo::new(fingerprint="5bef82ed43430e63", fields=[
-    @component.FieldInfo::new("n", "s32", FInt),
-    @component.FieldInfo::new("m", "s32", FInt),
+    @component.FieldInfo::new("n", TyInt),
+    @component.FieldInfo::new("m", TyInt),
   ])
 }
 
@@ -565,8 +565,8 @@ impl @component.Fields for VwPickerState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for VwPickerState with fn schema() {
   @component.SchemaInfo::new(fingerprint="e5eda1d1115e0e30", fields=[
-    @component.FieldInfo::new("currentSection", "string", FText),
-    @component.FieldInfo::new("instructions", "list<any>", FList, elem="any"),
-    @component.FieldInfo::new("filter", "string", FText),
+    @component.FieldInfo::new("currentSection", TyText),
+    @component.FieldInfo::new("instructions", TyList(TyAny)),
+    @component.FieldInfo::new("filter", TyText),
   ])
 }

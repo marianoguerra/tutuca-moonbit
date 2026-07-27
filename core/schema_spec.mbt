@@ -35,22 +35,16 @@ pub(all) enum FieldKind {
 
 ///|
 /// One declared field of a component's state.
+///
+/// Two parts, where there were six. The WIT spelling, the runtime kind, a
+/// collection's element type, a slot's component and a closed set's members are
+/// all FUNCTIONS of the type (`ty_info.mbt`), so they are asked rather than
+/// stored — which is what stops them from contradicting each other, and what
+/// lets a reader descend into `list<card>` instead of receiving the string
+/// `"card"` and having nowhere to take it.
 pub(all) struct FieldInfo {
   name : String
-  /// The WIT spelling verbatim — `list<card>`, `option<string>`, `text-set`.
-  /// Carried rather than reconstructed, so an inspector shows what is in the
-  /// file.
-  ty : String
-  kind : FieldKind
-  /// A collection's element type, so a viewer can descend rather than stop
-  /// at "list". None for a scalar.
-  elem : String?
-  /// The component a child slot holds; None for a data field.
-  slot : String?
-  /// A `flags` field's declared members — the one thing about a set that only
-  /// the schema knows, since the encoded value is just a Map. Empty for every
-  /// other field, and for a set with open membership.
-  members : Array[String]
+  ty : TyInfo
 }
 
 ///|
@@ -84,23 +78,19 @@ pub(all) struct SchemaInfo {
 }
 
 ///|
-/// One declared field, with the parts most fields do not use defaulted.
+/// One declared field: its name and its type.
 ///
-/// The generator writes every part out because it knows every part. A
-/// hand-written schema — a dyncomp guest's manifest, the storybook shell's
-/// computed field set, a test fixture — usually has a name, a WIT spelling and
-/// a kind, and `elem`/`slot`/`members` are the shapes it does not have. Making
-/// those defaults is a shorthand for writing them empty, not a way to leave
-/// them unsaid: the struct is still `pub(all)` and a caller that knows more
-/// still writes it whole.
-declare pub fn FieldInfo::new(
-  name : String,
-  ty : String,
-  kind : FieldKind,
-  elem? : String,
-  slot? : String,
-  members? : Array[String],
-) -> FieldInfo
+/// There is nothing to default any more. The five optional parts this used to
+/// take were all recoverable from the type, and letting a caller state them
+/// separately meant letting a caller state them WRONG — a descriptor reading
+/// `("rows", "value-omap", FMap)` named an ordered map and then gave it a plain
+/// map's kind, and nothing could notice.
+declare pub fn FieldInfo::new(name : String, ty : TyInfo) -> FieldInfo
+
+///|
+/// The runtime kind this field carries — a projection of its type, never a
+/// second statement about it.
+declare pub fn FieldInfo::kind(self : FieldInfo) -> FieldKind
 
 ///|
 /// A component's declared schema, with the channels it does not use defaulted

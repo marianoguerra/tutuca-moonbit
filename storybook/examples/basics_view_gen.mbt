@@ -217,10 +217,10 @@ impl @component.Fields for TextDirectiveState with fn schema() {
     name="TextDirective",
     fingerprint="f6fb027d2388083c",
     fields=[
-      @component.FieldInfo::new("str", "string", FText),
-      @component.FieldInfo::new("num", "s32", FInt),
-      @component.FieldInfo::new("bool", "bool", FBool),
-      @component.FieldInfo::new("notSet", "any", FAny, elem="any"),
+      @component.FieldInfo::new("str", TyText),
+      @component.FieldInfo::new("num", TyInt),
+      @component.FieldInfo::new("bool", TyBool),
+      @component.FieldInfo::new("notSet", TyAny),
     ],
     methods=["getStrUpper"],
     view_names=["main"],
@@ -286,7 +286,7 @@ impl @component.Fields for DangerSetInnerHtmlState with fn schema() {
   @component.SchemaInfo::new(
     name="DangerSetInnerHtml",
     fingerprint="20e28deaad6a8c77",
-    fields=[@component.FieldInfo::new("content", "string", FText)],
+    fields=[@component.FieldInfo::new("content", TyText)],
     view_names=["main"],
   )
 }

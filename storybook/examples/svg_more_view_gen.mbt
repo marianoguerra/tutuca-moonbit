@@ -57,7 +57,7 @@ impl @component.Fields for IconGalleryState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for IconGalleryState with fn schema() {
   @component.SchemaInfo::new(fingerprint="17ce7599eac0af6f", fields=[
-    @component.FieldInfo::new("size", "s32", FInt),
+    @component.FieldInfo::new("size", TyInt),
   ])
 }
 
@@ -214,7 +214,7 @@ impl @component.Fields for BarChartState with fn schema() {
   @component.SchemaInfo::new(
     name="BarChart",
     fingerprint="6bab0bb9bb7de924",
-    fields=[@component.FieldInfo::new("values", "list<any>", FList, elem="any")],
+    fields=[@component.FieldInfo::new("values", TyList(TyAny))],
     inputs=["addBar", "randomize", "removeBar"],
     view_names=["main"],
   )

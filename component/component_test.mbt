@@ -526,7 +526,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
     // does — being hand-written is not being under-described.
     schema=@component.SchemaInfo::new(
       fingerprint="badge-test",
-      fields=[@component.FieldInfo::new("label", "string", FText)],
+      fields=[@component.FieldInfo::new("label", TyText)],
       receives=["relabel"],
       view_names=["main"],
     ),
@@ -809,11 +809,11 @@ impl @component.Fields for SwapBState with fn decode(f) {
 ///|
 impl @component.Fields for TodoState with fn schema() {
   @component.SchemaInfo::new(fingerprint="todo_state", fields=[
-    @component.FieldInfo::new("title", "string", FText),
-    @component.FieldInfo::new("done", "bool", FBool),
-    @component.FieldInfo::new("count", "s32", FInt),
-    @component.FieldInfo::new("items", "values", FList),
-    @component.FieldInfo::new("tags", "value-omap", FMap),
+    @component.FieldInfo::new("title", TyText),
+    @component.FieldInfo::new("done", TyBool),
+    @component.FieldInfo::new("count", TyInt),
+    @component.FieldInfo::new("items", TyList(TyAny)),
+    @component.FieldInfo::new("tags", TyOMap(TyAny)),
   ])
 }
 
@@ -825,55 +825,55 @@ impl @component.Fields for NoFields with fn schema() {
 ///|
 impl @component.Fields for SetInState with fn schema() {
   @component.SchemaInfo::new(fingerprint="set_in_state", fields=[
-    @component.FieldInfo::new("sel", "text-set", FSet),
+    @component.FieldInfo::new("sel", TySet),
   ])
 }
 
 ///|
 impl @component.Fields for CountOnly with fn schema() {
   @component.SchemaInfo::new(fingerprint="count_only", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }
 
 ///|
 impl @component.Fields for TitleOnly with fn schema() {
   @component.SchemaInfo::new(fingerprint="title_only", fields=[
-    @component.FieldInfo::new("title", "string", FText),
+    @component.FieldInfo::new("title", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for LabelOnly with fn schema() {
   @component.SchemaInfo::new(fingerprint="label_only", fields=[
-    @component.FieldInfo::new("label", "string", FText),
+    @component.FieldInfo::new("label", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for StashedState with fn schema() {
   @component.SchemaInfo::new(fingerprint="stashed_state", fields=[
-    @component.FieldInfo::new("items", "values", FList),
+    @component.FieldInfo::new("items", TyList(TyAny)),
   ])
 }
 
 ///|
 impl @component.Fields for FilterState with fn schema() {
   @component.SchemaInfo::new(fingerprint="filter_state", fields=[
-    @component.FieldInfo::new("query", "string", FText),
+    @component.FieldInfo::new("query", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for SwapBState with fn schema() {
   @component.SchemaInfo::new(fingerprint="swap_b_state", fields=[
-    @component.FieldInfo::new("note", "string", FText),
+    @component.FieldInfo::new("note", TyText),
   ])
 }
 
 ///|
 impl @component.Fields for SwapAState with fn schema() {
   @component.SchemaInfo::new(fingerprint="swap_a_state", fields=[
-    @component.FieldInfo::new("label", "string", FText),
+    @component.FieldInfo::new("label", TyText),
   ])
 }

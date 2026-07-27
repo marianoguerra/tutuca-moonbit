@@ -129,7 +129,7 @@ impl @component.Fields for TrafficLightState with fn schema() {
   @component.SchemaInfo::new(
     name="TrafficLight",
     fingerprint="641f8260005d94a3",
-    fields=[@component.FieldInfo::new("lightIndex", "s32", FInt)],
+    fields=[@component.FieldInfo::new("lightIndex", TyInt)],
     inputs=["nextLight"],
     methods=["light"],
     view_names=["main"],
@@ -242,7 +242,7 @@ impl @component.Fields for TabbedUIState with fn schema() {
   @component.SchemaInfo::new(
     name="TabbedUI",
     fingerprint="91f1c8c673117b38",
-    fields=[@component.FieldInfo::new("tab", "string", FText)],
+    fields=[@component.FieldInfo::new("tab", TyText)],
     inputs=["setTab"],
     ids=["t-features", "t-overview", "t-pricing"],
     view_names=["main"],
@@ -388,8 +388,8 @@ impl @component.Fields for ListAndFilterState with fn schema() {
     name="ListAndFilter",
     fingerprint="80f3b6c5cd0e5b4d",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("query", "string", FText),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("query", TyText),
     ],
     inputs=["resetQuery", "setQuery"],
     view_names=["main"],

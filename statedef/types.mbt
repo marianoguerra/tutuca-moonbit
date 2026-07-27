@@ -2,7 +2,7 @@
 //
 // Two audiences: viewgen's type environment asks the questions (`elem_of`,
 // `field_of`, `is_boolish`), and viewgen's emitter asks for text
-// (`moonbit_ty`, `zero_expr`, `field_kind_src`).
+// (`moonbit_ty`, `zero_expr`, `ty_info_src`).
 
 ///|
 pub fn StateDef::field(self : StateDef, name : String) -> FieldDef? {
@@ -170,30 +170,54 @@ fn edit_distance(a : String, b : String) -> Int {
 }
 
 ///|
-/// The `@component.FieldKind` constructor, as source text.
+/// The MoonBit source of the `@tutuca.TyInfo` expression describing this type.
 ///
-/// UNQUALIFIED, and it has to be: the type moved to `@tutuca` and an enum
+/// Text and not a `TyInfo` value: statedef stays a pure text-in/text-out
+/// package, and importing core here would drag `@tutuca.Value` in for the sake
+/// of one enum.
+///
+/// The constructors are written UNQUALIFIED, and have to be: an enum
 /// constructor does not resolve through the `pub using` re-export that keeps
-/// `@component.FieldKind` spelling correct — nor through the module-root
-/// facade the playground compiles examples against, which is a different
-/// package again. Bare works in both, because every position the generator
-/// writes one into (a `FieldInfo::new` argument, a `<T>Field::kind` return)
+/// `@component.TyInfo` spelling correct, nor through the module-root facade
+/// the playground compiles examples against. Bare works in both, because the
+/// only position the generator writes one into — a `FieldInfo::new` argument —
 /// already knows the type.
-pub fn StateTy::field_kind_src(self : StateTy) -> String {
-  match self {
-    TBool => "FBool"
-    TInt(..) => "FInt"
-    TFloat => "FFloat"
-    TText | TEnum(_) => "FText"
-    TList(_) | TTuple(_) => "FList"
-    TRecord(_) | TVariant(_) => "FMap"
-    TSet | TFlags(_) => "FSet"
-    TOMap(_) => "FOMap"
-    // FComp carries the component it slots, so it cannot be written bare.
-    TComp(Some(c)) => "FComp(comp=\"" + c + "\", args=Map([]))"
-    TComp(None) => "FComp(comp=\"\", args=Map([]))"
-    TOption(_) | TAny => "FAny"
+///
+/// A closed set's members are INLINED rather than named: `TyInfo` is read at
+/// runtime, where the declaration they would refer to does not exist.
+pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
+  match ty {
+    TBool => "TyBool"
+    TInt(..) => "TyInt"
+    TFloat => "TyFloat"
+    TText => "TyText"
+    TList(e) => "TyList(" + self.ty_info_src(e) + ")"
+    TTuple(ts) =>
+      "TyTuple([" + ts.map(t => self.ty_info_src(t)).join(", ") + "])"
+    TOption(e) => "TyOption(" + self.ty_info_src(e) + ")"
+    TOMap(v) => "TyOMap(" + self.ty_info_src(v) + ")"
+    TRecord(n) => "TyRecord(" + quoted(n) + ")"
+    TEnum(n) => "TyEnum(" + quoted(n) + ")"
+    TVariant(n) => "TyVariant(" + quoted(n) + ")"
+    TFlags(n) => {
+      let members = match self.user_ty(n) {
+        Some({ kind: UFlags(ms), .. }) => ms.map(m => quoted(m.1)).join(", ")
+        _ => ""
+      }
+      "TyFlags(" + quoted(n) + ", [" + members + "])"
+    }
+    TSet => "TySet"
+    TComp(Some(c)) => "TyComp(Some(" + quoted(c) + "))"
+    TComp(None) => "TyComp(None)"
+    TAny => "TyAny"
   }
+}
+
+///|
+/// A MoonBit string literal. Schema identifiers are WIT names, so there is
+/// nothing to escape beyond the quotes themselves.
+fn quoted(s : String) -> String {
+  "\"" + s + "\""
 }
 
 ///|

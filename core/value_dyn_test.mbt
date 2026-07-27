@@ -15,8 +15,8 @@ fn row_schema() -> @core.SchemaInfo {
     name="Row",
     fingerprint="row1",
     fields=[
-      @core.FieldInfo::new("title", "string", FText),
-      @core.FieldInfo::new("tags", "list<string>", FList, elem="string"),
+      @core.FieldInfo::new("title", TyText),
+      @core.FieldInfo::new("tags", TyList(TyText)),
     ],
     methods=["shout"],
   )
@@ -200,9 +200,10 @@ test "an instance names its own fields, with no registry in hand" {
   let r = row("hi", tags=[Str("a")])
   assert_eq(r.field_names(), ["title", "tags"])
   guard r.field_info("tags") is Some(fi)
-  assert_eq(fi.ty, "list<string>")
-  assert_eq(fi.elem, Some("string"))
-  assert_true(fi.kind is FList)
+  assert_eq(fi.ty, TyList(TyText))
+  assert_eq(fi.ty.show_wit(), "list<string>")
+  assert_eq(fi.ty.elem(), Some(TyText))
+  assert_true(fi.kind() is FList)
   assert_true(r.field_info("nope") is None)
   guard r.schema() is Some(s)
   assert_eq(s.name, "Row")

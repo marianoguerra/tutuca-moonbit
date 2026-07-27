@@ -120,9 +120,9 @@ impl @component.Fields for ShellState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="dyn-shell",
     fields=[
-      @component.FieldInfo::new("status", "string", FText),
-      @component.FieldInfo::new("slot", "any", FAny),
-      @component.FieldInfo::new("pair", "any", FAny),
+      @component.FieldInfo::new("status", TyText),
+      @component.FieldInfo::new("slot", TyAny),
+      @component.FieldInfo::new("pair", TyAny),
     ],
     inputs=["load"],
     // raised by the JS glue once a bundle finishes loading

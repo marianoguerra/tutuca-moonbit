@@ -107,7 +107,7 @@ impl @component.Fields for MacroParamsState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for MacroParamsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="e24255b8b42d4192", fields=[
-    @component.FieldInfo::new("status", "string", FText),
+    @component.FieldInfo::new("status", TyText),
   ])
 }
 
@@ -161,7 +161,7 @@ impl @component.Fields for MacroSlotsState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for MacroSlotsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="29f5d9126343b9a9", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }
 
@@ -215,6 +215,6 @@ impl @component.Fields for MacroNamedSlotsState with fn decode(f) {
 /// can name these fields without a component registry.
 impl @component.Fields for MacroNamedSlotsState with fn schema() {
   @component.SchemaInfo::new(fingerprint="ef1c08d80888b3fd", fields=[
-    @component.FieldInfo::new("count", "s32", FInt),
+    @component.FieldInfo::new("count", TyInt),
   ])
 }

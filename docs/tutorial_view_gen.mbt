@@ -120,7 +120,7 @@ impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
     fingerprint="a0fd8e55e2e67751",
-    fields=[@component.FieldInfo::new("count", "s32", FInt)],
+    fields=[@component.FieldInfo::new("count", TyInt)],
     inputs=["dec", "inc"],
     view_names=["main"],
   )
@@ -241,8 +241,8 @@ impl @component.Fields for ProfileState with fn schema() {
     name="Profile",
     fingerprint="4ed5917e67f7d9fe",
     fields=[
-      @component.FieldInfo::new("name", "string", FText),
-      @component.FieldInfo::new("waving", "bool", FBool),
+      @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("waving", TyBool),
     ],
     inputs=["setName", "toggleWaving"],
     view_names=["main"],
@@ -370,8 +370,8 @@ impl @component.Fields for SearchState with fn schema() {
     name="Search",
     fingerprint="bc62780dbd5228e0",
     fields=[
-      @component.FieldInfo::new("draft", "string", FText),
-      @component.FieldInfo::new("sent", "string", FText),
+      @component.FieldInfo::new("draft", TyText),
+      @component.FieldInfo::new("sent", TyText),
     ],
     inputs=["resetDraft", "setDraft", "setSent"],
     view_names=["main"],
@@ -487,8 +487,8 @@ impl @component.Fields for ToggleState with fn schema() {
     name="Toggle",
     fingerprint="c42e90f4c5f432f5",
     fields=[
-      @component.FieldInfo::new("on", "bool", FBool),
-      @component.FieldInfo::new("message", "any", FAny, elem="any"),
+      @component.FieldInfo::new("on", TyBool),
+      @component.FieldInfo::new("message", TyAny),
     ],
     inputs=["toggleOn"],
     view_names=["main"],
@@ -573,9 +573,7 @@ impl @component.Fields for FruitsState with fn schema() {
   @component.SchemaInfo::new(
     name="Fruits",
     fingerprint="419974fe207b2f06",
-    fields=[
-      @component.FieldInfo::new("items", "list<string>", FList, elem="string"),
-    ],
+    fields=[@component.FieldInfo::new("items", TyList(TyText))],
     view_names=["main"],
   )
 }
@@ -639,7 +637,7 @@ impl @component.Fields for GreetingState with fn schema() {
   @component.SchemaInfo::new(
     name="Greeting",
     fingerprint="291131f40d1ed859",
-    fields=[@component.FieldInfo::new("name", "string", FText)],
+    fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main", "shout"],
   )
 }
@@ -700,15 +698,7 @@ impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
     fingerprint="db02b6e5e92c5199",
-    fields=[
-      @component.FieldInfo::new(
-        "greeting",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("greeting", TyComp(None))],
     view_names=["main"],
   )
 }
@@ -822,7 +812,7 @@ impl @component.Fields for StatusState with fn schema() {
   @component.SchemaInfo::new(
     name="Status",
     fingerprint="a2b654c8e701a90b",
-    fields=[@component.FieldInfo::new("message", "string", FText)],
+    fields=[@component.FieldInfo::new("message", TyText)],
     receives=["flash"],
     view_names=["main"],
   )
@@ -941,14 +931,8 @@ impl @component.Fields for ChatState with fn schema() {
     name="Chat",
     fingerprint="e9c91ee756980c30",
     fields=[
-      @component.FieldInfo::new("draft", "string", FText),
-      @component.FieldInfo::new(
-        "status",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("draft", TyText),
+      @component.FieldInfo::new("status", TyComp(None)),
     ],
     inputs=["setDraft", "submit"],
     view_names=["main"],
@@ -1118,8 +1102,8 @@ impl @component.Fields for QuotesState with fn schema() {
     name="Quotes",
     fingerprint="cac567af4f8666d4",
     fields=[
-      @component.FieldInfo::new("items", "list<string>", FList, elem="string"),
-      @component.FieldInfo::new("isLoading", "bool", FBool),
+      @component.FieldInfo::new("items", TyList(TyText)),
+      @component.FieldInfo::new("isLoading", TyBool),
     ],
     receives=["init"],
     responses=["loadQuotes"],
@@ -1186,7 +1170,7 @@ impl @component.Fields for FeaturesState with fn schema() {
   @component.SchemaInfo::new(
     name="Features",
     fingerprint="e99a9864393da090",
-    fields=[@component.FieldInfo::new("status", "string", FText)],
+    fields=[@component.FieldInfo::new("status", TyText)],
     view_names=["main"],
   )
 }

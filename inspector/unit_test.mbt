@@ -563,10 +563,10 @@ impl @component.Fields for RichState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="rich_state",
     fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("tags", "values", FList, elem="any"),
-      @component.FieldInfo::new("open", "bool", FBool),
+      @component.FieldInfo::new("title", TyText),
+      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("tags", TyList(TyAny)),
+      @component.FieldInfo::new("open", TyBool),
     ],
     inputs=["inc", "reset"],
     receives=["ping"],
@@ -621,9 +621,9 @@ impl @component.Fields for DescribedState with fn schema() {
   @component.SchemaInfo::new(
     fingerprint="deadbeefcafe0001",
     fields=[
-      @component.FieldInfo::new("title", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("tags", "list<string>", FList, elem="string"),
+      @component.FieldInfo::new("title", TyText),
+      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("tags", TyList(TyText)),
     ],
     inputs=["inc", "reset"],
     receives=["ping"],
@@ -662,8 +662,10 @@ test "state editor: rows come from the schema, controls from the kinds" {
   assert_true(oget(rows[0], "text") is Str("Hello"))
   assert_true(oget(rows[1], "kind") is Str("num"))
   assert_true(oget(rows[1], "num") is Num(3.0))
-  // the WIT spelling, not a label reconstructed from the runtime kind
-  assert_true(oget(rows[2], "type") is Str("values"))
+  // the WIT spelling, not a label reconstructed from the runtime kind.
+  // `values` is a marker alias for `list<any>`, and the spelling is now a
+  // function of the type, so it normalizes the way the generator already did.
+  assert_true(oget(rows[2], "type") is Str("list<any>"))
   // a list is a tree, not a control: shown, not edited
   assert_true(oget(rows[2], "kind") is Str("readonly"))
   assert_true(oget(rows[2], "editable") is Bool(false))

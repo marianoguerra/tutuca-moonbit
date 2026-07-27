@@ -228,9 +228,9 @@ impl @component.Fields for CounterState with fn schema() {
     name="Counter",
     fingerprint="3d30a5c1ebb6ea6f",
     fields=[
-      @component.FieldInfo::new("label", "string", FText),
-      @component.FieldInfo::new("count", "s32", FInt),
-      @component.FieldInfo::new("history", "list<s32>", FList, elem="s32"),
+      @component.FieldInfo::new("label", TyText),
+      @component.FieldInfo::new("count", TyInt),
+      @component.FieldInfo::new("history", TyList(TyInt)),
     ],
     inputs=["add", "resetCount", "setLabel"],
     receives=["resetTo"],

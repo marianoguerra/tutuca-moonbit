@@ -216,8 +216,8 @@ impl @component.Fields for DropBoardState with fn decode(f) {
 ///|
 impl @component.Fields for SmokeCounterState with fn schema() {
   @component.SchemaInfo::new(fingerprint="smoke_counter_state", fields=[
-    @component.FieldInfo::new("n", "s32", FInt),
-    @component.FieldInfo::new("label", "string", FText),
+    @component.FieldInfo::new("n", TyInt),
+    @component.FieldInfo::new("label", TyText),
   ])
 }
 
@@ -229,6 +229,6 @@ impl @component.Fields for SmokeEmptyState with fn schema() {
 ///|
 impl @component.Fields for DropBoardState with fn schema() {
   @component.SchemaInfo::new(fingerprint="drop_board_state", fields=[
-    @component.FieldInfo::new("landed_kind", "string", FText),
+    @component.FieldInfo::new("landed_kind", TyText),
   ])
 }

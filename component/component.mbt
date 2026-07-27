@@ -79,12 +79,14 @@ fn complete_schema(
     if schema.field(name) is Some(_) {
       continue
     }
-    let (ty, slot) = match sp.kind {
-      FComp(comp~, ..) =>
-        (if comp == "" { "component" } else { comp }, Some(comp))
-      _ => ("any", None)
+    // What a runtime spec can say about a field the schema never named is
+    // thin — that it is a slot, and which component it holds — which is
+    // exactly the gap `specs~` exists to fill.
+    let ty : @tutuca.TyInfo = match sp.kind {
+      FComp(comp~, ..) => TyComp(if comp == "" { None } else { Some(comp) })
+      _ => TyAny
     }
-    extra.push(@tutuca.FieldInfo::new(name, ty, sp.kind, slot?))
+    extra.push(@tutuca.FieldInfo::new(name, ty))
   }
   if extra.is_empty() {
     return schema
@@ -203,18 +205,19 @@ pub fn[S : @tutuca.Fields] component(
   // produced it, so it exists, but nothing declared what it is.
   for k, v in init_fields {
     all_specs[k] = match schema.field(k) {
-      Some(fi) => { kind: fi.kind, default: v }
+      Some(fi) => { kind: fi.kind(), default: v }
       None => { kind: FAny, default: v }
     }
   }
   for fi in schema.fields {
     // A slot carries no init value, so it is not in `init_fields` at all.
-    if fi.slot is Some(comp) && !all_specs.contains(fi.name) {
+    if fi.ty.slot() is Some(comp) && !all_specs.contains(fi.name) {
       all_specs[fi.name] = FieldSpec::comp(comp)
     }
     // A `flags` set's declared membership seeds its default.
-    if !fi.members.is_empty() {
-      all_specs[fi.name] = FieldSpec::set(members=fi.members)
+    let members = fi.ty.members()
+    if !members.is_empty() {
+      all_specs[fi.name] = FieldSpec::set(members~)
     }
   }
   for k, sp in specs {

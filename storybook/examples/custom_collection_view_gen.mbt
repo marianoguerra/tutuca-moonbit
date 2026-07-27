@@ -113,7 +113,7 @@ impl @component.Fields for PlaylistState with fn schema() {
   @component.SchemaInfo::new(
     name="Playlist",
     fingerprint="cc5dc1cd9f4badee",
-    fields=[@component.FieldInfo::new("songs", "any", FAny, elem="any")],
+    fields=[@component.FieldInfo::new("songs", TyAny)],
     inputs=["removeSong"],
     view_names=["main"],
   )
@@ -178,7 +178,7 @@ impl @component.Fields for SongState with fn schema() {
   @component.SchemaInfo::new(
     name="Song",
     fingerprint="5d3ec9756ba331ba",
-    fields=[@component.FieldInfo::new("title", "string", FText)],
+    fields=[@component.FieldInfo::new("title", TyText)],
     view_names=["main"],
   )
 }

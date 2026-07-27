@@ -120,7 +120,7 @@ impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
     fingerprint="a0fd8e55e2e67751",
-    fields=[@component.FieldInfo::new("count", "s32", FInt)],
+    fields=[@component.FieldInfo::new("count", TyInt)],
     inputs=["dec", "inc"],
     view_names=["main"],
   )

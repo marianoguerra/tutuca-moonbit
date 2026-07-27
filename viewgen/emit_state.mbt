@@ -291,30 +291,12 @@ fn emit_schema(
   if !def.fields.is_empty() {
     out.write_string("    fields=[\n")
     for f in def.fields {
-      // Only a `flags` set has declared members; an open `text-set` does not.
-      let members = match f.ty {
-        TFlags(n) =>
-          match def.user_ty(n) {
-            Some({ kind: UFlags(ms), .. }) => ms.map(m => quote(m.1)).join(", ")
-            _ => ""
-          }
-        _ => ""
-      }
-      let mut extra = match f.ty.elem() {
-        Some(e) => ", elem=\{quote(e.show_wit())}"
-        None => ""
-      }
-      extra = extra +
-        (match f.ty {
-          TComp(Some(c)) => ", slot=\{quote(c)}"
-          TComp(None) => ", slot=\"\""
-          _ => ""
-        })
-      if members != "" {
-        extra = extra + ", members=[\{members}]"
-      }
+      // One argument, where there were five. The WIT spelling, the runtime
+      // kind, a collection's element type, a slot's component and a closed
+      // set's members are all questions the type answers, so writing them
+      // out separately only created five chances to disagree with it.
       out.write_string(
-        "      @component.FieldInfo::new(\{quote(f.name)}, \{quote(f.ty.show_wit())}, \{f.ty.field_kind_src()}\{extra}),\n",
+        "      @component.FieldInfo::new(\{quote(f.name)}, \{def.ty_info_src(f.ty)}),\n",
       )
     }
     out.write_string("    ],\n")

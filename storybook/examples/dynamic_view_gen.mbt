@@ -124,8 +124,8 @@ impl @component.Fields for SelectorEntryState with fn schema() {
     name="SelectorEntry",
     fingerprint="1324f37b25b27096",
     fields=[
-      @component.FieldInfo::new("value", "string", FText),
-      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("value", TyText),
+      @component.FieldInfo::new("label", TyText),
     ],
     inputs=["setLabel", "setValue"],
     view_names=["main"],
@@ -250,8 +250,8 @@ impl @component.Fields for SelectorState with fn schema() {
     name="Selector",
     fingerprint="7d6e4c9774279bbb",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new("selectedValue", "any", FAny, elem="any"),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("selectedValue", TyAny),
     ],
     inputs=["setSelectedValue"],
     view_names=["main"],
@@ -383,14 +383,8 @@ impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
     name="EntryEditorAndSelector",
     fingerprint="7114357b2636c359",
     fields=[
-      @component.FieldInfo::new("items", "list<any>", FList, elem="any"),
-      @component.FieldInfo::new(
-        "selector",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("items", TyList(TyAny)),
+      @component.FieldInfo::new("selector", TyComp(None)),
     ],
     inputs=["onAddItem", "removeInItemsAt"],
     view_names=["main"],
@@ -503,7 +497,7 @@ impl @component.Fields for SheetState with fn schema() {
   @component.SchemaInfo::new(
     name="Sheet",
     fingerprint="5ee8832621359ec0",
-    fields=[@component.FieldInfo::new("title", "string", FText)],
+    fields=[@component.FieldInfo::new("title", TyText)],
     inputs=["setTitle"],
     view_names=["main"],
   )
@@ -623,15 +617,7 @@ impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(
     name="Panel",
     fingerprint="f64005029cb0440a",
-    fields=[
-      @component.FieldInfo::new(
-        "toolbar",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
-    ],
+    fields=[@component.FieldInfo::new("toolbar", TyComp(None))],
     view_names=["main"],
   )
 }
@@ -709,14 +695,8 @@ impl @component.Fields for WorkspaceState with fn schema() {
     name="Workspace",
     fingerprint="de7864d15ebd3a60",
     fields=[
-      @component.FieldInfo::new("sheet", "any", FAny, elem="any"),
-      @component.FieldInfo::new(
-        "panel",
-        "component",
-        FComp(comp="", args=Map([])),
-        elem="any",
-        slot="",
-      ),
+      @component.FieldInfo::new("sheet", TyAny),
+      @component.FieldInfo::new("panel", TyComp(None)),
     ],
     methods=["sheetTitle"],
     view_names=["main"],

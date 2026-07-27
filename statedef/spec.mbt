@@ -233,13 +233,13 @@ declare pub fn StateTy::is_boolish(self : StateTy) -> Bool
 declare pub fn StateTy::is_renderable(self : StateTy) -> Bool
 
 ///|
-/// The tutuca `FieldKind` this type maps to, as the MoonBit source text of a
-/// `@component.FieldKind` expression.
+/// The MoonBit source of the `@tutuca.TyInfo` expression describing this type.
 ///
-/// Text and not a `@component.FieldKind` value: statedef stays a pure
-/// text-in/text-out package like viewgen, and importing component/ here
-/// would drag @tutuca.Value in for the sake of one enum.
-declare pub fn StateTy::field_kind_src(self : StateTy) -> String
+/// Text and not a `TyInfo` value: statedef stays a pure text-in/text-out
+/// package like viewgen, and importing core here would drag `@tutuca.Value`
+/// in for the sake of one enum. Takes the `StateDef` because a closed set's
+/// members are inlined, and only the declaration knows them.
+declare pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String
 
 ///|
 /// The MoonBit type expression for a state field of this type, with named

@@ -210,7 +210,7 @@ fn dsheet(title : String) -> &@tutuca.PathNode {
 ///|
 impl @tutuca.Obj for DSheet with fn obj_schema(_self) {
   @tutuca.SchemaInfo::new(name="DSheet", fingerprint="dsheet", fields=[
-    @tutuca.FieldInfo::new("title", "string", FText),
+    @tutuca.FieldInfo::new("title", TyText),
   ])
   |> Some
 }

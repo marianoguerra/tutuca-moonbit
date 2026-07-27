@@ -145,10 +145,10 @@ impl @component.Fields for AttributeBindingState with fn schema() {
     name="AttributeBinding",
     fingerprint="8ea3de0f9d1d7877",
     fields=[
-      @component.FieldInfo::new("str", "string", FText),
-      @component.FieldInfo::new("num", "s32", FInt),
-      @component.FieldInfo::new("bool", "bool", FBool),
-      @component.FieldInfo::new("notSet", "any", FAny, elem="any"),
+      @component.FieldInfo::new("str", TyText),
+      @component.FieldInfo::new("num", TyInt),
+      @component.FieldInfo::new("bool", TyBool),
+      @component.FieldInfo::new("notSet", TyAny),
     ],
     inputs=["setBool", "setRawNumber", "setStr"],
     view_names=["main"],
@@ -267,7 +267,7 @@ impl @component.Fields for ConditionalAttributesState with fn schema() {
   @component.SchemaInfo::new(
     name="ConditionalAttributes",
     fingerprint="910117f2f10fc51d",
-    fields=[@component.FieldInfo::new("isActive", "bool", FBool)],
+    fields=[@component.FieldInfo::new("isActive", TyBool)],
     inputs=["toggleIsActive"],
     view_names=["main"],
   )
@@ -396,8 +396,8 @@ impl @component.Fields for EventModifiersState with fn schema() {
     name="EventModifiers",
     fingerprint="d6a42b598e90df83",
     fields=[
-      @component.FieldInfo::new("query", "string", FText),
-      @component.FieldInfo::new("lastSentSearch", "any", FAny, elem="any"),
+      @component.FieldInfo::new("query", TyText),
+      @component.FieldInfo::new("lastSentSearch", TyAny),
     ],
     inputs=["onInput", "resetQuery", "setLastSentSearch"],
     view_names=["main"],
@@ -533,8 +533,8 @@ impl @component.Fields for ShowHideState with fn schema() {
     name="ShowHide",
     fingerprint="3f79c6cc46a1f1b3",
     fields=[
-      @component.FieldInfo::new("isOpen", "bool", FBool),
-      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("isOpen", TyBool),
+      @component.FieldInfo::new("count", TyInt),
     ],
     inputs=["incCount", "toggleIsOpen"],
     methods=["label"],
