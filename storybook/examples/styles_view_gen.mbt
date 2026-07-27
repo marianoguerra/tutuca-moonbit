@@ -22,22 +22,9 @@ pub(all) struct StylesExampleState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StylesExampleState::zero(), label: "Counter" }
-fn StylesExampleState::zero() -> StylesExampleState {
+pub fn StylesExampleState::zero() -> StylesExampleState {
   StylesExampleState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn styles_example_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StylesExampleState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let styles_example_schema_fingerprint : String = "5c435ae5582bab80"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -55,23 +42,6 @@ impl @component.Fields for StylesExampleState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleState with fn decode(_f) {
   Some(StylesExampleState::{  })
-}
-
-///|
-/// The views declared in styles.html.
-pub(all) enum StylesExampleView {
-  Main
-  One
-  Two
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StylesExampleView::name(self : StylesExampleView) -> String {
-  match self {
-    Main => "main"
-    One => "one"
-    Two => "two"
-  }
 }
 
 ///|
@@ -116,51 +86,9 @@ pub(all) struct StylesExampleRootState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
-fn StylesExampleRootState::zero() -> StylesExampleRootState {
+pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
   StylesExampleRootState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn styles_example_root_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StylesExampleRootState::zero())
-}
-
-///|
-/// Every field the StylesExampleRoot state declares — typed field names for tests and inspectors.
-pub(all) enum StylesExampleRootField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StylesExampleRootField::name(self : StylesExampleRootField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn StylesExampleRootField::kind(
-  self : StylesExampleRootField,
-) -> @component.FieldKind {
-  match self {
-    Value => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let styles_example_root_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let styles_example_root_schema_fingerprint : String = "5407ac5b07426d2a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -178,19 +106,6 @@ impl @component.Fields for StylesExampleRootState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleRootState with fn decode(_f) {
   Some(StylesExampleRootState::{  })
-}
-
-///|
-/// The views declared in styles.html.
-pub(all) enum StylesExampleRootView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StylesExampleRootView::name(self : StylesExampleRootView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

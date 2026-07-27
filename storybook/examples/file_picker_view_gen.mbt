@@ -28,7 +28,7 @@ pub(all) struct FilePickerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..FilePickerState::zero(), label: "Counter" }
-fn FilePickerState::zero() -> FilePickerState {
+pub fn FilePickerState::zero() -> FilePickerState {
   FilePickerState::{
     name: "",
     size: 0.0,
@@ -37,60 +37,6 @@ fn FilePickerState::zero() -> FilePickerState {
     hasFile: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn file_picker_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(FilePickerState::zero())
-}
-
-///|
-/// Every field the FilePicker state declares — typed field names for tests and inspectors.
-pub(all) enum FilePickerField {
-  Name
-  Size
-  Type
-  LastModified
-  HasFile
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FilePickerField::name(self : FilePickerField) -> String {
-  match self {
-    Name => "name"
-    Size => "size"
-    Type => "type"
-    LastModified => "lastModified"
-    HasFile => "hasFile"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn FilePickerField::kind(self : FilePickerField) -> @component.FieldKind {
-  match self {
-    Name => FText
-    Size => FFloat
-    Type => FText
-    LastModified => FFloat
-    HasFile => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let file_picker_field_names : Array[String] = [
-  "name", "size", "type", "lastModified", "hasFile",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let file_picker_schema_fingerprint : String = "9d3c25a65f5d9e0a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -125,19 +71,6 @@ impl @component.Fields for FilePickerState with fn decode(f) {
     lastModified: v_lastModified,
     hasFile: v_hasFile,
   })
-}
-
-///|
-/// The views declared in file_picker.html.
-pub(all) enum FilePickerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FilePickerView::name(self : FilePickerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

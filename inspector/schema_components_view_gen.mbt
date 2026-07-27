@@ -32,7 +32,7 @@ pub(all) struct SchemaScalarState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaScalarState::zero(), label: "Counter" }
-fn SchemaScalarState::zero() -> SchemaScalarState {
+pub fn SchemaScalarState::zero() -> SchemaScalarState {
   SchemaScalarState::{
     items: [],
     isExpanded: false,
@@ -45,75 +45,6 @@ fn SchemaScalarState::zero() -> SchemaScalarState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_scalar_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaScalarState::zero())
-}
-
-///|
-/// Every field the SchemaScalar state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaScalarField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeLabel
-  Badges
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaScalarField::name(self : SchemaScalarField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeLabel => "typeLabel"
-    Badges => "badges"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaScalarField::kind(
-  self : SchemaScalarField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeLabel => FText
-    Badges => FList
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_scalar_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeLabel", "badges", "title",
-  "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_scalar_schema_fingerprint : String = "d80d4b9d65fbcb82"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -174,19 +105,6 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaScalarView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaScalarView::name(self : SchemaScalarView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -422,7 +340,7 @@ pub(all) struct SchemaObjectState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaObjectState::zero(), label: "Counter" }
-fn SchemaObjectState::zero() -> SchemaObjectState {
+pub fn SchemaObjectState::zero() -> SchemaObjectState {
   SchemaObjectState::{
     items: [],
     isExpanded: false,
@@ -435,75 +353,6 @@ fn SchemaObjectState::zero() -> SchemaObjectState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_object_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaObjectState::zero())
-}
-
-///|
-/// Every field the SchemaObject state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaObjectField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeLabel
-  Badges
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaObjectField::name(self : SchemaObjectField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeLabel => "typeLabel"
-    Badges => "badges"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaObjectField::kind(
-  self : SchemaObjectField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeLabel => FText
-    Badges => FList
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_object_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeLabel", "badges", "title",
-  "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_object_schema_fingerprint : String = "c2f51e0706da8337"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -564,19 +413,6 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaObjectView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaObjectView::name(self : SchemaObjectView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -812,7 +648,7 @@ pub(all) struct SchemaArrayState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaArrayState::zero(), label: "Counter" }
-fn SchemaArrayState::zero() -> SchemaArrayState {
+pub fn SchemaArrayState::zero() -> SchemaArrayState {
   SchemaArrayState::{
     items: [],
     isExpanded: false,
@@ -825,73 +661,6 @@ fn SchemaArrayState::zero() -> SchemaArrayState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_array_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaArrayState::zero())
-}
-
-///|
-/// Every field the SchemaArray state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaArrayField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeLabel
-  Badges
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaArrayField::name(self : SchemaArrayField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeLabel => "typeLabel"
-    Badges => "badges"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaArrayField::kind(self : SchemaArrayField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeLabel => FText
-    Badges => FList
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_array_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeLabel", "badges", "title",
-  "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_array_schema_fingerprint : String = "796f47f63629496d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -952,19 +721,6 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaArrayView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaArrayView::name(self : SchemaArrayView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1200,7 +956,7 @@ pub(all) struct SchemaEnumState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaEnumState::zero(), label: "Counter" }
-fn SchemaEnumState::zero() -> SchemaEnumState {
+pub fn SchemaEnumState::zero() -> SchemaEnumState {
   SchemaEnumState::{
     items: [],
     isExpanded: false,
@@ -1213,73 +969,6 @@ fn SchemaEnumState::zero() -> SchemaEnumState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_enum_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaEnumState::zero())
-}
-
-///|
-/// Every field the SchemaEnum state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaEnumField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeLabel
-  Badges
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaEnumField::name(self : SchemaEnumField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeLabel => "typeLabel"
-    Badges => "badges"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaEnumField::kind(self : SchemaEnumField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeLabel => FText
-    Badges => FList
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_enum_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeLabel", "badges", "title",
-  "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_enum_schema_fingerprint : String = "ad5c6b13ee63780d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1340,19 +1029,6 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaEnumView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaEnumView::name(self : SchemaEnumView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1586,7 +1262,7 @@ pub(all) struct SchemaCombinatorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaCombinatorState::zero(), label: "Counter" }
-fn SchemaCombinatorState::zero() -> SchemaCombinatorState {
+pub fn SchemaCombinatorState::zero() -> SchemaCombinatorState {
   SchemaCombinatorState::{
     items: [],
     isExpanded: false,
@@ -1599,75 +1275,6 @@ fn SchemaCombinatorState::zero() -> SchemaCombinatorState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_combinator_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaCombinatorState::zero())
-}
-
-///|
-/// Every field the SchemaCombinator state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaCombinatorField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeLabel
-  Badges
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaCombinatorField::name(self : SchemaCombinatorField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeLabel => "typeLabel"
-    Badges => "badges"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaCombinatorField::kind(
-  self : SchemaCombinatorField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeLabel => FText
-    Badges => FList
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_combinator_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeLabel", "badges", "title",
-  "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_combinator_schema_fingerprint : String = "a1586e79655db820"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1728,19 +1335,6 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaCombinatorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaCombinatorView::name(self : SchemaCombinatorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1971,49 +1565,9 @@ pub(all) struct SchemaConstState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaConstState::zero(), label: "Counter" }
-fn SchemaConstState::zero() -> SchemaConstState {
+pub fn SchemaConstState::zero() -> SchemaConstState {
   SchemaConstState::{ value: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_const_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaConstState::zero())
-}
-
-///|
-/// Every field the SchemaConst state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaConstField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaConstField::name(self : SchemaConstField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaConstField::kind(self : SchemaConstField) -> @component.FieldKind {
-  match self {
-    Value => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_const_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_const_schema_fingerprint : String = "1fbdb30e4d4e6d8e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -2032,19 +1586,6 @@ impl @component.Fields for SchemaConstState with fn encode(s) {
 impl @component.Fields for SchemaConstState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
   Some(SchemaConstState::{ value: v_value })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaConstView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaConstView::name(self : SchemaConstView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -2093,7 +1634,7 @@ pub(all) struct SchemaConditionalState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaConditionalState::zero(), label: "Counter" }
-fn SchemaConditionalState::zero() -> SchemaConditionalState {
+pub fn SchemaConditionalState::zero() -> SchemaConditionalState {
   SchemaConditionalState::{
     ifNode: Null,
     thenNode: Null,
@@ -2103,65 +1644,6 @@ fn SchemaConditionalState::zero() -> SchemaConditionalState {
     deprecated: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_conditional_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaConditionalState::zero())
-}
-
-///|
-/// Every field the SchemaConditional state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaConditionalField {
-  IfNode
-  ThenNode
-  ElseNode
-  Title
-  Description
-  Deprecated
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaConditionalField::name(self : SchemaConditionalField) -> String {
-  match self {
-    IfNode => "ifNode"
-    ThenNode => "thenNode"
-    ElseNode => "elseNode"
-    Title => "title"
-    Description => "description"
-    Deprecated => "deprecated"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaConditionalField::kind(
-  self : SchemaConditionalField,
-) -> @component.FieldKind {
-  match self {
-    IfNode => FAny
-    ThenNode => FAny
-    ElseNode => FAny
-    Title => FText
-    Description => FText
-    Deprecated => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_conditional_field_names : Array[String] = [
-  "ifNode", "thenNode", "elseNode", "title", "description", "deprecated",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_conditional_schema_fingerprint : String = "8c2393c520937ed2"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -2199,19 +1681,6 @@ impl @component.Fields for SchemaConditionalState with fn decode(f) {
     description: v_description,
     deprecated: v_deprecated,
   })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaConditionalView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaConditionalView::name(self : SchemaConditionalView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -2262,49 +1731,9 @@ pub(all) struct SchemaNotState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaNotState::zero(), label: "Counter" }
-fn SchemaNotState::zero() -> SchemaNotState {
+pub fn SchemaNotState::zero() -> SchemaNotState {
   SchemaNotState::{ child: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_not_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaNotState::zero())
-}
-
-///|
-/// Every field the SchemaNot state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaNotField {
-  Child
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaNotField::name(self : SchemaNotField) -> String {
-  match self {
-    Child => "child"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaNotField::kind(self : SchemaNotField) -> @component.FieldKind {
-  match self {
-    Child => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_not_field_names : Array[String] = ["child"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_not_schema_fingerprint : String = "d37d27078d9280ad"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -2323,19 +1752,6 @@ impl @component.Fields for SchemaNotState with fn encode(s) {
 impl @component.Fields for SchemaNotState with fn decode(f) {
   let v_child = f.get("child").unwrap_or(Null)
   Some(SchemaNotState::{ child: v_child })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaNotView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaNotView::name(self : SchemaNotView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -2379,51 +1795,9 @@ pub(all) struct SchemaBooleanState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaBooleanState::zero(), label: "Counter" }
-fn SchemaBooleanState::zero() -> SchemaBooleanState {
+pub fn SchemaBooleanState::zero() -> SchemaBooleanState {
   SchemaBooleanState::{ value: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_boolean_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaBooleanState::zero())
-}
-
-///|
-/// Every field the SchemaBoolean state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaBooleanField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaBooleanField::name(self : SchemaBooleanField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaBooleanField::kind(
-  self : SchemaBooleanField,
-) -> @component.FieldKind {
-  match self {
-    Value => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_boolean_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_boolean_schema_fingerprint : String = "92339a28ccc7d29d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -2442,21 +1816,6 @@ impl @component.Fields for SchemaBooleanState with fn encode(s) {
 impl @component.Fields for SchemaBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
   Some(SchemaBooleanState::{ value: v_value })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaBooleanView {
-  Main
-  MargauiClasses
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaBooleanView::name(self : SchemaBooleanView) -> String {
-  match self {
-    Main => "main"
-    MargauiClasses => "_margauiClasses"
-  }
 }
 
 ///|
@@ -2533,49 +1892,9 @@ pub(all) struct SchemaRefState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaRefState::zero(), label: "Counter" }
-fn SchemaRefState::zero() -> SchemaRefState {
+pub fn SchemaRefState::zero() -> SchemaRefState {
   SchemaRefState::{ target: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_ref_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaRefState::zero())
-}
-
-///|
-/// Every field the SchemaRef state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaRefField {
-  Target
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaRefField::name(self : SchemaRefField) -> String {
-  match self {
-    Target => "target"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaRefField::kind(self : SchemaRefField) -> @component.FieldKind {
-  match self {
-    Target => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_ref_field_names : Array[String] = ["target"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_ref_schema_fingerprint : String = "372b432fc265d9c7"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -2594,19 +1913,6 @@ impl @component.Fields for SchemaRefState with fn encode(s) {
 impl @component.Fields for SchemaRefState with fn decode(f) {
   guard f.get("target") is Some(Str(v_target)) else { return None }
   Some(SchemaRefState::{ target: v_target })
-}
-
-///|
-/// The views declared in schema_components.html.
-pub(all) enum SchemaRefView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaRefView::name(self : SchemaRefView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

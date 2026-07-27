@@ -22,22 +22,9 @@ pub(all) struct MinimumViableComponentState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
-fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
+pub fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
   MinimumViableComponentState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn minimum_viable_component_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MinimumViableComponentState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let minimum_viable_component_schema_fingerprint : String = "0f2138963e0265a7"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -55,21 +42,6 @@ impl @component.Fields for MinimumViableComponentState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MinimumViableComponentState with fn decode(_f) {
   Some(MinimumViableComponentState::{  })
-}
-
-///|
-/// The views declared in basics.html.
-pub(all) enum MinimumViableComponentView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MinimumViableComponentView::name(
-  self : MinimumViableComponentView,
-) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -110,22 +82,9 @@ pub(all) struct StaticViewComponentState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
-fn StaticViewComponentState::zero() -> StaticViewComponentState {
+pub fn StaticViewComponentState::zero() -> StaticViewComponentState {
   StaticViewComponentState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn static_view_component_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StaticViewComponentState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let static_view_component_schema_fingerprint : String = "a2006cc55bf0a041"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -143,19 +102,6 @@ impl @component.Fields for StaticViewComponentState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StaticViewComponentState with fn decode(_f) {
   Some(StaticViewComponentState::{  })
-}
-
-///|
-/// The views declared in basics.html.
-pub(all) enum StaticViewComponentView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StaticViewComponentView::name(self : StaticViewComponentView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -201,62 +147,9 @@ pub(all) struct TextDirectiveState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TextDirectiveState::zero(), label: "Counter" }
-fn TextDirectiveState::zero() -> TextDirectiveState {
+pub fn TextDirectiveState::zero() -> TextDirectiveState {
   TextDirectiveState::{ str: "", num: 0, bool: false, notSet: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn text_directive_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TextDirectiveState::zero())
-}
-
-///|
-/// Every field the TextDirective state declares — typed field names for tests and inspectors.
-pub(all) enum TextDirectiveField {
-  Str
-  Num
-  Bool
-  NotSet
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TextDirectiveField::name(self : TextDirectiveField) -> String {
-  match self {
-    Str => "str"
-    Num => "num"
-    Bool => "bool"
-    NotSet => "notSet"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TextDirectiveField::kind(
-  self : TextDirectiveField,
-) -> @component.FieldKind {
-  match self {
-    Str => FText
-    Num => FInt
-    Bool => FBool
-    NotSet => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let text_directive_field_names : Array[String] = [
-  "str", "num", "bool", "notSet",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let text_directive_schema_fingerprint : String = "f6fb027d2388083c"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -289,19 +182,6 @@ impl @component.Fields for TextDirectiveState with fn decode(f) {
     bool: v_bool,
     notSet: v_notSet,
   })
-}
-
-///|
-/// The views declared in basics.html.
-pub(all) enum TextDirectiveView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TextDirectiveView::name(self : TextDirectiveView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -381,51 +261,9 @@ pub(all) struct DangerSetInnerHtmlState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
-fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
+pub fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
   DangerSetInnerHtmlState::{ content: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn danger_set_inner_html_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DangerSetInnerHtmlState::zero())
-}
-
-///|
-/// Every field the DangerSetInnerHtml state declares — typed field names for tests and inspectors.
-pub(all) enum DangerSetInnerHtmlField {
-  Content
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DangerSetInnerHtmlField::name(self : DangerSetInnerHtmlField) -> String {
-  match self {
-    Content => "content"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DangerSetInnerHtmlField::kind(
-  self : DangerSetInnerHtmlField,
-) -> @component.FieldKind {
-  match self {
-    Content => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let danger_set_inner_html_field_names : Array[String] = ["content"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let danger_set_inner_html_schema_fingerprint : String = "20e28deaad6a8c77"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -444,19 +282,6 @@ impl @component.Fields for DangerSetInnerHtmlState with fn encode(s) {
 impl @component.Fields for DangerSetInnerHtmlState with fn decode(f) {
   guard f.get("content") is Some(Str(v_content)) else { return None }
   Some(DangerSetInnerHtmlState::{ content: v_content })
-}
-
-///|
-/// The views declared in basics.html.
-pub(all) enum DangerSetInnerHtmlView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DangerSetInnerHtmlView::name(self : DangerSetInnerHtmlView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

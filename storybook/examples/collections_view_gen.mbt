@@ -24,51 +24,9 @@ pub(all) struct RenderWithScopeState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RenderWithScopeState::zero(), label: "Counter" }
-fn RenderWithScopeState::zero() -> RenderWithScopeState {
+pub fn RenderWithScopeState::zero() -> RenderWithScopeState {
   RenderWithScopeState::{ text: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn render_with_scope_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(RenderWithScopeState::zero())
-}
-
-///|
-/// Every field the RenderWithScope state declares — typed field names for tests and inspectors.
-pub(all) enum RenderWithScopeField {
-  Text
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RenderWithScopeField::name(self : RenderWithScopeField) -> String {
-  match self {
-    Text => "text"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn RenderWithScopeField::kind(
-  self : RenderWithScopeField,
-) -> @component.FieldKind {
-  match self {
-    Text => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let render_with_scope_field_names : Array[String] = ["text"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let render_with_scope_schema_fingerprint : String = "25c803b695d1cdde"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -87,19 +45,6 @@ impl @component.Fields for RenderWithScopeState with fn encode(s) {
 impl @component.Fields for RenderWithScopeState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   Some(RenderWithScopeState::{ text: v_text })
-}
-
-///|
-/// The views declared in collections.html.
-pub(all) enum RenderWithScopeView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RenderWithScopeView::name(self : RenderWithScopeView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -246,54 +191,9 @@ pub(all) struct ListFilterEnrichState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListFilterEnrichState::zero(), label: "Counter" }
-fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
+pub fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
   ListFilterEnrichState::{ items: [], query: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn list_filter_enrich_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ListFilterEnrichState::zero())
-}
-
-///|
-/// Every field the ListFilterEnrich state declares — typed field names for tests and inspectors.
-pub(all) enum ListFilterEnrichField {
-  Items
-  Query
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListFilterEnrichField::name(self : ListFilterEnrichField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ListFilterEnrichField::kind(
-  self : ListFilterEnrichField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let list_filter_enrich_field_names : Array[String] = ["items", "query"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let list_filter_enrich_schema_fingerprint : String = "d9bbfb6a84864d29"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -322,19 +222,6 @@ impl @component.Fields for ListFilterEnrichState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListFilterEnrichState::{ items: v_items, query: v_query })
-}
-
-///|
-/// The views declared in collections.html.
-pub(all) enum ListFilterEnrichView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListFilterEnrichView::name(self : ListFilterEnrichView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -538,56 +425,9 @@ pub(all) struct ListFilterEnrichWithState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListFilterEnrichWithState::zero(), label: "Counter" }
-fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
+pub fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
   ListFilterEnrichWithState::{ items: [], query: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn list_filter_enrich_with_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ListFilterEnrichWithState::zero())
-}
-
-///|
-/// Every field the ListFilterEnrichWith state declares — typed field names for tests and inspectors.
-pub(all) enum ListFilterEnrichWithField {
-  Items
-  Query
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListFilterEnrichWithField::name(
-  self : ListFilterEnrichWithField,
-) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ListFilterEnrichWithField::kind(
-  self : ListFilterEnrichWithField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let list_filter_enrich_with_field_names : Array[String] = ["items", "query"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let list_filter_enrich_with_schema_fingerprint : String = "4b8fcd058a698178"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -616,21 +456,6 @@ impl @component.Fields for ListFilterEnrichWithState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListFilterEnrichWithState::{ items: v_items, query: v_query })
-}
-
-///|
-/// The views declared in collections.html.
-pub(all) enum ListFilterEnrichWithView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListFilterEnrichWithView::name(
-  self : ListFilterEnrichWithView,
-) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

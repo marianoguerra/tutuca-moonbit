@@ -15,19 +15,6 @@ test "the generated counter module" {
       #|//   "moonbitlang/core/debug"
       #|
       #|///|
-      #|/// The views declared in counter.html.
-      #|pub(all) enum CounterView {
-      #|  Main
-      #|} derive(Eq, @debug.Debug)
-      #|
-      #|///|
-      #|pub fn CounterView::name(self : CounterView) -> String {
-      #|  match self {
-      #|    Main => "main"
-      #|  }
-      #|}
-      #|
-      #|///|
       #|/// The file-level style — pass as `common_style~`.
       #|pub let counter_common_style : String = ""
       #|
@@ -109,61 +96,6 @@ test "the generated counter module" {
       #|    }
       #|  }
       #|  out
-      #|}
-      #|
-      #|///|
-      #|/// State fields the views read at a view's ROOT scope. Reads under an
-      #|/// @each, an @enrich-with, a push-view or an <x render> address the loop
-      #|/// item or the child component, not this state, so they are not listed.
-      #|pub let counter_fields : Array[String] = ["count", "history", "label"]
-      #|
-      #|///|
-      #|/// The fields in `counter_fields` that `s` does not carry — assert this is
-      #|/// empty in a test. Fields the component declares through `specs~` rather
-      #|/// than through its state struct go in `extra~`.
-      #|pub fn[S : ToJson] counter_missing_fields(
-      #|  s : S,
-      #|  extra? : Array[String] = [],
-      #|) -> Array[String] {
-      #|  let present : Map[String, Bool] = Map([])
-      #|  if s.to_json() is Object(o) {
-      #|    for k, _ in o {
-      #|      present[k] = true
-      #|    }
-      #|  }
-      #|  for k in extra {
-      #|    present[k] = true
-      #|  }
-      #|  counter_fields.filter(f => !present.contains(f))
-      #|}
-      #|
-      #|///|
-      #|/// Constant `id` attributes in the views — typed selectors for tests.
-      #|pub(all) enum CounterId {
-      #|  Count
-      #|  Dec
-      #|  History
-      #|  Inc
-      #|  Label
-      #|  Reset
-      #|} derive(Eq, @debug.Debug)
-      #|
-      #|///|
-      #|pub fn CounterId::id(self : CounterId) -> String {
-      #|  match self {
-      #|    Count => "count"
-      #|    Dec => "dec"
-      #|    History => "history"
-      #|    Inc => "inc"
-      #|    Label => "label"
-      #|    Reset => "reset"
-      #|  }
-      #|}
-      #|
-      #|///|
-      #|/// The `#id` CSS selector for this element.
-      #|pub fn CounterId::selector(self : CounterId) -> String {
-      #|  "#" + self.id()
       #|}
       #|
       #|
@@ -286,21 +218,6 @@ test "a view with a $method, several views and styles" {
       #|//   "moonbitlang/core/debug"
       #|
       #|///|
-      #|/// The views declared in todo.html.
-      #|pub(all) enum TodoListView {
-      #|  Main
-      #|  Row
-      #|} derive(Eq, @debug.Debug)
-      #|
-      #|///|
-      #|pub fn TodoListView::name(self : TodoListView) -> String {
-      #|  match self {
-      #|    Main => "main"
-      #|    Row => "row"
-      #|  }
-      #|}
-      #|
-      #|///|
       #|/// The file-level style — pass as `common_style~`.
       #|pub let todo_list_common_style : String = ".todo { display: grid }"
       #|
@@ -400,32 +317,6 @@ test "a view with a $method, several views and styles" {
       #|    }
       #|  }
       #|  out
-      #|}
-      #|
-      #|///|
-      #|/// State fields the views read at a view's ROOT scope. Reads under an
-      #|/// @each, an @enrich-with, a push-view or an <x render> address the loop
-      #|/// item or the child component, not this state, so they are not listed.
-      #|pub let todo_list_fields : Array[String] = ["items"]
-      #|
-      #|///|
-      #|/// The fields in `todo_list_fields` that `s` does not carry — assert this is
-      #|/// empty in a test. Fields the component declares through `specs~` rather
-      #|/// than through its state struct go in `extra~`.
-      #|pub fn[S : ToJson] todo_list_missing_fields(
-      #|  s : S,
-      #|  extra? : Array[String] = [],
-      #|) -> Array[String] {
-      #|  let present : Map[String, Bool] = Map([])
-      #|  if s.to_json() is Object(o) {
-      #|    for k, _ in o {
-      #|      present[k] = true
-      #|    }
-      #|  }
-      #|  for k in extra {
-      #|    present[k] = true
-      #|  }
-      #|  todo_list_fields.filter(f => !present.contains(f))
       #|}
       #|
       #|

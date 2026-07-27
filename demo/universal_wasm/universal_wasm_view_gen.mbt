@@ -24,54 +24,9 @@ pub(all) struct UniversalWasmState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..UniversalWasmState::zero(), label: "Counter" }
-fn UniversalWasmState::zero() -> UniversalWasmState {
+pub fn UniversalWasmState::zero() -> UniversalWasmState {
   UniversalWasmState::{ status: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn universal_wasm_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(UniversalWasmState::zero())
-}
-
-///|
-/// Every field the UniversalWasm state declares — typed field names for tests and inspectors.
-pub(all) enum UniversalWasmField {
-  Status
-  List
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn UniversalWasmField::name(self : UniversalWasmField) -> String {
-  match self {
-    Status => "status"
-    List => "list"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn UniversalWasmField::kind(
-  self : UniversalWasmField,
-) -> @component.FieldKind {
-  match self {
-    Status => FText
-    List => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let universal_wasm_field_names : Array[String] = ["status", "list"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let universal_wasm_schema_fingerprint : String = "027396975b37b745"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -90,19 +45,6 @@ impl @component.Fields for UniversalWasmState with fn encode(s) {
 impl @component.Fields for UniversalWasmState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   Some(UniversalWasmState::{ status: v_status })
-}
-
-///|
-/// The views declared in universal_wasm.html.
-pub(all) enum UniversalWasmView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn UniversalWasmView::name(self : UniversalWasmView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -161,7 +103,7 @@ pub(all) struct ComponentListState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComponentListState::zero(), label: "Counter" }
-fn ComponentListState::zero() -> ComponentListState {
+pub fn ComponentListState::zero() -> ComponentListState {
   ComponentListState::{
     entries: [],
     showSettings: false,
@@ -172,68 +114,6 @@ fn ComponentListState::zero() -> ComponentListState {
     wrap: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn component_list_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ComponentListState::zero())
-}
-
-///|
-/// Every field the ComponentList state declares — typed field names for tests and inspectors.
-pub(all) enum ComponentListField {
-  Entries
-  ShowSettings
-  Dir
-  Justify
-  Align
-  Gap
-  Wrap
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentListField::name(self : ComponentListField) -> String {
-  match self {
-    Entries => "entries"
-    ShowSettings => "showSettings"
-    Dir => "dir"
-    Justify => "justify"
-    Align => "align"
-    Gap => "gap"
-    Wrap => "wrap"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ComponentListField::kind(
-  self : ComponentListField,
-) -> @component.FieldKind {
-  match self {
-    Entries => FList
-    ShowSettings => FBool
-    Dir => FText
-    Justify => FText
-    Align => FText
-    Gap => FInt
-    Wrap => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let component_list_field_names : Array[String] = [
-  "entries", "showSettings", "dir", "justify", "align", "gap", "wrap",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let component_list_schema_fingerprint : String = "85aeb3d6986afb5a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -281,19 +161,6 @@ impl @component.Fields for ComponentListState with fn decode(f) {
     gap: v_gap,
     wrap: v_wrap,
   })
-}
-
-///|
-/// The views declared in universal_wasm.html.
-pub(all) enum ComponentListView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentListView::name(self : ComponentListView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -497,59 +364,9 @@ pub(all) struct ComponentPickerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComponentPickerState::zero(), label: "Counter" }
-fn ComponentPickerState::zero() -> ComponentPickerState {
+pub fn ComponentPickerState::zero() -> ComponentPickerState {
   ComponentPickerState::{ filterText: "", items: [], selected: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn component_picker_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ComponentPickerState::zero())
-}
-
-///|
-/// Every field the ComponentPicker state declares — typed field names for tests and inspectors.
-pub(all) enum ComponentPickerField {
-  FilterText
-  Items
-  Selected
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentPickerField::name(self : ComponentPickerField) -> String {
-  match self {
-    FilterText => "filterText"
-    Items => "items"
-    Selected => "selected"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ComponentPickerField::kind(
-  self : ComponentPickerField,
-) -> @component.FieldKind {
-  match self {
-    FilterText => FText
-    Items => FList
-    Selected => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let component_picker_field_names : Array[String] = [
-  "filterText", "items", "selected",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let component_picker_schema_fingerprint : String = "d38a8f3626c9ef02"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -584,19 +401,6 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
     items: v_items,
     selected: v_selected,
   })
-}
-
-///|
-/// The views declared in universal_wasm.html.
-pub(all) enum ComponentPickerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentPickerView::name(self : ComponentPickerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -749,59 +553,9 @@ pub(all) struct ComponentEntryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComponentEntryState::zero(), label: "Counter" }
-fn ComponentEntryState::zero() -> ComponentEntryState {
+pub fn ComponentEntryState::zero() -> ComponentEntryState {
   ComponentEntryState::{ module_: "", name: "", label: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn component_entry_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ComponentEntryState::zero())
-}
-
-///|
-/// Every field the ComponentEntry state declares — typed field names for tests and inspectors.
-pub(all) enum ComponentEntryField {
-  Module
-  Name
-  Label
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentEntryField::name(self : ComponentEntryField) -> String {
-  match self {
-    Module => "module"
-    Name => "name"
-    Label => "label"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ComponentEntryField::kind(
-  self : ComponentEntryField,
-) -> @component.FieldKind {
-  match self {
-    Module => FText
-    Name => FText
-    Label => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let component_entry_field_names : Array[String] = [
-  "module", "name", "label",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let component_entry_schema_fingerprint : String = "4f88e4ef86812754"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -822,19 +576,6 @@ impl @component.Fields for ComponentEntryState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
   Some(ComponentEntryState::{ module_: v_module_, name: v_name, label: v_label })
-}
-
-///|
-/// The views declared in universal_wasm.html.
-pub(all) enum ComponentEntryView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentEntryView::name(self : ComponentEntryView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

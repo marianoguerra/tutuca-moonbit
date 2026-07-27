@@ -76,35 +76,38 @@ pub fn module_def() -> @component.ModuleDef {
 /// letting a missing field render as null. What is worth pinning is that the
 /// schema gives each field the kind the runtime will act on, which the old
 /// `FieldSpec::of_default` had to guess from the seed value.
-test "the schema declares each field's kind rather than inferring it" {
-  // Matched rather than compared: FieldKind carries a Map[String, Value] in
-  // its FComp arm, and Value holds Fn and &Obj, so it cannot derive Eq.
-  assert_true(CounterField::Count.kind() is FInt)
-  assert_true(CounterField::Label.kind() is FText)
-  assert_true(CounterField::History.kind() is FList)
-  assert_eq(counter_field_names, ["label", "count", "history"])
-}
-
-///|
-/// The schema reaches the runtime, so the field kinds are DECLARED rather
-/// than inferred from the init value.
+///
+/// Asserted through `SchemaInfo` and not through a generated `CounterField`
+/// enum, because the descriptor is what the inspector and the state editor
+/// actually read: they hold a bare `@tutuca.Value` and no component registry,
+/// so anything they cannot reach this way is not really declared.
 test "the component takes its kinds from the schema, not the seed value" {
   let comp = counter_comp()
   let si = comp.schema
-  assert_eq(si.fingerprint, counter_schema_fingerprint)
+  // Computed, not merely present: the structural fingerprint is 64 bits of
+  // hex, and it is what notices that a stored state can no longer be read back.
+  assert_eq(si.fingerprint.length(), 16)
+  assert_eq(si.field_names(), ["label", "count", "history"])
   // The names `update` answers — unknowable by reflection, since update is
   // one opaque pattern match.
   assert_eq(si.inputs, ["add", "resetCount", "setLabel"])
   assert_eq(si.receives, ["resetTo"])
   assert_eq(si.init_names, ["fresh", "with-history"])
+  assert_eq(si.view_names, ["main"])
   // `count` seeds at 0, which `FieldSpec::of_default` would also call FInt —
   // but for the wrong reason. The schema says s32.
+  //
+  // Matched rather than compared: FieldKind carries a Map[String, Value] in its
+  // FComp arm, and Value holds Fn and &Obj, so it cannot derive Eq.
   guard si.field("count") is Some(fi)
   assert_eq(fi.ty, "s32")
   assert_true(fi.kind is FInt)
+  guard si.field("label") is Some(lf)
+  assert_true(lf.kind is FText)
   // ...and an element type, which a runtime spec has no room for.
   guard si.field("history") is Some(hf)
   assert_eq(hf.ty, "list<s32>")
+  assert_true(hf.kind is FList)
   assert_eq(hf.elem, Some("s32"))
   // The specs the runtime actually built agree with it.
   guard comp.specs.get("count") is Some(sp)

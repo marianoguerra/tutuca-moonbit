@@ -24,71 +24,9 @@ pub(all) struct ComposabilityState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComposabilityState::zero(), label: "Counter" }
-fn ComposabilityState::zero() -> ComposabilityState {
+pub fn ComposabilityState::zero() -> ComposabilityState {
   ComposabilityState::{ activeSection: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn composability_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ComposabilityState::zero())
-}
-
-///|
-/// Every field the Composability state declares — typed field names for tests and inspectors.
-pub(all) enum ComposabilityField {
-  ActiveSection
-  Todo
-  Json
-  Tree
-  PersonalSite
-  VisualWasm
-  Dnd
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComposabilityField::name(self : ComposabilityField) -> String {
-  match self {
-    ActiveSection => "activeSection"
-    Todo => "todo"
-    Json => "json"
-    Tree => "tree"
-    PersonalSite => "personalSite"
-    VisualWasm => "visualWasm"
-    Dnd => "dnd"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ComposabilityField::kind(
-  self : ComposabilityField,
-) -> @component.FieldKind {
-  match self {
-    ActiveSection => FText
-    Todo => FComp(comp="", args=Map([]))
-    Json => FComp(comp="", args=Map([]))
-    Tree => FComp(comp="", args=Map([]))
-    PersonalSite => FComp(comp="", args=Map([]))
-    VisualWasm => FComp(comp="", args=Map([]))
-    Dnd => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let composability_field_names : Array[String] = [
-  "activeSection", "todo", "json", "tree", "personalSite", "visualWasm", "dnd",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let composability_schema_fingerprint : String = "a3b3ea198bfa01dd"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -109,19 +47,6 @@ impl @component.Fields for ComposabilityState with fn decode(f) {
     return None
   }
   Some(ComposabilityState::{ activeSection: v_activeSection })
-}
-
-///|
-/// The views declared in composability.html.
-pub(all) enum ComposabilityView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComposabilityView::name(self : ComposabilityView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -199,35 +124,6 @@ pub fn[S] composability_swap(
     }
   }
   out
-}
-
-///|
-/// Constant `id` attributes in the views — typed selectors for tests.
-pub(all) enum ComposabilityId {
-  TabDnd
-  TabJson
-  TabPersonalSite
-  TabTodo
-  TabTree
-  TabVisualWasm
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComposabilityId::id(self : ComposabilityId) -> String {
-  match self {
-    TabDnd => "tab-dnd"
-    TabJson => "tab-json"
-    TabPersonalSite => "tab-personal-site"
-    TabTodo => "tab-todo"
-    TabTree => "tab-tree"
-    TabVisualWasm => "tab-visual-wasm"
-  }
-}
-
-///|
-/// The `#id` CSS selector for this element.
-pub fn ComposabilityId::selector(self : ComposabilityId) -> String {
-  "#" + self.id()
 }
 
 ///|

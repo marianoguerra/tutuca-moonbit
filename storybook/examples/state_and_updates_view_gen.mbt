@@ -27,62 +27,9 @@ pub(all) struct AttributeBindingState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..AttributeBindingState::zero(), label: "Counter" }
-fn AttributeBindingState::zero() -> AttributeBindingState {
+pub fn AttributeBindingState::zero() -> AttributeBindingState {
   AttributeBindingState::{ str: "", num: 0, bool: false, notSet: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn attribute_binding_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(AttributeBindingState::zero())
-}
-
-///|
-/// Every field the AttributeBinding state declares — typed field names for tests and inspectors.
-pub(all) enum AttributeBindingField {
-  Str
-  Num
-  Bool
-  NotSet
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn AttributeBindingField::name(self : AttributeBindingField) -> String {
-  match self {
-    Str => "str"
-    Num => "num"
-    Bool => "bool"
-    NotSet => "notSet"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn AttributeBindingField::kind(
-  self : AttributeBindingField,
-) -> @component.FieldKind {
-  match self {
-    Str => FText
-    Num => FInt
-    Bool => FBool
-    NotSet => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let attribute_binding_field_names : Array[String] = [
-  "str", "num", "bool", "notSet",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let attribute_binding_schema_fingerprint : String = "8ea3de0f9d1d7877"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -115,19 +62,6 @@ impl @component.Fields for AttributeBindingState with fn decode(f) {
     bool: v_bool,
     notSet: v_notSet,
   })
-}
-
-///|
-/// The views declared in state_and_updates.html.
-pub(all) enum AttributeBindingView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn AttributeBindingView::name(self : AttributeBindingView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -258,53 +192,9 @@ pub(all) struct ConditionalAttributesState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ConditionalAttributesState::zero(), label: "Counter" }
-fn ConditionalAttributesState::zero() -> ConditionalAttributesState {
+pub fn ConditionalAttributesState::zero() -> ConditionalAttributesState {
   ConditionalAttributesState::{ isActive: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn conditional_attributes_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ConditionalAttributesState::zero())
-}
-
-///|
-/// Every field the ConditionalAttributes state declares — typed field names for tests and inspectors.
-pub(all) enum ConditionalAttributesField {
-  IsActive
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ConditionalAttributesField::name(
-  self : ConditionalAttributesField,
-) -> String {
-  match self {
-    IsActive => "isActive"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ConditionalAttributesField::kind(
-  self : ConditionalAttributesField,
-) -> @component.FieldKind {
-  match self {
-    IsActive => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let conditional_attributes_field_names : Array[String] = ["isActive"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let conditional_attributes_schema_fingerprint : String = "910117f2f10fc51d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -323,21 +213,6 @@ impl @component.Fields for ConditionalAttributesState with fn encode(s) {
 impl @component.Fields for ConditionalAttributesState with fn decode(f) {
   guard f.get("isActive") is Some(Bool(v_isActive)) else { return None }
   Some(ConditionalAttributesState::{ isActive: v_isActive })
-}
-
-///|
-/// The views declared in state_and_updates.html.
-pub(all) enum ConditionalAttributesView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ConditionalAttributesView::name(
-  self : ConditionalAttributesView,
-) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -456,56 +331,9 @@ pub(all) struct EventModifiersState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EventModifiersState::zero(), label: "Counter" }
-fn EventModifiersState::zero() -> EventModifiersState {
+pub fn EventModifiersState::zero() -> EventModifiersState {
   EventModifiersState::{ query: "", lastSentSearch: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn event_modifiers_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(EventModifiersState::zero())
-}
-
-///|
-/// Every field the EventModifiers state declares — typed field names for tests and inspectors.
-pub(all) enum EventModifiersField {
-  Query
-  LastSentSearch
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EventModifiersField::name(self : EventModifiersField) -> String {
-  match self {
-    Query => "query"
-    LastSentSearch => "lastSentSearch"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn EventModifiersField::kind(
-  self : EventModifiersField,
-) -> @component.FieldKind {
-  match self {
-    Query => FText
-    LastSentSearch => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let event_modifiers_field_names : Array[String] = [
-  "query", "lastSentSearch",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let event_modifiers_schema_fingerprint : String = "d6a42b598e90df83"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -525,19 +353,6 @@ impl @component.Fields for EventModifiersState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
   let v_lastSentSearch = f.get("lastSentSearch").unwrap_or(Null)
   Some(EventModifiersState::{ query: v_query, lastSentSearch: v_lastSentSearch })
-}
-
-///|
-/// The views declared in state_and_updates.html.
-pub(all) enum EventModifiersView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EventModifiersView::name(self : EventModifiersView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -668,52 +483,9 @@ pub(all) struct ShowHideState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ShowHideState::zero(), label: "Counter" }
-fn ShowHideState::zero() -> ShowHideState {
+pub fn ShowHideState::zero() -> ShowHideState {
   ShowHideState::{ isOpen: false, count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn show_hide_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ShowHideState::zero())
-}
-
-///|
-/// Every field the ShowHide state declares — typed field names for tests and inspectors.
-pub(all) enum ShowHideField {
-  IsOpen
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ShowHideField::name(self : ShowHideField) -> String {
-  match self {
-    IsOpen => "isOpen"
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ShowHideField::kind(self : ShowHideField) -> @component.FieldKind {
-  match self {
-    IsOpen => FBool
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let show_hide_field_names : Array[String] = ["isOpen", "count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let show_hide_schema_fingerprint : String = "3f79c6cc46a1f1b3"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -734,19 +506,6 @@ impl @component.Fields for ShowHideState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(ShowHideState::{ isOpen: v_isOpen, count: v_count })
-}
-
-///|
-/// The views declared in state_and_updates.html.
-pub(all) enum ShowHideView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ShowHideView::name(self : ShowHideView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

@@ -86,8 +86,8 @@ For a component named `Counter` the generated module declares
 `CounterInput` and `CounterMsg` (`@on` handler names, with payload types
 inferred from the argument shapes at the call sites, plus
 `CounterMsg::from_dispatch`), `CounterMethod` with `counter_compute` /
-`counter_swap` (the `$`-callables, as exhaustive matches),
-`CounterView` / `CounterId`. The package it lands in must import
+`counter_swap` (the `$`-callables, as exhaustive matches).
+The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
 `"moonbitlang/core/debug"`.
 
@@ -103,11 +103,15 @@ subset of WIT, next to the templates that read it:
 </script>
 ```
 
-Then `CounterState` itself is generated — with its `ToJson`/`FromJson`
-derives, a `zero()`, a `CounterField` table whose `kind()` is declared rather
-than guessed from the seed value, and `counter_schema()`, the whole contract
-as static metadata — and every `.field` a view reads is checked against
-it, inside an `@each` body as well as at the root. A misspelt field is a
+Then `CounterState` itself is generated — a plain struct with no derives, a
+`zero()`, a direct state↔Value codec, and one `SchemaInfo` carrying the whole
+contract as static metadata: every field with the kind the schema DECLARES
+rather than one guessed from the seed value, plus the handler names, the view
+names, the element ids and the fixture names. That descriptor is what an
+instance answers `obj_schema()` with, so the inspector and the state editor
+build themselves from it with no component registry in hand. And every
+`.field` a view reads is checked against it, inside an `@each` body as well as
+at the root. A misspelt field is a
 generation failure naming the near miss, where before it rendered as null.
 The `receive` / `bubble` / `response` buckets get typed enums too: those
 names are raised from MoonBit rather than written in a view, so the schema is
@@ -250,7 +254,7 @@ runs the same generator in the browser. Its left pane has three tabs:
 | **Generated** | read-only: what `gen-views` makes of the View tab, updating as you type |
 
 The generated modules are compiled as extra files of *your* package, so the
-Component tab names `counter_views()` / `CounterMsg` / `CounterId`
+Component tab names `counter_views()` / `CounterMsg` / `CounterInput`
 with no import — and adding an `@on` handler in the View tab fails the build
 with `Partial match … Some(Del(_))` until the Component tab handles it. Load
 the "Counter (view tab)" example to see it.

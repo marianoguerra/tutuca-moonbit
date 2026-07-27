@@ -26,55 +26,9 @@ pub(all) struct PersonState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PersonState::zero(), label: "Counter" }
-fn PersonState::zero() -> PersonState {
+pub fn PersonState::zero() -> PersonState {
   PersonState::{ name: "", email: "", active: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn person_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PersonState::zero())
-}
-
-///|
-/// Every field the Person state declares — typed field names for tests and inspectors.
-pub(all) enum PersonField {
-  Name
-  Email
-  Active
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PersonField::name(self : PersonField) -> String {
-  match self {
-    Name => "name"
-    Email => "email"
-    Active => "active"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PersonField::kind(self : PersonField) -> @component.FieldKind {
-  match self {
-    Name => FText
-    Email => FText
-    Active => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let person_field_names : Array[String] = ["name", "email", "active"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let person_schema_fingerprint : String = "e2e8301a252a8190"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -95,19 +49,6 @@ impl @component.Fields for PersonState with fn decode(f) {
   guard f.get("email") is Some(Str(v_email)) else { return None }
   guard f.get("active") is Some(Bool(v_active)) else { return None }
   Some(PersonState::{ name: v_name, email: v_email, active: v_active })
-}
-
-///|
-/// The views declared in filter_paginate.html.
-pub(all) enum PersonView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PersonView::name(self : PersonView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -233,55 +174,9 @@ pub(all) struct StrategiesState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StrategiesState::zero(), label: "Counter" }
-fn StrategiesState::zero() -> StrategiesState {
+pub fn StrategiesState::zero() -> StrategiesState {
   StrategiesState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn strategies_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StrategiesState::zero())
-}
-
-///|
-/// Every field the Strategies state declares — typed field names for tests and inspectors.
-pub(all) enum StrategiesField {
-  Naive
-  Shared
-  Coupled
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StrategiesField::name(self : StrategiesField) -> String {
-  match self {
-    Naive => "naive"
-    Shared => "shared"
-    Coupled => "coupled"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn StrategiesField::kind(self : StrategiesField) -> @component.FieldKind {
-  match self {
-    Naive => FComp(comp="", args=Map([]))
-    Shared => FComp(comp="", args=Map([]))
-    Coupled => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let strategies_field_names : Array[String] = ["naive", "shared", "coupled"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let strategies_schema_fingerprint : String = "6bace7a4dde1b354"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -299,19 +194,6 @@ impl @component.Fields for StrategiesState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StrategiesState with fn decode(_f) {
   Some(StrategiesState::{  })
-}
-
-///|
-/// The views declared in filter_paginate.html.
-pub(all) enum StrategiesView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StrategiesView::name(self : StrategiesView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -384,60 +266,9 @@ pub(all) struct NaivePeopleState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NaivePeopleState::zero(), label: "Counter" }
-fn NaivePeopleState::zero() -> NaivePeopleState {
+pub fn NaivePeopleState::zero() -> NaivePeopleState {
   NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn naive_people_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(NaivePeopleState::zero())
-}
-
-///|
-/// Every field the NaivePeople state declares — typed field names for tests and inspectors.
-pub(all) enum NaivePeopleField {
-  Items
-  Query
-  Page
-  PageSize
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NaivePeopleField::name(self : NaivePeopleField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-    Page => "page"
-    PageSize => "pageSize"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn NaivePeopleField::kind(self : NaivePeopleField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-    Page => FInt
-    PageSize => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let naive_people_field_names : Array[String] = [
-  "items", "query", "page", "pageSize",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let naive_people_schema_fingerprint : String = "1a6e19dbb5fd3c45"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -477,19 +308,6 @@ impl @component.Fields for NaivePeopleState with fn decode(f) {
     page: v_page,
     pageSize: v_pageSize,
   })
-}
-
-///|
-/// The views declared in filter_paginate.html.
-pub(all) enum NaivePeopleView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NaivePeopleView::name(self : NaivePeopleView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -706,19 +524,6 @@ impl @component.Fields for NaivePeopleState with fn schema() {
 }
 
 ///|
-/// The views declared in filter_paginate.html.
-pub(all) enum SharedPeopleView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SharedPeopleView::name(self : SharedPeopleView) -> String {
-  match self {
-    Main => "main"
-  }
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let shared_people_common_style : String = ""
 
@@ -910,45 +715,6 @@ pub fn[S] shared_people_loop_with(
 }
 
 ///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let shared_people_fields : Array[String] = []
-
-///|
-/// The fields in `shared_people_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] shared_people_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  shared_people_fields.filter(f => !present.contains(f))
-}
-
-///|
-/// The views declared in filter_paginate.html.
-pub(all) enum CoupledPeopleView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CoupledPeopleView::name(self : CoupledPeopleView) -> String {
-  match self {
-    Main => "main"
-  }
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let coupled_people_common_style : String = ""
 
@@ -1106,30 +872,4 @@ pub fn[S] coupled_people_loop_with(
     }
   }
   out
-}
-
-///|
-/// State fields the views read at a view's ROOT scope. Reads under an
-/// @each, an @enrich-with, a push-view or an <x render> address the loop
-/// item or the child component, not this state, so they are not listed.
-pub let coupled_people_fields : Array[String] = []
-
-///|
-/// The fields in `coupled_people_fields` that `s` does not carry — assert this is
-/// empty in a test. Fields the component declares through `specs~` rather
-/// than through its state struct go in `extra~`.
-pub fn[S : ToJson] coupled_people_missing_fields(
-  s : S,
-  extra? : Array[String] = [],
-) -> Array[String] {
-  let present : Map[String, Bool] = Map([])
-  if s.to_json() is Object(o) {
-    for k, _ in o {
-      present[k] = true
-    }
-  }
-  for k in extra {
-    present[k] = true
-  }
-  coupled_people_fields.filter(f => !present.contains(f))
 }

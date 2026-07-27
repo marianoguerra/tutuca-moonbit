@@ -484,6 +484,58 @@ test "the summary is the declaration, not a reconstruction" {
 }
 
 ///|
+/// The metadata FLOOR, over a GENERATED component rather than a hand-written
+/// fixture.
+///
+/// The two tests above pin what the summary says; this one pins that a
+/// component compiled by `gen-views` still SUPPLIES it. That is the property
+/// every deletion in the generator has to preserve and the one a snapshot of
+/// the emitter cannot see: the inspector and the state editor are generated
+/// from this descriptor rather than written per component, so a channel that
+/// stops being emitted does not break a build — it silently empties a panel.
+///
+/// `RichSample` is the fixture that declares every channel at once. Built here
+/// with no handlers at all, because what is under test is what the SCHEMA
+/// supplies — `swap` and `alter` are author-wired runtime facts and are pinned
+/// by the tests above.
+test "a generated component fills every summary row its schema can" {
+  guard @inspector.component_summary(@inspector.rich_sample_component())
+    is Map(d) else {
+    fail("summary is not a Map")
+  }
+  // Every row exists, whether or not this component fills it.
+  for
+    row in [
+      "name", "id", "fingerprint", "fields", "methods", "update", "receive", "bubble",
+      "response", "swap", "alter", "ids", "fixtures", "views",
+    ] {
+    assert_true(d.get(row) is Some(_))
+  }
+  // ...and every row RichSample declares is actually populated.
+  assert_eq(d.get("name"), Some(Str("RichSample")))
+  assert_eq(d.get("update"), Some(List([Str("inc"), Str("reset")])))
+  assert_eq(d.get("receive"), Some(List([Str("ping")])))
+  assert_eq(d.get("bubble"), Some(List([Str("onChild")])))
+  assert_eq(d.get("response"), Some(List([Str("onData")])))
+  assert_eq(d.get("methods"), Some(List([Str("double"), Str("label")])))
+  // A fingerprint is computed, not merely present: 64 bits of hex.
+  guard d.get("fingerprint") is Some(Str(fp))
+  assert_eq(fp.length(), 16)
+  // Each field row carries the name and the WIT spelling the author wrote —
+  // what the state editor labels a control with and picks a control from.
+  guard d.get("fields") is Some(List(fields))
+  assert_eq(fields.length(), 4)
+  for f in fields {
+    guard f is Map(row)
+    assert_true(row.get("name") is Some(Str(_)))
+    assert_true(row.get("type") is Some(Str(_)))
+  }
+  // The views the component can be rendered under are reachable too.
+  guard d.get("views") is Some(List(views))
+  assert_eq(views.length(), 2)
+}
+
+///|
 impl @component.Fields for RichState with fn encode(s) {
   {
     "title": Str(s.title),

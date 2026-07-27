@@ -31,7 +31,7 @@ pub(all) struct StateEditorRowState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StateEditorRowState::zero(), label: "Counter" }
-fn StateEditorRowState::zero() -> StateEditorRowState {
+pub fn StateEditorRowState::zero() -> StateEditorRowState {
   StateEditorRowState::{
     name: "",
     type_: "",
@@ -43,71 +43,6 @@ fn StateEditorRowState::zero() -> StateEditorRowState {
     editable: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn state_editor_row_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StateEditorRowState::zero())
-}
-
-///|
-/// Every field the StateEditorRow state declares — typed field names for tests and inspectors.
-pub(all) enum StateEditorRowField {
-  Name
-  Type
-  Kind
-  Text
-  Num
-  Flag
-  Readonly
-  Editable
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StateEditorRowField::name(self : StateEditorRowField) -> String {
-  match self {
-    Name => "name"
-    Type => "type"
-    Kind => "kind"
-    Text => "text"
-    Num => "num"
-    Flag => "flag"
-    Readonly => "readonly"
-    Editable => "editable"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn StateEditorRowField::kind(
-  self : StateEditorRowField,
-) -> @component.FieldKind {
-  match self {
-    Name => FText
-    Type => FText
-    Kind => FText
-    Text => FText
-    Num => FFloat
-    Flag => FBool
-    Readonly => FText
-    Editable => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let state_editor_row_field_names : Array[String] = [
-  "name", "type", "kind", "text", "num", "flag", "readonly", "editable",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let state_editor_row_schema_fingerprint : String = "b3b1eecbb80cba4e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -151,19 +86,6 @@ impl @component.Fields for StateEditorRowState with fn decode(f) {
     readonly_: v_readonly_,
     editable: v_editable,
   })
-}
-
-///|
-/// The views declared in state_editor.html.
-pub(all) enum StateEditorRowView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StateEditorRowView::name(self : StateEditorRowView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -288,55 +210,9 @@ pub(all) struct StateEditorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StateEditorState::zero(), label: "Counter" }
-fn StateEditorState::zero() -> StateEditorState {
+pub fn StateEditorState::zero() -> StateEditorState {
   StateEditorState::{ target: Null, rows: [], name: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn state_editor_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StateEditorState::zero())
-}
-
-///|
-/// Every field the StateEditor state declares — typed field names for tests and inspectors.
-pub(all) enum StateEditorField {
-  Target
-  Rows
-  Name
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StateEditorField::name(self : StateEditorField) -> String {
-  match self {
-    Target => "target"
-    Rows => "rows"
-    Name => "name"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn StateEditorField::kind(self : StateEditorField) -> @component.FieldKind {
-  match self {
-    Target => FAny
-    Rows => FList
-    Name => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let state_editor_field_names : Array[String] = ["target", "rows", "name"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let state_editor_schema_fingerprint : String = "1bfad85c93f3a53d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -367,19 +243,6 @@ impl @component.Fields for StateEditorState with fn decode(f) {
   }
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(StateEditorState::{ target: v_target, rows: v_rows, name: v_name })
-}
-
-///|
-/// The views declared in state_editor.html.
-pub(all) enum StateEditorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StateEditorView::name(self : StateEditorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

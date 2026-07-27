@@ -26,55 +26,9 @@ pub(all) struct PushViewState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PushViewState::zero(), label: "Counter" }
-fn PushViewState::zero() -> PushViewState {
+pub fn PushViewState::zero() -> PushViewState {
   PushViewState::{ items: [], query: "", view: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn push_view_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PushViewState::zero())
-}
-
-///|
-/// Every field the PushView state declares — typed field names for tests and inspectors.
-pub(all) enum PushViewField {
-  Items
-  Query
-  View
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PushViewField::name(self : PushViewField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-    View => "view"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PushViewField::kind(self : PushViewField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-    View => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let push_view_field_names : Array[String] = ["items", "query", "view"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let push_view_schema_fingerprint : String = "59de8df8ec76d36f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -105,19 +59,6 @@ impl @component.Fields for PushViewState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
   guard f.get("view") is Some(Str(v_view)) else { return None }
   Some(PushViewState::{ items: v_items, query: v_query, view: v_view })
-}
-
-///|
-/// The views declared in rendering.html.
-pub(all) enum PushViewView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PushViewView::name(self : PushViewView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -312,7 +253,7 @@ pub(all) struct SeqItemAccessState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SeqItemAccessState::zero(), label: "Counter" }
-fn SeqItemAccessState::zero() -> SeqItemAccessState {
+pub fn SeqItemAccessState::zero() -> SeqItemAccessState {
   SeqItemAccessState::{
     byKey: Map([]),
     byIndex: [],
@@ -320,59 +261,6 @@ fn SeqItemAccessState::zero() -> SeqItemAccessState {
     currentIndex: 0,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn seq_item_access_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SeqItemAccessState::zero())
-}
-
-///|
-/// Every field the SeqItemAccess state declares — typed field names for tests and inspectors.
-pub(all) enum SeqItemAccessField {
-  ByKey
-  ByIndex
-  CurrentKey
-  CurrentIndex
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SeqItemAccessField::name(self : SeqItemAccessField) -> String {
-  match self {
-    ByKey => "byKey"
-    ByIndex => "byIndex"
-    CurrentKey => "currentKey"
-    CurrentIndex => "currentIndex"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SeqItemAccessField::kind(
-  self : SeqItemAccessField,
-) -> @component.FieldKind {
-  match self {
-    ByKey => FOMap
-    ByIndex => FList
-    CurrentKey => FAny
-    CurrentIndex => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let seq_item_access_field_names : Array[String] = [
-  "byKey", "byIndex", "currentKey", "currentIndex",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let seq_item_access_schema_fingerprint : String = "3d8aff68ab0f9efc"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -423,19 +311,6 @@ impl @component.Fields for SeqItemAccessState with fn decode(f) {
     currentKey: v_currentKey,
     currentIndex: v_currentIndex,
   })
-}
-
-///|
-/// The views declared in rendering.html.
-pub(all) enum SeqItemAccessView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SeqItemAccessView::name(self : SeqItemAccessView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -598,55 +473,9 @@ pub(all) struct PaginationState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PaginationState::zero(), label: "Counter" }
-fn PaginationState::zero() -> PaginationState {
+pub fn PaginationState::zero() -> PaginationState {
   PaginationState::{ items: [], page: 0, pageSize: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn pagination_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PaginationState::zero())
-}
-
-///|
-/// Every field the Pagination state declares — typed field names for tests and inspectors.
-pub(all) enum PaginationField {
-  Items
-  Page
-  PageSize
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PaginationField::name(self : PaginationField) -> String {
-  match self {
-    Items => "items"
-    Page => "page"
-    PageSize => "pageSize"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PaginationField::kind(self : PaginationField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Page => FInt
-    PageSize => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let pagination_field_names : Array[String] = ["items", "page", "pageSize"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let pagination_schema_fingerprint : String = "c2aa11aab6bf6478"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -679,19 +508,6 @@ impl @component.Fields for PaginationState with fn decode(f) {
   guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
   let v_pageSize = t1_pageSize.to_int()
   Some(PaginationState::{ items: v_items, page: v_page, pageSize: v_pageSize })
-}
-
-///|
-/// The views declared in rendering.html.
-pub(all) enum PaginationView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PaginationView::name(self : PaginationView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

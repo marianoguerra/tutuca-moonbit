@@ -27,9 +27,7 @@ fn emit_state(
 ) -> Unit raise GenError {
   emit_user_types(def, derives, out)
   emit_state_struct(t, def, out)
-  emit_zero(t, v, def, out)
-  emit_field_enum(t, v, def, derives, out)
-  emit_fingerprint(v, def, out)
+  emit_zero(t, def, out)
   emit_inits(t, v, def, inits, out)
   emit_codec(t, def, out)
   emit_msgs(t, def, out)
@@ -84,13 +82,9 @@ fn emit_inits(
       out.write_string("  }\n}\n\n")
     }
   }
-  out.write_string(
-    "///|\n" +
-    "/// Every named initial state, in the order the init block declares them.\n" +
-    "pub let \{v}_init_names : Array[String] = [" +
-    inits.map(st => quote(st.name)).join(", ") +
-    "]\n\n",
-  )
+  // The NAMES go in `SchemaInfo.init_names` and nowhere else: a second `pub let`
+  // saying the same thing could only be read by code that already knows this
+  // component's module, while the descriptor is reachable from a bare Value.
   out.write_string(
     "///|\n" +
     "/// A named initial state as component arguments — what a ModuleDef\n" +
@@ -108,26 +102,6 @@ fn emit_inits(
     )
   }
   out.write_string("    _ => None\n  }\n}\n\n")
-}
-
-///|
-/// The schema's structural fingerprint.
-///
-/// Over shape, not over source text: reindenting the block leaves it alone,
-/// renaming a field changes it. A hot swap or a stored state that crosses a
-/// change in this value cannot be reinterpreted, only migrated.
-fn emit_fingerprint(
-  v : String,
-  def : @statedef.StateDef,
-  out : StringBuilder,
-) -> Unit {
-  out.write_string(
-    "///|\n" +
-    "/// The structural fingerprint of this component's schema. Changes when\n" +
-    "/// the SHAPE changes — a renamed or retyped field, a new message case —\n" +
-    "/// and not when the block is merely reformatted.\n" +
-    "pub let \{v}_schema_fingerprint : String = \{quote(@statedef.fingerprint([def]))}\n\n",
-  )
 }
 
 ///|
@@ -235,12 +209,7 @@ fn emit_state_struct(
 }
 
 ///|
-fn emit_zero(
-  t : String,
-  v : String,
-  def : @statedef.StateDef,
-  out : StringBuilder,
-) -> Unit {
+fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit {
   out.write_string(
     "///|\n" +
     "/// The zero state: every field at its type's empty value.\n" +
@@ -249,9 +218,12 @@ fn emit_zero(
     "/// is type-directed, and `init` spreads it to name only what differs:\n" +
     "///\n" +
     "///   init={ ..\{t}State::zero(), label: \"Counter\" }\n" +
-    // Package-private, like the struct it returns: a public function may not
-    // depend on a private type, and the state is nobody else's business.
-    "fn \{t}State::zero() -> \{t}State {\n",
+    // `pub`, like the `pub(all)` struct it returns. It used to be private with a
+    // public `<v>_zero_args()` wrapper beside it, whose only real job was to keep
+    // this from reading as unused in a file with no generated `component()`
+    // wrapper to default `init~` from. Making the thing itself public says that
+    // directly, and the encoded form nobody asked for goes away.
+    "pub fn \{t}State::zero() -> \{t}State {\n",
   )
   let carried = def.fields.filter(f => f.ty.in_struct())
   if carried.is_empty() {
@@ -263,61 +235,14 @@ fn emit_zero(
     }
     out.write_string("  }\n}\n\n")
   }
-  // `zero` is package-private, like the struct it returns, so a component
-  // that seeds from a literal would leave it unused — and a generated file
-  // must not be the thing that warns. This is its public face, and it is
-  // what a storybook example's default arguments are anyway.
-  out.write_string(
-    "///|\n" +
-    "/// The zero state as component arguments — the default a ModuleDef\n" +
-    "/// example takes when it sets nothing of its own.\n" +
-    "pub fn \{v}_zero_args() -> Map[String, @tutuca.Value] {\n" +
-    "  @component.Fields::encode(\{t}State::zero())\n}\n\n",
-  )
 }
 
-///|
-/// The field descriptor table: every field as a typed name, with the kind
-/// the runtime will give it.
-fn emit_field_enum(
-  t : String,
-  v : String,
-  def : @statedef.StateDef,
-  derives : String,
-  out : StringBuilder,
-) -> Unit raise GenError {
-  if def.fields.is_empty() {
-    return
-  }
-  let variants = variants_for(def.fields.map(f => f.name))
-  emit_name_enum(
-    out,
-    "Every field the \{t} state declares — typed field names for tests and inspectors.",
-    "\{t}Field",
-    "name",
-    variants,
-    derives,
-  )
-  out.write_string(
-    "///|\n" +
-    "/// The runtime kind this field carries. Declared, not inferred: the old\n" +
-    "/// `FieldSpec::of_default` had to guess FInt from whether the seed value\n" +
-    "/// happened to be integral.\n" +
-    "pub fn \{t}Field::kind(self : \{t}Field) -> @component.FieldKind {\n" +
-    "  match self {\n",
-  )
-  for i, f in def.fields {
-    out.write_string("    \{variants[i].1} => \{f.ty.field_kind_src()}\n")
-  }
-  out.write_string("  }\n}\n\n")
-  out.write_string(
-    "///|\n" +
-    "/// Every field, in declaration order.\n" +
-    "pub let \{v}_field_names : Array[String] = [" +
-    def.fields.map(f => quote(f.name)).join(", ") +
-    "]\n\n",
-  )
-}
+// There is no `<T>Field` enum and no `<v>_field_names`. Both restated
+// `SchemaInfo.fields`, which carries the same names WITH their declared kind
+// and type — and carries them where a holder of a bare `@tutuca.Value` can
+// read them, which is what the inspector and the state editor actually do. A
+// typed field enum can only be read by code that already knows the component's
+// type, and such code can spell the field name directly.
 
 ///|
 /// The static description an inspector reads instead of reflecting.

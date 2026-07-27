@@ -20,7 +20,7 @@ let counter_state_html : String =
   #|</template>
 
 ///|
-test "a state block emits the struct, its zero and its field table" {
+test "a state block emits the struct, its zero and its declared field kinds" {
   let file = @viewgen.split_file(counter_state_html)
   assert_eq(file.state.length(), 1)
   assert_eq(file.state[0].component, "Counter")
@@ -34,16 +34,27 @@ test "a state block emits the struct, its zero and its field table" {
   // The generated codec does the conversion, and there is no JSON bridge left
   // for a derive to serve.
   assert_false(src.contains("derive(ToJson"))
-  // The zero, so `init` spreads it and names only what differs.
-  assert_true(src.contains("\nfn CounterState::zero() -> CounterState {"))
+  // The zero, so `init` spreads it and names only what differs. Public,
+  // because a file with no generated `component()` wrapper has nothing else to
+  // default `init~` from.
+  assert_true(src.contains("\npub fn CounterState::zero() -> CounterState {"))
   assert_true(src.contains("label: \"\","))
   assert_true(src.contains("count: 0,"))
   assert_true(src.contains("history: [],"))
   // The declared field kinds — `count` is FInt because the schema says s32,
   // not because the seed value happened to be integral.
-  assert_true(src.contains("Count => FInt"))
-  assert_true(src.contains("History => FList"))
-  assert_true(src.contains("Label => FText"))
+  //
+  // Asserted on the descriptor and not on a `CounterField` enum: the kinds have
+  // exactly one home now, and it is the one an inspector holding a bare
+  // `@tutuca.Value` can read.
+  assert_false(src.contains("enum CounterField"))
+  assert_true(src.contains("FieldInfo::new(\"count\", \"s32\", FInt)"))
+  assert_true(src.contains("FieldInfo::new(\"label\", \"string\", FText)"))
+  assert_true(
+    src.contains(
+      "FieldInfo::new(\"history\", \"list<s32>\", FList, elem=\"s32\")",
+    ),
+  )
 }
 
 ///|
@@ -58,10 +69,11 @@ test "a file with no state block generates exactly what it did before" {
   // Nothing from the state half leaks into an unmigrated file — this is what
   // lets the view files migrate one at a time.
   assert_false(src.contains("pub(all) struct CounterState"))
-  assert_false(src.contains("CounterField"))
+  assert_false(src.contains("CounterState::zero"))
   assert_false(src.contains("counter_specs"))
+  assert_false(src.contains("SchemaInfo::new"))
   // ...and the view half is untouched.
-  assert_true(src.contains("pub(all) enum CounterView {"))
+  assert_true(src.contains("pub let counter_common_style"))
 }
 
 ///|
@@ -239,10 +251,10 @@ test "a schema-only file declares state for views built at runtime" {
   assert_eq(file.state.length(), 1)
   let src = @viewgen.emit_module("BarChart", "bar_chart.html", file)
   assert_true(src.contains("pub(all) struct BarChartState {"))
-  assert_true(src.contains("pub(all) enum BarChartField {"))
+  assert_true(src.contains("FieldInfo::new(\"title\", \"string\", FText)"))
   // ...and NO view surface: there are no views to describe, and the schema
   // block itself must not become one.
-  assert_false(src.contains("BarChartView"))
+  assert_false(src.contains("bar_chart_common_style"))
   assert_false(src.contains("bar_chart_views"))
   assert_false(src.contains("@anode"))
   assert_false(src.contains("script"))

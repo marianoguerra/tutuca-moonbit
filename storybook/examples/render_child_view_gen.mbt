@@ -24,49 +24,9 @@ pub(all) struct GreetingState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..GreetingState::zero(), label: "Counter" }
-fn GreetingState::zero() -> GreetingState {
+pub fn GreetingState::zero() -> GreetingState {
   GreetingState::{ name: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn greeting_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(GreetingState::zero())
-}
-
-///|
-/// Every field the Greeting state declares — typed field names for tests and inspectors.
-pub(all) enum GreetingField {
-  Name
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn GreetingField::name(self : GreetingField) -> String {
-  match self {
-    Name => "name"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn GreetingField::kind(self : GreetingField) -> @component.FieldKind {
-  match self {
-    Name => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let greeting_field_names : Array[String] = ["name"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let greeting_schema_fingerprint : String = "291131f40d1ed859"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -85,19 +45,6 @@ impl @component.Fields for GreetingState with fn encode(s) {
 impl @component.Fields for GreetingState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(GreetingState::{ name: v_name })
-}
-
-///|
-/// The views declared in render_child.html.
-pub(all) enum GreetingView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn GreetingView::name(self : GreetingView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -139,49 +86,9 @@ pub(all) struct PageState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
-fn PageState::zero() -> PageState {
+pub fn PageState::zero() -> PageState {
   PageState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn page_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PageState::zero())
-}
-
-///|
-/// Every field the Page state declares — typed field names for tests and inspectors.
-pub(all) enum PageField {
-  Greeting
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PageField::name(self : PageField) -> String {
-  match self {
-    Greeting => "greeting"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PageField::kind(self : PageField) -> @component.FieldKind {
-  match self {
-    Greeting => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let page_field_names : Array[String] = ["greeting"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let page_schema_fingerprint : String = "db02b6e5e92c5199"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -199,19 +106,6 @@ impl @component.Fields for PageState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PageState with fn decode(_f) {
   Some(PageState::{  })
-}
-
-///|
-/// The views declared in render_child.html.
-pub(all) enum PageView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PageView::name(self : PageView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -264,52 +158,9 @@ pub(all) struct EntryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EntryState::zero(), label: "Counter" }
-fn EntryState::zero() -> EntryState {
+pub fn EntryState::zero() -> EntryState {
   EntryState::{ title: "", description: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn entry_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(EntryState::zero())
-}
-
-///|
-/// Every field the Entry state declares — typed field names for tests and inspectors.
-pub(all) enum EntryField {
-  Title
-  Description
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EntryField::name(self : EntryField) -> String {
-  match self {
-    Title => "title"
-    Description => "description"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn EntryField::kind(self : EntryField) -> @component.FieldKind {
-  match self {
-    Title => FText
-    Description => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let entry_field_names : Array[String] = ["title", "description"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let entry_schema_fingerprint : String = "e63d2a9edab89eef"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -329,21 +180,6 @@ impl @component.Fields for EntryState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   Some(EntryState::{ title: v_title, description: v_description })
-}
-
-///|
-/// The views declared in render_child.html.
-pub(all) enum EntryView {
-  Main
-  Edit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EntryView::name(self : EntryView) -> String {
-  match self {
-    Main => "main"
-    Edit => "edit"
-  }
 }
 
 ///|
@@ -493,51 +329,9 @@ pub(all) struct MultipleViewsState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MultipleViewsState::zero(), label: "Counter" }
-fn MultipleViewsState::zero() -> MultipleViewsState {
+pub fn MultipleViewsState::zero() -> MultipleViewsState {
   MultipleViewsState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn multiple_views_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MultipleViewsState::zero())
-}
-
-///|
-/// Every field the MultipleViews state declares — typed field names for tests and inspectors.
-pub(all) enum MultipleViewsField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MultipleViewsField::name(self : MultipleViewsField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn MultipleViewsField::kind(
-  self : MultipleViewsField,
-) -> @component.FieldKind {
-  match self {
-    Value => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let multiple_views_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let multiple_views_schema_fingerprint : String = "74788bd77ca3a59f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -555,19 +349,6 @@ impl @component.Fields for MultipleViewsState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MultipleViewsState with fn decode(_f) {
   Some(MultipleViewsState::{  })
-}
-
-///|
-/// The views declared in render_child.html.
-pub(all) enum MultipleViewsView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MultipleViewsView::name(self : MultipleViewsView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

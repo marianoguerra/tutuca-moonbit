@@ -25,52 +25,9 @@ pub(all) struct AltUrlState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..AltUrlState::zero(), label: "Counter" }
-fn AltUrlState::zero() -> AltUrlState {
+pub fn AltUrlState::zero() -> AltUrlState {
   AltUrlState::{ label: "", url: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn alt_url_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(AltUrlState::zero())
-}
-
-///|
-/// Every field the AltUrl state declares — typed field names for tests and inspectors.
-pub(all) enum AltUrlField {
-  Label
-  Url
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn AltUrlField::name(self : AltUrlField) -> String {
-  match self {
-    Label => "label"
-    Url => "url"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn AltUrlField::kind(self : AltUrlField) -> @component.FieldKind {
-  match self {
-    Label => FText
-    Url => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let alt_url_field_names : Array[String] = ["label", "url"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let alt_url_schema_fingerprint : String = "5894c82bae5b3921"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -90,19 +47,6 @@ impl @component.Fields for AltUrlState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("url") is Some(Str(v_url)) else { return None }
   Some(AltUrlState::{ label: v_label, url: v_url })
-}
-
-///|
-/// The views declared in personal_site.html.
-pub(all) enum AltUrlView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn AltUrlView::name(self : AltUrlView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -158,7 +102,7 @@ pub(all) struct PsEntryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PsEntryState::zero(), label: "Counter" }
-fn PsEntryState::zero() -> PsEntryState {
+pub fn PsEntryState::zero() -> PsEntryState {
   PsEntryState::{
     title: "",
     description: "",
@@ -172,76 +116,6 @@ fn PsEntryState::zero() -> PsEntryState {
     categories: [],
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn ps_entry_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PsEntryState::zero())
-}
-
-///|
-/// Every field the PsEntry state declares — typed field names for tests and inspectors.
-pub(all) enum PsEntryField {
-  Title
-  Description
-  Lang
-  StartYear
-  EndYear
-  Role
-  Featured
-  Url
-  AltUrls
-  Categories
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PsEntryField::name(self : PsEntryField) -> String {
-  match self {
-    Title => "title"
-    Description => "description"
-    Lang => "lang"
-    StartYear => "startYear"
-    EndYear => "endYear"
-    Role => "role"
-    Featured => "featured"
-    Url => "url"
-    AltUrls => "altUrls"
-    Categories => "categories"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PsEntryField::kind(self : PsEntryField) -> @component.FieldKind {
-  match self {
-    Title => FText
-    Description => FText
-    Lang => FText
-    StartYear => FAny
-    EndYear => FAny
-    Role => FAny
-    Featured => FBool
-    Url => FText
-    AltUrls => FList
-    Categories => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let ps_entry_field_names : Array[String] = [
-  "title", "description", "lang", "startYear", "endYear", "role", "featured", "url",
-  "altUrls", "categories",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let ps_entry_schema_fingerprint : String = "dbbed9cebaa1412f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -303,19 +177,6 @@ impl @component.Fields for PsEntryState with fn decode(f) {
     altUrls: v_altUrls,
     categories: v_categories,
   })
-}
-
-///|
-/// The views declared in personal_site.html.
-pub(all) enum PsEntryView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PsEntryView::name(self : PsEntryView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -454,7 +315,7 @@ pub(all) struct RootState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RootState::zero(), label: "Counter" }
-fn RootState::zero() -> RootState {
+pub fn RootState::zero() -> RootState {
   RootState::{
     allEntries: [],
     allCategories: [],
@@ -466,70 +327,6 @@ fn RootState::zero() -> RootState {
     sortAsc: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn root_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(RootState::zero())
-}
-
-///|
-/// Every field the Root state declares — typed field names for tests and inspectors.
-pub(all) enum RootField {
-  AllEntries
-  AllCategories
-  AllRoles
-  SelectedCategories
-  SelectedRoles
-  FeaturedFirst
-  SortByEnd
-  SortAsc
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RootField::name(self : RootField) -> String {
-  match self {
-    AllEntries => "allEntries"
-    AllCategories => "allCategories"
-    AllRoles => "allRoles"
-    SelectedCategories => "selectedCategories"
-    SelectedRoles => "selectedRoles"
-    FeaturedFirst => "featuredFirst"
-    SortByEnd => "sortByEnd"
-    SortAsc => "sortAsc"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn RootField::kind(self : RootField) -> @component.FieldKind {
-  match self {
-    AllEntries => FList
-    AllCategories => FList
-    AllRoles => FList
-    SelectedCategories => FSet
-    SelectedRoles => FSet
-    FeaturedFirst => FBool
-    SortByEnd => FBool
-    SortAsc => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let root_field_names : Array[String] = [
-  "allEntries", "allCategories", "allRoles", "selectedCategories", "selectedRoles",
-  "featuredFirst", "sortByEnd", "sortAsc",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let root_schema_fingerprint : String = "b2600c9777dc4864"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -617,19 +414,6 @@ impl @component.Fields for RootState with fn decode(f) {
     sortByEnd: v_sortByEnd,
     sortAsc: v_sortAsc,
   })
-}
-
-///|
-/// The views declared in personal_site.html.
-pub(all) enum RootView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RootView::name(self : RootView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

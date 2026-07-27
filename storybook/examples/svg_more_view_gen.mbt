@@ -24,49 +24,9 @@ pub(all) struct IconGalleryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..IconGalleryState::zero(), label: "Counter" }
-fn IconGalleryState::zero() -> IconGalleryState {
+pub fn IconGalleryState::zero() -> IconGalleryState {
   IconGalleryState::{ size: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn icon_gallery_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(IconGalleryState::zero())
-}
-
-///|
-/// Every field the IconGallery state declares — typed field names for tests and inspectors.
-pub(all) enum IconGalleryField {
-  Size
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn IconGalleryField::name(self : IconGalleryField) -> String {
-  match self {
-    Size => "size"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn IconGalleryField::kind(self : IconGalleryField) -> @component.FieldKind {
-  match self {
-    Size => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let icon_gallery_field_names : Array[String] = ["size"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let icon_gallery_schema_fingerprint : String = "17ce7599eac0af6f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -121,49 +81,9 @@ pub(all) struct BarChartState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..BarChartState::zero(), label: "Counter" }
-fn BarChartState::zero() -> BarChartState {
+pub fn BarChartState::zero() -> BarChartState {
   BarChartState::{ values: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn bar_chart_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(BarChartState::zero())
-}
-
-///|
-/// Every field the BarChart state declares — typed field names for tests and inspectors.
-pub(all) enum BarChartField {
-  Values
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn BarChartField::name(self : BarChartField) -> String {
-  match self {
-    Values => "values"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn BarChartField::kind(self : BarChartField) -> @component.FieldKind {
-  match self {
-    Values => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let bar_chart_field_names : Array[String] = ["values"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let bar_chart_schema_fingerprint : String = "6bab0bb9bb7de924"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -188,19 +108,6 @@ impl @component.Fields for BarChartState with fn decode(f) {
     v_values.push(x1_values)
   }
   Some(BarChartState::{ values: v_values })
-}
-
-///|
-/// The views declared in svg_more.html.
-pub(all) enum BarChartView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn BarChartView::name(self : BarChartView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

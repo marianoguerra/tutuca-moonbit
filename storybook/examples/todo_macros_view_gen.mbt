@@ -28,52 +28,9 @@ pub(all) struct TmItemState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TmItemState::zero(), label: "Counter" }
-fn TmItemState::zero() -> TmItemState {
+pub fn TmItemState::zero() -> TmItemState {
   TmItemState::{ completed: false, text: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn tm_item_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TmItemState::zero())
-}
-
-///|
-/// Every field the TmItem state declares — typed field names for tests and inspectors.
-pub(all) enum TmItemField {
-  Completed
-  Text
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TmItemField::name(self : TmItemField) -> String {
-  match self {
-    Completed => "completed"
-    Text => "text"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TmItemField::kind(self : TmItemField) -> @component.FieldKind {
-  match self {
-    Completed => FBool
-    Text => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let tm_item_field_names : Array[String] = ["completed", "text"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let tm_item_schema_fingerprint : String = "cd61ed8baa3d59fd"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -126,49 +83,9 @@ pub(all) struct TmItemsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TmItemsState::zero(), label: "Counter" }
-fn TmItemsState::zero() -> TmItemsState {
+pub fn TmItemsState::zero() -> TmItemsState {
   TmItemsState::{ items: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn tm_items_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TmItemsState::zero())
-}
-
-///|
-/// Every field the TmItems state declares — typed field names for tests and inspectors.
-pub(all) enum TmItemsField {
-  Items
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TmItemsField::name(self : TmItemsField) -> String {
-  match self {
-    Items => "items"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TmItemsField::kind(self : TmItemsField) -> @component.FieldKind {
-  match self {
-    Items => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let tm_items_field_names : Array[String] = ["items"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let tm_items_schema_fingerprint : String = "3e274b25537b213e"
 
 ///|
 /// The state as the fields map the render and path layers read, built

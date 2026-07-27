@@ -26,55 +26,9 @@ pub(all) struct TableRowState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TableRowState::zero(), label: "Counter" }
-fn TableRowState::zero() -> TableRowState {
+pub fn TableRowState::zero() -> TableRowState {
   TableRowState::{ name: "", qty: 0, price: 0.0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn table_row_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TableRowState::zero())
-}
-
-///|
-/// Every field the TableRow state declares — typed field names for tests and inspectors.
-pub(all) enum TableRowField {
-  Name
-  Qty
-  Price
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TableRowField::name(self : TableRowField) -> String {
-  match self {
-    Name => "name"
-    Qty => "qty"
-    Price => "price"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TableRowField::kind(self : TableRowField) -> @component.FieldKind {
-  match self {
-    Name => FText
-    Qty => FInt
-    Price => FFloat
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let table_row_field_names : Array[String] = ["name", "qty", "price"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let table_row_schema_fingerprint : String = "78cde2ca3599de8c"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -96,19 +50,6 @@ impl @component.Fields for TableRowState with fn decode(f) {
   let v_qty = t1_qty.to_int()
   guard f.get("price") is Some(Num(v_price)) else { return None }
   Some(TableRowState::{ name: v_name, qty: v_qty, price: v_price })
-}
-
-///|
-/// The views declared in pseudo_x.html.
-pub(all) enum TableRowView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TableRowView::name(self : TableRowView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -156,49 +97,9 @@ pub(all) struct ItemTableState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemTableState::zero(), label: "Counter" }
-fn ItemTableState::zero() -> ItemTableState {
+pub fn ItemTableState::zero() -> ItemTableState {
   ItemTableState::{ rows: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn item_table_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ItemTableState::zero())
-}
-
-///|
-/// Every field the ItemTable state declares — typed field names for tests and inspectors.
-pub(all) enum ItemTableField {
-  Rows
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemTableField::name(self : ItemTableField) -> String {
-  match self {
-    Rows => "rows"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ItemTableField::kind(self : ItemTableField) -> @component.FieldKind {
-  match self {
-    Rows => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let item_table_field_names : Array[String] = ["rows"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let item_table_schema_fingerprint : String = "413b1cfe818d4bc7"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -223,19 +124,6 @@ impl @component.Fields for ItemTableState with fn decode(f) {
     v_rows.push(x1_rows)
   }
   Some(ItemTableState::{ rows: v_rows })
-}
-
-///|
-/// The views declared in pseudo_x.html.
-pub(all) enum ItemTableView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemTableView::name(self : ItemTableView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -280,54 +168,9 @@ pub(all) struct SelectOptionState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SelectOptionState::zero(), label: "Counter" }
-fn SelectOptionState::zero() -> SelectOptionState {
+pub fn SelectOptionState::zero() -> SelectOptionState {
   SelectOptionState::{ value: "", label: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn select_option_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SelectOptionState::zero())
-}
-
-///|
-/// Every field the SelectOption state declares — typed field names for tests and inspectors.
-pub(all) enum SelectOptionField {
-  Value
-  Label
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SelectOptionField::name(self : SelectOptionField) -> String {
-  match self {
-    Value => "value"
-    Label => "label"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SelectOptionField::kind(
-  self : SelectOptionField,
-) -> @component.FieldKind {
-  match self {
-    Value => FText
-    Label => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let select_option_field_names : Array[String] = ["value", "label"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let select_option_schema_fingerprint : String = "07ec6c7cf74c56fc"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -347,19 +190,6 @@ impl @component.Fields for SelectOptionState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
   Some(SelectOptionState::{ value: v_value, label: v_label })
-}
-
-///|
-/// The views declared in pseudo_x.html.
-pub(all) enum SelectOptionView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SelectOptionView::name(self : SelectOptionView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -407,52 +237,9 @@ pub(all) struct ItemSelectState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemSelectState::zero(), label: "Counter" }
-fn ItemSelectState::zero() -> ItemSelectState {
+pub fn ItemSelectState::zero() -> ItemSelectState {
   ItemSelectState::{ options: [], current: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn item_select_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ItemSelectState::zero())
-}
-
-///|
-/// Every field the ItemSelect state declares — typed field names for tests and inspectors.
-pub(all) enum ItemSelectField {
-  Options
-  Current
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemSelectField::name(self : ItemSelectField) -> String {
-  match self {
-    Options => "options"
-    Current => "current"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ItemSelectField::kind(self : ItemSelectField) -> @component.FieldKind {
-  match self {
-    Options => FList
-    Current => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let item_select_field_names : Array[String] = ["options", "current"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let item_select_schema_fingerprint : String = "c0c9027a3ae072e5"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -481,19 +268,6 @@ impl @component.Fields for ItemSelectState with fn decode(f) {
   }
   guard f.get("current") is Some(Str(v_current)) else { return None }
   Some(ItemSelectState::{ options: v_options, current: v_current })
-}
-
-///|
-/// The views declared in pseudo_x.html.
-pub(all) enum ItemSelectView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemSelectView::name(self : ItemSelectView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -606,52 +380,9 @@ pub(all) struct PseudoXDemoState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
-fn PseudoXDemoState::zero() -> PseudoXDemoState {
+pub fn PseudoXDemoState::zero() -> PseudoXDemoState {
   PseudoXDemoState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn pseudo_x_demo_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PseudoXDemoState::zero())
-}
-
-///|
-/// Every field the PseudoXDemo state declares — typed field names for tests and inspectors.
-pub(all) enum PseudoXDemoField {
-  Table
-  Select
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PseudoXDemoField::name(self : PseudoXDemoField) -> String {
-  match self {
-    Table => "table"
-    Select => "select"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PseudoXDemoField::kind(self : PseudoXDemoField) -> @component.FieldKind {
-  match self {
-    Table => FComp(comp="", args=Map([]))
-    Select => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let pseudo_x_demo_field_names : Array[String] = ["table", "select"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let pseudo_x_demo_schema_fingerprint : String = "e785760a33d1bedc"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -669,19 +400,6 @@ impl @component.Fields for PseudoXDemoState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PseudoXDemoState with fn decode(_f) {
   Some(PseudoXDemoState::{  })
-}
-
-///|
-/// The views declared in pseudo_x.html.
-pub(all) enum PseudoXDemoView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PseudoXDemoView::name(self : PseudoXDemoView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

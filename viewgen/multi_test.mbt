@@ -43,8 +43,7 @@ test "one generated module carries every component in the file" {
   }
   for
     want in [
-      "pub(all) enum JsonRootView", "pub(all) enum JsonNodeView", "pub(all) enum JsonLeafMsg",
-      "pub let json_root_common_style", "pub let json_leaf_global_style",
+      "pub(all) enum JsonLeafMsg", "pub let json_root_common_style", "pub let json_leaf_global_style",
     ] {
     assert_true(src.contains(want))
   }

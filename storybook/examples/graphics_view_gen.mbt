@@ -25,54 +25,9 @@ pub(all) struct SwatchPickerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SwatchPickerState::zero(), label: "Counter" }
-fn SwatchPickerState::zero() -> SwatchPickerState {
+pub fn SwatchPickerState::zero() -> SwatchPickerState {
   SwatchPickerState::{ color: "", palette: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn swatch_picker_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SwatchPickerState::zero())
-}
-
-///|
-/// Every field the SwatchPicker state declares — typed field names for tests and inspectors.
-pub(all) enum SwatchPickerField {
-  Color
-  Palette
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SwatchPickerField::name(self : SwatchPickerField) -> String {
-  match self {
-    Color => "color"
-    Palette => "palette"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SwatchPickerField::kind(
-  self : SwatchPickerField,
-) -> @component.FieldKind {
-  match self {
-    Color => FText
-    Palette => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let swatch_picker_field_names : Array[String] = ["color", "palette"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let swatch_picker_schema_fingerprint : String = "30457ae742655759"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -101,19 +56,6 @@ impl @component.Fields for SwatchPickerState with fn decode(f) {
     v_palette.push(x1_palette)
   }
   Some(SwatchPickerState::{ color: v_color, palette: v_palette })
-}
-
-///|
-/// The views declared in graphics.html.
-pub(all) enum SwatchPickerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SwatchPickerView::name(self : SwatchPickerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -274,55 +216,9 @@ pub(all) struct QuadraticState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..QuadraticState::zero(), label: "Counter" }
-fn QuadraticState::zero() -> QuadraticState {
+pub fn QuadraticState::zero() -> QuadraticState {
   QuadraticState::{ a: 0, b: 0, c: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn quadratic_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(QuadraticState::zero())
-}
-
-///|
-/// Every field the Quadratic state declares — typed field names for tests and inspectors.
-pub(all) enum QuadraticField {
-  A
-  B
-  C
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn QuadraticField::name(self : QuadraticField) -> String {
-  match self {
-    A => "a"
-    B => "b"
-    C => "c"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn QuadraticField::kind(self : QuadraticField) -> @component.FieldKind {
-  match self {
-    A => FInt
-    B => FInt
-    C => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let quadratic_field_names : Array[String] = ["a", "b", "c"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let quadratic_schema_fingerprint : String = "bb32e2a1638d9036"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -350,19 +246,6 @@ impl @component.Fields for QuadraticState with fn decode(f) {
   guard f.get("c") is Some(Num(t1_c)) else { return None }
   let v_c = t1_c.to_int()
   Some(QuadraticState::{ a: v_a, b: v_b, c: v_c })
-}
-
-///|
-/// The views declared in graphics.html.
-pub(all) enum QuadraticView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn QuadraticView::name(self : QuadraticView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

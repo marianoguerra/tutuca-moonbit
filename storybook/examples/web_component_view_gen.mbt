@@ -25,54 +25,9 @@ pub(all) struct EmojiPickerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EmojiPickerState::zero(), label: "Counter" }
-fn EmojiPickerState::zero() -> EmojiPickerState {
+pub fn EmojiPickerState::zero() -> EmojiPickerState {
   EmojiPickerState::{ current: Null, isPickerVisible: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn emoji_picker_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(EmojiPickerState::zero())
-}
-
-///|
-/// Every field the EmojiPicker state declares — typed field names for tests and inspectors.
-pub(all) enum EmojiPickerField {
-  Current
-  IsPickerVisible
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EmojiPickerField::name(self : EmojiPickerField) -> String {
-  match self {
-    Current => "current"
-    IsPickerVisible => "isPickerVisible"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn EmojiPickerField::kind(self : EmojiPickerField) -> @component.FieldKind {
-  match self {
-    Current => FAny
-    IsPickerVisible => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let emoji_picker_field_names : Array[String] = [
-  "current", "isPickerVisible",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let emoji_picker_schema_fingerprint : String = "4ae49bac65c482b5"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -97,19 +52,6 @@ impl @component.Fields for EmojiPickerState with fn decode(f) {
     current: v_current,
     isPickerVisible: v_isPickerVisible,
   })
-}
-
-///|
-/// The views declared in web_component.html.
-pub(all) enum EmojiPickerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EmojiPickerView::name(self : EmojiPickerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

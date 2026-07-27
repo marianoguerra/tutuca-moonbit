@@ -24,51 +24,9 @@ pub(all) struct TrafficLightState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TrafficLightState::zero(), label: "Counter" }
-fn TrafficLightState::zero() -> TrafficLightState {
+pub fn TrafficLightState::zero() -> TrafficLightState {
   TrafficLightState::{ lightIndex: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn traffic_light_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TrafficLightState::zero())
-}
-
-///|
-/// Every field the TrafficLight state declares — typed field names for tests and inspectors.
-pub(all) enum TrafficLightField {
-  LightIndex
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TrafficLightField::name(self : TrafficLightField) -> String {
-  match self {
-    LightIndex => "lightIndex"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TrafficLightField::kind(
-  self : TrafficLightField,
-) -> @component.FieldKind {
-  match self {
-    LightIndex => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let traffic_light_field_names : Array[String] = ["lightIndex"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let traffic_light_schema_fingerprint : String = "641f8260005d94a3"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -88,19 +46,6 @@ impl @component.Fields for TrafficLightState with fn decode(f) {
   guard f.get("lightIndex") is Some(Num(t1_lightIndex)) else { return None }
   let v_lightIndex = t1_lightIndex.to_int()
   Some(TrafficLightState::{ lightIndex: v_lightIndex })
-}
-
-///|
-/// The views declared in conditionals.html.
-pub(all) enum TrafficLightView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TrafficLightView::name(self : TrafficLightView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -245,49 +190,9 @@ pub(all) struct TabbedUIState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TabbedUIState::zero(), label: "Counter" }
-fn TabbedUIState::zero() -> TabbedUIState {
+pub fn TabbedUIState::zero() -> TabbedUIState {
   TabbedUIState::{ tab: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn tabbed_u_i_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TabbedUIState::zero())
-}
-
-///|
-/// Every field the TabbedUI state declares — typed field names for tests and inspectors.
-pub(all) enum TabbedUIField {
-  Tab
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TabbedUIField::name(self : TabbedUIField) -> String {
-  match self {
-    Tab => "tab"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TabbedUIField::kind(self : TabbedUIField) -> @component.FieldKind {
-  match self {
-    Tab => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let tabbed_u_i_field_names : Array[String] = ["tab"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let tabbed_u_i_schema_fingerprint : String = "91f1c8c673117b38"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -306,19 +211,6 @@ impl @component.Fields for TabbedUIState with fn encode(s) {
 impl @component.Fields for TabbedUIState with fn decode(f) {
   guard f.get("tab") is Some(Str(v_tab)) else { return None }
   Some(TabbedUIState::{ tab: v_tab })
-}
-
-///|
-/// The views declared in conditionals.html.
-pub(all) enum TabbedUIView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TabbedUIView::name(self : TabbedUIView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -397,29 +289,6 @@ pub fn[S] tabbed_u_i_swap(
 }
 
 ///|
-/// Constant `id` attributes in the views — typed selectors for tests.
-pub(all) enum TabbedUIId {
-  TFeatures
-  TOverview
-  TPricing
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TabbedUIId::id(self : TabbedUIId) -> String {
-  match self {
-    TFeatures => "t-features"
-    TOverview => "t-overview"
-    TPricing => "t-pricing"
-  }
-}
-
-///|
-/// The `#id` CSS selector for this element.
-pub fn TabbedUIId::selector(self : TabbedUIId) -> String {
-  "#" + self.id()
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -455,54 +324,9 @@ pub(all) struct ListAndFilterState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListAndFilterState::zero(), label: "Counter" }
-fn ListAndFilterState::zero() -> ListAndFilterState {
+pub fn ListAndFilterState::zero() -> ListAndFilterState {
   ListAndFilterState::{ items: [], query: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn list_and_filter_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ListAndFilterState::zero())
-}
-
-///|
-/// Every field the ListAndFilter state declares — typed field names for tests and inspectors.
-pub(all) enum ListAndFilterField {
-  Items
-  Query
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListAndFilterField::name(self : ListAndFilterField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ListAndFilterField::kind(
-  self : ListAndFilterField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let list_and_filter_field_names : Array[String] = ["items", "query"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let list_and_filter_schema_fingerprint : String = "80f3b6c5cd0e5b4d"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -531,19 +355,6 @@ impl @component.Fields for ListAndFilterState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(ListAndFilterState::{ items: v_items, query: v_query })
-}
-
-///|
-/// The views declared in conditionals.html.
-pub(all) enum ListAndFilterView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListAndFilterView::name(self : ListAndFilterView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

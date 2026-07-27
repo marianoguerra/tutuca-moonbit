@@ -24,49 +24,9 @@ pub(all) struct FpGreetingState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..FpGreetingState::zero(), label: "Counter" }
-fn FpGreetingState::zero() -> FpGreetingState {
+pub fn FpGreetingState::zero() -> FpGreetingState {
   FpGreetingState::{ name: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn fp_greeting_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(FpGreetingState::zero())
-}
-
-///|
-/// Every field the FpGreeting state declares — typed field names for tests and inspectors.
-pub(all) enum FpGreetingField {
-  Name
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FpGreetingField::name(self : FpGreetingField) -> String {
-  match self {
-    Name => "name"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn FpGreetingField::kind(self : FpGreetingField) -> @component.FieldKind {
-  match self {
-    Name => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let fp_greeting_field_names : Array[String] = ["name"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let fp_greeting_schema_fingerprint : String = "7fde5bb7d59361e6"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -85,19 +45,6 @@ impl @component.Fields for FpGreetingState with fn encode(s) {
 impl @component.Fields for FpGreetingState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(FpGreetingState::{ name: v_name })
-}
-
-///|
-/// The views declared in first_principles.html.
-pub(all) enum FpGreetingView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn FpGreetingView::name(self : FpGreetingView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -141,49 +88,9 @@ pub(all) struct NoteState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NoteState::zero(), label: "Counter" }
-fn NoteState::zero() -> NoteState {
+pub fn NoteState::zero() -> NoteState {
   NoteState::{ text: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn note_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(NoteState::zero())
-}
-
-///|
-/// Every field the Note state declares — typed field names for tests and inspectors.
-pub(all) enum NoteField {
-  Text
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NoteField::name(self : NoteField) -> String {
-  match self {
-    Text => "text"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn NoteField::kind(self : NoteField) -> @component.FieldKind {
-  match self {
-    Text => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let note_field_names : Array[String] = ["text"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let note_schema_fingerprint : String = "416c7af2c341fb4c"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -255,19 +162,6 @@ pub fn NoteReceive::send(self : NoteReceive, ctx : &@tutuca.Ctx) -> Unit {
 }
 
 ///|
-/// The views declared in first_principles.html.
-pub(all) enum NoteView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NoteView::name(self : NoteView) -> String {
-  match self {
-    Main => "main"
-  }
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let note_common_style : String = ""
 
@@ -307,49 +201,9 @@ pub(all) struct MailboxState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MailboxState::zero(), label: "Counter" }
-fn MailboxState::zero() -> MailboxState {
+pub fn MailboxState::zero() -> MailboxState {
   MailboxState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn mailbox_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MailboxState::zero())
-}
-
-///|
-/// Every field the Mailbox state declares — typed field names for tests and inspectors.
-pub(all) enum MailboxField {
-  Note
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MailboxField::name(self : MailboxField) -> String {
-  match self {
-    Note => "note"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn MailboxField::kind(self : MailboxField) -> @component.FieldKind {
-  match self {
-    Note => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let mailbox_field_names : Array[String] = ["note"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let mailbox_schema_fingerprint : String = "44b8998831569bcf"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -367,19 +221,6 @@ impl @component.Fields for MailboxState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MailboxState with fn decode(_f) {
   Some(MailboxState::{  })
-}
-
-///|
-/// The views declared in first_principles.html.
-pub(all) enum MailboxView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MailboxView::name(self : MailboxView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

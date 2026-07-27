@@ -30,60 +30,9 @@ pub(all) struct RichSampleState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RichSampleState::zero(), label: "Counter" }
-fn RichSampleState::zero() -> RichSampleState {
+pub fn RichSampleState::zero() -> RichSampleState {
   RichSampleState::{ title: "", count: 0, tags: [], open: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn rich_sample_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(RichSampleState::zero())
-}
-
-///|
-/// Every field the RichSample state declares — typed field names for tests and inspectors.
-pub(all) enum RichSampleField {
-  Title
-  Count
-  Tags
-  Open
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RichSampleField::name(self : RichSampleField) -> String {
-  match self {
-    Title => "title"
-    Count => "count"
-    Tags => "tags"
-    Open => "open"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn RichSampleField::kind(self : RichSampleField) -> @component.FieldKind {
-  match self {
-    Title => FText
-    Count => FInt
-    Tags => FList
-    Open => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let rich_sample_field_names : Array[String] = [
-  "title", "count", "tags", "open",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let rich_sample_schema_fingerprint : String = "98c5770c79268b31"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -273,21 +222,6 @@ pub fn RichSampleResponse::to_dispatch(
   match self {
     OnData => ("onData", [])
     Unknown(n, args) => (n, args)
-  }
-}
-
-///|
-/// The views declared in module.html.
-pub(all) enum RichSampleView {
-  Main
-  Compact
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RichSampleView::name(self : RichSampleView) -> String {
-  match self {
-    Main => "main"
-    Compact => "compact"
   }
 }
 
@@ -483,60 +417,9 @@ pub(all) struct SampleCardState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SampleCardState::zero(), label: "Counter" }
-fn SampleCardState::zero() -> SampleCardState {
+pub fn SampleCardState::zero() -> SampleCardState {
   SampleCardState::{ title: "", count: 0, tags: [], open: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn sample_card_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SampleCardState::zero())
-}
-
-///|
-/// Every field the SampleCard state declares — typed field names for tests and inspectors.
-pub(all) enum SampleCardField {
-  Title
-  Count
-  Tags
-  Open
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SampleCardField::name(self : SampleCardField) -> String {
-  match self {
-    Title => "title"
-    Count => "count"
-    Tags => "tags"
-    Open => "open"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SampleCardField::kind(self : SampleCardField) -> @component.FieldKind {
-  match self {
-    Title => FText
-    Count => FInt
-    Tags => FList
-    Open => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let sample_card_field_names : Array[String] = [
-  "title", "count", "tags", "open",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let sample_card_schema_fingerprint : String = "33fd8877c57069f1"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -575,19 +458,6 @@ impl @component.Fields for SampleCardState with fn decode(f) {
     tags: v_tags,
     open: v_open,
   })
-}
-
-///|
-/// The views declared in module.html.
-pub(all) enum SampleCardView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SampleCardView::name(self : SampleCardView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

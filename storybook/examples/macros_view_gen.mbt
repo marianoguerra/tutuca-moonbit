@@ -25,22 +25,9 @@ pub(all) struct MacrosNoState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacrosNoState::zero(), label: "Counter" }
-fn MacrosNoState::zero() -> MacrosNoState {
+pub fn MacrosNoState::zero() -> MacrosNoState {
   MacrosNoState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn macros_no_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MacrosNoState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let macros_no_schema_fingerprint : String = "d913a4b9e7d1c76a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -88,49 +75,9 @@ pub(all) struct MacroParamsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroParamsState::zero(), label: "Counter" }
-fn MacroParamsState::zero() -> MacroParamsState {
+pub fn MacroParamsState::zero() -> MacroParamsState {
   MacroParamsState::{ status: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn macro_params_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MacroParamsState::zero())
-}
-
-///|
-/// Every field the MacroParams state declares — typed field names for tests and inspectors.
-pub(all) enum MacroParamsField {
-  Status
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MacroParamsField::name(self : MacroParamsField) -> String {
-  match self {
-    Status => "status"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn MacroParamsField::kind(self : MacroParamsField) -> @component.FieldKind {
-  match self {
-    Status => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let macro_params_field_names : Array[String] = ["status"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let macro_params_schema_fingerprint : String = "e24255b8b42d4192"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -181,49 +128,9 @@ pub(all) struct MacroSlotsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroSlotsState::zero(), label: "Counter" }
-fn MacroSlotsState::zero() -> MacroSlotsState {
+pub fn MacroSlotsState::zero() -> MacroSlotsState {
   MacroSlotsState::{ count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn macro_slots_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MacroSlotsState::zero())
-}
-
-///|
-/// Every field the MacroSlots state declares — typed field names for tests and inspectors.
-pub(all) enum MacroSlotsField {
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MacroSlotsField::name(self : MacroSlotsField) -> String {
-  match self {
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn MacroSlotsField::kind(self : MacroSlotsField) -> @component.FieldKind {
-  match self {
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let macro_slots_field_names : Array[String] = ["count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let macro_slots_schema_fingerprint : String = "29f5d9126343b9a9"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -275,51 +182,9 @@ pub(all) struct MacroNamedSlotsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroNamedSlotsState::zero(), label: "Counter" }
-fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
+pub fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
   MacroNamedSlotsState::{ count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn macro_named_slots_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(MacroNamedSlotsState::zero())
-}
-
-///|
-/// Every field the MacroNamedSlots state declares — typed field names for tests and inspectors.
-pub(all) enum MacroNamedSlotsField {
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn MacroNamedSlotsField::name(self : MacroNamedSlotsField) -> String {
-  match self {
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn MacroNamedSlotsField::kind(
-  self : MacroNamedSlotsField,
-) -> @component.FieldKind {
-  match self {
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let macro_named_slots_field_names : Array[String] = ["count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let macro_named_slots_schema_fingerprint : String = "ef1c08d80888b3fd"
 
 ///|
 /// The state as the fields map the render and path layers read, built

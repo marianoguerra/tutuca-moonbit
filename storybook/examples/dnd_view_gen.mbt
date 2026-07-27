@@ -25,52 +25,9 @@ pub(all) struct DnDExampleState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DnDExampleState::zero(), label: "Counter" }
-fn DnDExampleState::zero() -> DnDExampleState {
+pub fn DnDExampleState::zero() -> DnDExampleState {
   DnDExampleState::{ items: [], query: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn dn_d_example_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DnDExampleState::zero())
-}
-
-///|
-/// Every field the DnDExample state declares — typed field names for tests and inspectors.
-pub(all) enum DnDExampleField {
-  Items
-  Query
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DnDExampleField::name(self : DnDExampleField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DnDExampleField::kind(self : DnDExampleField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let dn_d_example_field_names : Array[String] = ["items", "query"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let dn_d_example_schema_fingerprint : String = "669b14463cd52e60"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -99,19 +56,6 @@ impl @component.Fields for DnDExampleState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   Some(DnDExampleState::{ items: v_items, query: v_query })
-}
-
-///|
-/// The views declared in dnd.html.
-pub(all) enum DnDExampleView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DnDExampleView::name(self : DnDExampleView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

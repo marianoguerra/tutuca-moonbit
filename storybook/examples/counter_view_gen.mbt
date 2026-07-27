@@ -24,49 +24,9 @@ pub(all) struct CounterState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
-fn CounterState::zero() -> CounterState {
+pub fn CounterState::zero() -> CounterState {
   CounterState::{ count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CounterState::zero())
-}
-
-///|
-/// Every field the Counter state declares — typed field names for tests and inspectors.
-pub(all) enum CounterField {
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterField::name(self : CounterField) -> String {
-  match self {
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
-  match self {
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let counter_field_names : Array[String] = ["count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let counter_schema_fingerprint : String = "a0fd8e55e2e67751"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -86,19 +46,6 @@ impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(CounterState::{ count: v_count })
-}
-
-///|
-/// The views declared in counter.html.
-pub(all) enum CounterView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterView::name(self : CounterView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

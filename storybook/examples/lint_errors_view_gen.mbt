@@ -31,63 +31,9 @@ pub(all) struct LintDemoState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..LintDemoState::zero(), label: "Counter" }
-fn LintDemoState::zero() -> LintDemoState {
+pub fn LintDemoState::zero() -> LintDemoState {
   LintDemoState::{ count: 0, items: [], kind: "", isOpen: false, child: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(LintDemoState::zero())
-}
-
-///|
-/// Every field the LintDemo state declares — typed field names for tests and inspectors.
-pub(all) enum LintDemoField {
-  Count
-  Items
-  Kind
-  IsOpen
-  Child
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn LintDemoField::name(self : LintDemoField) -> String {
-  match self {
-    Count => "count"
-    Items => "items"
-    Kind => "kind"
-    IsOpen => "isOpen"
-    Child => "child"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn LintDemoField::kind(self : LintDemoField) -> @component.FieldKind {
-  match self {
-    Count => FInt
-    Items => FList
-    Kind => FText
-    IsOpen => FBool
-    Child => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let lint_demo_field_names : Array[String] = [
-  "count", "items", "kind", "isOpen", "child",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let lint_demo_schema_fingerprint : String = "61623a4912326968"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -165,51 +111,9 @@ pub(all) struct HtmlLintDemoState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..HtmlLintDemoState::zero(), label: "Counter" }
-fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
+pub fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
   HtmlLintDemoState::{ count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn html_lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(HtmlLintDemoState::zero())
-}
-
-///|
-/// Every field the HtmlLintDemo state declares — typed field names for tests and inspectors.
-pub(all) enum HtmlLintDemoField {
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn HtmlLintDemoField::name(self : HtmlLintDemoField) -> String {
-  match self {
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn HtmlLintDemoField::kind(
-  self : HtmlLintDemoField,
-) -> @component.FieldKind {
-  match self {
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let html_lint_demo_field_names : Array[String] = ["count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let html_lint_demo_schema_fingerprint : String = "5527f190b24e5ee0"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -261,51 +165,9 @@ pub(all) struct ScopedStyleDemoState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ScopedStyleDemoState::zero(), label: "Counter" }
-fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
+pub fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
   ScopedStyleDemoState::{ count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn scoped_style_demo_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ScopedStyleDemoState::zero())
-}
-
-///|
-/// Every field the ScopedStyleDemo state declares — typed field names for tests and inspectors.
-pub(all) enum ScopedStyleDemoField {
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ScopedStyleDemoField::name(self : ScopedStyleDemoField) -> String {
-  match self {
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ScopedStyleDemoField::kind(
-  self : ScopedStyleDemoField,
-) -> @component.FieldKind {
-  match self {
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let scoped_style_demo_field_names : Array[String] = ["count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let scoped_style_demo_schema_fingerprint : String = "86b61c5fb0f1011d"
 
 ///|
 /// The state as the fields map the render and path layers read, built

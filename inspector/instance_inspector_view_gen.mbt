@@ -28,7 +28,7 @@ pub(all) struct InstanceFieldsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceFieldsState::zero(), label: "Counter" }
-fn InstanceFieldsState::zero() -> InstanceFieldsState {
+pub fn InstanceFieldsState::zero() -> InstanceFieldsState {
   InstanceFieldsState::{
     items: [],
     isExpanded: false,
@@ -37,62 +37,6 @@ fn InstanceFieldsState::zero() -> InstanceFieldsState {
     typeName: "",
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn instance_fields_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(InstanceFieldsState::zero())
-}
-
-///|
-/// Every field the InstanceFields state declares — typed field names for tests and inspectors.
-pub(all) enum InstanceFieldsField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  TypeName
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceFieldsField::name(self : InstanceFieldsField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    TypeName => "typeName"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn InstanceFieldsField::kind(
-  self : InstanceFieldsField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    TypeName => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let instance_fields_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "typeName",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let instance_fields_schema_fingerprint : String = "b02c70c78c681361"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -135,19 +79,6 @@ impl @component.Fields for InstanceFieldsState with fn decode(f) {
     currentPage: v_currentPage,
     typeName: v_typeName,
   })
-}
-
-///|
-/// The views declared in instance_inspector.html.
-pub(all) enum InstanceFieldsView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceFieldsView::name(self : InstanceFieldsView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -371,51 +302,9 @@ pub(all) struct InstanceInspectorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceInspectorState::zero(), label: "Counter" }
-fn InstanceInspectorState::zero() -> InstanceInspectorState {
+pub fn InstanceInspectorState::zero() -> InstanceInspectorState {
   InstanceInspectorState::{ value: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn instance_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(InstanceInspectorState::zero())
-}
-
-///|
-/// Every field the InstanceInspector state declares — typed field names for tests and inspectors.
-pub(all) enum InstanceInspectorField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceInspectorField::name(self : InstanceInspectorField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn InstanceInspectorField::kind(
-  self : InstanceInspectorField,
-) -> @component.FieldKind {
-  match self {
-    Value => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let instance_inspector_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let instance_inspector_schema_fingerprint : String = "dc6d2f180419a084"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -434,19 +323,6 @@ impl @component.Fields for InstanceInspectorState with fn encode(s) {
 impl @component.Fields for InstanceInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
   Some(InstanceInspectorState::{ value: v_value })
-}
-
-///|
-/// The views declared in instance_inspector.html.
-pub(all) enum InstanceInspectorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceInspectorView::name(self : InstanceInspectorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -493,7 +369,7 @@ pub(all) struct InstanceExplorerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceExplorerState::zero(), label: "Counter" }
-fn InstanceExplorerState::zero() -> InstanceExplorerState {
+pub fn InstanceExplorerState::zero() -> InstanceExplorerState {
   InstanceExplorerState::{
     activeTab: "",
     instanceView: Null,
@@ -501,59 +377,6 @@ fn InstanceExplorerState::zero() -> InstanceExplorerState {
     hasComponent: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn instance_explorer_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(InstanceExplorerState::zero())
-}
-
-///|
-/// Every field the InstanceExplorer state declares — typed field names for tests and inspectors.
-pub(all) enum InstanceExplorerField {
-  ActiveTab
-  InstanceView
-  ComponentView
-  HasComponent
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceExplorerField::name(self : InstanceExplorerField) -> String {
-  match self {
-    ActiveTab => "activeTab"
-    InstanceView => "instanceView"
-    ComponentView => "componentView"
-    HasComponent => "hasComponent"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn InstanceExplorerField::kind(
-  self : InstanceExplorerField,
-) -> @component.FieldKind {
-  match self {
-    ActiveTab => FText
-    InstanceView => FAny
-    ComponentView => FAny
-    HasComponent => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let instance_explorer_field_names : Array[String] = [
-  "activeTab", "instanceView", "componentView", "hasComponent",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let instance_explorer_schema_fingerprint : String = "7b0fa55820264791"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -585,19 +408,6 @@ impl @component.Fields for InstanceExplorerState with fn decode(f) {
     componentView: v_componentView,
     hasComponent: v_hasComponent,
   })
-}
-
-///|
-/// The views declared in instance_inspector.html.
-pub(all) enum InstanceExplorerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn InstanceExplorerView::name(self : InstanceExplorerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

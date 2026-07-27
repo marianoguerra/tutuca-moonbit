@@ -50,7 +50,7 @@ pub(all) struct NestedStateState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NestedStateState::zero(), label: "Counter" }
-fn NestedStateState::zero() -> NestedStateState {
+pub fn NestedStateState::zero() -> NestedStateState {
   NestedStateState::{
     title: "",
     labels: [],
@@ -60,63 +60,6 @@ fn NestedStateState::zero() -> NestedStateState {
     size: (0, 0),
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn nested_state_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(NestedStateState::zero())
-}
-
-///|
-/// Every field the NestedState state declares — typed field names for tests and inspectors.
-pub(all) enum NestedStateField {
-  Title
-  Labels
-  Priority
-  Due
-  Note
-  Size
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NestedStateField::name(self : NestedStateField) -> String {
-  match self {
-    Title => "title"
-    Labels => "labels"
-    Priority => "priority"
-    Due => "due"
-    Note => "note"
-    Size => "size"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn NestedStateField::kind(self : NestedStateField) -> @component.FieldKind {
-  match self {
-    Title => FText
-    Labels => FList
-    Priority => FText
-    Due => FMap
-    Note => FAny
-    Size => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let nested_state_field_names : Array[String] = [
-  "title", "labels", "priority", "due", "note", "size",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let nested_state_schema_fingerprint : String = "4718555fe446ae34"
 
 ///|
 /// The `due` variant as a `@tutuca.Value`: the bare case
@@ -252,19 +195,6 @@ impl @component.Fields for NestedStateState with fn decode(f) {
     note: v_note,
     size: v_size,
   })
-}
-
-///|
-/// The views declared in nested_state.html.
-pub(all) enum NestedStateView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn NestedStateView::name(self : NestedStateView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

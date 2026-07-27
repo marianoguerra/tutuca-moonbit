@@ -32,7 +32,7 @@ pub(all) struct ActivityEntryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ActivityEntryState::zero(), label: "Counter" }
-fn ActivityEntryState::zero() -> ActivityEntryState {
+pub fn ActivityEntryState::zero() -> ActivityEntryState {
   ActivityEntryState::{
     kind: "",
     name: "",
@@ -45,75 +45,6 @@ fn ActivityEntryState::zero() -> ActivityEntryState {
     hasAfter: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn activity_entry_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ActivityEntryState::zero())
-}
-
-///|
-/// Every field the ActivityEntry state declares — typed field names for tests and inspectors.
-pub(all) enum ActivityEntryField {
-  Kind
-  Name
-  HandlerName
-  Matched
-  PathLabel
-  Time
-  Before
-  After
-  HasAfter
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ActivityEntryField::name(self : ActivityEntryField) -> String {
-  match self {
-    Kind => "kind"
-    Name => "name"
-    HandlerName => "handlerName"
-    Matched => "matched"
-    PathLabel => "pathLabel"
-    Time => "time"
-    Before => "before"
-    After => "after"
-    HasAfter => "hasAfter"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ActivityEntryField::kind(
-  self : ActivityEntryField,
-) -> @component.FieldKind {
-  match self {
-    Kind => FText
-    Name => FText
-    HandlerName => FText
-    Matched => FText
-    PathLabel => FText
-    Time => FText
-    Before => FAny
-    After => FAny
-    HasAfter => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let activity_entry_field_names : Array[String] = [
-  "kind", "name", "handlerName", "matched", "pathLabel", "time", "before", "after",
-  "hasAfter",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let activity_entry_schema_fingerprint : String = "d3dd8d6a5a69b8b2"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -160,19 +91,6 @@ impl @component.Fields for ActivityEntryState with fn decode(f) {
     after: v_after,
     hasAfter: v_hasAfter,
   })
-}
-
-///|
-/// The views declared in activity.html.
-pub(all) enum ActivityEntryView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ActivityEntryView::name(self : ActivityEntryView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -227,52 +145,9 @@ pub(all) struct ActivityLogState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ActivityLogState::zero(), label: "Counter" }
-fn ActivityLogState::zero() -> ActivityLogState {
+pub fn ActivityLogState::zero() -> ActivityLogState {
   ActivityLogState::{ events: [], hasEvents: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn activity_log_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ActivityLogState::zero())
-}
-
-///|
-/// Every field the ActivityLog state declares — typed field names for tests and inspectors.
-pub(all) enum ActivityLogField {
-  Events
-  HasEvents
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ActivityLogField::name(self : ActivityLogField) -> String {
-  match self {
-    Events => "events"
-    HasEvents => "hasEvents"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ActivityLogField::kind(self : ActivityLogField) -> @component.FieldKind {
-  match self {
-    Events => FList
-    HasEvents => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let activity_log_field_names : Array[String] = ["events", "hasEvents"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let activity_log_schema_fingerprint : String = "f3de3a72eae2fe61"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -356,19 +231,6 @@ pub fn ActivityLogReceive::send(
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.send(name, args)
-}
-
-///|
-/// The views declared in activity.html.
-pub(all) enum ActivityLogView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ActivityLogView::name(self : ActivityLogView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

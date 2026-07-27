@@ -78,14 +78,21 @@ For `--name Counter` the module declares `counter_views()` /
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
 -> `@tutuca.Value`), `CounterMethod` + `counter_compute`/`_swap`
-(the `$`-callables, built from an exhaustive match), `CounterView` and
-`CounterId`. A file that also carries a `<script type="tutuca/state">` block
-gets the state half: `CounterState` (a plain struct — no derives),
-`CounterState::zero()`, `CounterField` with a declared `kind()`,
-`counter_schema_fingerprint`, an `impl @component.Fields for CounterState`
-carrying the whole contract as static metadata plus the direct
-encode/decode, and a typed `CounterReceive`/`CounterBubble`/`CounterResponse` for each
-message bucket the schema declares.
+(the `$`-callables, built from an exhaustive match). A file that also carries
+a `<script type="tutuca/state">` block gets the state half: `CounterState`
+(a plain struct — no derives), `CounterState::zero()`, an
+`impl @component.Fields for CounterState` carrying the whole contract as
+static metadata plus the direct encode/decode, and a typed
+`CounterReceive`/`CounterBubble`/`CounterResponse` for each message bucket the
+schema declares.
+
+The field names, their declared kinds, the view names, the constant element
+ids, the fixture names and the schema fingerprint are all in that one
+descriptor — `SchemaInfo` — and not also in enums beside it. That is where the
+inspector and the state editor read them from, holding a bare `@tutuca.Value`
+and no component registry, which is the only place they CAN be read from; a
+typed enum can only be read by code that already knows the component's type,
+and such code can spell the name directly.
 
 Schema **and** templates together also get `counter_component(...)`, beside
 `counter_views()` in the IR module: `component()` with the name, the views,
@@ -106,14 +113,15 @@ The schema goes in a `<script>` and not a `<template>`, because script
 content is raw text to an HTML parser and template content is markup — a
 `list<s32>` inside a template would be read as an `<s32>` element.
 
-A component with no schema block generates exactly what it did before,
-including the older `counter_fields` / `counter_missing_fields` pair. Those
-existed because the generator could not check a read: they listed the names
-and left you to assert in a test that the state carried them, and they only
-ever covered a view's ROOT scope — a `.field` under an `@each`,
-`@enrich-with`, push-view or `<x render>` was not listed and not checked.
-A schema-backed component checks every read at generation time, loop bodies
-included, so the pair is not emitted for it.
+A component with no schema block gets the view half only — no state type, no
+codec and no descriptor. There is no weaker substitute: a `counter_fields` /
+`counter_missing_fields` pair used to be emitted for such a file, because the
+generator could not check a read. It listed the names and left you to assert in
+a test that the state carried them, and it only ever covered a view's ROOT
+scope — a `.field` under an `@each`, `@enrich-with`, push-view or `<x render>`
+was not listed and not checked. A schema-backed component checks every read at
+generation time, loop bodies included, so the answer to a file without one is
+to declare the schema.
 
 ## The state schema
 

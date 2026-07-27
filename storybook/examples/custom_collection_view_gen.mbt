@@ -24,49 +24,9 @@ pub(all) struct PlaylistState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PlaylistState::zero(), label: "Counter" }
-fn PlaylistState::zero() -> PlaylistState {
+pub fn PlaylistState::zero() -> PlaylistState {
   PlaylistState::{ songs: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn playlist_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(PlaylistState::zero())
-}
-
-///|
-/// Every field the Playlist state declares — typed field names for tests and inspectors.
-pub(all) enum PlaylistField {
-  Songs
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PlaylistField::name(self : PlaylistField) -> String {
-  match self {
-    Songs => "songs"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn PlaylistField::kind(self : PlaylistField) -> @component.FieldKind {
-  match self {
-    Songs => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let playlist_field_names : Array[String] = ["songs"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let playlist_schema_fingerprint : String = "cc5dc1cd9f4badee"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -85,19 +45,6 @@ impl @component.Fields for PlaylistState with fn encode(s) {
 impl @component.Fields for PlaylistState with fn decode(f) {
   let v_songs = f.get("songs").unwrap_or(Null)
   Some(PlaylistState::{ songs: v_songs })
-}
-
-///|
-/// The views declared in custom_collection.html.
-pub(all) enum PlaylistView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn PlaylistView::name(self : PlaylistView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -209,49 +156,9 @@ pub(all) struct SongState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SongState::zero(), label: "Counter" }
-fn SongState::zero() -> SongState {
+pub fn SongState::zero() -> SongState {
   SongState::{ title: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn song_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SongState::zero())
-}
-
-///|
-/// Every field the Song state declares — typed field names for tests and inspectors.
-pub(all) enum SongField {
-  Title
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SongField::name(self : SongField) -> String {
-  match self {
-    Title => "title"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SongField::kind(self : SongField) -> @component.FieldKind {
-  match self {
-    Title => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let song_field_names : Array[String] = ["title"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let song_schema_fingerprint : String = "5d3ec9756ba331ba"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -270,19 +177,6 @@ impl @component.Fields for SongState with fn encode(s) {
 impl @component.Fields for SongState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   Some(SongState::{ title: v_title })
-}
-
-///|
-/// The views declared in custom_collection.html.
-pub(all) enum SongView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SongView::name(self : SongView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

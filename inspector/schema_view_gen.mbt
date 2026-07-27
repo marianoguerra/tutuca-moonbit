@@ -26,59 +26,9 @@ pub(all) struct SchemaPropertyState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaPropertyState::zero(), label: "Counter" }
-fn SchemaPropertyState::zero() -> SchemaPropertyState {
+pub fn SchemaPropertyState::zero() -> SchemaPropertyState {
   SchemaPropertyState::{ key: "", child: Null, required: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_property_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaPropertyState::zero())
-}
-
-///|
-/// Every field the SchemaProperty state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaPropertyField {
-  Key
-  Child
-  Required
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaPropertyField::name(self : SchemaPropertyField) -> String {
-  match self {
-    Key => "key"
-    Child => "child"
-    Required => "required"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaPropertyField::kind(
-  self : SchemaPropertyField,
-) -> @component.FieldKind {
-  match self {
-    Key => FText
-    Child => FAny
-    Required => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_property_field_names : Array[String] = [
-  "key", "child", "required",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_property_schema_fingerprint : String = "738c4fe1907764e4"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -99,19 +49,6 @@ impl @component.Fields for SchemaPropertyState with fn decode(f) {
   let v_child = f.get("child").unwrap_or(Null)
   guard f.get("required") is Some(Bool(v_required)) else { return None }
   Some(SchemaPropertyState::{ key: v_key, child: v_child, required: v_required })
-}
-
-///|
-/// The views declared in schema.html.
-pub(all) enum SchemaPropertyView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaPropertyView::name(self : SchemaPropertyView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -161,59 +98,9 @@ pub(all) struct SchemaBranchState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaBranchState::zero(), label: "Counter" }
-fn SchemaBranchState::zero() -> SchemaBranchState {
+pub fn SchemaBranchState::zero() -> SchemaBranchState {
   SchemaBranchState::{ label: "", child: Null, labelClass: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_branch_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaBranchState::zero())
-}
-
-///|
-/// Every field the SchemaBranch state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaBranchField {
-  Label
-  Child
-  LabelClass
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaBranchField::name(self : SchemaBranchField) -> String {
-  match self {
-    Label => "label"
-    Child => "child"
-    LabelClass => "labelClass"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaBranchField::kind(
-  self : SchemaBranchField,
-) -> @component.FieldKind {
-  match self {
-    Label => FText
-    Child => FAny
-    LabelClass => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_branch_field_names : Array[String] = [
-  "label", "child", "labelClass",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_branch_schema_fingerprint : String = "b48cf0ecfc472225"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -238,21 +125,6 @@ impl @component.Fields for SchemaBranchState with fn decode(f) {
     child: v_child,
     labelClass: v_labelClass,
   })
-}
-
-///|
-/// The views declared in schema.html.
-pub(all) enum SchemaBranchView {
-  Main
-  MargauiClasses
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaBranchView::name(self : SchemaBranchView) -> String {
-  match self {
-    Main => "main"
-    MargauiClasses => "_margauiClasses"
-  }
 }
 
 ///|

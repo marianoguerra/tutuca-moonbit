@@ -26,55 +26,9 @@ pub(all) struct CounterState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
-fn CounterState::zero() -> CounterState {
+pub fn CounterState::zero() -> CounterState {
   CounterState::{ label: "", count: 0, history: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CounterState::zero())
-}
-
-///|
-/// Every field the Counter state declares — typed field names for tests and inspectors.
-pub(all) enum CounterField {
-  Label
-  Count
-  History
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterField::name(self : CounterField) -> String {
-  match self {
-    Label => "label"
-    Count => "count"
-    History => "history"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CounterField::kind(self : CounterField) -> @component.FieldKind {
-  match self {
-    Label => FText
-    Count => FInt
-    History => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let counter_field_names : Array[String] = ["label", "count", "history"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let counter_schema_fingerprint : String = "3d30a5c1ebb6ea6f"
 
 ///|
 /// The `fresh` initial state, from the init block. Checked against
@@ -91,10 +45,6 @@ fn CounterState::fresh() -> CounterState {
 fn CounterState::withHistory() -> CounterState {
   CounterState::{ label: "Demo", count: 3, history: [1, 2, 3] }
 }
-
-///|
-/// Every named initial state, in the order the init block declares them.
-pub let counter_init_names : Array[String] = ["fresh", "with-history"]
 
 ///|
 /// A named initial state as component arguments — what a ModuleDef
@@ -200,19 +150,6 @@ pub fn CounterReceive::send(self : CounterReceive, ctx : &@tutuca.Ctx) -> Unit {
 }
 
 ///|
-/// The views declared in counter.html.
-pub(all) enum CounterView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterView::name(self : CounterView) -> String {
-  match self {
-    Main => "main"
-  }
-}
-
-///|
 /// The file-level style — pass as `common_style~`.
 pub let counter_common_style : String = ""
 
@@ -297,35 +234,6 @@ pub fn[S] counter_swap(
     }
   }
   out
-}
-
-///|
-/// Constant `id` attributes in the views — typed selectors for tests.
-pub(all) enum CounterId {
-  Count
-  Dec
-  History
-  Inc
-  Label
-  Reset
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CounterId::id(self : CounterId) -> String {
-  match self {
-    Count => "count"
-    Dec => "dec"
-    History => "history"
-    Inc => "inc"
-    Label => "label"
-    Reset => "reset"
-  }
-}
-
-///|
-/// The `#id` CSS selector for this element.
-pub fn CounterId::selector(self : CounterId) -> String {
-  "#" + self.id()
 }
 
 ///|

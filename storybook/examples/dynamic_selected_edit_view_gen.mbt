@@ -25,57 +25,9 @@ pub(all) struct DseRootState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseRootState::zero(), label: "Counter" }
-fn DseRootState::zero() -> DseRootState {
+pub fn DseRootState::zero() -> DseRootState {
   DseRootState::{ items: Map([]), selectedKey: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn dse_root_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DseRootState::zero())
-}
-
-///|
-/// Every field the DseRoot state declares — typed field names for tests and inspectors.
-pub(all) enum DseRootField {
-  Items
-  SelectedKey
-  Editor
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseRootField::name(self : DseRootField) -> String {
-  match self {
-    Items => "items"
-    SelectedKey => "selectedKey"
-    Editor => "editor"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DseRootField::kind(self : DseRootField) -> @component.FieldKind {
-  match self {
-    Items => FOMap
-    SelectedKey => FText
-    Editor => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let dse_root_field_names : Array[String] = [
-  "items", "selectedKey", "editor",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let dse_root_schema_fingerprint : String = "1e0db39e41167c58"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -110,19 +62,6 @@ impl @component.Fields for DseRootState with fn decode(f) {
   }
   guard f.get("selectedKey") is Some(Str(v_selectedKey)) else { return None }
   Some(DseRootState::{ items: v_items, selectedKey: v_selectedKey })
-}
-
-///|
-/// The views declared in dynamic_selected_edit.html.
-pub(all) enum DseRootView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseRootView::name(self : DseRootView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -249,49 +188,9 @@ pub(all) struct DseEditorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseEditorState::zero(), label: "Counter" }
-fn DseEditorState::zero() -> DseEditorState {
+pub fn DseEditorState::zero() -> DseEditorState {
   DseEditorState::{ missing: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn dse_editor_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DseEditorState::zero())
-}
-
-///|
-/// Every field the DseEditor state declares — typed field names for tests and inspectors.
-pub(all) enum DseEditorField {
-  Missing
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseEditorField::name(self : DseEditorField) -> String {
-  match self {
-    Missing => "missing"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DseEditorField::kind(self : DseEditorField) -> @component.FieldKind {
-  match self {
-    Missing => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let dse_editor_field_names : Array[String] = ["missing"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let dse_editor_schema_fingerprint : String = "6d6412be74f3d0b4"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -310,19 +209,6 @@ impl @component.Fields for DseEditorState with fn encode(s) {
 impl @component.Fields for DseEditorState with fn decode(f) {
   let v_missing = f.get("missing").unwrap_or(Null)
   Some(DseEditorState::{ missing: v_missing })
-}
-
-///|
-/// The views declared in dynamic_selected_edit.html.
-pub(all) enum DseEditorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseEditorView::name(self : DseEditorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -366,49 +252,9 @@ pub(all) struct DseEntryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseEntryState::zero(), label: "Counter" }
-fn DseEntryState::zero() -> DseEntryState {
+pub fn DseEntryState::zero() -> DseEntryState {
   DseEntryState::{ name: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn dse_entry_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DseEntryState::zero())
-}
-
-///|
-/// Every field the DseEntry state declares — typed field names for tests and inspectors.
-pub(all) enum DseEntryField {
-  Name
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseEntryField::name(self : DseEntryField) -> String {
-  match self {
-    Name => "name"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DseEntryField::kind(self : DseEntryField) -> @component.FieldKind {
-  match self {
-    Name => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let dse_entry_field_names : Array[String] = ["name"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let dse_entry_schema_fingerprint : String = "2184b70b210b0dff"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -427,21 +273,6 @@ impl @component.Fields for DseEntryState with fn encode(s) {
 impl @component.Fields for DseEntryState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(DseEntryState::{ name: v_name })
-}
-
-///|
-/// The views declared in dynamic_selected_edit.html.
-pub(all) enum DseEntryView {
-  Main
-  Edit
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DseEntryView::name(self : DseEntryView) -> String {
-  match self {
-    Main => "main"
-    Edit => "edit"
-  }
 }
 
 ///|

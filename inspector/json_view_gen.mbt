@@ -22,22 +22,9 @@ pub(all) struct JsonNullState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonNullState::zero(), label: "Counter" }
-fn JsonNullState::zero() -> JsonNullState {
+pub fn JsonNullState::zero() -> JsonNullState {
   JsonNullState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_null_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonNullState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_null_schema_fingerprint : String = "28cebc724be3edcf"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -55,19 +42,6 @@ impl @component.Fields for JsonNullState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNullState with fn decode(_f) {
   Some(JsonNullState::{  })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonNullView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonNullView::name(self : JsonNullView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -108,49 +82,9 @@ pub(all) struct JsonBooleanState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonBooleanState::zero(), label: "Counter" }
-fn JsonBooleanState::zero() -> JsonBooleanState {
+pub fn JsonBooleanState::zero() -> JsonBooleanState {
   JsonBooleanState::{ value: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_boolean_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonBooleanState::zero())
-}
-
-///|
-/// Every field the JsonBoolean state declares — typed field names for tests and inspectors.
-pub(all) enum JsonBooleanField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonBooleanField::name(self : JsonBooleanField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonBooleanField::kind(self : JsonBooleanField) -> @component.FieldKind {
-  match self {
-    Value => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_boolean_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_boolean_schema_fingerprint : String = "b270c2ac6dd034f0"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -169,21 +103,6 @@ impl @component.Fields for JsonBooleanState with fn encode(s) {
 impl @component.Fields for JsonBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
   Some(JsonBooleanState::{ value: v_value })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonBooleanView {
-  Main
-  MargauiClasses
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonBooleanView::name(self : JsonBooleanView) -> String {
-  match self {
-    Main => "main"
-    MargauiClasses => "_margauiClasses"
-  }
 }
 
 ///|
@@ -260,49 +179,9 @@ pub(all) struct JsonNumberState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonNumberState::zero(), label: "Counter" }
-fn JsonNumberState::zero() -> JsonNumberState {
+pub fn JsonNumberState::zero() -> JsonNumberState {
   JsonNumberState::{ value: 0.0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_number_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonNumberState::zero())
-}
-
-///|
-/// Every field the JsonNumber state declares — typed field names for tests and inspectors.
-pub(all) enum JsonNumberField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonNumberField::name(self : JsonNumberField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonNumberField::kind(self : JsonNumberField) -> @component.FieldKind {
-  match self {
-    Value => FFloat
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_number_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_number_schema_fingerprint : String = "73392a7a2fd55507"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -321,19 +200,6 @@ impl @component.Fields for JsonNumberState with fn encode(s) {
 impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("value") is Some(Num(v_value)) else { return None }
   Some(JsonNumberState::{ value: v_value })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonNumberView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonNumberView::name(self : JsonNumberView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -408,49 +274,9 @@ pub(all) struct JsonStringState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonStringState::zero(), label: "Counter" }
-fn JsonStringState::zero() -> JsonStringState {
+pub fn JsonStringState::zero() -> JsonStringState {
   JsonStringState::{ value: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_string_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonStringState::zero())
-}
-
-///|
-/// Every field the JsonString state declares — typed field names for tests and inspectors.
-pub(all) enum JsonStringField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonStringField::name(self : JsonStringField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonStringField::kind(self : JsonStringField) -> @component.FieldKind {
-  match self {
-    Value => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_string_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_string_schema_fingerprint : String = "56e6fad878f71b0c"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -469,19 +295,6 @@ impl @component.Fields for JsonStringState with fn encode(s) {
 impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   Some(JsonStringState::{ value: v_value })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonStringView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonStringView::name(self : JsonStringView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -554,22 +367,9 @@ pub(all) struct ValueFnState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ValueFnState::zero(), label: "Counter" }
-fn ValueFnState::zero() -> ValueFnState {
+pub fn ValueFnState::zero() -> ValueFnState {
   ValueFnState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn value_fn_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ValueFnState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let value_fn_schema_fingerprint : String = "a2befef6d2f97a5f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -587,19 +387,6 @@ impl @component.Fields for ValueFnState with fn encode(_s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ValueFnState with fn decode(_f) {
   Some(ValueFnState::{  })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum ValueFnView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ValueFnView::name(self : ValueFnView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -640,49 +427,9 @@ pub(all) struct ValueObjState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ValueObjState::zero(), label: "Counter" }
-fn ValueObjState::zero() -> ValueObjState {
+pub fn ValueObjState::zero() -> ValueObjState {
   ValueObjState::{ text: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn value_obj_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ValueObjState::zero())
-}
-
-///|
-/// Every field the ValueObj state declares — typed field names for tests and inspectors.
-pub(all) enum ValueObjField {
-  Text
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ValueObjField::name(self : ValueObjField) -> String {
-  match self {
-    Text => "text"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ValueObjField::kind(self : ValueObjField) -> @component.FieldKind {
-  match self {
-    Text => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let value_obj_field_names : Array[String] = ["text"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let value_obj_schema_fingerprint : String = "aefeaa6a83e10b7f"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -701,19 +448,6 @@ impl @component.Fields for ValueObjState with fn encode(s) {
 impl @component.Fields for ValueObjState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   Some(ValueObjState::{ text: v_text })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum ValueObjView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ValueObjView::name(self : ValueObjView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -760,7 +494,7 @@ pub(all) struct JsonArrayState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonArrayState::zero(), label: "Counter" }
-fn JsonArrayState::zero() -> JsonArrayState {
+pub fn JsonArrayState::zero() -> JsonArrayState {
   JsonArrayState::{
     items: [],
     isExpanded: false,
@@ -768,57 +502,6 @@ fn JsonArrayState::zero() -> JsonArrayState {
     currentPage: 0,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_array_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonArrayState::zero())
-}
-
-///|
-/// Every field the JsonArray state declares — typed field names for tests and inspectors.
-pub(all) enum JsonArrayField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonArrayField::name(self : JsonArrayField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonArrayField::kind(self : JsonArrayField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_array_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_array_schema_fingerprint : String = "caa6ec404b1842e6"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -858,19 +541,6 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
     itemsPerPage: v_itemsPerPage,
     currentPage: v_currentPage,
   })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonArrayView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonArrayView::name(self : JsonArrayView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1094,7 +764,7 @@ pub(all) struct JsonObjectState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonObjectState::zero(), label: "Counter" }
-fn JsonObjectState::zero() -> JsonObjectState {
+pub fn JsonObjectState::zero() -> JsonObjectState {
   JsonObjectState::{
     items: [],
     isExpanded: false,
@@ -1102,57 +772,6 @@ fn JsonObjectState::zero() -> JsonObjectState {
     currentPage: 0,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_object_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonObjectState::zero())
-}
-
-///|
-/// Every field the JsonObject state declares — typed field names for tests and inspectors.
-pub(all) enum JsonObjectField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectField::name(self : JsonObjectField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonObjectField::kind(self : JsonObjectField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_object_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_object_schema_fingerprint : String = "3bc7ffe3e271b846"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1192,19 +811,6 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
     itemsPerPage: v_itemsPerPage,
     currentPage: v_currentPage,
   })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonObjectView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonObjectView::name(self : JsonObjectView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1426,54 +1032,9 @@ pub(all) struct JsonPropertyState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonPropertyState::zero(), label: "Counter" }
-fn JsonPropertyState::zero() -> JsonPropertyState {
+pub fn JsonPropertyState::zero() -> JsonPropertyState {
   JsonPropertyState::{ key: "", child: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn json_property_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(JsonPropertyState::zero())
-}
-
-///|
-/// Every field the JsonProperty state declares — typed field names for tests and inspectors.
-pub(all) enum JsonPropertyField {
-  Key
-  Child
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonPropertyField::name(self : JsonPropertyField) -> String {
-  match self {
-    Key => "key"
-    Child => "child"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn JsonPropertyField::kind(
-  self : JsonPropertyField,
-) -> @component.FieldKind {
-  match self {
-    Key => FText
-    Child => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let json_property_field_names : Array[String] = ["key", "child"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let json_property_schema_fingerprint : String = "3b1ac48212658a79"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1493,19 +1054,6 @@ impl @component.Fields for JsonPropertyState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   Some(JsonPropertyState::{ key: v_key, child: v_child })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum JsonPropertyView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn JsonPropertyView::name(self : JsonPropertyView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -1552,51 +1100,9 @@ pub(all) struct DataInspectorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DataInspectorState::zero(), label: "Counter" }
-fn DataInspectorState::zero() -> DataInspectorState {
+pub fn DataInspectorState::zero() -> DataInspectorState {
   DataInspectorState::{ value: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn data_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(DataInspectorState::zero())
-}
-
-///|
-/// Every field the DataInspector state declares — typed field names for tests and inspectors.
-pub(all) enum DataInspectorField {
-  Value
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DataInspectorField::name(self : DataInspectorField) -> String {
-  match self {
-    Value => "value"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn DataInspectorField::kind(
-  self : DataInspectorField,
-) -> @component.FieldKind {
-  match self {
-    Value => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let data_inspector_field_names : Array[String] = ["value"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let data_inspector_schema_fingerprint : String = "d5f8be83eb3069b1"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1615,19 +1121,6 @@ impl @component.Fields for DataInspectorState with fn encode(s) {
 impl @component.Fields for DataInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
   Some(DataInspectorState::{ value: v_value })
-}
-
-///|
-/// The views declared in json.html.
-pub(all) enum DataInspectorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn DataInspectorView::name(self : DataInspectorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

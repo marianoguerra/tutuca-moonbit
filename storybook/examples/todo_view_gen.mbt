@@ -25,52 +25,9 @@ pub(all) struct ItemState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemState::zero(), label: "Counter" }
-fn ItemState::zero() -> ItemState {
+pub fn ItemState::zero() -> ItemState {
   ItemState::{ completed: false, text: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn item_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ItemState::zero())
-}
-
-///|
-/// Every field the Item state declares — typed field names for tests and inspectors.
-pub(all) enum ItemField {
-  Completed
-  Text
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemField::name(self : ItemField) -> String {
-  match self {
-    Completed => "completed"
-    Text => "text"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ItemField::kind(self : ItemField) -> @component.FieldKind {
-  match self {
-    Completed => FBool
-    Text => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let item_field_names : Array[String] = ["completed", "text"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let item_schema_fingerprint : String = "1e66ddad592bcfff"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -90,19 +47,6 @@ impl @component.Fields for ItemState with fn decode(f) {
   guard f.get("completed") is Some(Bool(v_completed)) else { return None }
   guard f.get("text") is Some(Str(v_text)) else { return None }
   Some(ItemState::{ completed: v_completed, text: v_text })
-}
-
-///|
-/// The views declared in todo.html.
-pub(all) enum ItemView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemView::name(self : ItemView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -223,49 +167,9 @@ pub(all) struct ItemsState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemsState::zero(), label: "Counter" }
-fn ItemsState::zero() -> ItemsState {
+pub fn ItemsState::zero() -> ItemsState {
   ItemsState::{ items: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn items_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ItemsState::zero())
-}
-
-///|
-/// Every field the Items state declares — typed field names for tests and inspectors.
-pub(all) enum ItemsField {
-  Items
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemsField::name(self : ItemsField) -> String {
-  match self {
-    Items => "items"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ItemsField::kind(self : ItemsField) -> @component.FieldKind {
-  match self {
-    Items => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let items_field_names : Array[String] = ["items"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let items_schema_fingerprint : String = "a499a33b72d011a0"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -290,19 +194,6 @@ impl @component.Fields for ItemsState with fn decode(f) {
     v_items.push(x1_items)
   }
   Some(ItemsState::{ items: v_items })
-}
-
-///|
-/// The views declared in todo.html.
-pub(all) enum ItemsView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ItemsView::name(self : ItemsView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

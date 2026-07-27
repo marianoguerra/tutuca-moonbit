@@ -262,18 +262,12 @@ fn emit_component(
   }
 
   // -- views ---------------------------------------------------------------
-  let view_variants = variants_for(views.views.map(view => view.name))
-  emit_name_enum(
-    out,
-    "The views declared in \{source_file}.",
-    "\{t}View",
-    "name",
-    view_variants,
-    derives,
-  )
   // The built views themselves live in the IR module as `<v>_views()`; the
   // per-view sources and styles are carried inside those @anode.View values,
-  // so nothing here re-emits them.
+  // so nothing here re-emits them. The view NAMES are declared metadata and
+  // live in `SchemaInfo.view_names`, which a holder of a bare @tutuca.Value
+  // can read — a `<T>View` enum could only be read by code that already knows
+  // the component's type, which is code that can spell the name anyway.
 
   // -- component-level styles ----------------------------------------------
   // Per-view style rides inside each View; only the two component-wide styles
@@ -434,79 +428,19 @@ fn emit_component(
     derives,
   )
 
-  // -- fields --------------------------------------------------------------
-  // Superseded by the schema. `<v>_fields` and `<v>_missing_fields` existed
-  // because the generator could not check a field read: it listed the names
-  // and left you to assert, in a test you had to remember to write, that the
-  // state carried them. A schema-backed component checks every read at
-  // generation time — under a loop as well as at the root, which the list
-  // never covered — so emitting a weaker second check would only invite
-  // someone to rely on it.
+  // -- the declared description --------------------------------------------
+  // Last, because it names things every section above declares.
+  //
+  // Two things used to be emitted here as well, and both were weaker restatements
+  // of what this descriptor already carries. `<v>_fields` / `<v>_missing_fields`
+  // existed because the generator could not check a field read: they listed the
+  // names and left you to assert, in a test you had to remember to write, that
+  // the state carried them — and only ever covered a view's ROOT scope. A
+  // schema-backed component checks every read at generation time, loop bodies
+  // included. `<T>Id` turned the same `surface.ids` that `SchemaInfo.ids` carries
+  // into an enum that nothing read.
   if state is Some(def_) {
-    emit_ids(t, surface, derives, out)
-    // Last, because it names things every section above declares.
     emit_schema(t, name, def_, surface, views, inits, out)
-    return
-  }
-  out.write_string(
-    "///|\n" +
-    "/// State fields the views read at a view's ROOT scope. Reads under an\n" +
-    "/// @each, an @enrich-with, a push-view or an <x render> address the loop\n" +
-    "/// item or the child component, not this state, so they are not listed.\n" +
-    "pub let \{v}_fields : Array[String] = [" +
-    surface.fields.map(quote).join(", ") +
-    "]\n\n",
-  )
-  out.write_string(
-    "///|\n" +
-    "/// The fields in `\{v}_fields` that `s` does not carry — assert this is\n" +
-    "/// empty in a test. Fields the component declares through `specs~` rather\n" +
-    "/// than through its state struct go in `extra~`.\n" +
-    "pub fn[S : ToJson] \{v}_missing_fields(\n" +
-    "  s : S,\n" +
-    "  extra? : Array[String] = [],\n" +
-    ") -> Array[String] {\n" +
-    "  let present : Map[String, Bool] = Map([])\n" +
-    "  if s.to_json() is Object(o) {\n" +
-    "    for k, _ in o {\n" +
-    "      present[k] = true\n" +
-    "    }\n" +
-    "  }\n" +
-    "  for k in extra {\n" +
-    "    present[k] = true\n" +
-    "  }\n" +
-    "  \{v}_fields.filter(f => !present.contains(f))\n" +
-    "}\n\n",
-  )
-
-  emit_ids(t, surface, derives, out)
-}
-
-///|
-/// Constant `id` attributes as typed selectors, for tests.
-fn emit_ids(
-  t : String,
-  surface : Surface,
-  derives : String,
-  out : StringBuilder,
-) -> Unit raise GenError {
-  if !surface.ids.is_empty() {
-    let id_variants = variants_for(surface.ids)
-    emit_name_enum(
-      out,
-      "Constant `id` attributes in the views — typed selectors for tests.",
-      "\{t}Id",
-      "id",
-      id_variants,
-      derives,
-    )
-    out.write_string(
-      "///|\n" +
-      "/// The `#id` CSS selector for this element.\n" +
-      "pub fn \{t}Id::selector(self : \{t}Id) -> String {\n" +
-      "  \"#\" + self.id()\n" +
-      "}\n\n",
-    )
   }
 }
 

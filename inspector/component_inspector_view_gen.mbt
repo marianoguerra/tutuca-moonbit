@@ -24,49 +24,9 @@ pub(all) struct CompNameState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompNameState::zero(), label: "Counter" }
-fn CompNameState::zero() -> CompNameState {
+pub fn CompNameState::zero() -> CompNameState {
   CompNameState::{ name: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn comp_name_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CompNameState::zero())
-}
-
-///|
-/// Every field the CompName state declares — typed field names for tests and inspectors.
-pub(all) enum CompNameField {
-  Name
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompNameField::name(self : CompNameField) -> String {
-  match self {
-    Name => "name"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CompNameField::kind(self : CompNameField) -> @component.FieldKind {
-  match self {
-    Name => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let comp_name_field_names : Array[String] = ["name"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let comp_name_schema_fingerprint : String = "57b45308f862e883"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -85,19 +45,6 @@ impl @component.Fields for CompNameState with fn encode(s) {
 impl @component.Fields for CompNameState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   Some(CompNameState::{ name: v_name })
-}
-
-///|
-/// The views declared in component_inspector.html.
-pub(all) enum CompNameView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompNameView::name(self : CompNameView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -143,55 +90,9 @@ pub(all) struct CompFieldState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompFieldState::zero(), label: "Counter" }
-fn CompFieldState::zero() -> CompFieldState {
+pub fn CompFieldState::zero() -> CompFieldState {
   CompFieldState::{ name: "", typeName: "", child: Null }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn comp_field_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CompFieldState::zero())
-}
-
-///|
-/// Every field the CompField state declares — typed field names for tests and inspectors.
-pub(all) enum CompFieldField {
-  Name
-  TypeName
-  Child
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompFieldField::name(self : CompFieldField) -> String {
-  match self {
-    Name => "name"
-    TypeName => "typeName"
-    Child => "child"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CompFieldField::kind(self : CompFieldField) -> @component.FieldKind {
-  match self {
-    Name => FText
-    TypeName => FText
-    Child => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let comp_field_field_names : Array[String] = ["name", "typeName", "child"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let comp_field_schema_fingerprint : String = "b1ab3e9e7437de19"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -212,19 +113,6 @@ impl @component.Fields for CompFieldState with fn decode(f) {
   guard f.get("typeName") is Some(Str(v_typeName)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   Some(CompFieldState::{ name: v_name, typeName: v_typeName, child: v_child })
-}
-
-///|
-/// The views declared in component_inspector.html.
-pub(all) enum CompFieldView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompFieldView::name(self : CompFieldView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -274,57 +162,9 @@ pub(all) struct CompViewState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompViewState::zero(), label: "Counter" }
-fn CompViewState::zero() -> CompViewState {
+pub fn CompViewState::zero() -> CompViewState {
   CompViewState::{ name: "", rawView: "", isExpanded: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn comp_view_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CompViewState::zero())
-}
-
-///|
-/// Every field the CompView state declares — typed field names for tests and inspectors.
-pub(all) enum CompViewField {
-  Name
-  RawView
-  IsExpanded
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompViewField::name(self : CompViewField) -> String {
-  match self {
-    Name => "name"
-    RawView => "rawView"
-    IsExpanded => "isExpanded"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CompViewField::kind(self : CompViewField) -> @component.FieldKind {
-  match self {
-    Name => FText
-    RawView => FText
-    IsExpanded => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let comp_view_field_names : Array[String] = [
-  "name", "rawView", "isExpanded",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let comp_view_schema_fingerprint : String = "a2bb4d5d672ad06a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -353,19 +193,6 @@ impl @component.Fields for CompViewState with fn decode(f) {
     rawView: v_rawView,
     isExpanded: v_isExpanded,
   })
-}
-
-///|
-/// The views declared in component_inspector.html.
-pub(all) enum CompViewView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompViewView::name(self : CompViewView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -516,7 +343,7 @@ pub(all) struct CompSectionState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompSectionState::zero(), label: "Counter" }
-fn CompSectionState::zero() -> CompSectionState {
+pub fn CompSectionState::zero() -> CompSectionState {
   CompSectionState::{
     items: [],
     isExpanded: false,
@@ -525,60 +352,6 @@ fn CompSectionState::zero() -> CompSectionState {
     label: "",
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn comp_section_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(CompSectionState::zero())
-}
-
-///|
-/// Every field the CompSection state declares — typed field names for tests and inspectors.
-pub(all) enum CompSectionField {
-  Items
-  IsExpanded
-  ItemsPerPage
-  CurrentPage
-  Label
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompSectionField::name(self : CompSectionField) -> String {
-  match self {
-    Items => "items"
-    IsExpanded => "isExpanded"
-    ItemsPerPage => "itemsPerPage"
-    CurrentPage => "currentPage"
-    Label => "label"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn CompSectionField::kind(self : CompSectionField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    IsExpanded => FBool
-    ItemsPerPage => FInt
-    CurrentPage => FInt
-    Label => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let comp_section_field_names : Array[String] = [
-  "items", "isExpanded", "itemsPerPage", "currentPage", "label",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let comp_section_schema_fingerprint : String = "fac650bb4a858759"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -621,19 +394,6 @@ impl @component.Fields for CompSectionState with fn decode(f) {
     currentPage: v_currentPage,
     label: v_label,
   })
-}
-
-///|
-/// The views declared in component_inspector.html.
-pub(all) enum CompSectionView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn CompSectionView::name(self : CompSectionView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -859,59 +619,9 @@ pub(all) struct ComponentInspectorState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComponentInspectorState::zero(), label: "Counter" }
-fn ComponentInspectorState::zero() -> ComponentInspectorState {
+pub fn ComponentInspectorState::zero() -> ComponentInspectorState {
   ComponentInspectorState::{ compName: "", compId: 0, sections: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn component_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ComponentInspectorState::zero())
-}
-
-///|
-/// Every field the ComponentInspector state declares — typed field names for tests and inspectors.
-pub(all) enum ComponentInspectorField {
-  CompName
-  CompId
-  Sections
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentInspectorField::name(self : ComponentInspectorField) -> String {
-  match self {
-    CompName => "compName"
-    CompId => "compId"
-    Sections => "sections"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ComponentInspectorField::kind(
-  self : ComponentInspectorField,
-) -> @component.FieldKind {
-  match self {
-    CompName => FText
-    CompId => FInt
-    Sections => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let component_inspector_field_names : Array[String] = [
-  "compName", "compId", "sections",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let component_inspector_schema_fingerprint : String = "177c6b469255fb1e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -1005,19 +715,6 @@ pub fn ComponentInspectorBubble::bubble(
 ) -> Unit {
   let (name, args) = self.to_dispatch()
   ctx.bubble(name, args)
-}
-
-///|
-/// The views declared in component_inspector.html.
-pub(all) enum ComponentInspectorView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ComponentInspectorView::name(self : ComponentInspectorView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

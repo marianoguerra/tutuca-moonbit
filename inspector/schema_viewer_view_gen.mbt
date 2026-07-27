@@ -27,62 +27,9 @@ pub(all) struct SchemaViewerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaViewerState::zero(), label: "Counter" }
-fn SchemaViewerState::zero() -> SchemaViewerState {
+pub fn SchemaViewerState::zero() -> SchemaViewerState {
   SchemaViewerState::{ value: Null, raw: Null, rawSchema: Null, showRaw: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn schema_viewer_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SchemaViewerState::zero())
-}
-
-///|
-/// Every field the SchemaViewer state declares — typed field names for tests and inspectors.
-pub(all) enum SchemaViewerField {
-  Value
-  Raw
-  RawSchema
-  ShowRaw
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaViewerField::name(self : SchemaViewerField) -> String {
-  match self {
-    Value => "value"
-    Raw => "raw"
-    RawSchema => "rawSchema"
-    ShowRaw => "showRaw"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SchemaViewerField::kind(
-  self : SchemaViewerField,
-) -> @component.FieldKind {
-  match self {
-    Value => FAny
-    Raw => FAny
-    RawSchema => FAny
-    ShowRaw => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let schema_viewer_field_names : Array[String] = [
-  "value", "raw", "rawSchema", "showRaw",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let schema_viewer_schema_fingerprint : String = "ec51fa7271aa7a98"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -114,19 +61,6 @@ impl @component.Fields for SchemaViewerState with fn decode(f) {
     rawSchema: v_rawSchema,
     showRaw: v_showRaw,
   })
-}
-
-///|
-/// The views declared in schema_viewer.html.
-pub(all) enum SchemaViewerView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SchemaViewerView::name(self : SchemaViewerView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

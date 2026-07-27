@@ -24,51 +24,9 @@ pub(all) struct ListIterationState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListIterationState::zero(), label: "Counter" }
-fn ListIterationState::zero() -> ListIterationState {
+pub fn ListIterationState::zero() -> ListIterationState {
   ListIterationState::{ items: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn list_iteration_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(ListIterationState::zero())
-}
-
-///|
-/// Every field the ListIteration state declares — typed field names for tests and inspectors.
-pub(all) enum ListIterationField {
-  Items
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListIterationField::name(self : ListIterationField) -> String {
-  match self {
-    Items => "items"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn ListIterationField::kind(
-  self : ListIterationField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let list_iteration_field_names : Array[String] = ["items"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let list_iteration_schema_fingerprint : String = "4cb2b12ca13a0bfa"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -93,19 +51,6 @@ impl @component.Fields for ListIterationState with fn decode(f) {
     v_items.push(x1_items)
   }
   Some(ListIterationState::{ items: v_items })
-}
-
-///|
-/// The views declared in list_iteration.html.
-pub(all) enum ListIterationView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn ListIterationView::name(self : ListIterationView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

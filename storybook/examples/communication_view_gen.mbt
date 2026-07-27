@@ -25,52 +25,9 @@ pub(all) struct StatusState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StatusState::zero(), label: "Counter" }
-fn StatusState::zero() -> StatusState {
+pub fn StatusState::zero() -> StatusState {
   StatusState::{ message: "", count: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn status_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(StatusState::zero())
-}
-
-///|
-/// Every field the Status state declares — typed field names for tests and inspectors.
-pub(all) enum StatusField {
-  Message
-  Count
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StatusField::name(self : StatusField) -> String {
-  match self {
-    Message => "message"
-    Count => "count"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn StatusField::kind(self : StatusField) -> @component.FieldKind {
-  match self {
-    Message => FText
-    Count => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let status_field_names : Array[String] = ["message", "count"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let status_schema_fingerprint : String = "818952001ae7566e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -91,19 +48,6 @@ impl @component.Fields for StatusState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(StatusState::{ message: v_message, count: v_count })
-}
-
-///|
-/// The views declared in communication.html.
-pub(all) enum StatusView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn StatusView::name(self : StatusView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -150,52 +94,9 @@ pub(all) struct SendReceiveState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SendReceiveState::zero(), label: "Counter" }
-fn SendReceiveState::zero() -> SendReceiveState {
+pub fn SendReceiveState::zero() -> SendReceiveState {
   SendReceiveState::{ draft: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn send_receive_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(SendReceiveState::zero())
-}
-
-///|
-/// Every field the SendReceive state declares — typed field names for tests and inspectors.
-pub(all) enum SendReceiveField {
-  Draft
-  Status
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SendReceiveField::name(self : SendReceiveField) -> String {
-  match self {
-    Draft => "draft"
-    Status => "status"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn SendReceiveField::kind(self : SendReceiveField) -> @component.FieldKind {
-  match self {
-    Draft => FText
-    Status => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let send_receive_field_names : Array[String] = ["draft", "status"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let send_receive_schema_fingerprint : String = "af6010efd88e64f0"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -214,19 +115,6 @@ impl @component.Fields for SendReceiveState with fn encode(s) {
 impl @component.Fields for SendReceiveState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
   Some(SendReceiveState::{ draft: v_draft })
-}
-
-///|
-/// The views declared in communication.html.
-pub(all) enum SendReceiveView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn SendReceiveView::name(self : SendReceiveView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -364,60 +252,9 @@ pub(all) struct TreeItemState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TreeItemState::zero(), label: "Counter" }
-fn TreeItemState::zero() -> TreeItemState {
+pub fn TreeItemState::zero() -> TreeItemState {
   TreeItemState::{ type_: "", label: "", isOpen: false, items: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn tree_item_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TreeItemState::zero())
-}
-
-///|
-/// Every field the TreeItem state declares — typed field names for tests and inspectors.
-pub(all) enum TreeItemField {
-  Type
-  Label
-  IsOpen
-  Items
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TreeItemField::name(self : TreeItemField) -> String {
-  match self {
-    Type => "type"
-    Label => "label"
-    IsOpen => "isOpen"
-    Items => "items"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TreeItemField::kind(self : TreeItemField) -> @component.FieldKind {
-  match self {
-    Type => FText
-    Label => FText
-    IsOpen => FBool
-    Items => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let tree_item_field_names : Array[String] = [
-  "type", "label", "isOpen", "items",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let tree_item_schema_fingerprint : String = "e6692133fe7c7e9a"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -455,19 +292,6 @@ impl @component.Fields for TreeItemState with fn decode(f) {
     isOpen: v_isOpen,
     items: v_items,
   })
-}
-
-///|
-/// The views declared in communication.html.
-pub(all) enum TreeItemView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TreeItemView::name(self : TreeItemView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|
@@ -615,52 +439,9 @@ pub(all) struct TreeRootState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TreeRootState::zero(), label: "Counter" }
-fn TreeRootState::zero() -> TreeRootState {
+pub fn TreeRootState::zero() -> TreeRootState {
   TreeRootState::{ log: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn tree_root_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(TreeRootState::zero())
-}
-
-///|
-/// Every field the TreeRoot state declares — typed field names for tests and inspectors.
-pub(all) enum TreeRootField {
-  Log
-  Root
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TreeRootField::name(self : TreeRootField) -> String {
-  match self {
-    Log => "log"
-    Root => "root"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn TreeRootField::kind(self : TreeRootField) -> @component.FieldKind {
-  match self {
-    Log => FList
-    Root => FComp(comp="", args=Map([]))
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let tree_root_field_names : Array[String] = ["log", "root"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let tree_root_schema_fingerprint : String = "956f1bda15ce4557"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -685,19 +466,6 @@ impl @component.Fields for TreeRootState with fn decode(f) {
     v_log.push(x1_log)
   }
   Some(TreeRootState::{ log: v_log })
-}
-
-///|
-/// The views declared in communication.html.
-pub(all) enum TreeRootView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn TreeRootView::name(self : TreeRootView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

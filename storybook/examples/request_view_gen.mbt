@@ -28,7 +28,7 @@ pub(all) struct RequestExampleState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RequestExampleState::zero(), label: "Counter" }
-fn RequestExampleState::zero() -> RequestExampleState {
+pub fn RequestExampleState::zero() -> RequestExampleState {
   RequestExampleState::{
     items: [],
     query: "",
@@ -37,62 +37,6 @@ fn RequestExampleState::zero() -> RequestExampleState {
     error: Null,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn request_example_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(RequestExampleState::zero())
-}
-
-///|
-/// Every field the RequestExample state declares — typed field names for tests and inspectors.
-pub(all) enum RequestExampleField {
-  Items
-  Query
-  View
-  IsLoading
-  Error
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RequestExampleField::name(self : RequestExampleField) -> String {
-  match self {
-    Items => "items"
-    Query => "query"
-    View => "view"
-    IsLoading => "isLoading"
-    Error => "error"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn RequestExampleField::kind(
-  self : RequestExampleField,
-) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Query => FText
-    View => FText
-    IsLoading => FBool
-    Error => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let request_example_field_names : Array[String] = [
-  "items", "query", "view", "isLoading", "error",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let request_example_schema_fingerprint : String = "fb42c79b675f798e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -133,19 +77,6 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
     isLoading: v_isLoading,
     error: v_error,
   })
-}
-
-///|
-/// The views declared in request.html.
-pub(all) enum RequestExampleView {
-  Main
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn RequestExampleView::name(self : RequestExampleView) -> String {
-  match self {
-    Main => "main"
-  }
 }
 
 ///|

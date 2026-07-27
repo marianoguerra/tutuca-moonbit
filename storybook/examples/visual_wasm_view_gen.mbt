@@ -25,22 +25,9 @@ pub(all) struct VwEmptyState {}
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwEmptyState::zero(), label: "Counter" }
-fn VwEmptyState::zero() -> VwEmptyState {
+pub fn VwEmptyState::zero() -> VwEmptyState {
   VwEmptyState::{  }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_empty_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwEmptyState::zero())
-}
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_empty_schema_fingerprint : String = "ce4923df302b81b2"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -89,52 +76,9 @@ pub(all) struct VwImmState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwImmState::zero(), label: "Counter" }
-fn VwImmState::zero() -> VwImmState {
+pub fn VwImmState::zero() -> VwImmState {
   VwImmState::{ value: 0, rawValue: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_imm_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwImmState::zero())
-}
-
-///|
-/// Every field the VwImm state declares — typed field names for tests and inspectors.
-pub(all) enum VwImmField {
-  Value
-  RawValue
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwImmField::name(self : VwImmField) -> String {
-  match self {
-    Value => "value"
-    RawValue => "rawValue"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwImmField::kind(self : VwImmField) -> @component.FieldKind {
-  match self {
-    Value => FInt
-    RawValue => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_imm_field_names : Array[String] = ["value", "rawValue"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_imm_schema_fingerprint : String = "53f3484f60b3c75c"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -188,49 +132,9 @@ pub(all) struct VwTypesState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwTypesState::zero(), label: "Counter" }
-fn VwTypesState::zero() -> VwTypesState {
+pub fn VwTypesState::zero() -> VwTypesState {
   VwTypesState::{ items: [] }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_types_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwTypesState::zero())
-}
-
-///|
-/// Every field the VwTypes state declares — typed field names for tests and inspectors.
-pub(all) enum VwTypesField {
-  Items
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwTypesField::name(self : VwTypesField) -> String {
-  match self {
-    Items => "items"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwTypesField::kind(self : VwTypesField) -> @component.FieldKind {
-  match self {
-    Items => FList
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_types_field_names : Array[String] = ["items"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_types_schema_fingerprint : String = "dd9e67b6f8d50b55"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -289,57 +193,9 @@ pub(all) struct VwContainerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwContainerState::zero(), label: "Counter" }
-fn VwContainerState::zero() -> VwContainerState {
+pub fn VwContainerState::zero() -> VwContainerState {
   VwContainerState::{ items: [], expanded: false, editing: false }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_container_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwContainerState::zero())
-}
-
-///|
-/// Every field the VwContainer state declares — typed field names for tests and inspectors.
-pub(all) enum VwContainerField {
-  Items
-  Expanded
-  Editing
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwContainerField::name(self : VwContainerField) -> String {
-  match self {
-    Items => "items"
-    Expanded => "expanded"
-    Editing => "editing"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwContainerField::kind(self : VwContainerField) -> @component.FieldKind {
-  match self {
-    Items => FList
-    Expanded => FBool
-    Editing => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_container_field_names : Array[String] = [
-  "items", "expanded", "editing",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_container_schema_fingerprint : String = "a94df03941e4c8f4"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -413,7 +269,7 @@ pub(all) struct VwIfState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwIfState::zero(), label: "Counter" }
-fn VwIfState::zero() -> VwIfState {
+pub fn VwIfState::zero() -> VwIfState {
   VwIfState::{
     thn: [],
     else_: [],
@@ -423,63 +279,6 @@ fn VwIfState::zero() -> VwIfState {
     editingElse: false,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_if_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwIfState::zero())
-}
-
-///|
-/// Every field the VwIf state declares — typed field names for tests and inspectors.
-pub(all) enum VwIfField {
-  Thn
-  Else
-  Expanded
-  EditingIf
-  EditingThn
-  EditingElse
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwIfField::name(self : VwIfField) -> String {
-  match self {
-    Thn => "thn"
-    Else => "else"
-    Expanded => "expanded"
-    EditingIf => "editingIf"
-    EditingThn => "editingThn"
-    EditingElse => "editingElse"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwIfField::kind(self : VwIfField) -> @component.FieldKind {
-  match self {
-    Thn => FList
-    Else => FList
-    Expanded => FBool
-    EditingIf => FBool
-    EditingThn => FBool
-    EditingElse => FBool
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_if_field_names : Array[String] = [
-  "thn", "else", "expanded", "editingIf", "editingThn", "editingElse",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_if_schema_fingerprint : String = "90972407f58ddfc3"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -570,7 +369,7 @@ pub(all) struct VwSectionState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwSectionState::zero(), label: "Counter" }
-fn VwSectionState::zero() -> VwSectionState {
+pub fn VwSectionState::zero() -> VwSectionState {
   VwSectionState::{
     id: 0,
     name: "",
@@ -579,60 +378,6 @@ fn VwSectionState::zero() -> VwSectionState {
     defaultItem: Null,
   }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_section_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwSectionState::zero())
-}
-
-///|
-/// Every field the VwSection state declares — typed field names for tests and inspectors.
-pub(all) enum VwSectionField {
-  Id
-  Name
-  Items
-  Expanded
-  DefaultItem
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwSectionField::name(self : VwSectionField) -> String {
-  match self {
-    Id => "id"
-    Name => "name"
-    Items => "items"
-    Expanded => "expanded"
-    DefaultItem => "defaultItem"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwSectionField::kind(self : VwSectionField) -> @component.FieldKind {
-  match self {
-    Id => FInt
-    Name => FText
-    Items => FList
-    Expanded => FBool
-    DefaultItem => FAny
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_section_field_names : Array[String] = [
-  "id", "name", "items", "expanded", "defaultItem",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_section_schema_fingerprint : String = "2bd9dd9147e15f1e"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -711,52 +456,9 @@ pub(all) struct VwMemoryState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwMemoryState::zero(), label: "Counter" }
-fn VwMemoryState::zero() -> VwMemoryState {
+pub fn VwMemoryState::zero() -> VwMemoryState {
   VwMemoryState::{ n: 0, m: 0 }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_memory_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwMemoryState::zero())
-}
-
-///|
-/// Every field the VwMemory state declares — typed field names for tests and inspectors.
-pub(all) enum VwMemoryField {
-  N
-  M
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwMemoryField::name(self : VwMemoryField) -> String {
-  match self {
-    N => "n"
-    M => "m"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwMemoryField::kind(self : VwMemoryField) -> @component.FieldKind {
-  match self {
-    N => FInt
-    M => FInt
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_memory_field_names : Array[String] = ["n", "m"]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_memory_schema_fingerprint : String = "5bef82ed43430e63"
 
 ///|
 /// The state as the fields map the render and path layers read, built
@@ -813,57 +515,9 @@ pub(all) struct VwPickerState {
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwPickerState::zero(), label: "Counter" }
-fn VwPickerState::zero() -> VwPickerState {
+pub fn VwPickerState::zero() -> VwPickerState {
   VwPickerState::{ currentSection: "", instructions: [], filter: "" }
 }
-
-///|
-/// The zero state as component arguments — the default a ModuleDef
-/// example takes when it sets nothing of its own.
-pub fn vw_picker_zero_args() -> Map[String, @tutuca.Value] {
-  @component.Fields::encode(VwPickerState::zero())
-}
-
-///|
-/// Every field the VwPicker state declares — typed field names for tests and inspectors.
-pub(all) enum VwPickerField {
-  CurrentSection
-  Instructions
-  Filter
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn VwPickerField::name(self : VwPickerField) -> String {
-  match self {
-    CurrentSection => "currentSection"
-    Instructions => "instructions"
-    Filter => "filter"
-  }
-}
-
-///|
-/// The runtime kind this field carries. Declared, not inferred: the old
-/// `FieldSpec::of_default` had to guess FInt from whether the seed value
-/// happened to be integral.
-pub fn VwPickerField::kind(self : VwPickerField) -> @component.FieldKind {
-  match self {
-    CurrentSection => FText
-    Instructions => FList
-    Filter => FText
-  }
-}
-
-///|
-/// Every field, in declaration order.
-pub let vw_picker_field_names : Array[String] = [
-  "currentSection", "instructions", "filter",
-]
-
-///|
-/// The structural fingerprint of this component's schema. Changes when
-/// the SHAPE changes — a renamed or retyped field, a new message case —
-/// and not when the block is merely reformatted.
-pub let vw_picker_schema_fingerprint : String = "e5eda1d1115e0e30"
 
 ///|
 /// The state as the fields map the render and path layers read, built
