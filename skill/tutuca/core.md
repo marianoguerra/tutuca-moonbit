@@ -125,29 +125,35 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 
 ## Bootstrap
 
-A component is a state struct with `derive(ToJson, FromJson)` plus a
-plain function returning a `@component.Component`; a module is a
-`ModuleDef` value:
+A component is declared in an `.html` view file — its state, its templates,
+its styles — and `tutuca gen-views` compiles that into a MoonBit module beside
+it. What you write is the code no generator can: the handlers.
 
-```moonbit
-priv struct CounterState {
-  count : Int
-} derive(ToJson, FromJson)
+`counter.html`:
 
+```html
+<script type="tutuca/state">
+  interface counter {
+    record state { count: s32 }
+  }
+</script>
+
+<template>
+  <button @on.click="inc" @text=".count"></button>
+</template>
+```
+
+`counter.mbt`:
+
+```moonbit nocheck
 fn counter_comp() -> @component.Component {
-  @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<button @on.click="inc" @text=".count"></button>
-    )),
-  },
-  name="Counter",
-  init=CounterState::{ count: 0 },
-  update=(s : CounterState, msg, _ctx) => match msg {
-    Input("inc", _) => Some({ count: s.count + 1 })
-    _ => None
-  },
-)
+  // `counter_component` is generated: it passes the name, the compiled views,
+  // the styles, the schema and the state <-> Value codec. `CounterState` and
+  // `CounterMsg` are generated too.
+  counter_component(update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+    Some(Inc) => Some({ count: s.count + 1 })
+    Some(Unknown(_, _)) | None => None
+  })
 }
 
 pub fn counter_module() -> @component.ModuleDef {
@@ -156,6 +162,14 @@ pub fn counter_module() -> @component.ModuleDef {
   ])
 }
 ```
+
+Then `moon run --target native cmd/dev -- gen-views` (never the CLI directly —
+the task formats after generating, which is what keeps the checked-in pair
+reproducible).
+
+Adding `@on.click="del"` to the view and regenerating makes that match
+non-exhaustive: a compile error naming `Some(Del)`, where a string-keyed
+handler map would have left a name nobody answers.
 
 The same `ModuleDef` value drives three hosts:
 
@@ -298,7 +312,7 @@ literal with spaces (escape an interior quote as `\'`).
 | Prefix   | Means                                     | Example               |
 | -------- | ----------------------------------------- | --------------------- |
 | `.x`     | field on the state (single-level — no `.foo.bar` paths) | `.count`, `.title` |
-| `$x`     | a `mutate`/`compute` call (or generated mutator) | `$inc`, `$canSubmit` |
+| `$x`     | a `compute` call (or a generated mutator), in a VALUE position only | `$label`, `$canSubmit` |
 | `@x`     | local binding (loop / scope)              | `@key`, `@value`      |
 | `^x`     | macro parameter                           | `^label`              |
 | `*x`     | dynamic binding — see [advanced.md](./advanced.md) | `*theme`          |
@@ -370,36 +384,16 @@ escape the double quotes (`"<p :class=\"'flex gap-3'\">x</p>"`). Prefer
 
 ## Component Skeleton
 
-`@component.component(...)` takes a state struct plus labeled arguments —
-the **component spec**. The full shape (see `component/pkg.generated.mbti`
-for the exact signature):
+What you write is the handlers; everything else the view file states. The
+wrapper `gen-views` emits is typed on the state struct, so lambda parameters
+need no annotation:
 
-```moonbit
-priv struct MyCompState {
-  count : Int
-  items : Array[String]
-  isLoading : Bool
-  selected : @tutuca.Value // "anything" fields are @tutuca.Value
-} derive(ToJson, FromJson)
-
-@component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-    #|<p @text=".count"></p>
-  ), style="p { color: blue; }"),
-    "edit": @anode.View::new("edit", raw_view="<input :value=\".count\" @on.input=\"$setCount valueAsInt\" />"),
-    "big": @anode.View::new("big", raw_view="<h1 @text=\".count\"></h1>", style="h1 { font-size: 4rem; }"),
-  },
-  name="MyComp",
-  // scoped to main view
-  common_style="p { font-family: sans-serif; }",
-  // scoped to all views of this component
-  global_style="body { margin: 0; }",
-  // injected globally, no scoping
-  // the struct's fields ARE the component's fields; init gives the defaults
-  init=MyCompState::{ count: 0, items: [], isLoading: false, selected: Null },
+```moonbit nocheck
+my_comp_component(
+  // `init` defaults to MyCompState::zero() — pass it only for what differs
+  init={ ..MyCompState::zero(), count: 0 },
   // ONE effectful dispatch match: (s, msg, ctx) => S?  (None = no change)
-  update=(s : MyCompState, msg, ctx) => match msg {
+  update=(s, msg, ctx) => match msg {
     Input("onClick", _) => Some({ ..s, count: s.count + 1 })
     Receive("init", _) => {
       ctx.request("loadData", [], @tutuca.RequestOpts::new())
@@ -410,11 +404,14 @@ priv struct MyCompState {
       Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
     _ => None // ALWAYS needed
   },
-  compute={ // pure value read, $-callable: (s, args) => Value
-    "label": (s : MyCompState, _args) => Str("n=\{s.count}"),
+  // Each bucket is keyed by an enum generated from the names the views use,
+  // so the match is exhaustive over them and a name added to a view is a
+  // build error. A bucket the views never use is not a parameter at all.
+  compute=m => match m { // pure value read, $name: (s, args) => Value
+    Label => Some((s, _args) => Str("n=\{s.count}"))
   },
-  when={ // @when filters: (s, key, value, iterData) => Bool
-    "filterItem": (s : MyCompState, _key, value, _iter) => value.str() != "",
+  when=w => match w { // @when filters: (s, key, value, iterData) => Bool
+    FilterItem => Some((s, _key, value, _iter) => value.str() != "")
   },
   // enrich= / enrich_scope= / loop_with= — see iteration.md
   specs={ // Value-level slots & kind overrides — NOT in the struct
@@ -424,48 +421,28 @@ priv struct MyCompState {
 )
 ```
 
-### Most of that is generated — use the wrapper
-
-The spec above is the **runtime-view** shape: views as `raw_view` strings, no
-schema. A component that keeps its views in an `.html` file **with** a
-`<script type="tutuca/state">` block gets a wrapper in its
-`<stem>_view_ir_gen.mbt`, and that is what you call:
-
-```moonbit nocheck
-// what you write
-fn my_comp_comp() -> @component.Component {
-  my_comp_component(
-    init=MyCompState::{ count: 0, items: [], isLoading: false, selected: Null },
-    update=(s, msg, ctx) => match msg { ... },
-  )
-}
-```
-
 `name`, `views`, `common_style`, `global_style`, `encode`, `decode` and
-`schema` are gone: the view file states them, and the wrapper passes them.
-Do **not** restate them — that is how a fact the generator learns fails to
-reach the component. `name`, `views`, `init` and the two styles are still
-parameters, so override one when a component genuinely differs (a registered
-name that is not the template id, views wrapped with a runtime-built extra).
+`schema` are not written here: the view file states them and the wrapper
+passes them. Do **not** restate them — that is how a fact the generator learns
+fails to reach the component. `name`, `views`, `init` and the two styles are
+still parameters, so override one when a component genuinely differs;
 `encode`/`decode`/`schema` are not parameters at all.
-
-The wrapper is typed on the state struct rather than on a type variable, so
-lambda parameters need no annotation: write `(s, msg, ctx)`, not
-`(s : MyCompState, msg, ctx)`.
 
 `init` defaults to `MyCompState::zero()` — omit it when the zero state is what
 you want, and pass a `tutuca/init` fixture (`MyCompState::fresh()`) or a
 literal otherwise.
 
-Call `@component.component(...)` directly only when there is no wrapper: a
-runtime-parsed or macro-using view (no IR module), a component with no schema,
-or one whose state shape is a sibling's.
+Call `@component.component(...)` directly only when there is no wrapper —
+views built in MoonBit, so there is nothing to default `views~` to. It takes
+the same `encode`, `decode` and `schema` the wrapper would have passed, and
+they are REQUIRED: a component that declares less does not get a runtime that
+infers the difference.
 
 `comp.make({...})` builds an instance from a `Map[String, Value]` of
 args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
 lists, maps, or example args. Missing fields get their defaults from
-`init`, and every arg is coerced through its inferred spec (a
-wrong-shaped value falls back to the default — silently).
+`init`, and every arg is coerced through its DECLARED kind (a wrong-shaped
+value falls back to the default — silently).
 Component-typed fields declared with
 `specs={ "child": FieldSpec::comp("Item", args={...}) }` build their
 default instance through the registration scope at `make()` time, so
@@ -512,8 +489,8 @@ code-side use), `resetX`, and `xLen` (`Null` for non-sized values). The
 generated names keep their **JS camelCase spelling** — that is what makes
 views port verbatim: `@on.click="removeInItemsAt @key"`,
 `@on.input="setQuery value"`, `@on.click="toggleView"` all call
-generated mutators. User-supplied `mutate` entries win over generated
-ones of the same name.
+generated mutators. A `compute` entry of the same name wins over the
+generated one.
 
 A field that can hold "anything" is declared `@tutuca.Value` — the
 dynamic escape hatch inside an otherwise typed struct. That includes
@@ -826,8 +803,10 @@ pagination and the `@loop-with` → `loop_with` return shape, and the
 A component's views come in through `views=` (a
 `Map[String, @anode.View]`), keyed by name — `"main"` is the one rendered by
 default. Author them in an `.html` file and generate the map with
-`tutuca gen-views` (see [cli.md](./cli.md)); for a runtime-built or test view,
-`@anode.View::new("main", raw_view="…")` is the same primitive. `as` selects
+`tutuca gen-views` (see [cli.md](./cli.md)). A view whose SOURCE only exists at
+run time — a guest bundle, markup a MoonBit function assembles — uses
+`@anode.View::new("main", raw_view="…")`, which builds the same `@anode.View`;
+its component still declares a schema and a codec like any other. `as` selects
 which view of the
 rendered component to use, falling back to `main` if absent. It accepts the
 same dynamic values as `@push-view` (a literal name like `edit`, or `.field`,
@@ -838,19 +817,17 @@ selector is evaluated once against the host, so every item gets the same view.
 
 ## Multiple Views & View Stack
 
-```moonbit
-priv struct NoteState {
-  title : String
-} derive(ToJson, FromJson)
+Named views are `<template id="Comp:name">` entries in the view file:
 
-@component.component(
-  views={
-    "main": @anode.View::new("main", raw_view="<p @text=\".title\"></p>"),
-    "edit": @anode.View::new("edit", raw_view="<input :value=\".title\" @on.input=\"$setTitle value\" />"),
-  },
-  name="Note",
-  init=NoteState::{ title: "" },
-)
+```html
+<template id="Note"><p @text=".title"></p></template>
+<template id="Note:edit">
+  <input :value=".title" @on.input="setTitle value">
+</template>
+```
+
+```moonbit nocheck
+note_component() // the wrapper passes both views
 ```
 
 ```html
@@ -889,8 +866,7 @@ of the **same `update` match**:
 The `update` fn — `(s, msg : Dispatch, ctx : &@tutuca.Ctx) => S?` — is
 one pattern match over all four; the framework swaps the returned state
 into the dispatch path (`None` = no change). `Input` dispatch that no
-`update` arm claims falls back to a `mutate` entry or generated mutator
-of the same name. The three channels beyond `Input` — plus `ctx.at()`,
+`update` arm claims falls back to a generated mutator of the same name. The three channels beyond `Input` — plus `ctx.at()`,
 catch-all arms, per-call handler-name overrides, error handling, and
 `RequestFn` registration — are in
 [request-response.md](./request-response.md); worked snippets in
@@ -903,10 +879,13 @@ Enrichment* in [iteration.md](./iteration.md)).
 
 ## Macros
 
-Pure template expansion — `@anode.Macro` values (`{ defaults, raw_view }`)
-called as `<x:name>`, with `^param` references, slots, and named slots:
-see [macros.md](./macros.md). Registry keys are lowercased —
-`<x:Card>` resolves as `<x:card>`.
+Pure template expansion, called as `<x:name>`, with `^param` references, slots
+and named slots: see [macros.md](./macros.md). Declare one in the view file as
+`<template id="macro:card" data-title="'Untitled'">` and it is expanded when
+the views are generated. `@anode.Macro` values (`{ defaults, raw_view }`)
+registered on a `ModuleDef` are the runtime form, for a body a MoonBit
+function builds — a file using those cannot be compiled ahead of time.
+Registry keys are lowercased — `<x:Card>` resolves as `<x:card>`.
 
 ## Raw HTML (escape hatch)
 
@@ -934,9 +913,10 @@ pub(all) enum Value {
 }
 ```
 
-- The state struct is encoded to / decoded from this layer (that is what
-  `derive(ToJson, FromJson)` wires up); `Obj`/`Fn` values held in
-  `@tutuca.Value` struct fields survive the round-trip losslessly.
+- The state struct is encoded to / decoded from this layer by the generated
+  `<c>_encode` / `<c>_decode`, field by field. A `@tutuca.Value` field is
+  passed straight through, which is why an `Obj` or an `Fn` held in one
+  survives — a JSON round trip could not carry either.
 - `Value` derives `Eq` (deep structural equality) and `Debug`, so
   `assert_eq` and `debug_inspect` work on values directly.
 - `v.is_truthy()` gives JS-style truthiness; `v.to_display_string()`

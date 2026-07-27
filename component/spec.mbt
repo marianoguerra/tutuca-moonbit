@@ -320,11 +320,11 @@ pub struct Component {
 }
 
 ///|
-/// Define a typed-state component: `init` is a plain struct with
-/// derive(ToJson, FromJson) — its fields become the component's fields,
-/// compiler-checked in every handler. `update` folds input/receive/bubble/
-/// response into one Dispatch match; `mutate`/`compute` are the $-callable
-/// buckets (state change / value read). Render-time directives get their own
+/// Define a typed-state component: `init` is a plain struct — no derives —
+/// whose fields become the component's fields, compiler-checked in every
+/// handler. `update` folds input/receive/bubble/response into one Dispatch
+/// match; `compute` answers `$name` in a value position. Render-time
+/// directives get their own
 /// typed buckets: `when` (@when filters), `enrich` (@enrich-with inside a
 /// loop — mutate the binds map), `enrich_scope` (@enrich-with without @each —
 /// return the binds), `loop_with` (@loop-with — slice/order the iteration).

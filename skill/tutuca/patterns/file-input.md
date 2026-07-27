@@ -2,35 +2,39 @@
 
 **Problem:** let the user pick a file and show its metadata.
 
-```moonbit
-priv struct FilePickerState {
-  name : String
-  size : Double
-  type_ : String
-  hasFile : Bool
-} derive(
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
+```html
+<!-- file_picker.html -->
+<script type="tutuca/state">
+  interface file-picker {
+    record state {
+      name: string,
+      size: f64,
+      %type: string,
+      has-file: bool,
+    }
+  }
+</script>
 
+<template>
+  <section>
+    <input type="file" @on.change="onPickFile value">
+    <p @hide=".hasFile">No file selected yet.</p>
+    <dl @show=".hasFile">
+      <dt>Name</dt><dd @text=".name"></dd>
+      <dt>Size</dt><dd @text=".size"></dd>
+      <dt>Type</dt><dd @text=".type"></dd>
+    </dl>
+  </section>
+</template>
+```
+
+`%type` is a MoonBit keyword, so the generated struct binds it as `type_`
+while the view keeps reading `.type` — the codec keys by the runtime name.
+
+```moonbit nocheck
 fn file_picker_comp() -> @component.Component {
-  @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<section>
-      #|  <input type="file" @on.change="onPickFile value" />
-      #|  <p @hide=".hasFile">No file selected yet.</p>
-      #|  <dl @show=".hasFile">
-      #|    <dt>Name</dt><dd @text=".name"></dd>
-      #|    <dt>Size</dt><dd @text=".size"></dd>
-      #|    <dt>Type</dt><dd @text=".type"></dd>
-      #|  </dl>
-      #|</section>
-    )),
-  },
-  name="FilePicker",
-  init=FilePickerState::{ name: "", size: 0, type_: "", hasFile: false },
-  update=(s : FilePickerState, msg, _ctx) => match msg {
+  file_picker_component(
+    update=(s, msg, _ctx) => match msg {
       // for a file input, `value` is the picked file's metadata as a Map
       // (name/size/type/lastModified); Null when no file is selected
       Input("onPickFile", [Map(meta), ..]) =>
@@ -43,7 +47,7 @@ fn file_picker_comp() -> @component.Component {
       Input("onPickFile", _) => Some({ ..s, hasFile: false })
       _ => None
     },
-)
+  )
 }
 ```
 

@@ -6,13 +6,97 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed (BREAKING)
+
+- **`component()` requires `schema~`, `encode~` and `decode~`; `for_type()`
+  requires `schema~`.** They were optional, and omitting them was the normal
+  case — each omission had the runtime do the work instead. There is one
+  component shape now, and no shape that specifies less. `gen-views` writes all
+  three, so a component with a view file passes them through its generated
+  wrapper and nothing changes at the call site; a component built by hand
+  supplies them by hand, complete. `SchemaInfo::new` / `FieldInfo::new` default
+  the channels a hand-written descriptor does not use.
+
+- **The state struct needs no derives.** `component()` no longer bounds `S` on
+  `ToJson + FromJson` — the generated codec does the conversion — so the
+  generator stops emitting `derive(ToJson, FromJson)` and a state struct is a
+  plain struct. A keyword field no longer needs
+  `derive(ToJson(fields(type_(rename="type"))))` either: the codec keys by the
+  runtime name.
+
+- **The generated `<C>State` and `<c>_component` are `pub`.** They were
+  package-private, which made a generated component unusable from another
+  package or from a blackbox test — including the executable guides.
+
+- **Handler buckets are keyed by generated enums, not strings.** `compute`,
+  `swap`, `when`, `enrich`, `enrich_scope` and `loop_with` were
+  `Map[String, closure]`; each is now a function from an enum generated out of
+  the names the views use, so a `$name` or an `@when` added to a view makes the
+  author's match non-exhaustive. A bucket the views never use is not a
+  parameter at all. `swap` is keyed by the INPUT enum — it answers an Input
+  dispatch ahead of `update`, not a `$name`.
+
+- **`Component.schema` is no longer an Option**, and `compute_names`,
+  `generated_names` and `has_update` are gone from `Component`.
+
+- **`ObserveMatch::Unknown` is gone** with the `"$unknown"` catch-all it
+  reported: dispatch does one lookup, so a miss is a miss.
+
+### Performance
+
+- **An ahead-of-time wasm bundle is 44.9% smaller.** `View::compile` branched
+  on an `ir : Bool`, so every program that compiled a view named
+  `ANode::parse` — and through it the vendored WHATWG HTML tokenizer — on the
+  branch it did not take. A linker cannot prune a runtime `if`. The flag is
+  the parse step itself now: only `View::new` names the parser, so a program
+  built entirely ahead of time does not link one. `demo/counter_wasm`:
+  438,803 → 241,941 bytes. No call site changed.
+
+### Removed
+
+- **The JSON state bridge and its stash.** `encode_state` / `decode_state`
+  converted state through `S -> Json -> Value` for a component with no
+  generated codec, and `core`'s `with_value_stash` existed solely to smuggle
+  `Obj` and `Fn` across that trip as `{"\u{0}tutuca-ref\u{0}": i}` markers.
+  Both are deleted, along with the process-global mutable and the "strictly
+  synchronous" caveat it carried. It was measured at ~2x slower on encode and
+  ~5x on decode; see `benchmarks/OPTIMIZATIONS.md`.
+
+- **`FieldSpec::of_default`**, which read a field's kind off its seed value —
+  why `FInt` vs `FFloat` depended on whether a double happened to be integral.
+
+- **The reflected component description** (`summary_from_specs`). The inspector
+  reads one source: what the component declares. Field rows show the author's
+  WIT spelling rather than a label rebuilt from a runtime kind, and `update`
+  lists the names it answers instead of the bare fact that it exists.
+
+- **The `"$unknown"` handler sentinel**, a second string lookup on every
+  dispatch miss.
+
 ### Added
+
+- **A WIT `func` in the state block declares a `$`-callable.** A method a
+  PARENT calls on a component — `contains-text: func(q: string) -> bool;`,
+  asked by a list's `@when` of every child regardless of the child's shape —
+  appears in no view of the component itself, so the schema is the only place
+  it can be named. The parser used to reject `func` outright, on the grounds
+  that behaviour lives in the MoonBit `update`; that is right about event
+  handlers and wrong about a value a parent reads.
+
+- **`gen-views` drift-checks its own output**, and `ci` runs it. A stale
+  `*_view_gen.mbt` type-checks and tests green while no longer describing the
+  `.html` beside it, and nothing caught that before.
+
+- **Direct codecs for every schema-backed component**, `record` / `enum` /
+  `variant` / `option` / `tuple` included, and for a state with no carried
+  fields at all. Previously 79 of 93 components had one and the rest fell back
+  to the JSON bridge.
 
 - **A component's state can be declared in the view file, in a subset of WIT,
   and is then generated.** A `<script type="tutuca/state">` block holds one
   `interface` per component and one `record state` in each; `gen-views` emits
-  the struct with its `ToJson`/`FromJson` derives, a `zero()`, a `Field` table
-  whose `kind()` is *declared*, and the `specs~` map. Sets, ordered maps and
+  the struct, a `zero()`, a `Field` table whose `kind()` is *declared*, the
+  state <-> Value codec, and the `specs~` map. Sets, ordered maps and
   child slots — the three kinds a struct could never express, and which had to
   be threaded by hand through `specs~` and `missing_fields(extra~)` — are now
   written in the schema and derived from it.

@@ -14,7 +14,7 @@ you don't want to thread it through every component in between.
 ```moonbit
 priv struct ItemsState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 // producer — exposes one of its fields under a name
 fn producer_comp() -> @component.Component {

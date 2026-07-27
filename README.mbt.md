@@ -26,7 +26,7 @@ and formal `spec.mbt`. From the bottom up:
 | **Templates** | `anode/` | Parses the HTML-ish view syntax into an AST: attributes, directives, `x-` ops, macros, whitespace handling, optimization. |
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |
-| **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain `derive(ToJson, FromJson)` struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
+| **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
 | **Tooling** | `lint/`, `inspector/`, `statedef/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the WIT-subset state schema, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Demos & docs** | `demo/`, `playground/`, `storybook/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
@@ -43,16 +43,25 @@ one.
 ## Views (`views~` + `gen-views`)
 
 `component(...)` takes its views as `views~ : Map[String,
-@anode.View]` — a view is a built `@anode.View`, never a raw string. There are
-two ways to build them: **ahead of time** with `tutuca gen-views` (the
-recommended path, below), or at runtime with `@anode.View::new("main",
-raw_view="…")` for a genuinely dynamic or throwaway view.
+@anode.View]` — a view is a built `@anode.View`, never a raw string. There is
+one component shape, and two ways to arrive at it.
 
-Ahead of time is the default everywhere in this repo. The runtime path is
-reserved for cases that cannot be generated: views that arrive as source at
-run time (the dyncomp guest bundles), views a macro or the component itself
-assembles programmatically, deliberately-broken lint fixtures, the playground's
-editable teaching examples, and test fixtures.
+**Ahead of time**, with `tutuca gen-views`: the view file states the component,
+and the generated module hands `component()` its name, views, styles, schema
+and codec. This is the default and what the rest of this section describes.
+
+**Late-bound**, with `@anode.View::new("main", raw_view="…")`, for a view whose
+SOURCE only exists at run time: a dyncomp guest bundle arriving over the wire,
+a macro body a MoonBit function builds per call, markup assembled from a value
+the program computes. Being late is not being under-described — such a
+component still declares its schema and its codec, because `component()`
+requires both of every caller. There is no shape that specifies less and makes
+the runtime infer the difference.
+
+That requirement is also why `View::new` is the only function in `anode` that
+names the parser: a program built entirely ahead of time never calls it, so it
+does not link an HTML parser it cannot reach. Worth 44% of the counter demo's
+wasm bundle — see `benchmarks/OPTIMIZATIONS.md`.
 
 A component keeps its views in an `.html` file and compiles them ahead of time
 into a companion MoonBit module, so the view's vocabulary stops being strings
@@ -173,9 +182,9 @@ come from. Being typed on `CounterState` rather than on a type variable, the
 wrapper is also what lets `update` be written `(s, msg, _ctx)` with no
 annotation.
 
-A component with no schema — a runtime-parsed view, a shape shared with a
-sibling — has no state type to build the parameters from, so it keeps calling
-`@component.component(views=..., name=..., init=...)` directly.
+A component whose views are built in MoonBit has no `views~` to default and so
+gets no wrapper; it calls `@component.component(...)` directly, passing the
+`encode`, `decode` and `schema` its view file's state block still generates.
 
 There is no serialization format and no decoder: the AST is `pub(all)`, and the
 tree is written with anode's builders — plain constructors with the rarely-set
@@ -202,10 +211,11 @@ handler list the id that is its position, stamps `data-vid` and runs the
 constant-subtree optimization — `RenderOnce` ids are process-global renderer
 memo keys, so they must be minted at load time, not baked in.
 
-A view that calls a macro cannot be compiled ahead of time (macros are
-registered from MoonBit at runtime), so the whole file falls back to the
-source path; `--no-ir` opts out by hand. Across the ported example library,
-every view compiles to a tree except the macro-using ones.
+A macro declared in the view file (`<template id="macro:badge" data-label="'New'">`)
+is expanded when the views are generated, so a view that calls one compiles to
+a tree like any other. A macro REGISTERED from MoonBit cannot be — its body is
+a runtime value — so a file using those keeps the source path; `--no-ir` opts
+out by hand.
 
 Regenerate through the task, not the CLI — `moon fmt` owns the layout of the
 generated pair:

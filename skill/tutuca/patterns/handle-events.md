@@ -3,8 +3,8 @@
 **Problem:** respond to a DOM event and update state.
 
 ```html
-<button @on.click="inc">+</button>      <!-- $ calls a mutate/generated -->
-<button @on.click="dec">-</button>        <!-- bare name = update Input arm -->
+<button @on.click="inc">+</button>      <!-- bare name = update Input arm -->
+<button @on.click="dec">-</button>        <!-- ...or a generated mutator -->
 
 <!-- pass args by name -->
 <input @on.input="setStr value" />
@@ -19,28 +19,29 @@
 ```
 
 Written args arrive in the handler's `args : Array[Value]` in template order.
-The first slot is a handler name (`$name` for `mutate`/`compute`/generated,
-or a bare name dispatched as `Input(name, args)` to `update`); later slots
+The first slot is a handler name — always bare in an event position, and
+dispatched as `Input(name, args)`; `$name` belongs in a VALUE position and is
+a generation error here. Later slots
 are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `event`,
 `key`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `dragInfo`, … `value` resolves
 to the input's value (or the checked state for a checkbox, the metadata
 `Map` for a file input, or the `detail` for a `CustomEvent`).
 
 ```moonbit
-mutate={ // pure: (s, args) => S
-  "inc": (s : CounterState, _args) => { count: s.count + 1 },
-},
-// gets ctx: (s, msg, ctx) => S?; None = no change
-update=(s : CounterState, msg, _ctx) => match msg {
-  Input("dec", _) => Some({ count: s.count - 1 })
-  _ => None
+// gets ctx: (s, msg, ctx) => S?; None = no change.
+// `CounterMsg` is generated from the `@on` names the views raise, so adding
+// one to the view makes this match non-exhaustive until it is answered.
+update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+  Some(Inc) => Some({ count: s.count + 1 })
+  Some(Dec) => Some({ count: s.count - 1 })
+  Some(Unknown(_, _)) | None => None
 },
 ```
 
 Bind events declaratively with `@on.` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor. A handler
 that needs `ctx` (to `send`/`bubble`/`request`) must be an `update` arm —
-`mutate`/`compute` are pure by type.
+`compute` is pure by type.
 
 Pass the most granular arg the handler needs — `value`/`valueAsInt`/`key`, not
 the raw `event` — so tests drive it with plain literals. Why this keeps tests

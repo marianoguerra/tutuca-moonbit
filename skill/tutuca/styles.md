@@ -3,25 +3,32 @@
 Read this file when authoring `style` / `common_style` / `global_style`
 blocks or debugging CSS that silently doesn't apply.
 
-```moonbit
-priv struct NoState {} derive(ToJson, FromJson)
+Styles live in the view file: a `<style>` inside a `<template>` is that view's
+style, one at file level is the component's `common_style`, and one marked
+`data-global` is its `global_style`.
 
-@component.component(
-  views={
-    "main": @anode.View::new("main", raw_view="<p class=\"mine\">x</p>", style=".mine { color: red; }"),
-    "two": @anode.View::new("two", raw_view="<p class=\"mine\">two</p>", style=".mine { color: orange; }"),
-  },
-  name="Styled",
-  init=NoState::{  },
-  // scoped to all views of this component
-  common_style=".shared { color: yellow; }",
-  // injected unscoped
-  global_style=".app-thing { color: green; }",
-)
+```html
+<script type="tutuca/state">
+  interface styled { record state {} }
+</script>
+
+<!-- scoped to all views of this component -->
+<style>.shared { color: yellow; }</style>
+<!-- injected unscoped -->
+<style data-global>.app-thing { color: green; }</style>
+
+<template id="Styled">
+  <style>.mine { color: red; }</style>
+  <p class="mine">x</p>
+</template>
+<template id="Styled:two">
+  <style>.mine { color: orange; }</style>
+  <p class="mine">two</p>
+</template>
 ```
 
-Styles are plain MoonBit strings (use `#|` raw strings for multi-line
-CSS). `Component::compile_style()` produces the compiled text;
+The generated `<c>_common_style` / `<c>_global_style` are plain strings the
+wrapper passes; `Component::compile_style()` produces the compiled text;
 `Components::compile_styles()` the whole registry's — injection is host
 territory (`@glue.install_styles(app, doc)` in the browser hosts, the
 harness's `h.styles()` in tests).

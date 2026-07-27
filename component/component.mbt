@@ -82,12 +82,14 @@ fn new_component(
 
 ///|
 /// Define a typed-state component. `init` is a plain struct with
-/// derive(ToJson, FromJson): its fields become the component's fields (names,
-/// defaults and kinds), compiler-checked inside every handler. Buckets:
+/// PLAIN struct — no derives — whose fields become the component's fields,
+/// compiler-checked inside every handler. `encode`/`decode` convert it to and
+/// from the fields map the render and path layers read, and `schema` states
+/// what it declares; all three are required, and `gen-views` writes them.
+/// Buckets:
 /// - update: ALL effectful dispatches in one pattern match over Dispatch
 ///   (Input/Receive/Bubble/Response), returning the new state (None = no
 ///   change).
-/// - mutate: pure $-callable state changes ($inc in views).
 /// - compute: $-callable value reads ($label in value positions).
 /// - when / enrich / enrich_scope / loop_with: the render-time directive
 ///   buckets, each with its own typed signature (@when filter -> Bool;

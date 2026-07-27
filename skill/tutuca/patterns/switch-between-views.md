@@ -3,19 +3,22 @@
 **Problem:** render the *same* component in a different view (e.g. a read-only
 "main" vs an "edit" form).
 
-```moonbit
-priv struct NoteState {
-  title : String
-} derive(ToJson, FromJson)
+A named view is a `<template id="Comp:name">` in the view file; `main` is the
+one with no suffix.
 
-@component.component(
-  views={
-    "main": @anode.View::new("main", raw_view="<p @text=\".title\"></p>"),
-    "edit": @anode.View::new("edit", raw_view="<input :value=\".title\" @on.input=\"$setTitle value\" />"),
-  },
-  name="Note",
-  init=NoteState::{ title: "" },
-)
+```html
+<script type="tutuca/state">
+  interface note { record state { title: string } }
+</script>
+
+<template id="Note"><p @text=".title"></p></template>
+<template id="Note:edit">
+  <input :value=".title" @on.input="setTitle value">
+</template>
+```
+
+```moonbit nocheck
+note_component() // the generated wrapper passes both views
 ```
 
 ```html

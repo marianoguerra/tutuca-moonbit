@@ -9,11 +9,11 @@ description: Use when authoring or reviewing tutuca components in the MoonBit po
 # Tutuca (MoonBit port)
 
 Tutuca is an immutable-state SPA framework. This skill covers the MoonBit
-port (`marianoguerra/tutuca`): components are built with
-`@component.component(...)` from a plain state struct
-(`derive(ToJson, FromJson)`) over the `@tutuca.Value` value layer, modules
-are `ModuleDef` values, and tests run under `moon test`. Read
-[core.md](./core.md) first for the framework primer.
+port (`marianoguerra/tutuca`): a component is declared in an `.html` view file
+— its state, its templates, its styles — which `tutuca gen-views` compiles
+into a MoonBit module beside it, over the `@tutuca.Value` value layer. What
+you write is the handlers. Modules are `ModuleDef` values, and tests run under
+`moon test`. Read [core.md](./core.md) first for the framework primer.
 
 ## Verifying changes
 

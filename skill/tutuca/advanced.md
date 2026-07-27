@@ -21,7 +21,7 @@ everything else, `core.md` is the right place.
 ```moonbit
 priv struct DndState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 // in the component spec:
 update=(s : DndState, msg, _ctx) => match msg {
@@ -91,12 +91,12 @@ them through every component in between. **`provide`** on the producer;
 ```moonbit
 priv struct ThemeState {
   color : String
-} derive(ToJson, FromJson)
+}
 
 fn theme_comp() -> @component.Component {
   @component.component(
   views={
-    "main": @anode.View::new("main", raw_view="<div><x render=\".child\"></x></div>"),
+    // <div><x render=".child"></x></div> — from the view file
   },
   name="Theme",
   init=ThemeState::{ color: "blue" },
@@ -105,12 +105,12 @@ fn theme_comp() -> @component.Component {
 )
 }
 
-priv struct NoState {} derive(ToJson, FromJson)
+priv struct NoState {}
 
 fn child_comp() -> @component.Component {
   @component.component(
   views={
-    "main": @anode.View::new("main", raw_view="<p :style=\"$'color: {*color}'\">themed</p>"),
+    // <p :style="$'color: {*color}'">themed</p> — from the view file
   },
   name="Child",
   init=NoState::{  },
@@ -156,12 +156,12 @@ like `'gray'`. A `provide` can be a sequence/map item access:
 priv struct RootState {
   items : Map[String, @tutuca.Value]
   selectedKey : String
-} derive(ToJson, FromJson)
+}
 
 fn root_comp() -> @component.Component {
   @component.component(
   views={
-    "main": @anode.View::new("main", raw_view=...),
+    // ... — from the view file
   },
   name="Root",
   // omitted

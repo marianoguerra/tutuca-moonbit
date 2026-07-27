@@ -14,7 +14,7 @@
 ```moonbit
 priv struct ListState {
   items : Array[@tutuca.Value] // or Array[String], Map[String, ...], …
-} derive(ToJson, FromJson)
+}
 ```
 
 `@each` accepts a `.field` or a `*dynamic` (not a `$handler` — a computed

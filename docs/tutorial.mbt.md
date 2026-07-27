@@ -89,14 +89,14 @@ fn counter_module() -> @component.ModuleDef {
 
 Things to notice:
 
-- **The state struct is the fields.** `derive(ToJson, FromJson)` is the whole
-  wiring: field names, defaults (from `init`) and kinds all come from the
-  struct, and every handler body is compiler-checked — `s.cuont` is a compile
-  error, not a silently-Null render. Declare the struct in the view file's
-  `<script type="tutuca/state">` block and it is generated instead, which
-  extends the same check to the VIEWS: `.cuont` there becomes a generation
-  failure rather than a null, and the field kinds are declared rather than
-  guessed from whether the seed value happened to be integral.
+- **The view file declares the state.** `CounterState` is generated from the
+  `<script type="tutuca/state">` block in `tutorial.html`, along with the codec
+  that converts it to the fields map, the schema that says what it declares,
+  and `counter_component` — the wrapper that hands `component()` all three. So
+  the check runs on both sides: `s.cuont` in a handler is a compile error, and
+  `.cuont` in a view is a generation failure naming the near miss, rather than
+  a silently-Null render. Field kinds are declared too, not guessed from
+  whether the seed value happened to be integral.
 - **`update` is one pattern match** over every effectful dispatch:
   `Input(name, args)` for view events, plus `Receive`/`Bubble`/`Response`
   (below). It gets a `ctx` to send messages with; returning `None` means

@@ -28,7 +28,7 @@ shows, and the active tab button is highlighted.
 ```moonbit
 priv struct TabsState {
   currentView : String // $setCurrentView is auto-generated
-} derive(ToJson, FromJson)
+}
 
 // in the component spec:
 init=TabsState::{ currentView: "overview" },

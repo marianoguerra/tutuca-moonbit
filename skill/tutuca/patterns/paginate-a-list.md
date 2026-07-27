@@ -14,7 +14,7 @@ priv struct PagedState {
   items : Array[@tutuca.Value]
   page : Int
   pageSize : Int
-} derive(ToJson, FromJson)
+}
 
 // in the component spec: init=PagedState::{ items: [], page: 0, pageSize: 5 },
 loop_with={

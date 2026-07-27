@@ -40,7 +40,7 @@ copied across unchanged. What changes is the JS *around* the view:
 | `component({name, view, fields, …})` | `@component.component(name~, views~, init~, …)` |
 | `fields: { count: 0 }` | a `derive(ToJson, FromJson)` state struct passed as `init=State::{ count: 0 }` |
 | `fields: { kid: Kid.make({…}) }` | `specs={ "kid": FieldSpec::comp("Kid", args={…}) }` — resolved through the registration scope at `make()` time |
-| `methods: { m() {…} }` | `mutate={ "m": (s, args) => S }` (state change) or `compute={ "m": (s, args) => Value }` (value read) — both **pure** |
+| `methods: { m() {…} }` | `compute=m => match m { M => Some((s, args) => Value) }` — a value read, **pure**, keyed by the generated `<C>Method` enum |
 | `input`/`receive`/`bubble`/`response` | one `update=(s, dispatch, ctx) => S?` match — `None` = no change |
 | `statics: { fromData }` | a plain `fn` — nothing in the framework calls statics, in either language |
 | `@on.click="onAddItem Item"` (a component as an arg) | the handler **captures** the `Component` in its closure; the view just calls `onAddItem` |
@@ -48,9 +48,9 @@ copied across unchanged. What changes is the JS *around* the view:
 | `app.sendAtRoot("init")` | `app.send_at_root("init")` |
 | `async` request handler | `RequestFn((args, respond) => …)` — callback-style, `respond(Ok(v))` / `respond(Err(e))` |
 
-**Handlers that need `ctx` go in `update` (or `swap`), not `mutate`/`compute`.**
+**Handlers that need `ctx` go in `update` (or `swap`), not `compute`.**
 JS appends `ctx` to every dispatched handler, so a `methods.submit(ctx)` can
-send messages. MoonBit keeps `mutate`/`compute` pure — they are also evaluated
+send messages. MoonBit keeps `compute` pure — it is also evaluated
 in value positions like `@text="$label"`, where no event exists — and gives
 `ctx` to `update` and `swap`, which are the effectful paths.
 
