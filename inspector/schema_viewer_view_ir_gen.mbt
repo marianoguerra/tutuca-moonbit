@@ -91,11 +91,21 @@ pub fn schema_viewer_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_viewer_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ToggleLabel] : Array[SchemaViewerMethod]),
+          SchemaViewerMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_viewer_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ToggleShowRaw] : Array[SchemaViewerInput]),
+          SchemaViewerInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

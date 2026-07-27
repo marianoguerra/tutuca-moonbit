@@ -111,26 +111,6 @@ pub fn ItemMsg::from_dispatch(d : @component.Dispatch) -> ItemMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] item_swap(
-  f : (ItemInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetCompleted, SetText] : Array[ItemInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -255,26 +235,6 @@ pub fn ItemsMsg::from_dispatch(d : @component.Dispatch) -> ItemsMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] items_swap(
-  f : (ItemsInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([OnAddItem, RemoveInItemsAt] : Array[ItemsInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

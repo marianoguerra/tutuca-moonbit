@@ -79,7 +79,12 @@ pub fn counter_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => counter_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Dec, Inc] : Array[CounterInput]),
+          CounterInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -170,7 +175,12 @@ pub fn profile_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => profile_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetName, ToggleWaving] : Array[ProfileInput]),
+          ProfileInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -255,7 +265,12 @@ pub fn search_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => search_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ResetDraft, SetDraft, SetSent] : Array[SearchInput]),
+          SearchInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -343,7 +358,12 @@ pub fn toggle_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => toggle_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ToggleOn] : Array[ToggleInput]),
+          ToggleInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -417,7 +437,12 @@ pub fn fruits_component(
     global_style~,
     update?,
     when=match when {
-      Some(f) => fruits_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NotTooLong] : Array[FruitsWhen]),
+          FruitsWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -676,7 +701,12 @@ pub fn chat_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => chat_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetDraft, Submit] : Array[ChatInput]),
+          ChatInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

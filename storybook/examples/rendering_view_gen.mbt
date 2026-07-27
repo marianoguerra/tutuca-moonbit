@@ -129,26 +129,6 @@ pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] push_view_swap(
-  f : (PushViewInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery, ToggleView] : Array[PushViewInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum PushViewMethod {
   GetToggleLabel
@@ -162,23 +142,6 @@ pub fn PushViewMethod::name(self : PushViewMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] push_view_compute(
-  f : (PushViewMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([GetToggleLabel] : Array[PushViewMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum PushViewWhen {
   FilterItem
@@ -189,26 +152,6 @@ pub fn PushViewWhen::name(self : PushViewWhen) -> String {
   match self {
     FilterItem => "filterItem"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] push_view_when(
-  f : (PushViewWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterItem] : Array[PushViewWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -377,26 +320,6 @@ pub fn SeqItemAccessMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] seq_item_access_swap(
-  f : (SeqItemAccessInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SeqItemAccessMethod {
   GetMaxIndex
@@ -407,23 +330,6 @@ pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
   match self {
     GetMaxIndex => "getMaxIndex"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] seq_item_access_compute(
-  f : (SeqItemAccessMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([GetMaxIndex] : Array[SeqItemAccessMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -572,26 +478,6 @@ pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] pagination_swap(
-  f : (PaginationInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Next, Prev] : Array[PaginationInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum PaginationMethod {
   IsFirstPage
@@ -609,23 +495,6 @@ pub fn PaginationMethod::name(self : PaginationMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] pagination_compute(
-  f : (PaginationMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum PaginationLoopWith {
   Paginate
@@ -636,26 +505,6 @@ pub fn PaginationLoopWith::name(self : PaginationLoopWith) -> String {
   match self {
     Paginate => "paginate"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] pagination_loop_with(
-  f : (PaginationLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([Paginate] : Array[PaginationLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

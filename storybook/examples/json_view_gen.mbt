@@ -132,29 +132,6 @@ pub fn JsonSelectorMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_selector_swap(
-  f : (JsonSelectorInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for
-    m in (
-      [SetToArray, SetToBool, SetToNull, SetToNumber, SetToObject, SetToString] :
-      Array[JsonSelectorInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -326,26 +303,6 @@ pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_bool_swap(
-  f : (JsonBoolInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleValue] : Array[JsonBoolInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -455,26 +412,6 @@ pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_string_swap(
-  f : (JsonStringInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetValue] : Array[JsonStringInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -589,26 +526,6 @@ pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_number_swap(
-  f : (JsonNumberInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetRawValue] : Array[JsonNumberInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -745,26 +662,6 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_swap(
-  f : (JsonArrayInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonArrayInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -878,26 +775,6 @@ pub fn JsonObjectKeyValMsg::from_dispatch(
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_key_val_swap(
-  f : (JsonObjectKeyValInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetKey] : Array[JsonObjectKeyValInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1031,26 +908,6 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_swap(
-  f : (JsonObjectInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonObjectInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

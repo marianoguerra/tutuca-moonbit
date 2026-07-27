@@ -282,7 +282,12 @@ pub fn composability_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => composability_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetActiveSection] : Array[ComposabilityInput]),
+          ComposabilityInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

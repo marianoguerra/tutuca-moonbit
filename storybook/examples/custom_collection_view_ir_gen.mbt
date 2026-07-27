@@ -88,7 +88,12 @@ pub fn playlist_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => playlist_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([RemoveSong] : Array[PlaylistInput]),
+          PlaylistInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

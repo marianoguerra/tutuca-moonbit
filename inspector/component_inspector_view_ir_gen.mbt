@@ -270,11 +270,21 @@ pub fn comp_view_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => comp_view_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ArrowText] : Array[CompViewMethod]),
+          CompViewMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => comp_view_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Toggle] : Array[CompViewInput]),
+          CompViewInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -439,15 +449,40 @@ pub fn comp_section_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => comp_section_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[CompSectionMethod]),
+          CompSectionMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => comp_section_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, Toggle] : Array[CompSectionInput]),
+          CompSectionInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => comp_section_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[CompSectionLoopWith]),
+          CompSectionLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -539,7 +574,12 @@ pub fn component_inspector_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => component_inspector_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([IdText] : Array[ComponentInspectorMethod]),
+          ComponentInspectorMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

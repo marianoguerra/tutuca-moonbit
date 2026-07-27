@@ -115,7 +115,12 @@ pub fn emoji_picker_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => emoji_picker_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnEmojiClick, ToggleIsPickerVisible] : Array[EmojiPickerInput]),
+          EmojiPickerInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

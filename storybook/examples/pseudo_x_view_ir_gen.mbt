@@ -270,7 +270,12 @@ pub fn item_select_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => item_select_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetCurrent] : Array[ItemSelectInput]),
+          ItemSelectInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

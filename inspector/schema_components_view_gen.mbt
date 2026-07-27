@@ -177,26 +177,6 @@ pub fn SchemaScalarMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_scalar_swap(
-  f : (SchemaScalarInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaScalarInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaScalarMethod {
   ArrowText
@@ -224,34 +204,6 @@ pub fn SchemaScalarMethod::name(self : SchemaScalarMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_scalar_compute(
-  f : (SchemaScalarMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[SchemaScalarMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SchemaScalarLoopWith {
   GetPageRange
@@ -262,26 +214,6 @@ pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_scalar_loop_with(
-  f : (SchemaScalarLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[SchemaScalarLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -485,26 +417,6 @@ pub fn SchemaObjectMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_object_swap(
-  f : (SchemaObjectInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaObjectInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaObjectMethod {
   ArrowText
@@ -532,34 +444,6 @@ pub fn SchemaObjectMethod::name(self : SchemaObjectMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_object_compute(
-  f : (SchemaObjectMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[SchemaObjectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SchemaObjectLoopWith {
   GetPageRange
@@ -570,26 +454,6 @@ pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_object_loop_with(
-  f : (SchemaObjectLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[SchemaObjectLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -793,26 +657,6 @@ pub fn SchemaArrayMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_array_swap(
-  f : (SchemaArrayInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaArrayInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaArrayMethod {
   ArrowText
@@ -840,34 +684,6 @@ pub fn SchemaArrayMethod::name(self : SchemaArrayMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_array_compute(
-  f : (SchemaArrayMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[SchemaArrayMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SchemaArrayLoopWith {
   GetPageRange
@@ -878,26 +694,6 @@ pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_array_loop_with(
-  f : (SchemaArrayLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[SchemaArrayLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1099,26 +895,6 @@ pub fn SchemaEnumMsg::from_dispatch(d : @component.Dispatch) -> SchemaEnumMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_enum_swap(
-  f : (SchemaEnumInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaEnumInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaEnumMethod {
   ArrowText
@@ -1146,34 +922,6 @@ pub fn SchemaEnumMethod::name(self : SchemaEnumMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_enum_compute(
-  f : (SchemaEnumMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[SchemaEnumMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SchemaEnumLoopWith {
   GetPageRange
@@ -1184,26 +932,6 @@ pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_enum_loop_with(
-  f : (SchemaEnumLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[SchemaEnumLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1407,27 +1135,6 @@ pub fn SchemaCombinatorMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_combinator_swap(
-  f : (SchemaCombinatorInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for
-    m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaCombinatorInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaCombinatorMethod {
   ArrowText
@@ -1455,34 +1162,6 @@ pub fn SchemaCombinatorMethod::name(self : SchemaCombinatorMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_combinator_compute(
-  f : (SchemaCombinatorMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[SchemaCombinatorMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SchemaCombinatorLoopWith {
   GetPageRange
@@ -1495,26 +1174,6 @@ pub fn SchemaCombinatorLoopWith::name(
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_combinator_loop_with(
-  f : (SchemaCombinatorLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[SchemaCombinatorLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1839,23 +1498,6 @@ pub fn SchemaBooleanMethod::name(self : SchemaBooleanMethod) -> String {
     CssClass => "cssClass"
     Text => "text"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_boolean_compute(
-  f : (SchemaBooleanMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([CssClass, Text] : Array[SchemaBooleanMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

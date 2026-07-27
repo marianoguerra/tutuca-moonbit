@@ -99,7 +99,12 @@ pub fn selector_entry_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => selector_entry_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetLabel, SetValue] : Array[SelectorEntryInput]),
+          SelectorEntryInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -183,7 +188,12 @@ pub fn selector_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => selector_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetSelectedValue] : Array[SelectorInput]),
+          SelectorInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -289,7 +299,12 @@ pub fn entry_editor_and_selector_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => entry_editor_and_selector_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnAddItem, RemoveInItemsAt] : Array[EntryEditorAndSelectorInput]),
+          EntryEditorAndSelectorInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -369,7 +384,12 @@ pub fn sheet_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => sheet_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetTitle] : Array[SheetInput]),
+          SheetInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -566,7 +586,12 @@ pub fn workspace_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => workspace_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SheetTitle] : Array[WorkspaceMethod]),
+          WorkspaceMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

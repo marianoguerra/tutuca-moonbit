@@ -129,23 +129,6 @@ pub fn JsonBooleanMethod::name(self : JsonBooleanMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_boolean_compute(
-  f : (JsonBooleanMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([CssClass, Text] : Array[JsonBooleanMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -224,23 +207,6 @@ pub fn JsonNumberMethod::name(self : JsonNumberMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_number_compute(
-  f : (JsonNumberMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Text] : Array[JsonNumberMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -316,23 +282,6 @@ pub fn JsonStringMethod::name(self : JsonStringMethod) -> String {
   match self {
     Text => "text"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_string_compute(
-  f : (JsonStringMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Text] : Array[JsonStringMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -611,26 +560,6 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_swap(
-  f : (JsonArrayInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonArrayInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum JsonArrayMethod {
   ArrowText
@@ -658,34 +587,6 @@ pub fn JsonArrayMethod::name(self : JsonArrayMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_compute(
-  f : (JsonArrayMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[JsonArrayMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum JsonArrayLoopWith {
   GetPageRange
@@ -696,26 +597,6 @@ pub fn JsonArrayLoopWith::name(self : JsonArrayLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_array_loop_with(
-  f : (JsonArrayLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[JsonArrayLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -881,26 +762,6 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_swap(
-  f : (JsonObjectInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonObjectInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum JsonObjectMethod {
   ArrowText
@@ -928,34 +789,6 @@ pub fn JsonObjectMethod::name(self : JsonObjectMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_compute(
-  f : (JsonObjectMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for
-    m in (
-      [
-        ArrowText,
-        CannotNextPage,
-        CannotPrevPage,
-        CountText,
-        IsItemsEmpty,
-        PageIndicatorText,
-        ShowPagination,
-        TypeText,
-      ] : Array[JsonObjectMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum JsonObjectLoopWith {
   GetPageRange
@@ -966,26 +799,6 @@ pub fn JsonObjectLoopWith::name(self : JsonObjectLoopWith) -> String {
   match self {
     GetPageRange => "getPageRange"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] json_object_loop_with(
-  f : (JsonObjectLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetPageRange] : Array[JsonObjectLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

@@ -102,7 +102,12 @@ pub fn nested_state_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => nested_state_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([BumpPriority, ToggleLabel] : Array[NestedStateInput]),
+          NestedStateInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

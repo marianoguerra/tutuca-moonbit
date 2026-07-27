@@ -105,26 +105,6 @@ pub fn RenderWithScopeMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] render_with_scope_swap(
-  f : (RenderWithScopeInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetText] : Array[RenderWithScopeInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named with no `@each` around it.
 pub(all) enum RenderWithScopeEnrichScope {
   EnrichScope
@@ -137,23 +117,6 @@ pub fn RenderWithScopeEnrichScope::name(
   match self {
     EnrichScope => "enrichScope"
   }
-}
-
-///|
-/// Build `enrich_scope~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] render_with_scope_enrich_scope(
-  f : (RenderWithScopeEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
-) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
-  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
-  for m in ([EnrichScope] : Array[RenderWithScopeEnrichScope]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -288,26 +251,6 @@ pub fn ListFilterEnrichMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_swap(
-  f : (ListFilterEnrichInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum ListFilterEnrichWhen {
   FilterItem
@@ -321,31 +264,6 @@ pub fn ListFilterEnrichWhen::name(self : ListFilterEnrichWhen) -> String {
 }
 
 ///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_when(
-  f : (ListFilterEnrichWhen) -> ((
-    S,
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterItem] : Array[ListFilterEnrichWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
 pub(all) enum ListFilterEnrichEnrich {
   EnrichItem
@@ -356,35 +274,6 @@ pub fn ListFilterEnrichEnrich::name(self : ListFilterEnrichEnrich) -> String {
   match self {
     EnrichItem => "enrichItem"
   }
-}
-
-///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_enrich(
-  f : (ListFilterEnrichEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([EnrichItem] : Array[ListFilterEnrichEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -526,26 +415,6 @@ pub fn ListFilterEnrichWithMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_swap(
-  f : (ListFilterEnrichWithInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum ListFilterEnrichWithWhen {
   FilterItem
@@ -558,31 +427,6 @@ pub fn ListFilterEnrichWithWhen::name(
   match self {
     FilterItem => "filterItem"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_when(
-  f : (ListFilterEnrichWithWhen) -> ((
-    S,
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterItem] : Array[ListFilterEnrichWithWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -601,35 +445,6 @@ pub fn ListFilterEnrichWithEnrich::name(
 }
 
 ///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_enrich(
-  f : (ListFilterEnrichWithEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([EnrichItem] : Array[ListFilterEnrichWithEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum ListFilterEnrichWithLoopWith {
   GetIterData
@@ -642,26 +457,6 @@ pub fn ListFilterEnrichWithLoopWith::name(
   match self {
     GetIterData => "getIterData"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_filter_enrich_with_loop_with(
-  f : (ListFilterEnrichWithLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([GetIterData] : Array[ListFilterEnrichWithLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

@@ -121,26 +121,6 @@ pub fn SchemaViewerMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_viewer_swap(
-  f : (SchemaViewerInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleShowRaw] : Array[SchemaViewerInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SchemaViewerMethod {
   ToggleLabel
@@ -151,23 +131,6 @@ pub fn SchemaViewerMethod::name(self : SchemaViewerMethod) -> String {
   match self {
     ToggleLabel => "toggleLabel"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_viewer_compute(
-  f : (SchemaViewerMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([ToggleLabel] : Array[SchemaViewerMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

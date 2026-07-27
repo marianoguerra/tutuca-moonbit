@@ -103,11 +103,21 @@ pub fn traffic_light_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => traffic_light_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Light] : Array[TrafficLightMethod]),
+          TrafficLightMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => traffic_light_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextLight] : Array[TrafficLightInput]),
+          TrafficLightInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -277,7 +287,12 @@ pub fn tabbed_u_i_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => tabbed_u_i_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetTab] : Array[TabbedUIInput]),
+          TabbedUIInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -377,11 +392,21 @@ pub fn list_and_filter_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => list_and_filter_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ResetQuery, SetQuery] : Array[ListAndFilterInput]),
+          ListAndFilterInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => list_and_filter_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[ListAndFilterWhen]),
+          ListAndFilterWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

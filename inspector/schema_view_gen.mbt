@@ -149,23 +149,6 @@ pub fn SchemaBranchMethod::name(self : SchemaBranchMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] schema_branch_compute(
-  f : (SchemaBranchMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([LabelCssClass] : Array[SchemaBranchMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no

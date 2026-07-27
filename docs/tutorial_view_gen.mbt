@@ -110,26 +110,6 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] counter_swap(
-  f : (CounterInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Dec, Inc] : Array[CounterInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -247,26 +227,6 @@ pub fn ProfileMsg::from_dispatch(d : @component.Dispatch) -> ProfileMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] profile_swap(
-  f : (ProfileInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetName, ToggleWaving] : Array[ProfileInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -399,26 +359,6 @@ pub fn SearchMsg::from_dispatch(d : @component.Dispatch) -> SearchMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] search_swap(
-  f : (SearchInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetDraft, SetDraft, SetSent] : Array[SearchInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -536,26 +476,6 @@ pub fn ToggleMsg::from_dispatch(d : @component.Dispatch) -> ToggleMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] toggle_swap(
-  f : (ToggleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ToggleOn] : Array[ToggleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -640,26 +560,6 @@ pub fn FruitsWhen::name(self : FruitsWhen) -> String {
   match self {
     NotTooLong => "notTooLong"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] fruits_when(
-  f : (FruitsWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([NotTooLong] : Array[FruitsWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -1027,26 +927,6 @@ pub fn ChatMsg::from_dispatch(d : @component.Dispatch) -> ChatMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] chat_swap(
-  f : (ChatInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetDraft, Submit] : Array[ChatInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

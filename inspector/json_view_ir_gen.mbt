@@ -138,7 +138,12 @@ pub fn json_boolean_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => json_boolean_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([CssClass, Text] : Array[JsonBooleanMethod]),
+          JsonBooleanMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -202,7 +207,12 @@ pub fn json_number_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => json_number_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Text] : Array[JsonNumberMethod]),
+          JsonNumberMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -267,7 +277,12 @@ pub fn json_string_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => json_string_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Text] : Array[JsonStringMethod]),
+          JsonStringMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -545,15 +560,40 @@ pub fn json_array_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => json_array_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[JsonArrayMethod]),
+          JsonArrayMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => json_array_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonArrayInput]),
+          JsonArrayInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => json_array_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[JsonArrayLoopWith]),
+          JsonArrayLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -712,15 +752,40 @@ pub fn json_object_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => json_object_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[JsonObjectMethod]),
+          JsonObjectMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => json_object_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[JsonObjectInput]),
+          JsonObjectInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => json_object_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[JsonObjectLoopWith]),
+          JsonObjectLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

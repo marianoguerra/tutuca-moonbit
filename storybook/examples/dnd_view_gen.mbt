@@ -126,26 +126,6 @@ pub fn DnDExampleMsg::from_dispatch(d : @component.Dispatch) -> DnDExampleMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dn_d_example_swap(
-  f : (DnDExampleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([OnDropOnItem, ResetQuery, SetQuery] : Array[DnDExampleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum DnDExampleWhen {
   FilterItem
@@ -156,26 +136,6 @@ pub fn DnDExampleWhen::name(self : DnDExampleWhen) -> String {
   match self {
     FilterItem => "filterItem"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] dn_d_example_when(
-  f : (DnDExampleWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterItem] : Array[DnDExampleWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

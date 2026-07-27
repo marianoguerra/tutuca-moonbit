@@ -97,7 +97,12 @@ pub fn item_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => item_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetCompleted, SetText] : Array[ItemInput]),
+          ItemInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -195,7 +200,12 @@ pub fn items_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => items_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnAddItem, RemoveInItemsAt] : Array[ItemsInput]),
+          ItemsInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

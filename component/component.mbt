@@ -31,6 +31,21 @@ fn cap_first(s : String) -> String {
 }
 
 ///|
+pub fn[E, H] build_bucket(
+  all : Array[E],
+  name : (E) -> String,
+  f : (E) -> H?,
+) -> Map[String, H] {
+  let out : Map[String, H] = Map([])
+  for m in all {
+    if f(m) is Some(h) {
+      out[name(m)] = h
+    }
+  }
+  out
+}
+
+///|
 priv struct EmptyScope {}
 
 ///|

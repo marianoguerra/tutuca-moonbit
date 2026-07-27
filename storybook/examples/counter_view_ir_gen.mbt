@@ -93,7 +93,12 @@ pub fn counter_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => counter_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Dec, Inc] : Array[CounterInput]),
+          CounterInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

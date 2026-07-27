@@ -137,7 +137,20 @@ pub fn json_selector_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_selector_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              SetToArray,
+              SetToBool,
+              SetToNull,
+              SetToNumber,
+              SetToObject,
+              SetToString,
+            ] : Array[JsonSelectorInput]),
+          JsonSelectorInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -276,7 +289,12 @@ pub fn json_bool_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_bool_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ToggleValue] : Array[JsonBoolInput]),
+          JsonBoolInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -352,7 +370,12 @@ pub fn json_string_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_string_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetValue] : Array[JsonStringInput]),
+          JsonStringInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -430,7 +453,12 @@ pub fn json_number_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_number_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetRawValue] : Array[JsonNumberInput]),
+          JsonNumberInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -554,7 +582,12 @@ pub fn json_array_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_array_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonArrayInput]),
+          JsonArrayInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -644,7 +677,12 @@ pub fn json_object_key_val_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_object_key_val_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetKey] : Array[JsonObjectKeyValInput]),
+          JsonObjectKeyValInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -770,7 +808,12 @@ pub fn json_object_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => json_object_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([AddItem, OnDropOnItem, RemoveInItemsAt] : Array[JsonObjectInput]),
+          JsonObjectInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

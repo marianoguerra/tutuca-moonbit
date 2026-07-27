@@ -222,15 +222,40 @@ pub fn schema_scalar_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_scalar_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[SchemaScalarMethod]),
+          SchemaScalarMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_scalar_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaScalarInput]),
+          SchemaScalarInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => schema_scalar_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[SchemaScalarLoopWith]),
+          SchemaScalarLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -444,15 +469,40 @@ pub fn schema_object_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_object_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[SchemaObjectMethod]),
+          SchemaObjectMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_object_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaObjectInput]),
+          SchemaObjectInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => schema_object_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[SchemaObjectLoopWith]),
+          SchemaObjectLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -666,15 +716,40 @@ pub fn schema_array_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_array_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[SchemaArrayMethod]),
+          SchemaArrayMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_array_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaArrayInput]),
+          SchemaArrayInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => schema_array_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[SchemaArrayLoopWith]),
+          SchemaArrayLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -883,15 +958,40 @@ pub fn schema_enum_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_enum_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[SchemaEnumMethod]),
+          SchemaEnumMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_enum_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaEnumInput]),
+          SchemaEnumInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => schema_enum_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[SchemaEnumLoopWith]),
+          SchemaEnumLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -1107,15 +1207,40 @@ pub fn schema_combinator_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_combinator_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[SchemaCombinatorMethod]),
+          SchemaCombinatorMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => schema_combinator_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[SchemaCombinatorInput]),
+          SchemaCombinatorInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => schema_combinator_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[SchemaCombinatorLoopWith]),
+          SchemaCombinatorLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -1517,7 +1642,12 @@ pub fn schema_boolean_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_boolean_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([CssClass, Text] : Array[SchemaBooleanMethod]),
+          SchemaBooleanMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

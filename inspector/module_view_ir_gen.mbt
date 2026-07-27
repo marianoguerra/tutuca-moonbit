@@ -96,15 +96,30 @@ pub fn rich_sample_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => rich_sample_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Double, Label] : Array[RichSampleMethod]),
+          RichSampleMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => rich_sample_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Inc, Reset] : Array[RichSampleInput]),
+          RichSampleInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => rich_sample_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Rows] : Array[RichSampleLoopWith]),
+          RichSampleLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -167,11 +182,21 @@ pub fn sample_card_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => sample_card_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Label] : Array[SampleCardMethod]),
+          SampleCardMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => sample_card_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Bump] : Array[SampleCardInput]),
+          SampleCardInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

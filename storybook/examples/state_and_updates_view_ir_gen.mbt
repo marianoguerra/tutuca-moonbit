@@ -139,7 +139,12 @@ pub fn attribute_binding_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => attribute_binding_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetBool, SetRawNumber, SetStr] : Array[AttributeBindingInput]),
+          AttributeBindingInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -233,7 +238,12 @@ pub fn conditional_attributes_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => conditional_attributes_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ToggleIsActive] : Array[ConditionalAttributesInput]),
+          ConditionalAttributesInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -333,7 +343,12 @@ pub fn event_modifiers_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => event_modifiers_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnInput, ResetQuery, SetLastSentSearch] : Array[EventModifiersInput]),
+          EventModifiersInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -442,11 +457,21 @@ pub fn show_hide_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => show_hide_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Label] : Array[ShowHideMethod]),
+          ShowHideMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => show_hide_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([IncCount, ToggleIsOpen] : Array[ShowHideInput]),
+          ShowHideInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

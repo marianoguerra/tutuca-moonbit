@@ -287,26 +287,6 @@ pub fn RichSampleMsg::from_dispatch(d : @component.Dispatch) -> RichSampleMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] rich_sample_swap(
-  f : (RichSampleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Inc, Reset] : Array[RichSampleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum RichSampleMethod {
   Double
@@ -322,23 +302,6 @@ pub fn RichSampleMethod::name(self : RichSampleMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] rich_sample_compute(
-  f : (RichSampleMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Double, Label] : Array[RichSampleMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum RichSampleLoopWith {
   Rows
@@ -349,26 +312,6 @@ pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
   match self {
     Rows => "rows"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] rich_sample_loop_with(
-  f : (RichSampleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([Rows] : Array[RichSampleLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -516,26 +459,6 @@ pub fn SampleCardMsg::from_dispatch(d : @component.Dispatch) -> SampleCardMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] sample_card_swap(
-  f : (SampleCardInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Bump] : Array[SampleCardInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum SampleCardMethod {
   Label
@@ -546,23 +469,6 @@ pub fn SampleCardMethod::name(self : SampleCardMethod) -> String {
   match self {
     Label => "label"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] sample_card_compute(
-  f : (SampleCardMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Label] : Array[SampleCardMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

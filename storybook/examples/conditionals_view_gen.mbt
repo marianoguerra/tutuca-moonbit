@@ -106,26 +106,6 @@ pub fn TrafficLightMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] traffic_light_swap(
-  f : (TrafficLightInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([NextLight] : Array[TrafficLightInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum TrafficLightMethod {
   Light
@@ -136,23 +116,6 @@ pub fn TrafficLightMethod::name(self : TrafficLightMethod) -> String {
   match self {
     Light => "light"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] traffic_light_compute(
-  f : (TrafficLightMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Light] : Array[TrafficLightMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -266,26 +229,6 @@ pub fn TabbedUIMsg::from_dispatch(d : @component.Dispatch) -> TabbedUIMsg? {
       _ => Unknown(name, args)
     },
   )
-}
-
-///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] tabbed_u_i_swap(
-  f : (TabbedUIInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetTab] : Array[TabbedUIInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -421,26 +364,6 @@ pub fn ListAndFilterMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_and_filter_swap(
-  f : (ListAndFilterInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([ResetQuery, SetQuery] : Array[ListAndFilterInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum ListAndFilterWhen {
   FilterItem
@@ -451,26 +374,6 @@ pub fn ListAndFilterWhen::name(self : ListAndFilterWhen) -> String {
   match self {
     FilterItem => "filterItem"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] list_and_filter_when(
-  f : (ListAndFilterWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterItem] : Array[ListAndFilterWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

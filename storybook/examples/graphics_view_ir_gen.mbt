@@ -128,11 +128,21 @@ pub fn swatch_picker_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => swatch_picker_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetColor] : Array[SwatchPickerInput]),
+          SwatchPickerInput::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => swatch_picker_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Swatch] : Array[SwatchPickerEnrich]),
+          SwatchPickerEnrich::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -319,11 +329,21 @@ pub fn quadratic_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => quadratic_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Classify, Discriminant] : Array[QuadraticMethod]),
+          QuadraticMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => quadratic_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetA, SetB, SetC] : Array[QuadraticInput]),
+          QuadraticInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

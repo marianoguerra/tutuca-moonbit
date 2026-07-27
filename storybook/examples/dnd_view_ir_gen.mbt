@@ -127,11 +127,21 @@ pub fn dn_d_example_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => dn_d_example_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnDropOnItem, ResetQuery, SetQuery] : Array[DnDExampleInput]),
+          DnDExampleInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => dn_d_example_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[DnDExampleWhen]),
+          DnDExampleWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

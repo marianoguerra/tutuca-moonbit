@@ -143,39 +143,6 @@ fn emit_msg_arm(out : StringBuilder, sig : InputSig, variant : String) -> Unit {
 }
 
 ///|
-/// One `$`-callable bucket builder: the user writes an exhaustive match over
-/// the method enum, so a `$name` added to a view breaks the build until it is
-/// answered.
-fn emit_bucket(
-  out : StringBuilder,
-  type_name : String,
-  fn_name : String,
-  handler_type : String,
-  doc : String,
-  variants : Array[(String, String)],
-) -> Unit {
-  let all = variants.map(p => p.1).join(", ")
-  out.write_string(
-    "///|\n" +
-    "/// \{doc}\n" +
-    "/// Return None for a name another bucket serves, or one of the mutators\n" +
-    "/// generated from the state's fields.\n" +
-    "pub fn[S] \{fn_name}(\n" +
-    "  f : (\{type_name}) -> (\{handler_type})?,\n" +
-    ") -> Map[String, \{handler_type}] {\n" +
-    "  let out : Map[String, \{handler_type}] = Map([])\n" +
-    "  for m in ([\{all}] : Array[\{type_name}]) {\n" +
-    "    match f(m) {\n" +
-    "      Some(h) => out[m.name()] = h\n" +
-    "      None => ()\n" +
-    "    }\n" +
-    "  }\n" +
-    "  out\n" +
-    "}\n\n",
-  )
-}
-
-///|
 /// Every `$`-callable this component answers: the ones its views call, and the
 /// ones its state block declares as `func`. Sorted and de-duplicated, so a
 /// method that is both called and declared is one enum case.
@@ -206,34 +173,35 @@ fn declared_methods(
 }
 
 ///|
-/// One render-time directive bucket: its name enum and its builder.
+/// One render-time directive bucket: the enum naming its handlers.
 ///
 /// Nothing is emitted when the views name no handler for it, on the same rule
 /// the `Method` enum follows — an empty enum is not a MoonBit type, and a
 /// bucket with no names has nothing for an author to answer.
+///
+/// The enum is all that is emitted. Turning the author's match over it into
+/// the `Map[String, H]` that `component()` takes is `@component.build_bucket`,
+/// which the generated wrapper calls with the case list — one generic function
+/// instead of the identical 14-line loop this used to write out per component
+/// per bucket, 143 times across the corpus.
 fn emit_alter_bucket(
   out : StringBuilder,
   t : String,
-  v : String,
   names : Array[String],
   suffix : String,
-  bucket : String,
   doc : String,
-  handler_type : String,
   derives : String,
 ) -> Unit raise GenError {
   if names.is_empty() {
     return
   }
-  let vs = variants_for(names)
-  emit_name_enum(out, doc, "\{t}\{suffix}", "name", vs, derives)
-  emit_bucket(
+  emit_name_enum(
     out,
+    doc,
     "\{t}\{suffix}",
-    "\{v}_\{bucket}",
-    handler_type,
-    "Build `\{bucket}~` from an exhaustive match over the names the views use.",
-    vs,
+    "name",
+    variants_for(names),
+    derives,
   )
 }
 
@@ -338,17 +306,6 @@ fn emit_component(
       emit_msg_arm(out, sig, input_variants[i].1)
     }
     out.write_string("      _ => Unknown(name, args)\n    },\n  )\n}\n\n")
-    // `swap` is keyed by the INPUT names, not by `$name`: it answers an Input
-    // dispatch ahead of `update`, and is what lets a handler replace this node
-    // with another component's instance.
-    emit_bucket(
-      out,
-      "\{t}Input",
-      "\{v}_swap",
-      "(S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
-      "Build `swap~` from an exhaustive match over the `@on` names the views raise.",
-      input_variants,
-    )
   }
 
   // -- $-callables ---------------------------------------------------------
@@ -370,14 +327,6 @@ fn emit_component(
     // No `<v>_mutate`: the bucket is gone. A `$name` only ever appears in a
     // value position now, where `compute` and `swap` are what answer it —
     // an event handler is a bare name and belongs to `update`.
-    emit_bucket(
-      out,
-      "\{t}Method",
-      "\{v}_compute",
-      "(S, Array[@tutuca.Value]) -> @tutuca.Value",
-      "Build `compute~` from an exhaustive match over the names the views call.",
-      method_variants,
-    )
   }
 
   // -- the render-time directives ------------------------------------------
@@ -386,45 +335,33 @@ fn emit_component(
   emit_alter_bucket(
     out,
     t,
-    v,
     surface.whens,
     "When",
-    "when",
     "Every `@when` handler the views name.",
-    "(S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
     derives,
   )
   emit_alter_bucket(
     out,
     t,
-    v,
     surface.enriches,
     "Enrich",
-    "enrich",
     "Every `@enrich-with` handler named INSIDE an `@each`.",
-    "(S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
     derives,
   )
   emit_alter_bucket(
     out,
     t,
-    v,
     surface.enrich_scopes,
     "EnrichScope",
-    "enrich_scope",
     "Every `@enrich-with` handler named with no `@each` around it.",
-    "(S) -> Map[String, @tutuca.Value]",
     derives,
   )
   emit_alter_bucket(
     out,
     t,
-    v,
     surface.loop_withs,
     "LoopWith",
-    "loop_with",
     "Every `@loop-with` handler the views name.",
-    "(S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith",
     derives,
   )
 

@@ -160,11 +160,23 @@ pub fn request_example_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => request_example_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [LoadAnotherWay, ResetQuery, SetQuery, ToggleView] :
+            Array[RequestExampleInput]),
+          RequestExampleInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => request_example_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[RequestExampleWhen]),
+          RequestExampleWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

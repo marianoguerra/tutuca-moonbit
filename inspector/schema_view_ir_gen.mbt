@@ -184,7 +184,12 @@ pub fn schema_branch_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => schema_branch_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([LabelCssClass] : Array[SchemaBranchMethod]),
+          SchemaBranchMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

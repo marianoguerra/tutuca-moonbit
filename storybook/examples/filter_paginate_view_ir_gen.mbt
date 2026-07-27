@@ -124,7 +124,12 @@ pub fn person_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => person_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetActive, SetEmail, SetName] : Array[PersonInput]),
+          PersonInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -367,19 +372,39 @@ pub fn naive_people_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => naive_people_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Next, Prev, RemoveInItemsAt, Search] : Array[NaivePeopleInput]),
+          NaivePeopleInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => naive_people_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnlyMatches] : Array[NaivePeopleWhen]),
+          NaivePeopleWhen::name,
+          f,
+        )
       None => Map([])
     },
     enrich_scope=match enrich_scope {
-      Some(f) => naive_people_enrich_scope(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([PagerInfo] : Array[NaivePeopleEnrichScope]),
+          NaivePeopleEnrichScope::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => naive_people_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([TablePage] : Array[NaivePeopleLoopWith]),
+          NaivePeopleLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

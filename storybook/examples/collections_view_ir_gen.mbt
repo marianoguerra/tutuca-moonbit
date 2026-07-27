@@ -113,11 +113,21 @@ pub fn render_with_scope_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => render_with_scope_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetText] : Array[RenderWithScopeInput]),
+          RenderWithScopeInput::name,
+          f,
+        )
       None => Map([])
     },
     enrich_scope=match enrich_scope {
-      Some(f) => render_with_scope_enrich_scope(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([EnrichScope] : Array[RenderWithScopeEnrichScope]),
+          RenderWithScopeEnrichScope::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -228,15 +238,30 @@ pub fn list_filter_enrich_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => list_filter_enrich_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ResetQuery, SetQuery] : Array[ListFilterEnrichInput]),
+          ListFilterEnrichInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => list_filter_enrich_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[ListFilterEnrichWhen]),
+          ListFilterEnrichWhen::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => list_filter_enrich_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([EnrichItem] : Array[ListFilterEnrichEnrich]),
+          ListFilterEnrichEnrich::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -355,19 +380,39 @@ pub fn list_filter_enrich_with_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => list_filter_enrich_with_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ResetQuery, SetQuery] : Array[ListFilterEnrichWithInput]),
+          ListFilterEnrichWithInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => list_filter_enrich_with_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[ListFilterEnrichWithWhen]),
+          ListFilterEnrichWithWhen::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => list_filter_enrich_with_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([EnrichItem] : Array[ListFilterEnrichWithEnrich]),
+          ListFilterEnrichWithEnrich::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => list_filter_enrich_with_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetIterData] : Array[ListFilterEnrichWithLoopWith]),
+          ListFilterEnrichWithLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

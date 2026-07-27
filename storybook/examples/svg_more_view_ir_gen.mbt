@@ -168,15 +168,30 @@ pub fn bar_chart_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => bar_chart_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([AddBar, Randomize, RemoveBar] : Array[BarChartInput]),
+          BarChartInput::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => bar_chart_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Bar] : Array[BarChartEnrich]),
+          BarChartEnrich::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => bar_chart_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Layout] : Array[BarChartLoopWith]),
+          BarChartLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

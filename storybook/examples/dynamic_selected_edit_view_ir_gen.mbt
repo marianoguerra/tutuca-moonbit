@@ -107,7 +107,12 @@ pub fn dse_root_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => dse_root_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SelectItem] : Array[DseRootInput]),
+          DseRootInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -276,7 +281,12 @@ pub fn dse_entry_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => dse_entry_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetName] : Array[DseEntryInput]),
+          DseEntryInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

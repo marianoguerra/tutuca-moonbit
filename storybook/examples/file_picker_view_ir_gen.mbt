@@ -128,11 +128,21 @@ pub fn file_picker_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => file_picker_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([LastModifiedLabel, SizeLabel, TypeLabel] : Array[FilePickerMethod]),
+          FilePickerMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => file_picker_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnPickFile] : Array[FilePickerInput]),
+          FilePickerInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

@@ -178,26 +178,6 @@ pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] bar_chart_swap(
-  f : (BarChartInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([AddBar, Randomize, RemoveBar] : Array[BarChartInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
 pub(all) enum BarChartEnrich {
   Bar
@@ -211,35 +191,6 @@ pub fn BarChartEnrich::name(self : BarChartEnrich) -> String {
 }
 
 ///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] bar_chart_enrich(
-  f : (BarChartEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([Bar] : Array[BarChartEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum BarChartLoopWith {
   Layout
@@ -250,26 +201,6 @@ pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {
   match self {
     Layout => "layout"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] bar_chart_loop_with(
-  f : (BarChartLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([Layout] : Array[BarChartLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

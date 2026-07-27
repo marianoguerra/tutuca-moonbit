@@ -234,11 +234,21 @@ pub fn ps_entry_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => ps_entry_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([IsSpanish, LangFlag, YearDisplay] : Array[PsEntryMethod]),
+          PsEntryMethod::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => ps_entry_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([EnrichCategoryBadge] : Array[PsEntryEnrich]),
+          PsEntryEnrich::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -518,19 +528,47 @@ pub fn root_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => root_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([HasActiveFilters] : Array[RootMethod]),
+          RootMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => root_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ClearFilters,
+              OnCategoryToggle,
+              OnRoleToggle,
+              OnToggleFeaturedFirst,
+              OnToggleSortAsc,
+              OnToggleSortByEnd,
+            ] : Array[RootInput]),
+          RootInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => root_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterEntry] : Array[RootWhen]),
+          RootWhen::name,
+          f,
+        )
       None => Map([])
     },
     enrich=match enrich {
-      Some(f) => root_enrich(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([EnrichCategoryBindings, EnrichRoleBindings] : Array[RootEnrich]),
+          RootEnrich::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

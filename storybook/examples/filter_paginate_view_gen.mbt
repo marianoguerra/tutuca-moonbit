@@ -119,26 +119,6 @@ pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] person_swap(
-  f : (PersonInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetActive, SetEmail, SetName] : Array[PersonInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no
@@ -386,26 +366,6 @@ pub fn NaivePeopleMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] naive_people_swap(
-  f : (NaivePeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[NaivePeopleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum NaivePeopleWhen {
   OnlyMatches
@@ -416,26 +376,6 @@ pub fn NaivePeopleWhen::name(self : NaivePeopleWhen) -> String {
   match self {
     OnlyMatches => "onlyMatches"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] naive_people_when(
-  f : (NaivePeopleWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([OnlyMatches] : Array[NaivePeopleWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -452,23 +392,6 @@ pub fn NaivePeopleEnrichScope::name(self : NaivePeopleEnrichScope) -> String {
 }
 
 ///|
-/// Build `enrich_scope~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] naive_people_enrich_scope(
-  f : (NaivePeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
-) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
-  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
-  for m in ([PagerInfo] : Array[NaivePeopleEnrichScope]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum NaivePeopleLoopWith {
   TablePage
@@ -479,26 +402,6 @@ pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
   match self {
     TablePage => "tablePage"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] naive_people_loop_with(
-  f : (NaivePeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([TablePage] : Array[NaivePeopleLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -599,26 +502,6 @@ pub fn SharedPeopleMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] shared_people_swap(
-  f : (SharedPeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[SharedPeopleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@when` handler the views name.
 pub(all) enum SharedPeopleWhen {
   OnlyMatches
@@ -629,26 +512,6 @@ pub fn SharedPeopleWhen::name(self : SharedPeopleWhen) -> String {
   match self {
     OnlyMatches => "onlyMatches"
   }
-}
-
-///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] shared_people_when(
-  f : (SharedPeopleWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([OnlyMatches] : Array[SharedPeopleWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -665,23 +528,6 @@ pub fn SharedPeopleEnrichScope::name(self : SharedPeopleEnrichScope) -> String {
 }
 
 ///|
-/// Build `enrich_scope~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] shared_people_enrich_scope(
-  f : (SharedPeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
-) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
-  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
-  for m in ([PagerInfo] : Array[SharedPeopleEnrichScope]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum SharedPeopleLoopWith {
   Page
@@ -692,26 +538,6 @@ pub fn SharedPeopleLoopWith::name(self : SharedPeopleLoopWith) -> String {
   match self {
     Page => "page"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] shared_people_loop_with(
-  f : (SharedPeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([Page] : Array[SharedPeopleLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -790,26 +616,6 @@ pub fn CoupledPeopleMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] coupled_people_swap(
-  f : (CoupledPeopleInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([Next, Prev, RemoveInItemsAt, Search] : Array[CoupledPeopleInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named with no `@each` around it.
 pub(all) enum CoupledPeopleEnrichScope {
   PagerInfo
@@ -825,23 +631,6 @@ pub fn CoupledPeopleEnrichScope::name(
 }
 
 ///|
-/// Build `enrich_scope~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] coupled_people_enrich_scope(
-  f : (CoupledPeopleEnrichScope) -> ((S) -> Map[String, @tutuca.Value])?,
-) -> Map[String, (S) -> Map[String, @tutuca.Value]] {
-  let out : Map[String, (S) -> Map[String, @tutuca.Value]] = Map([])
-  for m in ([PagerInfo] : Array[CoupledPeopleEnrichScope]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@loop-with` handler the views name.
 pub(all) enum CoupledPeopleLoopWith {
   ForwardKeys
@@ -852,24 +641,4 @@ pub fn CoupledPeopleLoopWith::name(self : CoupledPeopleLoopWith) -> String {
   match self {
     ForwardKeys => "forwardKeys"
   }
-}
-
-///|
-/// Build `loop_with~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] coupled_people_loop_with(
-  f : (CoupledPeopleLoopWith) -> ((S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith)?,
-) -> Map[String, (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith,
-  ] = Map([])
-  for m in ([ForwardKeys] : Array[CoupledPeopleLoopWith]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }

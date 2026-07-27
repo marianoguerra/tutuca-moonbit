@@ -516,11 +516,30 @@ pub fn component_list_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => component_list_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FlexStyle] : Array[ComponentListMethod]),
+          ComponentListMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => component_list_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              OnAdd,
+              SetAlign,
+              SetDir,
+              SetGap,
+              SetJustify,
+              ToggleShowSettings,
+              ToggleWrap,
+            ] : Array[ComponentListInput]),
+          ComponentListInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -659,11 +678,21 @@ pub fn component_picker_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => component_picker_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetFilterText] : Array[ComponentPickerInput]),
+          ComponentPickerInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => component_picker_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([MatchesFilter] : Array[ComponentPickerWhen]),
+          ComponentPickerWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -744,11 +773,21 @@ pub fn component_entry_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => component_entry_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ContainsText] : Array[ComponentEntryMethod]),
+          ComponentEntryMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => component_entry_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnSelect] : Array[ComponentEntryInput]),
+          ComponentEntryInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

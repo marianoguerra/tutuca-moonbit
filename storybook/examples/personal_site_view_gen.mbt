@@ -205,23 +205,6 @@ pub fn PsEntryMethod::name(self : PsEntryMethod) -> String {
 }
 
 ///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] ps_entry_compute(
-  f : (PsEntryMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([IsSpanish, LangFlag, YearDisplay] : Array[PsEntryMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
 pub(all) enum PsEntryEnrich {
   EnrichCategoryBadge
@@ -232,35 +215,6 @@ pub fn PsEntryEnrich::name(self : PsEntryEnrich) -> String {
   match self {
     EnrichCategoryBadge => "enrichCategoryBadge"
   }
-}
-
-///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] ps_entry_enrich(
-  f : (PsEntryEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([EnrichCategoryBadge] : Array[PsEntryEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -502,35 +456,6 @@ pub fn RootMsg::from_dispatch(d : @component.Dispatch) -> RootMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] root_swap(
-  f : (RootInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for
-    m in (
-      [
-        ClearFilters,
-        OnCategoryToggle,
-        OnRoleToggle,
-        OnToggleFeaturedFirst,
-        OnToggleSortAsc,
-        OnToggleSortByEnd,
-      ] : Array[RootInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum RootMethod {
   HasActiveFilters
@@ -541,23 +466,6 @@ pub fn RootMethod::name(self : RootMethod) -> String {
   match self {
     HasActiveFilters => "hasActiveFilters"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] root_compute(
-  f : (RootMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([HasActiveFilters] : Array[RootMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -574,26 +482,6 @@ pub fn RootWhen::name(self : RootWhen) -> String {
 }
 
 ///|
-/// Build `when~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] root_when(
-  f : (RootWhen) -> ((S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)?,
-) -> Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool] {
-  let out : Map[
-    String,
-    (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool,
-  ] = Map([])
-  for m in ([FilterEntry] : Array[RootWhen]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
 pub(all) enum RootEnrich {
   EnrichCategoryBindings
@@ -606,35 +494,6 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
     EnrichCategoryBindings => "enrichCategoryBindings"
     EnrichRoleBindings => "enrichRoleBindings"
   }
-}
-
-///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] root_enrich(
-  f : (RootEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([EnrichCategoryBindings, EnrichRoleBindings] : Array[RootEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

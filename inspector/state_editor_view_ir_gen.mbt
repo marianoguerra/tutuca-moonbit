@@ -165,7 +165,12 @@ pub fn state_editor_row_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => state_editor_row_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Edit] : Array[StateEditorRowInput]),
+          StateEditorRowInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

@@ -269,6 +269,24 @@ declare pub fn[S : @tutuca.Fields] component(
 ) -> Component
 
 ///|
+/// Turn an exhaustive match over a generated handler-name enum into the
+/// `Map[String, H]` bucket `component()` takes.
+///
+/// `all` is every case of the enum, `name` its source spelling, `f` the
+/// author's match. A case answered `None` contributes no entry — that is what
+/// lets a handler fall through to `update` or to a generated mutator.
+///
+/// One generic function rather than one generated per component per bucket:
+/// `gen-views` used to emit this same 14-line loop 143 times across the corpus,
+/// differing only in the two type names and the case list, which the call site
+/// can simply pass.
+declare pub fn[E, H] build_bucket(
+  all : Array[E],
+  name : (E) -> String,
+  f : (E) -> H?,
+) -> Map[String, H]
+
+///|
 /// Define a component whose instances are a user typed struct implementing
 /// @tutuca.Obj directly (the fully-manual path): views/styles/provide/lookup
 /// only — fields and handlers live on the struct itself. The struct's

@@ -126,7 +126,12 @@ pub fn counter_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => counter_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Add, ResetCount, SetLabel] : Array[CounterInput]),
+          CounterInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

@@ -172,15 +172,40 @@ pub fn instance_fields_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => instance_fields_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          (
+            [
+              ArrowText,
+              CannotNextPage,
+              CannotPrevPage,
+              CountText,
+              IsItemsEmpty,
+              PageIndicatorText,
+              ShowPagination,
+              TypeText,
+            ] : Array[InstanceFieldsMethod]),
+          InstanceFieldsMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => instance_fields_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([NextPage, PrevPage, ToggleIsExpanded] : Array[InstanceFieldsInput]),
+          InstanceFieldsInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => instance_fields_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetPageRange] : Array[InstanceFieldsLoopWith]),
+          InstanceFieldsLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -391,7 +416,12 @@ pub fn instance_explorer_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => instance_explorer_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetActiveTab] : Array[InstanceExplorerInput]),
+          InstanceExplorerInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

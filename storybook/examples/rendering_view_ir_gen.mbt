@@ -129,15 +129,30 @@ pub fn push_view_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => push_view_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetToggleLabel] : Array[PushViewMethod]),
+          PushViewMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => push_view_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ResetQuery, SetQuery, ToggleView] : Array[PushViewInput]),
+          PushViewInput::name,
+          f,
+        )
       None => Map([])
     },
     when=match when {
-      Some(f) => push_view_when(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([FilterItem] : Array[PushViewWhen]),
+          PushViewWhen::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -246,11 +261,21 @@ pub fn seq_item_access_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => seq_item_access_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetMaxIndex] : Array[SeqItemAccessMethod]),
+          SeqItemAccessMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => seq_item_access_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetCurrentIndex, SetCurrentKey] : Array[SeqItemAccessInput]),
+          SeqItemAccessInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -361,15 +386,30 @@ pub fn pagination_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => pagination_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([IsFirstPage, IsLastPage, PageLabel] : Array[PaginationMethod]),
+          PaginationMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => pagination_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Next, Prev] : Array[PaginationInput]),
+          PaginationInput::name,
+          f,
+        )
       None => Map([])
     },
     loop_with=match loop_with {
-      Some(f) => pagination_loop_with(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([Paginate] : Array[PaginationLoopWith]),
+          PaginationLoopWith::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

@@ -116,26 +116,6 @@ pub fn SwatchPickerMsg::from_dispatch(
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] swatch_picker_swap(
-  f : (SwatchPickerInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetColor] : Array[SwatchPickerInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `@enrich-with` handler named INSIDE an `@each`.
 pub(all) enum SwatchPickerEnrich {
   Swatch
@@ -146,35 +126,6 @@ pub fn SwatchPickerEnrich::name(self : SwatchPickerEnrich) -> String {
   match self {
     Swatch => "swatch"
   }
-}
-
-///|
-/// Build `enrich~` from an exhaustive match over the names the views use.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] swatch_picker_enrich(
-  f : (SwatchPickerEnrich) -> ((
-    S,
-    Map[String, @tutuca.Value],
-    @tutuca.Value,
-    @tutuca.Value,
-    @tutuca.Value,
-  ) -> Unit)?,
-) -> Map[
-  String,
-  (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-] {
-  let out : Map[
-    String,
-    (S, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit,
-  ] = Map([])
-  for m in ([Swatch] : Array[SwatchPickerEnrich]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|
@@ -316,26 +267,6 @@ pub fn QuadraticMsg::from_dispatch(d : @component.Dispatch) -> QuadraticMsg? {
 }
 
 ///|
-/// Build `swap~` from an exhaustive match over the `@on` names the views raise.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] quadratic_swap(
-  f : (QuadraticInput) -> ((S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
-) -> Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] {
-  let out : Map[
-    String,
-    (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?,
-  ] = Map([])
-  for m in ([SetA, SetB, SetC] : Array[QuadraticInput]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
-}
-
-///|
 /// Every `$name` the views call.
 pub(all) enum QuadraticMethod {
   Classify
@@ -348,23 +279,6 @@ pub fn QuadraticMethod::name(self : QuadraticMethod) -> String {
     Classify => "classify"
     Discriminant => "discriminant"
   }
-}
-
-///|
-/// Build `compute~` from an exhaustive match over the names the views call.
-/// Return None for a name another bucket serves, or one of the mutators
-/// generated from the state's fields.
-pub fn[S] quadratic_compute(
-  f : (QuadraticMethod) -> ((S, Array[@tutuca.Value]) -> @tutuca.Value)?,
-) -> Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] {
-  let out : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([])
-  for m in ([Classify, Discriminant] : Array[QuadraticMethod]) {
-    match f(m) {
-      Some(h) => out[m.name()] = h
-      None => ()
-    }
-  }
-  out
 }
 
 ///|

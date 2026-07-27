@@ -202,7 +202,12 @@ pub fn text_directive_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => text_directive_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([GetStrUpper] : Array[TextDirectiveMethod]),
+          TextDirectiveMethod::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

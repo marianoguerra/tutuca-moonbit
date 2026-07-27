@@ -170,7 +170,12 @@ pub fn send_receive_component(
     global_style~,
     update?,
     swap=match swap {
-      Some(f) => send_receive_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ClearStatus, SetDraft, Submit] : Array[SendReceiveInput]),
+          SendReceiveInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
@@ -269,11 +274,21 @@ pub fn tree_item_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => tree_item_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([AreChildsVisible] : Array[TreeItemMethod]),
+          TreeItemMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => tree_item_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([OnItemClick] : Array[TreeItemInput]),
+          TreeItemInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,

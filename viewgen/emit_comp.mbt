@@ -25,6 +25,16 @@ fn wrapper_opt(name : String, ty : String, default : String) -> String {
 }
 
 ///|
+/// Every case of a handler enum, as a MoonBit array literal.
+///
+/// The same `variants_for` the enum itself was emitted from, so the list and
+/// the declaration cannot disagree — and it raises on the same collision, which
+/// the enum has already refused by the time this runs.
+fn variant_list(names : Array[String]) -> String raise GenError {
+  "[" + variants_for(names).map(p => p.1).join(", ") + "]"
+}
+
+///|
 /// The wrapper: `component()` with everything the view file states already
 /// filled in.
 ///
@@ -38,7 +48,7 @@ fn emit_wrapper(
   def : @statedef.StateDef,
   surface : Surface,
   out : StringBuilder,
-) -> Unit {
+) -> Unit raise GenError {
   let methods = declared_methods(surface, Some(def))
   let s = "\{t}State"
   // One branch, because `has_direct_codec` answers true for the whole StateTy
@@ -71,7 +81,7 @@ fn emit_wrapper(
   out.write_string(
     "  update? : (\{s}, @component.Dispatch, &@tutuca.Ctx) -> \{s}?,\n",
   )
-  for b in wrapper_buckets(t, v, s, surface, methods) {
+  for b in wrapper_buckets(t, s, surface, methods) {
     // No default: an absent bucket is `None`, and the call below turns that
     // into the empty map. Giving it `_ => None` instead would read as "answer
     // nothing", which is a different statement from "there is nothing here".
@@ -94,9 +104,13 @@ fn emit_wrapper(
     "    global_style~,\n" +
     "    update?=update,\n",
   )
-  for b in wrapper_buckets(t, v, s, surface, methods) {
+  for b in wrapper_buckets(t, s, surface, methods) {
     out.write_string(
-      "    \{b.param}=match \{b.param} { Some(f) => \{b.builder}(f); None => Map([]) },\n",
+      "    \{b.param}=match \{b.param} {\n" +
+      "      Some(f) =>\n" +
+      "        @component.build_bucket((\{b.all} : Array[\{b.enum_}]), \{b.enum_}::name, f)\n" +
+      "      None => Map([])\n" +
+      "    },\n",
     )
   }
   out.write_string("    specs~,\n    provide~,\n    lookup~,\n")
@@ -111,7 +125,11 @@ priv struct WrapperBucket {
   param : String
   enum_ : String
   handler : String
-  builder : String
+  /// Every case of `enum_`, as the MoonBit array literal the call site passes
+  /// to `@component.build_bucket`. The bucket used to be built by a generated
+  /// function per component that closed over this list; the list is the only
+  /// part that varied, so it is passed instead.
+  all : String
 }
 
 ///|
@@ -128,11 +146,10 @@ priv struct WrapperBucket {
 /// view a build error instead of a handler silently never called.
 fn wrapper_buckets(
   t : String,
-  v : String,
   s : String,
   surface : Surface,
   methods : Array[String],
-) -> Array[WrapperBucket] {
+) -> Array[WrapperBucket] raise GenError {
   let out : Array[WrapperBucket] = []
   // `compute` answers `$name` in a VALUE position, so it is keyed by Method.
   if !methods.is_empty() {
@@ -140,7 +157,7 @@ fn wrapper_buckets(
       param: "compute",
       enum_: "\{t}Method",
       handler: "(\{s}, Array[@tutuca.Value]) -> @tutuca.Value",
-      builder: "\{v}_compute",
+      all: variant_list(methods),
     })
   }
   // `swap` does NOT share that enum, though it reads like it should. A swap
@@ -153,7 +170,7 @@ fn wrapper_buckets(
       param: "swap",
       enum_: "\{t}Input",
       handler: "(\{s}, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?",
-      builder: "\{v}_swap",
+      all: variant_list(surface.inputs.map(i => i.name)),
     })
   }
   if !surface.whens.is_empty() {
@@ -161,7 +178,7 @@ fn wrapper_buckets(
       param: "when",
       enum_: "\{t}When",
       handler: "(\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
-      builder: "\{v}_when",
+      all: variant_list(surface.whens),
     })
   }
   if !surface.enriches.is_empty() {
@@ -169,7 +186,7 @@ fn wrapper_buckets(
       param: "enrich",
       enum_: "\{t}Enrich",
       handler: "(\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
-      builder: "\{v}_enrich",
+      all: variant_list(surface.enriches),
     })
   }
   if !surface.enrich_scopes.is_empty() {
@@ -177,7 +194,7 @@ fn wrapper_buckets(
       param: "enrich_scope",
       enum_: "\{t}EnrichScope",
       handler: "(\{s}) -> Map[String, @tutuca.Value]",
-      builder: "\{v}_enrich_scope",
+      all: variant_list(surface.enrich_scopes),
     })
   }
   if !surface.loop_withs.is_empty() {
@@ -185,7 +202,7 @@ fn wrapper_buckets(
       param: "loop_with",
       enum_: "\{t}LoopWith",
       handler: "(\{s}, @tutuca.Value, @component.LoopCtx) -> @component.LoopWith",
-      builder: "\{v}_loop_with",
+      all: variant_list(surface.loop_withs),
     })
   }
   out

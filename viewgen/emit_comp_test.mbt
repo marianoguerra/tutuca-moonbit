@@ -64,6 +64,18 @@ test "a schema-backed component gets a wrapper over component()" {
   // answered by mistake. This view calls no `$name` and names no `@when`.
   assert_false(ir.contains("  compute? :"))
   assert_false(ir.contains("  when? :"))
+  // The author's match becomes the map `component()` takes through ONE generic
+  // function, given the case list. This used to be a 14-line loop generated per
+  // component per bucket — 143 of them across the corpus, identical but for the
+  // two type names and the list, which the call site can simply pass.
+  assert_true(
+    ir.contains(
+      "@component.build_bucket(([Add] : Array[CounterInput]), CounterInput::name, f)",
+    ),
+  )
+  // ...and an unanswered bucket is still the empty map, not a match that
+  // answers nothing.
+  assert_true(ir.contains("None => Map([])"))
   // An absent update stays absent: component() takes it as an Option and the
   // wrapper forwards one rather than inventing a no-op.
   assert_true(ir.contains("    update?=update,"))

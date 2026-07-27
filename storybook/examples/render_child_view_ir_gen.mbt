@@ -235,11 +235,21 @@ pub fn entry_component(
     global_style~,
     update?,
     compute=match compute {
-      Some(f) => entry_compute(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([ContainsText] : Array[EntryMethod]),
+          EntryMethod::name,
+          f,
+        )
       None => Map([])
     },
     swap=match swap {
-      Some(f) => entry_swap(f)
+      Some(f) =>
+        @component.build_bucket(
+          ([SetDescription, SetTitle] : Array[EntryInput]),
+          EntryInput::name,
+          f,
+        )
       None => Map([])
     },
     specs~,
