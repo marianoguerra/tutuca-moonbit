@@ -636,9 +636,17 @@ pub(all) struct View {
   style : String
   mut anode : ANode?
   mut ctx : ParseContext?
-  /// Built by `View::from_ir` from an ahead-of-time compiled tree: there is
-  /// no source to parse, so `compile` only stamps the component id.
-  ir : Bool
+  /// How to turn `raw_view` into a tree — `None` for a view that already IS
+  /// one (`View::from_ir`), where `compile` only stamps the component id.
+  ///
+  /// A function slot rather than the `ir : Bool` it replaced, and that is the
+  /// whole point: with a flag, `compile` named `ANode::parse` on the branch it
+  /// did not take, so every program that compiled a view linked the HTML
+  /// parser whether it could reach it or not. Only `View::new` names the
+  /// parser now, so a program that never calls it does not carry one — worth
+  /// 195 KB of a 439 KB ahead-of-time wasm bundle (44%), measured in
+  /// benchmarks/OPTIMIZATIONS.md.
+  parse : ((View, ParseContext, &MacroScope, @tutuca.Lit?) -> Unit raise MacroError)?
 }
 
 ///|

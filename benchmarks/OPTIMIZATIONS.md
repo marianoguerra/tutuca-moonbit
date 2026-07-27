@@ -435,3 +435,37 @@ gate would have to read the handler names back off the compiled view trees,
 which is a second implementation of `viewgen/surface.mbt`'s walker living in
 the runtime. Paying that for a number this size is the trade this file exists
 to refuse.
+
+## `View.parse` instead of `View.ir` — the AOT wasm bundle −44.9%
+
+`View::compile` branched on an `ir : Bool`: an ahead-of-time view only needed
+its component id stamped, a source view had to be parsed. Both arms were in
+one function, so every program that compiled a view NAMED `ANode::parse` —
+and through it the whole parse subtree, the vendored WHATWG HTML tokenizer
+included — whether it could ever reach that branch or not. A linker cannot
+prune a runtime `if`.
+
+The flag is a function slot now. `View::new` installs the parse step;
+`View::from_ir` leaves it `None`; `compile` calls it or stamps the id. Only
+`View::new` names the parser, so a program that never builds a view from
+source does not link one.
+
+Measured on `demo/counter_wasm`, which is entirely ahead-of-time
+(`moon build --target wasm-gc --release`):
+
+| | bytes |
+|---|---|
+| before | 438,803 |
+| after  | 241,941 |
+| | **−196,862 (−44.9%)** |
+
+No call site changed — `View::new` and `View::from_ir` keep their signatures.
+The bracketing measurement that found this: deleting the parse branch outright
+gave 243,514 bytes, so the slot recovers essentially all of it.
+
+This is the one claim in this file that the timing benchmarks cannot show, and
+the reason to check it separately. An earlier, shallower probe — stubbing the
+body of `ANode::parse` — moved only 1.7 KB and nearly led to the opposite
+conclusion: the rest of the branch (`ParseContext::compile`, the attribute and
+x-op parsers) kept the subtree alive on its own. Stub the entry point, not the
+leaf.

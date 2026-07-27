@@ -120,5 +120,5 @@ pub fn View::from_ir(
   let ctx = ParseContext::from_ir(root, events_of(handlers))
   root.set_data_attr("data-vid", LStr(name))
   let anode = if ctx.cache_const_nodes { optimize_node(root) } else { root }
-  { name, raw_view: "", style, anode: Some(anode), ctx: Some(ctx), ir: true }
+  { name, raw_view: "", style, anode: Some(anode), ctx: Some(ctx), parse: None }
 }
