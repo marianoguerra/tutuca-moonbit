@@ -31,7 +31,7 @@ fn emit_state(
   emit_field_enum(t, v, def, derives, out)
   emit_fingerprint(v, def, out)
   emit_inits(t, v, def, inits, out)
-  emit_codec(t, v, def, out)
+  emit_codec(t, def, out)
   emit_msgs(t, def, out)
 }
 
@@ -329,7 +329,6 @@ fn emit_field_enum(
 fn emit_schema(
   t : String,
   name : String,
-  v : String,
   def : @statedef.StateDef,
   surface : Surface,
   views : ViewSet,

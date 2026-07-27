@@ -240,7 +240,6 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
 /// reach.
 fn emit_codec(
   t : String,
-  v : String,
   def : @statedef.StateDef,
   out : StringBuilder,
 ) -> Unit {

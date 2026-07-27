@@ -44,8 +44,10 @@ pub fn comp_name_views() -> Map[String, @anode.View] {
 
 ///|
 /// The CompName component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `CompNameState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -119,8 +121,10 @@ pub fn comp_field_views() -> Map[String, @anode.View] {
 
 ///|
 /// The CompField component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `CompFieldState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -233,8 +237,10 @@ pub fn comp_view_views() -> Map[String, @anode.View] {
 
 ///|
 /// The CompView component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `CompViewState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -395,8 +401,10 @@ pub fn comp_section_views() -> Map[String, @anode.View] {
 
 ///|
 /// The CompSection component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `CompSectionState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -500,8 +508,10 @@ pub fn component_inspector_views() -> Map[String, @anode.View] {
 
 ///|
 /// The ComponentInspector component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `ComponentInspectorState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is

@@ -184,8 +184,10 @@ pub fn schema_scalar_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaScalar component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaScalarState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -404,8 +406,10 @@ pub fn schema_object_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaObject component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaObjectState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -624,8 +628,10 @@ pub fn schema_array_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaArray component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaArrayState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -839,8 +845,10 @@ pub fn schema_enum_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaEnum component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaEnumState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1058,8 +1066,10 @@ pub fn schema_combinator_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaCombinator component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaCombinatorState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1151,8 +1161,10 @@ pub fn schema_const_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaConst component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaConstState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1339,8 +1351,10 @@ pub fn schema_conditional_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaConditional component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaConditionalState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1406,8 +1420,10 @@ pub fn schema_not_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaNot component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaNotState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1470,8 +1486,10 @@ pub fn schema_boolean_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaBoolean component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaBooleanState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -1538,8 +1556,10 @@ pub fn schema_ref_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SchemaRef component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SchemaRefState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is

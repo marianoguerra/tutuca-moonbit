@@ -96,8 +96,10 @@ pub fn person_views() -> Map[String, @anode.View] {
 
 ///|
 /// The Person component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `PersonState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -171,8 +173,10 @@ pub fn strategies_views() -> Map[String, @anode.View] {
 
 ///|
 /// The Strategies component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `StrategiesState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -316,8 +320,10 @@ pub fn naive_people_views() -> Map[String, @anode.View] {
 
 ///|
 /// The NaivePeople component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `NaivePeopleState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is

@@ -46,8 +46,10 @@ pub fn table_row_views() -> Map[String, @anode.View] {
 
 ///|
 /// The TableRow component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `TableRowState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -111,8 +113,10 @@ pub fn item_table_views() -> Map[String, @anode.View] {
 
 ///|
 /// The ItemTable component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `ItemTableState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -162,8 +166,10 @@ pub fn select_option_views() -> Map[String, @anode.View] {
 
 ///|
 /// The SelectOption component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SelectOptionState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -232,8 +238,10 @@ pub fn item_select_views() -> Map[String, @anode.View] {
 
 ///|
 /// The ItemSelect component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `ItemSelectState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -294,8 +302,10 @@ pub fn pseudo_x_demo_views() -> Map[String, @anode.View] {
 
 ///|
 /// The PseudoXDemo component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `PseudoXDemoState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is

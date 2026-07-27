@@ -131,8 +131,10 @@ pub fn instance_fields_views() -> Map[String, @anode.View] {
 
 ///|
 /// The InstanceFields component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `InstanceFieldsState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -208,8 +210,10 @@ pub fn instance_inspector_views() -> Map[String, @anode.View] {
 
 ///|
 /// The InstanceInspector component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `InstanceInspectorState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
@@ -355,8 +359,10 @@ pub fn instance_explorer_views() -> Map[String, @anode.View] {
 
 ///|
 /// The InstanceExplorer component: `component()` with everything the view file already
-/// states filled in — its name, its compiled views, its styles, its schema
-/// and its direct codec. What is left is the code no generator can write.
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `InstanceExplorerState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
 ///
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is

@@ -41,13 +41,14 @@ fn emit_wrapper(
 ) -> Unit {
   let methods = declared_methods(surface, Some(def))
   let s = "\{t}State"
-  let filled = if has_direct_codec(def) {
-    "/// states filled in — its name, its compiled views, its styles, its schema\n" +
-    "/// and its direct codec. What is left is the code no generator can write.\n"
-  } else {
-    "/// states filled in — its name, its compiled views, its styles and its\n" +
-    "/// schema. What is left is the code no generator can write.\n"
-  }
+  // One branch, because `has_direct_codec` answers true for the whole StateTy
+  // lattice — the shape it used to discriminate was a state the generator
+  // could not convert field by field, which fell back to a JSON bridge that no
+  // longer exists.
+  let filled = "/// states filled in — its name, its compiled views and its styles. The\n" +
+    "/// schema and the codec are not passed at all: `\{s}` states them\n" +
+    "/// through `@component.Fields`, and `component()` reads them off the\n" +
+    "/// bound. What is left is the code no generator can write.\n"
   out.write_string(
     "///|\n" +
     "/// The \{name} component: `component()` with everything the view file already\n" +
@@ -99,13 +100,6 @@ fn emit_wrapper(
     )
   }
   out.write_string("    specs~,\n    provide~,\n    lookup~,\n")
-  // The codec is skipped for a state the generator cannot convert field by
-  // field; naming it here would be naming a function that was never emitted.
-  // Without it `component()` uses the JSON bridge, which is what such a state
-  // needs anyway.
-  if has_direct_codec(def) {
-
-  }
   out.write_string("  )\n}\n\n")
 }
 

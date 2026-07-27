@@ -99,7 +99,10 @@ test "a nested record still gets a direct codec, named by the wrapper" {
   assert_false(ir.contains("encode="))
   assert_false(ir.contains("decode="))
   assert_false(ir.contains("schema="))
-  assert_true(ir.contains("its schema\n/// and its direct codec."))
+  // The doc comment says where they went, since the signature no longer can.
+  assert_true(
+    ir.contains("`CardState` states them\n/// through `@component.Fields`"),
+  )
 }
 
 ///|

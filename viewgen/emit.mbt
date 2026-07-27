@@ -445,7 +445,7 @@ fn emit_component(
   if state is Some(def_) {
     emit_ids(t, surface, derives, out)
     // Last, because it names things every section above declares.
-    emit_schema(t, name, v, def_, surface, views, inits, out)
+    emit_schema(t, name, def_, surface, views, inits, out)
     return
   }
   out.write_string(
@@ -615,7 +615,7 @@ fn emit_state_only(
     common_style: "",
     global_style: "",
   }
-  emit_schema(t, "", v, def, empty_surface, no_views, inits, out)
+  emit_schema(t, "", def, empty_surface, no_views, inits, out)
 }
 
 ///|
