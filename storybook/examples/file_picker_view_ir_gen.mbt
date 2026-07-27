@@ -101,7 +101,7 @@ pub fn file_picker_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn file_picker_component(
+pub fn file_picker_component(
   name? : String = "FilePicker",
   views? : Map[String, @anode.View] = file_picker_views(),
   init? : FilePickerState = FilePickerState::zero(),

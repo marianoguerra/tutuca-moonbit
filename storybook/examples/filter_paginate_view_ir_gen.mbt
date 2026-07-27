@@ -102,7 +102,7 @@ pub fn person_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn person_component(
+pub fn person_component(
   name? : String = "Person",
   views? : Map[String, @anode.View] = person_views(),
   init? : PersonState = PersonState::zero(),
@@ -180,7 +180,7 @@ pub fn strategies_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn strategies_component(
+pub fn strategies_component(
   name? : String = "Strategies",
   views? : Map[String, @anode.View] = strategies_views(),
   init? : StrategiesState = StrategiesState::zero(),
@@ -328,7 +328,7 @@ pub fn naive_people_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn naive_people_component(
+pub fn naive_people_component(
   name? : String = "NaivePeople",
   views? : Map[String, @anode.View] = naive_people_views(),
   init? : NaivePeopleState = NaivePeopleState::zero(),

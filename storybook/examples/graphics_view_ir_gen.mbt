@@ -95,7 +95,7 @@ pub fn swatch_picker_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn swatch_picker_component(
+pub fn swatch_picker_component(
   name? : String = "SwatchPicker",
   views? : Map[String, @anode.View] = swatch_picker_views(),
   init? : SwatchPickerState = SwatchPickerState::zero(),
@@ -293,7 +293,7 @@ pub fn quadratic_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn quadratic_component(
+pub fn quadratic_component(
   name? : String = "Quadratic",
   views? : Map[String, @anode.View] = quadratic_views(),
   init? : QuadraticState = QuadraticState::zero(),

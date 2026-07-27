@@ -13,11 +13,11 @@
 /// Declared as `interface person` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PersonState {
+pub(all) struct PersonState {
   name : String
   email : String
   active : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -34,10 +34,7 @@ fn PersonState::zero() -> PersonState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn person_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PersonState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  person_encode(PersonState::zero())
 }
 
 ///|
@@ -84,8 +81,8 @@ pub let person_schema_fingerprint : String = "e2e8301a252a8190"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn person_encode(s : PersonState) -> Map[String, @tutuca.Value] {
   { "name": Str(s.name), "email": Str(s.email), "active": Bool(s.active) }
 }
@@ -251,7 +248,7 @@ pub fn person_schema() -> @component.SchemaInfo {
 /// Declared as `interface strategies` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct StrategiesState {} derive(ToJson, FromJson)
+pub(all) struct StrategiesState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -268,10 +265,7 @@ fn StrategiesState::zero() -> StrategiesState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn strategies_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(StrategiesState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  strategies_encode(StrategiesState::zero())
 }
 
 ///|
@@ -318,8 +312,8 @@ pub let strategies_schema_fingerprint : String = "6bace7a4dde1b354"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn strategies_encode(_s : StrategiesState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -407,12 +401,12 @@ pub fn strategies_schema() -> @component.SchemaInfo {
 /// Declared as `interface naive-people` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct NaivePeopleState {
+pub(all) struct NaivePeopleState {
   items : Array[@tutuca.Value]
   query : String
   page : Int
   pageSize : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -429,10 +423,7 @@ fn NaivePeopleState::zero() -> NaivePeopleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn naive_people_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(NaivePeopleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  naive_people_encode(NaivePeopleState::zero())
 }
 
 ///|
@@ -484,8 +475,8 @@ pub let naive_people_schema_fingerprint : String = "1a6e19dbb5fd3c45"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn naive_people_encode(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),

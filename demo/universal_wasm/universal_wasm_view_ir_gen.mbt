@@ -72,7 +72,7 @@ pub fn universal_wasm_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn universal_wasm_component(
+pub fn universal_wasm_component(
   name? : String = "UniversalWasm",
   views? : Map[String, @anode.View] = universal_wasm_views(),
   init? : UniversalWasmState = UniversalWasmState::zero(),
@@ -487,7 +487,7 @@ pub fn component_list_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn component_list_component(
+pub fn component_list_component(
   name? : String = "ComponentList",
   views? : Map[String, @anode.View] = component_list_views(),
   init? : ComponentListState = ComponentListState::zero(),
@@ -629,7 +629,7 @@ pub fn component_picker_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn component_picker_component(
+pub fn component_picker_component(
   name? : String = "ComponentPicker",
   views? : Map[String, @anode.View] = component_picker_views(),
   init? : ComponentPickerState = ComponentPickerState::zero(),
@@ -717,7 +717,7 @@ pub fn component_entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn component_entry_component(
+pub fn component_entry_component(
   name? : String = "ComponentEntry",
   views? : Map[String, @anode.View] = component_entry_views(),
   init? : ComponentEntryState = ComponentEntryState::zero(),

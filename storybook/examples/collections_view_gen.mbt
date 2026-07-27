@@ -13,9 +13,9 @@
 /// Declared as `interface render-with-scope` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct RenderWithScopeState {
+pub(all) struct RenderWithScopeState {
   text : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,11 +32,7 @@ fn RenderWithScopeState::zero() -> RenderWithScopeState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn render_with_scope_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(RenderWithScopeState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  render_with_scope_encode(RenderWithScopeState::zero())
 }
 
 ///|
@@ -79,8 +75,8 @@ pub let render_with_scope_schema_fingerprint : String = "25c803b695d1cdde"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn render_with_scope_encode(
   s : RenderWithScopeState,
 ) -> Map[String, @tutuca.Value] {
@@ -254,10 +250,10 @@ pub fn render_with_scope_schema() -> @component.SchemaInfo {
 /// Declared as `interface list-filter-enrich` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ListFilterEnrichState {
+pub(all) struct ListFilterEnrichState {
   items : Array[@tutuca.Value]
   query : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -274,11 +270,7 @@ fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_filter_enrich_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(ListFilterEnrichState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  list_filter_enrich_encode(ListFilterEnrichState::zero())
 }
 
 ///|
@@ -324,8 +316,8 @@ pub let list_filter_enrich_schema_fingerprint : String = "d9bbfb6a84864d29"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn list_filter_enrich_encode(
   s : ListFilterEnrichState,
 ) -> Map[String, @tutuca.Value] {
@@ -571,10 +563,10 @@ pub fn list_filter_enrich_schema() -> @component.SchemaInfo {
 /// Declared as `interface list-filter-enrich-with` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ListFilterEnrichWithState {
+pub(all) struct ListFilterEnrichWithState {
   items : Array[@tutuca.Value]
   query : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -591,11 +583,7 @@ fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_filter_enrich_with_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(ListFilterEnrichWithState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  list_filter_enrich_with_encode(ListFilterEnrichWithState::zero())
 }
 
 ///|
@@ -643,8 +631,8 @@ pub let list_filter_enrich_with_schema_fingerprint : String = "4b8fcd058a698178"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn list_filter_enrich_with_encode(
   s : ListFilterEnrichWithState,
 ) -> Map[String, @tutuca.Value] {

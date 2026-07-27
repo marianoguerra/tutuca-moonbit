@@ -55,7 +55,7 @@ pub fn status_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn status_component(
+pub fn status_component(
   name? : String = "Status",
   views? : Map[String, @anode.View] = status_views(),
   init? : StatusState = StatusState::zero(),
@@ -145,7 +145,7 @@ pub fn send_receive_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn send_receive_component(
+pub fn send_receive_component(
   name? : String = "SendReceive",
   views? : Map[String, @anode.View] = send_receive_views(),
   init? : SendReceiveState = SendReceiveState::zero(),
@@ -244,7 +244,7 @@ pub fn tree_item_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn tree_item_component(
+pub fn tree_item_component(
   name? : String = "TreeItem",
   views? : Map[String, @anode.View] = tree_item_views(),
   init? : TreeItemState = TreeItemState::zero(),
@@ -328,7 +328,7 @@ pub fn tree_root_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn tree_root_component(
+pub fn tree_root_component(
   name? : String = "TreeRoot",
   views? : Map[String, @anode.View] = tree_root_views(),
   init? : TreeRootState = TreeRootState::zero(),

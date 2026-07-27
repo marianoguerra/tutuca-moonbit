@@ -13,10 +13,10 @@
 /// Declared as `interface dse-root` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct DseRootState {
+pub(all) struct DseRootState {
   items : Map[String, @tutuca.Value]
   selectedKey : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn DseRootState::zero() -> DseRootState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_root_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(DseRootState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  dse_root_encode(DseRootState::zero())
 }
 
 ///|
@@ -85,8 +82,8 @@ pub let dse_root_schema_fingerprint : String = "1e0db39e41167c58"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn dse_root_encode(s : DseRootState) -> Map[String, @tutuca.Value] {
   {
     "items": {
@@ -254,9 +251,9 @@ pub fn dse_root_schema() -> @component.SchemaInfo {
 /// Declared as `interface dse-editor` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct DseEditorState {
+pub(all) struct DseEditorState {
   missing : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -273,10 +270,7 @@ fn DseEditorState::zero() -> DseEditorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_editor_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(DseEditorState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  dse_editor_encode(DseEditorState::zero())
 }
 
 ///|
@@ -317,8 +311,8 @@ pub let dse_editor_schema_fingerprint : String = "6d6412be74f3d0b4"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn dse_editor_encode(s : DseEditorState) -> Map[String, @tutuca.Value] {
   { "missing": s.missing }
 }
@@ -387,9 +381,9 @@ pub fn dse_editor_schema() -> @component.SchemaInfo {
 /// Declared as `interface dse-entry` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct DseEntryState {
+pub(all) struct DseEntryState {
   name : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -406,10 +400,7 @@ fn DseEntryState::zero() -> DseEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dse_entry_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(DseEntryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  dse_entry_encode(DseEntryState::zero())
 }
 
 ///|
@@ -450,8 +441,8 @@ pub let dse_entry_schema_fingerprint : String = "2184b70b210b0dff"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn dse_entry_encode(s : DseEntryState) -> Map[String, @tutuca.Value] {
   { "name": Str(s.name) }
 }

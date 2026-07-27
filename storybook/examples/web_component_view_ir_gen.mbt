@@ -89,7 +89,7 @@ pub fn emoji_picker_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn emoji_picker_component(
+pub fn emoji_picker_component(
   name? : String = "EmojiPicker",
   views? : Map[String, @anode.View] = emoji_picker_views(),
   init? : EmojiPickerState = EmojiPickerState::zero(),

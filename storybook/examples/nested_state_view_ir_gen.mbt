@@ -76,7 +76,7 @@ pub fn nested_state_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn nested_state_component(
+pub fn nested_state_component(
   name? : String = "NestedState",
   views? : Map[String, @anode.View] = nested_state_views(),
   init? : NestedStateState = NestedStateState::zero(),

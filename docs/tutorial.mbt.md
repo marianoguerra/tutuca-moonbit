@@ -62,33 +62,16 @@ counter:
 
 ```mbt check
 ///|
-priv struct CounterState {
-  count : Int
-} derive(ToJson, FromJson)
-
-///|
 fn counter() -> @component.Component {
-  @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div>
-          #|  <button class="dec" @on.click="dec">-</button>
-          #|  <span class="count" @text=".count"></span>
-          #|  <button class="inc" @on.click="inc">+</button>
-          #|</div>
-        ),
-      ),
-    },
-    name="Counter",
-    init=CounterState::{ count: 0 },
-    // views call update by bare name: @on.click="dec"
-    update=(s : CounterState, msg, _ctx) => {
-      match msg {
-        Input("inc", _) => Some({ count: s.count + 1 })
-        Input("dec", _) => Some({ count: s.count - 1 })
-        _ => None
+  counter_component(
+    // views call update by bare name: @on.click="dec". `CounterMsg` is
+    // generated from those names, so adding one to the view breaks this match
+    // until it is answered.
+    update=(s, msg, _ctx) => {
+      match CounterMsg::from_dispatch(msg) {
+        Some(Inc) => Some({ count: s.count + 1 })
+        Some(Dec) => Some({ count: s.count - 1 })
+        Some(Unknown(_, _)) | None => None
       }
     },
     // Every handler the views raise is answered here, `inc` included:
@@ -181,30 +164,8 @@ string template:
 
 ```mbt check
 ///|
-priv struct ProfileState {
-  name : String
-  waving : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn profile_module() -> @component.ModuleDef {
-  let profile = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <input class="who" :value=".name" @on.input="setName value"
-          #|    :title="$'Editing {.name}'" />
-          #|  <button class="wave" @on.click="toggleWaving">wave</button>
-          #|  <p class="out" @text="$'Hello, {.name}!'"></p>
-          #|</section>
-        ),
-      ),
-    },
-    name="Profile",
-    init=ProfileState::{ name: "world", waving: false },
-  )
+  let profile = profile_component(init={ name: "world", waving: false })
   @component.ModuleDef::new(name="profile", components=[profile])
 }
 
@@ -230,31 +191,8 @@ matching modifier key. They combine with `+`:
 
 ```mbt check
 ///|
-priv struct SearchState {
-  draft : String
-  sent : String
-} derive(ToJson, FromJson)
-
-///|
 fn search_module() -> @component.ModuleDef {
-  let search = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <input class="q" :value=".draft"
-          #|    @on.input="setDraft value"
-          #|    @on.keydown+send="setSent value"
-          #|    @on.keydown+cancel="resetDraft" />
-          #|  <p class="sent" @text=".sent"></p>
-          #|</section>
-        ),
-      ),
-    },
-    name="Search",
-    init=SearchState::{ draft: "", sent: "" },
-  )
+  let search = search_component()
   @component.ModuleDef::new(name="search", components=[search])
 }
 
@@ -278,31 +216,8 @@ choose between two attribute values:
 
 ```mbt check
 ///|
-priv struct ToggleState {
-  on : Bool
-  message : @tutuca.Value
-} derive(ToJson, FromJson)
-
-///|
 fn toggle_module() -> @component.ModuleDef {
-  let toggle = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <button class="flip" @on.click="toggleOn"
-          #|    @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
-          #|  <p class="yes" @show=".on">it is ON</p>
-          #|  <p class="no" @hide=".on">it is OFF</p>
-          #|  <p class="msg" @show="truthy? .message" @text=".message"></p>
-          #|</section>
-        ),
-      ),
-    },
-    name="Toggle",
-    init=ToggleState::{ on: false, message: Null },
-  )
+  let toggle = toggle_component()
   @component.ModuleDef::new(name="toggle", components=[toggle])
 }
 
@@ -337,32 +252,16 @@ data once through `loop_with`:
 
 ```mbt check
 ///|
-priv struct FruitsState {
-  items : Array[String]
-} derive(ToJson, FromJson)
-
-///|
 fn fruits_module() -> @component.ModuleDef {
-  let fruits = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<ul>
-          #|  <li @each=".items" @when="notTooLong">
-          #|    <span class="k" @text="@key"></span>: <x text="@value"></x>
-          #|  </li>
-          #|</ul>
-        ),
-      ),
-    },
-    name="Fruits",
-    init=FruitsState::{ items: [] },
-    when={
-      // (state, key, value, iter_data) -> Bool: true keeps the item
-      "notTooLong": (_s : FruitsState, _key, value, _iter) => {
-        value.str().length() <= 6
-      },
+  let fruits = fruits_component(
+    // `FruitsWhen` is generated from the `@when` names the view uses, so the
+    // match is exhaustive over them.
+    when=w => {
+      match w {
+        // (state, key, value, iter_data) -> Bool: true keeps the item
+        NotTooLong =>
+          Some((_s, _key, value, _iter) => value.str().length() <= 6)
+      }
     },
   )
   @component.ModuleDef::new(name="fruits", components=[fruits])
@@ -408,53 +307,15 @@ namespace — the parent's bindings do not leak in.
 
 ```mbt check
 ///|
-priv struct GreetingState {
-  name : String
-} derive(ToJson, FromJson)
-
-///|
-priv struct NoState {} derive(ToJson, FromJson)
-
-///|
 fn page_module() -> @component.ModuleDef {
-  let greeting = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<p class="hello">Hello, <strong @text=".name"></strong>!</p>
-        ),
-      ),
-      "shout": @anode.View::new(
-        "shout",
-        raw_view=(
-          #|<p class="hello">HELLO, <strong @text=".name"></strong>!!!</p>
-        ),
-      ),
-    },
-    name="Greeting",
-    init=GreetingState::{ name: "world" },
-  )
-  let page = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <x render=".greeting"></x>
-          #|  <x render=".greeting" as="shout"></x>
-          #|</section>
-        ),
-      ),
-    },
-    name="Page",
-    init=NoState::{  },
-    specs={
-      "greeting": @component.FieldSpec::comp("Greeting", args={
-        "name": Str("reader"),
-      }),
-    },
-  )
+  let greeting = greeting_component(init={ name: "world" })
+  // The `greeting: component` field in the state block declares the slot; the
+  // args it is made with are the one thing the schema does not state.
+  let page = page_component(specs={
+    "greeting": @component.FieldSpec::comp("Greeting", args={
+      "name": Str("reader"),
+    }),
+  })
   @component.ModuleDef::new(name="page", components=[page, greeting])
 }
 
@@ -497,52 +358,21 @@ incoming message lands in the same `update` match:
 
 ```mbt check
 ///|
-priv struct StatusState {
-  message : String
-} derive(ToJson, FromJson)
-
-///|
-priv struct ChatState {
-  draft : String
-} derive(ToJson, FromJson)
-
-///|
 fn chat_module() -> @component.ModuleDef {
-  let status = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<p class="status" @show="truthy? .message" @text=".message"></p>
-        ),
-      ),
-    },
-    name="Status",
-    init=StatusState::{ message: "" },
-    update=(_s : StatusState, msg, _ctx) => {
-      match msg {
-        Receive("flash", [Str(m), ..]) => Some({ message: m })
-        _ => None
+  let status = status_component(
+    // `flash` is raised from MoonBit, never written in a view, so the schema
+    // is the only place it can be declared — and `StatusReceive` is what it
+    // gets declared into.
+    update=(_s, msg, _ctx) => {
+      match StatusReceive::from_dispatch(msg) {
+        Some(Flash(m)) => Some({ message: m })
+        Some(Unknown(_, _)) | None => None
       }
     },
   )
-  let chat = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <x render=".status"></x>
-          #|  <input class="draft" :value=".draft" @on.input="setDraft value" />
-          #|  <button class="send" @on.click="submit">send</button>
-          #|</section>
-        ),
-      ),
-    },
-    name="Chat",
-    init=ChatState::{ draft: "" },
+  let chat = chat_component(
     specs={ "status": @component.FieldSpec::comp("Status") },
-    update=(s : ChatState, msg, ctx) => {
+    update=(s, msg, ctx) => {
       match msg {
         Input("submit", _) => {
           guard s.draft != "" else { None }
@@ -583,39 +413,18 @@ dispatches it after start — that is what `send_at_root` is for.
 
 ```mbt check
 ///|
-priv struct QuotesState {
-  items : Array[String]
-  isLoading : Bool
-} derive(ToJson, FromJson)
-
-///|
 fn quotes_module() -> @component.ModuleDef {
-  let quotes = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section>
-          #|  <p class="loading" @show=".isLoading">Loading…</p>
-          #|  <ul><li @each=".items"><x text="@value"></x></li></ul>
-          #|</section>
-        ),
-      ),
-    },
-    name="Quotes",
-    init=QuotesState::{ items: [], isLoading: false },
-    update=(s : QuotesState, msg, ctx) => {
-      match msg {
-        Receive("init", _) => {
-          ctx.request("loadQuotes", [], @tutuca.RequestOpts::new())
-          Some({ ..s, isLoading: true })
-        }
-        Response("loadQuotes", [List(rows), _err]) =>
-          Some({ items: rows.map(r => r.str()), isLoading: false })
-        _ => None
+  let quotes = quotes_component(update=(s, msg, ctx) => {
+    match msg {
+      Receive("init", _) => {
+        ctx.request("loadQuotes", [], @tutuca.RequestOpts::new())
+        Some({ ..s, isLoading: true })
       }
-    },
-  )
+      Response("loadQuotes", [List(rows), _err]) =>
+        Some({ items: rows.map(r => r.str()), isLoading: false })
+      _ => None
+    }
+  })
   @component.ModuleDef::new(name="quotes", components=[quotes], requests={
     "loadQuotes": RequestFn((_args, respond) => {
       respond(Ok(List([Str("less, but better"), Str("fits in your head")])))
@@ -648,35 +457,12 @@ run against the component the macro expands into.
 
 ```mbt check
 ///|
-priv struct FeaturesState {
-  status : String
-} derive(ToJson, FromJson)
-
-///|
 fn badge_module() -> @component.ModuleDef {
-  let badge : @anode.Macro = {
-    defaults: { "label": "'New'" },
-    raw_view: "<span class=\"badge\" @text=\"^label\"></span>",
-  }
-  let features = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div>
-          #|  <span>Feature A</span> <x:badge></x:badge>
-          #|  <span>Feature B</span> <x:badge label="Beta"></x:badge>
-          #|  <span>Feature C</span> <x:badge :label=".status"></x:badge>
-          #|</div>
-        ),
-      ),
-    },
-    name="Features",
-    init=FeaturesState::{ status: "Soon" },
-  )
-  @component.ModuleDef::new(name="badges", components=[features], macros={
-    "badge": badge,
-  })
+  // No `macros~`: the macro is declared in tutorial.html as
+  // `<template id="macro:badge" data-label="'New'">` and expanded when the
+  // views were generated, so nothing is left to register at run time.
+  let features = features_component(init={ status: "Soon" })
+  @component.ModuleDef::new(name="badges", components=[features])
 }
 
 ///|

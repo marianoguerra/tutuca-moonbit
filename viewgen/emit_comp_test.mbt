@@ -26,9 +26,11 @@ let wrapper_html : String =
 test "a schema-backed component gets a wrapper over component()" {
   let f = @viewgen.split_file(wrapper_html)
   let ir = @viewgen.emit_ir_module("Counter", "counter.html", f)
-  // Package-private, because it names the private state type — the same
-  // reason `<v>_encode` is.
-  assert_true(ir.contains("\nfn counter_component(\n"))
+  // Public, like every other piece of generated vocabulary. It names the
+  // state type in its signature, which is why that is `pub(all)` too — and
+  // why a component generated in one package can be built from another, or
+  // from a blackbox test.
+  assert_true(ir.contains("\npub fn counter_component(\n"))
   // Everything counter.html states, filled in.
   assert_true(ir.contains("  name? : String = \"Counter\","))
   assert_true(
@@ -90,7 +92,7 @@ test "a nested record still gets a direct codec, named by the wrapper" {
     ),
   )
   let ir = @viewgen.emit_ir_module("Card", "card.html", f)
-  assert_true(ir.contains("\nfn card_component(\n"))
+  assert_true(ir.contains("\npub fn card_component(\n"))
   assert_true(ir.contains("    encode=card_encode,"))
   assert_true(ir.contains("    decode=card_decode,"))
   // The schema reaches component() too: it is what declares the kinds.
@@ -124,7 +126,7 @@ test "a schema-only component gets no wrapper" {
     ),
   )
   let ir = @viewgen.emit_ir_module("Ignored", "two.html", f)
-  assert_true(ir.contains("\nfn shown_component(\n"))
+  assert_true(ir.contains("\npub fn shown_component(\n"))
   assert_false(ir.contains("headless_component("))
 }
 
@@ -144,6 +146,6 @@ test "the wrapper's name default is the declared component name" {
     ),
   )
   let ir = @viewgen.emit_ir_module("Ignored", "dse.html", f)
-  assert_true(ir.contains("\nfn dse_root_component(\n"))
+  assert_true(ir.contains("\npub fn dse_root_component(\n"))
   assert_true(ir.contains("  name? : String = \"DseRoot\","))
 }

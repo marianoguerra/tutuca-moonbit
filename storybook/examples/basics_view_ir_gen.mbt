@@ -38,7 +38,7 @@ pub fn minimum_viable_component_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn minimum_viable_component_component(
+pub fn minimum_viable_component_component(
   name? : String = "MinimumViableComponent",
   views? : Map[String, @anode.View] = minimum_viable_component_views(),
   init? : MinimumViableComponentState = MinimumViableComponentState::zero(),
@@ -90,7 +90,7 @@ pub fn static_view_component_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn static_view_component_component(
+pub fn static_view_component_component(
   name? : String = "StaticViewComponent",
   views? : Map[String, @anode.View] = static_view_component_views(),
   init? : StaticViewComponentState = StaticViewComponentState::zero(),
@@ -179,7 +179,7 @@ pub fn text_directive_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn text_directive_component(
+pub fn text_directive_component(
   name? : String = "TextDirective",
   views? : Map[String, @anode.View] = text_directive_views(),
   init? : TextDirectiveState = TextDirectiveState::zero(),
@@ -245,7 +245,7 @@ pub fn danger_set_inner_html_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn danger_set_inner_html_component(
+pub fn danger_set_inner_html_component(
   name? : String = "DangerSetInnerHtml",
   views? : Map[String, @anode.View] = danger_set_inner_html_views(),
   init? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),

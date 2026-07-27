@@ -14,7 +14,7 @@ priv struct IrState {
   label : String
   count : Int
   history : Array[Int]
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn ir_state() -> IrState {
@@ -76,11 +76,25 @@ test "a component built from the compiled tree renders identically" {
     },
     name="IrFromSource",
     init=ir_state(),
+    encode=ir_state_encode,
+    decode=ir_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("history", "list<s32>", FList),
+    ]),
   )
   let from_tree = @component.component(
     name="IrFromTree",
     views=@viewgen.build_views(views.components[0], macros=views.macros),
     init=ir_state(),
+    encode=ir_state_encode,
+    decode=ir_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("history", "list<s32>", FList),
+    ]),
   )
   let want = render_comp(from_source)
   let got = render_comp(from_tree)
@@ -105,6 +119,13 @@ test "handlers dispatch through a compiled tree" {
         _ => None
       }
     },
+    encode=ir_state_encode,
+    decode=ir_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="ir_state", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("history", "list<s32>", FList),
+    ]),
   )
   let scope = @component.ComponentStack::new()
   scope.register_components([comp])
@@ -188,7 +209,7 @@ let macro_view_html : String =
 ///|
 priv struct BadgeState {
   title : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "a file-declared macro renders like a MoonBit-registered one" {
@@ -197,6 +218,11 @@ test "a file-declared macro renders like a MoonBit-registered one" {
     name="BadgeTree",
     views=@viewgen.build_views(vs.components[0], macros=vs.macros),
     init=BadgeState::{ title: "hi" },
+    encode=badge_state_encode,
+    decode=badge_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="badge_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+    ]),
   )
   // The runtime equivalent: the same macro body, registered as a value.
   let from_macro = @component.component(
@@ -208,6 +234,11 @@ test "a file-declared macro renders like a MoonBit-registered one" {
     },
     name="BadgeRuntime",
     init=BadgeState::{ title: "hi" },
+    encode=badge_state_encode,
+    decode=badge_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="badge_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+    ]),
   )
   let scope = @component.ComponentStack::new()
   scope.register_macros({
@@ -242,4 +273,40 @@ fn to_html(v : @vdom.Vdom?) -> String {
       }
     None => "<!-- nothing -->"
   }
+}
+
+///|
+fn ir_state_encode(s : IrState) -> Map[String, @tutuca.Value] {
+  {
+    "label": Str(s.label),
+    "count": Num(s.count.to_double()),
+    "history": (
+      List(s.history.map(x => (Num(x.to_double()) : @tutuca.Value))) :
+      @tutuca.Value),
+  }
+}
+
+///|
+fn ir_state_decode(f : Map[String, @tutuca.Value]) -> IrState? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  guard f.get("history") is Some(List(l_history)) else { return None }
+  let v_history : Array[Int] = []
+  for x in l_history {
+    guard x is Num(n) else { return None }
+    v_history.push(n.to_int())
+  }
+  Some(IrState::{ label: v_label, count: v_count, history: v_history })
+}
+
+///|
+fn badge_state_encode(s : BadgeState) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title) }
+}
+
+///|
+fn badge_state_decode(f : Map[String, @tutuca.Value]) -> BadgeState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  Some(BadgeState::{ title: v_title })
 }

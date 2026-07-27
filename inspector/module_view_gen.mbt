@@ -16,12 +16,12 @@
 /// Declared as `interface rich-sample` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct RichSampleState {
+pub(all) struct RichSampleState {
   title : String
   count : Int
   tags : Array[@tutuca.Value]
   open : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -38,10 +38,7 @@ fn RichSampleState::zero() -> RichSampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn rich_sample_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(RichSampleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  rich_sample_encode(RichSampleState::zero())
 }
 
 ///|
@@ -93,8 +90,8 @@ pub let rich_sample_schema_fingerprint : String = "98c5770c79268b31"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn rich_sample_encode(s : RichSampleState) -> Map[String, @tutuca.Value] {
   {
     "title": Str(s.title),
@@ -499,12 +496,12 @@ pub fn rich_sample_schema() -> @component.SchemaInfo {
 /// Declared as `interface sample-card` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SampleCardState {
+pub(all) struct SampleCardState {
   title : String
   count : Int
   tags : Array[@tutuca.Value]
   open : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -521,10 +518,7 @@ fn SampleCardState::zero() -> SampleCardState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn sample_card_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SampleCardState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  sample_card_encode(SampleCardState::zero())
 }
 
 ///|
@@ -576,8 +570,8 @@ pub let sample_card_schema_fingerprint : String = "33fd8877c57069f1"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn sample_card_encode(s : SampleCardState) -> Map[String, @tutuca.Value] {
   {
     "title": Str(s.title),

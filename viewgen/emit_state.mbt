@@ -100,24 +100,14 @@ fn emit_inits(
     "/// type, so they cannot be public themselves, and a storybook needs the\n" +
     "/// encoded form anyway.\n" +
     "pub fn \{v}_init_args(name : String) -> Map[String, @tutuca.Value]? {\n" +
-    "  let j = match name {\n",
+    "  match name {\n",
   )
   for st in inits {
     out.write_string(
-      // `ToJson::to_json(x)` rather than `x.to_json()`: the implicit method
-      // promotion from a derived impl is deprecated, and a generated file
-      // must not be the thing that warns.
-      "    \{quote(st.name)} => ToJson::to_json(\{t}State::\{st.ident}())\n",
+      "    \{quote(st.name)} => Some(\{v}_encode(\{t}State::\{st.ident}()))\n",
     )
   }
-  out.write_string(
-    "    _ => return None\n" +
-    "  }\n" +
-    "  match @tutuca.Value::from_json(j) {\n" +
-    "    Map(m) => Some(m)\n" +
-    "    _ => None\n" +
-    "  }\n}\n\n",
-  )
+  out.write_string("    _ => None\n  }\n}\n\n")
 }
 
 ///|
@@ -165,7 +155,7 @@ fn emit_user_types(
         for f in fields {
           out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
         }
-        out.write_string("} derive(ToJson, FromJson, \{derives})\n\n")
+        out.write_string("} derive(\{derives})\n\n")
       }
       UEnum(cases) => {
         out.write_string("///|\n")
@@ -174,7 +164,7 @@ fn emit_user_types(
         for c in cases {
           out.write_string("  \{c.1}\n")
         }
-        out.write_string("} derive(ToJson, FromJson, \{derives})\n\n")
+        out.write_string("} derive(\{derives})\n\n")
       }
       UVariant(cases) => {
         out.write_string("///|\n")
@@ -188,7 +178,7 @@ fn emit_user_types(
             out.write_string("  \{c.variant}(\{ps})\n")
           }
         }
-        out.write_string("} derive(ToJson, FromJson, \{derives})\n\n")
+        out.write_string("} derive(\{derives})\n\n")
       }
       // A `flags` set is Map-backed at runtime like any other set, so it
       // contributes no MoonBit type — only the member list, which the specs
@@ -230,25 +220,18 @@ fn emit_state_struct(
   if carried.is_empty() {
     // MoonBit has no empty struct body on one line worth breaking; a state
     // with no fields is common (a toolbar is behaviour, not data).
-    out.write_string("priv struct \{t}State {} derive(ToJson, FromJson)\n\n")
+    out.write_string("pub(all) struct \{t}State {}\n\n")
     return
   }
-  out.write_string("priv struct \{t}State {\n")
+  out.write_string("pub(all) struct \{t}State {\n")
   for f in carried {
     out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
   }
-  // A MoonBit keyword binding must not change the JSON name: the view reads
-  // `.type` and the wire carries "type", so it is the binding that bends and
-  // the derive that puts the name back.
-  let renamed = carried.filter(f => f.binding != f.name)
-  if renamed.is_empty() {
-    out.write_string("} derive(ToJson, FromJson)\n\n")
-  } else {
-    let fs = renamed.map(f => "\{f.binding}(rename=\"\{f.name}\")").join(", ")
-    out.write_string(
-      "} derive(ToJson(fields(\{fs})), FromJson(fields(\{fs})))\n\n",
-    )
-  }
+  // No derive, and none needed for a keyword binding either. The view reads
+  // `.type` and the fields map carries "type"; it used to be a
+  // `derive(ToJson(fields(type_(rename="type"))))` that put the name back,
+  // and now it is the codec, which keys by the runtime name directly.
+  out.write_string("}\n\n")
 }
 
 ///|
@@ -289,10 +272,7 @@ fn emit_zero(
     "/// The zero state as component arguments — the default a ModuleDef\n" +
     "/// example takes when it sets nothing of its own.\n" +
     "pub fn \{v}_zero_args() -> Map[String, @tutuca.Value] {\n" +
-    "  match @tutuca.Value::from_json(ToJson::to_json(\{t}State::zero())) {\n" +
-    "    Map(m) => m\n" +
-    "    _ => Map([])\n" +
-    "  }\n}\n\n",
+    "  \{v}_encode(\{t}State::zero())\n}\n\n",
   )
 }
 

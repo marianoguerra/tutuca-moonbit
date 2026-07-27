@@ -130,7 +130,7 @@ pub fn bar_chart_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn bar_chart_component(
+pub fn bar_chart_component(
   name? : String = "BarChart",
   views? : Map[String, @anode.View] = bar_chart_views(),
   init? : BarChartState = BarChartState::zero(),

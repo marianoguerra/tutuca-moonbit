@@ -1,17 +1,9 @@
 // Field specs (the field half of src/oo.js classFromData).
-
-///|
-fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec {
-  let kind : FieldKind = match v {
-    Bool(_) => FBool
-    Str(_) => FText
-    Num(n) => if n.to_int().to_double() == n { FInt } else { FFloat }
-    List(_) => FList
-    Map(_) => FMap
-    _ => FAny
-  }
-  { kind, default: v }
-}
+//
+// There is no `FieldSpec::of_default` any more. It read a field's KIND off the
+// seed value — which is why `FInt` vs `FFloat` used to depend on whether a
+// double happened to be integral — and it existed because a component might
+// arrive without a schema to state the kind instead. None does.
 
 ///|
 pub fn FieldSpec::comp(

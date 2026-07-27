@@ -13,7 +13,7 @@
 /// Declared as `interface activity-entry` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ActivityEntryState {
+pub(all) struct ActivityEntryState {
   kind : String
   name : String
   handlerName : String
@@ -23,7 +23,7 @@ priv struct ActivityEntryState {
   before : @tutuca.Value
   after : @tutuca.Value
   hasAfter : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -50,10 +50,7 @@ fn ActivityEntryState::zero() -> ActivityEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn activity_entry_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ActivityEntryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  activity_entry_encode(ActivityEntryState::zero())
 }
 
 ///|
@@ -123,8 +120,8 @@ pub let activity_entry_schema_fingerprint : String = "d3dd8d6a5a69b8b2"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn activity_entry_encode(s : ActivityEntryState) -> Map[String, @tutuca.Value] {
   {
     "kind": Str(s.kind),
@@ -285,10 +282,10 @@ pub fn activity_entry_schema() -> @component.SchemaInfo {
 /// Declared as `interface activity-log` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ActivityLogState {
+pub(all) struct ActivityLogState {
   events : Array[@tutuca.Value]
   hasEvents : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -305,10 +302,7 @@ fn ActivityLogState::zero() -> ActivityLogState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn activity_log_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ActivityLogState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  activity_log_encode(ActivityLogState::zero())
 }
 
 ///|
@@ -352,8 +346,8 @@ pub let activity_log_schema_fingerprint : String = "f3de3a72eae2fe61"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn activity_log_encode(s : ActivityLogState) -> Map[String, @tutuca.Value] {
   {
     "events": (List(s.events.map(x => x)) : @tutuca.Value),

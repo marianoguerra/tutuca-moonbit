@@ -190,7 +190,7 @@ pub fn schema_scalar_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_scalar_component(
+pub fn schema_scalar_component(
   name? : String = "SchemaScalar",
   views? : Map[String, @anode.View] = schema_scalar_views(),
   init? : SchemaScalarState = SchemaScalarState::zero(),
@@ -413,7 +413,7 @@ pub fn schema_object_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_object_component(
+pub fn schema_object_component(
   name? : String = "SchemaObject",
   views? : Map[String, @anode.View] = schema_object_views(),
   init? : SchemaObjectState = SchemaObjectState::zero(),
@@ -636,7 +636,7 @@ pub fn schema_array_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_array_component(
+pub fn schema_array_component(
   name? : String = "SchemaArray",
   views? : Map[String, @anode.View] = schema_array_views(),
   init? : SchemaArrayState = SchemaArrayState::zero(),
@@ -854,7 +854,7 @@ pub fn schema_enum_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_enum_component(
+pub fn schema_enum_component(
   name? : String = "SchemaEnum",
   views? : Map[String, @anode.View] = schema_enum_views(),
   init? : SchemaEnumState = SchemaEnumState::zero(),
@@ -1076,7 +1076,7 @@ pub fn schema_combinator_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_combinator_component(
+pub fn schema_combinator_component(
   name? : String = "SchemaCombinator",
   views? : Map[String, @anode.View] = schema_combinator_views(),
   init? : SchemaCombinatorState = SchemaCombinatorState::zero(),
@@ -1172,7 +1172,7 @@ pub fn schema_const_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_const_component(
+pub fn schema_const_component(
   name? : String = "SchemaConst",
   views? : Map[String, @anode.View] = schema_const_views(),
   init? : SchemaConstState = SchemaConstState::zero(),
@@ -1363,7 +1363,7 @@ pub fn schema_conditional_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_conditional_component(
+pub fn schema_conditional_component(
   name? : String = "SchemaConditional",
   views? : Map[String, @anode.View] = schema_conditional_views(),
   init? : SchemaConditionalState = SchemaConditionalState::zero(),
@@ -1433,7 +1433,7 @@ pub fn schema_not_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_not_component(
+pub fn schema_not_component(
   name? : String = "SchemaNot",
   views? : Map[String, @anode.View] = schema_not_views(),
   init? : SchemaNotState = SchemaNotState::zero(),
@@ -1500,7 +1500,7 @@ pub fn schema_boolean_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_boolean_component(
+pub fn schema_boolean_component(
   name? : String = "SchemaBoolean",
   views? : Map[String, @anode.View] = schema_boolean_views(),
   init? : SchemaBooleanState = SchemaBooleanState::zero(),
@@ -1571,7 +1571,7 @@ pub fn schema_ref_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_ref_component(
+pub fn schema_ref_component(
   name? : String = "SchemaRef",
   views? : Map[String, @anode.View] = schema_ref_views(),
   init? : SchemaRefState = SchemaRefState::zero(),

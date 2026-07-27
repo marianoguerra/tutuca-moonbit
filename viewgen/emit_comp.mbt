@@ -56,7 +56,7 @@ fn emit_wrapper(
     "/// `init` defaults to the zero state and `name` to the name the template\n" +
     "/// id declares — pass either when yours differs. The signature below is\n" +
     "/// the whole story: anything not a parameter here, the view file states.\n" +
-    "fn \{v}_component(\n",
+    "pub fn \{v}_component(\n",
   )
   out.write_string(wrapper_opt("name", "String", quote(name)))
   out.write_string(

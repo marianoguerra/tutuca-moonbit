@@ -56,7 +56,7 @@ pub fn list_iteration_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn list_iteration_component(
+pub fn list_iteration_component(
   name? : String = "ListIteration",
   views? : Map[String, @anode.View] = list_iteration_views(),
   init? : ListIterationState = ListIterationState::zero(),

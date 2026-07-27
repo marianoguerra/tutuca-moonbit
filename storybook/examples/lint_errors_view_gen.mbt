@@ -16,13 +16,13 @@
 /// Declared as `interface lint-demo` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct LintDemoState {
+pub(all) struct LintDemoState {
   count : Int
   items : Array[@tutuca.Value]
   kind : String
   isOpen : Bool
   child : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -39,10 +39,7 @@ fn LintDemoState::zero() -> LintDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(LintDemoState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  lint_demo_encode(LintDemoState::zero())
 }
 
 ///|
@@ -97,8 +94,8 @@ pub let lint_demo_schema_fingerprint : String = "61623a4912326968"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn lint_demo_encode(s : LintDemoState) -> Map[String, @tutuca.Value] {
   {
     "count": Num(s.count.to_double()),
@@ -201,9 +198,9 @@ pub fn lint_demo_schema() -> @component.SchemaInfo {
 /// Declared as `interface html-lint-demo` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct HtmlLintDemoState {
+pub(all) struct HtmlLintDemoState {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -220,10 +217,7 @@ fn HtmlLintDemoState::zero() -> HtmlLintDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn html_lint_demo_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(HtmlLintDemoState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  html_lint_demo_encode(HtmlLintDemoState::zero())
 }
 
 ///|
@@ -266,8 +260,8 @@ pub let html_lint_demo_schema_fingerprint : String = "5527f190b24e5ee0"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn html_lint_demo_encode(s : HtmlLintDemoState) -> Map[String, @tutuca.Value] {
   { "count": Num(s.count.to_double()) }
 }
@@ -316,9 +310,9 @@ pub fn html_lint_demo_schema() -> @component.SchemaInfo {
 /// Declared as `interface scoped-style-demo` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ScopedStyleDemoState {
+pub(all) struct ScopedStyleDemoState {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -335,11 +329,7 @@ fn ScopedStyleDemoState::zero() -> ScopedStyleDemoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn scoped_style_demo_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(ScopedStyleDemoState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  scoped_style_demo_encode(ScopedStyleDemoState::zero())
 }
 
 ///|
@@ -382,8 +372,8 @@ pub let scoped_style_demo_schema_fingerprint : String = "86b61c5fb0f1011d"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn scoped_style_demo_encode(
   s : ScopedStyleDemoState,
 ) -> Map[String, @tutuca.Value] {

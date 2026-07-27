@@ -13,7 +13,7 @@
 /// Declared as `interface minimum-viable-component` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MinimumViableComponentState {} derive(ToJson, FromJson)
+pub(all) struct MinimumViableComponentState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -30,13 +30,7 @@ fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn minimum_viable_component_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(
-      ToJson::to_json(MinimumViableComponentState::zero()),
-    ) {
-    Map(m) => m
-    _ => Map([])
-  }
+  minimum_viable_component_encode(MinimumViableComponentState::zero())
 }
 
 ///|
@@ -50,8 +44,8 @@ pub let minimum_viable_component_schema_fingerprint : String = "0f2138963e0265a7
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn minimum_viable_component_encode(
   _s : MinimumViableComponentState,
 ) -> Map[String, @tutuca.Value] {
@@ -116,7 +110,7 @@ pub fn minimum_viable_component_schema() -> @component.SchemaInfo {
 /// Declared as `interface static-view-component` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct StaticViewComponentState {} derive(ToJson, FromJson)
+pub(all) struct StaticViewComponentState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -133,11 +127,7 @@ fn StaticViewComponentState::zero() -> StaticViewComponentState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn static_view_component_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(StaticViewComponentState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  static_view_component_encode(StaticViewComponentState::zero())
 }
 
 ///|
@@ -151,8 +141,8 @@ pub let static_view_component_schema_fingerprint : String = "a2006cc55bf0a041"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn static_view_component_encode(
   _s : StaticViewComponentState,
 ) -> Map[String, @tutuca.Value] {
@@ -215,12 +205,12 @@ pub fn static_view_component_schema() -> @component.SchemaInfo {
 /// Declared as `interface text-directive` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TextDirectiveState {
+pub(all) struct TextDirectiveState {
   str : String
   num : Int
   bool : Bool
   notSet : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -237,10 +227,7 @@ fn TextDirectiveState::zero() -> TextDirectiveState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn text_directive_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TextDirectiveState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  text_directive_encode(TextDirectiveState::zero())
 }
 
 ///|
@@ -294,8 +281,8 @@ pub let text_directive_schema_fingerprint : String = "f6fb027d2388083c"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn text_directive_encode(s : TextDirectiveState) -> Map[String, @tutuca.Value] {
   {
     "str": Str(s.str),
@@ -432,9 +419,9 @@ pub fn text_directive_schema() -> @component.SchemaInfo {
 /// Declared as `interface danger-set-inner-html` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct DangerSetInnerHtmlState {
+pub(all) struct DangerSetInnerHtmlState {
   content : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -451,11 +438,7 @@ fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn danger_set_inner_html_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(DangerSetInnerHtmlState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  danger_set_inner_html_encode(DangerSetInnerHtmlState::zero())
 }
 
 ///|
@@ -498,8 +481,8 @@ pub let danger_set_inner_html_schema_fingerprint : String = "20e28deaad6a8c77"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn danger_set_inner_html_encode(
   s : DangerSetInnerHtmlState,
 ) -> Map[String, @tutuca.Value] {

@@ -16,7 +16,7 @@
 /// Declared as `interface vw-empty` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwEmptyState {} derive(ToJson, FromJson)
+pub(all) struct VwEmptyState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn VwEmptyState::zero() -> VwEmptyState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_empty_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwEmptyState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_empty_encode(VwEmptyState::zero())
 }
 
 ///|
@@ -50,8 +47,8 @@ pub let vw_empty_schema_fingerprint : String = "ce4923df302b81b2"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_empty_encode(_s : VwEmptyState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -89,10 +86,10 @@ pub fn vw_empty_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-imm` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwImmState {
+pub(all) struct VwImmState {
   value : Int
   rawValue : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -109,10 +106,7 @@ fn VwImmState::zero() -> VwImmState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_imm_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwImmState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_imm_encode(VwImmState::zero())
 }
 
 ///|
@@ -156,8 +150,8 @@ pub let vw_imm_schema_fingerprint : String = "53f3484f60b3c75c"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_imm_encode(s : VwImmState) -> Map[String, @tutuca.Value] {
   { "value": Num(s.value.to_double()), "rawValue": Str(s.rawValue) }
 }
@@ -215,9 +209,9 @@ pub fn vw_imm_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-types` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwTypesState {
+pub(all) struct VwTypesState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -234,10 +228,7 @@ fn VwTypesState::zero() -> VwTypesState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_types_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwTypesState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_types_encode(VwTypesState::zero())
 }
 
 ///|
@@ -278,8 +269,8 @@ pub let vw_types_schema_fingerprint : String = "dd9e67b6f8d50b55"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_types_encode(s : VwTypesState) -> Map[String, @tutuca.Value] {
   { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
 }
@@ -333,11 +324,11 @@ pub fn vw_types_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-container` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwContainerState {
+pub(all) struct VwContainerState {
   items : Array[@tutuca.Value]
   expanded : Bool
   editing : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -354,10 +345,7 @@ fn VwContainerState::zero() -> VwContainerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_container_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwContainerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_container_encode(VwContainerState::zero())
 }
 
 ///|
@@ -406,8 +394,8 @@ pub let vw_container_schema_fingerprint : String = "a94df03941e4c8f4"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_container_encode(s : VwContainerState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
@@ -487,17 +475,14 @@ pub fn vw_container_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-if` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwIfState {
+pub(all) struct VwIfState {
   thn : Array[@tutuca.Value]
   else_ : Array[@tutuca.Value]
   expanded : Bool
   editingIf : Bool
   editingThn : Bool
   editingElse : Bool
-} derive (
-  ToJson(fields(else_(rename="else"))),
-  FromJson(fields(else_(rename="else"))),
-)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -521,10 +506,7 @@ fn VwIfState::zero() -> VwIfState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_if_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwIfState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_if_encode(VwIfState::zero())
 }
 
 ///|
@@ -582,8 +564,8 @@ pub let vw_if_schema_fingerprint : String = "90972407f58ddfc3"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_if_encode(s : VwIfState) -> Map[String, @tutuca.Value] {
   {
     "thn": (List(s.thn.map(x => x)) : @tutuca.Value),
@@ -702,13 +684,13 @@ pub fn vw_if_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-section` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwSectionState {
+pub(all) struct VwSectionState {
   id : Int
   name : String
   items : Array[@tutuca.Value]
   expanded : Bool
   defaultItem : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -731,10 +713,7 @@ fn VwSectionState::zero() -> VwSectionState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_section_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwSectionState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_section_encode(VwSectionState::zero())
 }
 
 ///|
@@ -789,8 +768,8 @@ pub let vw_section_schema_fingerprint : String = "2bd9dd9147e15f1e"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_section_encode(s : VwSectionState) -> Map[String, @tutuca.Value] {
   {
     "id": Num(s.id.to_double()),
@@ -893,10 +872,10 @@ pub fn vw_section_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-memory` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwMemoryState {
+pub(all) struct VwMemoryState {
   n : Int
   m : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -913,10 +892,7 @@ fn VwMemoryState::zero() -> VwMemoryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_memory_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwMemoryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_memory_encode(VwMemoryState::zero())
 }
 
 ///|
@@ -960,8 +936,8 @@ pub let vw_memory_schema_fingerprint : String = "5bef82ed43430e63"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_memory_encode(s : VwMemoryState) -> Map[String, @tutuca.Value] {
   { "n": Num(s.n.to_double()), "m": Num(s.m.to_double()) }
 }
@@ -1020,11 +996,11 @@ pub fn vw_memory_schema() -> @component.SchemaInfo {
 /// Declared as `interface vw-picker` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct VwPickerState {
+pub(all) struct VwPickerState {
   currentSection : String
   instructions : Array[@tutuca.Value]
   filter : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -1041,10 +1017,7 @@ fn VwPickerState::zero() -> VwPickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn vw_picker_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(VwPickerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  vw_picker_encode(VwPickerState::zero())
 }
 
 ///|
@@ -1093,8 +1066,8 @@ pub let vw_picker_schema_fingerprint : String = "e5eda1d1115e0e30"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn vw_picker_encode(s : VwPickerState) -> Map[String, @tutuca.Value] {
   {
     "currentSection": Str(s.currentSection),

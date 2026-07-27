@@ -13,7 +13,7 @@
 /// Declared as `interface styles-example` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct StylesExampleState {} derive(ToJson, FromJson)
+pub(all) struct StylesExampleState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -30,10 +30,7 @@ fn StylesExampleState::zero() -> StylesExampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn styles_example_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(StylesExampleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  styles_example_encode(StylesExampleState::zero())
 }
 
 ///|
@@ -47,8 +44,8 @@ pub let styles_example_schema_fingerprint : String = "5c435ae5582bab80"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn styles_example_encode(_s : StylesExampleState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -117,7 +114,7 @@ pub fn styles_example_schema() -> @component.SchemaInfo {
 /// Declared as `interface styles-example-root` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct StylesExampleRootState {} derive(ToJson, FromJson)
+pub(all) struct StylesExampleRootState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -134,11 +131,7 @@ fn StylesExampleRootState::zero() -> StylesExampleRootState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn styles_example_root_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(StylesExampleRootState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  styles_example_root_encode(StylesExampleRootState::zero())
 }
 
 ///|
@@ -181,8 +174,8 @@ pub let styles_example_root_schema_fingerprint : String = "5407ac5b07426d2a"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn styles_example_root_encode(
   _s : StylesExampleRootState,
 ) -> Map[String, @tutuca.Value] {

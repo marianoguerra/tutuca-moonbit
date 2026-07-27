@@ -137,7 +137,7 @@ pub fn instance_fields_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn instance_fields_component(
+pub fn instance_fields_component(
   name? : String = "InstanceFields",
   views? : Map[String, @anode.View] = instance_fields_views(),
   init? : InstanceFieldsState = InstanceFieldsState::zero(),
@@ -217,7 +217,7 @@ pub fn instance_inspector_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn instance_inspector_component(
+pub fn instance_inspector_component(
   name? : String = "InstanceInspector",
   views? : Map[String, @anode.View] = instance_inspector_views(),
   init? : InstanceInspectorState = InstanceInspectorState::zero(),
@@ -367,7 +367,7 @@ pub fn instance_explorer_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn instance_explorer_component(
+pub fn instance_explorer_component(
   name? : String = "InstanceExplorer",
   views? : Map[String, @anode.View] = instance_explorer_views(),
   init? : InstanceExplorerState = InstanceExplorerState::zero(),

@@ -73,7 +73,7 @@ pub fn selector_entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn selector_entry_component(
+pub fn selector_entry_component(
   name? : String = "SelectorEntry",
   views? : Map[String, @anode.View] = selector_entry_views(),
   init? : SelectorEntryState = SelectorEntryState::zero(),
@@ -158,7 +158,7 @@ pub fn selector_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn selector_component(
+pub fn selector_component(
   name? : String = "Selector",
   views? : Map[String, @anode.View] = selector_views(),
   init? : SelectorState = SelectorState::zero(),
@@ -265,7 +265,7 @@ pub fn entry_editor_and_selector_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn entry_editor_and_selector_component(
+pub fn entry_editor_and_selector_component(
   name? : String = "EntryEditorAndSelector",
   views? : Map[String, @anode.View] = entry_editor_and_selector_views(),
   init? : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
@@ -350,7 +350,7 @@ pub fn sheet_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn sheet_component(
+pub fn sheet_component(
   name? : String = "Sheet",
   views? : Map[String, @anode.View] = sheet_views(),
   init? : SheetState = SheetState::zero(),
@@ -421,7 +421,7 @@ pub fn toolbar_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn toolbar_component(
+pub fn toolbar_component(
   name? : String = "Toolbar",
   views? : Map[String, @anode.View] = toolbar_views(),
   init? : ToolbarState = ToolbarState::zero(),
@@ -487,7 +487,7 @@ pub fn panel_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn panel_component(
+pub fn panel_component(
   name? : String = "Panel",
   views? : Map[String, @anode.View] = panel_views(),
   init? : PanelState = PanelState::zero(),
@@ -550,7 +550,7 @@ pub fn workspace_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn workspace_component(
+pub fn workspace_component(
   name? : String = "Workspace",
   views? : Map[String, @anode.View] = workspace_views(),
   init? : WorkspaceState = WorkspaceState::zero(),

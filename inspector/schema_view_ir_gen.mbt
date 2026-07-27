@@ -76,7 +76,7 @@ pub fn schema_property_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_property_component(
+pub fn schema_property_component(
   name? : String = "SchemaProperty",
   views? : Map[String, @anode.View] = schema_property_views(),
   init? : SchemaPropertyState = SchemaPropertyState::zero(),
@@ -163,7 +163,7 @@ pub fn schema_branch_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn schema_branch_component(
+pub fn schema_branch_component(
   name? : String = "SchemaBranch",
   views? : Map[String, @anode.View] = schema_branch_views(),
   init? : SchemaBranchState = SchemaBranchState::zero(),

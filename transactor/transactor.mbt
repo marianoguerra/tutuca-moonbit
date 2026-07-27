@@ -415,22 +415,18 @@ fn Transactor::update_root_value(
     return cur
   }
   t.obs_before = leaf.as_value()
+  // One lookup — see Path::dispatch. The `"$unknown"` sentinel a second one
+  // probed for is gone, and with it the `Unknown` observation: a miss is a
+  // miss.
   let resolved = match leaf.handler(t.bucket, t.name) {
     Some(h) => {
       t.obs_matched = Some(Exact)
       Some(h)
     }
-    None =>
-      match leaf.handler(t.bucket, "$unknown") {
-        Some(h) => {
-          t.obs_matched = Some(Unknown)
-          Some(h)
-        }
-        None => {
-          t.obs_matched = Some(NoHandler)
-          None
-        }
-      }
+    None => {
+      t.obs_matched = Some(NoHandler)
+      None
+    }
   }
   guard resolved is Some(Handler(f)) else {
     t.mark_settled()

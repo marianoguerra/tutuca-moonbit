@@ -14,34 +14,17 @@
 // - generated field mutators never appear (they live in their own table).
 
 ///|
-fn field_kind_name(k : @component.FieldKind) -> String {
-  match k {
-    FBool => "bool"
-    FText => "text"
-    FInt => "int"
-    FFloat => "float"
-    FList => "list"
-    FMap => "map"
-    FAny => "any"
-    FComp(comp~, ..) => "comp(\{comp})"
-    FSet => "set"
-    FOMap => "omap"
-  }
-}
-
-///|
 /// The pure snapshot the component inspector renders (JS introspectComponent).
 ///
-/// Two sources. A component with a `tutuca/state` schema is DESCRIBED by its
-/// generator — field types with their element types, the names `update`
-/// answers, the declared message buckets, the element ids, the named
-/// fixtures. One without is RECOVERED from the runtime descriptor, which is
-/// all a JS port ever had and all that is knowable without a schema.
+/// One source: what the component DECLARES. There used to be a second — a
+/// description recovered from the runtime descriptor, which is all a JS port
+/// ever had — and it answered for every component without a schema. Every
+/// component has one now, so the reflected path had nothing left to describe
+/// and is gone: field types show the author's WIT spelling rather than a label
+/// reconstructed from a runtime kind, and `update` lists the names it answers
+/// instead of the bare fact that it exists.
 pub fn component_summary(comp : @component.Component) -> @tutuca.Value {
-  match comp.schema {
-    Some(si) => summary_from_schema(comp, si)
-    None => summary_from_specs(comp)
-  }
+  summary_from_schema(comp, comp.schema)
 }
 
 ///|
@@ -109,33 +92,6 @@ fn summary_from_schema(
     "alter": name_list(comp.alter_names),
     "ids": name_list(si.ids),
     "fixtures": name_list(si.init_names),
-    "views": view_rows(comp),
-  })
-}
-
-///|
-/// The reflected description, for a component with no schema: field kinds
-/// inferred from the encoded init value, and `update` as a presence flag
-/// because its handled names are unknowable.
-fn summary_from_specs(comp : @component.Component) -> @tutuca.Value {
-  let fields : Array[@tutuca.Value] = []
-  for name, spec in comp.specs {
-    fields.push(
-      Map({
-        "name": Str(name),
-        "type": Str(field_kind_name(spec.kind)),
-        "default": spec.default,
-      }),
-    )
-  }
-  Map({
-    "name": Str(comp.name),
-    "id": Num(comp.id.to_double()),
-    "fields": List(fields),
-    "methods": name_list(comp.compute_names),
-    "update": name_list(if comp.has_update { ["update"] } else { [] }),
-    "swap": name_list(comp.swap_names),
-    "alter": name_list(comp.alter_names),
     "views": view_rows(comp),
   })
 }

@@ -13,7 +13,7 @@
 priv struct CounterState {
   count : Int
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// A counter with one mutate handler (`$inc`, `$`-prefixed in views) and one
@@ -39,6 +39,8 @@ fn counter_module() -> @component.ModuleDef {
     // schema because the runtime should be told a component's shape rather
     // than reconstruct it, and that holds whether the shape came from
     // `gen-views` or from here.
+    encode=counter_state_encode,
+    decode=counter_state_decode,
     schema=@component.SchemaInfo::new(
       fingerprint="harness-counter",
       fields=[
@@ -112,4 +114,18 @@ test "a no-op interaction re-renders nothing at all" {
   assert_eq(h.value_of(".label-input"), "world")
   assert_eq(h.render_count(), before + 1)
   assert_false(physical_equal(h.drive_value(), root))
+}
+
+///|
+/// The state <-> fields codec, written by hand the way a generated module
+/// writes it. A fixture is not exempt: there is no bridge to fall back to.
+fn counter_state_encode(s : CounterState) -> Map[String, @tutuca.Value] {
+  { "count": Num(s.count.to_double()), "label": Str(s.label) }
+}
+
+///|
+fn counter_state_decode(f : Map[String, @tutuca.Value]) -> CounterState? {
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some({ count: n_count.to_int(), label: v_label })
 }

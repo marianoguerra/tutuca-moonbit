@@ -55,7 +55,7 @@ pub fn alt_url_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn alt_url_component(
+pub fn alt_url_component(
   name? : String = "AltUrl",
   views? : Map[String, @anode.View] = alt_url_views(),
   init? : AltUrlState = AltUrlState::zero(),
@@ -206,7 +206,7 @@ pub fn ps_entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn ps_entry_component(
+pub fn ps_entry_component(
   name? : String = "PsEntry",
   views? : Map[String, @anode.View] = ps_entry_views(),
   init? : PsEntryState = PsEntryState::zero(),
@@ -484,7 +484,7 @@ pub fn root_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn root_component(
+pub fn root_component(
   name? : String = "Root",
   views? : Map[String, @anode.View] = root_views(),
   init? : RootState = RootState::zero(),

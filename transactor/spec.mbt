@@ -108,11 +108,14 @@ pub(all) enum ObserveKind {
 } derive(Debug, Eq)
 
 ///|
-/// How the handler was resolved (JS _matched): an exact bucket entry, the
-/// $unknown fallback, or nothing (silent no-op).
+/// How the handler was resolved (JS _matched): an exact bucket entry, or
+/// nothing (silent no-op).
+///
+/// There was a third answer, `Unknown`, for the `"$unknown"` catch-all a
+/// second lookup probed for on every miss. Dispatch does one lookup now, so a
+/// miss is a miss and there is no third thing to report.
 pub(all) enum ObserveMatch {
   Exact
-  Unknown
   NoHandler
 } derive(Debug, Eq)
 

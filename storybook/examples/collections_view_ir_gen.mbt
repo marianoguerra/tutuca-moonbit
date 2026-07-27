@@ -83,7 +83,7 @@ pub fn render_with_scope_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn render_with_scope_component(
+pub fn render_with_scope_component(
   name? : String = "RenderWithScope",
   views? : Map[String, @anode.View] = render_with_scope_views(),
   init? : RenderWithScopeState = RenderWithScopeState::zero(),
@@ -190,7 +190,7 @@ pub fn list_filter_enrich_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn list_filter_enrich_component(
+pub fn list_filter_enrich_component(
   name? : String = "ListFilterEnrich",
   views? : Map[String, @anode.View] = list_filter_enrich_views(),
   init? : ListFilterEnrichState = ListFilterEnrichState::zero(),
@@ -313,7 +313,7 @@ pub fn list_filter_enrich_with_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn list_filter_enrich_with_component(
+pub fn list_filter_enrich_with_component(
   name? : String = "ListFilterEnrichWith",
   views? : Map[String, @anode.View] = list_filter_enrich_with_views(),
   init? : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),

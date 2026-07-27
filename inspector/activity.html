@@ -31,7 +31,7 @@
       <span title="Message name dispatched — for a DOM input, the event type (click, input, change, keydown, …)" class="font-mono font-semibold entry-name" @text=".name"></span>
       <span title="Actual handler that ran — shown only when it differs from the name" class="text-xs opacity-60 font-mono" @show="truthy? .handlerName" @text=".handlerName"></span>
       <span title="Path to the target component" class="text-xs opacity-40 font-mono entry-path" @text=".pathLabel"></span>
-      <span title="Handler resolution — exact: matched by name · unknown: $unknown fallback · none: no handler (no-op)" class="badge badge-xs badge-ghost entry-matched" @show="truthy? .matched" @text=".matched"></span>
+      <span title="Handler resolution — exact: matched by name · none: no handler (no-op)" class="badge badge-xs badge-ghost entry-matched" @show="truthy? .matched" @text=".matched"></span>
       <span title="When this event ran" class="ml-auto text-xs opacity-40 font-mono tabular-nums entry-time" @text=".time"></span>
     </div>
     <div class="flex gap-3 items-start font-mono text-xs">

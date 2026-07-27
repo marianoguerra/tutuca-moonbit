@@ -52,7 +52,7 @@ pub fn table_row_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn table_row_component(
+pub fn table_row_component(
   name? : String = "TableRow",
   views? : Map[String, @anode.View] = table_row_views(),
   init? : TableRowState = TableRowState::zero(),
@@ -120,7 +120,7 @@ pub fn item_table_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn item_table_component(
+pub fn item_table_component(
   name? : String = "ItemTable",
   views? : Map[String, @anode.View] = item_table_views(),
   init? : ItemTableState = ItemTableState::zero(),
@@ -174,7 +174,7 @@ pub fn select_option_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn select_option_component(
+pub fn select_option_component(
   name? : String = "SelectOption",
   views? : Map[String, @anode.View] = select_option_views(),
   init? : SelectOptionState = SelectOptionState::zero(),
@@ -247,7 +247,7 @@ pub fn item_select_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn item_select_component(
+pub fn item_select_component(
   name? : String = "ItemSelect",
   views? : Map[String, @anode.View] = item_select_views(),
   init? : ItemSelectState = ItemSelectState::zero(),
@@ -312,7 +312,7 @@ pub fn pseudo_x_demo_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn pseudo_x_demo_component(
+pub fn pseudo_x_demo_component(
   name? : String = "PseudoXDemo",
   views? : Map[String, @anode.View] = pseudo_x_demo_views(),
   init? : PseudoXDemoState = PseudoXDemoState::zero(),

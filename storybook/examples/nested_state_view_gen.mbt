@@ -12,21 +12,21 @@
 pub(all) enum NestedStateDue {
   Unscheduled
   OnDay(Int)
-} derive(ToJson, FromJson, Eq, @debug.Debug)
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The `label` record.
 pub(all) struct NestedStateLabel {
   text : String
   done : Bool
-} derive(ToJson, FromJson, Eq, @debug.Debug)
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The `priority` enum.
 pub(all) enum NestedStatePriority {
   Low
   High
-} derive(ToJson, FromJson, Eq, @debug.Debug)
+} derive(Eq, @debug.Debug)
 
 ///|
 /// The state of the NestedState component.
@@ -34,14 +34,14 @@ pub(all) enum NestedStatePriority {
 /// Declared as `interface nested-state` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct NestedStateState {
+pub(all) struct NestedStateState {
   title : String
   labels : Array[NestedStateLabel]
   priority : NestedStatePriority
   due : NestedStateDue
   note : String?
   size : (Int, Int)
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -65,10 +65,7 @@ fn NestedStateState::zero() -> NestedStateState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn nested_state_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(NestedStateState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  nested_state_encode(NestedStateState::zero())
 }
 
 ///|
@@ -124,7 +121,7 @@ pub let nested_state_schema_fingerprint : String = "4718555fe446ae34"
 ///|
 /// The `due` variant as a `@tutuca.Value`: the bare case
 /// name when it carries nothing, else the name followed by its
-/// payload — the shape `derive(ToJson)` writes.
+/// payload.
 fn nested_state_due_to_value(x : NestedStateDue) -> @tutuca.Value {
   match x {
     Unscheduled => Str("Unscheduled")
@@ -170,8 +167,7 @@ fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
 }
 
 ///|
-/// The `priority` enum as a `@tutuca.Value` — the case name,
-/// which is what `derive(ToJson)` writes for a payload-free enum.
+/// The `priority` enum as a `@tutuca.Value`: the case name.
 fn nested_state_priority_to_value(x : NestedStatePriority) -> @tutuca.Value {
   match x {
     Low => Str("Low")
@@ -195,8 +191,8 @@ fn nested_state_priority_of_value(v : @tutuca.Value) -> NestedStatePriority? {
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn nested_state_encode(s : NestedStateState) -> Map[String, @tutuca.Value] {
   let out : Map[String, @tutuca.Value] = Map([])
   out["title"] = Str(s.title)

@@ -13,11 +13,11 @@
 /// Declared as `interface schema-property` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SchemaPropertyState {
+pub(all) struct SchemaPropertyState {
   key : String
   child : @tutuca.Value
   required : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -34,10 +34,7 @@ fn SchemaPropertyState::zero() -> SchemaPropertyState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_property_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SchemaPropertyState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  schema_property_encode(SchemaPropertyState::zero())
 }
 
 ///|
@@ -88,8 +85,8 @@ pub let schema_property_schema_fingerprint : String = "738c4fe1907764e4"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn schema_property_encode(
   s : SchemaPropertyState,
 ) -> Map[String, @tutuca.Value] {
@@ -180,11 +177,11 @@ pub fn schema_property_schema() -> @component.SchemaInfo {
 /// Declared as `interface schema-branch` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SchemaBranchState {
+pub(all) struct SchemaBranchState {
   label : String
   child : @tutuca.Value
   labelClass : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -201,10 +198,7 @@ fn SchemaBranchState::zero() -> SchemaBranchState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_branch_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SchemaBranchState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  schema_branch_encode(SchemaBranchState::zero())
 }
 
 ///|
@@ -255,8 +249,8 @@ pub let schema_branch_schema_fingerprint : String = "b48cf0ecfc472225"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn schema_branch_encode(s : SchemaBranchState) -> Map[String, @tutuca.Value] {
   { "label": Str(s.label), "child": s.child, "labelClass": Str(s.labelClass) }
 }

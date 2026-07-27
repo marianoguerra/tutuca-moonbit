@@ -11,7 +11,7 @@ priv struct TodoState {
   count : Int
   items : Array[@tutuca.Value]
   tags : Map[String, @tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn todo_comp() -> @component.Component {
@@ -36,6 +36,15 @@ fn todo_comp() -> @component.Component {
         _ => None
       }
     },
+    encode=todo_state_encode,
+    decode=todo_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="todo_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("done", "bool", FBool),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("items", "values", FList),
+      @component.FieldInfo::new("tags", "value-omap", FMap),
+    ]),
   )
 }
 
@@ -101,7 +110,7 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
 }
 
 ///|
-priv struct NoFields {} derive(ToJson, FromJson)
+priv struct NoFields {}
 
 ///|
 test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
@@ -112,6 +121,9 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
     // default set of two members; a List arg coerces (and dedups) into the
     // Map-backed set, Bool(true) values keyed by member.
     specs={ "sel": @component.FieldSpec::set(members=["a", "b"]) },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   // default
   let t = comp.make(Map([]))
@@ -154,7 +166,7 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
 ///|
 priv struct SetInState {
   sel : Map[String, Bool]
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "FSet kind override for a typed S field keeps the typed default" {
@@ -163,6 +175,11 @@ test "FSet kind override for a typed S field keeps the typed default" {
     name="TypedFacets",
     init=SetInState::{ sel: { "a": true } },
     specs={ "sel": @component.FieldSpec::set() },
+    encode=set_in_state_encode,
+    decode=set_in_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="set_in_state", fields=[
+      @component.FieldInfo::new("sel", "text-set", FSet),
+    ]),
   )
   let t = comp.make(Map([]))
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
@@ -182,6 +199,9 @@ test "omap slot field: keyed mutators over an ordered Map" {
     name="Ordered",
     init=NoFields::{  },
     specs={ "m": @component.FieldSpec::omap(default={ "x": Num(1) }) },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   let t = comp.make(Map([]))
   assert_true(t.field("m") == Map({ "x": Num(1) }))
@@ -208,6 +228,9 @@ test "Components::collect_classes gathers sorted classes from compiled views" {
     },
     name="A",
     init=NoFields::{  },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   let b = @component.component(
     views={
@@ -215,6 +238,9 @@ test "Components::collect_classes gathers sorted classes from compiled views" {
     },
     name="B",
     init=NoFields::{  },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   scope.register_components([a, b])
   scope.compile_all()
@@ -251,7 +277,7 @@ test "update dispatches through Path::update; Input falls back to mutators" {
 ///|
 priv struct CountOnly {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "a compute entry is a pre-bound Fn; an update arm is not" {
@@ -266,6 +292,11 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
       }
     },
     compute={ "label": (s : CountOnly, _args) => Str("n=\{s.count}") },
+    encode=count_only_encode,
+    decode=count_only_decode,
+    schema=@component.SchemaInfo::new(fingerprint="count_only", fields=[
+      @component.FieldInfo::new("count", "s32", FInt),
+    ]),
   )
   let t = comp.make(Map([]))
   guard t is Obj(o)
@@ -295,11 +326,17 @@ test "registration scopes: chains, aliases, sibling independence" {
     views={ "main": @anode.View::new("main", raw_view="<i>a</i>") },
     name="A",
     init=NoFields::{  },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   let b = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<i>b</i>") },
     name="B",
     init=NoFields::{  },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   root_scope.register_components([a], aliases={ "Alias": "A" })
   guard a.scope is Some(a_scope) else { fail("no scope on A") }
@@ -317,7 +354,7 @@ test "registration scopes: chains, aliases, sibling independence" {
 ///|
 priv struct TitleOnly {
   title : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "compile parses provide/lookup and stamps view ids" {
@@ -340,6 +377,11 @@ test "compile parses provide/lookup and stamps view ids" {
       "active": { source: "Workspace.active", default: Some(".fallback") },
       "broken": { source: "nodot", default: None },
     },
+    encode=title_only_encode,
+    decode=title_only_decode,
+    schema=@component.SchemaInfo::new(fingerprint="title_only", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+    ]),
   )
   scope.register_components([ws])
   scope.compile_all()
@@ -387,6 +429,9 @@ test "compile_style emits data-cid scoped blocks" {
     init=NoFields::{  },
     common_style="border: 0",
     global_style="body{margin:0}",
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   let css = comp.compile_style()
   assert_true(css.contains("[data-cid=\"\{comp.id}\"]{border: 0}"))
@@ -399,7 +444,7 @@ test "compile_style emits data-cid scoped blocks" {
 ///|
 priv struct LabelOnly {
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "FComp slot fields default through the registration scope" {
@@ -408,6 +453,11 @@ test "FComp slot fields default through the registration scope" {
     views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
     name="Child",
     init=LabelOnly::{ label: "hi" },
+    encode=label_only_encode,
+    decode=label_only_decode,
+    schema=@component.SchemaInfo::new(fingerprint="label_only", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+    ]),
   )
   let parent = @component.component(
     views={
@@ -419,6 +469,9 @@ test "FComp slot fields default through the registration scope" {
     name="Parent",
     init=NoFields::{  },
     specs={ "kid": @component.FieldSpec::comp("Child") },
+    encode=no_fields_encode,
+    decode=no_fields_decode,
+    schema=@component.SchemaInfo::new(fingerprint="no_fields", fields=[]),
   )
   scope.register_components([child, parent])
   let p = parent.make(Map([]))
@@ -429,7 +482,7 @@ test "FComp slot fields default through the registration scope" {
 ///|
 priv struct StashedState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "Value fields in S carry Obj instances losslessly through updates" {
@@ -438,6 +491,11 @@ test "Value fields in S carry Obj instances losslessly through updates" {
     views={ "main": @anode.View::new("main", raw_view="<i>l</i>") },
     name="Leaf",
     init=LabelOnly::{ label: "leaf" },
+    encode=label_only_encode,
+    decode=label_only_decode,
+    schema=@component.SchemaInfo::new(fingerprint="label_only", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+    ]),
   )
   let parent = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
@@ -449,6 +507,11 @@ test "Value fields in S carry Obj instances losslessly through updates" {
         _ => None
       }
     },
+    encode=stashed_state_encode,
+    decode=stashed_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="stashed_state", fields=[
+      @component.FieldInfo::new("items", "values", FList),
+    ]),
   )
   scope.register_components([child, parent])
   let leaf = child.make(Map([]))
@@ -557,7 +620,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
 ///|
 priv struct FilterState {
   query : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
@@ -588,6 +651,11 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
         @component.LoopWith::new(start=1, end=3)
       },
     },
+    encode=filter_state_encode,
+    decode=filter_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="filter_state", fields=[
+      @component.FieldInfo::new("query", "string", FText),
+    ]),
   )
   let t = comp.make(Map([]))
   guard t is Obj(o)
@@ -617,12 +685,12 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
 ///|
 priv struct SwapAState {
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 priv struct SwapBState {
   note : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 test "swap handlers replace the node with another component's instance" {
@@ -633,6 +701,11 @@ test "swap handlers replace the node with another component's instance" {
     },
     name="BComp",
     init=SwapBState::{ note: "i am b" },
+    encode=swap_b_state_encode,
+    decode=swap_b_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="swap_b_state", fields=[
+      @component.FieldInfo::new("note", "string", FText),
+    ]),
   )
   let a = @component.component(
     views={
@@ -648,6 +721,11 @@ test "swap handlers replace the node with another component's instance" {
         Some(b.make({ "note": Str("from \{s.label}") }))
       },
     },
+    encode=swap_a_state_encode,
+    decode=swap_a_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="swap_a_state", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+    ]),
   )
   scope.register_components([a, b])
   let inst = a.make(Map([]))
@@ -665,4 +743,143 @@ test "swap handlers replace the node with another component's instance" {
   assert_eq(note, "from a")
   // metadata surfaces the swap bucket
   assert_true(a.swap_names.contains("becomeB"))
+}
+
+///|
+fn todo_state_encode(s : TodoState) -> Map[String, @tutuca.Value] {
+  {
+    "title": Str(s.title),
+    "done": Bool(s.done),
+    "count": Num(s.count.to_double()),
+    "items": (List(s.items) : @tutuca.Value),
+    "tags": (Map(s.tags) : @tutuca.Value),
+  }
+}
+
+///|
+fn todo_state_decode(f : Map[String, @tutuca.Value]) -> TodoState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("done") is Some(Bool(v_done)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  guard f.get("items") is Some(List(v_items)) else { return None }
+  guard f.get("tags") is Some(Map(v_tags)) else { return None }
+  Some(TodoState::{
+    title: v_title,
+    done: v_done,
+    count: v_count,
+    items: v_items,
+    tags: v_tags,
+  })
+}
+
+///|
+fn no_fields_encode(_s : NoFields) -> Map[String, @tutuca.Value] {
+  Map([])
+}
+
+///|
+fn no_fields_decode(_f : Map[String, @tutuca.Value]) -> NoFields? {
+  Some(NoFields::{  })
+}
+
+///|
+fn set_in_state_encode(s : SetInState) -> Map[String, @tutuca.Value] {
+  {
+    "sel": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, b in s.sel {
+        m[k] = Bool(b)
+      }
+      (Map(m) : @tutuca.Value)
+    },
+  }
+}
+
+///|
+fn set_in_state_decode(f : Map[String, @tutuca.Value]) -> SetInState? {
+  guard f.get("sel") is Some(Map(m_sel)) else { return None }
+  let v_sel : Map[String, Bool] = Map([])
+  for k2, x in m_sel {
+    v_sel[k2] = x is Bool(true)
+  }
+  Some(SetInState::{ sel: v_sel })
+}
+
+///|
+fn count_only_encode(s : CountOnly) -> Map[String, @tutuca.Value] {
+  { "count": Num(s.count.to_double()) }
+}
+
+///|
+fn count_only_decode(f : Map[String, @tutuca.Value]) -> CountOnly? {
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  Some(CountOnly::{ count: v_count })
+}
+
+///|
+fn title_only_encode(s : TitleOnly) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title) }
+}
+
+///|
+fn title_only_decode(f : Map[String, @tutuca.Value]) -> TitleOnly? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  Some(TitleOnly::{ title: v_title })
+}
+
+///|
+fn label_only_encode(s : LabelOnly) -> Map[String, @tutuca.Value] {
+  { "label": Str(s.label) }
+}
+
+///|
+fn label_only_decode(f : Map[String, @tutuca.Value]) -> LabelOnly? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(LabelOnly::{ label: v_label })
+}
+
+///|
+fn stashed_state_encode(s : StashedState) -> Map[String, @tutuca.Value] {
+  { "items": (List(s.items) : @tutuca.Value) }
+}
+
+///|
+fn stashed_state_decode(f : Map[String, @tutuca.Value]) -> StashedState? {
+  guard f.get("items") is Some(List(v_items)) else { return None }
+  Some(StashedState::{ items: v_items })
+}
+
+///|
+fn filter_state_encode(s : FilterState) -> Map[String, @tutuca.Value] {
+  { "query": Str(s.query) }
+}
+
+///|
+fn filter_state_decode(f : Map[String, @tutuca.Value]) -> FilterState? {
+  guard f.get("query") is Some(Str(v_query)) else { return None }
+  Some(FilterState::{ query: v_query })
+}
+
+///|
+fn swap_a_state_encode(s : SwapAState) -> Map[String, @tutuca.Value] {
+  { "label": Str(s.label) }
+}
+
+///|
+fn swap_a_state_decode(f : Map[String, @tutuca.Value]) -> SwapAState? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(SwapAState::{ label: v_label })
+}
+
+///|
+fn swap_b_state_encode(s : SwapBState) -> Map[String, @tutuca.Value] {
+  { "note": Str(s.note) }
+}
+
+///|
+fn swap_b_state_decode(f : Map[String, @tutuca.Value]) -> SwapBState? {
+  guard f.get("note") is Some(Str(v_note)) else { return None }
+  Some(SwapBState::{ note: v_note })
 }

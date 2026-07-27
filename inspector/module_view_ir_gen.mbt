@@ -64,7 +64,7 @@ pub fn rich_sample_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn rich_sample_component(
+pub fn rich_sample_component(
   name? : String = "RichSample",
   views? : Map[String, @anode.View] = rich_sample_views(),
   init? : RichSampleState = RichSampleState::zero(),
@@ -141,7 +141,7 @@ pub fn sample_card_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn sample_card_component(
+pub fn sample_card_component(
   name? : String = "SampleCard",
   views? : Map[String, @anode.View] = sample_card_views(),
   init? : SampleCardState = SampleCardState::zero(),

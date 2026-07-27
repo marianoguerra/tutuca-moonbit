@@ -91,5 +91,5 @@ test "a component with no declared buckets emits none of this" {
   assert_false(src.contains("ChatBubble"))
   assert_false(src.contains("ChatResponse"))
   // ...but the Input bucket the views DO type is untouched.
-  assert_true(src.contains("priv struct ChatState {"))
+  assert_true(src.contains("pub(all) struct ChatState {"))
 }

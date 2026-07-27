@@ -187,8 +187,14 @@ fn tpl_piece(v : Value) -> String {
 }
 
 ///|
-/// JS mk404Handler: a warn-and-return-this function for unresolved handler
-/// names (our Fn convention: element 0 is `this`).
+/// A handler nothing answers: warn and hand back `this` unchanged.
+///
+/// Narrower than it used to be. A view's `@when` / `@enrich-with` /
+/// `@loop-with` names are generated into an enum the author matches
+/// exhaustively, so a name NOBODY wired is a build error now. What is left is
+/// the case the enum cannot rule out — an arm that answers `None`, meaning
+/// "another bucket serves this", where no other bucket does. That is a real
+/// mistake worth reporting rather than a shape the engine has to tolerate.
 fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
   Fn(args => {
     warn("handler not found \{to_repr((ns, name))}")

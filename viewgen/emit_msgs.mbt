@@ -58,7 +58,7 @@ fn emit_bucket_enum(
     if m.payload.is_empty() {
       out.write_string("  \{m.variant}\n")
     } else {
-      let ps = m.payload.map(p => def.moonbit_ty(p)).join(", ")
+      let ps = m.payload.map(p => msg_payload_ty(def, p)).join(", ")
       out.write_string("  \{m.variant}(\{ps})\n")
     }
   }
@@ -243,17 +243,35 @@ fn to_value_expr(
   binder : String,
   def : @statedef.StateDef,
 ) -> String {
+  def.moonbit_ty(ty) |> ignore
   match ty {
     TInt(..) => "Num(\{binder}.to_double())"
     TFloat => "Num(\{binder})"
     TText => "Str(\{binder})"
     TBool => "Bool(\{binder})"
-    // A structured payload round-trips through its own ToJson, which is the
-    // same road the state itself travels.
-    TRecord(_) | TVariant(_) | TEnum(_) | TList(_) | TTuple(_) | TOption(_) => {
-      def.moonbit_ty(ty) |> ignore
-      "@tutuca.Value::from_json(ToJson::to_json(\{binder}))"
-    }
+    // Everything else already IS the Value — see `msg_payload_ty`.
     _ => binder
+  }
+}
+
+///|
+/// The MoonBit type one message payload carries.
+///
+/// A scalar is its own type; everything else is `@tutuca.Value`. This is the
+/// ONE place that decides, because three sites have to agree — the enum
+/// variant, the pattern `from_dispatch` matches, and the expression
+/// `to_dispatch` writes — and they did not: the variant said
+/// `Array[@tutuca.Value]` for a `values` payload while the decode bound the raw
+/// Value, so the generated module did not compile.
+///
+/// Value rather than the declared collection because a dispatch payload
+/// arrives as `Array[@tutuca.Value]` and always did. Typing it as an
+/// `Array[String]` would mean converting, and the only converter to hand was a
+/// JSON round trip — the same one the state codec exists to avoid. The handler
+/// destructures the Value instead, which is what the `Unknown` arm does too.
+fn msg_payload_ty(def : @statedef.StateDef, ty : @statedef.StateTy) -> String {
+  match ty {
+    TInt(..) | TFloat | TText | TBool => def.moonbit_ty(ty)
+    _ => "@tutuca.Value"
   }
 }

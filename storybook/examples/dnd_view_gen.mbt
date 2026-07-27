@@ -13,10 +13,10 @@
 /// Declared as `interface dn-d-example` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct DnDExampleState {
+pub(all) struct DnDExampleState {
   items : Array[@tutuca.Value]
   query : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn DnDExampleState::zero() -> DnDExampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn dn_d_example_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(DnDExampleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  dn_d_example_encode(DnDExampleState::zero())
 }
 
 ///|
@@ -80,8 +77,8 @@ pub let dn_d_example_schema_fingerprint : String = "669b14463cd52e60"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn dn_d_example_encode(s : DnDExampleState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),

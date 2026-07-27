@@ -1,16 +1,16 @@
 // Emitting direct state <-> Value codecs.
 //
-// The runtime bridges typed state to the Value world through JSON: `S ->
-// Json -> Value` on the way in and back on the way out
-// (component/instance.mbt encode_state / decode_state), once per state
-// write. benchmarks/OPTIMIZATIONS.md flags the cost.
+// The runtime used to bridge typed state to the Value world through JSON:
+// `S -> Json -> Value` on the way in and back on the way out, once per state
+// write. This replaced it, and then it was deleted — so what follows is not an
+// optimization over a fallback, it is the only conversion there is.
 //
-// With the schema in hand the conversion can be written out field by field,
-// with no intermediate `Json` object. The interesting part is not the
-// allocation saved but the fields that need NO conversion at all: an `any`
-// or a child-slot field already holds a `@tutuca.Value`, and the whole
-// reason `with_value_stash` exists is that those cannot survive a JSON round
-// trip. A direct codec never sends them through one.
+// With the schema in hand the conversion is written out field by field, with
+// no intermediate `Json` object. The interesting part was never the allocation
+// saved but the fields that need NO conversion at all: an `any` or a
+// child-slot field already holds a `@tutuca.Value`, and those cannot survive a
+// JSON round trip — the bridge kept a process-global stash of them purely to
+// smuggle them across. A direct codec never sends them through one.
 //
 // Emitted for EVERY schema-backed component. It used to be emitted only for
 // the ones whose fields all had a direct form, which left the JSON bridge as
@@ -19,9 +19,10 @@
 // whole `StateTy` lattice, `record` / `enum` / `variant` / `option` / `tuple`
 // included.
 //
-// The encoding REPRODUCES what `derive(ToJson)` produces, because during the
-// migration both paths must agree; the shapes were read off the deriver
-// rather than assumed:
+// The encodings were read off `derive(ToJson)` rather than invented, because
+// while the JSON bridge still existed the two paths had to agree. The bridge
+// is gone and the state struct derives nothing now, so these ARE the shapes —
+// what a view reads is defined here:
 //
 //   record   {"title": …, "done": …}     keyed by MoonBit field name
 //   enum     "Blue"                      the MoonBit case name
@@ -144,8 +145,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
       UEnum(cases) => {
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` enum as a `@tutuca.Value` — the case name,\n" +
-          "/// which is what `derive(ToJson)` writes for a payload-free enum.\n" +
+          "/// The `\{ty.wit_name}` enum as a `@tutuca.Value`: the case name.\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  match x {\n",
         )
@@ -170,7 +170,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
           "///|\n" +
           "/// The `\{ty.wit_name}` variant as a `@tutuca.Value`: the bare case\n" +
           "/// name when it carries nothing, else the name followed by its\n" +
-          "/// payload — the shape `derive(ToJson)` writes.\n" +
+          "/// payload.\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  match x {\n",
         )
@@ -254,9 +254,9 @@ fn emit_codec(
   } else {
     ("s", "f")
   }
-  // `option` is the one shape whose ABSENCE is the encoding: `derive(ToJson)`
-  // omits the key rather than writing null, so a state carrying one cannot be
-  // a map literal and is built by insertion instead.
+  // `option` is the one shape whose ABSENCE is the encoding: None omits the
+  // key rather than writing null, so a state carrying one cannot be a map
+  // literal and is built by insertion instead.
   let has_optional = carried.iter().any(f => f.ty is TOption(_))
   out.write_string(
     "///|\n" +
@@ -264,8 +264,8 @@ fn emit_codec(
     "/// field by field rather than through a `Json` round trip.\n" +
     "///\n" +
     "/// A field that already holds a `@tutuca.Value` is passed straight\n" +
-    "/// through: it is exactly what `with_value_stash` exists to rescue from\n" +
-    "/// the JSON path, and this way it never enters one.\n" +
+    "/// through. That is the case a JSON round trip could not do at all: an\n" +
+    "/// `Obj` or an `Fn` does not survive one.\n" +
     "fn \{v}_encode(\{s_param} : \{t}State) -> Map[String, @tutuca.Value] {\n",
   )
   if carried.is_empty() {

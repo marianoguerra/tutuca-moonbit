@@ -50,7 +50,7 @@ pub fn comp_name_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn comp_name_component(
+pub fn comp_name_component(
   name? : String = "CompName",
   views? : Map[String, @anode.View] = comp_name_views(),
   init? : CompNameState = CompNameState::zero(),
@@ -128,7 +128,7 @@ pub fn comp_field_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn comp_field_component(
+pub fn comp_field_component(
   name? : String = "CompField",
   views? : Map[String, @anode.View] = comp_field_views(),
   init? : CompFieldState = CompFieldState::zero(),
@@ -245,7 +245,7 @@ pub fn comp_view_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn comp_view_component(
+pub fn comp_view_component(
   name? : String = "CompView",
   views? : Map[String, @anode.View] = comp_view_views(),
   init? : CompViewState = CompViewState::zero(),
@@ -410,7 +410,7 @@ pub fn comp_section_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn comp_section_component(
+pub fn comp_section_component(
   name? : String = "CompSection",
   views? : Map[String, @anode.View] = comp_section_views(),
   init? : CompSectionState = CompSectionState::zero(),
@@ -518,7 +518,7 @@ pub fn component_inspector_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn component_inspector_component(
+pub fn component_inspector_component(
   name? : String = "ComponentInspector",
   views? : Map[String, @anode.View] = component_inspector_views(),
   init? : ComponentInspectorState = ComponentInspectorState::zero(),

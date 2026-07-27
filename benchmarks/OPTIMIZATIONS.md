@@ -389,3 +389,19 @@ In the view pipeline:
 - **`JSArray::push` / GC** (9–16% + 9–10%). Mostly `StringBuilder` and tree
   children growth; the tw-mb log's biggest wins were all allocation removal, so
   this is where the headroom is.
+
+## The state <-> Value codec, retired
+
+`codec_bench_test.mbt` A/B'd the JSON bridge (`S -> Json -> Value` and back,
+inside a process-global stash because `Obj`/`Fn` cannot survive JSON) against a
+direct field-by-field codec generated from the schema. On the shape the corpus
+has — scalars, a list and a dynamic field — encode came out ~2x and decode ~5x,
+decode gaining most because the JSON path rebuilt a whole `Json` object just to
+hand it to `from_json`. That measurement is what justified generating a second
+encoder at all.
+
+The bench is gone because its comparison is: `component()` requires a codec
+now, the bridge and the stash are deleted, and there is no second path to
+measure against. The numbers stay recorded here — they are why the codec
+exists, and re-deriving them would mean rebuilding the thing they argued
+against.

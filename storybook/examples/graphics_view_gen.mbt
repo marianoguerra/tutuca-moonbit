@@ -13,10 +13,10 @@
 /// Declared as `interface swatch-picker` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SwatchPickerState {
+pub(all) struct SwatchPickerState {
   color : String
   palette : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn SwatchPickerState::zero() -> SwatchPickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn swatch_picker_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SwatchPickerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  swatch_picker_encode(SwatchPickerState::zero())
 }
 
 ///|
@@ -82,8 +79,8 @@ pub let swatch_picker_schema_fingerprint : String = "30457ae742655759"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn swatch_picker_encode(s : SwatchPickerState) -> Map[String, @tutuca.Value] {
   {
     "color": Str(s.color),
@@ -281,11 +278,11 @@ pub fn swatch_picker_schema() -> @component.SchemaInfo {
 /// Declared as `interface quadratic` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct QuadraticState {
+pub(all) struct QuadraticState {
   a : Int
   b : Int
   c : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -302,10 +299,7 @@ fn QuadraticState::zero() -> QuadraticState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn quadratic_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(QuadraticState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  quadratic_encode(QuadraticState::zero())
 }
 
 ///|
@@ -352,8 +346,8 @@ pub let quadratic_schema_fingerprint : String = "bb32e2a1638d9036"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn quadratic_encode(s : QuadraticState) -> Map[String, @tutuca.Value] {
   {
     "a": Num(s.a.to_double()),

@@ -13,10 +13,10 @@
 /// Declared as `interface selector-entry` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SelectorEntryState {
+pub(all) struct SelectorEntryState {
   value : String
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn SelectorEntryState::zero() -> SelectorEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn selector_entry_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SelectorEntryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  selector_entry_encode(SelectorEntryState::zero())
 }
 
 ///|
@@ -82,8 +79,8 @@ pub let selector_entry_schema_fingerprint : String = "1324f37b25b27096"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn selector_entry_encode(s : SelectorEntryState) -> Map[String, @tutuca.Value] {
   { "value": Str(s.value), "label": Str(s.label) }
 }
@@ -236,10 +233,10 @@ pub fn selector_entry_schema() -> @component.SchemaInfo {
 /// Declared as `interface selector` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SelectorState {
+pub(all) struct SelectorState {
   items : Array[@tutuca.Value]
   selectedValue : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -256,10 +253,7 @@ fn SelectorState::zero() -> SelectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn selector_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SelectorState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  selector_encode(SelectorState::zero())
 }
 
 ///|
@@ -303,8 +297,8 @@ pub let selector_schema_fingerprint : String = "7d6e4c9774279bbb"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn selector_encode(s : SelectorState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
@@ -458,9 +452,9 @@ pub fn selector_schema() -> @component.SchemaInfo {
 /// Declared as `interface entry-editor-and-selector` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct EntryEditorAndSelectorState {
+pub(all) struct EntryEditorAndSelectorState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -477,13 +471,7 @@ fn EntryEditorAndSelectorState::zero() -> EntryEditorAndSelectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn entry_editor_and_selector_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(
-      ToJson::to_json(EntryEditorAndSelectorState::zero()),
-    ) {
-    Map(m) => m
-    _ => Map([])
-  }
+  entry_editor_and_selector_encode(EntryEditorAndSelectorState::zero())
 }
 
 ///|
@@ -533,8 +521,8 @@ pub let entry_editor_and_selector_schema_fingerprint : String = "7114357b2636c35
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn entry_editor_and_selector_encode(
   s : EntryEditorAndSelectorState,
 ) -> Map[String, @tutuca.Value] {
@@ -702,9 +690,9 @@ pub fn entry_editor_and_selector_schema() -> @component.SchemaInfo {
 /// Declared as `interface sheet` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SheetState {
+pub(all) struct SheetState {
   title : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -721,10 +709,7 @@ fn SheetState::zero() -> SheetState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn sheet_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SheetState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  sheet_encode(SheetState::zero())
 }
 
 ///|
@@ -765,8 +750,8 @@ pub let sheet_schema_fingerprint : String = "5ee8832621359ec0"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn sheet_encode(s : SheetState) -> Map[String, @tutuca.Value] {
   { "title": Str(s.title) }
 }
@@ -902,7 +887,7 @@ pub fn sheet_schema() -> @component.SchemaInfo {
 /// Declared as `interface toolbar` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ToolbarState {} derive(ToJson, FromJson)
+pub(all) struct ToolbarState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -919,10 +904,7 @@ fn ToolbarState::zero() -> ToolbarState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn toolbar_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ToolbarState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  toolbar_encode(ToolbarState::zero())
 }
 
 ///|
@@ -936,8 +918,8 @@ pub let toolbar_schema_fingerprint : String = "56782604789d5a5e"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn toolbar_encode(_s : ToolbarState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -996,7 +978,7 @@ pub fn toolbar_schema() -> @component.SchemaInfo {
 /// Declared as `interface panel` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PanelState {} derive(ToJson, FromJson)
+pub(all) struct PanelState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -1013,10 +995,7 @@ fn PanelState::zero() -> PanelState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn panel_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PanelState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  panel_encode(PanelState::zero())
 }
 
 ///|
@@ -1057,8 +1036,8 @@ pub let panel_schema_fingerprint : String = "f64005029cb0440a"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn panel_encode(_s : PanelState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -1126,9 +1105,9 @@ pub fn panel_schema() -> @component.SchemaInfo {
 /// Declared as `interface workspace` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct WorkspaceState {
+pub(all) struct WorkspaceState {
   sheet : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -1145,10 +1124,7 @@ fn WorkspaceState::zero() -> WorkspaceState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn workspace_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(WorkspaceState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  workspace_encode(WorkspaceState::zero())
 }
 
 ///|
@@ -1192,8 +1168,8 @@ pub let workspace_schema_fingerprint : String = "de7864d15ebd3a60"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn workspace_encode(s : WorkspaceState) -> Map[String, @tutuca.Value] {
   { "sheet": s.sheet }
 }

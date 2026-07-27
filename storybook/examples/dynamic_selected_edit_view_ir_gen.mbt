@@ -85,7 +85,7 @@ pub fn dse_root_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn dse_root_component(
+pub fn dse_root_component(
   name? : String = "DseRoot",
   views? : Map[String, @anode.View] = dse_root_views(),
   init? : DseRootState = DseRootState::zero(),
@@ -173,7 +173,7 @@ pub fn dse_editor_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn dse_editor_component(
+pub fn dse_editor_component(
   name? : String = "DseEditor",
   views? : Map[String, @anode.View] = dse_editor_views(),
   init? : DseEditorState = DseEditorState::zero(),
@@ -252,7 +252,7 @@ pub fn dse_entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn dse_entry_component(
+pub fn dse_entry_component(
   name? : String = "DseEntry",
   views? : Map[String, @anode.View] = dse_entry_views(),
   init? : DseEntryState = DseEntryState::zero(),

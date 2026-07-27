@@ -5,7 +5,7 @@
 priv struct EditorState {
   text : String
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn text_editor() -> @component.Component {
@@ -18,6 +18,12 @@ fn text_editor() -> @component.Component {
     },
     name="Editor",
     init=EditorState::{ text: "start", count: 0 },
+    encode=editor_state_encode,
+    decode=editor_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="editor_state", fields=[
+      @component.FieldInfo::new("text", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+    ]),
   )
 }
 
@@ -129,6 +135,12 @@ test "@each `value` bind shadows the DOM event's value" {
         _ => None
       }
     },
+    encode=picker_state_encode,
+    decode=picker_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="picker_state", fields=[
+      @component.FieldInfo::new("items", "list<string>", FList),
+      @component.FieldInfo::new("picked", "string", FText),
+    ]),
   )
   let (a, container) = mk_app(list, {
     "items": List([Str("alpha"), Str("beta")]),
@@ -189,6 +201,11 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
         _ => None
       }
     },
+    encode=chatty_state_encode,
+    decode=chatty_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="chatty_state", fields=[
+      @component.FieldInfo::new("n", "s32", FInt),
+    ]),
   )
   let (a, container) = mk_app(chatty, Map([]))
   assert_eq(a.render_count, 1) // the initial render
@@ -204,9 +221,54 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
 priv struct PickerState {
   items : Array[String]
   picked : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 priv struct ChattyState {
   n : Int
-} derive(ToJson, FromJson)
+}
+
+///|
+fn editor_state_encode(s : EditorState) -> Map[String, @tutuca.Value] {
+  { "text": Str(s.text), "count": Num(s.count.to_double()) }
+}
+
+///|
+fn editor_state_decode(f : Map[String, @tutuca.Value]) -> EditorState? {
+  guard f.get("text") is Some(Str(v_text)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  Some(EditorState::{ text: v_text, count: v_count })
+}
+
+///|
+fn picker_state_encode(s : PickerState) -> Map[String, @tutuca.Value] {
+  {
+    "items": (List(s.items.map(x => (Str(x) : @tutuca.Value))) : @tutuca.Value),
+    "picked": Str(s.picked),
+  }
+}
+
+///|
+fn picker_state_decode(f : Map[String, @tutuca.Value]) -> PickerState? {
+  guard f.get("items") is Some(List(l_items)) else { return None }
+  let v_items : Array[String] = []
+  for x in l_items {
+    guard x is Str(s) else { return None }
+    v_items.push(s)
+  }
+  guard f.get("picked") is Some(Str(v_picked)) else { return None }
+  Some(PickerState::{ items: v_items, picked: v_picked })
+}
+
+///|
+fn chatty_state_encode(s : ChattyState) -> Map[String, @tutuca.Value] {
+  { "n": Num(s.n.to_double()) }
+}
+
+///|
+fn chatty_state_decode(f : Map[String, @tutuca.Value]) -> ChattyState? {
+  guard f.get("n") is Some(Num(n_n)) else { return None }
+  let v_n = n_n.to_int()
+  Some(ChattyState::{ n: v_n })
+}

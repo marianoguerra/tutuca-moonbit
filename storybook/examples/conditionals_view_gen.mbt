@@ -13,9 +13,9 @@
 /// Declared as `interface traffic-light` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TrafficLightState {
+pub(all) struct TrafficLightState {
   lightIndex : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,10 +32,7 @@ fn TrafficLightState::zero() -> TrafficLightState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn traffic_light_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TrafficLightState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  traffic_light_encode(TrafficLightState::zero())
 }
 
 ///|
@@ -78,8 +75,8 @@ pub let traffic_light_schema_fingerprint : String = "641f8260005d94a3"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn traffic_light_encode(s : TrafficLightState) -> Map[String, @tutuca.Value] {
   { "lightIndex": Num(s.lightIndex.to_double()) }
 }
@@ -248,9 +245,9 @@ pub fn traffic_light_schema() -> @component.SchemaInfo {
 /// Declared as `interface tabbed-u-i` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TabbedUIState {
+pub(all) struct TabbedUIState {
   tab : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -267,10 +264,7 @@ fn TabbedUIState::zero() -> TabbedUIState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tabbed_u_i_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TabbedUIState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  tabbed_u_i_encode(TabbedUIState::zero())
 }
 
 ///|
@@ -311,8 +305,8 @@ pub let tabbed_u_i_schema_fingerprint : String = "91f1c8c673117b38"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn tabbed_u_i_encode(s : TabbedUIState) -> Map[String, @tutuca.Value] {
   { "tab": Str(s.tab) }
 }
@@ -471,10 +465,10 @@ pub fn tabbed_u_i_schema() -> @component.SchemaInfo {
 /// Declared as `interface list-and-filter` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ListAndFilterState {
+pub(all) struct ListAndFilterState {
   items : Array[@tutuca.Value]
   query : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -491,10 +485,7 @@ fn ListAndFilterState::zero() -> ListAndFilterState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn list_and_filter_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ListAndFilterState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  list_and_filter_encode(ListAndFilterState::zero())
 }
 
 ///|
@@ -540,8 +531,8 @@ pub let list_and_filter_schema_fingerprint : String = "80f3b6c5cd0e5b4d"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn list_and_filter_encode(s : ListAndFilterState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),

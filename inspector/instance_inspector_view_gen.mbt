@@ -13,13 +13,13 @@
 /// Declared as `interface instance-fields` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct InstanceFieldsState {
+pub(all) struct InstanceFieldsState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
   itemsPerPage : Int
   currentPage : Int
   typeName : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -42,10 +42,7 @@ fn InstanceFieldsState::zero() -> InstanceFieldsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_fields_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(InstanceFieldsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  instance_fields_encode(InstanceFieldsState::zero())
 }
 
 ///|
@@ -102,8 +99,8 @@ pub let instance_fields_schema_fingerprint : String = "b02c70c78c681361"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn instance_fields_encode(
   s : InstanceFieldsState,
 ) -> Map[String, @tutuca.Value] {
@@ -404,9 +401,9 @@ pub fn instance_fields_schema() -> @component.SchemaInfo {
 /// Declared as `interface instance-inspector` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct InstanceInspectorState {
+pub(all) struct InstanceInspectorState {
   value : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -423,11 +420,7 @@ fn InstanceInspectorState::zero() -> InstanceInspectorState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_inspector_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(InstanceInspectorState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  instance_inspector_encode(InstanceInspectorState::zero())
 }
 
 ///|
@@ -470,8 +463,8 @@ pub let instance_inspector_schema_fingerprint : String = "dc6d2f180419a084"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn instance_inspector_encode(
   s : InstanceInspectorState,
 ) -> Map[String, @tutuca.Value] {
@@ -544,12 +537,12 @@ pub fn instance_inspector_schema() -> @component.SchemaInfo {
 /// Declared as `interface instance-explorer` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct InstanceExplorerState {
+pub(all) struct InstanceExplorerState {
   activeTab : String
   instanceView : @tutuca.Value
   componentView : @tutuca.Value
   hasComponent : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -571,11 +564,7 @@ fn InstanceExplorerState::zero() -> InstanceExplorerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn instance_explorer_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(InstanceExplorerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  instance_explorer_encode(InstanceExplorerState::zero())
 }
 
 ///|
@@ -629,8 +618,8 @@ pub let instance_explorer_schema_fingerprint : String = "7b0fa55820264791"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn instance_explorer_encode(
   s : InstanceExplorerState,
 ) -> Map[String, @tutuca.Value] {

@@ -35,7 +35,7 @@ impl @core.PathNode for Sheet with fn with_field(self, name, v) {
 }
 
 ///|
-impl @core.PathNode for Sheet with fn handler(self, bucket, name) {
+impl @core.PathNode for Sheet with fn handler(_self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
@@ -48,8 +48,6 @@ impl @core.PathNode for Sheet with fn handler(self, bucket, name) {
       )
     // a handler that decides nothing changed answers None
     (Receive, "noop") => Some(Handler((_args, _ctx) => None))
-    (Receive, "$unknown") =>
-      Some(Handler((_args, _ctx) => Some(sheet("\{self.title}?"))))
     _ => None
   }
 }
@@ -174,10 +172,14 @@ test "a handler answering None leaves the root physically unchanged" {
 }
 
 ///|
-test "an unregistered name falls back to the $unknown handler" {
+/// There is no `$unknown` catch-all any more: dispatch does ONE lookup, and a
+/// name nothing registered changes nothing. A component that wants a catch-all
+/// writes the wildcard arm of its own `update` match, which is the same thing
+/// with the name statically bound.
+test "an unregistered name is a no-op" {
   let root = make_app("b")
   let root2 = sel_path().update(root, Receive, "does-not-exist", [])
-  assert_true(title_of(root2, "b") is Some(Str("second?")))
+  assert_true(physical_equal(root2, root))
 }
 
 ///|

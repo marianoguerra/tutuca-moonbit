@@ -25,16 +25,16 @@ priv struct TypedSpec[S] {
     String,
     (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value,
   ]
-  /// Direct state <-> fields conversion, when the component has a declared
-  /// schema to generate one from. None falls back to the JSON bridge below,
-  /// which is what an undeclared state still uses.
+  /// Direct state <-> fields conversion, field by field.
   ///
-  /// Worth the second encoder: measured against the JSON path on the shape
-  /// the corpus actually has, encode is ~2x and decode ~5x (see
-  /// benchmarks/codec_bench_test.mbt). Decode gains most because the JSON
-  /// path rebuilds a whole `Json` object to hand to `from_json`.
-  encode : ((S) -> Map[String, @tutuca.Value])?
-  decode : ((Map[String, @tutuca.Value]) -> S?)?
+  /// There used to be a JSON bridge behind these — `S -> Json -> Value` and
+  /// back, inside a process-global stash, because `Obj` and `Fn` cannot
+  /// survive JSON at all. It was the fallback for a component with no declared
+  /// schema to generate a codec from, and measured ~2x slower on encode and
+  /// ~5x on decode (benchmarks/codec_bench_test.mbt). Every component declares
+  /// one now, so there is nothing left to fall back to and the bridge is gone.
+  encode : (S) -> Map[String, @tutuca.Value]
+  decode : (Map[String, @tutuca.Value]) -> S?
 }
 
 ///|
@@ -115,43 +115,6 @@ fn drop_this(args : Array[@tutuca.Value]) -> Array[@tutuca.Value] {
 }
 
 ///|
-/// Encode a state struct to the fields-map representation. Runs in the value
-/// stash: Obj/Fn survive identically.
-fn[S : ToJson] encode_state(s : S) -> Map[String, @tutuca.Value] {
-  @tutuca.with_value_stash(() => {
-    match ToJson::to_json(s) {
-      Object(m) => {
-        let out : Map[String, @tutuca.Value] = Map([])
-        for k, jv in m {
-          let v : @tutuca.Value = @json.from_json(jv) catch { _ => Null }
-          out[k] = v
-        }
-        out
-      }
-      _ => Map([])
-    }
-  })
-}
-
-///|
-/// Decode the S-subset of a fields map back into the state struct. None on a
-/// shape mismatch (callers treat it as a no-op write).
-fn[S : @json.FromJson] decode_state(
-  fields : Map[String, @tutuca.Value],
-  s_fields : Array[String],
-) -> S? {
-  @tutuca.with_value_stash(() => {
-    let obj : Map[String, Json] = Map([])
-    for name in s_fields {
-      obj[name] = ToJson::to_json(fields.get(name).unwrap_or(Null))
-    }
-    Some(@json.from_json(Json::object(obj))) catch {
-      _ => None
-    }
-  })
-}
-
-///|
 /// How much comparing an encoded field may cost before `reuse_equal` gives up
 /// and keeps the new object. Fuel is spent ONLY where the two sides don't
 /// already share structure, so this is not a size limit on state — it is a
@@ -218,14 +181,11 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
 /// did not move. When no encoded field and no slot field changed, the
 /// ORIGINAL instance is returned, and the no-op reaches the transactor as
 /// "the root is the same object": no re-render is scheduled.
-fn[S : ToJson] TypedInstance::with_state(
+fn[S] TypedInstance::with_state(
   self : TypedInstance[S],
   s : S,
 ) -> TypedInstance[S] {
-  let encoded = match self.spec.encode {
-    Some(f) => f(s)
-    None => encode_state(s)
-  }
+  let encoded = (self.spec.encode)(s)
   let fields : Map[String, @tutuca.Value] = Map([])
   let mut changed = false
   for name, v in encoded {
@@ -261,7 +221,7 @@ fn[S] TypedInstance::get(
 ///|
 /// Coerced field write; unknown names and undecodable results keep the
 /// instance unchanged.
-fn[S : @json.FromJson] TypedInstance::set(
+fn[S] TypedInstance::set(
   self : TypedInstance[S],
   name : String,
   v : @tutuca.Value,
@@ -282,11 +242,7 @@ fn[S : @json.FromJson] TypedInstance::set(
   let fields = self.fields.copy()
   fields[name] = coerced
   if self.spec.s_fields.contains(name) {
-    match
-      (match self.spec.decode {
-        Some(f) => f(fields)
-        None => decode_state(fields, self.spec.s_fields)
-      }) {
+    match (self.spec.decode)(fields) {
       Some(s) => TypedInstance::make(self.spec, s, fields)
       None => self
     }
@@ -297,9 +253,7 @@ fn[S : @json.FromJson] TypedInstance::set(
 
 ///|
 /// The instance as a Value — the SAME Value every time (see `boxed`).
-fn[S : ToJson + @json.FromJson] TypedInstance::to_value(
-  self : TypedInstance[S],
-) -> @tutuca.Value {
+fn[S] TypedInstance::to_value(self : TypedInstance[S]) -> @tutuca.Value {
   match self.boxed {
     Some(v) => v
     None => {
@@ -311,9 +265,7 @@ fn[S : ToJson + @json.FromJson] TypedInstance::to_value(
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn component_id(
-  self,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
   match self.spec.comp {
     Some(c) => Some(c.id)
     None => None
@@ -321,10 +273,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn compo
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_field(
-  self,
-  name,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
   match self.fields.get(name) {
     Some(v) => Some(v)
     // $-callables surface as self-pre-bound Fns (JS prototype lookup);
@@ -342,11 +291,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_f
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(
-  self,
-  name,
-  v,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
   guard self.spec.comp is Some(comp) else { return None }
   if comp.specs.contains(name) {
     Some(self.set(name, v).to_value())
@@ -356,7 +301,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_w
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_render_handler(
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_render_handler(
   self,
   name,
   ns,
@@ -428,11 +373,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_r
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_handler(
-  self,
-  bucket,
-  name,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name) {
   let has_update = self.spec.update is Some(_)
   let input_fallback = bucket is Input &&
     (self.spec.swap.contains(name) || self.spec.generated.contains(name))
@@ -489,10 +430,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_h
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_eq(
-  self,
-  other,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_eq(self, other) {
   match self.spec.comp {
     Some(c) => if other.component_id() != Some(c.id) { return false }
     None => return false
@@ -506,9 +444,7 @@ impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_e
 }
 
 ///|
-impl[S : ToJson + @json.FromJson] @tutuca.Obj for TypedInstance[S] with fn obj_debug(
-  self,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_debug(self) {
   let cname = match self.spec.comp {
     Some(c) => c.name
     None => "?"

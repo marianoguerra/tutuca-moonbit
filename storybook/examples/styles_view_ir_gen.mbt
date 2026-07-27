@@ -95,7 +95,7 @@ pub fn styles_example_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn styles_example_component(
+pub fn styles_example_component(
   name? : String = "StylesExample",
   views? : Map[String, @anode.View] = styles_example_views(),
   init? : StylesExampleState = StylesExampleState::zero(),
@@ -153,7 +153,7 @@ pub fn styles_example_root_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn styles_example_root_component(
+pub fn styles_example_root_component(
   name? : String = "StylesExampleRoot",
   views? : Map[String, @anode.View] = styles_example_root_views(),
   init? : StylesExampleRootState = StylesExampleRootState::zero(),

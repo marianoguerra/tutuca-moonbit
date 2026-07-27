@@ -41,7 +41,7 @@ fn mount(
 ///|
 priv struct ItemState {
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn item_comp() -> @component.Component {
@@ -61,13 +61,18 @@ fn item_comp() -> @component.Component {
         _ => None
       }
     },
+    encode=item_state_encode,
+    decode=item_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="item_state", fields=[
+      @component.FieldInfo::new("label", "string", FText),
+    ]),
   )
 }
 
 ///|
 priv struct PanelState {
   title : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn panel_comp() -> @component.Component {
@@ -81,6 +86,11 @@ fn panel_comp() -> @component.Component {
     name="Panel",
     init=PanelState::{ title: "panel" },
     specs={ "item": @component.FieldSpec::comp("Item") },
+    encode=panel_state_encode,
+    decode=panel_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="panel_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+    ]),
   )
 }
 
@@ -167,4 +177,26 @@ test "requests resolve through the component's registration scope" {
   let before = tx.root
   tx.push_request(@tutuca.DispatchPath::of_steps([FieldStep("item")]), "nope", [])
   assert_true(physical_equal(tx.root, before))
+}
+
+///|
+fn item_state_encode(s : ItemState) -> Map[String, @tutuca.Value] {
+  { "label": Str(s.label) }
+}
+
+///|
+fn item_state_decode(f : Map[String, @tutuca.Value]) -> ItemState? {
+  guard f.get("label") is Some(Str(v_label)) else { return None }
+  Some(ItemState::{ label: v_label })
+}
+
+///|
+fn panel_state_encode(s : PanelState) -> Map[String, @tutuca.Value] {
+  { "title": Str(s.title) }
+}
+
+///|
+fn panel_state_decode(f : Map[String, @tutuca.Value]) -> PanelState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  Some(PanelState::{ title: v_title })
 }

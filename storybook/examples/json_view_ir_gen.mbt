@@ -111,7 +111,7 @@ pub fn json_selector_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_selector_component(
+pub fn json_selector_component(
   name? : String = "JsonSelector",
   views? : Map[String, @anode.View] = json_selector_views(),
   init? : JsonSelectorState = JsonSelectorState::zero(),
@@ -176,7 +176,7 @@ pub fn json_null_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_null_component(
+pub fn json_null_component(
   name? : String = "JsonNull",
   views? : Map[String, @anode.View] = json_null_views(),
   init? : JsonNullState = JsonNullState::zero(),
@@ -252,7 +252,7 @@ pub fn json_bool_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_bool_component(
+pub fn json_bool_component(
   name? : String = "JsonBool",
   views? : Map[String, @anode.View] = json_bool_views(),
   init? : JsonBoolState = JsonBoolState::zero(),
@@ -329,7 +329,7 @@ pub fn json_string_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_string_component(
+pub fn json_string_component(
   name? : String = "JsonString",
   views? : Map[String, @anode.View] = json_string_views(),
   init? : JsonStringState = JsonStringState::zero(),
@@ -408,7 +408,7 @@ pub fn json_number_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_number_component(
+pub fn json_number_component(
   name? : String = "JsonNumber",
   views? : Map[String, @anode.View] = json_number_views(),
   init? : JsonNumberState = JsonNumberState::zero(),
@@ -533,7 +533,7 @@ pub fn json_array_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_array_component(
+pub fn json_array_component(
   name? : String = "JsonArray",
   views? : Map[String, @anode.View] = json_array_views(),
   init? : JsonArrayState = JsonArrayState::zero(),
@@ -624,7 +624,7 @@ pub fn json_object_key_val_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_object_key_val_component(
+pub fn json_object_key_val_component(
   name? : String = "JsonObjectKeyVal",
   views? : Map[String, @anode.View] = json_object_key_val_views(),
   init? : JsonObjectKeyValState = JsonObjectKeyValState::zero(),
@@ -751,7 +751,7 @@ pub fn json_object_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn json_object_component(
+pub fn json_object_component(
   name? : String = "JsonObject",
   views? : Map[String, @anode.View] = json_object_views(),
   init? : JsonObjectState = JsonObjectState::zero(),

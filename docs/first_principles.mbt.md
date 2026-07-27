@@ -419,24 +419,8 @@ produces a new instance:
 
 ```mbt check
 ///|
-priv struct FpGreetingState {
-  name : String
-} derive(ToJson, FromJson)
-
-///|
 test "instances are copy-on-write values, visible through Obj" {
-  let greeting = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<p @text=".name"></p>
-        ),
-      ),
-    },
-    name="Greeting",
-    init=FpGreetingState::{ name: "world" },
-  )
+  let greeting = fp_greeting_component(init={ name: "world" })
   let a = greeting.make(Map([]))
   // writes go through the Obj trait (or generated mutators from views):
   // they return a NEW instance value
@@ -490,37 +474,15 @@ navigable and rebuildable:
 /// A parent holding a child component in a field — the smallest tree with a
 /// spine worth rebuilding.
 fn mailbox_module() -> @component.ModuleDef {
-  let note = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<p class="note" @text=".text"></p>
-        ),
-      ),
-    },
-    name="Note",
-    init=NoteState::{ text: "" },
-    update=(_s : NoteState, msg, _ctx) => {
-      match msg {
-        Receive("write", [Str(t), ..]) => Some({ text: t })
-        _ => None
-      }
-    },
-  )
-  let mailbox = @component.component(
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<section><x render=".note"></x></section>
-        ),
-      ),
-    },
-    name="Mailbox",
-    init=EmptyMailboxState::{  },
+  let note = note_component(update=(_s, msg, _ctx) => {
+    match NoteReceive::from_dispatch(msg) {
+      Some(Write(t)) => Some({ text: t })
+      Some(Unknown(_, _)) | None => None
+    }
+  })
+  let mailbox = mailbox_component(
     specs={ "note": @component.FieldSpec::comp("Note") },
-    update=(_s : EmptyMailboxState, msg, ctx) => {
+    update=(_s, msg, ctx) => {
       match msg {
         // forward to the child by path — used from the host in section 9
         Receive("write", args) => {
@@ -537,14 +499,6 @@ fn mailbox_module() -> @component.ModuleDef {
   )
   @component.ModuleDef::new(name="mailbox", components=[mailbox, note])
 }
-
-///|
-priv struct NoteState {
-  text : String
-} derive(ToJson, FromJson)
-
-///|
-priv struct EmptyMailboxState {} derive(ToJson, FromJson)
 
 ///|
 test "Path::update: run a handler at a path, rebuild only the spine" {

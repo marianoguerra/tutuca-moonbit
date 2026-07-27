@@ -90,7 +90,7 @@ test "the schema declares each field's kind rather than inferring it" {
 /// than inferred from the init value.
 test "the component takes its kinds from the schema, not the seed value" {
   let comp = counter_comp()
-  guard comp.schema is Some(si) else { fail("no schema on the component") }
+  let si = comp.schema
   assert_eq(si.fingerprint, counter_schema_fingerprint)
   // The names `update` answers — unknowable by reflection, since update is
   // one opaque pattern match.

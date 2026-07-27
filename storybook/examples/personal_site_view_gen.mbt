@@ -13,10 +13,10 @@
 /// Declared as `interface alt-url` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct AltUrlState {
+pub(all) struct AltUrlState {
   label : String
   url : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn AltUrlState::zero() -> AltUrlState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn alt_url_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(AltUrlState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  alt_url_encode(AltUrlState::zero())
 }
 
 ///|
@@ -80,8 +77,8 @@ pub let alt_url_schema_fingerprint : String = "5894c82bae5b3921"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn alt_url_encode(s : AltUrlState) -> Map[String, @tutuca.Value] {
   { "label": Str(s.label), "url": Str(s.url) }
 }
@@ -159,7 +156,7 @@ pub fn alt_url_schema() -> @component.SchemaInfo {
 /// Declared as `interface ps-entry` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PsEntryState {
+pub(all) struct PsEntryState {
   title : String
   description : String
   lang : String
@@ -170,7 +167,7 @@ priv struct PsEntryState {
   url : String
   altUrls : Array[@tutuca.Value]
   categories : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -198,10 +195,7 @@ fn PsEntryState::zero() -> PsEntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn ps_entry_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PsEntryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  ps_entry_encode(PsEntryState::zero())
 }
 
 ///|
@@ -272,8 +266,8 @@ pub let ps_entry_schema_fingerprint : String = "dbbed9cebaa1412f"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn ps_entry_encode(s : PsEntryState) -> Map[String, @tutuca.Value] {
   {
     "title": Str(s.title),
@@ -533,7 +527,7 @@ pub fn ps_entry_schema() -> @component.SchemaInfo {
 /// Declared as `interface root` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct RootState {
+pub(all) struct RootState {
   allEntries : Array[@tutuca.Value]
   allCategories : Array[String]
   allRoles : Array[String]
@@ -542,7 +536,7 @@ priv struct RootState {
   featuredFirst : Bool
   sortByEnd : Bool
   sortAsc : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -568,10 +562,7 @@ fn RootState::zero() -> RootState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn root_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(RootState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  root_encode(RootState::zero())
 }
 
 ///|
@@ -636,8 +627,8 @@ pub let root_schema_fingerprint : String = "b2600c9777dc4864"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn root_encode(s : RootState) -> Map[String, @tutuca.Value] {
   {
     "allEntries": (List(s.allEntries.map(x => x)) : @tutuca.Value),

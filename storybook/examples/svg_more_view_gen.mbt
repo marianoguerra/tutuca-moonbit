@@ -13,9 +13,9 @@
 /// Declared as `interface icon-gallery` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct IconGalleryState {
+pub(all) struct IconGalleryState {
   size : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,10 +32,7 @@ fn IconGalleryState::zero() -> IconGalleryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn icon_gallery_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(IconGalleryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  icon_gallery_encode(IconGalleryState::zero())
 }
 
 ///|
@@ -76,8 +73,8 @@ pub let icon_gallery_schema_fingerprint : String = "17ce7599eac0af6f"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn icon_gallery_encode(s : IconGalleryState) -> Map[String, @tutuca.Value] {
   { "size": Num(s.size.to_double()) }
 }
@@ -129,9 +126,9 @@ pub fn icon_gallery_schema() -> @component.SchemaInfo {
 /// Declared as `interface bar-chart` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct BarChartState {
+pub(all) struct BarChartState {
   values : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -148,10 +145,7 @@ fn BarChartState::zero() -> BarChartState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn bar_chart_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(BarChartState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  bar_chart_encode(BarChartState::zero())
 }
 
 ///|
@@ -192,8 +186,8 @@ pub let bar_chart_schema_fingerprint : String = "6bab0bb9bb7de924"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn bar_chart_encode(s : BarChartState) -> Map[String, @tutuca.Value] {
   { "values": (List(s.values.map(x => x)) : @tutuca.Value) }
 }

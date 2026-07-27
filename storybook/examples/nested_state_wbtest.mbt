@@ -1,11 +1,15 @@
-// The generated codec for the named and structural schema types, checked
-// against the bridge it replaces.
+// The generated codec for the named and structural schema types.
 //
-// `nested_state_encode` is a second encoder for a shape `derive(ToJson)`
-// already knows how to write, so the only thing that makes it safe is that the
-// two agree. These tests are that agreement, written over a state that
-// populates every shape the schema language has: a record, an enum, a variant
-// with and without a payload, a set and an unset option, and a tuple.
+// It used to be checked against the JSON bridge it replaced: the codec was a
+// second encoder for a shape `derive(ToJson)` already knew how to write, and
+// the two agreeing was what made replacing one with the other safe. The bridge
+// is gone now and the state struct derives nothing, so there is no second
+// encoder to agree with — the codec IS the definition of what a view reads.
+//
+// What is left is the part that still says something: the shapes it produces,
+// pinned, over a state that populates every shape the schema language has — a
+// record, an enum, a variant with and without a payload, a set and an unset
+// option, and a tuple.
 
 ///|
 /// A state with every schema shape populated, and `note` set.
@@ -35,38 +39,8 @@ fn ns_empty() -> NestedStateState {
 }
 
 ///|
-/// The JSON bridge, spelled exactly as `component/instance.mbt`'s
-/// `encode_state` spells it: `ToJson` per field, inside the value stash.
-fn ns_bridge_encode(s : NestedStateState) -> Map[String, @tutuca.Value] {
-  @tutuca.with_value_stash(() => {
-    match ToJson::to_json(s) {
-      Object(m) => {
-        let out : Map[String, @tutuca.Value] = Map([])
-        for k, jv in m {
-          let v : @tutuca.Value = @json.from_json(jv) catch { _ => Null }
-          out[k] = v
-        }
-        out
-      }
-      _ => Map([])
-    }
-  })
-}
-
-///|
-test "nested state: the direct codec encodes what the JSON bridge encodes" {
-  for s in [ns_full(), ns_empty()] {
-    let direct : @tutuca.Value = Map(nested_state_encode(s))
-    let bridged : @tutuca.Value = Map(ns_bridge_encode(s))
-    @debug.assert_eq(direct, bridged)
-  }
-}
-
-///|
-/// The shapes themselves, pinned. The test above proves the two encoders
-/// agree; this one says what they agree ON, so a change to either is legible
-/// as a change in the data views read rather than as two numbers moving
-/// together.
+/// The shapes, pinned — so a change to the codec is legible as a change in the
+/// data views read.
 test "nested state: the encoded shapes" {
   let m = nested_state_encode(ns_full())
   @debug.assert_eq(m.get("priority"), Some(Str("High")))

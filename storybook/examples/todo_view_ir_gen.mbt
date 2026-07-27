@@ -75,7 +75,7 @@ pub fn item_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn item_component(
+pub fn item_component(
   name? : String = "Item",
   views? : Map[String, @anode.View] = item_views(),
   init? : ItemState = ItemState::zero(),
@@ -174,7 +174,7 @@ pub fn items_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn items_component(
+pub fn items_component(
   name? : String = "Items",
   views? : Map[String, @anode.View] = items_views(),
   init? : ItemsState = ItemsState::zero(),

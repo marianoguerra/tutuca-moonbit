@@ -46,7 +46,7 @@ pub fn greeting_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn greeting_component(
+pub fn greeting_component(
   name? : String = "Greeting",
   views? : Map[String, @anode.View] = greeting_views(),
   init? : GreetingState = GreetingState::zero(),
@@ -108,7 +108,7 @@ pub fn page_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn page_component(
+pub fn page_component(
   name? : String = "Page",
   views? : Map[String, @anode.View] = page_views(),
   init? : PageState = PageState::zero(),
@@ -214,7 +214,7 @@ pub fn entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn entry_component(
+pub fn entry_component(
   name? : String = "Entry",
   views? : Map[String, @anode.View] = entry_views(),
   init? : EntryState = EntryState::zero(),
@@ -280,7 +280,7 @@ pub fn multiple_views_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn multiple_views_component(
+pub fn multiple_views_component(
   name? : String = "MultipleViews",
   views? : Map[String, @anode.View] = multiple_views_views(),
   init? : MultipleViewsState = MultipleViewsState::zero(),

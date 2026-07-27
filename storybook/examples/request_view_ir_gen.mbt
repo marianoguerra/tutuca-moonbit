@@ -128,7 +128,7 @@ pub fn request_example_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn request_example_component(
+pub fn request_example_component(
   name? : String = "RequestExample",
   views? : Map[String, @anode.View] = request_example_views(),
   init? : RequestExampleState = RequestExampleState::zero(),

@@ -1,0 +1,24 @@
+<script type="tutuca/state">
+  interface fp-greeting {
+    record state { name: string }
+  }
+  interface note {
+    record state { text: string }
+    variant receive { write(string) }
+  }
+  interface mailbox {
+    record state { note: component }
+  }
+</script>
+
+<template id="FpGreeting">
+  <p @text=".name"></p>
+</template>
+
+<template id="Note">
+  <p class="note" @text=".text"></p>
+</template>
+
+<template id="Mailbox">
+  <section><x render=".note"></x></section>
+</template>

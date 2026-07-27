@@ -49,12 +49,9 @@ fn new_component(
   provide : Map[String, String],
   lookup : Map[String, LookupSpec],
   specs : Map[String, FieldSpec],
-  compute_names? : Array[String] = [],
   swap_names? : Array[String] = [],
   alter_names? : Array[String] = [],
-  generated_names? : Array[String] = [],
-  has_update? : Bool = false,
-  schema? : SchemaInfo?,
+  schema~ : SchemaInfo,
 ) -> Component {
   // Views arrive already built — either compiled ahead of time by
   // `tutuca gen-views` (View::from_ir) or parsed from source by
@@ -71,12 +68,9 @@ fn new_component(
     common_style,
     global_style,
     specs,
-    compute_names,
     swap_names,
     alter_names,
-    generated_names,
-    has_update,
-    schema: schema.bind(x => x),
+    schema,
     make_fn: _args => Null,
     raw_provide: provide,
     raw_lookup: lookup,
@@ -103,7 +97,7 @@ fn new_component(
 /// xLen / pushInX / setInXAt / ...); a user `compute` entry wins over them.
 /// `specs` adds Value-level slot fields (child components via
 /// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
-pub fn[S : ToJson + @json.FromJson] component(
+pub fn[S] component(
   name~ : String,
   views~ : Map[String, @anode.View],
   init~ : S,
@@ -124,49 +118,36 @@ pub fn[S : ToJson + @json.FromJson] component(
   specs? : Map[String, FieldSpec] = Map([]),
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
-  encode? : (S) -> Map[String, @tutuca.Value],
-  decode? : (Map[String, @tutuca.Value]) -> S?,
-  schema? : SchemaInfo,
+  encode~ : (S) -> Map[String, @tutuca.Value],
+  decode~ : (Map[String, @tutuca.Value]) -> S?,
+  schema~ : SchemaInfo,
 ) -> Component {
-  let init_fields = match encode {
-    Some(f) => f(init)
-    None => encode_state(init)
-  }
+  let init_fields = encode(init)
   let s_fields : Array[String] = []
   for k, _ in init_fields {
     s_fields.push(k)
   }
   let all_specs : Map[String, FieldSpec] = Map([])
-  // The schema DECLARES each field's kind. Without one there is nothing to
-  // read but the seed value, and `of_default` guesses from it — which is why
-  // `FInt` vs `FFloat` used to depend on whether a double happened to be
-  // integral. With one, the guess is skipped entirely: two sources of truth
-  // for the same fact is worse than either alone.
+  // The schema DECLARES each field's kind, and is the only thing consulted for
+  // it. There used to be a fallback that read the seed value instead, which is
+  // why `FInt` vs `FFloat` depended on whether a double happened to be
+  // integral. A field the schema does not mention gets `FAny`: the encoder
+  // produced it, so it exists, but nothing declared what it is.
   for k, v in init_fields {
-    all_specs[k] = match schema {
-      Some(si) =>
-        match si.field(k) {
-          Some(fi) => { kind: fi.kind, default: v }
-          None => FieldSpec::of_default(v)
-        }
-      None => FieldSpec::of_default(v)
+    all_specs[k] = match schema.field(k) {
+      Some(fi) => { kind: fi.kind, default: v }
+      None => { kind: FAny, default: v }
     }
   }
-  // A slot is declared in the schema but carries no init value, so it is not
-  // in `init_fields` at all — it has to be added.
-  match schema {
-    Some(si) =>
-      for fi in si.fields {
-        // A slot carries no init value, so it is not in `init_fields` at all.
-        if fi.slot is Some(comp) && !all_specs.contains(fi.name) {
-          all_specs[fi.name] = FieldSpec::comp(comp)
-        }
-        // A `flags` set's declared membership seeds its default.
-        if !fi.members.is_empty() {
-          all_specs[fi.name] = FieldSpec::set(members=fi.members)
-        }
-      }
-    None => ()
+  for fi in schema.fields {
+    // A slot carries no init value, so it is not in `init_fields` at all.
+    if fi.slot is Some(comp) && !all_specs.contains(fi.name) {
+      all_specs[fi.name] = FieldSpec::comp(comp)
+    }
+    // A `flags` set's declared membership seeds its default.
+    if !fi.members.is_empty() {
+      all_specs[fi.name] = FieldSpec::set(members=fi.members)
+    }
   }
   for k, sp in specs {
     match (all_specs.get(k), sp.kind) {
@@ -200,14 +181,11 @@ pub fn[S : ToJson + @json.FromJson] component(
     provide,
     lookup,
     all_specs,
-    compute_names=map_keys(compute),
     swap_names=map_keys(swap),
     alter_names=map_keys(when) +
       map_keys(enrich) +
       map_keys(enrich_scope) +
       map_keys(loop_with),
-    generated_names=map_keys(tspec.generated),
-    has_update=update is Some(_),
     schema~,
   )
   tspec.comp = Some(comp)
@@ -218,7 +196,7 @@ pub fn[S : ToJson + @json.FromJson] component(
 ///|
 /// Build an instance Value: coerce args against field specs, fill defaults
 /// (FComp children made through the registration scope), decode the state.
-fn[S : ToJson + @json.FromJson] make_typed(
+fn[S] make_typed(
   comp : Component,
   tspec : TypedSpec[S],
   args : Map[String, @tutuca.Value],
@@ -244,11 +222,7 @@ fn[S : ToJson + @json.FromJson] make_typed(
     }
     fields[name] = v
   }
-  let state : S = match
-    (match tspec.decode {
-      Some(f) => f(fields)
-      None => decode_state(fields, tspec.s_fields)
-    }) {
+  let state : S = match (tspec.decode)(fields) {
     Some(s) => s
     None => tspec.init
   }
@@ -290,7 +264,7 @@ pub fn Component::for_type(
     provide,
     lookup,
     Map([]),
-    schema=Some(schema),
+    schema~,
   )
 }
 
@@ -390,7 +364,7 @@ pub fn Component::compile_style(self : Component) -> String {
 /// views port verbatim: set/update/reset/toggle/len/pushIn/setInAt/updateInAt/
 /// deleteInAt/removeInAt for list/map/omap, and addIn/deleteIn/removeIn/hasIn/
 /// toggleIn for sets. getInAt is the only deferred accessor.
-fn[S : ToJson + @json.FromJson] gen_mutators(
+fn[S] gen_mutators(
   fields : Map[String, FieldSpec],
   into : Map[String, (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value],
 ) -> Unit {
@@ -523,7 +497,7 @@ fn[S : ToJson + @json.FromJson] gen_mutators(
 }
 
 ///|
-fn[S : ToJson + @json.FromJson] seq_set(
+fn[S] seq_set(
   inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
@@ -549,7 +523,7 @@ fn[S : ToJson + @json.FromJson] seq_set(
 }
 
 ///|
-fn[S : ToJson + @json.FromJson] seq_update(
+fn[S] seq_update(
   inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
@@ -573,7 +547,7 @@ fn[S : ToJson + @json.FromJson] seq_update(
 }
 
 ///|
-fn[S : ToJson + @json.FromJson] seq_delete(
+fn[S] seq_delete(
   inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],

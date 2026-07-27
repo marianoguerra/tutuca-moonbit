@@ -8,7 +8,7 @@ priv struct BoardState {
   received : String
   from : String
   kind : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn board_comp() -> @component.Component {
@@ -59,6 +59,14 @@ fn board_comp() -> @component.Component {
         _ => None
       }
     },
+    encode=board_state_encode,
+    decode=board_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="board_state", fields=[
+      @component.FieldInfo::new("cards", "text-omap", FMap),
+      @component.FieldInfo::new("received", "string", FText),
+      @component.FieldInfo::new("from", "string", FText),
+      @component.FieldInfo::new("kind", "string", FText),
+    ]),
   )
 }
 
@@ -101,4 +109,39 @@ test "dragover from outside the app marks droptargets as _external" {
   // no dragstart happened: external drag
   assert_true(a.dispatch(zone, @render.DomEvent::new(name="dragover")))
   assert_true(zone.get_attribute("data-draggingover") == Some("_external"))
+}
+
+///|
+fn board_state_encode(s : BoardState) -> Map[String, @tutuca.Value] {
+  {
+    "cards": {
+      let m : Map[String, @tutuca.Value] = Map([])
+      for k, x in s.cards {
+        m[k] = Str(x)
+      }
+      (Map(m) : @tutuca.Value)
+    },
+    "received": Str(s.received),
+    "from": Str(s.from),
+    "kind": Str(s.kind),
+  }
+}
+
+///|
+fn board_state_decode(f : Map[String, @tutuca.Value]) -> BoardState? {
+  guard f.get("cards") is Some(Map(m_cards)) else { return None }
+  let v_cards : Map[String, String] = Map([])
+  for k2, x in m_cards {
+    guard x is Str(sv) else { return None }
+    v_cards[k2] = sv
+  }
+  guard f.get("received") is Some(Str(v_received)) else { return None }
+  guard f.get("from") is Some(Str(v_from)) else { return None }
+  guard f.get("kind") is Some(Str(v_kind)) else { return None }
+  Some(BoardState::{
+    cards: v_cards,
+    received: v_received,
+    from: v_from,
+    kind: v_kind,
+  })
 }

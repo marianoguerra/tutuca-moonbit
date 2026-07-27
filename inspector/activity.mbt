@@ -78,7 +78,6 @@ fn observe_kind_label(kind : @transactor.ObserveKind) -> String {
 fn observe_match_label(m : @transactor.ObserveMatch) -> String {
   match m {
     Exact => "exact"
-    Unknown => "unknown"
     NoHandler => "none"
   }
 }

@@ -16,7 +16,7 @@ priv struct IdState {
   count : Int
   items : Array[@tutuca.Value]
   tags : Map[String, @tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn id_comp() -> @component.Component {
@@ -37,6 +37,14 @@ fn id_comp() -> @component.Component {
         _ => None
       }
     },
+    encode=id_state_encode,
+    decode=id_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("items", "values", FList),
+      @component.FieldInfo::new("tags", "value-omap", FMap),
+    ]),
   )
 }
 
@@ -142,6 +150,14 @@ test "identity is preserved through a nested list, not just at the top" {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
     init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    encode=id_state_encode,
+    decode=id_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("items", "values", FList),
+      @component.FieldInfo::new("tags", "value-omap", FMap),
+    ]),
   )
   let kids = [
     child.make({ "title": Str("one") }),
@@ -173,6 +189,14 @@ test "writing a list back unchanged leaves the parent instance alone" {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Parent",
     init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+    encode=id_state_encode,
+    decode=id_state_decode,
+    schema=@component.SchemaInfo::new(fingerprint="id_state", fields=[
+      @component.FieldInfo::new("title", "string", FText),
+      @component.FieldInfo::new("count", "s32", FInt),
+      @component.FieldInfo::new("items", "values", FList),
+      @component.FieldInfo::new("tags", "value-omap", FMap),
+    ]),
   )
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
@@ -181,4 +205,24 @@ test "writing a list back unchanged leaves the parent instance alone" {
   // set index 0 to the object already there: a fresh List is built and then
   // discarded, because it is equal to the one stored.
   assert_true(physical_equal(set_at([Null, Num(0), kids[0]]), v))
+}
+
+///|
+fn id_state_encode(s : IdState) -> Map[String, @tutuca.Value] {
+  {
+    "title": Str(s.title),
+    "count": Num(s.count.to_double()),
+    "items": (List(s.items) : @tutuca.Value),
+    "tags": (Map(s.tags) : @tutuca.Value),
+  }
+}
+
+///|
+fn id_state_decode(f : Map[String, @tutuca.Value]) -> IdState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  guard f.get("items") is Some(List(v_items)) else { return None }
+  guard f.get("tags") is Some(Map(v_tags)) else { return None }
+  Some(IdState::{ title: v_title, count: v_count, items: v_items, tags: v_tags })
 }

@@ -12,7 +12,7 @@ priv struct ShellState {
   status : String
   slot : @tutuca.Value
   pair : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
@@ -39,6 +39,8 @@ pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
     },
     name="DynShell",
     init=ShellState::{ status: "no bundle loaded", slot: Null, pair: Null },
+    encode=shell_state_encode,
+    decode=shell_state_decode,
     schema=@component.SchemaInfo::new(
       fingerprint="dyn-shell",
       fields=[
@@ -112,4 +114,17 @@ pub fn shell_request_handlers() -> Map[String, @component.RequestFn] {
       }
     }),
   }
+}
+
+///|
+fn shell_state_encode(s : ShellState) -> Map[String, @tutuca.Value] {
+  { "status": Str(s.status), "slot": s.slot, "pair": s.pair }
+}
+
+///|
+fn shell_state_decode(f : Map[String, @tutuca.Value]) -> ShellState? {
+  guard f.get("status") is Some(Str(v_status)) else { return None }
+  let v_slot = f.get("slot").unwrap_or(Null)
+  let v_pair = f.get("pair").unwrap_or(Null)
+  Some(ShellState::{ status: v_status, slot: v_slot, pair: v_pair })
 }

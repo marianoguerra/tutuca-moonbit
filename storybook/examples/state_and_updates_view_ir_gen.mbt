@@ -113,7 +113,7 @@ pub fn attribute_binding_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn attribute_binding_component(
+pub fn attribute_binding_component(
   name? : String = "AttributeBinding",
   views? : Map[String, @anode.View] = attribute_binding_views(),
   init? : AttributeBindingState = AttributeBindingState::zero(),
@@ -208,7 +208,7 @@ pub fn conditional_attributes_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn conditional_attributes_component(
+pub fn conditional_attributes_component(
   name? : String = "ConditionalAttributes",
   views? : Map[String, @anode.View] = conditional_attributes_views(),
   init? : ConditionalAttributesState = ConditionalAttributesState::zero(),
@@ -309,7 +309,7 @@ pub fn event_modifiers_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn event_modifiers_component(
+pub fn event_modifiers_component(
   name? : String = "EventModifiers",
   views? : Map[String, @anode.View] = event_modifiers_views(),
   init? : EventModifiersState = EventModifiersState::zero(),
@@ -418,7 +418,7 @@ pub fn show_hide_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn show_hide_component(
+pub fn show_hide_component(
   name? : String = "ShowHide",
   views? : Map[String, @anode.View] = show_hide_views(),
   init? : ShowHideState = ShowHideState::zero(),

@@ -7,7 +7,7 @@
 //
 // Instances are TypedInstance[S] (instance.mbt, package-private): the state
 // struct is the source of truth, an encoded fields map serves the render/
-// path/Value seams, and encode/decode run inside @tutuca.with_value_stash so
+// path/Value seams, and encode/decode are generated field by field so
 // Obj/Fn values held by S survive the Json round-trip losslessly.
 
 ///|
@@ -33,10 +33,6 @@ pub(all) struct FieldSpec {
   kind : FieldKind
   default : @tutuca.Value
 } derive(Debug)
-
-///|
-/// Infer the field kind from its default value (Null/Fn/Obj => FAny).
-declare fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
 
 ///|
 /// One declared field, with the parts most fields do not use defaulted.
@@ -303,18 +299,18 @@ pub struct Component {
   common_style : String
   global_style : String
   specs : Map[String, FieldSpec] // empty for for_type components
-  // introspection metadata (the typed handlers themselves are erased behind
-  // make_fn): bucket name lists + whether an update fn exists. update's
-  // handled names are unknowable — it is one opaque pattern match.
-  compute_names : Array[String]
+  // What the AUTHOR wired, which the schema does not know: the schema lists
+  // the names the VIEWS use, and these two say which of them this component
+  // answered in the swap and alter buckets rather than in `update`. The other
+  // three arrays that lived here — compute_names, generated_names, has_update
+  // — were recoverable from the schema or read by nothing, and are gone.
   swap_names : Array[String]
   alter_names : Array[String]
-  generated_names : Array[String] // the per-field mutators gen_mutators built
-  has_update : Bool
-  /// The generator's static description, when the component has a schema.
-  /// Everything above this line is what a runtime descriptor can recover;
-  /// this is what was declared.
-  schema : SchemaInfo?
+  /// What this component DECLARES. Everything above this line is what a
+  /// runtime descriptor could recover by reflection; this is the thing that
+  /// was stated, and it is no longer optional — there is nothing left that
+  /// reconstructs it.
+  schema : SchemaInfo
   mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]
@@ -335,7 +331,7 @@ pub struct Component {
 /// Generated per-field mutators (setX/updateX/...) stay; user entries win.
 /// `specs` declares Value-level slots (FieldSpec::comp children) and
 /// FSet/FOMap kind overrides.
-declare pub fn[S : ToJson + @json.FromJson] component(
+declare pub fn[S] component(
   name~ : String,
   views~ : Map[String, @anode.View],
   init~ : S,
@@ -354,16 +350,13 @@ declare pub fn[S : ToJson + @json.FromJson] component(
   specs? : Map[String, FieldSpec],
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
-  /// Direct state <-> fields conversion, generated from a declared schema.
-  /// Omitted, the JSON bridge is used, which is what an undeclared state
-  /// still needs. Measured at ~2x on encode and ~5x on decode
-  /// (benchmarks/codec_bench_test.mbt).
-  encode? : (S) -> Map[String, @tutuca.Value],
-  decode? : (Map[String, @tutuca.Value]) -> S?,
-  /// The generator's static description of this component's schema. Given
-  /// one, `component` stops inferring field kinds from the init value and
-  /// reads the declared ones instead.
-  schema? : SchemaInfo,
+  /// Direct state <-> fields conversion, field by field. REQUIRED: there is no
+  /// JSON bridge behind it any more to fall back to.
+  encode~ : (S) -> Map[String, @tutuca.Value],
+  decode~ : (Map[String, @tutuca.Value]) -> S?,
+  /// This component's declared schema. REQUIRED: it is the only thing consulted
+  /// for a field's kind, so there is nothing to infer it from instead.
+  schema~ : SchemaInfo,
 ) -> Component
 
 ///|

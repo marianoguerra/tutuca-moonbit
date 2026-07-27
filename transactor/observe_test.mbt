@@ -32,7 +32,7 @@ impl @tutuca.Obj for OSheet with fn obj_handler(self, bucket, name) {
           }
         }),
       )
-    (Receive, "$unknown") =>
+    (Receive, "catch-all") =>
       Some(Handler((_args, _ctx) => Some(osheet("\{self.title}?"))))
     (Receive, "poke-up") =>
       Some(
@@ -117,7 +117,7 @@ test "observe: send records carry kind, matched, before/after and pinned keys" {
   assert_true(r0.after is Some(Obj(_)))
   assert_true(r0.path_keys is [{ field: "sheet", key: None }])
   let r1 = records[1]
-  assert_true(r1.matched is Unknown) // $unknown fallback fired
+  assert_true(r1.matched is NoHandler) // nothing registers that name
   assert_true(r1.seq > r0.seq)
 }
 

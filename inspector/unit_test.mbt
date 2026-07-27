@@ -143,7 +143,7 @@ priv struct RichState {
   count : Int
   tags : Array[@tutuca.Value]
   open : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn sample_comp() -> @component.Component {
@@ -182,6 +182,26 @@ fn sample_comp() -> @component.Component {
         @component.LoopWith::new(start=0, end=0)
       },
     },
+    encode=rich_state_encode,
+    decode=rich_state_decode,
+    // Hand-written and COMPLETE: this fixture exists to make every panel of
+    // the component inspector have something to show, so it declares one of
+    // everything — which is also what `component()` now requires of it.
+    schema=@component.SchemaInfo::new(
+      fingerprint="rich_state",
+      fields=[
+        @component.FieldInfo::new("title", "string", FText),
+        @component.FieldInfo::new("count", "s32", FInt),
+        @component.FieldInfo::new("tags", "values", FList, elem="any"),
+        @component.FieldInfo::new("open", "bool", FBool),
+      ],
+      inputs=["inc", "reset"],
+      receives=["ping"],
+      bubbles=["onChild"],
+      responses=["onData"],
+      methods=["double", "label"],
+      view_names=["main", "compact"],
+    ),
   )
 }
 
@@ -195,7 +215,9 @@ test "component_summary reads fields, buckets, and view sources" {
   inspect(fields.length(), content="4")
   guard fields[0] is Map(f0) else { fail("field row is not a Map") }
   assert_true(f0.get("name") is Some(Str("title")))
-  assert_true(f0.get("type") is Some(Str("text")))
+  // The author's WIT spelling, not a label reconstructed from the runtime
+  // kind — which is the whole difference between describing and reflecting.
+  assert_true(f0.get("type") is Some(Str("string")))
   assert_true(f0.get("default") is Some(Str("")))
   // methods = the compute names. `inc`/`reset` are update arms, not
   // methods: they answer a dispatch rather than a field read. The generated
@@ -209,8 +231,12 @@ test "component_summary reads fields, buckets, and view sources" {
   assert_false(methods.contains(Str("setTitle")))
   assert_false(methods.contains(Str("toggleOpen")))
   assert_false(methods.contains(Str("pushInTags")))
-  // update is one opaque pattern match — surfaced as a presence flag
-  assert_true(d.get("update") is Some(List([Str("update")])))
+  // `update` is one opaque pattern match at run time, so reflection could
+  // only ever say THAT it exists. The schema names what it answers.
+  assert_true(d.get("update") is Some(List([Str("inc"), Str("reset")])))
+  assert_true(d.get("receive") is Some(List([Str("ping")])))
+  assert_true(d.get("bubble") is Some(List([Str("onChild")])))
+  assert_true(d.get("response") is Some(List([Str("onData")])))
   assert_true(d.get("alter") is Some(List([Str("rows")])))
   guard d.get("views") is Some(List(views)) else { fail("no views") }
   inspect(views.length(), content="2")
@@ -228,7 +254,16 @@ test "inspect_component builds one section per non-empty group" {
   let labels = olist(ci, "sections").map(s => oget(s, "label"))
   assert_true(
     labels ==
-    [Str("Fields"), Str("Methods"), Str("Update"), Str("Alter"), Str("Views")],
+    [
+      Str("Fields"),
+      Str("Methods"),
+      Str("Update"),
+      Str("Receive"),
+      Str("Bubble"),
+      Str("Response"),
+      Str("Alter"),
+      Str("Views"),
+    ],
   )
   // Fields starts expanded, the rest collapsed
   let sections = olist(ci, "sections")
@@ -394,6 +429,8 @@ fn schema_sample_comp() -> @component.Component {
     name="Described",
     init=RichState::{ title: "", count: 0, tags: [], open: false },
     update=(_s : RichState, _msg, _ctx) => None,
+    encode=rich_state_encode,
+    decode=rich_state_decode,
     schema={
       fingerprint: "deadbeefcafe0001",
       fields: [
@@ -463,17 +500,36 @@ test "a described component surfaces what reflection cannot" {
 }
 
 ///|
-/// The reflected path is unchanged for a component with no schema — that is
-/// the fallback contract, and most components are still on it.
-test "an undescribed component still reflects" {
+/// There is no undescribed component to reflect any more. `component()`
+/// requires a schema, so `component_summary` reads one source and the
+/// reflected path it used to fall back to is gone — this pins that the
+/// descriptor really is the declaration, right down to the fixture's own
+/// fingerprint.
+test "the summary is the declaration, not a reconstruction" {
   guard @inspector.component_summary(sample_comp()) is Map(d) else {
     fail("summary is not a Map")
   }
-  assert_eq(d.get("update"), Some(List([Str("update")])))
-  assert_eq(d.get("receive"), None)
-  assert_eq(d.get("ids"), None)
-  guard d.get("fields") is Some(List(fields))
-  guard fields[0] is Map(f0)
-  // A label reconstructed from the runtime kind, not the author's spelling.
-  assert_eq(f0.get("type"), Some(Str("text")))
+  assert_eq(d.get("fingerprint"), Some(Str("rich_state")))
+  assert_eq(d.get("ids"), Some(List([])))
+  assert_eq(d.get("fixtures"), Some(List([])))
+}
+
+///|
+fn rich_state_encode(s : RichState) -> Map[String, @tutuca.Value] {
+  {
+    "title": Str(s.title),
+    "count": Num(s.count.to_double()),
+    "tags": (List(s.tags) : @tutuca.Value),
+    "open": Bool(s.open),
+  }
+}
+
+///|
+fn rich_state_decode(f : Map[String, @tutuca.Value]) -> RichState? {
+  guard f.get("title") is Some(Str(v_title)) else { return None }
+  guard f.get("count") is Some(Num(n_count)) else { return None }
+  let v_count = n_count.to_int()
+  guard f.get("tags") is Some(List(v_tags)) else { return None }
+  guard f.get("open") is Some(Bool(v_open)) else { return None }
+  Some(RichState::{ title: v_title, count: v_count, tags: v_tags, open: v_open })
 }

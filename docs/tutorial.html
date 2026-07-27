@@ -1,0 +1,144 @@
+<script type="tutuca/state">
+  interface counter {
+    record state { count: s32 }
+  }
+  interface profile {
+    record state {
+      name: string,
+      waving: bool,
+    }
+  }
+  interface search {
+    record state {
+      draft: string,
+      sent: string,
+    }
+  }
+  interface toggle {
+    record state {
+      on: bool,
+      message: any,
+    }
+  }
+  interface fruits {
+    record state { items: list<string> }
+  }
+  interface greeting {
+    record state { name: string }
+  }
+  interface page {
+    record state { greeting: component }
+  }
+  interface status {
+    record state { message: string }
+    variant receive { flash(string) }
+  }
+  interface chat {
+    record state {
+      draft: string,
+      status: component,
+    }
+  }
+  interface quotes {
+    record state {
+      items: list<string>,
+      is-loading: bool,
+    }
+    variant receive { init }
+    variant response { load-quotes(values) }
+  }
+  interface features {
+    record state { status: string }
+  }
+</script>
+
+<template id="Counter">
+  <div>
+    <button class="dec" @on.click="dec">-</button>
+    <span class="count" @text=".count"></span>
+    <button class="inc" @on.click="inc">+</button>
+  </div>
+</template>
+
+<template id="Profile">
+  <section>
+    <input class="who" :value=".name" @on.input="setName value"
+      :title="$'Editing {.name}'">
+    <button class="wave" @on.click="toggleWaving">wave</button>
+    <p class="out" @text="$'Hello, {.name}!'"></p>
+  </section>
+</template>
+
+<template id="Search">
+  <section>
+    <input class="q" :value=".draft"
+      @on.input="setDraft value"
+      @on.keydown+send="setSent value"
+      @on.keydown+cancel="resetDraft">
+    <p class="sent" @text=".sent"></p>
+  </section>
+</template>
+
+<template id="Toggle">
+  <section>
+    <button class="flip" @on.click="toggleOn"
+      @if.class=".on" @then="'flip is-on'" @else="'flip is-off'">toggle</button>
+    <p class="yes" @show=".on">it is ON</p>
+    <p class="no" @hide=".on">it is OFF</p>
+    <p class="msg" @show="truthy? .message" @text=".message"></p>
+  </section>
+</template>
+
+<template id="Fruits">
+  <ul>
+    <li @each=".items" @when="notTooLong">
+      <span class="k" @text="@key"></span>: <x text="@value"></x>
+    </li>
+  </ul>
+</template>
+
+<template id="Greeting">
+  <p class="hello">Hello, <strong @text=".name"></strong>!</p>
+</template>
+
+<template id="Greeting:shout">
+  <p class="hello">HELLO, <strong @text=".name"></strong>!!!</p>
+</template>
+
+<template id="Page">
+  <section>
+    <x render=".greeting"></x>
+    <x render=".greeting" as="shout"></x>
+  </section>
+</template>
+
+<template id="Status">
+  <p class="status" @show="truthy? .message" @text=".message"></p>
+</template>
+
+<template id="Chat">
+  <section>
+    <x render=".status"></x>
+    <input class="draft" :value=".draft" @on.input="setDraft value">
+    <button class="send" @on.click="submit">send</button>
+  </section>
+</template>
+
+<template id="Quotes">
+  <section>
+    <p class="loading" @show=".isLoading">Loading…</p>
+    <ul><li @each=".items"><x text="@value"></x></li></ul>
+  </section>
+</template>
+
+<template id="macro:badge" data-label="'New'">
+  <span class="badge" @text="^label"></span>
+</template>
+
+<template id="Features">
+  <div>
+    <span>Feature A</span> <x:badge></x:badge>
+    <span>Feature B</span> <x:badge label="Beta"></x:badge>
+    <span>Feature C</span> <x:badge :label=".status"></x:badge>
+  </div>
+</template>

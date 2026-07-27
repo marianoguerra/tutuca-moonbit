@@ -1,5 +1,5 @@
 // Dispatch-channel tests ported from test/transactor.test.js: send/receive,
-// $unknown fallback, bubbling (path shortens per hop, target_path fixed),
+// bubbling (path shortens per hop, target_path fixed),
 // stop_propagation, send_at_path back to the origin, and completion for a
 // synchronous cascade. Handlers RECORD what they saw by transforming their
 // own state — no shared logs, fully functional.
@@ -52,7 +52,7 @@ impl @tutuca.PathNode for Item with fn handler(self, bucket, name) {
       )
     (Receive, "ack") =>
       Some(Handler((_args, _ctx) => Some(item_node(self.label, true))))
-    (Receive, "$unknown") =>
+    (Receive, "catch-all") =>
       Some(Handler((_args, _ctx) => Some(item_node("unknown!", false))))
     _ => None
   }
@@ -207,9 +207,13 @@ test "send dispatches to the leaf's receive bucket" {
 }
 
 ///|
-test "a named handler wins; missing name falls back to $unknown" {
+/// One lookup, no `$unknown` sentinel behind it: a name the leaf does not
+/// register changes nothing. The fixture still has a `catch-all` handler —
+/// under a name of its own, which is all `$unknown` ever was minus the
+/// second string lookup on every miss.
+test "a named handler wins; an unregistered name changes nothing" {
   let tx = @transactor.Transactor::new(make_tree())
-  let _ = tx.push_send(item_path(), "no-such-message", [])
+  let _ = tx.push_send(item_path(), "catch-all", [])
   tx.settle()
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("label")]),
@@ -218,7 +222,7 @@ test "a named handler wins; missing name falls back to $unknown" {
 }
 
 ///|
-test "a missing handler with no $unknown is a silent physical no-op" {
+test "a missing handler is a silent physical no-op" {
   let tx = @transactor.Transactor::new(make_tree())
   let before = tx.root
   // Panel has no Receive bucket at all
@@ -292,7 +296,8 @@ test "on_change fires once per root swap with new and old" {
     swaps.val = swaps.val + 1
   })
   let _ = tx.push_send(item_path(), "set-label", [Str("x")])
-  let _ = tx.push_send(item_path(), "does-not-exist-anywhere", []) // $unknown fires -> swap
+  // a name nothing registers is a no-op, so it does not swap the root
+  let _ = tx.push_send(item_path(), "does-not-exist-anywhere", [])
   tx.settle()
-  assert_eq(swaps.val, 2)
+  assert_eq(swaps.val, 1)
 }

@@ -163,11 +163,12 @@ pub fn Path::update(
   args : Array[Value],
 ) -> &PathNode {
   guard self.lookup(root) is Some(leaf) else { return root }
-  let resolved = match leaf.handler(bucket, name) {
-    Some(h) => Some(h)
-    None => leaf.handler(bucket, "$unknown")
-  }
-  guard resolved is Some(Handler(f)) else { return root }
+  // One lookup. There used to be a second, for the literal name `"$unknown"`,
+  // as a catch-all a component could register — a JS-era sentinel that cost a
+  // string lookup on every miss. A typed `update` is one pattern match whose
+  // `_ => None` already IS the catch-all, and the generated `<C>Msg` hands the
+  // unmatched name to an `Unknown(name, args)` arm.
+  guard leaf.handler(bucket, name) is Some(Handler(f)) else { return root }
   match f(args, NullCtx::{  }) {
     Some(new_leaf) =>
       // JS `newLeaf !== curLeaf` parity: a handler that hands back the value

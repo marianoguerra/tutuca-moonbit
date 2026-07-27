@@ -13,9 +13,9 @@
 /// Declared as `interface composability` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ComposabilityState {
+pub(all) struct ComposabilityState {
   activeSection : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,10 +32,7 @@ fn ComposabilityState::zero() -> ComposabilityState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn composability_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ComposabilityState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  composability_encode(ComposabilityState::zero())
 }
 
 ///|
@@ -98,8 +95,8 @@ pub let composability_schema_fingerprint : String = "a3b3ea198bfa01dd"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn composability_encode(s : ComposabilityState) -> Map[String, @tutuca.Value] {
   { "activeSection": Str(s.activeSection) }
 }

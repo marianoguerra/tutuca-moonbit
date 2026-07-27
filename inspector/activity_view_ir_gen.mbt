@@ -85,7 +85,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
                 "span",
                 [
                   @anode.attr(
-                    "title", "Handler resolution — exact: matched by name · unknown: $unknown fallback · none: no handler (no-op)",
+                    "title", "Handler resolution — exact: matched by name · none: no handler (no-op)",
                   ),
                   @anode.attr(
                     "class", "badge badge-xs badge-ghost entry-matched",
@@ -162,7 +162,7 @@ pub fn activity_entry_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn activity_entry_component(
+pub fn activity_entry_component(
   name? : String = "ActivityEntry",
   views? : Map[String, @anode.View] = activity_entry_views(),
   init? : ActivityEntryState = ActivityEntryState::zero(),
@@ -242,7 +242,7 @@ pub fn activity_log_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn activity_log_component(
+pub fn activity_log_component(
   name? : String = "ActivityLog",
   views? : Map[String, @anode.View] = activity_log_views(),
   init? : ActivityLogState = ActivityLogState::zero(),

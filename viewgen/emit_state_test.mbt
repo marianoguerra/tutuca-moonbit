@@ -26,14 +26,15 @@ test "a state block emits the struct, its zero and its field table" {
   assert_eq(file.state[0].component, "Counter")
   let src = @viewgen.emit_module("Counter", "counter.html", file)
   // The struct the author no longer writes.
-  assert_true(src.contains("priv struct CounterState {"))
+  assert_true(src.contains("pub(all) struct CounterState {"))
   assert_true(src.contains("  label : String"))
   assert_true(src.contains("  count : Int"))
   assert_true(src.contains("  history : Array[Int]"))
-  assert_true(src.contains("} derive(ToJson, FromJson)"))
-  // The zero, so `init` spreads it and names only what differs. Package-
-  // private like the struct: a public function may not depend on a private
-  // type.
+  // No `derive(ToJson, FromJson)`: the state struct is a plain struct now.
+  // The generated codec does the conversion, and there is no JSON bridge left
+  // for a derive to serve.
+  assert_false(src.contains("derive(ToJson"))
+  // The zero, so `init` spreads it and names only what differs.
   assert_true(src.contains("\nfn CounterState::zero() -> CounterState {"))
   assert_true(src.contains("label: \"\","))
   assert_true(src.contains("count: 0,"))
@@ -56,7 +57,7 @@ test "a file with no state block generates exactly what it did before" {
   let src = @viewgen.emit_module("Counter", "counter.html", file)
   // Nothing from the state half leaks into an unmigrated file — this is what
   // lets the view files migrate one at a time.
-  assert_false(src.contains("priv struct CounterState"))
+  assert_false(src.contains("pub(all) struct CounterState"))
   assert_false(src.contains("CounterField"))
   assert_false(src.contains("counter_specs"))
   // ...and the view half is untouched.
@@ -101,8 +102,8 @@ test "sets, ordered maps and child slots are described in the schema" {
   // schema, not only the parts the runtime would get wrong.
   assert_true(src.contains("name: \"plain\""))
   // Two components, two states.
-  assert_true(src.contains("priv struct CardState {"))
-  assert_true(src.contains("priv struct BoardState {"))
+  assert_true(src.contains("pub(all) struct CardState {"))
+  assert_true(src.contains("pub(all) struct BoardState {"))
 }
 
 ///|
@@ -127,15 +128,13 @@ test "named types become MoonBit types, and a keyword field escapes" {
   assert_true(src.contains("pub(all) struct EditorItem {"))
   assert_true(src.contains("  items : Array[EditorItem]"))
   assert_true(src.contains("m: EditorMode::View,"))
-  // The runtime name stays `type` — it is what the view and the JSON use —
-  // so only the MoonBit binding bends, and the derive puts the name back on
-  // the wire.
+  // The runtime name stays `type` — it is what the view reads and what the
+  // fields map carries — so only the MoonBit binding bends. It used to take a
+  // `derive(ToJson(fields(type_(rename="type"))))` to put the name back; the
+  // codec keys by the runtime name directly, so there is no derive at all.
   assert_true(src.contains("  type_ : String"))
-  assert_true(
-    src.contains(
-      "} derive(ToJson(fields(type_(rename=\"type\"))), FromJson(fields(type_(rename=\"type\"))))",
-    ),
-  )
+  assert_false(src.contains("derive(ToJson"))
+  assert_true(src.contains("\"type\": Str(s.type_)"))
 }
 
 ///|
@@ -153,7 +152,7 @@ test "a schema interface with no template declares state anyway" {
   assert_eq(@viewgen.declared_components(file, "Counter"), ["Counter"])
   let src = @viewgen.emit_module("Counter", "c.html", file)
   // The state is generated...
-  assert_true(src.contains("priv struct CountrState {"))
+  assert_true(src.contains("pub(all) struct CountrState {"))
   // ...but no view surface is invented for it.
   assert_false(src.contains("CountrView"))
 }
@@ -237,7 +236,7 @@ test "a schema-only file declares state for views built at runtime" {
   assert_eq(file.components.length(), 0)
   assert_eq(file.state.length(), 1)
   let src = @viewgen.emit_module("BarChart", "bar_chart.html", file)
-  assert_true(src.contains("priv struct BarChartState {"))
+  assert_true(src.contains("pub(all) struct BarChartState {"))
   assert_true(src.contains("pub(all) enum BarChartField {"))
   // ...and NO view surface: there are no views to describe, and the schema
   // block itself must not become one.

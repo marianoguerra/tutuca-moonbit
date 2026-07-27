@@ -13,16 +13,13 @@
 /// Declared as `interface file-picker` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct FilePickerState {
+pub(all) struct FilePickerState {
   name : String
   size : Double
   type_ : String
   lastModified : Double
   hasFile : Bool
-} derive (
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -45,10 +42,7 @@ fn FilePickerState::zero() -> FilePickerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn file_picker_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(FilePickerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  file_picker_encode(FilePickerState::zero())
 }
 
 ///|
@@ -103,8 +97,8 @@ pub let file_picker_schema_fingerprint : String = "9d3c25a65f5d9e0a"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn file_picker_encode(s : FilePickerState) -> Map[String, @tutuca.Value] {
   {
     "name": Str(s.name),

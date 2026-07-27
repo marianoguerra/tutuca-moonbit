@@ -96,7 +96,7 @@ pub fn push_view_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn push_view_component(
+pub fn push_view_component(
   name? : String = "PushView",
   views? : Map[String, @anode.View] = push_view_views(),
   init? : PushViewState = PushViewState::zero(),
@@ -217,7 +217,7 @@ pub fn seq_item_access_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn seq_item_access_component(
+pub fn seq_item_access_component(
   name? : String = "SeqItemAccess",
   views? : Map[String, @anode.View] = seq_item_access_views(),
   init? : SeqItemAccessState = SeqItemAccessState::zero(),
@@ -331,7 +331,7 @@ pub fn pagination_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn pagination_component(
+pub fn pagination_component(
   name? : String = "Pagination",
   views? : Map[String, @anode.View] = pagination_views(),
   init? : PaginationState = PaginationState::zero(),

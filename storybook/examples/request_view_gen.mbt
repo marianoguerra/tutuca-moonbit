@@ -13,13 +13,13 @@
 /// Declared as `interface request-example` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct RequestExampleState {
+pub(all) struct RequestExampleState {
   items : Array[@tutuca.Value]
   query : String
   view : String
   isLoading : Bool
   error : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -42,10 +42,7 @@ fn RequestExampleState::zero() -> RequestExampleState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn request_example_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(RequestExampleState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  request_example_encode(RequestExampleState::zero())
 }
 
 ///|
@@ -102,8 +99,8 @@ pub let request_example_schema_fingerprint : String = "fb42c79b675f798e"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn request_example_encode(
   s : RequestExampleState,
 ) -> Map[String, @tutuca.Value] {

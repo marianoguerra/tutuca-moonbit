@@ -13,9 +13,9 @@
 /// Declared as `interface counter` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct CounterState {
+pub(all) struct CounterState {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,10 +32,7 @@ fn CounterState::zero() -> CounterState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn counter_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(CounterState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  counter_encode(CounterState::zero())
 }
 
 ///|
@@ -76,8 +73,8 @@ pub let counter_schema_fingerprint : String = "a0fd8e55e2e67751"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn counter_encode(s : CounterState) -> Map[String, @tutuca.Value] {
   { "count": Num(s.count.to_double()) }
 }

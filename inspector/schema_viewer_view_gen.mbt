@@ -13,12 +13,12 @@
 /// Declared as `interface schema-viewer` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SchemaViewerState {
+pub(all) struct SchemaViewerState {
   value : @tutuca.Value
   raw : @tutuca.Value
   rawSchema : @tutuca.Value
   showRaw : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -35,10 +35,7 @@ fn SchemaViewerState::zero() -> SchemaViewerState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn schema_viewer_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SchemaViewerState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  schema_viewer_encode(SchemaViewerState::zero())
 }
 
 ///|
@@ -92,8 +89,8 @@ pub let schema_viewer_schema_fingerprint : String = "ec51fa7271aa7a98"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn schema_viewer_encode(s : SchemaViewerState) -> Map[String, @tutuca.Value] {
   {
     "value": s.value,

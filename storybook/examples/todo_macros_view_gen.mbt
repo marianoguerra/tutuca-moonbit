@@ -16,10 +16,10 @@
 /// Declared as `interface tm-item` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TmItemState {
+pub(all) struct TmItemState {
   completed : Bool
   text : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -36,10 +36,7 @@ fn TmItemState::zero() -> TmItemState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tm_item_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TmItemState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  tm_item_encode(TmItemState::zero())
 }
 
 ///|
@@ -83,8 +80,8 @@ pub let tm_item_schema_fingerprint : String = "cd61ed8baa3d59fd"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn tm_item_encode(s : TmItemState) -> Map[String, @tutuca.Value] {
   { "completed": Bool(s.completed), "text": Str(s.text) }
 }
@@ -141,9 +138,9 @@ pub fn tm_item_schema() -> @component.SchemaInfo {
 /// Declared as `interface tm-items` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TmItemsState {
+pub(all) struct TmItemsState {
   items : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -160,10 +157,7 @@ fn TmItemsState::zero() -> TmItemsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tm_items_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TmItemsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  tm_items_encode(TmItemsState::zero())
 }
 
 ///|
@@ -204,8 +198,8 @@ pub let tm_items_schema_fingerprint : String = "3e274b25537b213e"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn tm_items_encode(s : TmItemsState) -> Map[String, @tutuca.Value] {
   { "items": (List(s.items.map(x => x)) : @tutuca.Value) }
 }

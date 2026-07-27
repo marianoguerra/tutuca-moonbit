@@ -16,7 +16,7 @@
 /// Declared as `interface macros-no` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MacrosNoState {} derive(ToJson, FromJson)
+pub(all) struct MacrosNoState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn MacrosNoState::zero() -> MacrosNoState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macros_no_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(MacrosNoState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  macros_no_encode(MacrosNoState::zero())
 }
 
 ///|
@@ -50,8 +47,8 @@ pub let macros_no_schema_fingerprint : String = "d913a4b9e7d1c76a"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn macros_no_encode(_s : MacrosNoState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -89,9 +86,9 @@ pub fn macros_no_schema() -> @component.SchemaInfo {
 /// Declared as `interface macro-params` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MacroParamsState {
+pub(all) struct MacroParamsState {
   status : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -108,10 +105,7 @@ fn MacroParamsState::zero() -> MacroParamsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_params_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(MacroParamsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  macro_params_encode(MacroParamsState::zero())
 }
 
 ///|
@@ -152,8 +146,8 @@ pub let macro_params_schema_fingerprint : String = "e24255b8b42d4192"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn macro_params_encode(s : MacroParamsState) -> Map[String, @tutuca.Value] {
   { "status": Str(s.status) }
 }
@@ -201,9 +195,9 @@ pub fn macro_params_schema() -> @component.SchemaInfo {
 /// Declared as `interface macro-slots` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MacroSlotsState {
+pub(all) struct MacroSlotsState {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -220,10 +214,7 @@ fn MacroSlotsState::zero() -> MacroSlotsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_slots_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(MacroSlotsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  macro_slots_encode(MacroSlotsState::zero())
 }
 
 ///|
@@ -264,8 +255,8 @@ pub let macro_slots_schema_fingerprint : String = "29f5d9126343b9a9"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn macro_slots_encode(s : MacroSlotsState) -> Map[String, @tutuca.Value] {
   { "count": Num(s.count.to_double()) }
 }
@@ -314,9 +305,9 @@ pub fn macro_slots_schema() -> @component.SchemaInfo {
 /// Declared as `interface macro-named-slots` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MacroNamedSlotsState {
+pub(all) struct MacroNamedSlotsState {
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -333,11 +324,7 @@ fn MacroNamedSlotsState::zero() -> MacroNamedSlotsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn macro_named_slots_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(MacroNamedSlotsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  macro_named_slots_encode(MacroNamedSlotsState::zero())
 }
 
 ///|
@@ -380,8 +367,8 @@ pub let macro_named_slots_schema_fingerprint : String = "ef1c08d80888b3fd"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn macro_named_slots_encode(
   s : MacroNamedSlotsState,
 ) -> Map[String, @tutuca.Value] {

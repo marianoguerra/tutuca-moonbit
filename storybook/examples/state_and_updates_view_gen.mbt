@@ -13,12 +13,12 @@
 /// Declared as `interface attribute-binding` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct AttributeBindingState {
+pub(all) struct AttributeBindingState {
   str : String
   num : Int
   bool : Bool
   notSet : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -35,11 +35,7 @@ fn AttributeBindingState::zero() -> AttributeBindingState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn attribute_binding_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(ToJson::to_json(AttributeBindingState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  attribute_binding_encode(AttributeBindingState::zero())
 }
 
 ///|
@@ -93,8 +89,8 @@ pub let attribute_binding_schema_fingerprint : String = "8ea3de0f9d1d7877"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn attribute_binding_encode(
   s : AttributeBindingState,
 ) -> Map[String, @tutuca.Value] {
@@ -286,9 +282,9 @@ pub fn attribute_binding_schema() -> @component.SchemaInfo {
 /// Declared as `interface conditional-attributes` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ConditionalAttributesState {
+pub(all) struct ConditionalAttributesState {
   isActive : Bool
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -305,13 +301,7 @@ fn ConditionalAttributesState::zero() -> ConditionalAttributesState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn conditional_attributes_zero_args() -> Map[String, @tutuca.Value] {
-  match
-    @tutuca.Value::from_json(
-      ToJson::to_json(ConditionalAttributesState::zero()),
-    ) {
-    Map(m) => m
-    _ => Map([])
-  }
+  conditional_attributes_encode(ConditionalAttributesState::zero())
 }
 
 ///|
@@ -356,8 +346,8 @@ pub let conditional_attributes_schema_fingerprint : String = "910117f2f10fc51d"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn conditional_attributes_encode(
   s : ConditionalAttributesState,
 ) -> Map[String, @tutuca.Value] {
@@ -505,10 +495,10 @@ pub fn conditional_attributes_schema() -> @component.SchemaInfo {
 /// Declared as `interface event-modifiers` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct EventModifiersState {
+pub(all) struct EventModifiersState {
   query : String
   lastSentSearch : @tutuca.Value
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -525,10 +515,7 @@ fn EventModifiersState::zero() -> EventModifiersState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn event_modifiers_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(EventModifiersState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  event_modifiers_encode(EventModifiersState::zero())
 }
 
 ///|
@@ -576,8 +563,8 @@ pub let event_modifiers_schema_fingerprint : String = "d6a42b598e90df83"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn event_modifiers_encode(
   s : EventModifiersState,
 ) -> Map[String, @tutuca.Value] {
@@ -741,10 +728,10 @@ pub fn event_modifiers_schema() -> @component.SchemaInfo {
 /// Declared as `interface show-hide` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct ShowHideState {
+pub(all) struct ShowHideState {
   isOpen : Bool
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -761,10 +748,7 @@ fn ShowHideState::zero() -> ShowHideState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn show_hide_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(ShowHideState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  show_hide_encode(ShowHideState::zero())
 }
 
 ///|
@@ -808,8 +792,8 @@ pub let show_hide_schema_fingerprint : String = "3f79c6cc46a1f1b3"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn show_hide_encode(s : ShowHideState) -> Map[String, @tutuca.Value] {
   { "isOpen": Bool(s.isOpen), "count": Num(s.count.to_double()) }
 }

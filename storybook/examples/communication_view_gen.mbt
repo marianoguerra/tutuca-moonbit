@@ -13,10 +13,10 @@
 /// Declared as `interface status` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct StatusState {
+pub(all) struct StatusState {
   message : String
   count : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -33,10 +33,7 @@ fn StatusState::zero() -> StatusState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn status_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(StatusState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  status_encode(StatusState::zero())
 }
 
 ///|
@@ -80,8 +77,8 @@ pub let status_schema_fingerprint : String = "818952001ae7566e"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn status_encode(s : StatusState) -> Map[String, @tutuca.Value] {
   { "message": Str(s.message), "count": Num(s.count.to_double()) }
 }
@@ -160,9 +157,9 @@ pub fn status_schema() -> @component.SchemaInfo {
 /// Declared as `interface send-receive` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SendReceiveState {
+pub(all) struct SendReceiveState {
   draft : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -179,10 +176,7 @@ fn SendReceiveState::zero() -> SendReceiveState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn send_receive_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SendReceiveState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  send_receive_encode(SendReceiveState::zero())
 }
 
 ///|
@@ -226,8 +220,8 @@ pub let send_receive_schema_fingerprint : String = "af6010efd88e64f0"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn send_receive_encode(s : SendReceiveState) -> Map[String, @tutuca.Value] {
   { "draft": Str(s.draft) }
 }
@@ -385,15 +379,12 @@ pub fn send_receive_schema() -> @component.SchemaInfo {
 /// Declared as `interface tree-item` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TreeItemState {
+pub(all) struct TreeItemState {
   type_ : String
   label : String
   isOpen : Bool
   items : Array[@tutuca.Value]
-} derive (
-  ToJson(fields(type_(rename="type"))),
-  FromJson(fields(type_(rename="type"))),
-)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -410,10 +401,7 @@ fn TreeItemState::zero() -> TreeItemState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tree_item_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TreeItemState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  tree_item_encode(TreeItemState::zero())
 }
 
 ///|
@@ -465,8 +453,8 @@ pub let tree_item_schema_fingerprint : String = "e6692133fe7c7e9a"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn tree_item_encode(s : TreeItemState) -> Map[String, @tutuca.Value] {
   {
     "type": Str(s.type_),
@@ -675,9 +663,9 @@ pub fn tree_item_schema() -> @component.SchemaInfo {
 /// Declared as `interface tree-root` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct TreeRootState {
+pub(all) struct TreeRootState {
   log : Array[@tutuca.Value]
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -694,10 +682,7 @@ fn TreeRootState::zero() -> TreeRootState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn tree_root_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(TreeRootState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  tree_root_encode(TreeRootState::zero())
 }
 
 ///|
@@ -741,8 +726,8 @@ pub let tree_root_schema_fingerprint : String = "956f1bda15ce4557"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn tree_root_encode(s : TreeRootState) -> Map[String, @tutuca.Value] {
   { "log": (List(s.log.map(x => x)) : @tutuca.Value) }
 }

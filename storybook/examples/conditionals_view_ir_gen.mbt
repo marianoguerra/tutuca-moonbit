@@ -76,7 +76,7 @@ pub fn traffic_light_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn traffic_light_component(
+pub fn traffic_light_component(
   name? : String = "TrafficLight",
   views? : Map[String, @anode.View] = traffic_light_views(),
   init? : TrafficLightState = TrafficLightState::zero(),
@@ -252,7 +252,7 @@ pub fn tabbed_u_i_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn tabbed_u_i_component(
+pub fn tabbed_u_i_component(
   name? : String = "TabbedUI",
   views? : Map[String, @anode.View] = tabbed_u_i_views(),
   init? : TabbedUIState = TabbedUIState::zero(),
@@ -347,7 +347,7 @@ pub fn list_and_filter_views() -> Map[String, @anode.View] {
 /// `init` defaults to the zero state and `name` to the name the template
 /// id declares — pass either when yours differs. The signature below is
 /// the whole story: anything not a parameter here, the view file states.
-fn list_and_filter_component(
+pub fn list_and_filter_component(
   name? : String = "ListAndFilter",
   views? : Map[String, @anode.View] = list_and_filter_views(),
   init? : ListAndFilterState = ListAndFilterState::zero(),

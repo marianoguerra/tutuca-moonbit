@@ -25,6 +25,8 @@ import {
 import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
+  // the fixture writes its own state <-> Value codec, like a generated module
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/render",

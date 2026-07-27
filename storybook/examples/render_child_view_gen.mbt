@@ -13,9 +13,9 @@
 /// Declared as `interface greeting` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct GreetingState {
+pub(all) struct GreetingState {
   name : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -32,10 +32,7 @@ fn GreetingState::zero() -> GreetingState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn greeting_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(GreetingState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  greeting_encode(GreetingState::zero())
 }
 
 ///|
@@ -76,8 +73,8 @@ pub let greeting_schema_fingerprint : String = "291131f40d1ed859"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn greeting_encode(s : GreetingState) -> Map[String, @tutuca.Value] {
   { "name": Str(s.name) }
 }
@@ -146,7 +143,7 @@ pub fn greeting_schema() -> @component.SchemaInfo {
 /// Declared as `interface page` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PageState {} derive(ToJson, FromJson)
+pub(all) struct PageState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -163,10 +160,7 @@ fn PageState::zero() -> PageState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn page_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PageState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  page_encode(PageState::zero())
 }
 
 ///|
@@ -207,8 +201,8 @@ pub let page_schema_fingerprint : String = "db02b6e5e92c5199"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn page_encode(_s : PageState) -> Map[String, @tutuca.Value] {
   Map([])
 }
@@ -276,10 +270,10 @@ pub fn page_schema() -> @component.SchemaInfo {
 /// Declared as `interface entry` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct EntryState {
+pub(all) struct EntryState {
   title : String
   description : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -296,10 +290,7 @@ fn EntryState::zero() -> EntryState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn entry_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(EntryState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  entry_encode(EntryState::zero())
 }
 
 ///|
@@ -343,8 +334,8 @@ pub let entry_schema_fingerprint : String = "e63d2a9edab89eef"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn entry_encode(s : EntryState) -> Map[String, @tutuca.Value] {
   { "title": Str(s.title), "description": Str(s.description) }
 }
@@ -527,7 +518,7 @@ pub fn entry_schema() -> @component.SchemaInfo {
 /// Declared as `interface multiple-views` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct MultipleViewsState {} derive(ToJson, FromJson)
+pub(all) struct MultipleViewsState {}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -544,10 +535,7 @@ fn MultipleViewsState::zero() -> MultipleViewsState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn multiple_views_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(MultipleViewsState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  multiple_views_encode(MultipleViewsState::zero())
 }
 
 ///|
@@ -590,8 +578,8 @@ pub let multiple_views_schema_fingerprint : String = "74788bd77ca3a59f"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn multiple_views_encode(_s : MultipleViewsState) -> Map[String, @tutuca.Value] {
   Map([])
 }

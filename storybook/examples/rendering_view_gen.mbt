@@ -13,11 +13,11 @@
 /// Declared as `interface push-view` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PushViewState {
+pub(all) struct PushViewState {
   items : Array[@tutuca.Value]
   query : String
   view : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -34,10 +34,7 @@ fn PushViewState::zero() -> PushViewState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn push_view_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PushViewState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  push_view_encode(PushViewState::zero())
 }
 
 ///|
@@ -84,8 +81,8 @@ pub let push_view_schema_fingerprint : String = "59de8df8ec76d36f"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn push_view_encode(s : PushViewState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
@@ -324,12 +321,12 @@ pub fn push_view_schema() -> @component.SchemaInfo {
 /// Declared as `interface seq-item-access` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct SeqItemAccessState {
+pub(all) struct SeqItemAccessState {
   byKey : Map[String, @tutuca.Value]
   byIndex : Array[@tutuca.Value]
   currentKey : @tutuca.Value
   currentIndex : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -351,10 +348,7 @@ fn SeqItemAccessState::zero() -> SeqItemAccessState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn seq_item_access_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(SeqItemAccessState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  seq_item_access_encode(SeqItemAccessState::zero())
 }
 
 ///|
@@ -408,8 +402,8 @@ pub let seq_item_access_schema_fingerprint : String = "3d8aff68ab0f9efc"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn seq_item_access_encode(s : SeqItemAccessState) -> Map[String, @tutuca.Value] {
   {
     "byKey": {
@@ -641,11 +635,11 @@ pub fn seq_item_access_schema() -> @component.SchemaInfo {
 /// Declared as `interface pagination` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-priv struct PaginationState {
+pub(all) struct PaginationState {
   items : Array[@tutuca.Value]
   page : Int
   pageSize : Int
-} derive(ToJson, FromJson)
+}
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -662,10 +656,7 @@ fn PaginationState::zero() -> PaginationState {
 /// The zero state as component arguments — the default a ModuleDef
 /// example takes when it sets nothing of its own.
 pub fn pagination_zero_args() -> Map[String, @tutuca.Value] {
-  match @tutuca.Value::from_json(ToJson::to_json(PaginationState::zero())) {
-    Map(m) => m
-    _ => Map([])
-  }
+  pagination_encode(PaginationState::zero())
 }
 
 ///|
@@ -712,8 +703,8 @@ pub let pagination_schema_fingerprint : String = "c2aa11aab6bf6478"
 /// field by field rather than through a `Json` round trip.
 ///
 /// A field that already holds a `@tutuca.Value` is passed straight
-/// through: it is exactly what `with_value_stash` exists to rescue from
-/// the JSON path, and this way it never enters one.
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
 fn pagination_encode(s : PaginationState) -> Map[String, @tutuca.Value] {
   {
     "items": (List(s.items.map(x => x)) : @tutuca.Value),
