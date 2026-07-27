@@ -64,6 +64,26 @@ fn macros_no_decode(_f : Map[String, @tutuca.Value]) -> MacrosNoState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn macros_no_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "d913a4b9e7d1c76a",
+    fields: [],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the MacroParams component.
 ///
 /// Declared as `interface macro-params` in the state block. Adding a
@@ -144,6 +164,35 @@ fn macro_params_encode(s : MacroParamsState) -> Map[String, @tutuca.Value] {
 fn macro_params_decode(f : Map[String, @tutuca.Value]) -> MacroParamsState? {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   Some(MacroParamsState::{ status: v_status })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn macro_params_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "e24255b8b42d4192",
+    fields: [
+      {
+        name: "status",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -228,6 +277,35 @@ fn macro_slots_decode(f : Map[String, @tutuca.Value]) -> MacroSlotsState? {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(MacroSlotsState::{ count: v_count })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn macro_slots_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "29f5d9126343b9a9",
+    fields: [
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -319,4 +397,33 @@ fn macro_named_slots_decode(
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(MacroNamedSlotsState::{ count: v_count })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn macro_named_slots_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "ef1c08d80888b3fd",
+    fields: [
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }

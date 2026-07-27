@@ -45,7 +45,23 @@ pub fn register_bundle(
       let style = if v.name == "main" { def.style } else { "" }
       cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
     }
-    let comp = @component.Component::for_type(name=def.name, views=cviews)
+    // The manifest already lists what the guest answers to; it used to go
+    // nowhere, so a guest component showed up in the inspector as a name and
+    // nothing else. `fields` stays empty on purpose — guest state is opaque
+    // by design (only views and handlers cross the boundary), and saying that
+    // is different from having no descriptor at all.
+    let comp = @component.Component::for_type(name=def.name, views=cviews, schema={
+      fingerprint: manifest_fingerprint(def),
+      fields: [],
+      inputs: def.input_handlers,
+      receives: def.receive_handlers,
+      bubbles: [],
+      responses: def.response_handlers,
+      methods: def.method_names,
+      ids: [],
+      view_names: def.views.map(v => v.name),
+      init_names: [],
+    })
     synthesized.push(comp)
     comps[def.name] = (comp.id, def)
   }
@@ -122,4 +138,26 @@ pub fn Bundle::migrate_instance(
 /// the caller seeded and unmounted explicitly).
 pub fn Bundle::drop_instance(self : Bundle, handle : Int) -> Unit {
   self.guest.drop_instance(handle)
+}
+
+///|
+/// A stand-in for the generated schema fingerprint: a guest ships no WIT with
+/// its manifest, so the shape it declares IS the manifest, and this hashes
+/// that. Same purpose as `<v>_schema_fingerprint` — it changes when the
+/// component's shape does, and not otherwise.
+fn manifest_fingerprint(def : DynComponentDef) -> String {
+  let parts = [def.name] +
+    def.views.map(v => v.name) +
+    def.input_handlers +
+    def.receive_handlers +
+    def.response_handlers +
+    def.method_names
+  let mut h = 0
+  for p in parts {
+    for c in p {
+      h = (h * 31 + c.to_int()) % 0x7FFFFFFF
+    }
+    h = (h * 31 + 1) % 0x7FFFFFFF
+  }
+  "dyn\{h}"
 }

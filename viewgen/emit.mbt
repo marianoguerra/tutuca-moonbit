@@ -591,6 +591,31 @@ fn emit_state_only(
   let derives = if debug_derive { "Eq, @debug.Debug" } else { "Eq" }
   let inits = file.init.filter(p => p.0 == def.component).map(p => p.1)
   emit_state(t, v, def, inits, derives, out)
+  // The schema too. Its view-derived lists — inputs, methods, ids, view names
+  // — come out EMPTY, and that is the honest reading: this file declares the
+  // component's data and no views, so there is no `@on` handler or `$name` in
+  // it to have found. The alternative was emitting no schema at all, which
+  // left `component()` with nothing to be told and the runtime guessing field
+  // kinds from the init value. A partial declaration still beats a
+  // reconstruction, and the missing half is recovered by moving the templates
+  // into the view file — which is the incentive.
+  let empty_surface : Surface = {
+    inputs: [],
+    methods: [],
+    fields: [],
+    ids: [],
+    whens: [],
+    enriches: [],
+    enrich_scopes: [],
+    loop_withs: [],
+  }
+  let no_views : ViewSet = {
+    name: def.component,
+    views: [],
+    common_style: "",
+    global_style: "",
+  }
+  emit_schema(t, v, def, empty_surface, no_views, inits, out)
 }
 
 ///|

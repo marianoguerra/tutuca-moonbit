@@ -1,6 +1,13 @@
 // ViewRegistry: one registry answering both render-time view resolution and
 // reconstruction-time boundary lookups, so emitted §Comp§ cids and later
 // (cid, vid, nid|eid) lookups always agree.
+//
+// TEST SUPPORT. It takes view SOURCE and parses it, which is what lets the
+// render tests state a view and a stack in one place and read the result —
+// and it has no caller outside those tests. It is public because they are
+// blackbox tests, not because anything ships against it. A component-less
+// render in production goes through @component, which is where a view arrives
+// already compiled.
 
 ///|
 priv struct EmptyMacroScope {}

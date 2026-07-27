@@ -284,6 +284,7 @@ fn root_comp() -> @component.Component {
     views=root_views_with_decoy(),
     encode=root_encode,
     decode=root_decode,
+    schema=root_schema(),
     name="Root",
     init=RootState::{
         allEntries: [],

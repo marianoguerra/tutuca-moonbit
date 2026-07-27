@@ -200,6 +200,7 @@ fn shared_people_comp() -> @component.Component {
     },
     encode=naive_people_encode,
     decode=naive_people_decode,
+    schema=naive_people_schema(),
   )
 }
 
@@ -244,6 +245,7 @@ fn coupled_people_comp() -> @component.Component {
     },
     encode=naive_people_encode,
     decode=naive_people_decode,
+    schema=naive_people_schema(),
   )
 }
 

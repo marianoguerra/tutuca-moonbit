@@ -597,9 +597,45 @@ fn build_shell(
     init_fields,
     num_sections,
   }
+  // The shell's field set depends on the section list, which is why it is a
+  // `for_type` component and not a typed-state one. Depending on a runtime
+  // value is not the same as being unknown, though: by this point every field
+  // name has been computed, so the descriptor is written from the same data
+  // the view was.
+  let field_names : Array[String] = []
+  for name, _ in defaults {
+    field_names.push(name)
+  }
+  field_names.sort_by((a, b) => a.lexical_compare(b))
   let comp = @component.Component::for_type(
     views={ "main": @anode.View::new("main", raw_view=sb.to_string()) },
     name="Storybook",
+    schema={
+      // The section list IS the shape, so it is what the fingerprint hashes.
+      fingerprint: "shell\{num_sections}x\{filter_text.length()}",
+      fields: field_names.map(n => {
+        (
+          {
+            name: n,
+            ty: "any",
+            kind: @component.FAny,
+            elem: None,
+            slot: None,
+            members: [],
+          } : @component.FieldInfo)
+      }),
+      inputs: [
+        "onClearFilter", "onFilter", "onFocusClose", "onFocusStory", "onSelect",
+        "onSelectTheme", "onToggleSection",
+      ],
+      receives: [],
+      bubbles: [],
+      responses: [],
+      methods: [],
+      ids: [],
+      view_names: ["main"],
+      init_names: [],
+    },
   )
   spec.comp = Some(comp)
   (comp, spec, defaults)

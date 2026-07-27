@@ -39,6 +39,36 @@ pub(all) struct FieldSpec {
 declare fn FieldSpec::of_default(v : @tutuca.Value) -> FieldSpec
 
 ///|
+/// One declared field, with the parts most fields do not use defaulted.
+/// Shorthand for writing `elem`/`slot`/`members` empty, not a way to leave
+/// them unsaid.
+declare pub fn FieldInfo::new(
+  name : String,
+  ty : String,
+  kind : FieldKind,
+  elem? : String,
+  slot? : String,
+  members? : Array[String],
+) -> FieldInfo
+
+///|
+/// A component's declared schema, with the channels it does not use defaulted
+/// to empty. Empty is a real answer and a different one from absent: it says
+/// the component raises no `bubble`, not that nobody looked.
+declare pub fn SchemaInfo::new(
+  fingerprint~ : String,
+  fields? : Array[FieldInfo],
+  inputs? : Array[String],
+  receives? : Array[String],
+  bubbles? : Array[String],
+  responses? : Array[String],
+  methods? : Array[String],
+  ids? : Array[String],
+  view_names? : Array[String],
+  init_names? : Array[String],
+) -> SchemaInfo
+
+///|
 /// The declared description of a field, by runtime name.
 declare pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo?
 
@@ -341,9 +371,15 @@ declare pub fn[S : ToJson + @json.FromJson] component(
 /// @tutuca.Obj directly (the fully-manual path): views/styles/provide/lookup
 /// only — fields and handlers live on the struct itself. The struct's
 /// component_id() must return this component's id. make() yields Null.
+///
+/// `schema` is required here for the same reason it is on `component`: being
+/// hand-written is not being under-described. A `fields: []` schema is the
+/// right answer when the instances really are opaque (the dyncomp contract),
+/// and it still carries the handler channels the caller knows about.
 declare pub fn Component::for_type(
   name~ : String,
   views~ : Map[String, @anode.View],
+  schema~ : SchemaInfo,
   common_style? : String,
   global_style? : String,
   provide? : Map[String, String],

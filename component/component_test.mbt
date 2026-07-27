@@ -521,6 +521,15 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
       ),
     },
     name="Badge",
+    // Hand-written and complete: the struct answers `.label` and one Receive,
+    // and this says so. `for_type` requires it for the same reason `component`
+    // does — being hand-written is not being under-described.
+    schema=@component.SchemaInfo::new(
+      fingerprint="badge-test",
+      fields=[@component.FieldInfo::new("label", "string", FText)],
+      receives=["relabel"],
+      view_names=["main"],
+    ),
   )
   let todo = todo_comp()
   scope.register_components([badge_comp, todo])

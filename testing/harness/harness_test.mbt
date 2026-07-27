@@ -35,6 +35,19 @@ fn counter_module() -> @component.ModuleDef {
     },
     name="Counter",
     init=CounterState::{ count: 0, label: "" },
+    // Hand-written and complete. A fixture is not exempt: `component` takes a
+    // schema because the runtime should be told a component's shape rather
+    // than reconstruct it, and that holds whether the shape came from
+    // `gen-views` or from here.
+    schema=@component.SchemaInfo::new(
+      fingerprint="harness-counter",
+      fields=[
+        @component.FieldInfo::new("count", "s32", FInt),
+        @component.FieldInfo::new("label", "string", FText),
+      ],
+      inputs=["dec", "inc", "setLabel"],
+      view_names=["main"],
+    ),
     update=(s : CounterState, msg, _ctx) => {
       match msg {
         Input("inc", _) => Some({ ..s, count: s.count + 1 })

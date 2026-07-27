@@ -92,6 +92,35 @@ fn icon_gallery_decode(f : Map[String, @tutuca.Value]) -> IconGalleryState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn icon_gallery_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "17ce7599eac0af6f",
+    fields: [
+      {
+        name: "size",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// BarChart's view is here; IconGallery's is not. IconGallery calls a macro
 /// whose body a MoonBit function builds per icon path and registers at run
 /// time, so there is nothing to expand ahead of time — it stays a designated

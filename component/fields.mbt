@@ -80,3 +80,59 @@ pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo? {
   }
   None
 }
+
+///|
+/// One declared field, with the parts most fields do not use defaulted.
+///
+/// The generator writes every part out because it knows every part. A
+/// hand-written schema — a dyncomp guest's manifest, the storybook shell's
+/// computed field set, a test fixture — usually has a name, a WIT spelling and
+/// a kind, and `elem`/`slot`/`members` are the shapes it does not have. Making
+/// those defaults is a shorthand for writing them empty, not a way to leave
+/// them unsaid: the struct is still `pub(all)` and a caller that knows more
+/// still writes it whole.
+pub fn FieldInfo::new(
+  name : String,
+  ty : String,
+  kind : FieldKind,
+  elem? : String,
+  slot? : String,
+  members? : Array[String] = [],
+) -> FieldInfo {
+  { name, ty, kind, elem, slot, members }
+}
+
+///|
+/// A component's declared schema, with the channels it does not use defaulted
+/// to empty.
+///
+/// Empty is a real answer here, and a different one from absent: it says the
+/// component raises no `bubble`, not that nobody looked. `component()` and
+/// `Component::for_type` both require a schema for that reason — what this
+/// removes is the eight lines of `[]` between the two or three lists a
+/// hand-written descriptor actually fills.
+pub fn SchemaInfo::new(
+  fingerprint~ : String,
+  fields? : Array[FieldInfo] = [],
+  inputs? : Array[String] = [],
+  receives? : Array[String] = [],
+  bubbles? : Array[String] = [],
+  responses? : Array[String] = [],
+  methods? : Array[String] = [],
+  ids? : Array[String] = [],
+  view_names? : Array[String] = [],
+  init_names? : Array[String] = [],
+) -> SchemaInfo {
+  {
+    fingerprint,
+    fields,
+    inputs,
+    receives,
+    bubbles,
+    responses,
+    methods,
+    ids,
+    view_names,
+    init_names,
+  }
+}

@@ -182,6 +182,7 @@ fn lint_demo_comp() -> @component.Component {
     },
     encode=lint_demo_encode,
     decode=lint_demo_decode,
+    schema=lint_demo_schema(),
   )
 }
 
@@ -222,6 +223,7 @@ fn html_lint_demo_comp() -> @component.Component {
     init=HtmlLintDemoState::{ count: 0 },
     encode=html_lint_demo_encode,
     decode=html_lint_demo_decode,
+    schema=html_lint_demo_schema(),
   )
 }
 
@@ -244,6 +246,7 @@ fn scoped_style_demo_comp() -> @component.Component {
     ),
     encode=scoped_style_demo_encode,
     decode=scoped_style_demo_decode,
+    schema=scoped_style_demo_schema(),
   )
 }
 

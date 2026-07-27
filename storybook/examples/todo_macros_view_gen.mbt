@@ -99,6 +99,43 @@ fn tm_item_decode(f : Map[String, @tutuca.Value]) -> TmItemState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn tm_item_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "cd61ed8baa3d59fd",
+    fields: [
+      {
+        name: "completed",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "text",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the TmItems component.
 ///
 /// Declared as `interface tm-items` in the state block. Adding a
@@ -185,4 +222,33 @@ fn tm_items_decode(f : Map[String, @tutuca.Value]) -> TmItemsState? {
     v_items.push(x1_items)
   }
   Some(TmItemsState::{ items: v_items })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn tm_items_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "3e274b25537b213e",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }

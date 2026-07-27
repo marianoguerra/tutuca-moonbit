@@ -135,6 +135,67 @@ fn lint_demo_decode(f : Map[String, @tutuca.Value]) -> LintDemoState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn lint_demo_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "61623a4912326968",
+    fields: [
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "kind",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "isOpen",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "child",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the HtmlLintDemo component.
 ///
 /// Declared as `interface html-lint-demo` in the state block. Adding a
@@ -218,6 +279,35 @@ fn html_lint_demo_decode(f : Map[String, @tutuca.Value]) -> HtmlLintDemoState? {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(HtmlLintDemoState::{ count: v_count })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn html_lint_demo_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5527f190b24e5ee0",
+    fields: [
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -309,4 +399,33 @@ fn scoped_style_demo_decode(
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
   Some(ScopedStyleDemoState::{ count: v_count })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn scoped_style_demo_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "86b61c5fb0f1011d",
+    fields: [
+      {
+        name: "count",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }

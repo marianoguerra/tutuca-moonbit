@@ -39,6 +39,18 @@ pub fn shell_module(bundle_url~ : String) -> @component.ModuleDef {
     },
     name="DynShell",
     init=ShellState::{ status: "no bundle loaded", slot: Null, pair: Null },
+    schema=@component.SchemaInfo::new(
+      fingerprint="dyn-shell",
+      fields=[
+        @component.FieldInfo::new("status", "string", FText),
+        @component.FieldInfo::new("slot", "any", FAny),
+        @component.FieldInfo::new("pair", "any", FAny),
+      ],
+      inputs=["load"],
+      // raised by the JS glue once a bundle finishes loading
+      receives=["dyncompLoaded"],
+      view_names=["main"],
+    ),
     update=(s : ShellState, msg, ctx) => {
       match msg {
         Input("load", _) => {

@@ -64,6 +64,26 @@ fn vw_empty_decode(_f : Map[String, @tutuca.Value]) -> VwEmptyState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_empty_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "ce4923df302b81b2",
+    fields: [],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the VwImm component.
 ///
 /// Declared as `interface vw-imm` in the state block. Adding a
@@ -153,6 +173,43 @@ fn vw_imm_decode(f : Map[String, @tutuca.Value]) -> VwImmState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_imm_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "53f3484f60b3c75c",
+    fields: [
+      {
+        name: "value",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "rawValue",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the VwTypes component.
 ///
 /// Declared as `interface vw-types` in the state block. Adding a
@@ -239,6 +296,35 @@ fn vw_types_decode(f : Map[String, @tutuca.Value]) -> VwTypesState? {
     v_items.push(x1_items)
   }
   Some(VwTypesState::{ items: v_items })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_types_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "dd9e67b6f8d50b55",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -348,6 +434,51 @@ fn vw_container_decode(f : Map[String, @tutuca.Value]) -> VwContainerState? {
     expanded: v_expanded,
     editing: v_editing,
   })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_container_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "a94df03941e4c8f4",
+    fields: [
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "expanded",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "editing",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -497,6 +628,75 @@ fn vw_if_decode(f : Map[String, @tutuca.Value]) -> VwIfState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_if_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "90972407f58ddfc3",
+    fields: [
+      {
+        name: "thn",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "else",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "expanded",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "editingIf",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "editingThn",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "editingElse",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the VwSection component.
 ///
 /// Declared as `interface vw-section` in the state block. Adding a
@@ -627,6 +827,67 @@ fn vw_section_decode(f : Map[String, @tutuca.Value]) -> VwSectionState? {
 }
 
 ///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_section_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "2bd9dd9147e15f1e",
+    fields: [
+      {
+        name: "id",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "name",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "items",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "expanded",
+        ty: "bool",
+        kind: @component.FBool,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "defaultItem",
+        ty: "any",
+        kind: @component.FAny,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
+}
+
+///|
 /// The state of the VwMemory component.
 ///
 /// Declared as `interface vw-memory` in the state block. Adding a
@@ -714,6 +975,43 @@ fn vw_memory_decode(f : Map[String, @tutuca.Value]) -> VwMemoryState? {
   guard f.get("m") is Some(Num(t1_m)) else { return None }
   let v_m = t1_m.to_int()
   Some(VwMemoryState::{ n: v_n, m: v_m })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_memory_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "5bef82ed43430e63",
+    fields: [
+      {
+        name: "n",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "m",
+        ty: "s32",
+        kind: @component.FInt,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }
 
 ///|
@@ -825,4 +1123,49 @@ fn vw_picker_decode(f : Map[String, @tutuca.Value]) -> VwPickerState? {
     instructions: v_instructions,
     filter: v_filter,
   })
+}
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// Passing it to `component` also stops the runtime inferring field
+/// kinds from the init value — the schema states them.
+pub fn vw_picker_schema() -> @component.SchemaInfo {
+  {
+    fingerprint: "e5eda1d1115e0e30",
+    fields: [
+      {
+        name: "currentSection",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+      {
+        name: "instructions",
+        ty: "list<any>",
+        kind: @component.FList,
+        elem: Some("any"),
+        slot: None,
+        members: [],
+      },
+      {
+        name: "filter",
+        ty: "string",
+        kind: @component.FText,
+        elem: None,
+        slot: None,
+        members: [],
+      },
+    ],
+    inputs: [],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: [],
+    ids: [],
+    view_names: [],
+    init_names: [],
+  }
 }

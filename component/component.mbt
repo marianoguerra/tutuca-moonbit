@@ -262,9 +262,21 @@ fn[S : ToJson + @json.FromJson] make_typed(
 /// @tutuca.Obj directly (the fully-manual path): views/styles/provide/lookup
 /// only — fields and handlers live on the struct itself. The struct's
 /// component_id() must return this component's id. make() yields Null.
+///
+/// `schema` is REQUIRED, exactly as it is for a typed-state component. Being
+/// hand-written is not being under-described: a caller here knows what its
+/// instances answer to — a dyncomp guest's manifest lists its handlers, the
+/// storybook shell computes its own field set — and the descriptor is where
+/// that goes. Without it the inspector had nothing to show for these
+/// components and the runtime had nothing to be told.
+///
+/// A `fields: []` schema is a fine answer when the instances really are
+/// opaque, which is the dyncomp contract: only views and handlers cross the
+/// boundary, and saying so beats leaving the whole descriptor blank.
 pub fn Component::for_type(
   name~ : String,
   views~ : Map[String, @anode.View],
+  schema~ : SchemaInfo,
   common_style? : String = "",
   global_style? : String = "",
   provide? : Map[String, String] = Map([]),
@@ -278,6 +290,7 @@ pub fn Component::for_type(
     provide,
     lookup,
     Map([]),
+    schema=Some(schema),
   )
 }
 
