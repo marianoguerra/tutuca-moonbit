@@ -128,7 +128,7 @@ fn v_at(
   steps : Array[@tutuca.Step],
 ) -> @tutuca.Value {
   match @tutuca.Path::new(steps~).lookup(tx.root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

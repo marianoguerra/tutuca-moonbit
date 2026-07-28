@@ -29,7 +29,7 @@ fn odispatch(v : @tutuca.Value, name : String) -> @tutuca.Value {
   guard v is Obj(o) else { return Null }
   guard o.obj_handler(Input, name) is Some(Handler(f)) else { return Null }
   match f([], @tutuca.NullCtx::{  }) {
-    Some(node) => node.as_value().unwrap_or(Null)
+    Some(node) => node
     None => v
   }
 }

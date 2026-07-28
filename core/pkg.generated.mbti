@@ -30,11 +30,9 @@ pub fn parse_text(String, ParseCtx) -> Val?
 
 pub fn parse_token(String, ParseCtx) -> Val?
 
-pub fn same_node(&PathNode, &PathNode) -> Bool
-
 pub fn size_of(Value) -> Int?
 
-pub fn step_get(&PathNode, Step) -> &PathNode?
+pub fn step_get(Value, Step) -> Value?
 
 pub fn step_keys_label(Array[StepKey]) -> String
 
@@ -86,7 +84,7 @@ pub(all) enum FieldKind {
   FOMap
 } derive(@debug.Debug)
 
-pub(all) struct Handler((Array[Value], &Ctx) -> &PathNode?)
+pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
 pub(all) enum HandlerBucket {
   Receive
@@ -153,15 +151,15 @@ pub fn Path::concat(Self, Array[Step]) -> Self
 pub fn Path::field(Self, String) -> Self
 pub fn Path::index(Self, String, Int) -> Self
 pub fn Path::key(Self, String, String) -> Self
-pub fn Path::lookup(Self, &PathNode) -> &PathNode?
+pub fn Path::lookup(Self, Value) -> Value?
 pub fn Path::new(steps? : Array[Step]) -> Self
-pub fn Path::pin_keys(Self, &PathNode) -> Self
+pub fn Path::pin_keys(Self, Value) -> Self
 pub fn Path::pop_step(Self) -> Self
-pub fn Path::resolve_chain(Self, &PathNode) -> Array[&PathNode]
-pub fn Path::set_value(Self, &PathNode, &PathNode) -> &PathNode
+pub fn Path::resolve_chain(Self, Value) -> Array[Value]
+pub fn Path::set_value(Self, Value, Value) -> Value
 pub fn Path::to_keys(Self) -> Array[StepKey]
 pub fn Path::to_label(Self) -> String
-pub fn Path::update(Self, &PathNode, HandlerBucket, String, Array[Value]) -> &PathNode
+pub fn Path::update(Self, Value, HandlerBucket, String, Array[Value]) -> Value
 pub impl Show for Path
 
 pub struct PathChanges {
@@ -285,6 +283,7 @@ pub(all) enum Value {
   Fn((Array[Value]) -> Value)
   Obj(&Obj)
 }
+pub fn Value::as_key(Self) -> PathKey?
 pub fn Value::at(Self, Path) -> Self
 pub fn Value::at_opt(Self, Path) -> Self?
 pub fn Value::bool(Self, default? : Bool) -> Bool
@@ -297,6 +296,7 @@ pub fn Value::field_info(Self, String) -> FieldInfo?
 pub fn Value::field_names(Self) -> Array[String]
 pub fn Value::field_opt(Self, String) -> Self?
 pub fn Value::from_json(Json) -> Self
+pub fn Value::handler(Self, HandlerBucket, String) -> Handler?
 pub fn Value::index(Self, Int, default? : Self) -> Self
 pub fn Value::int(Self, default? : Int) -> Int
 pub fn Value::int_opt(Self) -> Int?
@@ -319,8 +319,9 @@ pub fn Value::to_display_string(Self) -> String
 pub fn Value::to_json(Self) -> Json
 pub fn Value::with_at(Self, Path, Self) -> Self
 pub fn Value::with_field(Self, String, Self) -> Self
+pub fn Value::with_field_opt(Self, String, Self) -> Self?
 pub fn Value::with_item(Self, PathKey, Self) -> Self
-pub impl PathNode for Value
+pub fn Value::with_item_opt(Self, PathKey, Self) -> Self?
 pub impl Eq for Value
 pub impl ToJson for Value
 pub impl @debug.Debug for Value
@@ -362,16 +363,6 @@ pub(open) trait Obj {
   fn obj_size(Self) -> Int? = _
   fn obj_eq(Self, &Obj) -> Bool = _
   fn obj_debug(Self) -> String = _
-}
-
-pub(open) trait PathNode {
-  fn field(Self, String) -> &PathNode? = _
-  fn item(Self, PathKey) -> &PathNode? = _
-  fn with_field(Self, String, &PathNode) -> &PathNode? = _
-  fn with_item(Self, PathKey, &PathNode) -> &PathNode? = _
-  fn as_key(Self) -> PathKey? = _
-  fn as_value(Self) -> Value? = _
-  fn handler(Self, HandlerBucket, String) -> Handler? = _
 }
 
 pub(open) trait Stack {

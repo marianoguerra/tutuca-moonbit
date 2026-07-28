@@ -1,33 +1,23 @@
-// One interpreter for addressing steps over the PathNode primitives, so step
-// semantics (especially SeqAccessStep's live key resolution) are identical
-// for every trait implementation.
+// One interpreter for addressing steps over the value accessors, so step
+// semantics (especially SeqAccessStep's live key resolution) are written once
+// instead of at every call site that walks a path.
 
 ///|
 /// Resolve a field-referenced key against a node NOW: read key_field, ask the
 /// scalar for its key form.
-fn live_key(node : &PathNode, key_field : String) -> PathKey? {
-  match node.field(key_field) {
-    Some(k) => k.as_key()
-    None => None
-  }
+fn live_key(node : Value, key_field : String) -> PathKey? {
+  node.field(key_field).as_key()
 }
 
 ///|
-pub fn step_get(node : &PathNode, step : Step) -> &PathNode? {
+pub fn step_get(node : Value, step : Step) -> Value? {
   match step {
-    FieldStep(name) => node.field(name)
+    FieldStep(name) => node.field_opt(name)
     SeqStep(field~, key~) | EachRenderItStep(field~, key~) =>
-      match node.field(field) {
-        Some(seq) => seq.item(key)
-        None => None
-      }
+      node.field(field).item_opt(key)
     SeqAccessStep(seq_field~, key_field~) =>
       match live_key(node, key_field) {
-        Some(key) =>
-          match node.field(seq_field) {
-            Some(seq) => seq.item(key)
-            None => None
-          }
+        Some(key) => node.field(seq_field).item_opt(key)
         None => None
       }
     BindStep(..) | ScopeBindStep(..) | EachBindStep(..) => Some(node) // frame-only: addresses nothing
@@ -36,17 +26,17 @@ pub fn step_get(node : &PathNode, step : Step) -> &PathNode? {
 
 ///|
 /// Rebuild one seq level: new seq with `key` replaced, then a new node with
-/// the seq field replaced (both COW per the trait contract).
+/// the seq field replaced (both COW per the accessors' identity contract).
 fn put_seq(
-  node : &PathNode,
+  node : Value,
   field : String,
   key : PathKey,
-  child : &PathNode,
-) -> &PathNode? {
-  match node.field(field) {
+  child : Value,
+) -> Value? {
+  match node.field_opt(field) {
     Some(seq) =>
-      match seq.with_item(key, child) {
-        Some(new_seq) => node.with_field(field, new_seq)
+      match seq.with_item_opt(key, child) {
+        Some(new_seq) => node.with_field_opt(field, new_seq)
         None => None
       }
     None => None
@@ -54,9 +44,9 @@ fn put_seq(
 }
 
 ///|
-fn step_put(node : &PathNode, step : Step, child : &PathNode) -> &PathNode? {
+fn step_put(node : Value, step : Step, child : Value) -> Value? {
   match step {
-    FieldStep(name) => node.with_field(name, child)
+    FieldStep(name) => node.with_field_opt(name, child)
     SeqStep(field~, key~) | EachRenderItStep(field~, key~) =>
       put_seq(node, field, key, child)
     SeqAccessStep(seq_field~, key_field~) =>
@@ -72,7 +62,7 @@ fn step_put(node : &PathNode, step : Step, child : &PathNode) -> &PathNode? {
 /// Freeze a field-resolved key against `node` as it is now (JS Step.pinKey):
 /// SeqAccessStep becomes a literal-key SeqStep; every other step (and an
 /// unresolvable key) pins to itself.
-fn step_pin(step : Step, node : &PathNode) -> Step {
+fn step_pin(step : Step, node : Value) -> Step {
   match step {
     SeqAccessStep(seq_field~, key_field~) =>
       match live_key(node, key_field) {

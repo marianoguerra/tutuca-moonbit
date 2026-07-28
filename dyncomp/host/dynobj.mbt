@@ -159,7 +159,7 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
       match result.next {
         Some(h) => {
           superseded.push((self.guest, self.handle))
-          Some((Obj(self.successor(h)) : @tutuca.Value) as &@tutuca.PathNode)
+          Some((Obj(self.successor(h)) : @tutuca.Value))
         }
         None => None
       }

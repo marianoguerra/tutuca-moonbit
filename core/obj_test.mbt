@@ -69,29 +69,26 @@ impl @core.Obj for Card with fn obj_debug(self) {
 ///|
 test "Obj fields traverse and rebuild through Path (COW)" {
   let root : @core.Value = Map({ "card": card("a") })
-  let node : &@core.PathNode = root
   let p = @core.Path::new(steps=[FieldStep("card"), FieldStep("title")])
-  assert_true(p.lookup(node) is Some(n) && n.as_value() == Some(Str("a")))
+  assert_true(p.lookup(root) is Some(Str("a")))
   let vb : @core.Value = Str("b")
-  let node2 = p.set_value(node, vb)
-  assert_true(p.lookup(node2) is Some(n2) && n2.as_value() == Some(Str("b")))
+  let root2 = p.set_value(root, vb)
+  assert_true(p.lookup(root2) is Some(Str("b")))
   // old tree untouched; new card is a different instance
-  assert_true(p.lookup(node) is Some(n3) && n3.as_value() == Some(Str("a")))
+  assert_true(p.lookup(root) is Some(Str("a")))
 }
 
 ///|
 test "Obj handler dispatches through Path::update" {
   let root : @core.Value = Map({ "card": card("a") })
-  let node : &@core.PathNode = root
   let p = @core.Path::new(steps=[FieldStep("card")])
-  let node2 = p.update(node, Receive, "rename", [Str("renamed")])
+  let root2 = p.update(root, Receive, "rename", [Str("renamed")])
   assert_true(
-    @core.Path::new(steps=[FieldStep("card"), FieldStep("title")]).lookup(node2)
-    is Some(n) &&
-    n.as_value() == Some(Str("renamed")),
+    @core.Path::new(steps=[FieldStep("card"), FieldStep("title")]).lookup(root2)
+    is Some(Str("renamed")),
   )
   // missing handler -> identity
-  assert_true(physical_equal(p.update(node, Input, "rename", []), node))
+  assert_true(physical_equal(p.update(root, Input, "rename", []), root))
 }
 
 ///|
@@ -100,33 +97,28 @@ test "instances nest inside Map/List spines and in seq items" {
     "cards": Map({ "x": card("first"), "y": card("second") }),
     "stack": List([card("bottom"), card("top")]),
   })
-  let node : &@core.PathNode = root
   let by_key = @core.Path::new(steps=[
     SeqStep(field="cards", key=KStr("y")),
     FieldStep("title"),
   ])
-  assert_true(
-    by_key.lookup(node) is Some(a) && a.as_value() == Some(Str("second")),
-  )
+  assert_true(by_key.lookup(root) is Some(Str("second")))
   let by_idx = @core.Path::new(steps=[
     SeqStep(field="stack", key=KInt(1)),
     FieldStep("title"),
   ])
   let vtop : @core.Value = Str("TOP")
-  let node2 = by_idx.set_value(node, vtop)
-  assert_true(
-    by_idx.lookup(node2) is Some(b) && b.as_value() == Some(Str("TOP")),
-  )
+  let root2 = by_idx.set_value(root, vtop)
+  assert_true(by_idx.lookup(root2) is Some(Str("TOP")))
   // sibling instance physically shared after the COW rebuild
   let x_path = @core.Path::new(steps=[SeqStep(field="cards", key=KStr("x"))])
   guard (
-      x_path.lookup(node),
-      x_path.lookup(by_key.set_value(node, (Str("z") : @core.Value))),
+      x_path.lookup(root),
+      x_path.lookup(by_key.set_value(root, (Str("z") : @core.Value))),
     )
     is (Some(o1), Some(o2)) else {
     fail("card x missing")
   }
-  assert_true(physical_equal(o1.as_value().unwrap(), o2.as_value().unwrap()))
+  assert_true(physical_equal(o1, o2))
 }
 
 ///|

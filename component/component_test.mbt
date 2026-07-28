@@ -240,7 +240,7 @@ test "update dispatches through Path::update; Input falls back to mutators" {
   let comp = todo_comp()
   let t = comp.make({ "title": Str("a") })
   let root : @tutuca.Value = Map({ "todo": t })
-  let node : &@tutuca.PathNode = root
+  let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("todo")])
   let node2 = p.update(node, Receive, "rename", [Str("b")])
   assert_true(
@@ -248,7 +248,7 @@ test "update dispatches through Path::update; Input falls back to mutators" {
       node2,
     )
     is Some(n) &&
-    n.as_value() == Some(Str("b")),
+    n == Str("b"),
   )
   // Input falls back to generated mutators (pre-app-loop convenience)
   let node3 = p.update(node, Input, "setTitle", [Str("via-input")])
@@ -257,7 +257,7 @@ test "update dispatches through Path::update; Input falls back to mutators" {
       node3,
     )
     is Some(n2) &&
-    n2.as_value() == Some(Str("via-input")),
+    n2 == Str("via-input"),
   )
 }
 
@@ -291,13 +291,13 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
   assert_true(o.obj_field("inc") is None)
   // ...and it does answer through Input dispatch (event position).
   let root : @tutuca.Value = Map({ "c": t })
-  let node : &@tutuca.PathNode = root
+  let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("c")])
   let node2 = p.update(node, Input, "inc", [])
   assert_true(
     @tutuca.Path::new(steps=[FieldStep("c"), FieldStep("count")]).lookup(node2)
     is Some(n) &&
-    n.as_value() == Some(Num(2)),
+    n == Num(2),
   )
 }
 
@@ -468,14 +468,14 @@ test "Value fields in S carry Obj instances losslessly through updates" {
   let leaf = child.make(Map([]))
   let holder = parent.make(Map([]))
   let root : @tutuca.Value = Map({ "h": holder })
-  let node : &@tutuca.PathNode = root
+  let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("h")])
   let node2 = p.update(node, Receive, "add", [leaf])
   guard @tutuca.Path::new(steps=[FieldStep("h"), FieldStep("items")]).lookup(
       node2,
     )
     is Some(n) &&
-    n.as_value() is Some(List(items)) else {
+    n is List(items) else {
     fail("items not found")
   }
   // the child instance survived the typed-state round-trip as the SAME Obj
@@ -512,10 +512,7 @@ impl @tutuca.Obj for Badge with fn obj_handler(self, bucket, name) {
         Handler((args, _ctx) => {
           match args {
             [Str(s)] =>
-              Some(
-                (Obj(Badge::{ cid: self.cid, label: s }) : @tutuca.Value)
-                as &@tutuca.PathNode,
-              )
+              Some((Obj(Badge::{ cid: self.cid, label: s }) : @tutuca.Value))
             _ => None
           }
         }),
@@ -556,7 +553,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
   )
   // and the typed struct dispatches through the same path machinery
   let root : @tutuca.Value = Map({ "badge": badge })
-  let node : &@tutuca.PathNode = root
+  let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("badge")])
   let node2 = p.update(node, Receive, "relabel", [Str("gold")])
   assert_true(
@@ -564,7 +561,7 @@ test "hybrid: a typed-struct component registers and dispatches alongside" {
       node2,
     )
     is Some(n) &&
-    n.as_value() == Some(Str("gold")),
+    n == Str("gold"),
   )
 }
 
@@ -666,14 +663,14 @@ test "swap handlers replace the node with another component's instance" {
   scope.register_components([a, b])
   let inst = a.make(Map([]))
   let root : @tutuca.Value = Map({ "slot": inst })
-  let node : &@tutuca.PathNode = root
+  let node : @tutuca.Value = root
   let p = @tutuca.Path::new(steps=[FieldStep("slot")])
   let node2 = p.update(node, Input, "becomeB", [])
   guard @tutuca.Path::new(steps=[FieldStep("slot"), FieldStep("note")]).lookup(
       node2,
     )
     is Some(n) &&
-    n.as_value() is Some(Str(note)) else {
+    n is Str(note) else {
     fail("swap did not replace the node")
   }
   assert_eq(note, "from a")

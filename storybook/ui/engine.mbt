@@ -316,7 +316,7 @@ impl @tutuca.Obj for ShellInst with fn obj_schema(self) {
 /// Every event/message handler of the gallery, dispatched by (bucket, name).
 /// The bodies mirror the JS storybook's mount.js handlers 1:1.
 impl @tutuca.Obj for ShellInst with fn obj_handler(self, bucket, name) {
-  let done = (inst : ShellInst) => Some(inst.to_value() as &@tutuca.PathNode)
+  let done = (inst : ShellInst) => Some(inst.to_value())
   match (bucket, name) {
     (Input, "toggleSidebarCollapsed") =>
       Some(

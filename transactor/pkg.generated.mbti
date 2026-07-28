@@ -71,14 +71,14 @@ pub struct Transaction {
 pub fn Transaction::completion(Self) -> Completion
 
 pub struct Transactor {
-  mut root : &@core.PathNode
+  mut root : @core.Value
   // private fields
 }
 pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
-pub fn Transactor::new(&@core.PathNode, requests? : &Requests) -> Self
+pub fn Transactor::new(@core.Value, requests? : &Requests) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit
-pub fn Transactor::on_change(Self, (&@core.PathNode, &@core.PathNode) -> Unit) -> Unit
+pub fn Transactor::on_change(Self, (@core.Value, @core.Value) -> Unit) -> Unit
 pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_input(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction) -> Transaction
 pub fn Transactor::push_request(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.RequestOpts, parent? : Transaction) -> Unit
@@ -89,6 +89,6 @@ pub fn Transactor::settle(Self, max_turns? : Int) -> Unit
 
 // Traits
 pub(open) trait Requests {
-  fn request_for(Self, &@core.PathNode, String) -> RequestHandler? = _
+  fn request_for(Self, @core.Value, String) -> RequestHandler? = _
 }
 

@@ -184,19 +184,14 @@ fn gen_tree_path_value() -> @gen.Gen[
 }
 
 ///|
-fn as_v(n : &@core.PathNode) -> @core.Value {
-  n.as_value().unwrap_or(Null)
-}
-
-///|
 test "property: derived paths resolve; get-put restores the same tree" {
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       match p.lookup(root) {
-        Some(leaf) => as_v(p.set_value(root, leaf)) == tree
+        Some(leaf) => p.set_value(root, leaf) == tree
         None => false
       }
     }),
@@ -209,10 +204,10 @@ test "property: put-get reads back the written value" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       match p.lookup(p.set_value(root, v)) {
-        Some(leaf) => as_v(leaf) == v
+        Some(leaf) => leaf == v
         None => false
       }
     }),
@@ -227,10 +222,9 @@ test "property: put-put — the last write wins" {
       gen_tree_path_value().bind(tpv => gen_value(1).fmap(v2 => (tpv, v2))),
       x => {
         let ((tree, steps, v1), v2) = x
-        let root : &@core.PathNode = tree
+        let root : @core.Value = tree
         let p = @core.Path::new(steps~)
-        as_v(p.set_value(p.set_value(root, v1), v2)) ==
-        as_v(p.set_value(root, v2))
+        p.set_value(p.set_value(root, v1), v2) == p.set_value(root, v2)
       },
     ),
     max_success=300,
@@ -248,7 +242,7 @@ test "property: put through an unresolvable path is physically identity" {
         let ((tree, steps, v), seed) = x
         let rng = Lcg::{ state: seed.reinterpret_as_uint() }
         let bad = invalidate(steps, rng)
-        let root : &@core.PathNode = tree
+        let root : @core.Value = tree
         let p = @core.Path::new(steps=bad)
         p.lookup(root) is None && physical_equal(p.set_value(root, v), root)
       },
@@ -262,15 +256,15 @@ test "property: compact preserves addressing for lookup and set_value" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       let c = p.compact()
       let same_lookup = match (p.lookup(root), c.lookup(root)) {
-        (Some(a), Some(b)) => as_v(a) == as_v(b)
+        (Some(a), Some(b)) => a == b
         (None, None) => true
         _ => false
       }
-      same_lookup && as_v(p.set_value(root, v)) == as_v(c.set_value(root, v))
+      same_lookup && p.set_value(root, v) == c.set_value(root, v)
     }),
     max_success=300,
   )
@@ -281,11 +275,11 @@ test "property: pin_keys preserves lookup, is idempotent, no-op stays physical" 
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       let pinned = p.pin_keys(root)
       let same_lookup = match (p.lookup(root), pinned.lookup(root)) {
-        (Some(a), Some(b)) => as_v(a) == as_v(b)
+        (Some(a), Some(b)) => a == b
         (None, None) => true
         _ => false
       }
@@ -305,14 +299,14 @@ test "property: resolve_chain coherence" {
   @qc.quick_check(
     @qc.forall(gen_tree_and_path(), tp => {
       let (tree, steps) = tp
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       let chain = p.resolve_chain(root)
       let head_ok = chain.length() > 0 && physical_equal(chain[0], root)
       let full_ok = match p.lookup(root) {
         Some(leaf) =>
           chain.length() == steps.length() + 1 &&
-          as_v(chain[chain.length() - 1]) == as_v(leaf)
+          chain[chain.length() - 1] == leaf
         None => chain.length() <= steps.length()
       }
       head_ok && full_ok
@@ -326,12 +320,12 @@ test "property: set_value shares first-level siblings physically" {
   @qc.quick_check(
     @qc.forall(gen_tree_path_value(), tpv => {
       let (tree, steps, v) = tpv
-      let root : &@core.PathNode = tree
+      let root : @core.Value = tree
       let p = @core.Path::new(steps~)
       let root2 = p.set_value(root, v)
       guard steps is [first_step, ..] else { return true }
       guard step_field(first_step) is Some(f) else { return true }
-      match (tree, as_v(root2)) {
+      match (tree, root2) {
         (Map(m1), Map(m2)) => {
           for k, v1 in m1 {
             if k != f && k != "zz-sel" {

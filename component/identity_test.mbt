@@ -58,11 +58,7 @@ fn send(
   name : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  let p = @tutuca.Path::new()
-  match p.update(v, Receive, name, args).as_value() {
-    Some(next) => next
-    None => v
-  }
+  @tutuca.Path::new().update(v, Receive, name, args)
 }
 
 ///|

@@ -9,7 +9,7 @@
 // form a single dependency
 // cycle that MoonBit packages cannot express across an import edge —
 // Obj::obj_handler returns Handler (path side), Handler carries &Ctx and
-// &PathNode, Ctx returns DispatchPath (whose Steps carry Val), and
+// returns a Value, Ctx returns DispatchPath (whose Steps carry Val), and
 // Value::Obj(&Obj) closes the loop. Breaking the cycle would mean removing
 // obj_handler from Obj, which needs a trait-object downcast MoonBit doesn't
 // have. The value_/path_ file prefixes are the intended organization.

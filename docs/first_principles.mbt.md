@@ -35,7 +35,7 @@ The layers, bottom to top:
 
 | Layer | Package | Key types |
 |---|---|---|
-| dynamic values | `core` | `Value`, `PathNode` |
+| dynamic values | `core` | `Value`, `Obj` |
 | the value language | `core` | `Lit`, `Val`, `Stack`, `ParseCtx` |
 | paths & dispatch | `core` | `Step`, `Path`, `DispatchPath`, `Handler`, `Ctx`, `Obj` |
 | virtual DOM | `vdom` (+ `memdom`, `browser`, `wasm`) | `Vdom`, `AttrValue`, `DomNode` |
@@ -463,11 +463,11 @@ compiles every view once.
 
 Handlers return new instances; something must splice a new instance into an
 immutable tree. That something is a `Path` — a sequence of `Step`s
-(`FieldStep`, `SeqStep`, …) from the root — operating on the **`PathNode`**
-trait (`field`/`item` to read, `with_field`/`with_item` to build a modified
-copy, `handler` to find a handler bucket). `Value` implements `PathNode`
-(`Obj` values delegate to the instance), so the whole state tree is
-navigable and rebuildable:
+(`FieldStep`, `SeqStep`, …) from the root — walking a `Value` with the
+accessors every value answers (`field`/`item` to read, `with_field`/`with_item`
+to build a modified copy, `handler` to find a handler bucket). A container
+answers them itself and an `Obj` delegates to the instance, so the whole state
+tree is navigable and rebuildable:
 
 ```mbt check
 ///|
@@ -502,8 +502,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
   let path = @tutuca.Path::new(steps=[FieldStep("note")])
   let new_root = path.update(root, Receive, "write", [Str("dear reader")])
   // the new tree has the new text…
-  guard new_root.field("note") is Some(note)
-  guard note.as_value() is Some(Obj(o))
+  guard new_root.field("note") is Obj(o)
   debug_inspect(
     o.obj_field("text"),
     content=(
@@ -511,9 +510,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
     ),
   )
   // …and the original tree is untouched (copy-on-write, not mutation)
-  let root_node : &@tutuca.PathNode = root
-  guard root_node.field("note") is Some(old_note)
-  guard old_note.as_value() is Some(Obj(old))
+  guard root.field("note") is Obj(old)
   debug_inspect(
     old.obj_field("text"),
     content=(
@@ -524,7 +521,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
 ```
 
 `Path::update` walks down collecting the chain of nodes, asks the target for
-its handler (`PathNode::handler(bucket, name)` → the instance's `update`
+its handler (`Value::handler(bucket, name)` → the instance's `update`
 match on `Receive`), runs it, then rebuilds **only the spine** — parent nodes on the way
 back up via `with_field`. Siblings keep their physical identity, and an
 update that writes back what was already there rebuilds nothing at all — so
@@ -538,7 +535,7 @@ Two refinements exist on top of plain `Path`:
   is what event routing produces; `to_transaction_path()` strips it back to
   a plain state path.
 - `Handler` — the uniform shape every bucket entry is wrapped into:
-  `(Array[Value], &Ctx) -> &PathNode?`. The **`Ctx` trait** is the
+  `(Array[Value], &Ctx) -> Value?`. The **`Ctx` trait** is the
   handler's window to the world: `path()`, `send`, `bubble`,
   `send_at_path`, `request`, `stop_propagation`. Handlers see only that
   trait, so the same component code runs under the real transactor, a test
@@ -549,7 +546,7 @@ Two refinements exist on top of plain `Path`:
 One event can trigger a cascade: a handler `send`s to a child, whose handler
 `bubble`s up, which fires a `request`, whose response mutates again. The
 `transactor` package serializes that cascade. `Transactor` owns the root
-(`mut root : &PathNode` — the *only* mutable state cell in the framework),
+(`mut root : Value` — the *only* mutable state cell in the framework),
 queues `Transaction`s, and `settle()` runs them until quiet — each one a
 `Path::update` producing the next root:
 
@@ -569,8 +566,7 @@ test "transactor: messages queue, settle produces one new root" {
   )
   txr.settle()
   inspect(changes, content="1")
-  guard txr.root.field("note") is Some(note)
-  guard note.as_value() is Some(Obj(o))
+  guard txr.root.field("note") is Obj(o)
   debug_inspect(
     o.obj_field("text"),
     content=(
@@ -636,7 +632,7 @@ their types form a single unbreakable cycle:
 
 ```
 Obj::obj_handler returns Handler
-  → Handler carries &Ctx and returns &PathNode?
+  → Handler carries &Ctx and returns Value?
     → Ctx::path() returns DispatchPath
       → DispatchPath steps carry Val (dynamic/frame segments)
         → Val evaluates to Value
@@ -654,7 +650,6 @@ and each has more than one real implementor:
 | Trait | Contract | Implementors |
 |---|---|---|
 | `Stack` | name resolution for `eval` | `RenderStack`, `NullStack`, your test doubles |
-| `PathNode` | navigate/rebuild state | `Value` (delegating to `Obj`) |
 | `Obj` | "acts like a component instance" | the typed-state instance, dyncomp's wasm-guest host object |
 | `Ctx` | a handler's effects | the transactor's ctx, `NullCtx` |
 | `DomNode`/`DomWalk` | a DOM | `memdom`, `browser`, `wasm` |

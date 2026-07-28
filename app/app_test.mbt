@@ -89,7 +89,7 @@ fn item_label(tx : @transactor.Transactor) -> @tutuca.Value {
     @tutuca.Path::new(steps=[FieldStep("item"), FieldStep("label")]).lookup(
       tx.root,
     ) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }
@@ -118,8 +118,7 @@ test "static e2e: register -> render -> click -> dispatch -> re-render" {
     root.field("item") is Obj(o) && o.obj_field("label") == Some(Str("plain")),
   )
   // re-render from the new root shows the change
-  guard tx.root.as_value() is Some(new_root) else { fail("root not a value") }
-  let container2 = mount(scope.comps, new_root)
+  let container2 = mount(scope.comps, tx.root)
   assert_true(container2.to_html().contains("gold"))
 }
 

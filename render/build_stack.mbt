@@ -86,11 +86,9 @@ fn step_enter_frame(
 pub fn build_stack(path : @tutuca.Path, stack : RenderStack) -> RenderStack? {
   let mut st = stack
   for step in path.steps {
-    let prev_node : &@tutuca.PathNode = st.it
-    guard @tutuca.step_get(prev_node, step) is Some(next_node) else { // bad path item (JS warns and returns null)
+    guard @tutuca.step_get(st.it, step) is Some(next) else { // bad path item (JS warns and returns null)
       return None
     }
-    let next = next_node.as_value().unwrap_or(Null)
     st = step_enter_frame(step, st, next)
   }
   Some(st)

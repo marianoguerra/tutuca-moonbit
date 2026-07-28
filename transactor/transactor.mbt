@@ -3,7 +3,7 @@
 
 ///|
 pub fn Transactor::new(
-  root : &@tutuca.PathNode,
+  root : @tutuca.Value,
   requests? : &Requests,
 ) -> Transactor {
   {
@@ -46,7 +46,7 @@ fn Transactor::emit(
   self : Transactor,
   kind : ObserveKind,
   t : Transaction,
-  old_root : &@tutuca.PathNode,
+  old_root : @tutuca.Value,
   matched : ObserveMatch,
 ) -> Unit {
   if self.observers.is_empty() {
@@ -84,7 +84,7 @@ pub fn Transactor::on_drained(self : Transactor, cb : () -> Unit) -> Unit {
 ///|
 pub fn Transactor::on_change(
   self : Transactor,
-  cb : (&@tutuca.PathNode, &@tutuca.PathNode) -> Unit,
+  cb : (@tutuca.Value, @tutuca.Value) -> Unit,
 ) -> Unit {
   self.change_subs.push(cb)
 }
@@ -263,10 +263,7 @@ pub fn Transactor::push_request(
       } else {
         NoHandler
       },
-      before: match txn_path.lookup(cur_root) {
-        Some(l) => l.as_value()
-        None => None
-      },
+      before: txn_path.lookup(cur_root),
       after: None,
       seq: self.obs_seq,
     }
@@ -367,11 +364,11 @@ pub fn Transactor::settle(self : Transactor, max_turns? : Int = 10000) -> Unit {
 fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   let cur = self.root
   let next = if t.skip_self { cur } else { self.update_root_value(t, cur) }
-  // `same_node` rather than `physical_equal`: the copy-on-write spine hands
-  // back the untouched root when a handler wrote a value equal to the one
-  // already there, but re-boxed into &PathNode. A root that did not change
-  // must not wake the observers — that is what makes a no-op update free.
-  if !@tutuca.same_node(next, cur) {
+  // Physical identity, because that is exactly what the copy-on-write spine
+  // preserves: a handler that wrote the value already stored hands back the
+  // untouched root, and a root that did not change must not wake the
+  // observers — that is what makes a no-op update free.
+  if !physical_equal(next, cur) {
     self.root = next
     for cb in self.change_subs {
       cb(next, cur)
@@ -407,8 +404,8 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
 fn Transactor::update_root_value(
   self : Transactor,
   t : Transaction,
-  cur : &@tutuca.PathNode,
-) -> &@tutuca.PathNode {
+  cur : @tutuca.Value,
+) -> @tutuca.Value {
   ignore(self)
   let txn_path = match t.txn_path {
     Some(p) => p
@@ -421,7 +418,7 @@ fn Transactor::update_root_value(
     t.mark_settled()
     return cur
   }
-  t.obs_before = leaf.as_value()
+  t.obs_before = Some(leaf)
   // One lookup — see Path::dispatch. The `"$unknown"` sentinel a second one
   // probed for is gone, and with it the `Unknown` observation: a miss is a
   // miss.
@@ -444,8 +441,8 @@ fn Transactor::update_root_value(
   t.mark_settled()
   match result {
     Some(new_leaf) => {
-      t.obs_after = new_leaf.as_value()
-      if @tutuca.same_node(new_leaf, leaf) {
+      t.obs_after = Some(new_leaf)
+      if physical_equal(new_leaf, leaf) {
         cur
       } else {
         txn_path.set_value(cur, new_leaf)
@@ -552,18 +549,14 @@ impl @tutuca.Ctx for EventContext with fn bubble_at_path(self, path, name, args)
 ///|
 /// The component instance a chain node carries, with its component id — None
 /// for non-component nodes (JS Components.getCompFor returning null).
-fn node_component(node : &@tutuca.PathNode) -> (Int, @tutuca.Value)? {
-  match node.as_value() {
-    Some(v) =>
-      match v {
-        Obj(o) =>
-          match o.component_id() {
-            Some(id) => Some((id, v))
-            None => None
-          }
-        _ => None
+fn node_component(node : @tutuca.Value) -> (Int, @tutuca.Value)? {
+  match node {
+    Obj(o) =>
+      match o.component_id() {
+        Some(id) => Some((id, node))
+        None => None
       }
-    None => None
+    _ => None
   }
 }
 

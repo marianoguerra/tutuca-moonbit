@@ -1,33 +1,43 @@
 // Generic access to a value whose shape is not known at the call site: read a
-// field or an item, ask how big a sequence is, iterate it, call a method,
-// name the fields.
+// field or an item, coerce a scalar, write one back, ask how big a sequence is,
+// iterate it, call a method, name the fields.
 //
-// These are FREE FUNCTIONS over the `Obj` / `PathNode` primitives, not trait
-// methods. A trait method has to be implemented once per type; a function over
-// the primitives is written once and every implementor gets it — which is what
+// These are FREE FUNCTIONS over the `Obj` primitives, not trait methods. A
+// trait method has to be implemented once per type; a function over the
+// primitives is written once and every implementor gets it — which is what
 // keeps the implementation side at "answer `obj_field`, and `obj_schema` if
 // you have one".
 //
 // The container triple — `(List, KInt) | (Map, KStr) | (Obj, obj_item)` — used
 // to be written out at each call site: the renderer's keyed lookup, the stack
-// rebuild, the PathNode impl, the seq-access evaluator. The evaluator's copy
+// rebuild, the path traversal, the seq-access evaluator. The evaluator's copy
 // had already lost its `Obj` arm, so `.songs[.currentKey]` returned Null on a
 // custom collection while `@each` iterated it fine. It lives here now.
 //
-// Everything is TOTAL, following value_access.mbt: a missing field, a
-// wrong-typed one and a key out of range all give the default. Use the `_opt`
-// twin when absent has to be told apart from present-but-empty, and a `match`
+// EVERY accessor comes in two forms, and the `_opt` one is the primitive: the
+// total form is `_opt(...).unwrap_or(default)`, never a second match over the
+// same shapes. The two used to live in two files (this one and
+// value_access.mbt) as independent matches — the exact arrangement whose
+// drift the paragraph above is about. Use `_opt` when absent has to be told
+// apart from present-but-empty, the total form when it does not, and a `match`
 // when the shape distinction is the point.
 
 ///|
-/// A field, or None when there is no such field. The partial twin of
-/// `Value::field` — `Map` and `Obj` answer, anything else has no fields.
+/// A field, or None when there is no such field. `Map` and `Obj` answer,
+/// anything else has no fields.
 pub fn Value::field_opt(self : Value, name : String) -> Value? {
   match self {
     Map(m) => m.get(name)
     Obj(o) => o.obj_field(name)
     _ => None
   }
+}
+
+///|
+/// Field access that works on Map values and Obj instances alike; Null for
+/// anything else (including missing fields).
+pub fn Value::field(self : Value, name : String) -> Value {
+  self.field_opt(name).unwrap_or(Null)
 }
 
 ///|
@@ -58,6 +68,29 @@ pub fn Value::item(
 }
 
 ///|
+/// This value AS a sequence key: a string keys a map, an integral number
+/// indexes a list. None for everything else — including a non-integral number,
+/// which is not an index and must not be rounded into one.
+///
+/// The bridge between the value world and the addressing world: it is how a
+/// `.seq[.key]` read turns the key FIELD into the key it looks up, and how the
+/// renderer names an iterated item in its `§Each§` breadcrumb.
+pub fn Value::as_key(self : Value) -> PathKey? {
+  match self {
+    Str(s) => Some(KStr(s))
+    Num(n) => {
+      let i = n.to_int()
+      if i.to_double() == n {
+        Some(KInt(i))
+      } else {
+        None
+      }
+    }
+    _ => None
+  }
+}
+
+///|
 /// `v.index(2)` — an item by position.
 pub fn Value::index(self : Value, i : Int, default? : Value = Null) -> Value {
   self.item(KInt(i), default~)
@@ -71,18 +104,14 @@ pub fn Value::key(self : Value, k : String, default? : Value = Null) -> Value {
 }
 
 ///|
-/// The map payload; empty for non-maps (fresh, like `Value::list`).
-pub fn Value::map(self : Value) -> Map[String, Value] {
-  match self {
-    Map(m) => m
-    _ => Map([])
-  }
-}
-
-// The partial coercers. `int(default=0)` cannot say whether the 0 was stored
-// or invented, and a caller assembling an Option — an optional slice bound, a
-// key list that may be absent — needs to. Each is the `_opt` twin of the total
-// one in value_access.mbt.
+// ---------------------------------------------------------------------------
+// Scalar coercion
+// ---------------------------------------------------------------------------
+//
+// The `_opt` form is the one that carries the shape test. `int(default=0)`
+// cannot say whether the 0 was stored or invented, and a caller assembling an
+// Option — an optional slice bound, a key list that may be absent — needs to;
+// a caller reading a handler arg does not, and takes the total form.
 
 ///|
 pub fn Value::int_opt(self : Value) -> Int? {
@@ -90,6 +119,11 @@ pub fn Value::int_opt(self : Value) -> Int? {
     Num(n) => Some(n.to_int())
     _ => None
   }
+}
+
+///|
+pub fn Value::int(self : Value, default? : Int = 0) -> Int {
+  self.int_opt().unwrap_or(default)
 }
 
 ///|
@@ -101,11 +135,21 @@ pub fn Value::num_opt(self : Value) -> Double? {
 }
 
 ///|
+pub fn Value::num(self : Value, default? : Double = 0) -> Double {
+  self.num_opt().unwrap_or(default)
+}
+
+///|
 pub fn Value::str_opt(self : Value) -> String? {
   match self {
     Str(s) => Some(s)
     _ => None
   }
+}
+
+///|
+pub fn Value::str(self : Value, default? : String = "") -> String {
+  self.str_opt().unwrap_or(default)
 }
 
 ///|
@@ -117,11 +161,22 @@ pub fn Value::bool_opt(self : Value) -> Bool? {
 }
 
 ///|
+pub fn Value::bool(self : Value, default? : Bool = false) -> Bool {
+  self.bool_opt().unwrap_or(default)
+}
+
+///|
 pub fn Value::list_opt(self : Value) -> Array[Value]? {
   match self {
     List(a) => Some(a)
     _ => None
   }
+}
+
+///|
+/// The list payload; [] for non-lists (shared empty NOT returned — fresh).
+pub fn Value::list(self : Value) -> Array[Value] {
+  self.list_opt().unwrap_or([])
 }
 
 ///|
@@ -133,53 +188,81 @@ pub fn Value::map_opt(self : Value) -> Map[String, Value]? {
 }
 
 ///|
-/// Copy-on-write field write, total: the value unchanged when the field cannot
-/// be written (no such field on an instance, not a container at all).
-///
-/// Writing back a value physically identical to the one already stored returns
-/// THIS value, not a copy — identity is what the transactor reads as "nothing
-/// happened", and a total wrapper must not be the thing that breaks it.
-pub fn Value::with_field(self : Value, name : String, v : Value) -> Value {
+/// The map payload; empty for non-maps (fresh, like `Value::list`).
+pub fn Value::map(self : Value) -> Map[String, Value] {
+  self.map_opt().unwrap_or(Map([]))
+}
+
+// ---------------------------------------------------------------------------
+// Copy-on-write writes
+// ---------------------------------------------------------------------------
+//
+// Writing back a value physically identical to the one already stored hands
+// back THIS value, not a copy. Identity is what the transactor reads as
+// "nothing happened", and it is what lets the spine rebuild above a write
+// collapse level by level, so an accessor must not be the thing that breaks
+// it.
+
+///|
+/// Copy-on-write field write; None when there is no such field to write (no
+/// such field on an instance, not a container at all). The partial form is
+/// what `step_put` needs: a step that cannot be addressed must leave the whole
+/// tree untouched rather than silently write nothing.
+pub fn Value::with_field_opt(self : Value, name : String, v : Value) -> Value? {
   match self {
     Map(m) => {
       if m.get(name) is Some(old) && physical_equal(old, v) {
-        return self
+        return Some(self)
       }
       let out = m.copy()
       out[name] = v
-      Map(out)
+      Some(Map(out))
     }
-    Obj(o) => o.obj_with_field(name, v).unwrap_or(self)
-    _ => self
+    Obj(o) => o.obj_with_field(name, v)
+    _ => None
+  }
+}
+
+///|
+/// Copy-on-write field write, total: the value unchanged when the field cannot
+/// be written.
+pub fn Value::with_field(self : Value, name : String, v : Value) -> Value {
+  self.with_field_opt(name, v).unwrap_or(self)
+}
+
+///|
+/// Copy-on-write item write; None when the key addresses no item (an index out
+/// of range, a key of the wrong kind for the container).
+pub fn Value::with_item_opt(self : Value, key : PathKey, v : Value) -> Value? {
+  match (self, key) {
+    (List(a), KInt(i)) => {
+      if i < 0 || i >= a.length() {
+        return None
+      }
+      if physical_equal(a[i], v) {
+        return Some(self)
+      }
+      let out = a.copy()
+      out[i] = v
+      Some(List(out))
+    }
+    (Map(m), KStr(s)) => {
+      if m.get(s) is Some(old) && physical_equal(old, v) {
+        return Some(self)
+      }
+      let out = m.copy()
+      out[s] = v
+      Some(Map(out))
+    }
+    (Obj(o), k) => o.obj_with_item(k, v)
+    _ => None
   }
 }
 
 ///|
 /// Copy-on-write item write, total. Same identity contract as `with_field`.
 pub fn Value::with_item(self : Value, key : PathKey, v : Value) -> Value {
-  match (self, key) {
-    (List(a), KInt(i)) => {
-      if i < 0 || i >= a.length() {
-        return self
-      }
-      if physical_equal(a[i], v) {
-        return self
-      }
-      let out = a.copy()
-      out[i] = v
-      List(out)
-    }
-    (Map(m), KStr(s)) => {
-      if m.get(s) is Some(old) && physical_equal(old, v) {
-        return self
-      }
-      let out = m.copy()
-      out[s] = v
-      Map(out)
-    }
-    (Obj(o), k) => o.obj_with_item(k, v).unwrap_or(self)
-    _ => self
-  }
+  self.with_item_opt(key, v).unwrap_or(self)
 }
 
 // ---------------------------------------------------------------------------
@@ -339,15 +422,12 @@ pub fn Value::at(self : Value, p : Path) -> Value {
 /// The value at a path, distinguishing "no such place" from a Null stored
 /// there — the one distinction `at` cannot express and no coercer can recover.
 pub fn Value::at_opt(self : Value, p : Path) -> Value? {
-  match p.lookup(self) {
-    Some(node) => node.as_value()
-    None => None
-  }
+  p.lookup(self)
 }
 
 ///|
 /// Copy-on-write write at a path, total: the SAME value back when the path
-/// does not resolve (`Path::set_value`'s own contract, surfaced as a Value).
+/// does not resolve (`Path::set_value`'s own contract).
 pub fn Value::with_at(self : Value, p : Path, v : Value) -> Value {
-  p.set_value(self, v).as_value().unwrap_or(self)
+  p.set_value(self, v)
 }

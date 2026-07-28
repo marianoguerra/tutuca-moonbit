@@ -389,7 +389,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
         match self.spec.swap.get(name) {
           Some(f) =>
             return match f(self.state, args, ctx) {
-              Some(v) => Some(v as &@tutuca.PathNode)
+              Some(v) => Some(v)
               None => None
             }
           None => ()
@@ -404,8 +404,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Response => Response(name, args)
           }
           match u(self.state, d, ctx) {
-            Some(s2) =>
-              return Some(self.with_state(s2).to_value() as &@tutuca.PathNode)
+            Some(s2) => return Some(self.with_state(s2).to_value())
             None => ()
           }
         }
@@ -418,7 +417,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
         match self.spec.generated.get(name) {
           Some(g) =>
             match g(self, args) {
-              Obj(_) as nv => return Some(nv as &@tutuca.PathNode)
+              Obj(_) as nv => return Some(nv)
               _ => ()
             }
           None => ()

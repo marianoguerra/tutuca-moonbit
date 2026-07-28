@@ -115,11 +115,7 @@ pub fn activity_json() -> String {
 /// state tree rather than the `Show` rendering the instance used to force.
 pub fn state_json() -> String {
   match current.val {
-    Some(app) =>
-      match app.root_value() {
-        Some(v) => v.to_json().stringify()
-        None => "—"
-      }
+    Some(app) => app.root_value().to_json().stringify()
     None => "—"
   }
 }

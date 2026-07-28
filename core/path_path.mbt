@@ -1,5 +1,5 @@
-// Path operations (src/path.js Path) over &PathNode trait objects, plus the
-// leaf-update core of the transactor (updateRootValue).
+// Path operations (src/path.js Path) over Values, plus the leaf-update core of
+// the transactor (updateRootValue).
 
 ///|
 pub fn Path::new(steps? : Array[Step]) -> Path {
@@ -51,7 +51,7 @@ pub fn Path::pop_step(self : Path) -> Path {
 }
 
 ///|
-pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode? {
+pub fn Path::lookup(self : Path, root : Value) -> Value? {
   let mut cur = root
   for step in self.steps {
     match step_get(cur, step) {
@@ -63,24 +63,9 @@ pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode? {
 }
 
 ///|
-pub fn same_node(a : &PathNode, b : &PathNode) -> Bool {
-  if physical_equal(a, b) {
-    return true
-  }
-  match (a.as_value(), b.as_value()) {
-    (Some(x), Some(y)) => physical_equal(x, y)
-    _ => false
-  }
-}
-
-///|
-pub fn Path::set_value(
-  self : Path,
-  root : &PathNode,
-  v : &PathNode,
-) -> &PathNode {
+pub fn Path::set_value(self : Path, root : Value, v : Value) -> Value {
   let n = self.steps.length()
-  let intermediates : Array[&PathNode] = []
+  let intermediates : Array[Value] = []
   let mut cur = root
   for step in self.steps {
     intermediates.push(cur)
@@ -100,8 +85,8 @@ pub fn Path::set_value(
 }
 
 ///|
-pub fn Path::resolve_chain(self : Path, root : &PathNode) -> Array[&PathNode] {
-  let out : Array[&PathNode] = [root]
+pub fn Path::resolve_chain(self : Path, root : Value) -> Array[Value] {
+  let out : Array[Value] = [root]
   let mut cur = root
   for step in self.steps {
     match step_get(cur, step) {
@@ -116,9 +101,9 @@ pub fn Path::resolve_chain(self : Path, root : &PathNode) -> Array[&PathNode] {
 }
 
 ///|
-pub fn Path::pin_keys(self : Path, root : &PathNode) -> Path {
+pub fn Path::pin_keys(self : Path, root : Value) -> Path {
   let mut out : Array[Step]? = None
-  let mut cur : &PathNode? = Some(root)
+  let mut cur : Value? = Some(root)
   for i in 0..<self.steps.length() {
     let step = self.steps[i]
     guard cur is Some(node) else { break }
@@ -227,13 +212,27 @@ pub fn RequestOpts::new(
 }
 
 ///|
+/// The handlers a value carries: component instances answer through the `Obj`
+/// trait, pure data has none.
+pub fn Value::handler(
+  self : Value,
+  bucket : HandlerBucket,
+  name : String,
+) -> Handler? {
+  match self {
+    Obj(o) => o.obj_handler(bucket, name)
+    _ => None
+  }
+}
+
+///|
 pub fn Path::update(
   self : Path,
-  root : &PathNode,
+  root : Value,
   bucket : HandlerBucket,
   name : String,
   args : Array[Value],
-) -> &PathNode {
+) -> Value {
   guard self.lookup(root) is Some(leaf) else { return root }
   // One lookup. There used to be a second, for the literal name `"$unknown"`,
   // as a catch-all a component could register — a JS-era sentinel that cost a
@@ -244,10 +243,9 @@ pub fn Path::update(
   match f(args, NullCtx::{  }) {
     Some(new_leaf) =>
       // JS `newLeaf !== curLeaf` parity: a handler that hands back the value
-      // it was given skips the rebuild. `same_node` sees through the
-      // &PathNode boxing, so an unchanged typed instance counts here and not
-      // only an explicit None.
-      if same_node(new_leaf, leaf) {
+      // it was given skips the rebuild, whether it says so by answering None
+      // or by handing the same object back.
+      if physical_equal(new_leaf, leaf) {
         root
       } else {
         self.set_value(root, new_leaf)

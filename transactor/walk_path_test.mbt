@@ -3,16 +3,16 @@
 ///|
 priv struct CompNode {
   cid : Int
-  child : CompNode?
+  child : @tutuca.Value?
   collector : Array[Int] // shared across the tree; the walk handler fills it
 }
 
 ///|
-impl @tutuca.PathNode for CompNode with fn field(self, name) {
+impl @tutuca.Obj for CompNode with fn obj_field(self, name) {
   match name {
     "child" =>
       match self.child {
-        Some(c) => Some(c as &@tutuca.PathNode)
+        Some(c) => Some(c)
         None => None
       }
     _ => None
@@ -20,12 +20,7 @@ impl @tutuca.PathNode for CompNode with fn field(self, name) {
 }
 
 ///|
-impl @tutuca.PathNode for CompNode with fn as_value(self) {
-  Some(Obj(self))
-}
-
-///|
-impl @tutuca.PathNode for CompNode with fn handler(self, bucket, name) {
+impl @tutuca.Obj for CompNode with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "walk") =>
       Some(
@@ -61,8 +56,12 @@ impl @tutuca.Obj for CompNode with fn component_id(self) {
 ///|
 test "walk_path visits component instances leaf -> root" {
   let collector : Array[Int] = []
-  let leaf = CompNode::{ cid: 2, child: None, collector }
-  let root = CompNode::{ cid: 1, child: Some(leaf), collector }
+  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector })
+  let root : @tutuca.Value = Obj(CompNode::{
+    cid: 1,
+    child: Some(leaf),
+    collector,
+  })
   let tx = @transactor.Transactor::new(root)
   // dispatch "walk" at .child (the leaf); the handler walks leaf -> root
   let _ = tx.push_send(
@@ -77,8 +76,12 @@ test "walk_path visits component instances leaf -> root" {
 ///|
 test "walk_path callback can stop early by returning false" {
   let collector : Array[Int] = []
-  let leaf = CompNode::{ cid: 2, child: None, collector }
-  let root = CompNode::{ cid: 1, child: Some(leaf), collector }
+  let leaf : @tutuca.Value = Obj(CompNode::{ cid: 2, child: None, collector })
+  let root : @tutuca.Value = Obj(CompNode::{
+    cid: 1,
+    child: Some(leaf),
+    collector,
+  })
   let tx = @transactor.Transactor::new(root)
   let _ = tx.push_send(
     @tutuca.DispatchPath::of_steps([FieldStep("child")]),

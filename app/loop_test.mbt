@@ -48,7 +48,7 @@ fn mk_app(
 ///|
 fn field_v(a : @app.App[@memdom.MemNode], name : String) -> @tutuca.Value {
   match @tutuca.Path::new(steps=[FieldStep(name)]).lookup(a.transactor.root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

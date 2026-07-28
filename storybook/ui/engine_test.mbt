@@ -78,10 +78,7 @@ fn url_fixture(
 ///|
 /// Read a top-level field off the started gallery's root instance.
 fn[N] root_field(app : @app.App[N], name : String) -> @tutuca.Value {
-  match app.root_value() {
-    Some(Obj(o)) => o.obj_field(name).unwrap_or(Null)
-    _ => Null
-  }
+  app.root_value().field(name)
 }
 
 ///|
@@ -183,7 +180,7 @@ fn shell_input(
   guard root is Obj(o) else { return root }
   guard o.obj_handler(Input, name) is Some(Handler(f)) else { return root }
   match f(args, @tutuca.NullCtx::{  }) {
-    Some(node) => node.as_value().unwrap_or(root)
+    Some(node) => node
     None => root
   }
 }
@@ -202,7 +199,7 @@ test "each story pane offers a live Instance tab" {
   let app = mount(sections, container, @vdom.RenderOpts::new(doc))
   assert_true(container.to_html().contains("story-tab"))
   assert_true(container.to_html().contains("instance-tab"))
-  let root = app.transactor.root.as_value().unwrap_or(Null)
+  let root = app.transactor.root
   // closed: the explorer is not built for a tab nobody opened
   assert_true(root.field("t0") is Str("story"))
   assert_true(root.field("i0") is Null)

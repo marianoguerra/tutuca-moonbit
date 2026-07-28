@@ -67,11 +67,7 @@ pub fn on_event(ev : @core.Any) -> Unit {
 /// declared fields rather than flattening to null.
 pub fn state_json() -> String {
   match current.val {
-    Some(app) =>
-      match app.root_value() {
-        Some(v) => v.to_json().stringify()
-        None => "—"
-      }
+    Some(app) => app.root_value().to_json().stringify()
     None => "—"
   }
 }

@@ -144,92 +144,33 @@ pub impl Ctx for NullCtx
 /// `handler.apply(instance, args)` binds `this` at call time; binding at
 /// resolution time is equivalent — same instance either way). Receives its
 /// args and the dispatch Ctx (JS appends ctx as the last handler argument).
-/// Returns the new leaf, or None for "no change" (the explicit port of the JS
-/// `newLeaf !== curLeaf` identity check: coercing into a trait object boxes,
-/// so returning `Some(self)` cannot preserve physical identity — answer None
-/// instead and the traversal skips the spine rebuild entirely).
-pub(all) struct Handler((Array[Value], &Ctx) -> &PathNode?)
-
-///|
-/// A node in the component/state tree addressable by path steps: given one
-/// addressing move it yields another node or an empty result. Every method
-/// defaults to None so implementations provide only what they support (the
-/// `Stack` trait precedent): pure data implements traversal only, component
-/// instances add `handler`.
-///
-/// Contract for with_field/with_item: return a NEW instance with that child
-/// replaced; `self` must not be mutated; untouched siblings must be shared
-/// (copy-on-write or a persistent structure — the property suite tests this
-/// contract, not the representation).
-pub(open) trait PathNode {
-  fn field(Self, name : String) -> &PathNode? = _
-  fn item(Self, key : PathKey) -> &PathNode? = _
-  fn with_field(Self, name : String, v : &PathNode) -> &PathNode? = _
-  fn with_item(Self, key : PathKey, v : &PathNode) -> &PathNode? = _
-  fn as_key(Self) -> PathKey? = _
-  fn as_value(Self) -> Value? = _
-  fn handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _
-}
-
-///|
-impl PathNode with fn field(_self, _name) {
-  None
-}
-
-///|
-impl PathNode with fn item(_self, _key) {
-  None
-}
-
-///|
-impl PathNode with fn with_field(_self, _name, _v) {
-  None
-}
-
-///|
-impl PathNode with fn with_item(_self, _key, _v) {
-  None
-}
-
-///|
-impl PathNode with fn as_key(_self) {
-  None
-}
-
-///|
-impl PathNode with fn as_value(_self) {
-  None
-}
-
-///|
-impl PathNode with fn handler(_self, _bucket, _name) {
-  None
-}
-
-///|
-/// Runtime values are path nodes: Map answers field/item(KStr), List answers
-/// item(KInt); with_* shallow-copies the one container on the spine (COW,
-/// siblings shared); scalars answer as_key/as_value. Fn and scalars are not
-/// containers: field/item/with_* answer None. handler is always None (pure
-/// data; component instances carry handlers).
-declare pub impl PathNode for Value
+/// Returns the new leaf, or None for "no change" (the port of the JS
+/// `newLeaf !== curLeaf` identity check — answering None lets the traversal
+/// skip the spine rebuild without comparing anything).
+pub(all) struct Handler((Array[Value], &Ctx) -> Value?)
 
 ///|
 /// Resolve one addressing step against a node: the child it addresses, or
 /// None when unresolvable (missing field, bad index, key field not a key…).
-/// One interpreter over the trait primitives so step semantics — especially
-/// SeqAccessStep's live key resolution — are uniform across every impl.
-declare pub fn step_get(node : &PathNode, step : Step) -> &PathNode?
+/// One interpreter over the `value_dyn.mbt` accessors, so step semantics —
+/// especially SeqAccessStep's live key resolution — are written once.
+///
+/// The tree used to be addressed through a `PathNode` TRAIT, so that a node
+/// could be something other than a `Value`. Nothing ever was: the only
+/// implementation outside the tests was `Value` itself, while typed component
+/// instances travelled — as they still do — inside `Value::Obj`. What the
+/// trait did buy was a box per traversal step, an `as_value` unwrap at every
+/// consumer (with an impossible failure branch each time), and a `same_node`
+/// that existed because two boxes carrying the SAME value are not
+/// `physical_equal` — which is the one comparison the whole copy-on-write
+/// design is keyed on.
+declare pub fn step_get(node : Value, step : Step) -> Value?
 
 ///|
 /// Rebuild one spine level: a new node with the child this step addresses
 /// replaced by `child`. None when the step is unaddressable on `node`
 /// (the caller leaves the tree untouched).
-declare fn step_put(
-  node : &PathNode,
-  step : Step,
-  child : &PathNode,
-) -> &PathNode?
+declare fn step_put(node : Value, step : Step, child : Value) -> Value?
 
 ///|
 /// A generic `{field, key?}` descriptor of an addressing step (JS
@@ -257,44 +198,27 @@ declare pub fn Path::pop_step(self : Path) -> Path
 
 ///|
 /// The value this path resolves to, or None at the first unresolvable step.
-declare pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode?
-
-///|
-/// "These two nodes are the same object", across the trait-object boxing.
-/// Casting a `Value` to `&PathNode` allocates, so two boxes carrying the
-/// SAME `Value` are not `physical_equal` — compare what they carry instead.
-/// This is the no-change signal every copy-on-write caller reads: `set_value`
-/// returns the untouched spine, and identity is what the transactor's
-/// root-swap check is keyed on — an update that writes what was already there
-/// leaves the root the same object, so no re-render is scheduled at all.
-declare pub fn same_node(a : &PathNode, b : &PathNode) -> Bool
+declare pub fn Path::lookup(self : Path, root : Value) -> Value?
 
 ///|
 /// Replace the leaf: walk down collecting intermediates, rebuild the spine
 /// bottom-up via step_put (structural sharing). If any step is unresolvable
 /// the SAME `root` object is returned (physically — callers detect "nothing
-/// happened" by identity, matching JS setValue).
-declare pub fn Path::set_value(
-  self : Path,
-  root : &PathNode,
-  v : &PathNode,
-) -> &PathNode
+/// happened" by `physical_equal`, matching JS setValue).
+declare pub fn Path::set_value(self : Path, root : Value, v : Value) -> Value
 
 ///|
 /// The nodes entered along the path, root included (index 0), stopping at
 /// the first unresolvable step. JS Path.resolveChain. Powers the
 /// transactor's `ctx.walk_path` (leaf→root component walk).
-declare pub fn Path::resolve_chain(
-  self : Path,
-  root : &PathNode,
-) -> Array[&PathNode]
+declare pub fn Path::resolve_chain(self : Path, root : Value) -> Array[Value]
 
 ///|
 /// Freeze every field-resolved key (SeqAccessStep) against `root` as it is
 /// NOW: SeqAccessStep(seq, keyField) becomes SeqStep(seq, key) so a later
 /// lookup/set_value lands on the same item even if keyField changes meanwhile
 /// (async response races). Returns `self` (physically) when nothing pinned.
-declare pub fn Path::pin_keys(self : Path, root : &PathNode) -> Path
+declare pub fn Path::pin_keys(self : Path, root : Value) -> Path
 
 ///|
 /// The abstract/dispatch projection: frame-only steps dropped (none exist
@@ -380,8 +304,8 @@ declare pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path
 /// changed.
 declare pub fn Path::update(
   self : Path,
-  root : &PathNode,
+  root : Value,
   bucket : HandlerBucket,
   name : String,
   args : Array[Value],
-) -> &PathNode
+) -> Value

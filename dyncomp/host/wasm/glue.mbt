@@ -487,7 +487,7 @@ pub fn make_instance(
 /// The live app's settled root value (for inspection/state display).
 pub fn app_root_value() -> @tutuca.Value? {
   guard current.val is Some(app) else { return None }
-  app.root_value()
+  Some(app.root_value())
 }
 
 ///|

@@ -118,11 +118,11 @@ fn[N : @vdom.DomWalk] App::handle_drag(
       }
     "dragstart" => {
       @vdom.DomNode::set_attribute(node, "data-dragging", "1")
-      guard self.transactor.root.as_value() is Some(root_val) else { return }
+      let root_val = self.transactor.root
       // teleported so the dragged value resolves to its real location
       let txn_path = path.compact().to_transaction_path()
       let value = match txn_path.lookup(self.transactor.root) {
-        Some(n) => n.as_value().unwrap_or(Null)
+        Some(n) => n
         None => Null
       }
       let drag_type = node.attribute("data-dragtype").unwrap_or("?")

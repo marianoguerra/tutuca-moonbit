@@ -9,20 +9,20 @@ priv struct RSheet {
 }
 
 ///|
-fn rsheet(title : String) -> &@tutuca.PathNode {
-  RSheet::{ title, }
+fn rsheet(title : String) -> @tutuca.Value {
+  Obj(RSheet::{ title, })
 }
 
 ///|
-impl @tutuca.PathNode for RSheet with fn field(self, name) {
+impl @tutuca.Obj for RSheet with fn obj_field(self, name) {
   match name {
-    "title" => Some(@tutuca.Value::Str(self.title) as &@tutuca.PathNode)
+    "title" => Some(@tutuca.Value::Str(self.title))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
+impl @tutuca.Obj for RSheet with fn obj_handler(self, bucket, name) {
   ignore(self)
   match (bucket, name) {
     (Response, "load") =>
@@ -66,11 +66,11 @@ impl @tutuca.PathNode for RSheet with fn handler(self, bucket, name) {
 
 ///|
 priv struct RSheets {
-  items : Map[String, &@tutuca.PathNode]
+  items : Map[String, @tutuca.Value]
 }
 
 ///|
-impl @tutuca.PathNode for RSheets with fn item(self, key) {
+impl @tutuca.Obj for RSheets with fn obj_item(self, key) {
   match key {
     KStr(k) => self.items.get(k)
     KInt(_) => None
@@ -78,13 +78,13 @@ impl @tutuca.PathNode for RSheets with fn item(self, key) {
 }
 
 ///|
-impl @tutuca.PathNode for RSheets with fn with_item(self, key, v) {
+impl @tutuca.Obj for RSheets with fn obj_with_item(self, key, v) {
   match key {
     KStr(k) =>
       if self.items.contains(k) {
         let items = self.items.copy()
         items[k] = v
-        Some(RSheets::{ items, } as &@tutuca.PathNode)
+        Some(Obj(RSheets::{ items, }))
       } else {
         None
       }
@@ -94,39 +94,35 @@ impl @tutuca.PathNode for RSheets with fn with_item(self, key, v) {
 
 ///|
 priv struct RApp {
-  sheets : &@tutuca.PathNode
+  sheets : @tutuca.Value
   sel_id : String
 }
 
 ///|
-impl @tutuca.PathNode for RApp with fn field(self, name) {
+impl @tutuca.Obj for RApp with fn obj_field(self, name) {
   match name {
     "sheets" => Some(self.sheets)
-    "selId" => Some(@tutuca.Value::Str(self.sel_id) as &@tutuca.PathNode)
+    "selId" => Some(@tutuca.Value::Str(self.sel_id))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for RApp with fn with_field(self, name, v) {
+impl @tutuca.Obj for RApp with fn obj_with_field(self, name, v) {
   match name {
-    "sheets" =>
-      Some(RApp::{ sheets: v, sel_id: self.sel_id } as &@tutuca.PathNode)
+    "sheets" => Some(Obj(RApp::{ sheets: v, sel_id: self.sel_id }))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for RApp with fn handler(self, bucket, name) {
+impl @tutuca.Obj for RApp with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "select") =>
       Some(
         Handler((args, _ctx) => {
           match args {
-            [Str(id)] =>
-              Some(
-                RApp::{ sheets: self.sheets, sel_id: id } as &@tutuca.PathNode,
-              )
+            [Str(id)] => Some(Obj(RApp::{ sheets: self.sheets, sel_id: id }))
             _ => None
           }
         }),
@@ -135,8 +131,10 @@ impl @tutuca.PathNode for RApp with fn handler(self, bucket, name) {
       Some(
         Handler((_args, _ctx) => {
           Some(
-            RApp::{ sheets: RSheets::{ items: Map([]) }, sel_id: self.sel_id }
-            as &@tutuca.PathNode,
+            Obj(RApp::{
+              sheets: Obj(RSheets::{ items: Map([]) }),
+              sel_id: self.sel_id,
+            }),
           )
         }),
       )
@@ -168,11 +166,13 @@ impl @transactor.Requests for TestRequests with fn request_for(
 }
 
 ///|
-fn make_rapp(sel_id : String) -> &@tutuca.PathNode {
-  RApp::{
-    sheets: RSheets::{ items: { "a": rsheet("first"), "b": rsheet("second") } },
+fn make_rapp(sel_id : String) -> @tutuca.Value {
+  Obj(RApp::{
+    sheets: Obj(RSheets::{
+      items: { "a": rsheet("first"), "b": rsheet("second") },
+    }),
     sel_id,
-  }
+  })
 }
 
 ///|
@@ -183,13 +183,13 @@ fn sel_dispatch() -> @tutuca.DispatchPath {
 }
 
 ///|
-fn rtitle(root : &@tutuca.PathNode, key : String) -> @tutuca.Value {
+fn rtitle(root : @tutuca.Value, key : String) -> @tutuca.Value {
   match
     @tutuca.Path::new(steps=[
       SeqStep(field="sheets", key=KStr(key)),
       FieldStep("title"),
     ]).lookup(root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

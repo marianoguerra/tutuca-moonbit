@@ -1,11 +1,13 @@
-// A struct-based PathNode implementation: typed component instances (the
-// MoonBit analogue of tutuca's Immutable Records) mixed with Value scalars in
-// one tree, proving the traversal is trait-generic and that leaf handlers
-// drive updates (test/transactor.test.js scenarios).
+// A typed struct mixed with Value containers in one tree, driving the
+// scenarios test/transactor.test.js exercises: a live-key selection
+// (SeqAccessStep), leaf handlers rebuilding the spine, and pinning a live key
+// so a late response lands where the request was issued.
 //
-// Pattern for struct impls: container children are STORED as &PathNode boxes
-// (trait objects cannot be downcast, so write-back must not need to recover a
-// concrete type); scalar fields round-trip through as_value.
+// This used to be written against a `PathNode` TRAIT, so that `Sheets` and
+// `App` could be structs too. They are ordinary `Value` containers now: the
+// trait's only production implementation was `Value` itself, and a typed leaf
+// reaches the tree through `Value::Obj` — which is what `Sheet` does here, and
+// what every generated component instance does.
 
 ///|
 priv struct Sheet {
@@ -13,29 +15,28 @@ priv struct Sheet {
 }
 
 ///|
-fn sheet(title : String) -> &@core.PathNode {
-  Sheet::{ title, }
+fn sheet(title : String) -> @core.Value {
+  Obj(Sheet::{ title, })
 }
 
 ///|
-impl @core.PathNode for Sheet with fn field(self, name) {
+impl @core.Obj for Sheet with fn obj_field(self, name) {
   match name {
-    "title" => Some(@core.Value::Str(self.title) as &@core.PathNode)
+    "title" => Some(Str(self.title))
     _ => None
   }
 }
 
 ///|
-impl @core.PathNode for Sheet with fn with_field(self, name, v) {
-  ignore(self)
-  match (name, v.as_value()) {
-    ("title", Some(Str(s))) => Some(sheet(s))
+impl @core.Obj for Sheet with fn obj_with_field(_self, name, v) {
+  match (name, v) {
+    ("title", Str(s)) => Some(sheet(s))
     _ => None
   }
 }
 
 ///|
-impl @core.PathNode for Sheet with fn handler(_self, bucket, name) {
+impl @core.Obj for Sheet with fn obj_handler(_self, bucket, name) {
   match (bucket, name) {
     (Receive, "rename") =>
       Some(
@@ -53,68 +54,11 @@ impl @core.PathNode for Sheet with fn handler(_self, bucket, name) {
 }
 
 ///|
-priv struct Sheets {
-  items : Map[String, &@core.PathNode]
-}
-
-///|
-impl @core.PathNode for Sheets with fn item(self, key) {
-  match key {
-    KStr(k) => self.items.get(k)
-    KInt(_) => None
-  }
-}
-
-///|
-impl @core.PathNode for Sheets with fn with_item(self, key, v) {
-  match key {
-    KStr(k) =>
-      if self.items.contains(k) {
-        let items = self.items.copy()
-        items[k] = v
-        Some(Sheets::{ items, } as &@core.PathNode)
-      } else {
-        None
-      }
-    KInt(_) => None
-  }
-}
-
-///|
-priv struct App {
-  sheets : &@core.PathNode // a Sheets box
-  sel_id : String
-}
-
-///|
-impl @core.PathNode for App with fn field(self, name) {
-  match name {
-    "sheets" => Some(self.sheets)
-    "selId" => Some(@core.Value::Str(self.sel_id) as &@core.PathNode)
-    _ => None
-  }
-}
-
-///|
-impl @core.PathNode for App with fn with_field(self, name, v) {
-  match name {
-    "sheets" => Some(App::{ sheets: v, sel_id: self.sel_id } as &@core.PathNode)
-    "selId" =>
-      match v.as_value() {
-        Some(Str(s)) =>
-          Some(App::{ sheets: self.sheets, sel_id: s } as &@core.PathNode)
-        _ => None
-      }
-    _ => None
-  }
-}
-
-///|
-fn make_app(sel_id : String) -> &@core.PathNode {
-  App::{
-    sheets: Sheets::{ items: { "a": sheet("first"), "b": sheet("second") } },
-    sel_id,
-  }
+fn make_app(sel_id : String) -> @core.Value {
+  Map({
+    "sheets": Map({ "a": sheet("first"), "b": sheet("second") }),
+    "selId": Str(sel_id),
+  })
 }
 
 ///|
@@ -123,24 +67,18 @@ fn sel_path() -> @core.Path {
 }
 
 ///|
-fn title_of(root : &@core.PathNode, key : String) -> @core.Value? {
-  match
-    @core.Path::new(steps=[
-      SeqStep(field="sheets", key=KStr(key)),
-      FieldStep("title"),
-    ]).lookup(root) {
-    Some(n) => n.as_value()
-    None => None
-  }
+fn title_of(root : @core.Value, key : String) -> @core.Value? {
+  @core.Path::new(steps=[
+    SeqStep(field="sheets", key=KStr(key)),
+    FieldStep("title"),
+  ]).lookup(root)
 }
 
 ///|
-test "SeqAccessStep traverses typed structs like Value trees" {
+test "SeqAccessStep resolves its key field against the tree" {
   let root = make_app("b")
   guard sel_path().lookup(root) is Some(leaf) else { fail("leaf not found") }
-  assert_true(
-    leaf.field("title") is Some(t) && t.as_value() is Some(Str("second")),
-  )
+  assert_true(leaf.field_opt("title") is Some(Str("second")))
 }
 
 ///|
@@ -152,13 +90,10 @@ test "update invokes the leaf handler and rebuilds the spine" {
   // the old tree is untouched
   assert_true(title_of(root, "b") is Some(Str("second")))
   // the off-path sibling sheet is physically shared between old and new root
-  let old_a = @core.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
-    root,
-  )
-  let new_a = @core.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))]).lookup(
-    root2,
-  )
-  guard (old_a, new_a) is (Some(oa), Some(na)) else { fail("sheet a missing") }
+  let a_path = @core.Path::new(steps=[SeqStep(field="sheets", key=KStr("a"))])
+  guard (a_path.lookup(root), a_path.lookup(root2)) is (Some(oa), Some(na)) else {
+    fail("sheet a missing")
+  }
   assert_true(physical_equal(oa, na))
 }
 
@@ -191,7 +126,7 @@ test "a missing bucket is an identity no-op" {
 }
 
 ///|
-test "pin_keys works across struct impls" {
+test "pin_keys freezes the live key" {
   let root = make_app("b")
   let pinned = sel_path().pin_keys(root)
   assert_true(pinned.steps is [SeqStep(field="sheets", key=KStr("b"))])

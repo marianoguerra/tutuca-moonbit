@@ -20,8 +20,7 @@ pub impl @transactor.Requests for ScopeRequests with fn request_for(
   leaf,
   name,
 ) {
-  guard leaf.as_value() is Some(v) else { return None }
-  guard self.comps.get_comp_for(v) is Some(comp) else { return None }
+  guard self.comps.get_comp_for(leaf) is Some(comp) else { return None }
   guard comp.scope is Some(scope) else { return None }
   match scope.lookup_request(name) {
     Some(RequestFn(f)) => Some(RequestHandler(f))
@@ -89,8 +88,7 @@ fn run_handlers(
   e : @render.DomEvent,
   comps : @component.Components,
 ) -> Unit {
-  guard tx.root.as_value() is Some(root_val) else { return }
-  let root_stack = @render.RenderStack::new(root_val, comps~, event=e)
+  let root_stack = @render.RenderStack::new(tx.root, comps~, event=e)
   let arg_stack = @render.build_stack(ed.path.to_transaction_path(), root_stack)
   for h in ed.handlers {
     if !modifiers_pass(e.name, h.modifiers, e) {

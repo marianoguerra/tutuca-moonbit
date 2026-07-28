@@ -17,16 +17,16 @@ fn vmap(m : Map[String, @core.Value]) -> @core.Value {
 
 ///|
 /// The Value a path resolves to, Null when unresolvable (JS lookup dval).
-fn resolved(p : @core.Path, root : &@core.PathNode) -> @core.Value {
+fn resolved(p : @core.Path, root : @core.Value) -> @core.Value {
   match p.lookup(root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }
 
 ///|
 test "lookup and set_value address nested fields" {
-  let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(42) }) })
+  let root : @core.Value = vmap({ "a": vmap({ "b": num(42) }) })
   let p = @core.Path::new(steps=[FieldStep("a"), FieldStep("b")])
   assert_true(resolved(p, root) == num(42))
   let root2 = p.set_value(root, num(43))
@@ -37,16 +37,16 @@ test "lookup and set_value address nested fields" {
 
 ///|
 test "empty path resolves to the root and set_value replaces it" {
-  let root : &@core.PathNode = vmap({ "a": num(1) })
+  let root : @core.Value = vmap({ "a": num(1) })
   let p = @core.Path::new()
   assert_true(resolved(p, root) == vmap({ "a": num(1) }))
-  let v : &@core.PathNode = num(9)
+  let v : @core.Value = num(9)
   assert_true(physical_equal(p.set_value(root, v), v))
 }
 
 ///|
 test "compact drops frame-only steps; addressing is unaffected by them" {
-  let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(42) }) })
+  let root : @core.Value = vmap({ "a": vmap({ "b": num(42) }) })
   let p = @core.Path::new(steps=[
     BindStep(binds=Map([])),
     FieldStep("a"),
@@ -62,7 +62,7 @@ test "compact drops frame-only steps; addressing is unaffected by them" {
 
 ///|
 test "EachRenderItStep compacts to SeqStep preserving field and key" {
-  let root : &@core.PathNode = vmap({
+  let root : @core.Value = vmap({
     "items": vmap({ "k": vmap({ "v": num(1) }) }),
   })
   let p = @core.Path::new(steps=[
@@ -82,7 +82,7 @@ test "EachRenderItStep compacts to SeqStep preserving field and key" {
 
 ///|
 test "SeqAccessStep resolves the item keyed by a sibling field" {
-  let root : &@core.PathNode = vmap({
+  let root : @core.Value = vmap({
     "selId": str("b"),
     "sheets": vmap({ "a": str("first"), "b": str("second") }),
   })
@@ -97,13 +97,13 @@ test "SeqAccessStep resolves the item keyed by a sibling field" {
       root2,
     )
     is Some(n) &&
-    n.as_value() == Some(str("first")),
+    n == str("first"),
   )
 }
 
 ///|
 test "pin_keys freezes SeqAccessStep to the key as it is now" {
-  let root : &@core.PathNode = vmap({
+  let root : @core.Value = vmap({
     "selId": str("b"),
     "sheets": vmap({ "a": str("first"), "b": str("second") }),
   })
@@ -113,7 +113,7 @@ test "pin_keys freezes SeqAccessStep to the key as it is now" {
   let pinned = p.pin_keys(root)
   assert_true(pinned.steps is [SeqStep(field="sheets", key=KStr("b"))])
   // the selected id moves while a request is in flight...
-  let moved : &@core.PathNode = vmap({
+  let moved : @core.Value = vmap({
     "selId": str("a"),
     "sheets": vmap({ "a": str("first"), "b": str("second") }),
   })
@@ -125,14 +125,14 @@ test "pin_keys freezes SeqAccessStep to the key as it is now" {
 
 ///|
 test "pin_keys returns the same Path when nothing needs pinning" {
-  let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(1) }) })
+  let root : @core.Value = vmap({ "a": vmap({ "b": num(1) }) })
   let p = @core.Path::new(steps=[FieldStep("a"), FieldStep("b")])
   assert_true(physical_equal(p.pin_keys(root), p))
 }
 
 ///|
 test "set_value through a missing branch returns the identical root" {
-  let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(1) }) })
+  let root : @core.Value = vmap({ "a": vmap({ "b": num(1) }) })
   let p = @core.Path::new(steps=[FieldStep("a"), FieldStep("missing")])
   assert_true(physical_equal(p.set_value(root, num(9)), root))
   let bad_idx = @core.Path::new(steps=[SeqStep(field="a", key=KInt(3))])
@@ -143,22 +143,22 @@ test "set_value through a missing branch returns the identical root" {
 test "set_value shares untouched siblings (structural sharing)" {
   let sib = vmap({ "x": num(1) })
   let root_v = vmap({ "a": vmap({ "b": num(2) }), "sib": sib })
-  let root : &@core.PathNode = root_v
+  let root : @core.Value = root_v
   let p = @core.Path::new(steps=[FieldStep("a"), FieldStep("b")])
   let root2 = p.set_value(root, num(3))
-  guard root2.as_value() is Some(Map(m2)) else { fail("expected a map root") }
+  guard root2 is Map(m2) else { fail("expected a map root") }
   guard m2.get("sib") is Some(sib2) else { fail("sibling dropped") }
   assert_true(physical_equal(sib2, sib))
 }
 
 ///|
 test "resolve_chain returns root plus entered values, stopping early" {
-  let root : &@core.PathNode = vmap({ "a": vmap({ "b": num(1) }) })
+  let root : @core.Value = vmap({ "a": vmap({ "b": num(1) }) })
   let full = @core.Path::new(steps=[FieldStep("a"), FieldStep("b")])
   let chain = full.resolve_chain(root)
   assert_eq(chain.length(), 3)
   assert_true(physical_equal(chain[0], root))
-  assert_true(chain[2].as_value() == Some(num(1)))
+  assert_true(chain[2] == num(1))
   let broken = @core.Path::new(steps=[FieldStep("a"), FieldStep("nope")])
   assert_eq(broken.resolve_chain(root).length(), 2)
 }
@@ -184,7 +184,7 @@ test "to_keys reports addressing steps; SeqAccessStep has no concrete key" {
 
 ///|
 test "lists index by KInt" {
-  let root : &@core.PathNode = vmap({ "items": List([num(10), num(20)]) })
+  let root : @core.Value = vmap({ "items": List([num(10), num(20)]) })
   let p = @core.Path::new(steps=[SeqStep(field="items", key=KInt(1))])
   assert_true(resolved(p, root) == num(20))
   assert_true(resolved(p, p.set_value(root, num(21))) == num(21))
@@ -203,7 +203,7 @@ test "concat and pop_step" {
 
 ///|
 test "plain Value leaves have no handlers: update is an identity no-op" {
-  let root : &@core.PathNode = vmap({ "a": num(1) })
+  let root : @core.Value = vmap({ "a": num(1) })
   let p = @core.Path::new(steps=[FieldStep("a")])
   assert_true(physical_equal(p.update(root, Receive, "rename", []), root))
 }

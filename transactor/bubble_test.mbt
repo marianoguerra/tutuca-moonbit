@@ -11,21 +11,21 @@ priv struct Item {
 }
 
 ///|
-fn item_node(label : String, acked : Bool) -> &@tutuca.PathNode {
-  Item::{ label, acked }
+fn item_node(label : String, acked : Bool) -> @tutuca.Value {
+  Obj(Item::{ label, acked })
 }
 
 ///|
-impl @tutuca.PathNode for Item with fn field(self, name) {
+impl @tutuca.Obj for Item with fn obj_field(self, name) {
   match name {
-    "label" => Some(@tutuca.Value::Str(self.label) as &@tutuca.PathNode)
-    "acked" => Some(@tutuca.Value::Bool(self.acked) as &@tutuca.PathNode)
+    "label" => Some(@tutuca.Value::Str(self.label))
+    "acked" => Some(@tutuca.Value::Bool(self.acked))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for Item with fn handler(self, bucket, name) {
+impl @tutuca.Obj for Item with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Receive, "set-label") =>
       Some(
@@ -60,29 +60,29 @@ impl @tutuca.PathNode for Item with fn handler(self, bucket, name) {
 
 ///|
 priv struct Panel {
-  item : &@tutuca.PathNode
+  item : @tutuca.Value
   seen : String
 }
 
 ///|
-impl @tutuca.PathNode for Panel with fn field(self, name) {
+impl @tutuca.Obj for Panel with fn obj_field(self, name) {
   match name {
     "item" => Some(self.item)
-    "seen" => Some(@tutuca.Value::Str(self.seen) as &@tutuca.PathNode)
+    "seen" => Some(@tutuca.Value::Str(self.seen))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for Panel with fn with_field(self, name, v) {
+impl @tutuca.Obj for Panel with fn obj_with_field(self, name, v) {
   match name {
-    "item" => Some(Panel::{ item: v, seen: self.seen } as &@tutuca.PathNode)
+    "item" => Some(Obj(Panel::{ item: v, seen: self.seen }))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
+impl @tutuca.Obj for Panel with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Bubble, "poked") =>
       Some(
@@ -93,11 +93,10 @@ impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
             _ => "?"
           }
           Some(
-            Panel::{
+            Obj(Panel::{
               item: self.item,
               seen: "poked:\{from}@\{ctx.path().items.length()}",
-            }
-            as &@tutuca.PathNode,
+            }),
           )
         }),
       )
@@ -105,7 +104,7 @@ impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
       Some(
         Handler((_args, ctx) => {
           ctx.stop_propagation()
-          Some(Panel::{ item: self.item, seen: "stopped" } as &@tutuca.PathNode)
+          Some(Obj(Panel::{ item: self.item, seen: "stopped" }))
         }),
       )
     _ => None
@@ -114,30 +113,29 @@ impl @tutuca.PathNode for Panel with fn handler(self, bucket, name) {
 
 ///|
 priv struct RootComp {
-  panel : &@tutuca.PathNode
+  panel : @tutuca.Value
   seen : String
 }
 
 ///|
-impl @tutuca.PathNode for RootComp with fn field(self, name) {
+impl @tutuca.Obj for RootComp with fn obj_field(self, name) {
   match name {
     "panel" => Some(self.panel)
-    "seen" => Some(@tutuca.Value::Str(self.seen) as &@tutuca.PathNode)
+    "seen" => Some(@tutuca.Value::Str(self.seen))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for RootComp with fn with_field(self, name, v) {
+impl @tutuca.Obj for RootComp with fn obj_with_field(self, name, v) {
   match name {
-    "panel" =>
-      Some(RootComp::{ panel: v, seen: self.seen } as &@tutuca.PathNode)
+    "panel" => Some(Obj(RootComp::{ panel: v, seen: self.seen }))
     _ => None
   }
 }
 
 ///|
-impl @tutuca.PathNode for RootComp with fn handler(self, bucket, name) {
+impl @tutuca.Obj for RootComp with fn obj_handler(self, bucket, name) {
   match (bucket, name) {
     (Bubble, "poked") =>
       Some(
@@ -145,21 +143,17 @@ impl @tutuca.PathNode for RootComp with fn handler(self, bucket, name) {
           // dispatch back to the fixed origin of the bubble
           ctx.send_at_path(ctx.target_path(), "ack", [])
           Some(
-            RootComp::{
+            Obj(RootComp::{
               panel: self.panel,
               seen: "root@path=\{ctx.path().items.length()},target=\{ctx.target_path().items.length()}",
-            }
-            as &@tutuca.PathNode,
+            }),
           )
         }),
       )
     (Bubble, "poked-stop") =>
       Some(
         Handler((_args, _ctx) => {
-          Some(
-            RootComp::{ panel: self.panel, seen: "should-never-fire" }
-            as &@tutuca.PathNode,
-          )
+          Some(Obj(RootComp::{ panel: self.panel, seen: "should-never-fire" }))
         }),
       )
     _ => None
@@ -167,11 +161,11 @@ impl @tutuca.PathNode for RootComp with fn handler(self, bucket, name) {
 }
 
 ///|
-fn make_tree() -> &@tutuca.PathNode {
-  RootComp::{
-    panel: Panel::{ item: item_node("it1", false), seen: "" },
+fn make_tree() -> @tutuca.Value {
+  Obj(RootComp::{
+    panel: Obj(Panel::{ item: item_node("it1", false), seen: "" }),
     seen: "",
-  }
+  })
 }
 
 ///|
@@ -180,12 +174,9 @@ fn item_path() -> @tutuca.DispatchPath {
 }
 
 ///|
-fn scalar(
-  root : &@tutuca.PathNode,
-  steps : Array[@tutuca.Step],
-) -> @tutuca.Value {
+fn scalar(root : @tutuca.Value, steps : Array[@tutuca.Step]) -> @tutuca.Value {
   match @tutuca.Path::new(steps~).lookup(root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

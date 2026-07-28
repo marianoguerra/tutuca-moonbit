@@ -4,7 +4,7 @@
 // need — they exercise the queue, not handler effects.
 
 ///|
-fn empty_root() -> &@tutuca.PathNode {
+fn empty_root() -> @tutuca.Value {
   @tutuca.Value::Map(Map([]))
 }
 

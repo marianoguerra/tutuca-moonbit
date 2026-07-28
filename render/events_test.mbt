@@ -45,9 +45,9 @@ fn resolve_leaf(
   ed : @render.EventDispatch,
   state : @tutuca.Value,
 ) -> @tutuca.Value {
-  let root : &@tutuca.PathNode = state
+  let root : @tutuca.Value = state
   match ed.path.to_transaction_path().lookup(root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

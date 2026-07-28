@@ -54,7 +54,7 @@ fn counter_comp() -> @component.Component {
 ///|
 fn field_v(a : @app.App[@bdom.BrowserNode], name : String) -> @tutuca.Value {
   match @tutuca.Path::new(steps=[FieldStep(name)]).lookup(a.transactor.root) {
-    Some(n) => n.as_value().unwrap_or(Null)
+    Some(n) => n
     None => Null
   }
 }

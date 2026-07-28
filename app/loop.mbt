@@ -128,11 +128,10 @@ pub fn[N] App::send_at_root(
 }
 
 ///|
-/// The current settled root value — the transactor's root as a `Value`, or
-/// `None` if the root is not a value node. Read-back for state-oriented tests
-/// (the tutuca `drive()` return value).
-pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value? {
-  self.transactor.root.as_value()
+/// The current settled root value. Read-back for state-oriented tests (the
+/// tutuca `drive()` return value).
+pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value {
+  self.transactor.root
 }
 
 ///|
@@ -159,7 +158,7 @@ pub fn[N] App::drain_batched(
 ///|
 fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   self.render_count += 1
-  guard self.transactor.root.as_value() is Some(root_val) else { return }
+  let root_val = self.transactor.root
   let stack = @render.RenderStack::new(root_val, comps=self.scope.comps)
   let ctx = @render.RenderCtx::new(view_resolver=self.scope.comps)
   match @render.render_root(root_val, stack, ctx) {

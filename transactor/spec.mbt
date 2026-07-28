@@ -12,9 +12,9 @@
 //   already-queued transactions.
 // - Completion exposes callback subscription (on_settled /
 //   on_subtree_settled) instead of promises.
-// - Handler resolution lives on the leaf (PathNode::handler); only request
-//   handlers use an external registry (in JS they resolve through the scope
-//   chain, not the component).
+// - Handler resolution lives on the leaf (Value::handler, which asks the
+//   instance through Obj); only request handlers use an external registry (in
+//   JS they resolve through the scope chain, not the component).
 //
 // walk_path (over Path::resolve_chain, leaf->root) and the ctx.at PathChanges
 // builder have shipped — walk_path is implemented on EventContext
@@ -37,7 +37,7 @@ pub(all) struct RequestHandler(
 /// External request registry (JS comps.getRequestFor). Defaults to None:
 /// an unknown request responds with an error (JS mkReq404).
 pub(open) trait Requests {
-  fn request_for(Self, leaf : &@tutuca.PathNode, name : String) -> RequestHandler? = _
+  fn request_for(Self, leaf : @tutuca.Value, name : String) -> RequestHandler? = _
 }
 
 ///|
@@ -189,14 +189,14 @@ pub struct Transaction {
 declare pub fn Transaction::completion(self : Transaction) -> Completion
 
 ///|
-/// The dispatcher: a queue of transactions over a mutable root &PathNode.
-/// Handlers resolve on the leaf (PathNode::handler); requests resolve via
-/// the external registry.
+/// The dispatcher: a queue of transactions over a mutable root Value.
+/// Handlers resolve on the leaf (Value::handler); requests resolve via the
+/// external registry.
 pub struct Transactor {
   priv requests : &Requests
-  mut root : &@tutuca.PathNode
+  mut root : @tutuca.Value
   priv queue : Array[Transaction]
-  priv change_subs : Array[(&@tutuca.PathNode, &@tutuca.PathNode) -> Unit]
+  priv change_subs : Array[(@tutuca.Value, @tutuca.Value) -> Unit]
   priv mut draining : Bool
   priv observers : Array[(ObserveRecord) -> Unit]
   priv mut obs_seq : Int
@@ -205,7 +205,7 @@ pub struct Transactor {
 
 ///|
 declare pub fn Transactor::new(
-  root : &@tutuca.PathNode,
+  root : @tutuca.Value,
   requests? : &Requests,
 ) -> Transactor
 
@@ -232,7 +232,7 @@ declare pub fn Transactor::on_drained(
 /// Subscribe to root swaps: cb(new_root, old_root).
 declare pub fn Transactor::on_change(
   self : Transactor,
-  cb : (&@tutuca.PathNode, &@tutuca.PathNode) -> Unit,
+  cb : (@tutuca.Value, @tutuca.Value) -> Unit,
 ) -> Unit
 
 ///|
