@@ -465,3 +465,25 @@ declare pub fn ModuleDef::register_into(
 /// Register macros, request handlers and components in a fresh scope and
 /// compile everything — the boot sequence tooling and apps share.
 declare pub fn ModuleDef::build_scope(self : ModuleDef) -> ComponentStack raise
+
+///|
+/// Encode a `@loop-with` return into the Map it crosses the `Obj::obj_callable`
+/// boundary as; `of_value` reads one back. Both halves live in one file
+/// (loop_codec.mbt) so the key names cannot drift apart.
+declare pub fn LoopWith::to_value(self : LoopWith) -> @tutuca.Value
+
+///|
+/// Read a `@loop-with` return back out, with `seq` supplying the `iter_data`
+/// default. Partial coercers throughout: an absent part stays absent.
+declare pub fn LoopWith::of_value(
+  v : @tutuca.Value,
+  seq : @tutuca.Value,
+) -> LoopWith
+
+///|
+/// Encode the loop context the renderer builds; `of_value` reads it back into
+/// the typed form a handler receives.
+declare pub fn LoopCtx::to_value(self : LoopCtx) -> @tutuca.Value
+
+///|
+declare pub fn LoopCtx::of_value(v : @tutuca.Value) -> LoopCtx

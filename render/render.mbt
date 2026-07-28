@@ -190,7 +190,9 @@ fn render_each(
     None => None
   }
   let plan = loop_plan(stack, seq, filter_h, d.iter_info.loop_with_val)
-  let iter_data = plan.iter_data
+  // `of_value` always fills the default, so this is the handler's iterData or
+  // the `{ seq }` stand-in — never absent.
+  let iter_data = plan.iter_data.unwrap_or(Null)
   let out : Array[@vdom.Vdom] = []
   fn visit(key : @tutuca.Value, value : @tutuca.Value, apply_filter : Bool) {
     // JS filter.call(it, key, value, iterData); default always-true. A keys

@@ -59,8 +59,7 @@ pub fn DispatchPath::to_transaction_path(Self) -> Path
 
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
-  Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int])
-  DynEach(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey)
+  Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int], key~ : PathKey?)
 } derive(Eq, @debug.Debug)
 
 pub(all) struct FieldInfo {
@@ -146,7 +145,6 @@ pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> Self
 pub(all) struct Path {
   steps : Array[Step]
 } derive(Eq, @debug.Debug)
-pub fn Path::compact(Self) -> Self
 pub fn Path::concat(Self, Array[Step]) -> Self
 pub fn Path::field(Self, String) -> Self
 pub fn Path::index(Self, String, Int) -> Self
@@ -357,7 +355,7 @@ pub(open) trait Obj {
   fn obj_item(Self, PathKey) -> Value? = _
   fn obj_with_item(Self, PathKey, Value) -> Value? = _
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
-  fn obj_render_handler(Self, String, HandlerNamespace) -> Value = _
+  fn obj_callable(Self, String, HandlerNamespace) -> Value? = _
   fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
   fn obj_schema(Self) -> SchemaInfo? = _
   fn obj_size(Self) -> Int? = _
@@ -371,7 +369,6 @@ pub(open) trait Stack {
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
-  fn lookup_type(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
 

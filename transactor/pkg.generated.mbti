@@ -33,6 +33,7 @@ pub(all) enum ObserveKind {
   Request
 } derive(Eq, @debug.Debug)
 pub fn ObserveKind::label(Self) -> String
+pub fn ObserveKind::of_bucket(@core.HandlerBucket) -> Self
 
 pub(all) enum ObserveMatch {
   Exact

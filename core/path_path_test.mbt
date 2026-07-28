@@ -16,6 +16,15 @@ fn vmap(m : Map[String, @core.Value]) -> @core.Value {
 }
 
 ///|
+/// The compact projection of a plain path, through the ONE compaction
+/// production uses. `Path` had a `compact` of its own, for JS parity; nothing
+/// but these tests called it, and a rule with two implementations and one
+/// caller is a rule with somewhere to drift to.
+fn compacted(p : @core.Path) -> @core.Path {
+  @core.DispatchPath::of_steps(p.steps).compact().to_transaction_path()
+}
+
+///|
 /// The Value a path resolves to, Null when unresolvable (JS lookup dval).
 fn resolved(p : @core.Path, root : @core.Value) -> @core.Value {
   match p.lookup(root) {
@@ -53,7 +62,7 @@ test "compact drops frame-only steps; addressing is unaffected by them" {
     BindStep(binds={ "key": str("x") }),
     FieldStep("b"),
   ])
-  assert_true(p.compact().steps is [FieldStep("a"), FieldStep("b")])
+  assert_true(compacted(p).steps is [FieldStep("a"), FieldStep("b")])
   assert_true(resolved(p, root) == num(42))
   assert_true(resolved(p, p.set_value(root, num(1))) == num(1))
   // frame-only steps report no key
@@ -69,7 +78,7 @@ test "EachRenderItStep compacts to SeqStep preserving field and key" {
     EachRenderItStep(field="items", key=KStr("k")),
     FieldStep("v"),
   ])
-  let c = p.compact()
+  let c = compacted(p)
   assert_true(
     c.steps is [SeqStep(field="items", key=KStr("k")), FieldStep("v")],
   )

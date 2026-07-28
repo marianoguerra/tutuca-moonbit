@@ -126,11 +126,11 @@ pub impl @tutuca.Obj for DynObj with fn obj_seq_entries(self) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_render_handler(self, name, _ns) {
+pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, _ns) {
   if self.def.method_names.contains(name) {
-    self.method_fn(name)
+    Some(self.method_fn(name))
   } else {
-    Null
+    None
   }
 }
 

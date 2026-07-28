@@ -180,17 +180,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
   node : N,
   e : @render.DomEvent,
 ) -> Bool {
-  let e2 : @render.DomEvent = {
-    name: e.name,
-    value: e.value,
-    key: e.key,
-    key_code: e.key_code,
-    alt: e.alt,
-    shift: e.shift,
-    ctrl_or_cmd: e.ctrl_or_cmd,
-    meta: e.meta,
-    drag_info: self.drag_info_value(),
-  }
+  let e2 : @render.DomEvent = { ..e, drag_info: self.drag_info_value() }
   if is_drag_event(e.name) {
     guard @render.from_node_and_event_name(
         node,
@@ -204,17 +194,7 @@ pub fn[N : @vdom.DomWalk] App::dispatch(
     }
     self.handle_drag(node, e.name, ed.path)
     // dragstart just captured: dispatch with the FRESH dragInfo
-    let e3 : @render.DomEvent = {
-      name: e2.name,
-      value: e2.value,
-      key: e2.key,
-      key_code: e2.key_code,
-      alt: e2.alt,
-      shift: e2.shift,
-      ctrl_or_cmd: e2.ctrl_or_cmd,
-      meta: e2.meta,
-      drag_info: self.drag_info_value(),
-    }
+    let e3 : @render.DomEvent = { ..e2, drag_info: self.drag_info_value() }
     if !ed.handlers.is_empty() {
       run_handlers(self.transactor, ed, e3, self.scope.comps)
     }

@@ -58,8 +58,9 @@ pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath {
 fn teleport_steps(item : DispatchStep) -> Array[Step] {
   match item {
     Plain(..) => []
-    Dyn(steps~, ..) => steps
-    DynEach(steps~, key~, ..) =>
+    Dyn(steps~, key=None, ..) => steps
+    // Iterated: the last field access becomes a keyed one.
+    Dyn(steps~, key=Some(key), ..) =>
       match steps {
         [.. init, FieldStep(f)] => {
           let out = init.to_owned()
@@ -80,7 +81,7 @@ pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path {
   for item in self.items {
     match item {
       Plain(step~, origin~) => out.push((step, origin))
-      Dyn(producer~, interior~, ..) | DynEach(producer~, interior~, ..) => {
+      Dyn(producer~, interior~, ..) => {
         // rewind the steps contributed by components interior to the
         // producer..consumer span — the data does not live under them
         while out is [.., (_, Some(cid))] && interior.contains(cid) {

@@ -258,7 +258,9 @@ test "property: compact preserves addressing for lookup and set_value" {
       let (tree, steps, v) = tpv
       let root : @core.Value = tree
       let p = @core.Path::new(steps~)
-      let c = p.compact()
+      let c = @core.DispatchPath::of_steps(steps)
+        .compact()
+        .to_transaction_path()
       let same_lookup = match (p.lookup(root), c.lookup(root)) {
         (Some(a), Some(b)) => a == b
         (None, None) => true

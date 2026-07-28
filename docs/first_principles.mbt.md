@@ -176,7 +176,6 @@ pub(open) trait Stack {
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
-  fn lookup_type(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
 ```

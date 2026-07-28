@@ -128,18 +128,6 @@ pub fn Path::pin_keys(self : Path, root : Value) -> Path {
 }
 
 ///|
-pub fn Path::compact(self : Path) -> Path {
-  let out : Array[Step] = []
-  for step in self.steps {
-    match step_to_abstract(step) {
-      Some(s) => out.push(s)
-      None => ()
-    }
-  }
-  { steps: out }
-}
-
-///|
 pub fn Path::to_keys(self : Path) -> Array[StepKey] {
   let out : Array[StepKey] = []
   for step in self.steps {

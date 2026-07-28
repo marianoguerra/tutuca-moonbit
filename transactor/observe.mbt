@@ -21,6 +21,20 @@ pub fn ObserveKind::label(self : ObserveKind) -> String {
 }
 
 ///|
+/// The kind a dispatch through `bucket` is observed as. `Request` is the one
+/// kind with no bucket behind it — a request resolves through the registry
+/// rather than on a leaf — so the two enums are not the same enum, but every
+/// bucket has exactly one kind and this is where that is said.
+pub fn ObserveKind::of_bucket(bucket : @tutuca.HandlerBucket) -> ObserveKind {
+  match bucket {
+    Receive => Receive
+    Input => Input
+    Bubble => Bubble
+    Response => Response
+  }
+}
+
+///|
 pub fn ObserveMatch::label(self : ObserveMatch) -> String {
   match self {
     Exact => "exact"

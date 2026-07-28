@@ -230,7 +230,12 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
         Null => mk_404_handler(ns, name)
         handler => handler
       }
-    TypeName(name) => stack.lookup_type(name)
+    // An Uppercase name parses (a handler arg may be written as one, and the
+    // linter reads them) but resolves to nothing: a type is not a Value, so
+    // there is nothing for a stack to hand back. `Stack` used to carry a
+    // `lookup_type` for this, defaulted to Null and overridden by no
+    // implementation in the tree — a seam with nobody on the other end.
+    TypeName(_) => Null
     Bind(name) => stack.lookup_bind(name)
     BindMember(name~, prop~) =>
       // Bindings hold maps (`@value`), component instances (iterating a seq of

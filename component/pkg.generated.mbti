@@ -110,6 +110,8 @@ pub(all) struct LoopCtx {
   lookup : (String) -> @core.Value
   filter : (@core.Value, @core.Value, @core.Value) -> Bool
 }
+pub fn LoopCtx::of_value(@core.Value) -> Self
+pub fn LoopCtx::to_value(Self) -> @core.Value
 
 pub(all) struct LoopWith {
   iter_data : @core.Value?
@@ -118,6 +120,8 @@ pub(all) struct LoopWith {
   keys : Array[@core.Value]?
 }
 pub fn LoopWith::new(iter_data? : @core.Value, start? : Int, end? : Int, keys? : Array[@core.Value]) -> Self
+pub fn LoopWith::of_value(@core.Value, @core.Value) -> Self
+pub fn LoopWith::to_value(Self) -> @core.Value
 
 pub(all) struct ModuleDef {
   name : String

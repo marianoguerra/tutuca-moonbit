@@ -5,75 +5,35 @@
 // takes over ordering entirely (skipping @when).
 
 ///|
-priv struct LoopPlan {
-  iter_data : @tutuca.Value
-  start : Int?
-  end : Int?
-  keys : Array[@tutuca.Value]?
-}
-
-///|
-/// The loopCtx handed to the @loop-with handler: `lookup` reads `@name`
-/// binds, `filter` applies the loop's own @when (both under the Fn
-/// convention — element 0 is the this-slot).
-fn make_loop_ctx(
-  stack : RenderStack,
-  filter_h : @tutuca.Value?,
-) -> @tutuca.Value {
-  Map({
-    "lookup": Fn(args => {
-      match args {
-        [_, Str(name), ..] => @tutuca.Stack::lookup_bind(stack, name)
-        _ => Null
-      }
-    }),
-    "filter": Fn(args => {
-      match args {
-        [_, k, v, idata, ..] =>
-          match filter_h {
-            Some(f) => call_handler(f, stack.it, [k, v, idata])
-            None => Bool(true)
-          }
-        _ => Bool(true)
-      }
-    }),
-  })
-}
-
-///|
-/// A `@loop-with` return, read back out of the Map it crossed the Fn boundary
-/// as. Each part is an OPTION — absent is what "the handler did not slice" and
-/// "the handler did not order" mean — so these are the partial coercers, not
-/// the defaulting ones. A result that is not a Map at all reads as all-absent
-/// through the same calls.
-fn unpack_loop_result(result : @tutuca.Value, seq : @tutuca.Value) -> LoopPlan {
-  let dflt : @tutuca.Value = Map({ "seq": seq })
-  {
-    iter_data: result.field_opt("iterData").unwrap_or(dflt),
-    start: result.field("start").int_opt(),
-    end: result.field("end").int_opt(),
-    keys: result.field("keys").list_opt(),
-  }
-}
-
-///|
+/// The plan for one `@loop-with` loop: the handler is called with
+/// `(seq, loopCtx)` and the component as `this`, and its return decodes
+/// through `@component.LoopWith` — the ONE place that encoding is written
+/// (see component/loop_codec.mbt). The renderer used to keep a `LoopPlan`
+/// of its own here, which was `LoopWith` again, filled by a decoder that had
+/// to guess the same four key names the encoder chose.
 fn loop_plan(
   stack : RenderStack,
   seq : @tutuca.Value,
   filter_h : @tutuca.Value?,
   loop_with_val : @tutuca.Val?,
-) -> LoopPlan {
-  match loop_with_val {
-    Some(lv) => {
-      let h = lv.eval_as_handler(stack)
-      unpack_loop_result(
-        call_handler(h, stack.it, [seq, make_loop_ctx(stack, filter_h)]),
-        seq,
-      )
-    }
-    None =>
-      { iter_data: Map({ "seq": seq }), start: None, end: None, keys: None }
+) -> @component.LoopWith {
+  guard loop_with_val is Some(lv) else {
+    return @component.LoopWith::new(iter_data=Map({ "seq": seq }))
   }
+  let ctx : @component.LoopCtx = {
+    lookup: name => @tutuca.Stack::lookup_bind(stack, name),
+    filter: (k, v, idata) => {
+      match filter_h {
+        Some(f) => call_handler(f, stack.it, [k, v, idata]).is_truthy()
+        None => true
+      }
+    },
+  }
+  let h = lv.eval_as_handler(stack)
+  @component.LoopWith::of_value(
+    call_handler(h, stack.it, [seq, ctx.to_value()]),
+    seq,
+  )
 }
 
 ///|
@@ -89,7 +49,7 @@ fn loop_iter_data(
     Some(v) => Some(v.eval_as_handler(stack))
     None => None
   }
-  loop_plan(stack, seq, filter_h, loop_with_val).iter_data
+  loop_plan(stack, seq, filter_h, loop_with_val).iter_data.unwrap_or(Null)
 }
 
 ///|

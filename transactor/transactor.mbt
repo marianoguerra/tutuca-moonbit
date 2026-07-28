@@ -42,6 +42,42 @@ pub fn Transactor::observe(
 }
 
 ///|
+/// Deliver one record, stamping the sequence number and deriving `path_keys`
+/// from the already-pinned path.
+///
+/// The four places a record is BUILT used to be two, and the second — the
+/// outgoing-request record — restated the empty-check, the counter bump and
+/// the delivery loop as well as the fields.
+fn Transactor::emit_record(
+  self : Transactor,
+  kind : ObserveKind,
+  name : String,
+  args : Array[@tutuca.Value],
+  path : @tutuca.Path,
+  target_path : @tutuca.DispatchPath,
+  matched : ObserveMatch,
+  before : @tutuca.Value?,
+  after : @tutuca.Value?,
+) -> Unit {
+  self.obs_seq = self.obs_seq + 1
+  let record : ObserveRecord = {
+    kind,
+    name,
+    args,
+    path,
+    path_keys: path.to_keys(),
+    target_path,
+    matched,
+    before,
+    after,
+    seq: self.obs_seq,
+  }
+  for cb in self.observers {
+    cb(record)
+  }
+}
+
+///|
 fn Transactor::emit(
   self : Transactor,
   kind : ObserveKind,
@@ -58,22 +94,16 @@ fn Transactor::emit(
     Some(p) => p
     None => t.path.to_transaction_path()
   }).pin_keys(old_root)
-  self.obs_seq = self.obs_seq + 1
-  let record : ObserveRecord = {
+  self.emit_record(
     kind,
-    name: t.name,
-    args: t.args,
+    t.name,
+    t.args,
     path,
-    path_keys: path.to_keys(),
-    target_path: t.target_path,
+    t.target_path,
     matched,
-    before: t.obs_before,
-    after: t.obs_after,
-    seq: self.obs_seq,
-  }
-  for cb in self.observers {
-    cb(record)
-  }
+    t.obs_before,
+    t.obs_after,
+  )
 }
 
 ///|
@@ -117,6 +147,41 @@ fn Transactor::link(
 }
 
 ///|
+/// One queued dispatch. Every channel differs in a field or three — the
+/// bucket, whether it bubbles, a pre-pinned response path — and used to say
+/// so by writing all fourteen out, four times over, so a new field meant
+/// finding all four.
+fn Transactor::mk_txn(
+  self : Transactor,
+  path : @tutuca.DispatchPath,
+  bucket : @tutuca.HandlerBucket,
+  name : String,
+  args : Array[@tutuca.Value],
+  target_path? : @tutuca.DispatchPath,
+  bubbles? : Bool = false,
+  skip_self? : Bool = false,
+  txn_path? : @tutuca.Path,
+  parent? : Transaction,
+) -> Transaction {
+  {
+    transactor: self,
+    path,
+    bucket,
+    name,
+    args,
+    target_path: target_path.unwrap_or(path),
+    bubbles,
+    skip_self,
+    txn_path,
+    parent,
+    cmpl: None,
+    obs_matched: None,
+    obs_before: None,
+    obs_after: None,
+  }
+}
+
+///|
 pub fn Transactor::push_send(
   self : Transactor,
   path : @tutuca.DispatchPath,
@@ -127,22 +192,7 @@ pub fn Transactor::push_send(
   bubbles? : Bool = false,
 ) -> Transaction {
   self.link(
-    {
-      transactor: self,
-      path,
-      bucket: Receive,
-      name,
-      args,
-      target_path: path,
-      bubbles,
-      skip_self,
-      txn_path: None,
-      parent,
-      cmpl: None,
-      obs_matched: None,
-      obs_before: None,
-      obs_after: None,
-    },
+    self.mk_txn(path, Receive, name, args, bubbles~, skip_self~, parent?),
     parent,
   )
 }
@@ -155,25 +205,7 @@ pub fn Transactor::push_input(
   args : Array[@tutuca.Value],
   parent? : Transaction,
 ) -> Transaction {
-  self.link(
-    {
-      transactor: self,
-      path,
-      bucket: Input,
-      name,
-      args,
-      target_path: path,
-      bubbles: false,
-      skip_self: false,
-      txn_path: None,
-      parent,
-      cmpl: None,
-      obs_matched: None,
-      obs_before: None,
-      obs_after: None,
-    },
-    parent,
-  )
+  self.link(self.mk_txn(path, Input, name, args, parent?), parent)
 }
 
 ///|
@@ -188,22 +220,7 @@ fn Transactor::push_bubble(
   target_path : @tutuca.DispatchPath,
 ) -> Transaction {
   self.link(
-    {
-      transactor: self,
-      path,
-      bucket: Bubble,
-      name,
-      args,
-      target_path,
-      bubbles: true,
-      skip_self: false,
-      txn_path: None,
-      parent,
-      cmpl: None,
-      obs_matched: None,
-      obs_before: None,
-      obs_after: None,
-    },
+    self.mk_txn(path, Bubble, name, args, target_path~, bubbles=true, parent?),
     parent,
   )
 }
@@ -249,27 +266,20 @@ pub fn Transactor::push_request(
   // observe the outgoing request (the response side is observed later when
   // its ResponseEvent flows through transact)
   if !self.observers.is_empty() {
-    let req_path = txn_path.pin_keys(cur_root)
-    self.obs_seq = self.obs_seq + 1
-    let record : ObserveRecord = {
-      kind: Request,
+    self.emit_record(
+      Request,
       name,
       args,
-      path: req_path,
-      path_keys: req_path.to_keys(),
-      target_path: path,
-      matched: if found is Some(_) {
+      txn_path.pin_keys(cur_root),
+      path,
+      if found is Some(_) {
         Exact
       } else {
         NoHandler
       },
-      before: txn_path.lookup(cur_root),
-      after: None,
-      seq: self.obs_seq,
-    }
-    for cb in self.observers {
-      cb(record)
-    }
+      txn_path.lookup(cur_root),
+      None,
+    )
   }
   let responded : Ref[Bool] = { val: false }
   let respond = (result : Result[@tutuca.Value, @tutuca.Value]) => {
@@ -295,25 +305,17 @@ pub fn Transactor::push_request(
           },
         )
     }
-    let t = Transaction::{
-      transactor: self,
+    let t = self.mk_txn(
       path,
-      bucket: Response,
-      name: match specific {
+      Response,
+      match specific {
         Some(n) => n
         None => base_name
       },
-      args: res_args,
-      target_path: path,
-      bubbles: false,
-      skip_self: false,
-      txn_path: res_path,
-      parent,
-      cmpl: None,
-      obs_matched: None,
-      obs_before: None,
-      obs_after: None,
-    }
+      res_args,
+      txn_path?=res_path,
+      parent?,
+    )
     // transfer the parent's request-unit onto the response's subtree; the
     // response is queued directly (not link), so it is not counted twice
     match release {
@@ -380,15 +382,8 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
   // a skipSelf send resolves no handler and emits no record (JS
   // _resolvedHandler undefined)
   match t.obs_matched {
-    Some(matched) => {
-      let kind : ObserveKind = match t.bucket {
-        Receive => Receive
-        Input => Input
-        Bubble => Bubble
-        Response => Response
-      }
-      self.emit(kind, t, cur, matched)
-    }
+    Some(matched) =>
+      self.emit(ObserveKind::of_bucket(t.bucket), t, cur, matched)
     None => ()
   }
   match t.cmpl {
@@ -508,28 +503,8 @@ impl @tutuca.Ctx for EventContext with fn name(self) {
 }
 
 ///|
-impl @tutuca.Ctx for EventContext with fn send(self, name, args) {
-  let _ = self.txn.transactor.push_send(
-    self.txn.path,
-    name,
-    args,
-    parent=self.txn,
-  )
-}
-
-///|
-impl @tutuca.Ctx for EventContext with fn bubble(self, name, args) {
-  let _ = self.txn.transactor.push_send(
-    self.txn.path,
-    name,
-    args,
-    parent=self.txn,
-    skip_self=true,
-    bubbles=true,
-  )
-}
-
-///|
+// `send` / `bubble` are not implemented: the trait defaults route them to the
+// two below at `path()`, which is exactly what they used to spell out again.
 impl @tutuca.Ctx for EventContext with fn send_at_path(self, path, name, args) {
   let _ = self.txn.transactor.push_send(path, name, args, parent=self.txn)
 }

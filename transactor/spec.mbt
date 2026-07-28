@@ -124,6 +124,13 @@ pub(all) enum ObserveMatch {
 declare pub fn ObserveKind::label(self : ObserveKind) -> String
 
 ///|
+/// The kind a dispatch through `bucket` is observed as. Every bucket has one;
+/// `Request` is the kind with no bucket behind it.
+declare pub fn ObserveKind::of_bucket(
+  bucket : @tutuca.HandlerBucket,
+) -> ObserveKind
+
+///|
 /// How the handler was resolved, as the wire/display word.
 declare pub fn ObserveMatch::label(self : ObserveMatch) -> String
 

@@ -19,7 +19,7 @@ test "a Dyn marker rewinds the interior span and splices the producer steps" {
     plain(FieldStep("s1"), origin=1),
     plain(FieldStep("s2"), origin=2),
     plain(FieldStep("s3"), origin=3),
-    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2, 3]),
+    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2, 3], key=None),
   ])
   assert_true(p.to_transaction_path().steps is [FieldStep("sheet")])
 }
@@ -30,7 +30,7 @@ test "steps outside the interior span survive the rewind" {
   let p = @core.DispatchPath::new(items=[
     plain(FieldStep("app"), origin=9),
     plain(FieldStep("panel"), origin=1),
-    Dyn(producer=9, steps=[FieldStep("sheet")], interior=[1]),
+    Dyn(producer=9, steps=[FieldStep("sheet")], interior=[1], key=None),
   ])
   assert_true(
     p.to_transaction_path().steps is [FieldStep("app"), FieldStep("sheet")],
@@ -38,10 +38,15 @@ test "steps outside the interior span survive the rewind" {
 }
 
 ///|
-test "DynEach splices a keyed SeqStep for the producer's field" {
+test "an iterated Dyn splices a keyed SeqStep for the producer's field" {
   let p = @core.DispatchPath::new(items=[
     plain(FieldStep("s1"), origin=1),
-    DynEach(producer=0, steps=[FieldStep("rows")], interior=[1], key=KStr("b")),
+    Dyn(
+      producer=0,
+      steps=[FieldStep("rows")],
+      interior=[1],
+      key=Some(KStr("b")),
+    ),
   ])
   assert_true(
     p.to_transaction_path().steps is [SeqStep(field="rows", key=KStr("b"))],
@@ -49,13 +54,13 @@ test "DynEach splices a keyed SeqStep for the producer's field" {
 }
 
 ///|
-test "DynEach over a seq-access dynamic splices unchanged (cannot be iterated)" {
+test "an iterated Dyn over a seq-access dynamic splices unchanged (cannot be iterated)" {
   let p = @core.DispatchPath::new(items=[
-    DynEach(
+    Dyn(
       producer=0,
       steps=[SeqAccessStep(seq_field="a", key_field="b")],
       interior=[],
-      key=KStr("k"),
+      key=Some(KStr("k")),
     ),
   ])
   assert_true(
@@ -71,8 +76,8 @@ test "nested dynamics: spliced steps carry the producer id for outer rewinds" {
   let p = @core.DispatchPath::new(items=[
     plain(FieldStep("root"), origin=9),
     plain(FieldStep("mid"), origin=5),
-    Dyn(producer=5, steps=[FieldStep("inner")], interior=[]),
-    Dyn(producer=9, steps=[FieldStep("outer")], interior=[5]),
+    Dyn(producer=5, steps=[FieldStep("inner")], interior=[], key=None),
+    Dyn(producer=9, steps=[FieldStep("outer")], interior=[5], key=None),
   ])
   assert_true(
     p.to_transaction_path().steps is [FieldStep("root"), FieldStep("outer")],
@@ -91,7 +96,7 @@ test "teleported path addresses the producer's data (end to end)" {
   let dispatch = @core.DispatchPath::new(items=[
     plain(FieldStep("panel"), origin=1),
     plain(FieldStep("toolbar"), origin=2),
-    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2]),
+    Dyn(producer=0, steps=[FieldStep("sheet")], interior=[1, 2], key=None),
     plain(FieldStep("title"), origin=0),
   ])
   let txn = dispatch.to_transaction_path()
@@ -106,13 +111,13 @@ test "compact drops frame-only plains, keeps Dyn markers, preserves origins" {
   let p = @core.DispatchPath::new(items=[
     plain(BindStep(binds=Map([]))),
     plain(EachRenderItStep(field="items", key=KInt(0)), origin=1),
-    Dyn(producer=0, steps=[FieldStep("x")], interior=[1]),
+    Dyn(producer=0, steps=[FieldStep("x")], interior=[1], key=None),
   ])
   assert_true(
     p.compact().items
     is [
       Plain(step=SeqStep(field="items", key=KInt(0)), origin=Some(1)),
-      Dyn(producer=0, steps=[FieldStep("x")], interior=[1]),
+      Dyn(producer=0, steps=[FieldStep("x")], interior=[1], key=None),
     ],
   )
 }

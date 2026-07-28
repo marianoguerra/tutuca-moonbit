@@ -118,7 +118,7 @@ pub(all) enum Value {
 /// the Value-backed Instance (component package) and user-defined typed
 /// structs. Instances live INSIDE Value so they flow through every
 /// Value-typed seam (binds, handler args, dynamic lookups, iterated seqs).
-/// Fns returned by obj_field / obj_render_handler and the Handler returned
+/// Fns returned by obj_field / obj_callable and the Handler returned
 /// by obj_handler are SELF-PRE-BOUND (they close over the concrete Self —
 /// the no-downcast analogue of JS late `this`) and ignore args element 0.
 /// Every method defaults to an empty/None answer.
@@ -133,7 +133,12 @@ pub(open) trait Obj {
   // (the JS unkIter default). Keyed entries use KStr keys ("sk" breadcrumbs),
   // indexed ones KInt ("si"); obj_item resolves the same keys for path lookup.
   fn obj_seq_entries(Self) -> Array[(PathKey, Value)]? = _
-  fn obj_render_handler(Self, name : String, ns : HandlerNamespace) -> Value = _ // alter bucket
+  // The named CALLABLE this instance exposes for evaluation: the render-time
+  // buckets (@when / @enrich-with / @loop-with) under Alter, and whatever
+  // answers a bare name otherwise. Distinct from obj_handler, which resolves a
+  // leaf-UPDATING handler in a dispatch bucket — different question, different
+  // answer, and the near-identical names used to hide that.
+  fn obj_callable(Self, name : String, ns : HandlerNamespace) -> Value? = _
   fn obj_handler(Self, bucket : HandlerBucket, name : String) -> Handler? = _ // dispatch buckets
   // What this instance DECLARES: the one method that makes the nine above
   // describable. Without it a holder of a bare `Value` can ask for a NAMED
@@ -190,8 +195,8 @@ impl Obj with fn obj_seq_entries(_self) {
 }
 
 ///|
-impl Obj with fn obj_render_handler(_self, _name, _ns) {
-  Null
+impl Obj with fn obj_callable(_self, _name, _ns) {
+  None
 }
 
 ///|
@@ -282,7 +287,6 @@ pub(open) trait Stack {
   fn lookup_dynamic(Self, String) -> Value = _
   fn lookup_field_raw(Self, String) -> Value = _
   fn lookup_method(Self, String) -> Value = _
-  fn lookup_type(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
 
@@ -308,11 +312,6 @@ impl Stack with fn lookup_field_raw(_self, _name) {
 
 ///|
 impl Stack with fn lookup_method(_self, _name) {
-  Null
-}
-
-///|
-impl Stack with fn lookup_type(_self, _name) {
   Null
 }
 

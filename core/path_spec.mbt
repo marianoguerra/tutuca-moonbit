@@ -93,13 +93,18 @@ impl Ctx with fn name(_self) {
 }
 
 ///|
-impl Ctx with fn send(_self, _name, _args) {
-
+/// `ctx.send` is `send_at_path` at the ctx's OWN path, and `ctx.bubble` is
+/// `bubble_at_path` there — which is what the transactor's ctx used to say
+/// twice, once as a default that did nothing and once as an implementation.
+/// Spelling them here leaves one pair of methods to implement, and no way for
+/// the relative and absolute forms to disagree about what "here" means.
+impl Ctx with fn send(self, name, args) {
+  self.send_at_path(self.path(), name, args)
 }
 
 ///|
-impl Ctx with fn bubble(_self, _name, _args) {
-
+impl Ctx with fn bubble(self, name, args) {
+  self.bubble_at_path(self.path(), name, args)
 }
 
 ///|
@@ -221,13 +226,6 @@ declare pub fn Path::resolve_chain(self : Path, root : Value) -> Array[Value]
 declare pub fn Path::pin_keys(self : Path, root : Value) -> Path
 
 ///|
-/// The abstract/dispatch projection: frame-only steps dropped (none exist
-/// yet — the hook is in place), EachRenderItStep abstracted to SeqStep.
-/// Ported for JS Path.compact parity; production callers all go through
-/// DispatchPath::compact — this one is exercised by tests only.
-declare pub fn Path::compact(self : Path) -> Path
-
-///|
 /// Flat StepKey list of the addressing steps (JS Path.toKeys). SeqAccessStep
 /// reports its seq field with no key (the key is live; pin_keys first for a
 /// concrete one) rather than being dropped, which would shift later indices.
@@ -241,16 +239,18 @@ declare pub fn Path::to_keys(self : Path) -> Array[StepKey]
 /// PRODUCER component (where the dynamic was defined), not at the consumer
 /// that wrote `<x render="*dyn">`, so `interior` lists the component ids
 /// crossed between producer and consumer, and `steps` is the producer's own
-/// path to the data. DynEach is its iterated form (the item lives at the
-/// producer's sequence field, keyed by `key`).
+/// path to the data. `key` is set when the dynamic is ITERATED (the item lives
+/// at the producer's sequence field under that key) — the one thing that used
+/// to be a whole second variant, `DynEach`, which differed in nothing else and
+/// so was matched alongside `Dyn` everywhere except the one line that reads
+/// the key.
 pub(all) enum DispatchStep {
   Plain(step~ : Step, origin~ : Int?)
-  Dyn(producer~ : Int, steps~ : Array[Step], interior~ : Array[Int])
-  DynEach(
+  Dyn(
     producer~ : Int,
     steps~ : Array[Step],
     interior~ : Array[Int],
-    key~ : PathKey
+    key~ : PathKey?
   )
 } derive(Debug, Eq)
 
@@ -291,7 +291,7 @@ declare pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath
 /// teleported — the trailing steps whose origin is interior to the
 /// producer..consumer span are dropped and the producer's own steps spliced
 /// in (stamped with the producer id, so a Dyn nested inside another
-/// teleports correctly). DynEach splices a keyed SeqStep for its last
+/// teleports correctly). An iterated Dyn splices a keyed SeqStep for its last
 /// FieldStep; a seq-access dynamic cannot be iterated and splices unchanged.
 declare pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path
 

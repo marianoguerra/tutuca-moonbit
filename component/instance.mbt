@@ -1,8 +1,9 @@
 // TypedInstance: the runtime instance of a typed-state component. The state
 // struct S is the source of truth; a parallel encoded fields map (S fields
 // plus spec-declared slots such as child components) serves the render/path/
-// Value seams. encode/decode run inside the core value stash so Obj/Fn
-// values held by S survive the Json round-trip losslessly.
+// Value seams. encode/decode are generated field by field, so an `Obj` or an
+// `Fn` held by S crosses unchanged — which a Json round trip, the bridge this
+// replaced, could not do at all.
 
 ///|
 /// The S-typed half of a component definition, erased behind Component's
@@ -35,50 +36,6 @@ priv struct TypedSpec[S] {
   /// one now, so there is nothing left to fall back to and the bridge is gone.
   encode : (S) -> Map[String, @tutuca.Value]
   decode : (Map[String, @tutuca.Value]) -> S?
-}
-
-///|
-/// Wrap the renderer's loopCtx Value (a Map of Fn-convention closures) into
-/// the typed LoopCtx a @loop-with handler receives.
-fn loop_ctx_of(v : @tutuca.Value) -> LoopCtx {
-  {
-    lookup: name => {
-      match v.field("lookup") {
-        Fn(f) => f([Null, Str(name)])
-        _ => Null
-      }
-    },
-    filter: (k, item, iter) => {
-      match v.field("filter") {
-        Fn(f) => f([Null, k, item, iter]).is_truthy()
-        _ => true
-      }
-    },
-  }
-}
-
-///|
-/// Encode a LoopWith back into the { iterData?, start?, end?, keys? } Map
-/// shape the renderer unpacks.
-fn loop_with_value(r : LoopWith) -> @tutuca.Value {
-  let m : Map[String, @tutuca.Value] = Map([])
-  match r.iter_data {
-    Some(v) => m["iterData"] = v
-    None => ()
-  }
-  match r.start {
-    Some(i) => m["start"] = Num(i.to_double())
-    None => ()
-  }
-  match r.end {
-    Some(i) => m["end"] = Num(i.to_double())
-    None => ()
-  }
-  match r.keys {
-    Some(ks) => m["keys"] = List(ks)
-    None => ()
-  }
-  Map(m)
 }
 
 ///|
@@ -127,9 +84,10 @@ const REUSE_FUEL = 64
 /// Keeping the old object is an optimization, so answering `false` is always
 /// safe — which is what lets this give up instead of paying for a deep scan.
 /// Fuel is spent only where the two sides do NOT already share structure: a
-/// list of child components rebuilt by the Json round trip compares
-/// element-wise in O(1) each (the value stash restores every `Obj` by
-/// reference) and costs one unit for the list itself, while a 1000-item list
+/// list of child components rebuilt by `encode` compares element-wise in O(1)
+/// each (the generated codec passes every `Obj` straight through, so the
+/// elements ARE the same objects) and costs one unit for the list itself,
+/// while a 1000-item list
 /// of plain maps would cost a deep map compare per element and bails out
 /// after the first handful. Identity is preserved exactly where preserving it
 /// is nearly free, which is also where it pays: the subtrees a transaction
@@ -173,10 +131,10 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
 ///|
 /// New instance from an updated state; slot fields (not part of S) carry over.
 ///
-/// Encoding round-trips through Json, which rebuilds every container even
-/// when nothing about it changed — and identity is exactly what Path
-/// copy-on-write reads. So each freshly encoded field is compared with the one
-/// it replaces and the OLD object kept when the two are equal; a
+/// Encoding builds every container fresh — a `list<s32>` field becomes a new
+/// `List` on each call, whatever the state did — and identity is exactly what
+/// Path copy-on-write reads. So each freshly encoded field is compared with
+/// the one it replaces and the OLD object kept when the two are equal; a
 /// rebuilt-but-equal field would otherwise propagate a new object all the way
 /// to the root. When no encoded field and no slot field changed, the ORIGINAL
 /// instance is returned, and the no-op reaches the transactor as "the root is
@@ -301,73 +259,75 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_with_field(self, name, v) {
 }
 
 ///|
-impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_render_handler(
-  self,
-  name,
-  ns,
-) {
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
   // Alter namespace: the four typed render-time buckets first, each adapted
   // to its directive's Fn-convention call shape (element 0 = this).
   if ns is Alter {
     match self.spec.when.get(name) {
       Some(f) =>
-        return Fn(args => {
-          let a = drop_this(args)
-          Bool(
-            f(
-              self.state,
-              a.get(0).unwrap_or(Null),
-              a.get(1).unwrap_or(Null),
-              a.get(2).unwrap_or(Null),
-            ),
-          )
-        })
+        return Some(
+          Fn(args => {
+            let a = drop_this(args)
+            Bool(
+              f(
+                self.state,
+                a.get(0).unwrap_or(Null),
+                a.get(1).unwrap_or(Null),
+                a.get(2).unwrap_or(Null),
+              ),
+            )
+          }),
+        )
       None => ()
     }
     match self.spec.enrich.get(name) {
       Some(f) =>
-        return Fn(args => {
-          match drop_this(args) {
-            [Map(binds), ..] as a => {
-              f(
-                self.state,
-                binds,
-                a.get(1).unwrap_or(Null),
-                a.get(2).unwrap_or(Null),
-                a.get(3).unwrap_or(Null),
-              )
-              Null
+        return Some(
+          Fn(args => {
+            match drop_this(args) {
+              [Map(binds), ..] as a => {
+                f(
+                  self.state,
+                  binds,
+                  a.get(1).unwrap_or(Null),
+                  a.get(2).unwrap_or(Null),
+                  a.get(3).unwrap_or(Null),
+                )
+                Null
+              }
+              _ => Null
             }
-            _ => Null
-          }
-        })
+          }),
+        )
       None => ()
     }
     match self.spec.enrich_scope.get(name) {
-      Some(f) => return Fn(_args => Map(f(self.state)))
+      Some(f) => return Some(Fn(_args => Map(f(self.state))))
       None => ()
     }
     match self.spec.loop_with.get(name) {
       Some(f) =>
-        return Fn(args => {
-          let a = drop_this(args)
-          loop_with_value(
-            f(
-              self.state,
-              a.get(0).unwrap_or(Null),
-              loop_ctx_of(a.get(1).unwrap_or(Null)),
-            ),
-          )
-        })
+        return Some(
+          Fn(args => {
+            let a = drop_this(args)
+            LoopWith::to_value(
+              f(
+                self.state,
+                a.get(0).unwrap_or(Null),
+                LoopCtx::of_value(a.get(1).unwrap_or(Null)),
+              ),
+            )
+          }),
+        )
       None => ()
     }
   }
   match self.spec.compute.get(name) {
-    Some(f) => Fn(args => f(self.state, drop_this(args)))
+    Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
     None =>
       match self.spec.generated.get(name) {
-        Some(g) => Fn(args => g(self, drop_this(args)))
-        None => Null
+        Some(g) => Some(Fn(args => g(self, drop_this(args))))
+        None => None
       }
   }
 }

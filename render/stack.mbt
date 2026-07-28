@@ -31,16 +31,7 @@ pub fn RenderStack::enter(
   binds : Map[String, @tutuca.Value],
   is_frame? : Bool = true,
 ) -> RenderStack {
-  let stack : RenderStack = {
-    it,
-    binds,
-    parent: Some(self),
-    view_names: self.view_names,
-    is_frame,
-    comps: self.comps,
-    dyn_binds: self.dyn_binds,
-    event: self.event,
-  }
+  let stack : RenderStack = { ..self, it, binds, parent: Some(self), is_frame }
   // only frames publish provides (JS: enter() calls _pushProvides when
   // isFrame — dynamic vars come from component boundaries, not scopes)
   if is_frame {
@@ -64,16 +55,7 @@ fn RenderStack::push_provides(self : RenderStack) -> RenderStack {
   for _, p in comp.provide {
     binds[p.key] = p.val.eval(self)
   }
-  {
-    it: self.it,
-    binds: self.binds,
-    parent: self.parent,
-    view_names: self.view_names,
-    is_frame: self.is_frame,
-    comps: self.comps,
-    dyn_binds: Some({ binds, parent: self.dyn_binds }),
-    event: self.event,
-  }
+  { ..self, dyn_binds: Some({ binds, parent: self.dyn_binds }) }
 }
 
 ///|
@@ -83,16 +65,7 @@ pub fn RenderStack::push_view_name(
 ) -> RenderStack {
   let view_names = self.view_names.copy()
   view_names.push(name)
-  {
-    it: self.it,
-    binds: self.binds,
-    parent: self.parent,
-    view_names,
-    is_frame: self.is_frame,
-    comps: self.comps,
-    dyn_binds: self.dyn_binds,
-    event: self.event,
-  }
+  { ..self, view_names, }
 }
 
 ///|
@@ -161,7 +134,7 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_method(self, name) {
 /// bucket on instances, plain Fn fields on the Map fallback.
 pub impl @tutuca.Stack for RenderStack with fn get_handler_for(self, name, ns) {
   match self.it {
-    Obj(o) => o.obj_render_handler(name, ns)
+    Obj(o) => o.obj_callable(name, ns).unwrap_or(Null)
     _ =>
       match self.it.field(name) {
         Fn(_) as f => f
@@ -212,4 +185,3 @@ pub impl @tutuca.Stack for RenderStack with fn lookup_dynamic(self, name) {
       }
   }
 }
-// lookup_type stays at the Null default (Component is not a Value).

@@ -114,7 +114,7 @@ No changes to `render/`, `vdom/`, or `transactor/` are needed.
   `tcomp.seq_entries`; `obj_handler(bucket, name)` returns a `Handler` that
   calls `tcomp.dispatch(...)` and wraps a returned new handle in a fresh
   `DynObj` (superseded handle queued for drop post-settle);
-  `obj_render_handler` → `tcomp.call_method`; `obj_eq` → `tcomp.eq`;
+  `obj_callable` → `tcomp.call_method`; `obj_eq` → `tcomp.eq`;
   `obj_debug` → `tcomp.to_json`.
 - **Lifecycle**: `load(url)` → `tcomp.load(load_id, url)`; the bridge
   `import()`s the jco ESM, `instantiate()`s it, and calls back
@@ -279,7 +279,7 @@ All deferred items landed and verified in Chrome (plus 7 memdom tests and
   responds; the response dispatches the guest's `response` bucket handler
   with `[result, error]` — browser demo doubles 7 → 14.
 - **Methods in views**: `@text="$label"` evaluates through
-  `obj_render_handler`/`call-method` live in the wasm demo.
+  `obj_callable`/`call-method` live in the wasm demo.
 - **List fields**: the guest's `history` crosses as an arena list and
   renders host-side with `@each=".history" @text="@value"`.
 - **Nested same-bundle children**: a guest `Pair` creates two child

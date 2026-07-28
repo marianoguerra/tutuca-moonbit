@@ -603,11 +603,11 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let t = comp.make(Map([]))
   guard t is Obj(o)
   // @when: Fn-convention [this, key, value, iterData] -> Bool
-  guard o.obj_render_handler("keep", Alter) is Fn(keep)
+  guard o.obj_callable("keep", Alter) is Some(Fn(keep))
   assert_eq(keep([Null, Num(0), Str("cat")]), Bool(true))
   assert_eq(keep([Null, Num(0), Str("dog")]), Bool(false))
   // @enrich-with: mutates the binds map, return ignored
-  guard o.obj_render_handler("annotate", Alter) is Fn(annotate)
+  guard o.obj_callable("annotate", Alter) is Some(Fn(annotate))
   let binds : Map[String, @tutuca.Value] = {
     "key": Num(0),
     "value": Str("cat"),
@@ -615,10 +615,10 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let _ = annotate([Null, Map(binds), Num(0), Str("cat"), Null])
   assert_eq(binds.get("len"), Some(Num(3)))
   // scope form: called with no args, returns the binds map
-  guard o.obj_render_handler("derived", Alter) is Fn(derived)
+  guard o.obj_callable("derived", Alter) is Some(Fn(derived))
   assert_eq(derived([Null]), Map({ "upper": Str("A") }))
   // @loop-with: returns the {start, end} plan the renderer unpacks
-  guard o.obj_render_handler("page", Alter) is Fn(page)
+  guard o.obj_callable("page", Alter) is Some(Fn(page))
   assert_eq(
     page([Null, List([]), Null]),
     Map({ "start": Num(1), "end": Num(3) }),

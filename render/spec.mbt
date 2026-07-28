@@ -103,7 +103,7 @@ declare pub fn RenderStack::push_view_name(
 
 ///|
 /// Value lookups against the binds chain / current item; lookup_dynamic
-/// walks the provide frames; lookup_type stays at the Null default.
+/// walks the provide frames.
 declare pub impl @tutuca.Stack for RenderStack
 
 ///|

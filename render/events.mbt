@@ -75,7 +75,7 @@ fn plain_of(step : @tutuca.Step?, cid : Int) -> @tutuca.DispatchStep? {
 ///|
 /// Resolve the dispatch item one collected NodeRef contributes (JS
 /// StepCtx.resolveNode().toPathStep(ctx)). Dynamic render targets produce
-/// Dyn/DynEach markers whose `interior` arrays start empty — the caller
+/// Dyn markers whose `interior` arrays start empty — the caller
 /// seeds and grows them while walking (JS pendingDyns).
 fn ref_step(
   comps : &Boundaries,
@@ -105,7 +105,12 @@ fn ref_step(
           match comps.dyn_producer(cid, name) {
             Some(dp) =>
               Some(
-                DynEach(producer=dp.producer, steps=dp.steps, interior=[], key~),
+                Dyn(
+                  producer=dp.producer,
+                  steps=dp.steps,
+                  interior=[],
+                  key=Some(key),
+                ),
               )
             None => None
           }
@@ -118,7 +123,9 @@ fn ref_step(
         Dyn(name) =>
           match comps.dyn_producer(cid, name) {
             Some(dp) =>
-              Some(Dyn(producer=dp.producer, steps=dp.steps, interior=[]))
+              Some(
+                Dyn(producer=dp.producer, steps=dp.steps, interior=[], key=None),
+              )
             None => None
           }
         _ => plain_of(base_step(d.val, refs[i].key), cid)
@@ -217,7 +224,7 @@ pub fn[N : @vdom.DomWalk] from_node_and_event_name(
         Some(item) => {
           items.push(item)
           match item {
-            Dyn(producer~, interior~, ..) | DynEach(producer~, interior~, ..) => {
+            Dyn(producer~, interior~, ..) => {
               interior.push(cid) // seed with the consumer cid
               pending.push((producer, interior))
             }
