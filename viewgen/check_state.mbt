@@ -450,6 +450,5 @@ fn Checker::node(
       self.node(d.node, { self_ty: item, item })
     }
     MacroCall(d) => if d.node is Some(n) { self.node(n, sc) }
-    RenderOnce(d) => self.node(d.node, sc)
   }
 }

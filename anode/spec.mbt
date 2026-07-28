@@ -185,14 +185,6 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
-  /// Renderer memo key for this element's evaluated attributes, minted by
-  /// `optimize_node` for a `ConstAttrs` element and 0 for everything else.
-  /// Same contract as a `RenderOnce` id: a process-global int, minted at load
-  /// time because the renderer keys a per-app cache on it, and meaningless
-  /// without that cache. Constant attributes evaluate to the same map on
-  /// every pass, so the renderer can hand the SAME map to every `h` call and
-  /// let `diff_props`'s `physical_equal` fast path answer in O(1).
-  mut attrs_id : Int
 } derive(Debug)
 
 ///|
@@ -295,18 +287,6 @@ pub(all) enum ANode {
   Scope(WrapData)
   Each(EachData)
   MacroCall(MacroData)
-  /// optimize() marker: subtree is constant, render result may be cached.
-  RenderOnce(RenderOnceData)
-} derive(Debug)
-
-///|
-/// A constant subtree marked for render-result memoization (JS
-/// RenderOnceNode). `id` is a process-global marker identity assigned at
-/// optimize time; the renderer keys its cache on it (JS memoizes on the
-/// node instance instead). Tests must not assert absolute ids.
-pub(all) struct RenderOnceData {
-  node : ANode
-  id : Int
 } derive(Debug)
 
 ///|
@@ -322,9 +302,6 @@ declare fn ANode::condense_whitespace(
   self : ANode,
   replacement? : String = "",
 ) -> Unit
-
-///|
-declare fn ANode::is_constant(self : ANode) -> Bool
 
 ///|
 /// Stamp a data-* attribute on the node's rendered output carrier(s):
@@ -343,11 +320,6 @@ declare fn ANode::set_data_attr(
 declare fn ANode::wrap_node(self : ANode, node : ANode) -> Unit
 
 ///|
-/// Recursively replace constant subtrees with RenderOnce markers (in place
-/// for children; use optimize_node for the root).
-declare fn ANode::optimize(self : ANode) -> Unit
-
-///|
 /// Collect the class names a margaui-style scanner can see (the port of JS
 /// ParseCtxClassSetCollector, src/util/parsectx.js): literal `class="…"`
 /// values split on whitespace, plus — for dynamic `:class` and
@@ -356,11 +328,6 @@ declare fn ANode::optimize(self : ANode) -> Unit
 /// macro-expanded classes are included; runtime-composed class strings are
 /// invisible (JS handles those with a never-rendered decoy view).
 declare pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit
-
-///|
-/// optimize() for a tree root: returns RenderOnce(node) when the whole node
-/// is constant, else optimizes in place and returns it.
-declare pub fn optimize_node(node : ANode) -> ANode
 
 ///|
 /// A single child stays bare; several become a Fragment (JS maybeFragment).
@@ -560,18 +527,11 @@ pub struct ParseContext {
   /// independent of the value layer's constructor).
   mut val_ctx : @tutuca.ParseCtx?
   mut current_tag : String?
-  cache_const_nodes : Bool
   handler : &ParseHandler
 }
 
 ///|
-/// `cache_const_nodes=false` skips the constant-subtree optimization, which
-/// the ahead-of-time generator needs: RenderOnce ids are process-global
-/// renderer memo keys, so they must be minted at load time, not baked in.
-declare pub fn ParseContext::new(
-  handler? : &ParseHandler,
-  cache_const_nodes? : Bool,
-) -> ParseContext
+declare pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext
 
 ///|
 /// New context for expanding macro `name`: shared registries and handler,
@@ -636,8 +596,7 @@ pub(open) trait MacroScope {
 
 ///|
 /// A named template (JS View, parse side: no render). compile() parses the
-/// raw view, stamps data-cid/data-vid, expands macros, and — when the context
-/// allows — optimizes constant subtrees.
+/// raw view, stamps data-cid/data-vid and expands macros.
 pub(all) struct View {
   name : String
   raw_view : String
@@ -660,7 +619,7 @@ pub(all) struct View {
 ///|
 /// Rebuild the compile context of an ahead-of-time compiled view: `nodes` is
 /// recovered from `root`, `events` is the generator's table in registration
-/// order. Call before the tree is optimized.
+/// order.
 declare fn ParseContext::from_ir(
   root : ANode,
   events : Array[NodeEvents],

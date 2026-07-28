@@ -46,7 +46,7 @@ Three principles, in order of consequence:
 | Component = views/styles only, no host-visible fields | `Component::for_type` (`component/spec.mbt`) — "fields, buckets and methods live on the struct itself" |
 | Opaque state uniform to the host | one host struct `DynObj { comp_id, bundle, handle }` implementing `&Obj` (`core/spec.mbt`) wraps every guest instance |
 | Handlers take self, return self | `Handler((Array[Value], &Ctx) -> &PathNode?)` (`core/path_spec.mbt`) is already self-pre-bound and returns the new self; the guest's new resource handle wraps into a fresh `DynObj` |
-| Change detection / re-render / cache invalidation | a fresh `DynObj` is a new physical identity — the COW model everything already keys on |
+| Change detection / re-render | a fresh `DynObj` is a new physical identity — the COW model everything already keys on |
 | Render reads | `Obj::obj_field` is a lazy per-name read; only fields the views actually evaluate cross the boundary |
 | Mounting a foreign bundle | the storybook precedent (`storybook/ui/engine.mbt`): register into a child scope, seed the instance `Value` into a field, render with `<x render=".slot">` — resolution is by component id in the shared registry |
 

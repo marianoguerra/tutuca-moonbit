@@ -86,10 +86,10 @@ priv struct TypedInstance[S] {
   spec : TypedSpec[S]
   state : S
   fields : Map[String, @tutuca.Value]
-  // Memoized `Obj(self)`. Every seam downstream of an instance — the render
-  // cache, Path copy-on-write, the transactor's root-swap check — compares
-  // Values by IDENTITY, and each `Obj(self)` cast allocates a fresh box. One
-  // stable Value per instance is what lets an unchanged instance still look
+  // Memoized `Obj(self)`. The seams downstream of an instance — Path
+  // copy-on-write, the transactor's root-swap check — compare Values by
+  // IDENTITY, and each `Obj(self)` cast allocates a fresh box. One stable
+  // Value per instance is what lets an unchanged instance still look
   // unchanged after a round trip through the value world.
   mut boxed : @tutuca.Value?
 }
@@ -174,13 +174,13 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
 /// New instance from an updated state; slot fields (not part of S) carry over.
 ///
 /// Encoding round-trips through Json, which rebuilds every container even
-/// when nothing about it changed — and identity is exactly what the render
-/// cache and Path copy-on-write read. So each freshly encoded field is
-/// compared with the one it replaces and the OLD object kept when the two are
-/// equal; a rebuilt-but-equal list would otherwise invalidate a subtree that
-/// did not move. When no encoded field and no slot field changed, the
-/// ORIGINAL instance is returned, and the no-op reaches the transactor as
-/// "the root is the same object": no re-render is scheduled.
+/// when nothing about it changed — and identity is exactly what Path
+/// copy-on-write reads. So each freshly encoded field is compared with the one
+/// it replaces and the OLD object kept when the two are equal; a
+/// rebuilt-but-equal field would otherwise propagate a new object all the way
+/// to the root. When no encoded field and no slot field changed, the ORIGINAL
+/// instance is returned, and the no-op reaches the transactor as "the root is
+/// the same object": no re-render is scheduled.
 fn[S] TypedInstance::with_state(
   self : TypedInstance[S],
   s : S,

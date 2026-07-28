@@ -49,19 +49,11 @@ pub impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
 }
 
 ///|
-pub fn RenderCtx::new(
-  view_resolver? : &ViewResolver,
-  render_once? : Map[Int, @vdom.Vdom] = Map([]),
-  render_cache? : RenderCache,
-  const_attrs? : Map[Int, Map[String, @vdom.AttrValue]] = Map([]),
-) -> RenderCtx {
+pub fn RenderCtx::new(view_resolver? : &ViewResolver) -> RenderCtx {
   {
     view_resolver: match view_resolver {
       Some(r) => r
       None => NullViewResolver::{  }
     },
-    render_once,
-    render_cache,
-    const_attrs,
   }
 }

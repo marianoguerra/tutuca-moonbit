@@ -292,7 +292,6 @@ fn walk_node(
         Some(n) => walk_node(n, c, root_scope, in_loop)
         None => ()
       }
-    RenderOnce(d) => walk_node(d.node, c, root_scope, in_loop)
   }
 }
 

@@ -91,6 +91,5 @@ pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit {
         Some(n) => n.collect_classes(into)
         None => ()
       }
-    RenderOnce(m) => m.node.collect_classes(into)
   }
 }

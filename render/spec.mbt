@@ -10,8 +10,8 @@
 //    layer later.
 //  - ViewResolver — TEMPORARY: stands in for component/view lookup
 //    (stack.lookupBestView + registry); replaced when components land.
-//  - Event wiring, §Comp§/§Each§/§Scope§ meta comments, @loop-with iterData,
-//    RenderOnce memoization — deferred (see Non-goals in render-plan.md).
+//  - Event wiring, §Comp§/§Each§/§Scope§ meta comments, @loop-with iterData
+//    — deferred (see Non-goals in render-plan.md).
 
 ///|
 /// The render stack (JS Stack): the current item (fields/methods/handlers
@@ -139,34 +139,20 @@ pub(all) struct ViewMap {
 declare pub impl ViewResolver for ViewMap
 
 ///|
-/// Per-render context (JS Renderer instance state, minus comps). `render_once`
-/// memoizes constant subtrees by their RenderOnce marker id (JS memoizes on
-/// the RenderOnceNode instance). Hand the SAME map across render passes to get
-/// JS's cross-render caching; a fresh map (the default) caches only within one
-/// pass. Const subtrees never suppress, so only Some results are stored.
+/// Per-render context (JS Renderer instance state, minus comps).
+///
+/// Rendering carries no memo of any kind: every pass rebuilds every subtree and
+/// every attribute map from the value tree, and `@vdom`'s differ is what keeps
+/// the DOM writes proportional to the change. The port used to memoize here
+/// three ways (component render sites keyed on value identity, constant
+/// subtrees, constant attribute maps); all three were removed while the core
+/// design is still moving, to be reintroduced once it settles.
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
-  render_once : Map[Int, @vdom.Vdom]
-  /// Component render-site cache (JS _rValComp DomCache). None = uncached (the
-  /// JS NullDomCache); the App supplies one persisted across passes.
-  render_cache : RenderCache?
-  /// Evaluated attribute maps for elements whose attributes are constant,
-  /// keyed by `DomData::attrs_id`. Same lifetime contract as `render_once`:
-  /// hand the SAME map across passes and every render of a static-attribute
-  /// element reuses one `Map[String, AttrValue]`, so `diff_props` short-
-  /// circuits on `physical_equal` rather than hashing every key twice. A
-  /// fresh map (the default) memoizes only within one pass, which still
-  /// removes the per-element rebuild.
-  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
 }
 
 ///|
-declare pub fn RenderCtx::new(
-  view_resolver? : &ViewResolver,
-  render_once? : Map[Int, @vdom.Vdom],
-  render_cache? : RenderCache,
-  const_attrs? : Map[Int, Map[String, @vdom.AttrValue]],
-) -> RenderCtx
+declare pub fn RenderCtx::new(view_resolver? : &ViewResolver) -> RenderCtx
 
 ///|
 /// A `§{json}§` boundary marker parsed from / emitted into a comment node.

@@ -23,16 +23,6 @@ pub struct App[N] {
   mut drag : DragState[N]?
   /// the element currently carrying data-draggingover
   mut cur_drag_over : N?
-  /// RenderOnce memo, persisted across render passes (JS RenderOnceNode's
-  /// per-view cache) so constant subtrees are built once for the app's life.
-  render_once : Map[Int, @vdom.Vdom]
-  /// Evaluated attributes of every static-attribute element, persisted across
-  /// passes so each one is built once for the app's life and every render
-  /// hands the differ the SAME map.
-  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
-  /// Component render-site cache (JS _rValComp DomCache), persisted across
-  /// passes; generation-rolled each render so unchanged subtrees are reused.
-  render_cache : @render.RenderCache
 }
 
 ///|
@@ -56,9 +46,6 @@ pub fn[N : @vdom.DomWalk] App::new(
     render_count: 0,
     drag: None,
     cur_drag_over: None,
-    render_once: Map([]),
-    const_attrs: Map([]),
-    render_cache: @render.RenderCache::new(),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -117,9 +104,6 @@ pub fn[N : @vdom.DomWalk] App::start(self : App[N]) -> Unit {
 pub fn[N] App::destroy(self : App[N]) -> Unit {
   self.transactor.clear_subscriptions()
   self.prev = None
-  self.render_once.clear()
-  self.const_attrs.clear()
-  self.render_cache.clear()
   self.drag = None
   self.cur_drag_over = None
 }
@@ -177,15 +161,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   self.render_count += 1
   guard self.transactor.root.as_value() is Some(root_val) else { return }
   let stack = @render.RenderStack::new(root_val, comps=self.scope.comps)
-  // Roll the render cache to a fresh generation: subtrees reused this pass are
-  // promoted, anything untouched falls out after the next pass.
-  self.render_cache.next_generation()
-  let ctx = @render.RenderCtx::new(
-    view_resolver=self.scope.comps,
-    render_once=self.render_once,
-    const_attrs=self.const_attrs,
-    render_cache=self.render_cache,
-  )
+  let ctx = @render.RenderCtx::new(view_resolver=self.scope.comps)
   match @render.render_root(root_val, stack, ctx) {
     Some(vdom) => {
       let prev = self.prev

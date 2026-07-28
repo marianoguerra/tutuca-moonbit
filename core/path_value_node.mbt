@@ -32,8 +32,8 @@ pub impl PathNode for Value with fn with_field(self, name, v) {
       // Writing back the very object already stored leaves the container
       // structurally identical, so hand back THIS one: the spine rebuild
       // above collapses level by level and the root keeps its identity,
-      // which is what the render cache and the transactor's change check
-      // both read as "nothing happened".
+      // which is what the transactor's change check reads as "nothing
+      // happened".
       if m.get(name) is Some(old) && physical_equal(old, value) {
         return Some(self as &PathNode)
       }

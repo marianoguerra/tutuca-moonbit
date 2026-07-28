@@ -13,9 +13,7 @@
 
 ///|
 /// Place every value-bearing node at its own node_id, growing `into` as
-/// needed. RenderOnce ids belong to the renderer's memo table, not to this
-/// array, so they are not collected (and cannot occur before optimization
-/// anyway).
+/// needed.
 fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
   fn put(id : Int) {
     while into.length() <= id {
@@ -58,7 +56,6 @@ fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
         Some(n) => collect_registered(n, into)
         None => ()
       }
-    RenderOnce(d) => collect_registered(d.node, into)
   }
 }
 
@@ -66,8 +63,6 @@ fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
 /// Rebuild the compile context of an ahead-of-time compiled view: `nodes` is
 /// recovered from `root`, `events` is the generator's table in registration
 /// order (its positions ARE the ids elements carry in `data-eid`).
-///
-/// Call before the tree is optimized — `View::from_ir` does.
 fn ParseContext::from_ir(
   root : ANode,
   events : Array[NodeEvents],
@@ -90,7 +85,6 @@ fn ParseContext::from_ir(
     frame: None,
     val_ctx: None,
     current_tag: None,
-    cache_const_nodes: true,
     handler: WarnHandler::{  },
   }
 }
@@ -107,8 +101,8 @@ pub fn events_of(handlers : Array[Array[NodeEvent]]) -> Array[NodeEvents] {
 ///|
 /// A view whose tree was compiled ahead of time. Everything `View::compile`
 /// would do EXCEPT stamping the component id happens here — the data-vid
-/// stamp and the constant-subtree optimization — because those depend only on
-/// the view, while data-cid depends on which component instance adopts it.
+/// stamp — because that depends only on the view, while data-cid depends on
+/// which component instance adopts it.
 ///
 /// `compile` on such a view therefore only stamps data-cid, and is idempotent.
 pub fn View::from_ir(
@@ -119,6 +113,5 @@ pub fn View::from_ir(
 ) -> View {
   let ctx = ParseContext::from_ir(root, events_of(handlers))
   root.set_data_attr("data-vid", LStr(name))
-  let anode = if ctx.cache_const_nodes { optimize_node(root) } else { root }
-  { name, raw_view: "", style, anode: Some(anode), ctx: Some(ctx), parse: None }
+  { name, raw_view: "", style, anode: Some(root), ctx: Some(ctx), parse: None }
 }

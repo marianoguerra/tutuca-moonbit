@@ -264,8 +264,9 @@ declare pub fn Path::lookup(self : Path, root : &PathNode) -> &PathNode?
 /// Casting a `Value` to `&PathNode` allocates, so two boxes carrying the
 /// SAME `Value` are not `physical_equal` — compare what they carry instead.
 /// This is the no-change signal every copy-on-write caller reads: `set_value`
-/// returns the untouched spine, and identity is what the render cache and the
-/// transactor's root-swap check are keyed on.
+/// returns the untouched spine, and identity is what the transactor's
+/// root-swap check is keyed on — an update that writes what was already there
+/// leaves the root the same object, so no re-render is scheduled at all.
 declare pub fn same_node(a : &PathNode, b : &PathNode) -> Bool
 
 ///|

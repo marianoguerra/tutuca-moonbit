@@ -101,8 +101,8 @@ test "a field set to the value it already holds returns the same instance" {
 test "an untouched field keeps its exact Value object across a change" {
   // `rename` rewrites `title` only. `items` and `tags` are rebuilt by the Json
   // round trip, so the ONLY reason they can still be the same objects is the
-  // reuse-if-equal comparison — and that is what lets the render cache skip
-  // the subtrees that render them.
+  // reuse-if-equal comparison — and that is what stops a rewrite of `title`
+  // from propagating a brand-new root and scheduling a re-render.
   let v = seeded()
   guard v is Obj(before)
   guard before.obj_field("items") is Some(items_before)

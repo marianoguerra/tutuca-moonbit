@@ -3,10 +3,7 @@
 // replaced by html_adapter.mbt.
 
 ///|
-pub fn ParseContext::new(
-  handler? : &ParseHandler,
-  cache_const_nodes? : Bool = true,
-) -> ParseContext {
+pub fn ParseContext::new(handler? : &ParseHandler) -> ParseContext {
   let h : &ParseHandler = match handler {
     Some(h) => h
     None => WarnHandler::{  }
@@ -19,7 +16,6 @@ pub fn ParseContext::new(
     frame: None,
     val_ctx: None,
     current_tag: None,
-    cache_const_nodes,
     handler: h,
   }
 }
@@ -39,7 +35,6 @@ pub fn ParseContext::enter_macro(
     frame: Some({ macro_name: name, macro_vars: vars, macro_slots: slots }),
     val_ctx: None,
     current_tag: None,
-    cache_const_nodes: true,
     handler: self.handler,
   }
 }

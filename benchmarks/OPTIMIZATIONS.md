@@ -14,7 +14,7 @@ faster".
 Every entry leaves output unchanged. For the view pipeline that means the
 workload checksums (`viewparse_bench_test.mbt` pins them) plus `cmd/dev --
 gen-views` followed by `git diff --exit-code`; for the runtime it means the full
-823-test suite (823 default / 821 native / 8 js browser), a good
+test suite (890 default / 890 native / 8 js browser), a good
 number of which are DOM snapshots.
 
 # The view pipeline
@@ -181,6 +181,9 @@ number of them DOM snapshots carrying these comments) checks thoroughly.
 Nothing regressed outside the two known-noisy benches.
 
 ## 5. `site_cache_key` written, not interpolated — big updates −4%
+
+**Retired by #8** — the render cache this keyed is gone, and so is the function.
+Kept for the record.
 
 Same shape as #4, one layer up: the render cache's per-slot key was an
 interpolated string built once per render site per pass, and it called
@@ -357,6 +360,10 @@ here fails a test rather than only showing up as a slower number.
 
 ## 7. Constant attributes evaluated once — updates −5.6% to −17.6%
 
+**Retired by #8** — the memo and its `attrs_id` key are gone; every element
+rebuilds its attribute map again. Kept for the record, and because the
+`@vdom.h`-adopts-rather-than-copies half of it survives.
+
 `eval_attrs` walked `ConstAttrs(m)` and built a fresh
 `Map[String, AttrValue]` per element per render; `@vdom.h` then copied it into
 a second map. For a constant attribute list both maps hold the same entries on
@@ -409,18 +416,87 @@ are one saved-baseline A/B rather than the interleaved 3× this file asks for on
 a change under 5%. Every kept number is well over that; re-measure both suites
 on wasm-gc before treating the entry as complete.
 
+## 8. All render caching removed — updates +23% to +150%, deliberately
+
+This entry runs the other way: a change that **costs** time and was kept anyway.
+Rendering memoized three ways — the component render-site cache keyed on value
+identity (`render/cache.mbt`), the `RenderOnce` constant-subtree memo, and the
+constant-attribute memo of #7 — and all three are gone. #5 and #7 are retired
+with them; #6 is NOT (see below).
+
+The reason is not performance. The three caches reached into the AST (a
+`RenderOnce` variant every tree walker had to see through, a `mut attrs_id` on
+`DomData`), into the view pipeline (`cache_const_nodes`, which made `viewgen`
+parse each view two different ways — the divergence this file's "Not yet tried"
+names as the blocker for sharing one parse), and into `RenderCtx`, which was a
+four-field bag of memos with a "hand the SAME map across passes" lifetime
+contract. That is a lot of structure to hold still while the core design is
+still moving. They can come back, keyed on whatever the design settles on.
+
+Measured before deleting anything, by flipping the caches off at their existing
+switches (`cache_const_nodes`, and `RenderCtx.render_cache`'s `None` default),
+so each half could be attributed separately. The landed numbers reproduce column
+A to within noise.
+
+wasm-gc, release, `patch_bench_test.mbt`, ±1–5%:
+
+| Workload | before | after | | RenderCache alone | RenderOnce+attrs alone |
+|---|---|---|---|---|---|
+| `patch noop todo 10` | 14.45 µs | 14.27 µs | −1.2% | −2.1% | −1.0% |
+| `patch noop todo 1000` | 15.37 µs | 14.09 µs | −8.3% | −8.6% | −6.8% |
+| `patch counter` | 17.62 µs | 21.61 µs | +22.6% | −9.8% | +24.5% |
+| `patch toggle todo 10` | 74.06 µs | 116.50 µs | +57.3% | +30.1% | +19.7% |
+| `patch toggle todo 100` | 450.94 µs | 973.09 µs | +115.8% | +67.8% | +29.3% |
+| `patch toggle todo 1000` | 9.27 ms | 19.50 ms | +110.4% | +58.9% | +41.0% |
+| `patch add+remove todo 10` | 80.56 µs | 108.90 µs | +35.2% | +10.2% | +20.9% |
+| `patch add+remove todo 100` | 623.95 µs | 971.07 µs | +55.6% | +11.7% | +29.9% |
+| `patch add+remove todo 1000` | 15.22 ms | 22.99 ms | +51.1% | +9.3% | +39.2% |
+| `patch move json 8x4` | 162.63 µs | 406.58 µs | +150.0% | +86.3% | +9.1% |
+| `patch page people 1000` | 262.82 µs | 281.92 µs | +7.3% | +4.1% | +9.8% |
+| `patch refilter people 100` | 285.17 µs | 294.59 µs | +3.3% | −3.3% | +5.8% |
+| `patch refilter people 1000` | 1.39 ms | 1.40 ms | +0.7% | −3.6% | 0.0% |
+| `patch switch view` | 48.74 µs | 54.58 µs | +12.0% | −2.1% | +16.1% |
+| `find .checkbox todo 1000` | 3.61 µs | 3.51 µs | −2.8% | −6.9% | −0.3% |
+| `find .next people 1000` | 27.64 µs | 25.47 µs | −7.9% | −9.7% | −1.4% |
+
+Four things the split says, worth keeping for whoever reintroduces caching:
+
+1. **The two halves are nearly independent** — A ≈ B + C throughout, so neither
+   was masking the other.
+2. **`RenderOnce` + const-attrs is never a net cost.** Positive on every
+   workload it touches, flat where it does not apply. It is also the half that
+   carried nearly all the structural complexity, which is the awkward part of
+   this entry.
+3. **The render-site cache is a net LOSS where it does not hit**: `counter`
+   −9.8%, `refilter people` −3.3/−3.6%, both mount-heavy `find` benches
+   −6.9/−9.7%. Building `site_cache_key` and missing is pure overhead, and
+   holding two generations of ~1000 entries costs GC on passes that never
+   render — which is why `noop todo 1000` is 8.6% *faster* without it. A
+   reintroduced cache should be able to decline.
+4. **#6 is untouched.** Both `noop` rows are flat-to-faster in every column: the
+   no-op win comes from the transactor's root-identity check, not from any
+   render cache. Everything that feeds it — `TypedInstance`'s memoized box,
+   `REUSE_FUEL`/`reuse_equal`, `with_field`/`with_item` returning the untouched
+   container — stays, and `component/identity_test.mbt` still pins it.
+
+Output unchanged: 890 default / 890 native / 8 js green, `gen-views` drift-clean
+(the markers were minted at load time and never reached a `*_view_gen.mbt`).
+
 ## Not yet tried
 
-Ranked by what the profiles say is left.
+Ranked by what the profiles say is left. **#8 removed the render caches, so the
+`cache_const_nodes` divergence named below is gone — `viewgen`'s three parses
+now produce identical trees, and sharing one is unblocked.**
 
 In the update path (the biggest numbers on the board):
 
 - **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
-  per pass. #7 took the CONSTANT half of this — those elements now share one
-  map and hit `physical_equal`. What is left is elements with dynamic
-  attributes, where the map really is rebuilt: comparing the two entry lists
-  directly would skip most of the hashing. Reprofile before chasing it.
+  per pass. #7 took the CONSTANT half of this, and #8 gave it back — EVERY
+  element rebuilds its map now, so this is the whole cost again and the biggest
+  single number on the board. Comparing the two entry lists directly, rather
+  than hashing both ways, is the version of this that does not need a cache.
+  Reprofile first.
 - **State through `Json`**: typed state derives `ToJson`/`FromJson`; worth
   confirming an update does not round-trip through it. (Part of what the 2.2% in
   `stringify` was is now gone with #4 — reprofile before chasing this.)
@@ -433,8 +509,9 @@ In the view pipeline:
 - **`Tokenizer::new` per view** (6.7% self on the many-views corpus). It is
   `input.to_array()` plus setup in the vendored `moonbit-community/html`; the
   view pipeline calls it once per view per pass. Fixing it means either fewer
-  passes (one parse shared between `view_surface` and `compiled_tree`, which
-  currently differ deliberately in `cache_const_nodes`) or an upstream change.
+  passes — one parse shared between `view_surface` and `compiled_tree`, which
+  #8 unblocked by removing the `cache_const_nodes` divergence that made the two
+  produce different trees — or an upstream change.
 - **`split_file`'s second `Array[Char]`** (`String::to_array`, 4.3–5.7%). The
   file is copied to an array twice: once here for slicing, once inside
   `Tokenizer::new`. Sharing one would need the tokenizer to expose its own, or

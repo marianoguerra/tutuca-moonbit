@@ -95,10 +95,10 @@ fn ShellSpec::explorer_of(
 priv struct ShellInst {
   spec : ShellSpec
   fields : Map[String, @tutuca.Value]
-  // Memoized `Obj(self)`, for the same reason TypedInstance memoizes it: every
-  // seam downstream compares Values by IDENTITY, and each cast allocates a
+  // Memoized `Obj(self)`, for the same reason TypedInstance memoizes it: the
+  // seams downstream compare Values by IDENTITY, and each cast allocates a
   // fresh box, so an unchanged instance handed out twice would look like two
-  // different ones to the render cache and the transactor's root-swap check.
+  // different ones to the transactor's root-swap check.
   mut boxed : @tutuca.Value?
 }
 

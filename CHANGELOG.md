@@ -66,6 +66,44 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `switch view` −13.4%, `page people 1000` −11.9%, `refilter people 100`
   −11.9%.
 
+### Removed (BREAKING)
+
+- **All render caching.** Rendering memoized three ways and now memoizes
+  nothing: the component render-site cache keyed on value identity
+  (`@render.RenderCache`), the `RenderOnce` constant-subtree memo, and the
+  constant-attribute memo added earlier in this same Unreleased section. Every
+  pass rebuilds every subtree and every attribute map from the value tree, and
+  `@vdom`'s differ is what keeps the DOM writes proportional to the change.
+
+  This is deliberate and it costs time — `patch toggle todo 1000` +110%,
+  `patch move json 8x4` +150%, `patch counter` +23% (wasm-gc; the full table
+  and the per-cache attribution are entry #8 in `benchmarks/OPTIMIZATIONS.md`).
+  The caches reached into the AST, the view pipeline and the render context,
+  which is more structure than is worth holding still while the core design is
+  moving. They are meant to come back, keyed on whatever it settles on.
+
+  Removed from the public API:
+
+  - `@render.RenderCache` and all its methods (`new`, `get`, `set`,
+    `next_generation`, `stats`, `size`, `evict`, `clear`).
+  - `@render.RenderCtx`'s `render_once`, `render_cache` and `const_attrs`
+    fields, and the matching `RenderCtx::new` parameters — it is now
+    `RenderCtx::new(view_resolver?)`.
+  - `@anode.optimize_node`, the `ANode::RenderOnce` variant and
+    `@anode.RenderOnceData`, `DomData::attrs_id`, and
+    `ParseContext::new`'s `cache_const_nodes` parameter.
+
+  A `match` over `@anode.ANode` that had a `RenderOnce` arm must drop it; one
+  that was exhaustive without it is unaffected. `@anode.Attrs`'s
+  `ConstAttrs`/`DynAttrs` split is NOT affected — that is a representation
+  choice about re-evaluating `Val` expressions, independent of the memo.
+
+  What did **not** change: the no-op-update short-circuit and everything that
+  feeds it (`TypedInstance`'s memoized `Obj(self)`, `REUSE_FUEL`/`reuse_equal`,
+  `with_field`/`with_item` returning the untouched container). That win comes
+  from the transactor's root-identity check, not from any render cache —
+  `patch noop todo 1000` is in fact 8.3% *faster* now.
+
 ## [0.6.0] - 2026-07-27
 
 ### Added

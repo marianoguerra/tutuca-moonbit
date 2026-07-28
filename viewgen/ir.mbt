@@ -90,11 +90,6 @@ fn strip_macro_calls(node : @anode.ANode) -> @anode.ANode raise GenError {
       d.node = strip_macro_calls(d.node)
       node
     }
-    RenderOnce(d) => {
-      // Pre-optimization trees carry none of these; be total anyway.
-      let _ = strip_macro_calls(d.node)
-      node
-    }
   }
 }
 
@@ -376,17 +371,12 @@ fn node_expr(node : @anode.ANode, indent : String) -> String raise GenError {
       (if d.from_render_each { ", from_render_each=true" } else { "" }) +
       ")"
     }
-    // Only reachable if the caller skipped ir_supported / emitted after
-    // optimization; both are generator bugs rather than user errors.
+    // Only reachable if the caller skipped ir_supported; a generator bug
+    // rather than a user error.
     MacroCall(d) =>
       raise ViewParseIssue(
         view="?",
         issue="macro '\{d.name}' cannot be compiled ahead of time",
-      )
-    RenderOnce(_) =>
-      raise ViewParseIssue(
-        view="?",
-        issue="internal: tree was optimized before emission",
       )
   }
 }
@@ -599,9 +589,7 @@ fn compiled_tree(
   scope : FileMacros,
 ) -> (@anode.ANode, Array[@anode.NodeEvents]) raise GenError {
   let collector = IssueCollector::{ issues: [] }
-  // Un-optimized: RenderOnce ids are process-global renderer memo keys, so
-  // View::from_ir mints them at load time instead.
-  let px = @anode.ParseContext::new(handler=collector, cache_const_nodes=false)
+  let px = @anode.ParseContext::new(handler=collector)
   let v = @anode.View::new(view.name, raw_view=view.source)
   v.compile(px, scope) catch {
     RecursiveMacro(n) =>

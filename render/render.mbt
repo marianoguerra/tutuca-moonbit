@@ -25,7 +25,7 @@ pub fn render(
         Some(MathML) => Some(MathMl)
         None => None
       }
-      Some(@vdom.h(d.tag, attrs=eval_attrs_of(d, stack, ctx), childs~, ns?))
+      Some(@vdom.h(d.tag, attrs=eval_attrs(d.attrs, stack), childs~, ns?))
     }
     Fragment(d) => {
       let childs : Array[@vdom.Vdom] = []
@@ -95,22 +95,6 @@ pub fn render(
         Some(n) => render(n, stack, ctx)
         None => Some(@vdom.comment("bad macro: \{d.name}"))
       }
-    // Constant subtree: render once, then reuse the same Vdom on every later
-    // hit (JS RenderOnceNode memoizes on the node instance; the port keys on
-    // the marker id). Returning the identical Vdom lets morph short-circuit
-    // the subtree via Vdom::is_equal_to's physical_equal fast path.
-    RenderOnce(m) =>
-      match ctx.render_once.get(m.id) {
-        Some(v) => Some(v)
-        None =>
-          match render(m.node, stack, ctx) {
-            Some(v) => {
-              ctx.render_once[m.id] = v
-              Some(v)
-            }
-            None => None
-          }
-      }
   }
 }
 
@@ -149,76 +133,19 @@ fn render_site(
     None => stack.view_trail()
   }
   match ctx.view_resolver.resolve_view(names, value) {
-    Some(rv) => {
-      // Cache lookup (JS _rValComp): a hit returns the reused fragment when the
-      // site's value + dynamic-binding context are physically unchanged.
-      let slot = match ctx.render_cache {
-        Some(cache) => {
-          let key = site_cache_key(rv, node_id, stack)
-          match cache.get(key, value, stack.dyn_binds) {
-            Some(v) => return Some(v)
-            None => Some(key)
-          }
-        }
-        None => None
-      }
+    Some(rv) =>
       match render(rv.node, stack.enter(value, Map([])), ctx) {
-        Some(body) => {
-          let frag = @vdom.fragment([
-            Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
-            body,
-          ])
-          // JS caches only a rendered (non-null) body.
-          match (ctx.render_cache, slot) {
-            (Some(cache), Some(key)) =>
-              cache.set(key, value, stack.dyn_binds, frag)
-            _ => ()
-          }
-          Some(frag)
-        }
+        Some(body) =>
+          Some(
+            @vdom.fragment([
+              Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
+              body,
+            ]),
+          )
         None => None
       }
-    }
     None => None
   }
-}
-
-///|
-/// The per-slot cache string (JS _rValComp cacheKey): resolved view identity +
-/// the inherited @push-view trail + the render-site node id + the innermost
-/// loop key (so sibling list items of the same component cache separately).
-/// `\x1f` can't appear in a view name or key, so the fields can't merge.
-/// Written into a builder rather than interpolated, and walking `view_names`
-/// backwards rather than asking `view_trail()` to materialize the reversed copy
-/// and then joining it: this runs once per render site per pass, so a 1000-row
-/// list paid for three throwaway allocations per row per render.
-fn site_cache_key(
-  rv : ResolvedView,
-  node_id : Int?,
-  stack : RenderStack,
-) -> String {
-  let sb = StringBuilder::new()
-  sb.write_string(rv.cid.to_string())
-  sb.write_char('\u{1f}')
-  sb.write_string(rv.vid)
-  sb.write_char('\u{1f}')
-  // The trail innermost-first, i.e. view_trail() order.
-  let names = stack.view_names
-  for i = names.length() - 1; i >= 0; i = i - 1 {
-    sb.write_string(names[i])
-    if i > 0 {
-      sb.write_char(',')
-    }
-  }
-  sb.write_char('\u{1f}')
-  if node_id is Some(n) {
-    sb.write_string(n.to_string())
-  }
-  sb.write_char('\u{1f}')
-  if stack.binds.get("key") is Some(k) {
-    sb.write_string(k.to_display_string())
-  }
-  sb.to_string()
 }
 
 ///|
@@ -341,31 +268,6 @@ fn render_each(
       }
   }
   Some(@vdom.fragment(out))
-}
-
-///|
-/// The evaluated attributes of one element.
-///
-/// A `ConstAttrs` element evaluates to the same map on every pass, so with a
-/// memo key minted for it (`DomData::attrs_id`, `anode/optimize.mbt`) the map
-/// is built once and handed to `@vdom.h` — which adopts rather than copies it
-/// — on every render after. Two allocations per element per pass become none,
-/// and the shared identity is what `diff_props`'s `physical_equal` fast path
-/// needs to answer in O(1).
-fn eval_attrs_of(
-  d : @anode.DomData,
-  stack : RenderStack,
-  ctx : RenderCtx,
-) -> Map[String, @vdom.AttrValue] {
-  if d.attrs_id != 0 {
-    if ctx.const_attrs.get(d.attrs_id) is Some(m) {
-      return m
-    }
-    let m = eval_attrs(d.attrs, stack)
-    ctx.const_attrs[d.attrs_id] = m
-    return m
-  }
-  eval_attrs(d.attrs, stack)
 }
 
 ///|

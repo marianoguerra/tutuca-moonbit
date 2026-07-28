@@ -137,9 +137,8 @@ pub fn Value::map_opt(self : Value) -> Map[String, Value]? {
 /// be written (no such field on an instance, not a container at all).
 ///
 /// Writing back a value physically identical to the one already stored returns
-/// THIS value, not a copy — identity is what the render cache and the
-/// transactor read as "nothing happened", and a total wrapper must not be the
-/// thing that breaks it.
+/// THIS value, not a copy — identity is what the transactor reads as "nothing
+/// happened", and a total wrapper must not be the thing that breaks it.
 pub fn Value::with_field(self : Value, name : String, v : Value) -> Value {
   match self {
     Map(m) => {

@@ -51,8 +51,6 @@ pub fn if_attr(String, @core.Val, then_val? : @core.Val, else_val? : @core.Val) 
 
 pub fn on(String, @core.Val, args? : Array[@core.Val], modifiers? : Array[String]) -> NodeEvent
 
-pub fn optimize_node(ANode) -> ANode
-
 pub fn parse_fragment(String) -> (@src.Document, Array[Int])
 
 pub fn push_view(@core.Val, ANode, id? : Int) -> ANode
@@ -92,7 +90,6 @@ pub(all) enum ANode {
   Scope(WrapData)
   Each(EachData)
   MacroCall(MacroData)
-  RenderOnce(RenderOnceData)
 } derive(@debug.Debug)
 pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
 pub fn ANode::has_newline(Self) -> Bool
@@ -135,7 +132,6 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
-  mut attrs_id : Int
 } derive(@debug.Debug)
 
 pub(all) struct EachData {
@@ -209,12 +205,11 @@ pub struct ParseContext {
   frame : MacroFrame?
   mut val_ctx : @core.ParseCtx?
   mut current_tag : String?
-  cache_const_nodes : Bool
   handler : &ParseHandler
 }
 pub fn ParseContext::compile(Self, &MacroScope) -> Unit raise MacroError
 pub fn ParseContext::enter_macro(Self, String, Map[String, String], Map[String, ANode]) -> Self
-pub fn ParseContext::new(handler? : &ParseHandler, cache_const_nodes? : Bool) -> Self
+pub fn ParseContext::new(handler? : &ParseHandler) -> Self
 
 pub(all) enum ParseIssue {
   UnknownDirective(name~ : String, value~ : String)
@@ -233,11 +228,6 @@ pub(all) struct RenderData {
 pub(all) struct RenderItData {
   node_id : Int
   view_val : @core.Val?
-} derive(@debug.Debug)
-
-pub(all) struct RenderOnceData {
-  node : ANode
-  id : Int
 } derive(@debug.Debug)
 
 pub(all) struct RenderTextData {

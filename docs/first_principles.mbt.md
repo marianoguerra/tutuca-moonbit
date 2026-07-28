@@ -366,8 +366,8 @@ by the time rendering happens, macros are gone.
 
 The `render` package walks an `ANode` with two inputs: a `RenderStack` (the
 production implementation of section 2's `Stack` trait — current value `it`,
-`@`-bindings, parent frame, current event) and a `RenderCtx` (view resolver
-and caches). Output: the `Vdom` of section 3.
+`@`-bindings, parent frame, current event) and a `RenderCtx` (the view
+resolver). Output: the `Vdom` of section 3.
 
 Nothing in this pipeline requires components — a plain `Map` value works as
 state, which shows the layering honestly:
@@ -526,9 +526,10 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
 `Path::update` walks down collecting the chain of nodes, asks the target for
 its handler (`PathNode::handler(bucket, name)` → the instance's `update`
 match on `Receive`), runs it, then rebuilds **only the spine** — parent nodes on the way
-back up via `with_field`. Siblings keep their physical identity, which is
-what makes the render cache's "same value → same vdom" check an O(1)
-identity comparison.
+back up via `with_field`. Siblings keep their physical identity, and an
+update that writes back what was already there rebuilds nothing at all — so
+the root comes back as the SAME object and the transactor schedules no
+re-render. That check is one pointer comparison.
 
 Two refinements exist on top of plain `Path`:
 

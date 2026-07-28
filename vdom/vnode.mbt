@@ -101,8 +101,10 @@ fn VElem::is_same_kind(self : VElem, other : VElem) -> Bool {
 /// compare by content (order-insensitive), children recursively. Alias for
 /// `==`; kept for API parity with the JS source.
 pub fn Vdom::is_equal_to(self : Vdom, other : Vdom) -> Bool {
-  // physical_equal short-circuits a shared subtree (e.g. a RenderOnce-cached
-  // node reused across render passes) in O(1) before the deep compare — the
-  // same fast path diff_props already uses on attr maps.
+  // physical_equal short-circuits a shared subtree in O(1) before the deep
+  // compare — the same fast path diff_props uses on attr maps. Nothing in the
+  // renderer shares Vdom across passes today (it memoizes nothing), so this
+  // only fires for a caller that builds one tree and hands it over twice; it
+  // is kept because it is correct for any producer and costs one compare.
   physical_equal(self, other) || self == other
 }

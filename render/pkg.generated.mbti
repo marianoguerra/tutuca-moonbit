@@ -58,27 +58,10 @@ pub(all) enum Meta {
 pub fn Meta::parse(String) -> Self?
 pub fn Meta::to_comment_text(Self) -> String
 
-pub struct RenderCache {
-  mut cur : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]
-  mut prev : Map[String, (@core.Value, @component.DynBinds?, @vdom.Vdom)]
-  mut hit : Int
-  mut miss : Int
-}
-pub fn RenderCache::evict(Self) -> (Int, Int)
-pub fn RenderCache::get(Self, String, @core.Value, @component.DynBinds?) -> @vdom.Vdom?
-pub fn RenderCache::new() -> Self
-pub fn RenderCache::next_generation(Self) -> Unit
-pub fn RenderCache::set(Self, String, @core.Value, @component.DynBinds?, @vdom.Vdom) -> Unit
-pub fn RenderCache::size(Self) -> (Int, Int)
-pub fn RenderCache::stats(Self) -> (Int, Int)
-
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
-  render_once : Map[Int, @vdom.Vdom]
-  render_cache : RenderCache?
-  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
 }
-pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_once? : Map[Int, @vdom.Vdom], render_cache? : RenderCache, const_attrs? : Map[Int, Map[String, @vdom.AttrValue]]) -> Self
+pub fn RenderCtx::new(view_resolver? : &ViewResolver) -> Self
 
 pub(all) struct RenderStack {
   it : @core.Value

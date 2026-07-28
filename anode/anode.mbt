@@ -45,23 +45,6 @@ fn ANode::condense_whitespace(self : ANode, replacement? : String = "") -> Unit 
 }
 
 ///|
-fn ANode::is_constant(self : ANode) -> Bool {
-  match self {
-    Text(_) | Comment(_) => true
-    Dom(d) => d.attrs.is_constant() && d.childs.iter().all(c => c.is_constant())
-    Fragment(d) => d.childs.iter().all(c => c.is_constant())
-    // Delegates to the compiled expansion; never asked before compile
-    // (JS would crash on the null node, we answer false defensively).
-    MacroCall(d) =>
-      match d.node {
-        Some(n) => n.is_constant()
-        None => false
-      }
-    _ => false
-  }
-}
-
-///|
 fn ANode::set_data_attr(self : ANode, key : String, val : @tutuca.Lit) -> Unit {
   match self {
     Dom(d) => d.attrs.set_data_attr(key, val)
@@ -76,10 +59,6 @@ fn ANode::set_data_attr(self : ANode, key : String, val : @tutuca.Lit) -> Unit {
     // Text/Comment render to text, RenderText/Render/RenderIt produce no
     // element of their own to carry the attribute: explicit no-ops in JS.
     Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => ()
-    // JS RenderOnceNode inherits the warn-only base method; delegating to the
-    // wrapped node is safe (the marker wraps a constant Dom/Fragment) and
-    // keeps optimized subtrees stampable.
-    RenderOnce(d) => d.node.set_data_attr(key, val)
   }
 }
 

@@ -114,7 +114,7 @@ test "a total write keeps THIS value when the write changes nothing" {
   let shared : @core.Value = List([Num(1)])
   let m : @core.Value = Map({ "a": shared })
   // writing back the very object already stored must not rebuild the map:
-  // identity is what the render cache and the transactor read
+  // identity is what the transactor reads as "nothing happened"
   @test.assert_same_object(m.with_field("a", shared), m)
   assert_eq(m.with_field("a", Num(2)).field("a"), Num(2))
   // an unwritable target answers with itself rather than a None to unwrap

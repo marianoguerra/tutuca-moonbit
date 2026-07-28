@@ -72,7 +72,7 @@ pub fn Bucket::from(self : Int) -> Bucket {
 /// One guest component instance with OPAQUE state. Instances are
 /// immutable by convention: handlers return a NEW instance (or none for
 /// "unchanged") and the host swaps its wrapper — new instance, new
-/// identity, which drives tutuca's change detection and render cache.
+/// identity, which drives tutuca's change detection.
 /// The host drops superseded handles once a transaction settles.
 pub(all) struct Instance(Int) derive(Show, Eq)
 

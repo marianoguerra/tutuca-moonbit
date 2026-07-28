@@ -29,55 +29,42 @@ fn render_html(
 }
 
 ///|
-test "RenderOnce memoizes a constant subtree across passes" {
-  // optimize_node wraps a constant node in a RenderOnce marker; a shared ctx
-  // (same render_once map) returns the identical Vdom on the second render,
-  // observable via physical_equal.
-  let node = @anode.optimize_node(parse_node("<p class=\"x\">hi</p>"))
-  guard node is RenderOnce(_)
+/// Rendering memoizes nothing: two passes over the same node with the same ctx
+/// build two distinct trees that compare equal. This pins the contract the
+/// three render caches used to break — while they existed, the second pass
+/// returned the FIRST pass's object and `physical_equal` held.
+test "a second render pass reuses nothing, and renders the same thing" {
+  let node = parse_node("<p class=\"x\">hi</p>")
   let ctx = @render.RenderCtx::new()
   let stack = @render.RenderStack::new(Map(Map([])))
   guard @render.render(node, stack, ctx) is Some(first)
   guard @render.render(node, stack, ctx) is Some(second)
-  assert_true(physical_equal(first, second))
-  // and it still renders the right HTML
+  assert_false(physical_equal(first, second))
+  assert_true(first.is_equal_to(second))
   assert_eq(to_html(second), "<p class=\"x\">hi</p>")
-  // a fresh ctx (empty cache) renders a distinct object
-  guard @render.render(node, stack, @render.RenderCtx::new()) is Some(other)
-  assert_false(physical_equal(first, other))
 }
 
 ///|
-test "render cache reuses an unchanged component subtree, misses on change" {
+test "a component render site rebuilds every pass, and tracks its value" {
   let card = parse_node("<div class=\"card\">static</div>")
   let resolver : &@render.ViewResolver = @render.ViewMap::{
     views: { "main": card },
   }
-  let cache = @render.RenderCache::new()
+  let ctx = @render.RenderCtx::new(view_resolver=resolver)
   let v1 : @tutuca.Value = Map({ "a": Num(1) })
-  let ctx = @render.RenderCtx::new(view_resolver=resolver, render_cache=cache)
   let stack = @render.RenderStack::new(v1)
-  guard @render.render_root(v1, stack, ctx) is Some(first)  // miss, cached
-  guard @render.render_root(v1, stack, ctx) is Some(second)  // hit (cur)
-  assert_true(physical_equal(first, second))
-  // survives one generation roll (promoted from prev)
-  cache.next_generation()
-  guard @render.render_root(v1, stack, ctx) is Some(third)
-  assert_true(physical_equal(first, third))
-  // falls out after two rolls with no reuse
-  cache.next_generation()
-  cache.next_generation()
-  guard @render.render_root(v1, stack, ctx) is Some(fourth)
-  assert_false(physical_equal(first, fourth))
+  guard @render.render_root(v1, stack, ctx) is Some(first)
+  guard @render.render_root(v1, stack, ctx) is Some(second)
+  // An unchanged value no longer buys a reused subtree — a fresh tree that
+  // compares equal is what the differ now has to work from.
+  assert_false(physical_equal(first, second))
+  assert_true(first.is_equal_to(second))
 
-  // identity validation: a different value under the same slot key is a miss
-  // (never a stale hit), so it re-renders a distinct object.
-  let cache2 = @render.RenderCache::new()
-  let ctx2 = @render.RenderCtx::new(view_resolver=resolver, render_cache=cache2)
+  // Different values still render distinct trees, as they always did.
   let a : @tutuca.Value = Map({ "n": Num(1) })
   let b : @tutuca.Value = Map({ "n": Num(2) })
-  guard @render.render_root(a, @render.RenderStack::new(a), ctx2) is Some(ra)
-  guard @render.render_root(b, @render.RenderStack::new(b), ctx2) is Some(rb)
+  guard @render.render_root(a, @render.RenderStack::new(a), ctx) is Some(ra)
+  guard @render.render_root(b, @render.RenderStack::new(b), ctx) is Some(rb)
   assert_false(physical_equal(ra, rb))
 }
 

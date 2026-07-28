@@ -31,9 +31,6 @@ fn parse_source(
   }
   node.set_data_attr("data-vid", LStr(v.name))
   ctx.compile(scope)
-  if ctx.cache_const_nodes {
-    v.anode = Some(optimize_node(node))
-  }
 }
 
 ///|
