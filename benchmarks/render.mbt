@@ -38,7 +38,13 @@ fn mount_render(
   if init {
     h.send_at_root("init")
   }
-  h.html().length()
+  let n = h.html().length()
+  // Every iteration mounts a fresh app, so the teardown is the workload's, not
+  // the caller's: without it the native binary grows by a whole app tree per
+  // iteration and the suite is killed part way through. It is inside the timed
+  // section because it is part of the cost of a mount that does not leak.
+  h.destroy()
+  n
 }
 
 ///|

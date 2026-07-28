@@ -102,6 +102,29 @@ pub fn[N : @vdom.DomWalk] App::start(self : App[N]) -> Unit {
 }
 
 ///|
+/// Let go of everything the app holds, and unsubscribe from the transactor.
+/// The app is dead afterwards: do not dispatch or render through it again.
+///
+/// App::new subscribes to the transactor with closures that capture the app,
+/// so App -> transactor -> closure -> App is a reference cycle. The native
+/// backend does not reclaim it, so a host that mounts and discards apps grows
+/// until it is killed. Mount-once hosts (the browser glue, the storybook)
+/// never need this; anything that mounts in a loop does.
+///
+/// The DOM tree is the backend's to release — App is generic over the node
+/// type and cannot walk it from here. memdom hosts pair this with
+/// `MemNode::destroy_tree` on the mount container; see @harness.Harness::destroy.
+pub fn[N] App::destroy(self : App[N]) -> Unit {
+  self.transactor.clear_subscriptions()
+  self.prev = None
+  self.render_once.clear()
+  self.const_attrs.clear()
+  self.render_cache.clear()
+  self.drag = None
+  self.cur_drag_over = None
+}
+
+///|
 /// Dispatch a message at the ROOT component and drain (JS app.sendAtRoot).
 ///
 /// Tutuca has no lifecycle: nothing in the framework calls `receive.init`. The

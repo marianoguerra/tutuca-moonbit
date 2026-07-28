@@ -60,6 +60,20 @@ pub fn Harness::html(self : Harness) -> String {
 }
 
 ///|
+/// Release the app and its DOM. The harness is dead afterwards — no find, no
+/// fire, no html.
+///
+/// Both halves of a mounted app are reference cycles the native backend does
+/// not reclaim (App <-> transactor closures, MemNode parent <-> childs), so a
+/// caller that mounts in a loop must tear each one down or it grows until it
+/// is killed. A test that mounts once per case can skip it; the process exits
+/// first.
+pub fn Harness::destroy(self : Harness) -> Unit {
+  self.app.destroy()
+  self.container.destroy_tree()
+}
+
+///|
 /// The current settled root value — the transactor's root as a `Value`, after
 /// every dispatched interaction has drained. `Null` if the root is not a value
 /// node. The state-oriented read-back that mirrors the JS `drive()` return.

@@ -236,6 +236,16 @@ declare pub fn Transactor::on_change(
 ) -> Unit
 
 ///|
+/// Drop every subscription: change, drained, and observers. on_change and
+/// on_drained hand back no unsubscribe handle (unlike observe), so this is how
+/// a subscriber that owns the transactor lets go of it.
+///
+/// The App subscribes with closures that capture the App, which makes
+/// App -> transactor -> closure -> App a reference cycle. A host that mounts
+/// and discards apps must break it; see App::destroy.
+declare pub fn Transactor::clear_subscriptions(self : Transactor) -> Unit
+
+///|
 /// Queue a targeted send (bucket Receive). skip_self queues the transaction
 /// without running its own handler (the no-op first hop of ctx.bubble);
 /// bubbles makes it pop one component per hop through the Bubble bucket

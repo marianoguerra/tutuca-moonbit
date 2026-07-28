@@ -37,6 +37,14 @@ pub fn RenderCache::new() -> RenderCache {
 }
 
 ///|
+/// Drop both generations. For teardown (App::destroy), not for eviction —
+/// next_generation is what bounds the cache while an app is live.
+pub fn RenderCache::clear(self : RenderCache) -> Unit {
+  self.cur = Map([])
+  self.prev = Map([])
+}
+
+///|
 fn dyn_binds_eq(a : @component.DynBinds?, b : @component.DynBinds?) -> Bool {
   match (a, b) {
     (None, None) => true

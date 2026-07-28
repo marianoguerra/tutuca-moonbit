@@ -90,6 +90,13 @@ pub fn Transactor::on_change(
 }
 
 ///|
+pub fn Transactor::clear_subscriptions(self : Transactor) -> Unit {
+  self.change_subs.clear()
+  self.drain_subs.clear()
+  self.observers.clear()
+}
+
+///|
 /// Queue `t` and make it a tracked unit of `parent`'s subtree (JS _link):
 /// tracking happens while the parent's self-unit is still held, so the
 /// parent's counter can't reach zero before the child registers.

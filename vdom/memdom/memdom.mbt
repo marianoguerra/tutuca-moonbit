@@ -58,6 +58,22 @@ pub fn document() -> MemNode {
 }
 
 ///|
+/// Empty this subtree and clear its `parent` back-pointers, recursively.
+///
+/// `childs` and `parent` point at each other, so every parent/child pair in a
+/// discarded tree is a reference cycle. The native backend does not reclaim
+/// them, so a host that builds and drops trees (mounting in a loop) grows
+/// without bound until it is killed. Nodes stay valid afterwards, just
+/// detached and childless.
+pub fn MemNode::destroy_tree(self : MemNode) -> Unit {
+  for c in self.childs {
+    c.parent = None
+    c.destroy_tree()
+  }
+  self.childs.clear()
+}
+
+///|
 /// Detach a node from its current parent, if any. DOM insertion primitives
 /// move nodes: inserting a node that already has a parent removes it from
 /// the old position first.
