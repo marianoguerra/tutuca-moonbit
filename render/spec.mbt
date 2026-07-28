@@ -150,6 +150,14 @@ pub(all) struct RenderCtx {
   /// Component render-site cache (JS _rValComp DomCache). None = uncached (the
   /// JS NullDomCache); the App supplies one persisted across passes.
   render_cache : RenderCache?
+  /// Evaluated attribute maps for elements whose attributes are constant,
+  /// keyed by `DomData::attrs_id`. Same lifetime contract as `render_once`:
+  /// hand the SAME map across passes and every render of a static-attribute
+  /// element reuses one `Map[String, AttrValue]`, so `diff_props` short-
+  /// circuits on `physical_equal` rather than hashing every key twice. A
+  /// fresh map (the default) memoizes only within one pass, which still
+  /// removes the per-element rebuild.
+  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
 }
 
 ///|
@@ -157,6 +165,7 @@ declare pub fn RenderCtx::new(
   view_resolver? : &ViewResolver,
   render_once? : Map[Int, @vdom.Vdom],
   render_cache? : RenderCache,
+  const_attrs? : Map[Int, Map[String, @vdom.AttrValue]],
 ) -> RenderCtx
 
 ///|

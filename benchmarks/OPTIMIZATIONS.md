@@ -355,6 +355,60 @@ discovering nothing changed.
 `component/identity_test.mbt` pins the identity rules directly, so a regression
 here fails a test rather than only showing up as a slower number.
 
+## 7. Constant attributes evaluated once — updates −5.6% to −17.6%
+
+`eval_attrs` walked `ConstAttrs(m)` and built a fresh
+`Map[String, AttrValue]` per element per render; `@vdom.h` then copied it into
+a second map. For a constant attribute list both maps hold the same entries on
+every pass.
+
+Two halves:
+
+- `DomData` gains an `attrs_id`, minted by `optimize_node` for a `ConstAttrs`
+  element — the same contract a `RenderOnce` id has (a process-global int the
+  renderer keys a per-app cache on, minted at load time). `RenderCtx` carries
+  the memo beside `render_once`, and the `App` holds it for its life.
+- `@vdom.h` adopts the attribute map instead of copying it when it holds no
+  `key` / `namespace` entry to strip — two lookups against a copy of every
+  entry, and, more to the point, the identity survives.
+
+The allocations are the smaller half. The identity is the point: with the same
+map on both sides, `diff_props`'s `physical_equal` fast path answers in O(1)
+where it used to hash every key in both directions. That is the
+"attribute-map equality" item this file ranked first below.
+
+`RenderOnce` does not subsume it. That needs the WHOLE subtree constant, so
+`<div class="row"><x text=".name"></x></div>` — the shape of every list row —
+never qualified.
+
+Native, release, `patch_bench_test.mbt`, against a saved baseline:
+
+| Workload                     | before   | after    |         |
+|------------------------------|----------|----------|---------|
+| `patch counter`              |  28.30 µs|  23.46 µs| −17.1%  |
+| `patch toggle todo 10`       | 107.24 µs|  95.53 µs| −10.9%  |
+| `patch toggle todo 100`      | 633.13 µs| 560.72 µs| −11.4%  |
+| `patch toggle todo 1000`     |  10.54 ms|   9.95 ms|  −5.6%  |
+| `patch add+remove todo 10`   | 133.83 µs| 110.23 µs| −17.6%  |
+| `patch add+remove todo 100`  |   1.02 ms| 863.32 µs| −15.4%  |
+| `patch add+remove todo 1000` |  23.81 ms|  20.33 ms| −14.6%  |
+| `patch move json 8x4`        | 186.36 µs| 175.61 µs|  −5.8%  |
+| `patch page people 1000`     | 375.42 µs| 330.81 µs| −11.9%  |
+| `patch refilter people 100`  | 325.66 µs| 286.85 µs| −11.9%  |
+| `patch refilter people 1000` |   1.16 ms|   1.08 ms|  −6.9%  |
+| `patch switch view`          |  77.46 µs|  67.10 µs| −13.4%  |
+
+`patch noop todo 1000` (+4.0%) and `find .checkbox todo 1000` (+5.4%) are the
+two that moved the wrong way; neither re-renders (the no-op short-circuit of #6
+and a harness search), so both are this machine's drift. Output unchanged: the
+full suite is green on all three targets and no `*_view_gen.mbt` moved.
+
+**Not measured on wasm-gc, and not measured on the render suite.** The machine
+running this ran out of memory on the second bench file, so the numbers above
+are one saved-baseline A/B rather than the interleaved 3× this file asks for on
+a change under 5%. Every kept number is well over that; re-measure both suites
+on wasm-gc before treating the entry as complete.
+
 ## Not yet tried
 
 Ranked by what the profiles say is left.
@@ -363,8 +417,10 @@ In the update path (the biggest numbers on the board):
 
 - **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
-  per pass. Comparing the two entry lists directly, or an identity check first,
-  would skip most of it.
+  per pass. #7 took the CONSTANT half of this — those elements now share one
+  map and hit `physical_equal`. What is left is elements with dynamic
+  attributes, where the map really is rebuilt: comparing the two entry lists
+  directly would skip most of the hashing. Reprofile before chasing it.
 - **State through `Json`**: typed state derives `ToJson`/`FromJson`; worth
   confirming an update does not round-trip through it. (Part of what the 2.2% in
   `stringify` was is now gone with #4 — reprofile before chasing this.)

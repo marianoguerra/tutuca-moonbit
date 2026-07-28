@@ -35,6 +35,10 @@ pub fn GenError::message(self : GenError) -> String {
         Some(s) => " — did you mean `.\{s}`?"
         None => "; declare it in the <script type=\"tutuca/state\"> block"
       })
+    IdInLoop(view~, id~) =>
+      "view \"\{view}\": `id=\"\{id}\"` sits inside an `@each`, so the loop stamps it on every item — use a class, or build the id per item with `:id=\"$'\{id}-{@key}'\"`"
+    AlwaysTruthy(view~, directive~, expr~, ty~) =>
+      "view \"\{view}\": `\{directive}=\"\{expr}\"` — \{ty} is always truthy, so this never hides anything; test `empty? \{expr}` or a field of it instead"
     NotIterable(view~, expr~, ty~) =>
       "view \"\{view}\": `@each` needs a collection, but `\{expr}` is \{ty}"
     NotRenderable(view~, expr~, ty~) =>

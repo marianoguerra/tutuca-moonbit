@@ -157,6 +157,18 @@ pub suberror GenError {
     scope~ : String,
     suggestion~ : String?
   )
+  /// A constant `id` inside an `@each` body. The loop emits the body once per
+  /// item, so the id is not unique the moment the sequence holds two.
+  IdInLoop(view~ : String, id~ : String)
+  /// `@show` / `@hide` over a container. `Value::is_truthy` answers `true`
+  /// for List, Map and Obj unconditionally, so the test cannot fail — the
+  /// element is always shown (or always hidden).
+  AlwaysTruthy(
+    view~ : String,
+    directive~ : String,
+    expr~ : String,
+    ty~ : String
+  )
   /// `@each` over something that is not a collection.
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   /// `<x render>` on something that is not a component slot.
@@ -198,11 +210,17 @@ declare pub fn view_surface(
 
 ///|
 /// Emit the generated MoonBit module.
+/// `hints` collects ADVISORY findings the schema check turns up — the ones a
+/// runtime `slots~` override could legitimately defeat, so they are reported
+/// rather than raised. Pass the caller's diagnostics array; omit it and they
+/// are discarded, which is what a caller with nowhere to print them wants.
 declare pub fn emit_module(
   name : String,
   source_file : String,
   file : ViewFile,
   debug_derive? : Bool,
+  hints? : Array[String],
+  program? : ProgramIndex,
 ) -> String raise GenError
 
 ///|

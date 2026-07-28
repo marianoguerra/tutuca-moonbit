@@ -7,17 +7,37 @@ fn plan_gen(args : Array[String]) -> @cli.Outcome {
 }
 
 ///|
-test "the input path decides the component name and the output file" {
+test "the roots reach the shell as written; it expands them" {
+  // A directory is a legal root — the shell contributes the .html files under
+  // it that already have a generated sibling, the same rule watch uses. The
+  // pure half cannot expand it, so it does not try.
   assert_true(
     plan_gen(["demo/counterlib/counter.html"])
     is GenViews(
       _,
-      input="demo/counterlib/counter.html",
-      target="demo/counterlib/counter_view_gen.mbt",
-      name="Counter",
+      roots=["demo/counterlib/counter.html"],
+      out=None,
+      name=None,
       dry_run=false,
       ..
     ),
+  )
+  assert_true(
+    plan_gen(["src/", "other/x.html"])
+    is GenViews(_, roots=["src/", "other/x.html"], ..),
+  )
+}
+
+///|
+test "the input path decides the component name and the output file" {
+  assert_eq(
+    @cli.gen_views_target("demo/counterlib/counter.html"),
+    ("demo/counterlib/counter_view_gen.mbt", "Counter"),
+  )
+  // Without --name the basename is capitalized: "todo-list" -> "TodoList".
+  assert_eq(
+    @cli.gen_views_target("views/todo-list.html"),
+    ("views/todo-list_view_gen.mbt", "TodoList"),
   )
 }
 
@@ -25,15 +45,48 @@ test "the input path decides the component name and the output file" {
 test "--name and --out override, in both spellings" {
   assert_true(
     plan_gen(["views/todo-list.html", "--name", "Todos", "--out", "src/"])
-    is GenViews(_, target="src/todo-list_view_gen.mbt", name="Todos", ..),
+    is GenViews(_, out=Some("src/"), name=Some("Todos"), ..),
   )
   assert_true(
     plan_gen(["views/todo-list.html", "--name=Todos", "--out=src/gen.mbt"])
-    is GenViews(_, target="src/gen.mbt", name="Todos", ..),
+    is GenViews(_, out=Some("src/gen.mbt"), name=Some("Todos"), ..),
   )
-  // Without --name the basename is capitalized: "todo-list" -> "TodoList".
+  assert_eq(
+    @cli.gen_views_target("views/todo-list.html", out="src/", name="Todos"),
+    ("src/todo-list_view_gen.mbt", "Todos"),
+  )
+  assert_eq(
+    @cli.gen_views_target(
+      "views/todo-list.html",
+      out="src/gen.mbt",
+      name="Todos",
+    ),
+    ("src/gen.mbt", "Todos"),
+  )
+}
+
+///|
+test "the flags that name ONE thing are refused for a batch" {
+  let emit_of = (o : @cli.Outcome) => {
+    match o {
+      Done(e) => e.err
+      _ => "not done"
+    }
+  }
   assert_true(
-    plan_gen(["views/todo-list.html"]) is GenViews(_, name="TodoList", ..),
+    emit_of(plan_gen(["a.html", "b.html", "--name", "X"])).contains(
+      "--name names one component",
+    ),
+  )
+  assert_true(
+    emit_of(plan_gen(["a.html", "b.html", "--out", "gen.mbt"])).contains(
+      "is one file, so it cannot take 2 paths",
+    ),
+  )
+  // A directory --out is fine for a batch: each file keeps its own stem.
+  assert_true(
+    plan_gen(["a.html", "b.html", "--out", "src/"])
+    is GenViews(_, out=Some("src/"), ..),
   )
 }
 
@@ -54,15 +107,17 @@ test "usage errors" {
   }
   inspect(
     emit_of(plan_gen([])),
-    content="tutuca: gen-views requires an input .html file\n  hint: `tutuca gen-views path/to/counter.html --name Counter`\n",
+    content="tutuca: gen-views requires an input .html file or a directory\n  hint: `tutuca gen-views path/to/counter.html --name Counter`, or `tutuca gen-views src/`\n",
   )
   inspect(
     emit_of(plan_gen(["a.html", "--nope"])),
     content="tutuca: unknown flag '--nope' for gen-views\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
   )
-  inspect(
-    emit_of(plan_gen(["a.html", "b.html"])),
-    content="tutuca: gen-views takes one input file, got a second positional 'b.html'\n  hint: generate one component's views per invocation\n",
+  // Two paths is no longer an error: it is the whole point of a batch, and
+  // what lets a view reference a component another file declares.
+  assert_true(
+    plan_gen(["a.html", "b.html"])
+    is GenViews(_, roots=["a.html", "b.html"], ..),
   )
 }
 

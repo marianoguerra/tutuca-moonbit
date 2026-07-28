@@ -389,6 +389,8 @@ pub fn emit_module(
   source_file : String,
   file : ViewFile,
   debug_derive? : Bool = true,
+  hints? : Array[String] = [],
+  program? : ProgramIndex,
 ) -> String raise GenError {
   let out = StringBuilder::new()
   out.write_string(
@@ -418,6 +420,13 @@ pub fn emit_module(
       emit_state_only(def, file, debug_derive, out)
     }
   }
+  // The caller's index when there is one — that is what makes a reference to a
+  // component declared in ANOTHER file checkable. Without one the file is its
+  // own whole program, which is what a single-file invocation means.
+  let prog = match program {
+    Some(p) => p
+    None => ProgramIndex::of(file, name)
+  }
   for comp in file.components {
     let cname = comp.component_name(name)
     let surface = view_surface(comp.views, macros=file.macros)
@@ -426,7 +435,7 @@ pub fn emit_module(
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
     if state is Some(def) {
-      check_views(comp.views, file.macros, def)
+      check_views(comp.views, file.macros, def, prog, hints)
     }
     emit_component(
       cname, source_file, comp, surface, state, inits, debug_derive, out,

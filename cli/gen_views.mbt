@@ -84,10 +84,20 @@ fn diagnostic_line(where_ : String, f : @lint.Finding) -> String {
 
 ///|
 let gen_views_help : String =
-  #|tutuca gen-views <file.html> [--name <Name>] [--out <dir-or-file>] [--dry-run]
+  #|tutuca gen-views [path...] [--name <Name>] [--out <dir-or-file>] [--dry-run]
   #|
-  #|  Compiles the views in <file.html> into a MoonBit module of typed view
+  #|  Compiles the views in each path into a MoonBit module of typed view
   #|  surfaces, written next to the component that uses them.
+  #|
+  #|  Paths are .html files or directories, following watch's rule: a directory
+  #|  contributes the .html files that ALREADY have a generated sibling, so
+  #|  pointing this at a project root does not try to compile index.html.
+  #|
+  #|  Passing more than one path is not just a convenience. The checks that span
+  #|  components — whether the component a view renders exists, and whether it
+  #|  has the view `as=` names — can only see what one invocation was given. The
+  #|  program is the set of paths you passed; a component outside it is unknown,
+  #|  and unknown is never reported as wrong.
   #|
   #|  Template ids say what each one is:
   #|    (none)         the single unnamed component's `main` view
@@ -119,8 +129,10 @@ let gen_views_help : String =
   #|
   #|  --name  the component name, for a file whose templates do not name one
   #|          (default: the file's basename, capitalized). A file that names
-  #|          its components with `id="Comp:view"` ignores it.
-  #|  --out   directory (default: the input's) or an explicit .mbt file path.
+  #|          its components with `id="Comp:view"` ignores it. Names ONE
+  #|          component, so it is refused with more than one path.
+  #|  --out   directory (default: each input's) or an explicit .mbt file path.
+  #|          The .mbt form names one file, so it too is refused for a batch.
   #|  --dry-run prints the generated modules to stdout instead of writing.
   #|  --no-ir skips the companion <stem>_view_ir_gen.mbt (the compiled tree,
   #|          which `views~` takes so the parser never runs at
@@ -175,7 +187,7 @@ fn join_path(dir : String, file : String) -> String {
 /// Parse gen-views' own args. Finishes purely on help and usage errors;
 /// otherwise hands the shell the input path to read and what to do with it.
 fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let mut input : String? = None
+  let roots : Array[String] = []
   let mut name : String? = None
   let mut out : String? = None
   let mut dry_run = false
@@ -220,19 +232,8 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
               ),
             ),
           )
-        } else if input is None {
-          input = Some(a)
         } else {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "gen-views takes one input file, got a second positional '\{a}'",
-                hint="generate one component's views per invocation",
-              ),
-            ),
-          )
+          roots.push(a)
         }
     }
     i = i + 1
@@ -240,31 +241,46 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
   if opts.help {
     return Done({ out: gen_views_help, err: "", exit_code: 0 })
   }
-  guard input is Some(path) else {
+  if roots.is_empty() {
     return Done(
       error_emit(
         opts,
         err(
           CODE_USAGE_MISSING_ARGUMENT,
-          "gen-views requires an input .html file",
-          hint="`tutuca gen-views path/to/counter.html --name Counter`",
+          "gen-views requires an input .html file or a directory",
+          hint="`tutuca gen-views path/to/counter.html --name Counter`, or `tutuca gen-views src/`",
         ),
       ),
     )
   }
-  let (dir, stem) = split_path(path)
-  let comp_name = name.unwrap_or(default_name(stem))
-  // --out names a .mbt file directly, or the directory to write into.
-  let target = match out {
-    Some(o) =>
-      if o.has_suffix(".mbt") {
-        o
-      } else {
-        join_path(o, "\{stem}_view_gen.mbt")
-      }
-    None => join_path(dir, "\{stem}_view_gen.mbt")
+  // Both of these name ONE component or ONE output file, so neither survives a
+  // batch. Rejected rather than silently applied to the first path: quietly
+  // writing every module to the same `--out` file is worse than not starting.
+  if roots.length() > 1 && name is Some(_) {
+    return Done(
+      error_emit(
+        opts,
+        err(
+          CODE_USAGE_MUTUALLY_EXCLUSIVE,
+          "--name names one component, so it cannot be used with \{roots.length()} paths",
+          hint="generate that file on its own, or let each file's basename name its component",
+        ),
+      ),
+    )
   }
-  GenViews(opts, input=path, target~, name=comp_name, dry_run~, ir~)
+  if roots.length() > 1 && out is Some(o) && o.has_suffix(".mbt") {
+    return Done(
+      error_emit(
+        opts,
+        err(
+          CODE_USAGE_MUTUALLY_EXCLUSIVE,
+          "--out '\{o}' is one file, so it cannot take \{roots.length()} paths",
+          hint="pass a directory instead, and each file keeps its own module name",
+        ),
+      ),
+    )
+  }
+  GenViews(opts, roots~, out~, name~, dry_run~, ir~)
 }
 
 ///|
@@ -280,8 +296,9 @@ fn missing_value(opts : GlobalOpts, flag : String) -> Emit {
 }
 
 ///|
-/// Generate the module from the file's contents. The only impure part is
-/// reading `source` and writing the plan, both of which the shell does.
+/// Generate the module from one file's contents — `gen_views_all` for a batch
+/// of one, kept because most callers (the playground, the tests) have exactly
+/// one file and no project around it.
 pub fn gen_views(
   source : String,
   name~ : String,
@@ -289,37 +306,116 @@ pub fn gen_views(
   target~ : String,
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape] {
-  let files : Array[(String, String)] = []
-  let diagnostics : Array[String] = []
-  let file = basename(input)
-  try {
-    let views = @viewgen.split_file(source)
-    for d in view_diagnostics(views, name) {
-      diagnostics.push(d)
-    }
-    files.push((target, @viewgen.emit_module(name, file, views)))
-    // The compiled tree goes in its own module: it is by far the biggest
-    // part of the output and nothing in the types file depends on it, so a
-    // component that opts out just never references it.
-    if ir && @viewgen.emit_ir_module_opt(name, file, views) is Some(src) {
-      files.push((ir_target(target), src))
-    }
-  } catch {
-    e =>
-      return Err(
-        err(
-          CODE_VIEW_GEN_FAILED,
-          "\{input}: \{@viewgen.GenError::message(e)}",
-          where_=input,
-        ),
-      )
+  gen_views_all([{ input, target, name, source }], ir~)
+}
+
+///|
+/// Resolve one view path's output module and component name.
+pub fn gen_views_target(
+  path : String,
+  out? : String,
+  name? : String,
+) -> (String, String) {
+  let (dir, stem) = split_path(path)
+  let target = match out {
+    Some(o) =>
+      if o.has_suffix(".mbt") {
+        o
+      } else {
+        join_path(o, "\{stem}_view_gen.mbt")
+      }
+    None => join_path(dir, "\{stem}_view_gen.mbt")
   }
-  Ok({ files, diagnostics })
+  (target, name.unwrap_or(default_name(stem)))
+}
+
+///|
+/// Compile a whole batch into one plan. The only impure parts are reading the
+/// sources and writing the plan, both of which the shell does.
+pub fn gen_views_all(
+  files : Array[GenInput],
+  ir~ : Bool,
+) -> Result[GenPlan, ErrShape] {
+  let out : Array[(String, String)] = []
+  let diagnostics : Array[String] = []
+  // Split everything BEFORE emitting anything: the component table has to be
+  // complete or a cross-file reference reads as an absence.
+  let split : Array[(GenInput, @viewgen.ViewFile)] = []
+  let index = @viewgen.ProgramIndex::new()
+  for f in files {
+    let views = @viewgen.split_file(f.source) catch {
+      e =>
+        return Err(
+          err(
+            CODE_VIEW_GEN_FAILED,
+            "\{f.input}: \{@viewgen.GenError::message(e)}",
+            where_=f.input,
+          ),
+        )
+    }
+    index.add(views, f.name)
+    split.push((f, views))
+  }
+  for pair in split {
+    let (f, views) = pair
+    let file = basename(f.input)
+    try {
+      for d in view_diagnostics(views, f.name) {
+        diagnostics.push(where_prefixed(files, f, d))
+      }
+      // `hints` is the schema check's advisory half — the findings a runtime
+      // `slots~` override could legitimately defeat, so they are reported here
+      // rather than failing generation. Passed rather than re-derived: the
+      // check runs inside emit_module, and asking for it separately would
+      // parse every view a fourth time.
+      let hints : Array[String] = []
+      let src = @viewgen.emit_module(f.name, file, views, hints~, program=index)
+      for h in hints {
+        diagnostics.push(where_prefixed(files, f, h))
+      }
+      out.push((f.target, src))
+      // The compiled tree goes in its own module: it is by far the biggest
+      // part of the output and nothing in the types file depends on it, so a
+      // component that opts out just never references it.
+      if ir && @viewgen.emit_ir_module_opt(f.name, file, views) is Some(ir_src) {
+        out.push((gen_views_ir_target(f.target), ir_src))
+      }
+    } catch {
+      e =>
+        return Err(
+          err(
+            CODE_VIEW_GEN_FAILED,
+            "\{f.input}: \{@viewgen.GenError::message(e)}",
+            where_=f.input,
+          ),
+        )
+    }
+  }
+  Ok({ files: out, diagnostics })
+}
+
+///|
+/// Name the file a diagnostic came from, but only when there is more than one
+/// — a single-file run already says which file it is on the command line, and
+/// prefixing it there would change every existing message.
+fn where_prefixed(
+  files : Array[GenInput],
+  f : GenInput,
+  line : String,
+) -> String {
+  if files.length() > 1 {
+    "\{f.input}: \{line}"
+  } else {
+    line
+  }
 }
 
 ///|
 /// "…/counter_view_gen.mbt" -> "…/counter_view_ir_gen.mbt"
-fn ir_target(target : String) -> String {
+///
+/// Public because the shell reports which input each written file came from,
+/// and a batch has more than one input to attribute them to.
+pub fn gen_views_ir_target(target : String) -> String {
   if target.has_suffix("_gen.mbt") {
     target[:target.length() - 8].to_owned() + "_ir_gen.mbt"
   } else if target.has_suffix(".mbt") {

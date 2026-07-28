@@ -16,7 +16,7 @@ pub fn emit_ir_module(String, String, ViewFile) -> String raise GenError
 
 pub fn emit_ir_module_opt(String, String, ViewFile) -> String?
 
-pub fn emit_module(String, String, ViewFile, debug_derive? : Bool) -> String raise GenError
+pub fn emit_module(String, String, ViewFile, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> String raise GenError
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 
@@ -47,6 +47,8 @@ pub suberror GenError {
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
   BadInitBlock(line~ : Int, message~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
+  IdInLoop(view~ : String, id~ : String)
+  AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
 }
@@ -71,6 +73,14 @@ pub(all) struct MacroDef {
   defaults : Map[String, String]
   source : String
 } derive(Eq, @debug.Debug)
+
+pub struct ProgramIndex {
+  defs : Map[String, @statedef.StateDef]
+  views : Map[String, Array[String]]
+}
+pub fn ProgramIndex::add(Self, ViewFile, String) -> Unit
+pub fn ProgramIndex::new() -> Self
+pub fn ProgramIndex::of(ViewFile, String) -> Self
 
 pub(all) struct RawView {
   name : String

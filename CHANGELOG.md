@@ -6,6 +6,66 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`gen-views` takes `[path…]`, and the checks that need two components come
+  with it.** Paths are `.html` files or directories, following `watch`'s rule
+  (a directory contributes the files that already have a generated sibling), so
+  `tutuca gen-views src/` compiles a project in one invocation. Every file is
+  split before any is emitted, which is what makes a reference to a component
+  declared in ANOTHER file checkable:
+
+  - **`<x render=".slot" as="edit">` where the child has no `edit` view.** At
+    run time `resolve_view` returns None and the site renders *nothing* — the
+    same silent blank that `.field` had before the schema could answer it.
+    Reported as a hint rather than a failure, because `component()`'s `slots~`
+    can point a declared slot at a different component than the schema names
+    and the generator cannot see that.
+  - **`.field` and `@value.member` inside a loop over child components.**
+    `list<todo>` names the Todo component, so the body is checked against
+    *that* schema instead of going opaque. A misspelt field is a build error
+    naming the near miss, where before it was not even looked at.
+
+  A component outside the paths passed is unknown, and unknown is not wrong —
+  so a single-file invocation still works and simply checks less. `--name` and
+  an `--out` ending in `.mbt` each name one thing, so both are refused for a
+  batch. `agent-context`'s `schemaVersion` is 6.
+
+- **A container in `@show` / `@hide` fails generation.** `Value::is_truthy`
+  answers `true` for List, Map and Obj unconditionally, so `@show=".alts"`
+  shows the element for an empty list too: it reads as a guard and is not one.
+  The message names `empty? .alts` as the fix. `StateTy::is_boolish` existed,
+  was tested, and was called by nothing; it now says what its own comment
+  always said — a string, a number and an option are left alone, because
+  `@show=".role"` beside `@text=".role"` is the idiomatic way to hide an empty
+  badge.
+
+- **A constant `id` inside an `@each` fails generation.** The loop stamps the
+  body once per item, so the id is not unique the moment the sequence holds
+  two. Only the compiled tree knows the element repeats, which is why no HTML
+  linter reading the source can catch it.
+
+### Performance
+
+- **Constant attributes are evaluated once, not once per element per render.**
+  `eval_attrs` rebuilt a `Map[String, AttrValue]` for every `ConstAttrs`
+  element on every pass and `@vdom.h` copied it into a second map — two
+  allocations per element per pass for attributes that cannot change. They are
+  memoized now on a per-element key minted at load time (the same contract a
+  `RenderOnce` id has), and `h` adopts an attribute map rather than copying it
+  when there is nothing to strip out of it. The point is not the allocations:
+  handing the differ the SAME map is what lets `diff_props` short-circuit on
+  `physical_equal` instead of hashing every key in both directions, which
+  `benchmarks/OPTIMIZATIONS.md` ranked first under "Not yet tried".
+
+  `RenderOnce` does not already cover these — it needs the whole subtree
+  constant, so `<div class="row"><x text=".name"></x></div>` misses it, and
+  that is the shape of every list row. Native, release, against a saved
+  baseline: `patch counter` −17.1%, `add+remove todo 10/100/1000`
+  −17.6/−15.4/−14.6%, `toggle todo 10/100/1000` −10.9/−11.4/−5.6%,
+  `switch view` −13.4%, `page people 1000` −11.9%, `refilter people 100`
+  −11.9%.
+
 ## [0.6.0] - 2026-07-27
 
 ### Added

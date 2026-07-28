@@ -8,10 +8,15 @@
 // and by `moon test`. `note` says so, so an agent doesn't go looking.
 
 ///|
+/// 6: `gen-views` takes `[path...]` rather than one `file`, matching the CSS
+/// commands and `watch`. The batch is what the cross-component checks can see,
+/// so the positional's arity is part of the contract, not a convenience —
+/// hence a version bump rather than a silent widening.
+///
 /// 5: one command set. The `mode` field of 4 is gone with the embedded-module
 /// story, along with `lintCodes` (there is no runtime linter), `formats`, and
 /// the per-command `needsModule` / `needsEnv` / `defaultFormat`.
-const SCHEMA_VERSION : Int = 5
+const SCHEMA_VERSION : Int = 6
 
 ///|
 fn global_flags_schema() -> Array[FlagSpec] {

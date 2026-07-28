@@ -53,6 +53,7 @@ pub fn RenderCtx::new(
   view_resolver? : &ViewResolver,
   render_once? : Map[Int, @vdom.Vdom] = Map([]),
   render_cache? : RenderCache,
+  const_attrs? : Map[Int, Map[String, @vdom.AttrValue]] = Map([]),
 ) -> RenderCtx {
   {
     view_resolver: match view_resolver {
@@ -61,5 +62,6 @@ pub fn RenderCtx::new(
     },
     render_once,
     render_cache,
+    const_attrs,
   }
 }

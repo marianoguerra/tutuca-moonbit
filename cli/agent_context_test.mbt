@@ -28,7 +28,7 @@ test "schema top-level shape" {
     "errorCodes", "commands",
   ])
   guard top.get("schemaVersion") is Some(Number(v, ..))
-  assert_eq(v, 5)
+  assert_eq(v, 6)
   @debug.assert_eq(top.get("cli"), Some(Json::string("tutuca")))
   @debug.assert_eq(top.get("version"), Some(Json::string(@cli.VERSION)))
   guard top.get("errorCodes") is Some(Array(codes))

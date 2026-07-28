@@ -108,6 +108,10 @@ priv struct Collect {
   methods : @set.Set[String]
   fields : @set.Set[String]
   ids : @set.Set[String]
+  /// Constant `id`s found INSIDE an `@each` body. The loop emits the body
+  /// once per item, so any one of these is `document.getElementById` returning
+  /// whichever row happens to be first.
+  loop_ids : @set.Set[String]
   whens : @set.Set[String]
   enriches : @set.Set[String]
   enrich_scopes : @set.Set[String]
@@ -120,6 +124,7 @@ fn Collect::new() -> Collect {
     methods: @set.Set::Set([], capacity=8),
     fields: @set.Set::Set([], capacity=8),
     ids: @set.Set::Set([], capacity=8),
+    loop_ids: @set.Set::Set([], capacity=2),
     whens: @set.Set::Set([], capacity=4),
     enriches: @set.Set::Set([], capacity=4),
     enrich_scopes: @set.Set::Set([], capacity=4),
@@ -176,12 +181,24 @@ fn walk_val_opt(val : @tutuca.Val?, c : Collect, root_scope : Bool) -> Unit {
 
 ///|
 /// Attribute values, plus the constant `id` this element declares.
-fn walk_attrs(attrs : @anode.Attrs, c : Collect, root_scope : Bool) -> Unit {
+fn walk_attrs(
+  attrs : @anode.Attrs,
+  c : Collect,
+  root_scope : Bool,
+  in_loop : Bool,
+) -> Unit {
+  fn id(v : String) {
+    c.ids.add(v)
+    if in_loop {
+      c.loop_ids.add(v)
+    }
+  }
+
   match attrs {
     ConstAttrs(m) =>
       for k, lit in m {
         if k == "id" && lit is LStr(v) {
-          c.ids.add(v)
+          id(v)
         }
       }
     DynAttrs(items) =>
@@ -189,7 +206,7 @@ fn walk_attrs(attrs : @anode.Attrs, c : Collect, root_scope : Bool) -> Unit {
         match item {
           Plain(name~, val~) | ConstA(name~, val~) => {
             if name == "id" && val is Const(lit=LStr(v), ..) {
-              c.ids.add(v)
+              id(v)
             }
             walk_val(val, c, root_scope)
           }
@@ -209,18 +226,27 @@ fn walk_attrs(attrs : @anode.Attrs, c : Collect, root_scope : Bool) -> Unit {
 /// a new stack frame (@each, @enrich-with, push-view, <x render>): a `.field`
 /// down there addresses the item or the child component, not this component's
 /// state. `$name` and `id` are collected everywhere.
-fn walk_node(node : @anode.ANode, c : Collect, root_scope : Bool) -> Unit {
+///
+/// `in_loop` goes true under an `@each` body and never back, so a constant
+/// `id` down there can be reported: the body is emitted once per item, and an
+/// id is supposed to be unique in a document.
+fn walk_node(
+  node : @anode.ANode,
+  c : Collect,
+  root_scope : Bool,
+  in_loop : Bool,
+) -> Unit {
   match node {
     Text(_) | Comment(_) => ()
     Dom(d) => {
-      walk_attrs(d.attrs, c, root_scope)
+      walk_attrs(d.attrs, c, root_scope, in_loop)
       for child in d.childs {
-        walk_node(child, c, root_scope)
+        walk_node(child, c, root_scope, in_loop)
       }
     }
     Fragment(d) =>
       for child in d.childs {
-        walk_node(child, c, root_scope)
+        walk_node(child, c, root_scope, in_loop)
       }
     RenderText(d) => walk_val(d.val, c, root_scope)
     Render(d) => {
@@ -232,11 +258,11 @@ fn walk_node(node : @anode.ANode, c : Collect, root_scope : Bool) -> Unit {
     RenderIt(d) => walk_val_opt(d.view_val, c, root_scope)
     Show(d) | Hide(d) => {
       walk_val(d.val, c, root_scope)
-      walk_node(d.node, c, root_scope)
+      walk_node(d.node, c, root_scope, in_loop)
     }
     PushView(d) => {
       walk_val(d.val, c, root_scope)
-      walk_node(d.node, c, false)
+      walk_node(d.node, c, false, in_loop)
     }
     // A Scope node IS an `@enrich-with` with no `@each` around it: its handler
     // returns the binds rather than mutating a map, which is the whole reason
@@ -244,9 +270,9 @@ fn walk_node(node : @anode.ANode, c : Collect, root_scope : Bool) -> Unit {
     Scope(d) => {
       walk_alter(Some(d.val), c.enrich_scopes)
       walk_val(d.val, c, root_scope)
-      walk_node(d.node, c, false)
+      walk_node(d.node, c, false, in_loop)
     }
-    Slot(d) => walk_node(d.node, c, root_scope)
+    Slot(d) => walk_node(d.node, c, root_scope, in_loop)
     Each(d) => {
       // The iterated value is read here; the body runs per item.
       walk_val(d.iter_info.val, c, root_scope)
@@ -256,14 +282,17 @@ fn walk_node(node : @anode.ANode, c : Collect, root_scope : Bool) -> Unit {
       walk_val_opt(d.iter_info.when_val, c, root_scope)
       walk_val_opt(d.iter_info.loop_with_val, c, root_scope)
       walk_val_opt(d.iter_info.enrich_with_val, c, root_scope)
-      walk_node(d.node, c, false)
+      // `<x render-each>` renders each item as a component in its own frame
+      // and drops the `<x>` element, so there is no host element to carry an
+      // id — only a host-element loop repeats markup written here.
+      walk_node(d.node, c, false, in_loop || !d.from_render_each)
     }
     MacroCall(d) =>
       match d.node {
-        Some(n) => walk_node(n, c, root_scope)
+        Some(n) => walk_node(n, c, root_scope, in_loop)
         None => ()
       }
-    RenderOnce(d) => walk_node(d.node, c, root_scope)
+    RenderOnce(d) => walk_node(d.node, c, root_scope, in_loop)
   }
 }
 
@@ -355,7 +384,11 @@ fn walk_view(
   c : Collect,
   inputs : Map[String, InputSig],
 ) -> Unit raise GenError {
-  walk_node(root, c, true)
+  walk_node(root, c, true, false)
+  if c.loop_ids.length() > 0 {
+    // Sorted so the message does not depend on set iteration order.
+    raise IdInLoop(view=view_name, id=sorted(c.loop_ids)[0])
+  }
   for ev in events {
     for h in ev.handlers {
       let site = "@on." + h.name

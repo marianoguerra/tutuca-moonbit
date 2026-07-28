@@ -162,17 +162,17 @@ let commands : Array[CommandSpec] = [
   // works before the component that will use the generated types exists.
   {
     name: "gen-views",
-    describe: "Compile an .html file of views into a MoonBit module of typed view surfaces.",
+    describe: "Compile .html files of views into MoonBit modules of typed view surfaces.",
     flags: [
       flag(
         "name",
         type_="string",
-        description="Component name heading the generated types (default: the file's basename).",
+        description="Component name heading the generated types (default: the file's basename). Refused with more than one path.",
       ),
       flag(
         "out",
         type_="string",
-        description="Output directory, or an explicit .mbt path (default: beside the input).",
+        description="Output directory, or an explicit .mbt path (default: beside each input). The .mbt form is refused with more than one path.",
       ),
       flag(
         "dry-run",
@@ -188,9 +188,10 @@ let commands : Array[CommandSpec] = [
     ],
     positionals: [
       positional(
-        "file",
+        "path",
         required=true,
-        description="The .html file holding the component's views.",
+        description="View files or directories to compile.",
+        note="A directory contributes the .html files that already have a generated sibling. The paths passed are also the set the cross-component checks can see.",
       ),
     ],
   },

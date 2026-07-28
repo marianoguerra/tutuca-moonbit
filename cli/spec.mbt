@@ -86,14 +86,21 @@ pub(all) enum Outcome {
   /// decides the flags; the shell (cmd/main) resolves the bundle directory,
   /// starts the static HTTP server, or copies the bundle for `--out`.
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
-  /// Compile the views in `input` into the MoonBit module `target`. The core
-  /// decides the paths and the component name; the shell reads the input file,
-  /// calls `gen_views`, and writes (or prints, under `dry_run`) the plan.
+  /// Compile the views under `roots` into MoonBit modules. The core decides
+  /// the flags; the shell expands the roots into view files (an explicit
+  /// .html at its word, a directory contributing the files that already have a
+  /// generated sibling — the same rule `watch` and the CSS commands use), reads
+  /// them, calls `gen_views_all`, and writes (or prints, under `dry_run`) the
+  /// plan.
+  ///
+  /// Roots rather than one file because the checks that span components need
+  /// the whole set in hand before any of it is emitted: whether the component
+  /// a view renders exists, and whether it has the view named in `as=`.
   GenViews(
     GlobalOpts,
-    input~ : String,
-    target~ : String,
-    name~ : String,
+    roots~ : Array[String],
+    out~ : String?,
+    name~ : String?,
     dry_run~ : Bool,
     ir~ : Bool
   )
@@ -149,6 +156,42 @@ declare pub fn gen_views(
   name~ : String,
   input~ : String,
   target~ : String,
+  ir~ : Bool,
+) -> Result[GenPlan, ErrShape]
+
+///|
+/// One view file on its way through `gen-views`: where it came from, where its
+/// module goes, what component it names, and its text. The shell fills these in
+/// — it is the half that knows the filesystem — and `gen_views_all` turns the
+/// batch into one plan.
+pub(all) struct GenInput {
+  input : String
+  target : String
+  name : String
+  source : String
+} derive(Debug, Eq)
+
+///|
+/// Resolve one view path's output module and component name from the flags,
+/// without touching the filesystem. `--out` names a .mbt file directly (only
+/// meaningful for a single input) or the directory to write into; `--name`
+/// overrides the basename-derived component name.
+declare pub fn gen_views_target(
+  path : String,
+  out? : String,
+  name? : String,
+) -> (String, String)
+
+///|
+/// Compile a whole batch into one plan.
+///
+/// Every file is split first, so the component table is complete before any of
+/// them is checked — that is what lets a view reference a component declared in
+/// another file. A file that fails to split fails the whole run, the same as
+/// with one input: a partial index would report absences that are really just
+/// the broken file's components missing.
+declare pub fn gen_views_all(
+  files : Array[GenInput],
   ir~ : Bool,
 ) -> Result[GenPlan, ErrShape]
 

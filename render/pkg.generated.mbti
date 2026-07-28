@@ -76,8 +76,9 @@ pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
   render_once : Map[Int, @vdom.Vdom]
   render_cache : RenderCache?
+  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
 }
-pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_once? : Map[Int, @vdom.Vdom], render_cache? : RenderCache) -> Self
+pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_once? : Map[Int, @vdom.Vdom], render_cache? : RenderCache, const_attrs? : Map[Int, Map[String, @vdom.AttrValue]]) -> Self
 
 pub(all) struct RenderStack {
   it : @core.Value

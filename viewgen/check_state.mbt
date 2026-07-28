@@ -26,6 +26,11 @@ priv enum SelfTy {
   SState
   /// A known type — a loop item, or the target of a push-view.
   STy(@statedef.StateTy)
+  /// ANOTHER component's state record, reached by iterating a collection whose
+  /// element type names a sibling interface. `.field` and `@value.member` down
+  /// there address that component's fields, not this one's — which is what the
+  /// single-`StateDef` checker could never say, so it said nothing.
+  SComp(@statedef.StateDef)
   /// Not statically known. Every check inside is skipped.
   SOpaque
 }
@@ -41,7 +46,15 @@ priv struct Scope {
 ///|
 priv struct Checker {
   def : @statedef.StateDef
+  prog : ProgramIndex
   view : String
+  /// Findings that are ADVISORY rather than fatal. A view name resolves at
+  /// render time against whatever component the registration scope actually
+  /// holds, and `component()`'s `slots~` can point a declared slot at a
+  /// different component than the schema names — which this generator cannot
+  /// see. So a missing view is reported, not raised: the alternative is a
+  /// build that cannot be fixed without a new opt-out.
+  hints : Array[String]
 }
 
 ///|
@@ -50,6 +63,8 @@ fn check_views(
   views : Array[RawView],
   macros : Array[MacroDef],
   def : @statedef.StateDef,
+  prog : ProgramIndex,
+  hints : Array[String],
 ) -> Unit raise GenError {
   let scope = FileMacros::of(macros)
   for view in views {
@@ -65,7 +80,7 @@ fn check_views(
         raise ViewParseIssue(view=view.name, issue="recursive macro '\{name}'")
     }
     guard v.anode is Some(root) else { raise EmptyView(view.name) }
-    let c = Checker::{ def, view: view.name }
+    let c = Checker::{ def, prog, view: view.name, hints }
     c.node(root, { self_ty: SState, item: SOpaque })
   }
 }
@@ -83,6 +98,7 @@ fn Checker::ty_of(
       match sc.self_ty {
         SState => self.def.field(name).map(f => f.ty)
         STy(t) => self.def.field_of(t, name)
+        SComp(d) => d.field(name).map(f => f.ty)
         SOpaque => None
       }
     // `@value` in a loop body. Other binds belong to @enrich-with, which
@@ -95,10 +111,14 @@ fn Checker::ty_of(
     Bind("key") => Some(TText)
     Bind("index") => Some(TInt(width=32, signed=true))
     BindMember(name~, prop~) =>
-      if name == "value" && sc.item is STy(t) {
-        self.def.field_of(t, prop)
-      } else {
+      if name != "value" {
         None
+      } else {
+        match sc.item {
+          STy(t) => self.def.field_of(t, prop)
+          SComp(d) => d.field(prop).map(f => f.ty)
+          _ => None
+        }
       }
     SeqAccess(seq~, ..) =>
       // `.seq[.key]` reads one entry out of the collection.
@@ -163,18 +183,40 @@ fn Checker::val(
                 |> fn(ns) { @statedef.nearest(name, ns) },
             )
           }
+        SComp(d) =>
+          if d.field(name) is None {
+            raise UnknownStateField(
+              view=self.view,
+              name~,
+              scope="the \{d.component} state",
+              suggestion=@statedef.nearest(name, d.fields.map(f => f.name)),
+            )
+          }
         SOpaque => ()
       }
     BindMember(name~, prop~) =>
-      if name == "value" && sc.item is STy(t) {
-        if self.def.field_of(t, prop) is None {
-          raise UnknownStateField(
-            view=self.view,
-            name=prop,
-            scope="the loop item (\{t.show_wit()})",
-            suggestion=self.members_of(t)
-              |> fn(ns) { @statedef.nearest(prop, ns) },
-          )
+      if name == "value" {
+        match sc.item {
+          STy(t) =>
+            if self.def.field_of(t, prop) is None {
+              raise UnknownStateField(
+                view=self.view,
+                name=prop,
+                scope="the loop item (\{t.show_wit()})",
+                suggestion=self.members_of(t)
+                  |> fn(ns) { @statedef.nearest(prop, ns) },
+              )
+            }
+          SComp(d) =>
+            if d.field(prop) is None {
+              raise UnknownStateField(
+                view=self.view,
+                name=prop,
+                scope="the loop item (the \{d.component} component)",
+                suggestion=@statedef.nearest(prop, d.fields.map(f => f.name)),
+              )
+            }
+          _ => ()
         }
       }
     SeqAccess(seq~, ..) => self.val(Field(seq), sc)
@@ -202,6 +244,68 @@ fn Checker::members_of(self : Checker, t : @statedef.StateTy) -> Array[String] {
         _ => []
       }
     _ => []
+  }
+}
+
+///|
+/// `as="edit"` on a render site: does the component being rendered have a view
+/// by that name?
+///
+/// The one check that genuinely needs more than one component's schema. When
+/// it fails at run time `resolve_view` returns None and the site renders
+/// NOTHING — the same silent-blank failure that `.field` used to have before
+/// the schema could answer it.
+///
+/// Everything about it is conditional on being sure: the view name must be a
+/// constant (a `*dyn` or a field read chooses at run time), the target must be
+/// a component this job can see, and it must be one that declares templates
+/// here. Anything else is unknown, and unknown is not wrong.
+fn Checker::child_view(
+  self : Checker,
+  comp : String?,
+  view_val : @tutuca.Val?,
+) -> Unit {
+  guard comp is Some(c) else { return }
+  guard view_val is Some(Const(lit=LStr(want), ..)) else { return }
+  guard self.prog.views.get(c) is Some(names) else { return }
+  if names.contains(want) {
+    return
+  }
+  let did_you_mean = match @statedef.nearest(want, names) {
+    Some(s) => " — did you mean `\{s}`?"
+    None => " (it has \{names.join(", ")})"
+  }
+  self.hints.push(
+    "unknown-child-view (hint) \{self.view}: `as=\"\{want}\"` — the \{c} component has no `\{want}` view\{did_you_mean}",
+  )
+}
+
+///|
+/// The component a scope's `self` is, when that is known.
+fn self_comp(sc : Scope) -> String? {
+  match sc.self_ty {
+    SComp(d) => Some(d.component)
+    _ => None
+  }
+}
+
+///|
+/// A value in a boolean position: it must exist, and it must be able to
+/// decide something. An unknown type checks the reads and stops there.
+fn Checker::boolish(
+  self : Checker,
+  val : @tutuca.Val,
+  directive : String,
+  sc : Scope,
+) -> Unit raise GenError {
+  self.val(val, sc)
+  if self.ty_of(val, sc) is Some(t) && !t.is_boolish() {
+    raise AlwaysTruthy(
+      view=self.view,
+      directive~,
+      expr=expr_src(val),
+      ty=t.show_wit(),
+    )
   }
 }
 
@@ -263,17 +367,39 @@ fn Checker::node(
       self.val_opt(d.view_val, sc)
       // `<x render>` needs a component instance. A string or a number there
       // renders nothing at all, silently.
-      if self.ty_of(d.val, sc) is Some(t) && !t.is_renderable() {
-        raise NotRenderable(
-          view=self.view,
-          expr=expr_src(d.val),
-          ty=t.show_wit(),
-        )
+      match self.ty_of(d.val, sc) {
+        Some(t) => {
+          if !t.is_renderable() {
+            raise NotRenderable(
+              view=self.view,
+              expr=expr_src(d.val),
+              ty=t.show_wit(),
+            )
+          }
+          // `option<comp>` is renderable through its inner type, so ask the
+          // type which component it names rather than matching TComp here.
+          self.child_view(t.component_named(), d.view_val)
+        }
+        None => ()
       }
     }
-    RenderIt(d) => self.val_opt(d.view_val, sc)
-    Show(d) | Hide(d) => {
-      self.val(d.val, sc)
+    // `<x render-it>` renders the CURRENT item, so the scope already says
+    // which component that is — which is how a `render-each ... as="edit"`
+    // gets checked: the loop resolved the element type first.
+    RenderIt(d) => {
+      self.val_opt(d.view_val, sc)
+      self.child_view(self_comp(sc), d.view_val)
+    }
+    // A predicate (`empty? .alts`) answers a Bool, so `ty_of` returns None for
+    // it and the container check below never sees it — which is the point:
+    // wrapping the container in a predicate is exactly the fix being asked
+    // for.
+    Show(d) => {
+      self.boolish(d.val, "@show", sc)
+      self.node(d.node, sc)
+    }
+    Hide(d) => {
+      self.boolish(d.val, "@hide", sc)
       self.node(d.node, sc)
     }
     // Neither changes what `.field` addresses. `@push-view` pushes a VIEW
@@ -293,10 +419,22 @@ fn Checker::node(
       self.val_opt(it.enrich_with_val, sc)
       // The body's scope is the ELEMENT type — the thing view_surface could
       // never look at.
+      //
+      // `elem()` answers TAny for a collection of child components, because a
+      // StateTy cannot spell "that component's state record". The name is in
+      // the type though (`TComp(Some("Todo"))`), so ask the program for the
+      // sibling's schema and check the body against it. Absent from the
+      // table — an untyped `component` slot, a component this job cannot see —
+      // and it stays opaque.
       let item = match self.ty_of(it.val, sc) {
         Some(t) =>
           match t.elem() {
-            Some(TAny) => SOpaque
+            Some(TComp(Some(c))) =>
+              match self.prog.defs.get(c) {
+                Some(d) => SComp(d)
+                None => SOpaque
+              }
+            Some(TAny) | Some(TComp(None)) => SOpaque
             Some(e) => STy(e)
             None =>
               raise NotIterable(

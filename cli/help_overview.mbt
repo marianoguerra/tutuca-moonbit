@@ -11,13 +11,22 @@ let overview_body : String =
   #|  tutuca {-h | --help}
   #|
   #|COMMANDS
-  #|  gen-views <file.html> [--name <Name>] [--out <dir|file>] [--dry-run] [--no-ir]
-  #|      Compile an .html file of views into a companion MoonBit module of
-  #|      typed view surfaces, plus a compiled-tree module beside it. The
-  #|      generated files are checked in; regenerate, never edit them.
+  #|  gen-views [path...] [--name <Name>] [--out <dir|file>] [--dry-run] [--no-ir]
+  #|      Compile .html files of views into companion MoonBit modules of typed
+  #|      view surfaces, plus a compiled-tree module beside each. The generated
+  #|      files are checked in; regenerate, never edit them. Paths follow the
+  #|      same rule as `watch` and the CSS commands — a directory contributes
+  #|      the .html files that already have a generated sibling.
+  #|
+  #|      Pass the whole project when you have one: the checks that span
+  #|      components (does the component this view renders exist? does it have
+  #|      the view `as=` names?) see exactly the paths you passed, and report
+  #|      nothing about a component outside them.
   #|        --name    component name heading the generated types
-  #|                  (default: the file's basename)
-  #|        --out     output directory, or an explicit .mbt path
+  #|                  (default: the file's basename). One component, so it is
+  #|                  refused with more than one path.
+  #|        --out     output directory, or an explicit .mbt path (the .mbt form
+  #|                  names one file, so it too is refused for a batch)
   #|        --dry-run print the generated modules instead of writing them
   #|        --no-ir   skip the companion <stem>_view_ir_gen.mbt
   #|
@@ -93,9 +102,12 @@ let overview_body : String =
   #|  missing feature — tutuca-mb compiles ahead of time, so those questions
   #|  are answered earlier, and more strictly, than a CLI could:
   #|
-  #|    - `gen-views` compiles your view file into typed MoonBit. A field that
+  #|    - `gen-views` compiles your view files into typed MoonBit. A field that
   #|      does not exist, or an `@on` handler nothing handles, is a BUILD
-  #|      error — not a finding you have to remember to go looking for.
+  #|      error — not a finding you have to remember to go looking for. Point
+  #|      it at the whole project and the checks that need two components
+  #|      (a missing child view, a read against the wrong child's schema)
+  #|      come with it.
   #|    - `moon check` type-checks every handler against its state struct.
   #|    - `moon test` runs component behaviour through the real event
   #|      pipeline; mount and drive a module with the

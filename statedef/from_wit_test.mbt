@@ -237,9 +237,13 @@ test "the reads a view makes are answerable from the schema" {
   // point: today they are not collected at all.
   assert_eq(d.field_of(TRecord("card"), "title"), Some(TText))
   assert_eq(d.field_of(TRecord("card"), "titel"), None)
-  // The boolean-position diagnostic.
+  // The boolean-position diagnostic. It asks whether the test can DECIDE
+  // anything, not whether the type is a bool: a list is always truthy, a
+  // string is not.
   assert_eq(d.field_of(TRecord("card"), "done").unwrap().is_boolish(), true)
   assert_eq(d.fields[0].ty.is_boolish(), false)
+  assert_eq(d.fields[1].ty.is_boolish(), true)
+  assert_eq((TRecord("card") : @statedef.StateTy).is_boolish(), false)
   // The <x render> diagnostic.
   let slot : @statedef.StateTy = TComp(Some("Card"))
   let text : @statedef.StateTy = TText

@@ -84,11 +84,38 @@ pub fn StateTy::in_struct(_self : StateTy) -> Bool {
 ///|
 pub fn StateTy::is_boolish(self : StateTy) -> Bool {
   // Everything has a truthiness at runtime; this asks whether writing it in
-  // a boolean position looks INTENDED. A list or a record in an `@show` is
-  // almost always a forgotten `.length` or field read.
+  // a boolean position can ever decide anything. `Value::is_truthy` answers
+  // `true` for List, Map and Obj unconditionally (JS objects are always
+  // truthy), so a container in an `@show` is a test that cannot fail — almost
+  // always a forgotten `.length` or field read.
+  //
+  // A string, a number and an enum are NOT in that set even though they are
+  // not booleans: `@show=".role"` beside `@text=".role"` is the idiomatic way
+  // to hide an empty badge, and `@show=".count"` hides a zero. Flagging those
+  // would cost more in false failures than the real ones are worth — the rule
+  // stated at the head of viewgen/check_state.mbt.
   match self {
-    TBool | TAny | TOption(_) | TComp(_) => true
-    _ => false
+    TList(_)
+    | TTuple(_)
+    | TRecord(_)
+    | TVariant(_)
+    | TFlags(_)
+    | TSet
+    | TOMap(_) => false
+    _ => true
+  }
+}
+
+///|
+/// The component this type names, when it names one. `option<greeting>` is a
+/// slot like `greeting` is — `is_renderable` already unwraps it, so the
+/// question "which component" has to unwrap it the same way or the two
+/// disagree about the same field.
+pub fn StateTy::component_named(self : StateTy) -> String? {
+  match self {
+    TComp(c) => c
+    TOption(inner) => inner.component_named()
+    _ => None
   }
 }
 

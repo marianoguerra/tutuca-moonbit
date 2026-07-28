@@ -25,7 +25,7 @@ pub fn render(
         Some(MathML) => Some(MathMl)
         None => None
       }
-      Some(@vdom.h(d.tag, attrs=eval_attrs(d.attrs, stack), childs~, ns?))
+      Some(@vdom.h(d.tag, attrs=eval_attrs_of(d, stack, ctx), childs~, ns?))
     }
     Fragment(d) => {
       let childs : Array[@vdom.Vdom] = []
@@ -341,6 +341,31 @@ fn render_each(
       }
   }
   Some(@vdom.fragment(out))
+}
+
+///|
+/// The evaluated attributes of one element.
+///
+/// A `ConstAttrs` element evaluates to the same map on every pass, so with a
+/// memo key minted for it (`DomData::attrs_id`, `anode/optimize.mbt`) the map
+/// is built once and handed to `@vdom.h` — which adopts rather than copies it
+/// — on every render after. Two allocations per element per pass become none,
+/// and the shared identity is what `diff_props`'s `physical_equal` fast path
+/// needs to answer in O(1).
+fn eval_attrs_of(
+  d : @anode.DomData,
+  stack : RenderStack,
+  ctx : RenderCtx,
+) -> Map[String, @vdom.AttrValue] {
+  if d.attrs_id != 0 {
+    if ctx.const_attrs.get(d.attrs_id) is Some(m) {
+      return m
+    }
+    let m = eval_attrs(d.attrs, stack)
+    ctx.const_attrs[d.attrs_id] = m
+    return m
+  }
+  eval_attrs(d.attrs, stack)
 }
 
 ///|

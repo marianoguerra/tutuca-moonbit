@@ -135,6 +135,7 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
+  mut attrs_id : Int
 } derive(@debug.Debug)
 
 pub(all) struct EachData {

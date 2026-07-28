@@ -26,6 +26,7 @@ pub struct App[N] {
   mut drag : DragState[N]?
   mut cur_drag_over : N?
   render_once : Map[Int, @vdom.Vdom]
+  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
   render_cache : @render.RenderCache
 }
 pub fn[N : @vdom.DomWalk] App::dispatch(Self[N], N, @render.DomEvent) -> Bool

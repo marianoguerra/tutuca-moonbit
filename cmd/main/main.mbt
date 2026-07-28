@@ -174,28 +174,50 @@ async fn run_install_skill(
 /// generated file in place is the whole workflow.
 async fn run_gen_views(
   opts : @cli.GlobalOpts,
-  input : String,
-  target : String,
-  name : String,
+  roots : Array[String],
+  out : String?,
+  name : String?,
   dry_run : Bool,
   ir : Bool,
 ) -> Unit noraise {
-  let source = @fs.read_file(input).text() catch {
-    e => {
-      emit_and_exit(
-        @cli.error_emit(
-          opts,
-          @cli.err(
-            @cli.CODE_INTERNAL,
-            "cannot read \{input}: \{e}",
-            hint="pass the path to the .html file holding the component's views",
-          ),
+  // The same expansion `watch` and the CSS commands use: an explicit .html at
+  // its word, a directory contributing the files that already have a generated
+  // sibling. That is what tells a view file from a page.
+  let paths = collect_view_files(roots)
+  if paths.is_empty() {
+    emit_and_exit(
+      @cli.error_emit(
+        opts,
+        @cli.err(
+          @cli.CODE_USAGE_MISSING_ARGUMENT,
+          "no view files under \{roots.join(", ")}",
+          hint="a directory contributes the .html files that already have a generated sibling; pass the .html path directly the first time",
         ),
-      )
-      return
-    }
+      ),
+    )
+    return
   }
-  let plan = match @cli.gen_views(source, name~, input~, target~, ir~) {
+  let inputs : Array[@cli.GenInput] = []
+  for input in paths {
+    let source = @fs.read_file(input).text() catch {
+      e => {
+        emit_and_exit(
+          @cli.error_emit(
+            opts,
+            @cli.err(
+              @cli.CODE_INTERNAL,
+              "cannot read \{input}: \{e}",
+              hint="pass the path to the .html file holding the component's views",
+            ),
+          ),
+        )
+        return
+      }
+    }
+    let (target, comp) = @cli.gen_views_target(input, out?, name?)
+    inputs.push({ input, target, name: comp, source })
+  }
+  let plan = match @cli.gen_views_all(inputs, ir~) {
     Ok(plan) => plan
     Err(shape) => {
       emit_and_exit(@cli.error_emit(opts, shape))
@@ -232,10 +254,25 @@ async fn run_gen_views(
       )
   }
   emit_and_exit({
-    out: plan.files.map(f => @cli.gen_views_success(f.0, input)).join(""),
+    out: plan.files
+    .map(f => @cli.gen_views_success(f.0, from_input(inputs, f.0)))
+    .join(""),
     err: plan.diagnostics.map(d => d + "\n").join(""),
     exit_code: 0,
   })
+}
+
+///|
+/// Which input a written file came from, for the "generated X from Y" line.
+/// Both of a file's modules are derived from its target, so the mapping is the
+/// same rule that produced the paths rather than a second guess at them.
+fn from_input(inputs : Array[@cli.GenInput], written : String) -> String {
+  for f in inputs {
+    if f.target == written || @cli.gen_views_ir_target(f.target) == written {
+      return f.input
+    }
+  }
+  written
 }
 
 ///|
@@ -683,8 +720,8 @@ async fn main {
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)
-    GenViews(opts, input~, target~, name~, dry_run~, ir~) =>
-      run_gen_views(opts, input, target, name, dry_run, ir)
+    GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>
+      run_gen_views(opts, roots, out, name, dry_run, ir)
     Watch(opts, plan~) => run_watch(opts, plan)
     GenCss(opts, plan~) => run_gen_css(opts, plan)
   }

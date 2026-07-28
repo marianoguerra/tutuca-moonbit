@@ -57,7 +57,13 @@ pub fn gen_css_success(String, files~ : Int, classes~ : Int) -> String
 
 pub fn gen_views(String, name~ : String, input~ : String, target~ : String, ir~ : Bool) -> Result[GenPlan, ErrShape]
 
+pub fn gen_views_all(Array[GenInput], ir~ : Bool) -> Result[GenPlan, ErrShape]
+
+pub fn gen_views_ir_target(String) -> String
+
 pub fn gen_views_success(String, String) -> String
+
+pub fn gen_views_target(String, out? : String, name? : String) -> (String, String)
 
 pub let global_flag_names : Array[String]
 
@@ -134,6 +140,13 @@ pub(all) struct FlagSpec {
   description : String?
 } derive(Eq, @debug.Debug)
 
+pub(all) struct GenInput {
+  input : String
+  target : String
+  name : String
+  source : String
+} derive(Eq, @debug.Debug)
+
 pub(all) struct GenPlan {
   files : Array[(String, String)]
   diagnostics : Array[String]
@@ -149,7 +162,7 @@ pub(all) enum Outcome {
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
-  GenViews(GlobalOpts, input~ : String, target~ : String, name~ : String, dry_run~ : Bool, ir~ : Bool)
+  GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
 } derive(Eq, @debug.Debug)

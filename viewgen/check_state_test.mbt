@@ -229,3 +229,242 @@ test "@push-view and @enrich-with keep the state scope" {
   )
   assert_true(msg.contains("`.qq` is not a field of the Board state"))
 }
+
+///|
+test "a container in @show is a test that cannot fail" {
+  // `Value::is_truthy` answers `true` for List, Map and Obj unconditionally
+  // (core/value_eval.mbt:98), so `@show=".alts"` shows the element for an
+  // EMPTY list too. It reads as a guard and is not one.
+  let msg = gen_err(
+    board(
+      "record state { alts: list<string> }", "<div @show=\".alts\">alternatives</div>",
+    ),
+    "Board",
+  )
+  assert_true(msg.contains("always truthy"))
+  assert_true(msg.contains("empty? .alts"))
+  // A record is the same story, and so is `@hide`.
+  let rec = gen_err(
+    board(
+      "record card { title: string }\nrecord state { c: card }", "<div @hide=\".c\">x</div>",
+    ),
+    "Board",
+  )
+  assert_true(rec.contains("`@hide=\".c\"`"))
+  assert_true(rec.contains("always truthy"))
+}
+
+///|
+test "a truthiness test that can decide something is left alone" {
+  // The predicate is the fix the message asks for, so it must not itself
+  // trip the check.
+  assert_eq(
+    gen_err(
+      board(
+        "record state { alts: list<string> }", "<div @show=\"empty? .alts\">none</div>",
+      ),
+      "Board",
+    ),
+    "",
+  )
+  // A string, a number and an option are NOT flagged. `@show=".role"` beside
+  // `@text=".role"` hides an empty badge and is the idiomatic spelling —
+  // storybook/examples/personal_site.html does exactly this.
+  assert_eq(
+    gen_err(
+      board(
+        "record state { role: string, count: s32, note: option<string>, on: bool }",
+        "<p @show=\".role\">r</p><p @show=\".count\">c</p>" +
+        "<p @show=\".note\">n</p><p @hide=\".on\">o</p>",
+      ),
+      "Board",
+    ),
+    "",
+  )
+  // An unknown type still checks nothing: unknown is not wrong.
+  assert_eq(
+    gen_err(
+      board(
+        "record state { anything: any }", "<div @show=\".anything\">x</div>",
+      ),
+      "Board",
+    ),
+    "",
+  )
+}
+
+///|
+test "a constant id inside a loop is not an id" {
+  // The loop emits its body once per item, so `id="row"` is stamped on every
+  // one of them. Only the compiled tree knows the element repeats — this is
+  // not visible to an HTML linter reading the source.
+  let msg = gen_err(
+    board(
+      "record state { items: values }", "<ul><li @each=\".items\" id=\"row\"><x text=\"@value\"></x></li></ul>",
+    ),
+    "Board",
+  )
+  assert_true(msg.contains("`id=\"row\"` sits inside an `@each`"))
+  assert_true(msg.contains("use a class"))
+  // Nested one level deeper is the same story.
+  assert_true(
+    gen_err(
+      board(
+        "record state { items: values }", "<ul><li @each=\".items\"><span id=\"cell\">x</span></li></ul>",
+      ),
+      "Board",
+    ).contains("`id=\"cell\"`"),
+  )
+}
+
+///|
+test "an id outside the loop, and a per-item id, are both fine" {
+  assert_eq(
+    gen_err(
+      board(
+        "record state { items: values }",
+        "<ul id=\"list\"><li @each=\".items\" :id=\"$'row-{@key}'\">" +
+        "<x text=\"@value\"></x></li></ul>",
+      ),
+      "Board",
+    ),
+    "",
+  )
+  // `<x render-each>` drops the element it is written on, so there is no host
+  // markup to repeat and nothing to report.
+  assert_eq(
+    gen_err(
+      board(
+        "record state { items: values }", "<div id=\"pane\"><x render-each=\".items\"></x></div>",
+      ),
+      "Board",
+    ),
+    "",
+  )
+}
+
+///|
+/// Generate, returning the ADVISORY findings (the `hints` channel) rather than
+/// the fatal ones.
+fn gen_hints(html : String, name : String) -> Array[String] {
+  let hints : Array[String] = []
+  try
+    @viewgen.emit_module(name, "t.html", @viewgen.split_file(html), hints~)
+    |> ignore
+  catch {
+    _ => ()
+  }
+  hints
+}
+
+///|
+/// Two components in one file: a Page holding a list of Rows.
+fn page_and_row(page_view : String, row_views : String) -> String {
+  "<script type=\"tutuca/state\">\n" +
+  "interface page { record state { rows: list<row>, sel: row } }\n" +
+  "interface row { record state { title: string } }\n" +
+  "</script>\n" +
+  "<template id=\"Page\">" +
+  page_view +
+  "</template>" +
+  row_views
+}
+
+///|
+test "a read inside a loop over CHILD components is checked against that child" {
+  // `list<row>` names a sibling interface, so the element type is the Row
+  // component — a thing one StateDef could never answer, which is why the
+  // loop body used to go opaque and this typo rendered as null.
+  let msg = gen_err(
+    page_and_row(
+      "<ul><li @each=\".rows\"><x text=\".titel\"></x></li></ul>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+    ),
+    "Page",
+  )
+  assert_true(msg.contains("`.titel` is not a field of the Row state"))
+  assert_true(msg.contains("did you mean `.title`?"))
+  // `@value.member` names the same place and must agree.
+  assert_true(
+    gen_err(
+      page_and_row(
+        "<ul><li @each=\".rows\"><x text=\"@value.titel\"></x></li></ul>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+      ),
+      "Page",
+    ).contains("not a field of the loop item (the Row component)"),
+  )
+  // The correct spellings both pass.
+  assert_eq(
+    gen_err(
+      page_and_row(
+        "<ul><li @each=\".rows\"><x text=\".title\"></x>" +
+        "<x text=\"@value.title\"></x></li></ul>",
+        "<template id=\"Row\"><span @text=\".title\"></span></template>",
+      ),
+      "Page",
+    ),
+    "",
+  )
+}
+
+///|
+test "an `as=` naming a view the child does not have is reported" {
+  // At run time `resolve_view` returns None and the site renders NOTHING.
+  // Only a table spanning both components can see it.
+  let hints = gen_hints(
+    page_and_row(
+      "<x render=\".sel\" as=\"edit\"></x>",
+      "<template id=\"Row\"><span @text=\".title\"></span></template>" +
+      "<template id=\"Row:edt\"><span></span></template>",
+    ),
+    "Page",
+  )
+  assert_eq(hints.length(), 1)
+  assert_true(hints[0].contains("unknown-child-view (hint)"))
+  assert_true(hints[0].contains("the Row component has no `edit` view"))
+  assert_true(hints[0].contains("did you mean `edt`?"))
+  // `render-each` reaches the same check through the loop's element type.
+  let each_hints = gen_hints(
+    page_and_row(
+      "<x render-each=\".rows\" as=\"edit\"></x>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+    ),
+    "Page",
+  )
+  assert_eq(each_hints.length(), 1)
+  assert_true(each_hints[0].contains("has no `edit` view (it has main)"))
+}
+
+///|
+test "a view name that does resolve, or cannot be known, is reported by nothing" {
+  // The name exists.
+  assert_eq(
+    gen_hints(
+      page_and_row(
+        "<x render=\".sel\" as=\"edit\"></x>",
+        "<template id=\"Row\"><span @text=\".title\"></span></template>" +
+        "<template id=\"Row:edit\"><input></template>",
+      ),
+      "Page",
+    ).length(),
+    0,
+  )
+  // The name is chosen at run time, so there is nothing to check.
+  assert_eq(
+    gen_hints(
+      page_and_row(
+        "<x render=\".sel\" as=\".pick\"></x>", "<template id=\"Row\"><span @text=\".title\"></span></template>",
+      ),
+      "Page",
+    ).length(),
+    0,
+  )
+  // An untyped `component` slot names no component: unknown is not wrong, in
+  // the hints channel as much as in the fatal one.
+  assert_eq(
+    gen_hints(
+      "<script type=\"tutuca/state\">\ninterface page { record state { sel: component } }\n</script>" +
+      "<template id=\"Page\"><x render=\".sel\" as=\"edit\"></x></template>",
+      "Page",
+    ).length(),
+    0,
+  )
+}

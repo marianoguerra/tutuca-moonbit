@@ -185,6 +185,14 @@ pub(all) struct DomData {
   attrs : Attrs
   childs : Array[ANode]
   ns : Ns?
+  /// Renderer memo key for this element's evaluated attributes, minted by
+  /// `optimize_node` for a `ConstAttrs` element and 0 for everything else.
+  /// Same contract as a `RenderOnce` id: a process-global int, minted at load
+  /// time because the renderer keys a per-app cache on it, and meaningless
+  /// without that cache. Constant attributes evaluate to the same map on
+  /// every pass, so the renderer can hand the SAME map to every `h` call and
+  /// let `diff_props`'s `physical_equal` fast path answer in O(1).
+  mut attrs_id : Int
 } derive(Debug)
 
 ///|

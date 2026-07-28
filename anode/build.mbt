@@ -89,7 +89,7 @@ pub fn h(
   childs : Array[ANode],
   ns? : Ns,
 ) -> ANode {
-  Dom({ tag, attrs: attrs_of_items(attrs), childs, ns })
+  Dom({ tag, attrs: attrs_of_items(attrs), childs, ns, attrs_id: 0 })
 }
 
 ///|

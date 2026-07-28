@@ -224,13 +224,21 @@ declare pub fn nearest(name : String, names : Array[String]) -> String?
 declare pub fn StateTy::in_struct(self : StateTy) -> Bool
 
 ///|
-/// True when a value of this type is a sensible thing to put in a boolean
-/// position (`@show`, `@hide`, a predicate).
+/// True when a value of this type can decide anything in a boolean position
+/// (`@show`, `@hide`, a predicate). False only for the container kinds, which
+/// `Value::is_truthy` answers `true` for unconditionally — a test over one of
+/// those cannot fail.
 declare pub fn StateTy::is_boolish(self : StateTy) -> Bool
 
 ///|
 /// True when `<x render>` can address a value of this type.
 declare pub fn StateTy::is_renderable(self : StateTy) -> Bool
+
+///|
+/// The component this type names, unwrapping an `option` the same way
+/// `is_renderable` does. None for the untyped `component` marker and for
+/// everything that is not a slot.
+declare pub fn StateTy::component_named(self : StateTy) -> String?
 
 ///|
 /// The MoonBit source of the `@tutuca.TyInfo` expression describing this type.

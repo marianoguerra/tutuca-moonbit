@@ -58,18 +58,30 @@ pub fn h(
   key? : String,
   ns? : Ns,
 ) -> Vdom {
-  let props : Map[String, AttrValue] = Map([])
   let mut key = key
   let mut ns = ns
-  for name, value in attrs {
-    match name {
-      "key" => if key is None { key = Some(value.to_attr_string()) }
-      "namespace" =>
-        if ns is None && value is Str(uri) {
-          ns = Some(Ns::from_uri(uri))
-        }
-      _ => props[name] = value
+  // `attrs` is adopted, not copied, when there is nothing to strip out of it.
+  // Two lookups against a copy of every entry — and, more to the point, the
+  // caller can then hand the SAME map to every render of a static-attribute
+  // element, which is what lets `diff_props`'s `physical_equal` fast path
+  // answer in O(1) instead of hashing every key in both directions. Nothing
+  // mutates a VElem's attrs after construction, so sharing is safe.
+  let props : Map[String, AttrValue] = if attrs.contains("key") ||
+    attrs.contains("namespace") {
+    let stripped : Map[String, AttrValue] = Map([])
+    for name, value in attrs {
+      match name {
+        "key" => if key is None { key = Some(value.to_attr_string()) }
+        "namespace" =>
+          if ns is None && value is Str(uri) {
+            ns = Some(Ns::from_uri(uri))
+          }
+        _ => stripped[name] = value
+      }
     }
+    stripped
+  } else {
+    attrs
   }
   let mut tag = tag
   if ns is None {

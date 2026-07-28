@@ -12,7 +12,10 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
-| does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/state">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root |
+| does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/state">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
+| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss renders blank at run time, and only a run that can see both components can say so. Reported as a hint, because `component()`'s `slots~` can point a slot at a different component than the schema names |
+| does this `@show` decide anything? | `gen-views` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
+| is this `id=` unique? | `gen-views` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
 | is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
 | does the handler compile against the state? | `moon check` — state is a plain struct; `s.cuont` does not compile |
 | does the component behave? | `moon test` over `@harness` — mount it, fire real events, read the DOM back → [testing.md](./testing.md) |
@@ -26,7 +29,7 @@ inspect a component, the answer is a `moon test` block.
 
 | Command                  | Purpose                                                                                                                |
 | ------------------------ | ---------------------------------------------------------------------------------------------------------------------- |
-| `gen-views <file.html>`  | Compile an `.html` file of views into a companion MoonBit module of typed view surfaces. Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
+| `gen-views [path...]`  | Compile `.html` files of views into companion MoonBit modules of typed view surfaces. Paths are files or directories (a directory contributes the `.html` files that already have a generated sibling). Flags: `--name <Name>`, `--out <dir-or-file>`, `--dry-run`, `--no-ir`. See below |
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
@@ -44,7 +47,24 @@ string literal, and turns the view's vocabulary into types:
 ```sh
 tutuca gen-views demo/counterlib/counter.html --name Counter
 # -> demo/counterlib/counter_view_gen.mbt   (checked in; regenerate, never edit)
+
+tutuca gen-views src/            # the whole project, in one invocation
 ```
+
+**Pass the whole project when you have one.** Two checks need more than one
+component's schema, and they see exactly the paths you passed:
+
+- `<x render=".slot" as="edit">` where the child has no `edit` view. At run time
+  `resolve_view` returns None and the site renders **nothing**. Reported as a
+  hint rather than an error, because `component()`'s `slots~` can point a
+  declared slot at a different component and the generator cannot see that.
+- `.field` and `@value.member` inside a loop over `list<todo>`, checked against
+  the **Todo** component's schema rather than skipped.
+
+A component outside the paths you passed is unknown, and unknown is never
+reported as wrong — so `tutuca gen-views one.html` still works and simply
+checks less. `--name` and an `--out` ending in `.mbt` each name ONE thing, so
+both are refused with more than one path.
 
 One view file per MoonBit module, not per component — template ids say what
 each one is:

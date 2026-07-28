@@ -117,6 +117,7 @@ pub(all) enum StateTy {
   TComp(String?)
   TAny
 } derive(Eq, @debug.Debug)
+pub fn StateTy::component_named(Self) -> String?
 pub fn StateTy::elem(Self) -> Self?
 pub fn StateTy::in_struct(Self) -> Bool
 pub fn StateTy::is_boolish(Self) -> Bool

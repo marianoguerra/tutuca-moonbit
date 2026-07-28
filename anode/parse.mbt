@@ -117,7 +117,7 @@ fn from_element(
     }
     Some(
       wrap(
-        Dom({ tag, attrs: result.attrs, childs: dom_childs, ns }),
+        Dom({ tag, attrs: result.attrs, childs: dom_childs, ns, attrs_id: 0 }),
         px,
         result.wrappers,
       ),

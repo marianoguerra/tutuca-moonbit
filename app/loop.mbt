@@ -26,6 +26,10 @@ pub struct App[N] {
   /// RenderOnce memo, persisted across render passes (JS RenderOnceNode's
   /// per-view cache) so constant subtrees are built once for the app's life.
   render_once : Map[Int, @vdom.Vdom]
+  /// Evaluated attributes of every static-attribute element, persisted across
+  /// passes so each one is built once for the app's life and every render
+  /// hands the differ the SAME map.
+  const_attrs : Map[Int, Map[String, @vdom.AttrValue]]
   /// Component render-site cache (JS _rValComp DomCache), persisted across
   /// passes; generation-rolled each render so unchanged subtrees are reused.
   render_cache : @render.RenderCache
@@ -53,6 +57,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_once: Map([]),
+    const_attrs: Map([]),
     render_cache: @render.RenderCache::new(),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
@@ -155,6 +160,7 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   let ctx = @render.RenderCtx::new(
     view_resolver=self.scope.comps,
     render_once=self.render_once,
+    const_attrs=self.const_attrs,
     render_cache=self.render_cache,
   )
   match @render.render_root(root_val, stack, ctx) {
