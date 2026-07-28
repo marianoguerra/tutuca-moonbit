@@ -74,6 +74,7 @@ pub struct Transactor {
   mut root : &@core.PathNode
   // private fields
 }
+pub fn Transactor::clear_subscriptions(Self) -> Unit
 pub fn Transactor::has_pending(Self) -> Bool
 pub fn Transactor::new(&@core.PathNode, requests? : &Requests) -> Self
 pub fn Transactor::observe(Self, (ObserveRecord) -> Unit) -> () -> Unit

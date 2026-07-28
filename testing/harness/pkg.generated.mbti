@@ -26,6 +26,7 @@ pub fn Harness::attr(Self, String, String, nth? : Int) -> String? raise
 pub fn Harness::check(Self, String, Bool, nth? : Int) -> Unit raise
 pub fn Harness::checked_of(Self, String, nth? : Int) -> Bool raise
 pub fn Harness::click(Self, String, nth? : Int) -> Unit raise
+pub fn Harness::destroy(Self) -> Unit
 pub fn Harness::drag(Self, String, Int, Int) -> Unit raise
 pub fn Harness::drive_value(Self) -> @core.Value
 pub fn Harness::find(Self, String, nth? : Int) -> @memdom.MemNode raise

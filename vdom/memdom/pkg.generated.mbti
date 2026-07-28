@@ -35,6 +35,7 @@ pub struct MemNode {
   mut dangerous_html : String?
   mut inner_html_sets : Int
 }
+pub fn MemNode::destroy_tree(Self) -> Unit
 pub fn MemNode::get_attribute(Self, String) -> String?
 pub fn MemNode::get_property(Self, String) -> @vdom.AttrValue?
 pub fn MemNode::to_html(Self) -> String
