@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.7.0] - 2026-07-29
+
 ### Added
 
 - **`gen-views` takes `[path…]`, and the checks that need two components come
