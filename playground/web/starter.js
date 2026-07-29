@@ -15,11 +15,23 @@ const EXAMPLES = {
   // The default example. The view lives in the View tab; the component reads
   // the compiled tree and the message enum generated from its @on handlers.
   Counter: {
-    view: `<!-- name: Counter -->
-<!-- Edit this and the Generated tab updates; the component tab sees the
+    view: `<!-- Edit this and the Generated tab updates; the component tab sees the
      names it declares. Adding an @on handler here breaks the match below
      until you handle it — that is the point. -->
-<template>
+
+<!-- The state is declared here too, in a WIT subset: CounterState, its
+     zero(), and its @component.Fields impl (schema + codec) are generated
+     from this block, so the component tab never writes a codec by hand. -->
+<script type="tutuca/state">
+  interface counter {
+    record state {
+      count: s32,
+      label: string,
+    }
+  }
+</script>
+
+<template id="Counter">
   <style>display:flex;gap:.5rem;align-items:center;font-size:1.5rem</style>
   <div>
     <button id="dec" @on.click="add -1">-</button>
@@ -31,21 +43,19 @@ const EXAMPLES = {
 `,
     code: `// The view lives in the View tab. \`tutuca gen-views\` turns it into the
 // module in the Generated tab, which is compiled as part of THIS package —
-// so counter_views(), CounterMsg and CounterId are all in scope here.
-struct CounterState {
-  count : Int
-  label : String
-} derive(ToJson, FromJson)
+// so CounterState, counter_component() and CounterMsg are all in scope here.
+//
+// Schema AND templates together generate \`counter_component(...)\`: a
+// @component.component() with the name, views and styles already filled in,
+// leaving the handlers. The codec and the schema are not parameters — they
+// are the state type's @component.Fields impl.
 
 fn build() -> @component.ModuleDef {
-  let counter = @component.component(
-    name="Counter",
-    // the compiled tree from the View tab: no template parsing at startup
-    views=counter_views(),
+  let counter = counter_component(
     init=CounterState::{ count: 0, label: "clicks" },
     // CounterMsg is generated from the @on handlers in the View tab, with
     // payload types read off the call sites — \`add 1\` makes Add(Double).
-    update=(s : CounterState, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
+    update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
       Some(Add(d)) => Some({ ..s, count: s.count + d.to_int() })
       Some(Unknown(_, _)) | None => None
     },
@@ -62,32 +72,33 @@ fn build() -> @component.ModuleDef {
   // compute derives the label — so the component has no @on Input handlers at
   // all, and no update. The View tab still compiles ahead of time.
   Toggle: {
-    view: `<!-- name: Panel -->
-<template>
+    view: `<script type="tutuca/state">
+  interface panel {
+    record state {
+      open: bool,
+    }
+  }
+</script>
+
+<template id="Panel">
   <style>font-family:system-ui</style>
   <section>
-    <button @on.click="\$toggleOpen" @text="\$label"></button>
+    <button @on.click="toggleOpen" @text="\$label"></button>
     <p @show=".open" style="padding:.5rem;border:1px solid #ccc;margin-top:.5rem">
       Now you see me. Toggle again to hide.
     </p>
   </section>
 </template>
 `,
-    code: `// 'open' is a Bool field, so \$toggleOpen is generated; \$label is a compute.
-// No hand-written handlers, no update — the view drives it all.
-struct PanelState {
-  open : Bool
-} derive(ToJson, FromJson)
+    code: `// 'open' is a Bool field, so a toggleOpen mutator is generated for it; \$label
+// is a compute. No hand-written handlers, no update — the view drives it all.
 
 fn build() -> @component.ModuleDef {
-  let panel = @component.component(
-    name="Panel",
-    views=panel_views(),
+  let panel = panel_component(
     init=PanelState::{ open: false },
-    compute={
-      "label": (s : PanelState, _a) => Str(
-        if s.open { "Hide details" } else { "Show details" },
-      ),
+    compute=m => match m {
+      Label =>
+        Some((s, _a) => Str(if s.open { "Hide details" } else { "Show details" }))
     },
   )
   @component.ModuleDef::new(
@@ -101,24 +112,26 @@ fn build() -> @component.ModuleDef {
   // Two-way binding: :value reads the field, @on.input writes it via the
   // generated $setName mutator. @text mirrors it live. No handlers needed.
   "Text input": {
-    view: `<!-- name: Greeter -->
-<template>
+    view: `<script type="tutuca/state">
+  interface greeter {
+    record state {
+      name: string,
+    }
+  }
+</script>
+
+<template id="Greeter">
   <div style="font-family:system-ui;display:flex;flex-direction:column;gap:.5rem">
-    <input :value=".name" @on.input="\$setName value" placeholder="your name">
+    <input :value=".name" @on.input="setName value" placeholder="your name">
     <p>Hello, <b @text=".name"></b>!</p>
   </div>
 </template>
 `,
-    code: `// :value + @on.input="\$setName value" is a two-way bind through the field's
-// generated \$setName mutator. @text mirrors it live. No handlers needed.
-struct GreeterState {
-  name : String
-} derive(ToJson, FromJson)
+    code: `// :value + @on.input="setName value" is a two-way bind through the field's
+// generated setName mutator. @text mirrors it live. No handlers needed.
 
 fn build() -> @component.ModuleDef {
-  let greeter = @component.component(
-    name="Greeter",
-    views=greeter_views(),
+  let greeter = greeter_component(
     init=GreeterState::{ name: "world" },
   )
   @component.ModuleDef::new(
@@ -136,9 +149,33 @@ fn build() -> @component.ModuleDef {
   // or throwaway view.
   "Dynamic view (raw handlers)": `// Runtime-compiled view + untyped handlers — the escape hatch. The AOT
 // examples above turn the View tab into a checked module instead.
+//
+// No View tab means no generator, so this state writes the three
+// @component.Fields methods by hand — the same contract gen-views emits from
+// a \`tutuca/state\` block. That is the whole cost of leaving the AOT path.
 struct CounterState {
   count : Int
-} derive(ToJson, FromJson)
+}
+
+impl @component.Fields for CounterState with fn schema() {
+  @component.SchemaInfo::new(
+    // hand-written, so the fingerprint is ours to state; the generator
+    // hashes the schema instead
+    fingerprint="starter-dynamic-counter",
+    fields=[@component.FieldInfo::new("count", TyInt)],
+    inputs=["dec", "inc"],
+    view_names=["main"],
+  )
+}
+
+impl @component.Fields for CounterState with fn encode(s) {
+  { "count": Num(s.count.to_double()) }
+}
+
+impl @component.Fields for CounterState with fn decode(f) {
+  guard f.get("count") is Some(Num(count)) else { return None }
+  Some(CounterState::{ count: count.to_int() })
+}
 
 fn build() -> @component.ModuleDef {
   let counter = @component.component(
@@ -147,7 +184,7 @@ fn build() -> @component.ModuleDef {
       #|<div style="display:flex;gap:.5rem;align-items:center;font-size:1.5rem">
       #|  <button @on.click="dec">-</button>
       #|  <b @text=".count"></b>
-      #|  <button @on.click="\$inc">+</button>
+      #|  <button @on.click="inc">+</button>
       #|</div>
     )),
   },
@@ -155,9 +192,9 @@ fn build() -> @component.ModuleDef {
   init=CounterState::{ count: 0 },
   update=(s : CounterState, msg, _ctx) => match msg {
       Input("dec", _) => Some({ count: s.count - 1 })
+      Input("inc", _) => Some({ count: s.count + 1 })
       _ => None
     },
-  mutate={ "inc": (s : CounterState, _a) => { count: s.count + 1 } },
 )
   @component.ModuleDef::new(
     name="counter", components=[counter],

@@ -9,15 +9,20 @@
 // where there is no moon.pkg to declare imports and `@tutuca` is the
 // module-root facade rather than core/.
 //
-// Covered: the standalone playground's starter example (starter.js) and every
+// Covered: EVERY starter example the picker offers (starter.js) and every
 // landing-site example pair (playground/site/examples/<name>.{mbt,html}) —
-// those are what dist/index.html compiles in a visitor's browser.
+// those are what dist/index.html compiles in a visitor's browser. The starter
+// examples are covered here and nowhere else: no moon package includes them
+// and check-playground-examples.mjs reads only site/examples, so the API can
+// move out from under them silently (it did — `component()` grew a `Fields`
+// bound and lost `mutate~`, and all four went on shipping uncompilable).
 //
 // Run after `node playground/build/assemble.mjs`:
 //   node playground/build/check-viewgen-tab.mjs
 
 import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
+import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
@@ -47,12 +52,18 @@ const generate = (html) => {
 // --- the cases: the starter example + the landing site's examples -----------
 const cases = [];
 
+// Every picker entry with a View tab. (The one runtime-view escape-hatch
+// example is a plain string with no view; it has no generated module, so
+// there is nothing for THIS check to drive — its compile is covered by
+// check-playground-examples.mjs' sibling scaffold instead.)
 const starterSrc = readFileSync(join(OUT, "starter.js"), "utf8");
 const window = {};
 new Function("window", starterSrc)(window);
-const starter = window.EXAMPLES["Counter"];
-if (!starter || !starter.view) throw new Error("starter has no view-tab example");
-cases.push({ label: "starter:Counter", code: starter.code, html: starter.view });
+const withViews = Object.entries(window.EXAMPLES).filter(([, ex]) => ex && ex.view);
+if (!withViews.length) throw new Error("starter has no view-tab example");
+for (const [name, ex] of withViews) {
+  cases.push({ label: `starter:${name}`, code: ex.code, html: ex.view });
+}
 
 for (const file of readdirSync(SITE_EXAMPLES).filter((f) => f.endsWith(".mbt")).sort()) {
   const html = join(SITE_EXAMPLES, file.replace(/\.mbt$/, ".html"));
@@ -68,7 +79,18 @@ for (const file of readdirSync(SITE_EXAMPLES).filter((f) => f.endsWith(".mbt")).
 
 // --- the in-browser compiler, as the worker drives it -----------------------
 globalThis.process = process;
-const moonc = (await import(join(OUT, "moonc-web.cjs"))).default;
+// A failed compile leaves moonc UNUSABLE — on an error it calls process.exit,
+// which returns mid-abort here, so every later buildPackage yields no core and
+// reports the FIRST failure's diagnostics forever. The worker handles this with
+// `compilerDirty` + a fresh evaluation (see compiler.worker.js); do the same,
+// or one stale example turns every case after it into a false failure.
+const require = createRequire(import.meta.url);
+const MOONC = join(OUT, "moonc-web.cjs");
+const loadCompiler = () => {
+  delete require.cache[require.resolve(MOONC)];
+  return require(MOONC);
+};
+let moonc = loadCompiler();
 const manifest = JSON.parse(readFileSync(join(OUT, "manifest.json"), "utf8"));
 const m = manifest.targets.js;
 const base = join(OUT, "fs", "js");
@@ -123,6 +145,9 @@ for (const c of cases) {
     console.error(`\nthe generated module does not compile in the playground:\n`);
     console.error(diagnostics.join("\n\n"));
     failed++;
+    // start the next case from a clean compiler (see loadCompiler above)
+    moonc = loadCompiler();
+    seenDiagnostics = 0;
     continue;
   }
 
