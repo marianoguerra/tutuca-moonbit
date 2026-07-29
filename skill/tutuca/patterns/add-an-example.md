@@ -5,7 +5,8 @@ storybook and the demo hosts can all mount it.
 
 Add `ExampleDef`s to the module's `ModuleDef`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `foo_comp` is the reader's own component
 pub fn foo_module() -> @component.ModuleDef {
   let foo = foo_comp()
   @component.ModuleDef::new(name="foo", components=[foo], examples=[
@@ -31,5 +32,23 @@ respond to hold a loading state) — see *The ModuleDef convention* in
 
 The same example is then reachable two ways: `@harness.mount_example(
 foo_module(), "Loading")` in a test, and the storybook / a demo host page
-mounting the module. If a demo host keeps a catalog, register the module
-in its example list.
+mounting the module.
+
+## Landing it in the gallery
+
+A gallery built from a compiled registry has more steps, and skipping any of them
+is **silent** rather than broken — the example appears, just unlabeled or in the
+wrong place:
+
+1. **Register the module** in the registry the gallery reads (in this repo,
+   `storybook/examples/examples.mbt`).
+2. **Give its name a section.** Sidebar grouping is a curated
+   `name -> section` map (`storybook/stories.mbt`), not derived from the module.
+   An unlisted name falls into **"Other"**, appended last. A section you add
+   that is not in `section_order` still renders, but after all the ordered ones.
+3. **Give it a title and description**, in the same file's `name -> (title,
+   description)` map. Unlisted, the story's title falls back to the raw
+   registry name and its description to the empty string.
+
+All three are display metadata: nothing about the component or its tests depends
+on them.

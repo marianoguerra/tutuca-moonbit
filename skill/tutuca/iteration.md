@@ -47,7 +47,8 @@ state first, always. With generated views the bucket is a match over a
 generated enum (one case per name the views use — a closed set), and the
 wrapper types the lambdas, so no annotations are needed:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // @when: (s, key, value, iterData) -> Bool — true keeps the item
 when=w => match w {
   FilterItem =>
@@ -80,10 +81,9 @@ loop_with=l => match l {
 },
 ```
 
-(A raw `@component.component(...)` call — no generated wrapper — takes
-string-keyed maps instead: `when={ "filterItem": (s : ListState, _key,
-value, _iter) => ... }`, with the state annotated. The signatures are
-the same; only the keying differs.)
+(This is the raw-call spelling. The signatures are identical either way; only
+the keying differs — see
+[The handler buckets](./core.md#the-handler-buckets).)
 
 Loop keys and values arrive as `@tutuca.Value` — read them with the
 coercers (`.str()`, `.int()`, `.list()`, `.field("x")`) or pattern-match
@@ -99,7 +99,7 @@ fields optional:
   `@enrich-with`. Defaults to `Map({ "seq": seq })` when omitted. Inside
   the loop a binding may read one **binding member** directly
   (`@value.title`) — if an enrich handler only copies members of the
-  loop value, the linter hints to drop it and read the members instead.
+  loop value, `gen-views` hints to drop it and read the members instead.
 - **`start`, `end`** (as `Int`) — a positional slice of the iteration,
   with JS `Array.prototype.slice` semantics: `end` is exclusive,
   negatives count from the end (`end=-3` drops the last 3), absent
@@ -184,7 +184,8 @@ Without an `@each` on the same element, `@enrich-with` resolves in the
 its **returned** `Map[String, Value]`'s keys become `@`-prefixed
 bindings for descendants.
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 enrich_scope={
   "enrichScope": (s : TextState) => {
     "len": Num(s.text.length().to_double()),
@@ -259,7 +260,8 @@ is full.
 page keys, and stashes them in a binding only the loop reads. Fastest,
 but the two handlers are welded together — name them so it shows:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // the only scan: count + labels + keys, stashed under "__keys__"
 enrich_scope=e => match e {
   PagerInfo =>

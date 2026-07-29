@@ -22,12 +22,15 @@ Written args arrive in the handler's `args : Array[Value]` in template order.
 The first slot is a handler name — always bare in an event position, and
 dispatched as `Input(name, args)`; `$name` belongs in a VALUE position and is
 a generation error here. Later slots
-are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `event`,
-`key`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `dragInfo`, … `value` resolves
-to the input's value (or the checked state for a checkbox, the metadata
-`Map` for a file input, or the `detail` for a `CustomEvent`).
+are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `key`,
+`keyCode`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isSend`, `isCancel`,
+`dragInfo`, … `value` resolves to the input's value (or the checked state for a
+checkbox, the metadata `Map` for a file input, or the `detail` for a
+`CustomEvent`). There is no `event` / `target` / `ctx` arg: a DOM object is not
+a `Value`, so asking for one silently yields `Null`.
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // gets ctx: (s, msg, ctx) => S?; None = no change.
 // `CounterMsg` is generated from the `@on` names the views raise, so adding
 // one to the view makes this match non-exhaustive until it is answered.
@@ -53,6 +56,8 @@ Bind events declaratively with `@on.` rather than reaching for the node and
 that needs `ctx` (to `send`/`bubble`/`request`) must be an `update` arm —
 `compute` is pure by type.
 
-Pass the most granular arg the handler needs — `value`/`valueAsInt`/`key`, not
-the raw `event` — so tests drive it with plain literals. Why this keeps tests
-simple: [testing.md](../testing.md) *Designing handlers so tests stay simple*.
+Pass the most granular arg the handler needs — `value`/`valueAsInt`/`key` — so
+tests drive it with plain literals. Why this keeps tests simple:
+[testing.md](../testing.md#designing-handlers-so-tests-stay-simple). The full arg
+list and the generated `<Comp>Msg` payload types are in
+[events.md](../events.md).

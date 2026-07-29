@@ -23,6 +23,10 @@ check:
 check-examples:
     {{dev}} check-examples
 
+# compile-check the MoonBit snippets in the bundled skill (skill/tutuca/)
+check-skill:
+    {{dev}} check-skill
+
 # format sources and regenerate the .mbti interface files
 fmt:
     {{dev}} fmt

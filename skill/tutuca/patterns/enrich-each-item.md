@@ -9,7 +9,8 @@ without storing it on the data.
 </li>
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // generated wrapper: enum-keyed ("enrichItem" -> EnrichItem)
 enrich=e => match e {
   // (s, binds, key, value, iterData) -> Unit; write into binds

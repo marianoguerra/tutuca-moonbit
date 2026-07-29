@@ -3,42 +3,51 @@
 **Problem:** build tabs — a single `currentView` field decides which panel
 shows, and the active tab button is highlighted.
 
-```html
-<div role="tablist" class="tabs">
-  <button
-    role="tab"
-    @if.class="equals? .currentView 'overview'"
-    @then="'tab tab-active'"
-    @else="'tab'"
-    @on.click="setCurrentView 'overview'"
-  >Overview</button>
-  <button
-    role="tab"
-    @if.class="equals? .currentView 'pricing'"
-    @then="'tab tab-active'"
-    @else="'tab'"
-    @on.click="setCurrentView 'pricing'"
-  >Pricing</button>
-</div>
+`tabs.html`:
 
-<div @show="equals? .currentView 'overview'">…overview…</div>
-<div @show="equals? .currentView 'pricing'">…pricing…</div>
+```html
+<script type="tutuca/state">
+  interface tabs {
+    record state { current-view: string }
+  }
+</script>
+
+<template id="Tabs">
+  <section>
+    <div role="tablist" class="tabs">
+      <button role="tab"
+        @if.class="equals? .currentView 'overview'" @then="'tab tab-active'" @else="'tab'"
+        @on.click="setCurrentView 'overview'">Overview</button>
+      <button role="tab"
+        @if.class="equals? .currentView 'pricing'" @then="'tab tab-active'" @else="'tab'"
+        @on.click="setCurrentView 'pricing'">Pricing</button>
+    </div>
+    <div @show="equals? .currentView 'overview'">…overview…</div>
+    <div @show="equals? .currentView 'pricing'">…pricing…</div>
+  </section>
+</template>
 ```
 
-```moonbit
-priv struct TabsState {
-  currentView : String // $setCurrentView is auto-generated
-}
+`tabs.mbt` — there are no handlers to write: `setCurrentView` is the mutator
+every text field gets, so the only thing left is the initial state.
 
-// in the component spec:
-init=TabsState::{ currentView: "overview" },
+```moonbit
+///|
+fn tabs_comp() -> @component.Component {
+  tabs_component(init={ currentView: "overview" })
+}
 ```
 
 One string field is the whole state machine. `equals? .currentView 'overview'`
 drives both the panel's `@show` and the active-tab class via `@if.class` /
-`@then` / `@else`. Tab clicks call the auto-generated setter with a
-string-literal arg (`@on.click="setCurrentView 'pricing'"`). This toggles
-**sibling panels** by predicate; to swap a *component's own* rendered view
-instead, see the switch-between-views recipe. The field name is yours to pick
-(`tab`, `currentView`, …). The same shape scales up to tabs over whole
-sub-apps — each panel a component rendered with `<x render=".field">`.
+`@then` / `@else`. Tab clicks call the generated setter with a string-literal arg
+(`@on.click="setCurrentView 'pricing'"`).
+
+Note the schema spells the field `current-view` while the views read
+`.currentView`: kebab-case in WIT, camelCase everywhere else. The field name is
+yours to pick (`tab`, `currentView`, …).
+
+This toggles **sibling panels** by predicate; to swap a *component's own*
+rendered view instead, see [Switch between views](switch-between-views.md). The
+same shape scales up to tabs over whole sub-apps — each panel a component
+rendered with `<x render=".field">`.

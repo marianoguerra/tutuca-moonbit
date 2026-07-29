@@ -19,7 +19,8 @@ fn badge_macro() -> @anode.Macro {
 
 Register macros on the `ModuleDef`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 @component.ModuleDef::new(
   name="my-module",
   components=[...],
@@ -55,6 +56,16 @@ fn btn_rm_macro() -> @anode.Macro {
 <!-- expands to @on.click="removeInItemsAt @key" -->
 <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
 ```
+
+> **The `$` prefix only survives a RUNTIME macro.** The example above is an
+> `@anode.Macro` value, expanded when the view is compiled — by then the `$` has
+> already been resolved away. A macro declared in a view file
+> (`<template id="macro:btn-rm">`) is expanded by `gen-views` instead, which sees
+> `@on.click="$removeInItemsAt"` in an event position and refuses it:
+> *"drop the `$` — in an event position a `$name` and a bare name are the SAME
+> dispatch"*. Pass the handler name bare (`:handler="removeInItemsAt"`) and it
+> works in both kinds of macro. Prefer bare everywhere; there is no case where
+> the `$` buys anything in an `@on`.
 
 If registering into a scope by hand (outside `ModuleDef::build_scope`),
 use `ComponentStack::register_macros(macros)` **before**

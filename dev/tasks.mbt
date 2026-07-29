@@ -191,6 +191,25 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "check-skill",
+      about: "compile-check the MoonBit snippets in the bundled skill (skill/tutuca/)",
+      commands: [
+        // The skill ships inside the CLI binary and is the only thing an agent
+        // reads before writing tutuca code, so a snippet naming a parameter the
+        // library dropped is worse than no snippet. Most recipes pair a view
+        // file with the MoonBit that uses it, so the check generates the view
+        // half the same way the playground does — with the js view generator.
+        moon("build · js view generator", [
+          "build", "--target", "js", "playground/viewgen_js",
+        ]),
+        {
+          label: "check · skill snippets",
+          prog: "node",
+          args: ["scripts/check-skill-snippets.mjs"],
+        },
+      ],
+    },
+    {
       name: "fetch-moonc",
       about: "fetch the gitignored in-browser MoonBit compiler (playground/vendor/moonc-web.cjs) from npm; see playground/vendor/README.md",
       commands: [
@@ -412,8 +431,8 @@ fn composites() -> Array[(String, String, Array[String])] {
     // runs against modules that provably match their sources.
     (
       "ci",
-      "gen-views drift + check + check-examples + test + build (build-smokes every backend & demo)",
-      ["gen-views", "check", "check-examples", "test", "build"],
+      "gen-views drift + check + check-examples + check-skill + test + build (build-smokes every backend & demo)",
+      ["gen-views", "check", "check-examples", "check-skill", "test", "build"],
     ),
   ]
 }

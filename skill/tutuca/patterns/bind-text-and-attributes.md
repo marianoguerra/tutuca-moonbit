@@ -17,7 +17,8 @@ string from several values.
 <div @enrich-with="enrichScope">Len: <x text="@len"></x></div>
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // generated wrapper: enum-keyed buckets ("getStrUpper" -> GetStrUpper)
 compute=m => match m {
   GetStrUpper => Some((s, _args) => Str(s.str.to_upper())),

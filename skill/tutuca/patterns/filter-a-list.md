@@ -9,7 +9,8 @@
 <!-- on <x render-each> the same directive applies: @when="filterItem" -->
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // generated wrapper: the bucket is a match over a generated enum whose
 // cases are the names the views use ("filterItem" -> FilterItem)
 when=w => match w {
@@ -22,9 +23,8 @@ when=w => match w {
 },
 ```
 
-(A raw `@component.component(...)` call takes a string-keyed map
-instead: `when={ "filterItem": (s : ListState, _key, value, _iter) =>
-... }` — same signature, different keying.)
+(Same signature either way; only the keying differs — see
+[The handler buckets](../core.md#the-handler-buckets).)
 
 `@when` names a `when` entry called per item with
 `(state, key, value, iter_data)`; return `false` to skip. It filters

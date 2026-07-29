@@ -18,7 +18,8 @@ list more than necessary.
 </section>
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // generated wrapper: each bucket is a match over a generated enum
 // ("onlyMatches" -> OnlyMatches; a raw component() call would take
 // string-keyed maps instead)

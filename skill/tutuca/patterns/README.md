@@ -1,9 +1,10 @@
 # Tutuca — Patterns
 
 Task-oriented recipes: "how do I do X" with a minimal working snippet and the
-one pitfall worth knowing. Each recipe is self-contained and brief; for the
-full directive *semantics* behind a pattern, see [core.md](../core.md) and its
-spokes.
+one pitfall worth knowing. Each recipe is self-contained and brief — most show
+both halves, the `.html` view file and the MoonBit beside it. For the full
+directive *semantics* behind a pattern, see [core.md](../core.md) and its
+spokes; for field spellings, [schema.md](../schema.md).
 
 New to Tutuca? Read [core.md](../core.md) first, then reach here for a specific
 task.
@@ -51,4 +52,4 @@ task.
 
 ## Examples & catalog
 
-- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving the harness tests, the storybook, and the demo hosts.
+- [Add an example for a component](add-an-example.md) — an `ExampleDef` in the `ModuleDef`, driving the harness tests, the storybook, and the demo hosts — plus the registry/section/title steps a gallery needs.

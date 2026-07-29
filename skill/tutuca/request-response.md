@@ -22,7 +22,8 @@ Each channel maps a trigger to one arm of the **same `update` match**:
 
 The `update` fn folds them all into one TEA-style pattern match:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : MyState, msg : @component.Dispatch, ctx : &@tutuca.Ctx) => match msg {
   ...
   _ => None // ALWAYS needed
@@ -46,7 +47,8 @@ and *Scope Enrichment* in [iteration.md](./iteration.md).
 
 ## Bubble Events
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : LogState, msg, ctx) => match msg {
   Input("onClick", _) => {
     ctx.bubble("treeItemSelected", [Str(s.label)])
@@ -91,7 +93,8 @@ is **no built-in lifecycle** — `Receive("init", _)` is just a
 convention; the host must dispatch it (typically after mounting) for it
 to run.
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : ListState, msg, ctx) => match msg {
   Receive("init", _) => {
     ctx.request("loadData", [], @tutuca.RequestOpts::new())
@@ -103,7 +106,8 @@ update=(s : ListState, msg, ctx) => match msg {
 
 Dispatch from anywhere:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 app.send_at_root("init")                             // host code, top-level
 ctx.at().field("personalSite").send("init", [])      // child by field name
 ctx.at().index("items", 3).send("init", [])          // list element at index 3
@@ -151,12 +155,14 @@ through handlers — never around them.
   running its `Receive("name", …)` arm under the same immutable
   return-a-new-state contract as every other handler.
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 // host / glue code, outside the component tree (e.g. inside a JS-FFI callback)
 app.send_at_root("serverPushed", args=[@tutuca.Value::from_json(payload)])
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // root component
 update=(s : RootState, msg, _ctx) => match msg {
   Receive("serverPushed", [msg_val, ..]) => Some(prepend_event(s, msg_val))
@@ -218,7 +224,8 @@ fn request_handlers() -> Map[String, @component.RequestFn] {
 Register them on the `ModuleDef` (or directly with
 `scope.register_request_handlers(...)`):
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 @component.ModuleDef::new(
   name="request-example",
   components=[...],
@@ -228,7 +235,8 @@ Register them on the `ModuleDef` (or directly with
 
 In a component:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : QuotesState, msg, ctx) => match msg {
   Receive("init", _) => {
     ctx.request("loadData", [], @tutuca.RequestOpts::new())
@@ -255,7 +263,8 @@ handler's `Ok` value is `res` and `err` is `Null`; on failure `res` is
 `Null` and `err` is the `Err` value. Branch on `err` when failure needs
 different state — put the error pattern first:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 Response("loadData", [_res, Str(e)]) =>
   Some({ ..s, isLoading: false, error: e })
 Response("loadData", [res, _]) =>
@@ -280,7 +289,8 @@ with three name keys:
 ⚠️ When `on_ok_name` / `on_error_name` is used, the split arm
 receives a **single** payload arg — *not* `[res, err]`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : ItemsState, msg, ctx) => match msg {
   Input("loadAnotherWay", _) => {
     ctx.request(
@@ -320,7 +330,8 @@ even if `.selId` moved while the request was in flight (e.g. the user
 switched tabs). Set `live_path=true` to opt out and re-resolve the key
 live, delivering to whatever the key now points at:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 ctx.request("save", [payload], @tutuca.RequestOpts::new())            // pinned
 ctx.request("refresh", [], @tutuca.RequestOpts::new(live_path=true))  // live
 ```
@@ -335,7 +346,8 @@ entirely — an unmatched dispatch falls to `_ => None` and the result is
 silently dropped. Idiomatic for side-effect-only work like persisting
 state:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 Input("onApplyFilter", [value, ..]) => {
   ctx.request(
     "persistState",
@@ -372,7 +384,8 @@ A `Response` arm gets the full `ctx`, so it can issue further
 `ctx.request` (request → response → request chains), `ctx.send`, or
 `ctx.bubble`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : UserState, msg, ctx) => match msg {
   Response("loadUser", [Map(user), Null]) => {
     ctx.request(
@@ -398,7 +411,8 @@ unmatched message passes the state through unchanged. Use a name-binding
 wildcard arm for a single catch-all (logging, a generic router); rely on
 `_ => None` for fire-and-forget requests.
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 update=(s : DebugState, msg, _ctx) => match msg {
   // specific arms first...
   Receive(name, _args) => Some({ ..s, lastUnhandled: name })
@@ -406,10 +420,10 @@ update=(s : DebugState, msg, _ctx) => match msg {
 },
 ```
 
-(At the value layer — custom `Obj` implementations, `for_type`
-components — the runtime still probes a literal `"$unknown"` handler
-name before dropping a dispatch; typed components never need it, the
-wildcard arm is the same thing with the name statically bound.)
+(There is no `"$unknown"` sentinel behind this. Dispatch does **one** lookup
+(`core/path_path.mbt:224-229`); a typed `update` whose match ends in `_ => None`
+already *is* the catch-all, with the name statically bound. A name nothing
+handles is simply dropped.)
 
 ## Positional delivery across async
 

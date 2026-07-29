@@ -18,7 +18,8 @@ everything else, `core.md` is the right place.
 ></div>
 ```
 
-```moonbit
+```moonbit nocheck
+// nocheck: a state struct plus one bucket argument, not a whole component
 priv struct DndState {
   items : Array[@tutuca.Value]
 }
@@ -88,34 +89,45 @@ them through every component in between. **`provide`** on the producer;
 > field it needs from its owner, and lift state only as far up the tree as it
 > actually needs to live.
 
+`theme.html` — both components in one view file, so one generated module:
+
+```html
+<script type="tutuca/state">
+  interface theme {
+    record state {
+      color: string,
+      body: child,
+    }
+  }
+  interface child {
+    record state {}
+  }
+</script>
+
+<template id="Theme">
+  <div><x render=".body"></x></div>
+</template>
+
+<template id="Child">
+  <p :style="$'color: {*color}'">themed</p>
+</template>
+```
+
+`theme.mbt`:
+
 ```moonbit
-priv struct ThemeState {
-  color : String
-}
-
+///|
 fn theme_comp() -> @component.Component {
-  @component.component(
-  views={
-    // <div><x render=".child"></x></div> — from the view file
-  },
-  name="Theme",
-  init=ThemeState::{ color: "blue" },
-  specs={ "child": @component.FieldSpec::comp("Child") },
-  provide={ "color": ".color" },
-)
+  theme_component(init={ ..ThemeState::zero(), color: "blue" }, provide={
+    "color": ".color",
+  })
 }
 
-priv struct NoState {}
-
+///|
 fn child_comp() -> @component.Component {
-  @component.component(
-  views={
-    // <p :style="$'color: {*color}'">themed</p> — from the view file
-  },
-  name="Child",
-  init=NoState::{  },
-  lookup={ "color": { source: "Theme.color", default: Some("'gray'") } },
-)
+  child_component(lookup={
+    "color": { source: "Theme.color", default: Some("'gray'") },
+  })
 }
 ```
 
@@ -146,13 +158,18 @@ component-render target and an iteration source:
 ```
 
 A `provide` value must be **addressable** — a `.field` or a `.seq[.key]`
-seq-access, nothing else. (It is both read as `*name` *and* used as a
+seq-access, nothing else. It is both read as `*name` *and* used as a
 render-target / teleport path, so a `$`-handler or constant — which has no
-path — is a lint error.) A `lookup` `default`, by contrast, is only a
+path — cannot work. Nothing reports it: `Component::compile` **drops a bad
+`provide` silently** (`component/component.mbt:369`), and the consumer's
+`*name` then resolves to its `default`, or to `null`. If a dynamic binding
+reads as its fallback everywhere, suspect the producer's expression first.
+A `lookup` `default`, by contrast, is only a
 value fallback and accepts the full value grammar, including constants
 like `'gray'`. A `provide` can be a sequence/map item access:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a hand-written state type; its `@component.Fields` impl is omitted for brevity
 priv struct RootState {
   items : Map[String, @tutuca.Value]
   selectedKey : String

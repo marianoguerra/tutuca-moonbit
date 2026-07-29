@@ -3,7 +3,8 @@
 **Problem:** the same markup fragment repeats across a view and you want one
 definition — but it has no state of its own.
 
-```moonbit
+```moonbit nocheck
+// nocheck: ends in a bare `ModuleDef::new(...)` expression showing registration
 fn badge_macro() -> @anode.Macro {
   {
     defaults: { "label": "'New'", "kind": "'info'" }, // defaults are *expressions*

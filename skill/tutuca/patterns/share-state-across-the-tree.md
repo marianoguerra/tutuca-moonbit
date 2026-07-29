@@ -11,49 +11,60 @@ you don't want to thread it through every component in between.
 > render the field it needs from its owner, and lift state only as far up the
 > tree as it needs to live.
 
+`entries.html`:
+
+```html
+<script type="tutuca/state">
+  interface editor {
+    record state {
+      entries: values,
+      picker: selector,
+    }
+  }
+  interface selector {
+    record state {}
+  }
+</script>
+
+<template id="Editor">
+  <div>
+    <x render=".picker"></x>
+  </div>
+</template>
+
+<template id="Selector">
+  <select class="select">
+    <option @each="*entries" :value="@value.value" @text="@value.label"></option>
+  </select>
+</template>
+```
+
+`entries.mbt`:
+
 ```moonbit
-priv struct ItemsState {
-  items : Array[@tutuca.Value]
+///|
+/// The producer publishes one of its fields under an exported name.
+fn editor_comp() -> @component.Component {
+  editor_component(provide={ "entries": ".entries" })
 }
 
-// producer — exposes one of its fields under a name
-fn producer_comp() -> @component.Component {
-  @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=...),
-  },
-  name="EntryEditorAndSelector",
-  // omitted
-    init=ItemsState::{ items: [] },
-  provide={ "entries": ".items" },
-)
-}
-
-// consumer — forwards to the producer's binding by "Component.name"
-fn consumer_comp() -> @component.Component {
-  @component.component(
-  views={
-    "main": @anode.View::new("main", raw_view=(
-      #|<select class="select">
-      #|  <option @each="*entries" :value="@value.value" @text="@value.label"></option>
-      #|</select>
-    )),
-  },
-  name="Selector",
-  init=ItemsState::{ items: [] },
-  lookup={
-      "entries": {
-        source: "EntryEditorAndSelector.entries",
-        default: Some(".items"),
-      },
-    },
-)
+///|
+/// The consumer resolves it by "Component.name", with a fallback expression for
+/// when no producer is in scope.
+fn selector_comp() -> @component.Component {
+  selector_component(lookup={
+    "entries": { source: "Editor.entries", default: Some("[]") },
+  })
 }
 ```
 
 `provide` publishes a field under a name; a descendant's `lookup` resolves
 `*name` to the nearest matching producer, falling back to the `default`
 expression when none is in scope (`None` → `null`). `*name` works wherever a
-`.field` does for iteration/rendering. This is the **read** side; to edit the
-producer's value through the dynamic, see the edit-through-a-dynamic-target
-recipe.
+`.field` does, iteration and render targets included.
+
+A `provide` expression must be **addressable** (`.field` or `.seq[.key]`), and a
+bad one is dropped **silently** — if `*name` reads as its fallback everywhere,
+suspect the producer's expression. This is the **read** side; to edit the
+producer's value through the dynamic, see
+[Edit through a dynamic target](edit-through-a-dynamic-target.md).

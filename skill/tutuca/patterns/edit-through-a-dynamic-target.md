@@ -3,45 +3,68 @@
 **Problem:** render a value owned by a distant ancestor *and* let edits made in
 the child land back on the owner — without forwarding events up by hand.
 
-```moonbit
-priv struct NoState {}
+`workspace.html` — one view file, so one generated module for all three:
 
-// producer exposes a field (or a seq-access) as a dynamic
+```html
+<script type="tutuca/state">
+  interface workspace {
+    record state {
+      sheet: sheet,
+      bar: toolbar,
+    }
+  }
+  interface sheet {
+    record state { text: string }
+  }
+  interface toolbar {
+    record state {}
+  }
+</script>
+
+<template id="Workspace">
+  <div>
+    <x render=".bar"></x>
+  </div>
+</template>
+
+<template id="Sheet">
+  <p @text=".text"></p>
+</template>
+<template id="Sheet:edit">
+  <input class="input" :value=".text" @on.input="setText value" />
+</template>
+
+<template id="Toolbar">
+  <x render="*active" as="edit"></x>
+</template>
+```
+
+`workspace.mbt`:
+
+```moonbit
+///|
+/// The producer exposes one of its fields as a dynamic. `provide` values must be
+/// addressable, so a seq-access works too: `".items[.selectedKey]"`.
 fn workspace_comp() -> @component.Component {
-  @component.component(
-  views={
-    // ... — from the view file
-  },
-  name="Workspace",
-  // renders .panel somewhere below
-    init=NoState::{  },
-  specs={
-      "sheet": @component.FieldSpec::comp("Sheet"),
-      "panel": @component.FieldSpec::comp("Panel"),
-    },
-  provide={ "active": ".sheet" },
-  // or ".items[.selectedKey]",
-)
+  workspace_component(provide={ "sheet": ".sheet" })
 }
 
-// a distant consumer renders it as a target
+///|
+/// A distant consumer renders it as a target, under its own local name.
 fn toolbar_comp() -> @component.Component {
-  @component.component(
-  views={
-    // <x render="*active" as="edit"></x> — from the view file
-  },
-  name="Toolbar",
-  init=NoState::{  },
-  lookup={
-      "active": { source: "Workspace.active", default: Some(".missing") },
-    },
-)
+  toolbar_component(lookup={
+    "active": { source: "Workspace.sheet", default: None },
+  })
 }
 ```
 
 Because `*active` resolves to a real **path** (not a copied value), the event
-fired inside the rendered child is *teleported*: the mutation skips the
-intermediate components and lands on `Workspace.sheet`, so the owner and any
-other view of the same value update in lock-step. A `provide` can even point at
-a seq-access (`.items[.selectedKey]`) to expose "the selected item". This is
-the **edit** counterpart of the share-state-across-the-tree recipe.
+fired by the `setText` input inside the rendered child is *teleported*: the
+mutation skips the intermediate components and lands on `Workspace.sheet`, so the
+owner and any other view of the same value update in lock-step. A `provide` can
+point at a seq-access (`.items[.selectedKey]`) to expose "the selected item".
+
+Every component needs a `main` view even when you only ever render it `as="edit"`
+— `gen-views` refuses a component without one. This is the **edit** counterpart
+of [Share state across the tree](share-state-across-the-tree.md); the full
+`provide`/`lookup` reference is in [advanced.md](../advanced.md#dynamic-bindings).

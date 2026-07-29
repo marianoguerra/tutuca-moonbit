@@ -34,6 +34,7 @@ A playground example is a PAIR of sources compiled together:
 - the **component** source — MoonBit, ending in a bare entry point:
 
   ```moonbit nocheck
+  // nocheck: `...` stands in for the reader's components
   fn build() -> @component.ModuleDef {
     @component.ModuleDef::new(name="demo", components=[...], examples=[
       { component: "Items", title: "Default", args: Map([]), view: None },

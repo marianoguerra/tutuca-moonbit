@@ -57,7 +57,8 @@ Generation derives every name from the template/interface ids:
 `ItemsMsg::from_dispatch`, and the bucket enums. What you write is the
 handlers:
 
-```moonbit nocheck
+```moonbit
+///|
 fn todo_item_comp() -> @component.Component {
   item_component(init=ItemState::{ completed: false, text: "do the thing" })
   // no update: `setCompleted value` and `setText value` are served by the
@@ -84,8 +85,9 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
       // items are Item INSTANCES (Obj values) — read fields off them
       // with the value coercers
       OnlyVisible =>
-        Some((s, _key, value, _iter) => !s.hideCompleted ||
-          !value.field("completed").bool()),
+        Some((s, _key, value, _iter) => {
+          !s.hideCompleted || !value.field("completed").bool()
+        })
     },
   )
 }

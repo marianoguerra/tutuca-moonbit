@@ -15,7 +15,7 @@ Add the harness to the package's test imports in `moon.pkg`:
 
 ```
 import {
-  "marianoguerra/tutuca",
+  "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
 }
 
@@ -25,9 +25,15 @@ import {
 } for "test"
 ```
 
+Import `core` under the `@tutuca` alias, not the module root. The root package
+re-exports only four names (`Value`, `RequestOpts`, `Ctx`, `Obj`), so
+`@tutuca.NullCtx` — needed to call an `update` fn directly — resolves only
+through `core`. Every package in this repo that does so imports it this way.
+
 Author tests as plain `test "..." { ... }` blocks in `*_test.mbt` files:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `counter_module` is the reader's own module
 test "counter: click increments" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")
@@ -77,9 +83,16 @@ before returning (CSS-selector addressed; `nth?` picks among matches):
 | `h.value_of(sel, nth?)` / `h.checked_of(sel, nth?)` | input value / checked state |
 | `h.html()` | the whole rendered HTML |
 | `h.find(sel, nth?)` / `h.find_all(sel)` | the memdom nodes |
+| `h.ns_of(sel, nth?)` | the element's XML namespace (SVG / MathML checks) |
 | `h.render_count()` | renders so far (assert batching) |
 | `h.drive_value()` | the settled root `Value` |
 | `h.styles()` | the compiled CSS text |
+
+**Tearing down** — `h.destroy()` unmounts the app and releases its listeners.
+Tests do not normally need it (each `mount` builds a fresh scope on a fresh
+memdom); reach for it when one test mounts repeatedly and you want to assert
+that teardown actually releases, or when asserting on `render_count()` across
+remounts.
 
 ## Assertions — jest → MoonBit built-ins
 
@@ -114,9 +127,9 @@ you want to look at it.
   (e.g. a `format_size` helper beside a file-picker component) and
   unit-test it directly.
 - **Handlers in isolation** — the typed handlers are erased behind the
-  compiled `Component` (only the name lists — `compute_names`,
-  `swap_names`, `alter_names`, `generated_names`, `has_update` — remain
-  for introspection), so there is no handler table to call into.
+  compiled `Component` (only `swap_names` and `alter_names` remain for
+  introspection; everything else is recoverable from `Component::schema`),
+  so there is no handler table to call into.
   For unit-level checks, keep the handler a named `fn` (or a builder
   `fn` returning the update fn) and call it directly with a state
   struct — the arguments are plain typed values, no mounting needed:
@@ -142,7 +155,8 @@ resolves and feeds its `response`, a `send` that triggers more sends —
 mount the module and use `h.send_at_root`; the harness settles the whole
 cascade (including the callback-style requests) before returning:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `request_module` / `failing_request_handlers` are the reader's own
 test "the init Receive arm fires the request, and the response lands" {
   // request_module takes requests? so tests inject fixtures
   let h = @harness.mount(request_module(), "RequestExample")
@@ -181,16 +195,19 @@ test "the error path routes to on_error_name" {
   arms by clicking the child element that emits the bubble, or call
   the update fn directly with a `Bubble(name, args)` dispatch.
 - To observe every committed transaction (message/state traces), the
-  transactor exposes `Transactor::observe((ObserveRecord) -> Unit)` —
-  `h.app.transactor.observe(...)` — each record carries
-  `{kind, name, args, path, before, after}`.
+  transactor exposes `Transactor::observe((ObserveRecord) -> Unit) -> () -> Unit`
+  — `h.app.transactor.observe(...)`, returning an **unsubscribe** closure to
+  call when you are done. Each record carries `kind`, `name`, `args`, `path`,
+  `path_keys`, `target_path`, `matched`, `seq`, `before` and `after`, plus a
+  `to_json()` for snapshotting a whole trace in one `inspect`.
 
 ## Custom events and file inputs
 
 Anything the glue would map to `value` can be fired directly with
 `h.fire` and a `@render.DomEvent`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 // a CustomEvent: detail arrives as a Map value
 h.fire(
   "section",
@@ -215,10 +232,9 @@ h.fire(
 ## Designing handlers so tests stay simple
 
 Tutuca templates resolve handler args by name (see
-[core.md](./core.md) *Event Handling*). When you author a handler,
-**pick the most specific named args you need; don't take the raw
-event**. With named args, the handler pattern-matches a plain literal;
-with `event`, it must dig through an event-shaped `Map`.
+[events.md](./events.md#handler-arguments)). When you author a handler, **pick
+the most specific named args you need**. With named args the handler
+pattern-matches a plain literal, which a test can pass directly.
 
 Every `@on` handler is written BARE and dispatches an `Input` arm of
 `update`. A leading `$` is refused there: in an event position a `$name`
@@ -226,21 +242,24 @@ and a bare name are the same dispatch, so the sigil would claim a
 distinction that does not exist. `$` belongs in a value position
 (`@text="$label"`), where a `compute` entry answers it.
 
-**Bad — Input arm taking the event:**
+**Bad — asking for the event object:**
 
 ```html
 <input @on.input="setCount event" />
 ```
-```moonbit
-Input("setCount", [Map(ev), ..]) => ... // dig target.value out of an event Map
-```
+
+`event`, `target` and `ctx` are **not** handler arguments in this port: a DOM
+object is not a `Value`, so each resolves to `Null` and the arm receives
+`[Null, ..]`. There is nothing to dig into — the handler simply never sees the
+input. Nothing reports it either; the dispatch lands and does nothing.
 
 **Good — named arg:**
 
 ```html
 <input @on.input="setCount valueAsInt" />
 ```
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 Input("setCount", [Num(n), ..]) => Some({ ..s, count: n.to_int() })
 ```
 
@@ -249,9 +268,9 @@ At test time, the "good" form is driven with one call —
 `u(state, Input("setCount", [Num(42)]), @tutuca.NullCtx::{  })` against
 the extracted update fn.
 
-The built-in named args are listed in [core.md](./core.md) *Event
-Handling*. Reach for `event` only when no narrower arg fits — and note
-the port's glue already narrows the classic exceptions: file inputs and
+The built-in named args are listed in
+[events.md](./events.md#handler-arguments). There is always a narrower arg,
+because the port's glue narrows the classic exceptions too: file inputs and
 custom events deliver plain `Map` metadata as `value`.
 
 ## Worked example
@@ -259,7 +278,8 @@ custom events deliver plain `Map` metadata as `value`.
 Interaction tests covering two `update` `Input` arms and a generated
 mutator:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `counter_module` is the reader's own module
 test "counter: inc and dec round-trip" {
   let h = @harness.mount(counter_module(), "Counter")
   inspect(h.text(".stat-value"), content="0")

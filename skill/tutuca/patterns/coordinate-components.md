@@ -6,7 +6,8 @@ specific component, or run async work and fold in the result.
 Every incoming message lands in the component's one `update` match —
 the channel picks the `Dispatch` arm:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 // bubble — walk toward the root; the first ancestor whose update
 // matches the Bubble arm runs it
 update=(s : LogState, msg, ctx) => match msg {

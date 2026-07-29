@@ -13,7 +13,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
 | does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/state">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
-| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss renders blank at run time, and only a run that can see both components can say so. Reported as a hint, because `component()`'s `slots~` can point a slot at a different component than the schema names |
+| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss renders blank at run time, and only a run that can see both components can say so. Reported as a hint, because a component built in MoonBit can add slots with `slots~` that no view file mentions |
 | does this `@show` decide anything? | `gen-views` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
 | is this `id=` unique? | `gen-views` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
 | is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
@@ -33,7 +33,7 @@ inspect a component, the answer is a `moon test` block.
 | `gen-tailwind-css [path...]` | Compile the classes a project's views use into CSS, against stock Tailwind. Flags: `-o/--out <file>`, `--entry <file>`, `--classes <file>`, `--print-classes`, `--polyfills <0..3>`. See below |
 | `gen-margaui-css [path...]` | The same, against Tailwind **+ margaui**'s component layers (`btn`, `card`, `stat`, …) |
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
-| `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>`, `--out <dir>`. A static file server: the gallery is a wasm host built by `cmd/dev -- dist` |
+| `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server: the gallery is a wasm host built by `cmd/dev -- dist` |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary by the dev `skill-embed` task. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code and error code |
@@ -56,8 +56,9 @@ component's schema, and they see exactly the paths you passed:
 
 - `<x render=".slot" as="edit">` where the child has no `edit` view. At run time
   `resolve_view` returns None and the site renders **nothing**. Reported as a
-  hint rather than an error, because `component()`'s `slots~` can point a
-  declared slot at a different component and the generator cannot see that.
+  hint rather than an error, because a hand-built component can declare slots
+  through `component()`'s `slots~`, which no view file mentions and the
+  generator cannot see.
 - `.field` and `@value.member` inside a loop over `list<todo>`, checked against
   the **Todo** component's schema rather than skipped.
 
@@ -99,8 +100,8 @@ inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)` — `value` becomes
 `Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
 element's static `type` — anything unresolvable
--> `@tutuca.Value`), `CounterMethod` + `counter_compute`/`_swap`
-(the `$`-callables, built from an exhaustive match). A file that also carries
+-> `@tutuca.Value`), and `CounterMethod`, the closed set of `$`-callables the
+views name (plus any `func` the schema declares). A file that also carries
 a `<script type="tutuca/state">` block gets the state half: `CounterState`
 (a plain struct — no derives), `CounterState::zero()`, an
 `impl @component.Fields for CounterState` carrying the whole contract as
@@ -127,9 +128,13 @@ the schema are not parameters.
 `update` then pattern-matches typed messages, so adding an `@on` handler to
 the `.html` and regenerating breaks the build until it is handled, instead of
 falling into a silent `_ => None`. Handlers served by the auto-generated
-field mutators return `None` and fall through to them, as before. The
-generated package must import `"marianoguerra/tutuca/core" @tutuca`,
-`"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"`.
+field mutators return `None` and fall through to them, as before.
+
+The generated package must import `"marianoguerra/tutuca/core" @tutuca`,
+`"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"` — plus
+`"marianoguerra/tutuca/anode"` unless you pass `--no-ir`, since the IR module
+spells `@anode.View` directly. Each generated file's header repeats the list it
+needs.
 
 The schema goes in a `<script>` and not a `<template>`, because script
 content is raw text to an HTML parser and template content is markup — a
@@ -145,116 +150,77 @@ was not listed and not checked. A schema-backed component checks every read at
 generation time, loop bodies included, so the answer to a file without one is
 to declare the schema.
 
-## The state schema
+### The state schema
 
-A view file may declare its component's data contract in a small subset of
-WIT, alongside the templates that read it:
+A view file may declare its component's data contract in a small subset of WIT,
+alongside the templates that read it. That language — every field spelling, the
+mutators each kind generates, message buckets, slots, declared `$`-callables,
+schema-only files and `tutuca/init` fixtures — is
+[schema.md](./schema.md).
 
-```html
-<script type="tutuca/state">
-  interface counter {
-    record state {
-      label: string,
-      count: s32,
-      history: list<s32>,
-    }
-    variant receive { reset-to(s32) }
-  }
-</script>
-```
+`gen-views` checks every `.field` read in every view against it, loop bodies and
+child components included, and a read of a name the schema lacks fails
+generation.
 
-One `interface` per component, named after the template id it gives views to
-(`id="Counter"` -> `interface counter`), and exactly one `record state` in
-each. No `package` line: the module supplies it.
+### `gen-views` diagnostics
 
-| you mean | you write |
-| -------- | --------- |
-| bool | `bool` |
-| int | `s8`..`s32`, `u8`..`u32` (each range-checked on decode) |
-| float | `f32` / `f64` |
-| text | `string`, `char`, or an `enum` |
-| list | `list<T>`, `tuple<A, B>` |
-| nullable | `option<T>` |
-| record / variant | `record R`, `variant V` |
-| set, closed members | `flags F` |
-| set, open members | `text-set` |
-| ordered map | `value-omap`, `text-omap` |
-| a child component | the sibling interface's name, or `component` |
-| anything at all | `any`, `values` |
+Every check `gen-views` runs reports on one of two channels, and both are worth
+recognizing on sight.
 
-The last four rows are marker names rather than WIT constructs: WIT has no
-open type and no user generics, so a set with open membership, an ORDERED map
-(WIT's own `map` is unordered by definition) and a child-component slot have
-no structural spelling. A slot declared here is checked in the views and
-generates its `specs~` entry, but does NOT become a struct field — the
-runtime still creates it through the registration scope.
+**Generation errors** stop the run and name the fix. Beyond the unknown-field and
+unknown-handler errors above:
 
-`values` is exactly `list<any>` — the spelling for a heterogeneous list,
-most often a list of component instances:
+| Error | Means |
+| ----- | ----- |
+| `NotIterable` | `@each` needs a collection, but the expression is a scalar |
+| `NotRenderable` | `<x render>` needs a component, but the field is not a slot |
+| `MethodInEventPosition` | a `$name` in an `@on` position; write it bare |
 
-```html
-<script type="tutuca/state">
-  interface items {
-    record state { items: values }
-  }
-</script>
-```
+**Lint findings** are printed one per line, as
+`CODE (level) <Component>/<view>: message` — for example
+`HTML_TAG_NOT_ALLOWED_IN_PARENT (error) Counter/main: <div> is not allowed in <tr>`.
+Levels are `error`, `warning` and `hint`. The linter is real and it runs **inside
+`gen-views`** (`cli/gen_views.mbt:59-67`); what does not exist is a separate
+`tutuca lint` command to invoke it with.
 
-generates `items : Array[@tutuca.Value]`. Iterate it with
-`<div @each=".items"><x render-it></x></div>` and append instances with
-`Some({ items: s.items + [item.make(Map([]))] })` (the complete pairing
-is in [patterns/todo-list.md](./patterns/todo-list.md)). When every
-element has one known shape, prefer `list<T>` — the reads stay typed and
-the views are checked against the element schema. `any` is the scalar
-counterpart: one `@tutuca.Value` field.
+The codes fall into three families:
 
-Out of the subset, each with its own message: `s64`/`u64` (state travels as
-JSON, where integers past 2^53 lose precision), `result`, `future`, `stream`,
-`world`s and freestanding `func`s. `map<K, V>` is real WIT but the parser
-does not carry it yet.
+- **Directive rules** — `UNKNOWN_DIRECTIVE`, `UNKNOWN_X_OP`, `UNKNOWN_X_ATTR`,
+  `BAD_VALUE`, `UNSUPPORTED_EXPR_SYNTAX`, `BINDING_MEMBER_TOO_DEEP`,
+  `X_OP_IGNORES_CHILDREN`.
+- **Nudges** — `MAYBE_ADD_AT_PREFIX`, `MAYBE_DROP_AT_PREFIX`,
+  `DEPRECATED_BARE_X_DIRECTIVE`.
+- **Structural HTML**, from a WHATWG tokenizer pass over the view text:
+  `HTML_TAG_NOT_ALLOWED_IN_PARENT`, `HTML_TEXT_NOT_ALLOWED_IN_PARENT`,
+  `HTML_VOID_ELEMENT_HAS_CLOSE_TAG`, `HTML_UNEXPECTED_END_TAG`,
+  `HTML_UNCLOSED_BEFORE_END`, `HTML_MISNESTED_FORMATTING`,
+  `HTML_NESTED_INTERACTIVE`, `HTML_DUPLICATE_FORM`, `HTML_DUPLICATE_ATTRIBUTE`,
+  `HTML_ATTRIBUTES_ON_END_TAG`, `HTML_SELF_CLOSING_END_TAG`,
+  `HTML_MISSING_ATTRIBUTE_VALUE`, `HTML_BOGUS_COMMENT`,
+  `HTML_CDATA_IN_HTML_NAMESPACE`, `HTML_TAG_NAME_HAS_UPPERCASE`,
+  `HTML_SVG_TAG_WILL_LOWERCASE`, `HTML_SVG_ATTR_WILL_LOWERCASE`,
+  `HTML_MATHML_ATTR_WILL_LOWERCASE`.
 
-A file may carry a schema and **no** `<template>` at all. That is how a
-component whose views are built in MoonBit — a macro user, a dynamically
-assembled tree — still gets a generated state type: the schema lives in a
-view file, so it needs a view file even when it has no views. Such a file
-emits the state half only, and no view surface. The same applies per
-interface: one file may give templates to some components and declare state
-alone for others, and `gen-views` reports the latter as a hint rather than an
-error, since it is also what a mistyped interface name looks like.
+A **void element** is one HTML gives no closing tag (`<br>`, `<input>`);
+`HTML_MISNESTED_FORMATTING` is the tokenizer's adoption-agency case
+(`<b><i></b></i>`); a **bogus comment** is a `<!…>` the parser recovers as a
+comment. These are recovery behaviors, so the view still parses — it just does
+not nest the way the source reads.
 
-Named initial states go in a block of their own, because a default is a value
-and not a type:
+One diagnostic is not a lint code: `state-without-views (hint)` — a schema
+interface with no `<template>` in the file. Legitimate for a component whose
+views are built in MoonBit, and also what a mistyped interface name looks like,
+which is why it is reported rather than passed in silence.
 
-```html
-<script type="tutuca/init">
-{ "fresh": { "label": "Counter" },
-  "with-history": { "count": 3, "history": [1, 2, 3] } }
-</script>
-```
+There is **no** `tutuca-lint-ignore` pragma and no per-line suppression.
 
-Each is checked against the schema — a fixture setting a field the schema
-dropped fails the build — and becomes `CounterState::fresh()` plus a public
-`counter_init_args("fresh")` for a ModuleDef example.
+### The drift check
 
-**Not in this port:**
-
-- **`tutuca test` does not exist.** `moon test` is the test runner —
-  component tests are `test { ... }` blocks over the `@harness` package
-  (see [testing.md](./testing.md)). The exit-4 code from the JS CLI is
-  gone with it.
-- **`tutuca lint` does not exist.** View checking happens at generation
-  time (`gen-views` fails on a view that would emit a parse issue), and
-  everything else the JS linter checked — undefined fields, unimplemented
-  `$`-methods, bad handler names — is a type error in the generated view
-  module. There is no run-time linter and no lint-code table.
-- **`tutuca storybook` serves a pre-built gallery, not scanned `*.dev.js`.**
-  The port compiles ahead of time and the native binary can't load user
-  code, so there is no runtime `*.dev.js` discovery. Stories are the
-  compiled example registry (`storybook/`), grouped into sections and baked
-  into a wasm host (`demo/storybook_wasm`) at build time. Build the bundle
-  with `moon run --target native cmd/dev -- dist`, then
-  `tutuca storybook [dir] [--port <n>] [--out <dir>]` serves it (static
-  HTTP) or copies it (`--out`).
+`gen-views` output is checked in, and a stale `*_view_gen.mbt` **type-checks and
+tests green** while no longer describing the `.html` beside it. So regenerating
+is not optional bookkeeping: it is the only thing that ties the two together.
+`moon run --target native cmd/dev -- ci` re-runs the generator and fails on any
+difference. Run `gen-views` (or leave `watch` running) after every view edit.
 
 ### `gen-tailwind-css` / `gen-margaui-css` — build-time CSS
 
@@ -310,6 +276,25 @@ to leave it too, and compiling is the expensive half of the loop. A view that
 will not parse is reported once by the regeneration pass and leaves the previous
 stylesheet in place; the next save fixes it.
 
+## Not in this port
+
+- **`tutuca test` does not exist.** `moon test` is the test runner —
+  component tests are `test { ... }` blocks over the `@harness` package
+  (see [testing.md](./testing.md)). The exit-4 code from the JS CLI is
+  gone with it.
+- **`tutuca lint` does not exist** as a command. The rules still run, inside
+  `gen-views` (above). What genuinely went away is the part of the JS linter
+  that needed a live component — undefined fields, unimplemented `$`-methods,
+  bad handler names — because those are type errors in the generated module now.
+- **`tutuca storybook` serves a pre-built gallery, not scanned `*.dev.js`.**
+  The port compiles ahead of time and the native binary can't load user
+  code, so there is no runtime `*.dev.js` discovery. Stories are the
+  compiled example registry (`storybook/`), grouped into sections and baked
+  into a wasm host (`demo/storybook_wasm`) at build time. Build the bundle
+  with `moon run --target native cmd/dev -- dist`, then
+  `tutuca storybook [dir] [--port <n>] [--out <dir>]` serves it (static
+  HTTP) or copies it (`--out`).
+
 ## Global flags
 
 ```
@@ -336,6 +321,9 @@ unknown flags. Under `--json`, errors are emitted as a JSON envelope:
 ```json
 {"error":{"code":"ERR_USAGE_UNKNOWN_FLAG","message":"Unknown flag '--titel'","suggestion":{"kind":"replace-name","from":"--titel","to":"--title"},"hint":"Valid flags: ..."}}
 ```
+
+`code` and `message` are always present; `suggestion`, `hint` and `where` (the
+file or view a diagnostic is about) appear when the command has one to give.
 
 Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 
@@ -376,8 +364,8 @@ itself was confusing, broken, or surprising — capture it in the
 moment instead of reconstructing it later.
 
 ```sh
-tutuca feedback "lint code FIELD_VAL_NOT_DEFINED didn't suggest the missing field"
-echo "render --pretty differed from -f html --pretty" | tutuca feedback
+tutuca feedback "HTML_TAG_NOT_ALLOWED_IN_PARENT didn't say which parent it meant"
+echo "gen-views --out swallowed my file when I passed two paths" | tutuca feedback
 tutuca feedback < notes.txt
 ```
 

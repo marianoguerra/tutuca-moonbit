@@ -80,6 +80,7 @@ moon run --target native cmd/dev -- <task>
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+| `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
 
@@ -102,6 +103,22 @@ and nowhere else) AND every landing-site example pair
 `<mb-playground>` elements compile in a visitor's browser). The cheaper
 `check-examples` task covers the same examples through `moon check` instead,
 generating their views with the same generator built to js.
+
+`check-skill` reuses that same js generator for the bundled skill. Nothing else
+compiles `skill/tutuca/`, and it rots: `specs=` / `@component.FieldSpec` outlived
+the parameter's removal by two releases in five files, and the skill ships inside
+the CLI binary, so a wrong snippet is what an agent reads before writing any
+tutuca code. A recipe that shows both halves — an ```` ```html ```` view file then
+the ```` ```moonbit ```` that uses it — gets the view half generated and the pair
+compiled together, per markdown SECTION (snippets in one section refer to each
+other; snippets in different sections are unrelated components that would
+collide). Fences are load-bearing: bare ```` ```moonbit ```` is compiled,
+`moonbit fragment` is wrapped in a `fn` first, and `moonbit nocheck` is skipped
+but **must** carry a `// nocheck: <reason>` line. Most blocks are bucket-argument
+fragments that no wrapper makes compilable, so they are `nocheck` — which is why
+every block, `nocheck` included, additionally goes through an identifier check
+against the checked-in `.mbti` files. That second pass is the one that catches a
+removed parameter, and it is the reason the task is worth having at all.
 
 Nothing in the playground shell resolves a fetched URL against the page.
 `runtime.js`'s `playgroundConfig` derives the four of them — the worker, the

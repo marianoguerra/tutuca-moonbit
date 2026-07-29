@@ -18,6 +18,7 @@ one with no suffix.
 ```
 
 ```moonbit nocheck
+// nocheck: one expression, shown to make the point that nothing else is needed
 note_component() // the generated wrapper passes both views
 ```
 

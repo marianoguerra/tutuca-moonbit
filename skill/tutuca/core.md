@@ -12,6 +12,7 @@ or when using the embedded `tutuca` CLI.
 
 > Load the topic files only when the task touches them (the routing
 > table in [SKILL.md](./SKILL.md) has the full descriptions):
+> [schema.md](./schema.md) · [events.md](./events.md) ·
 > [iteration.md](./iteration.md) · [macros.md](./macros.md) ·
 > [styles.md](./styles.md) · [request-response.md](./request-response.md) ·
 > [component-design.md](./component-design.md) · [testing.md](./testing.md) ·
@@ -23,7 +24,8 @@ or when using the embedded `tutuca` CLI.
 
 After editing a tutuca module, run these checks before declaring the
 edit done. This is an ahead-of-time port, so the first two are the
-compiler — there is no run-time linter to run.
+compiler. The view rules still run, inside `gen-views`; what does not
+exist is a separate `tutuca lint` command to invoke them with.
 
 1. **Regenerate the views, if you edited an `.html`** — the generator is
    the view checker: a view that would emit a parse issue fails
@@ -100,8 +102,8 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   field with `v.field("name")` — use `$fullName`), or use `@enrich-with`
   for scope-level derivation. The one exception: a **binding** may read
   exactly one **binding member** — `@text="@value.title"` inside `@each`
-  works (any `@`-binding, one level only; `@value.a.b` is a lint error,
-  and render targets still reject it).
+  works (any `@`-binding, one level only; `@value.a.b` fails generation
+  as `BINDING_MEMBER_TOO_DEEP`, and render targets still reject it).
 - **`make()` / example args are coerced by shape, silently.** Each arg is
   coerced through the field's inferred spec: a value whose shape doesn't
   match the field kind **falls back to the default** (no error). The
@@ -123,8 +125,8 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   must be built with `comp.make({...})` — which returns the instance as a
   `@tutuca.Value` directly — not a bare `Map`.
 - **Views must contain a root element.** A leading newline before the
-  first element is trimmed, but a whitespace-only view renders blank
-  silently. Write views as `#|` raw strings starting at the opening tag.
+  first element is trimmed, but a whitespace-only `<template>` renders blank
+  silently.
 - **Macro registry keys are lowercased.** `<x:Card>` becomes `<x:card>` —
   see [macros.md](./macros.md).
 
@@ -150,7 +152,8 @@ it. What you write is the code no generator can: the handlers.
 
 `counter.mbt`:
 
-```moonbit nocheck
+```moonbit
+///|
 fn counter_comp() -> @component.Component {
   // `counter_component` is generated: it passes the name, the compiled views,
   // the styles, the schema and the state <-> Value codec. `CounterState` and
@@ -203,7 +206,27 @@ The same `ModuleDef` value drives three hosts:
 
 - **The storybook gallery** — register the module's examples and mount
   the whole set as one app (see [cli.md](./cli.md) for building and
-  serving it).
+  serving it, and
+  [patterns/add-an-example.md](./patterns/add-an-example.md) for adding one).
+
+### Observing and tearing down an app
+
+The mounted `App` is what a host reaches for when it needs to persist state, log
+transactions, or remount:
+
+| Call | Gives |
+| ---- | ----- |
+| `app.root_value()` | the current root `Value` — snapshot it to persist |
+| `app.render_count` | renders so far (assert batching) |
+| `app.event_names()` | every event name the compiled views listen for |
+| `app.transactor.observe(fn)` | every committed transaction; returns an **unsubscribe** closure |
+| `app.destroy()` | unmount and release listeners |
+| `app.start()` | (re)start rendering |
+
+`observe` is the hook for persistence and logging — there is no `onChange`
+callback on the app itself. Each `ObserveRecord` carries `kind`, `name`, `args`,
+`path`, `path_keys`, `target_path`, `matched`, `seq`, `before`, `after` and a
+`to_json()`. Mounting in a loop without `destroy()` leaks listeners.
 
 ## Mental model
 
@@ -328,8 +351,9 @@ literal with spaces (escape an interior quote as `\'`).
 | `pred? .x` | boolean predicate in a conditional slot | `empty? .items`, `equals? .view 'detail'` |
 
 `.x` and `$x` are not interchangeable: `.x` only reads a field, `$x`
-only calls a `$`-handler. The linter flags a mismatch and tells you
-which prefix to use.
+only calls a `$`-handler. `gen-views` reports a mismatch and names the
+prefix to use (`MAYBE_ADD_AT_PREFIX` / `MAYBE_DROP_AT_PREFIX` for the
+`@` case).
 
 A bare `name` (no prefix) in `@on.<event>="<handler> <arg> <arg>..."`
 resolves by slot:
@@ -393,6 +417,7 @@ wrapper `gen-views` emits is typed on the state struct, so lambda parameters
 need no annotation:
 
 ```moonbit nocheck
+// nocheck: the wrapper's parameter list, annotated — not a compilable item
 my_comp_component(
   // `init` defaults to MyCompState::zero() — pass it only for what differs
   init={ ..MyCompState::zero(), count: 0 },
@@ -421,8 +446,9 @@ my_comp_component(
     FilterItem => Some((s, _key, value, _iter) => value.str() != "")
   },
   // enrich= / enrich_scope= / loop_with= — see iteration.md
-  specs={ // Value-level slots & kind overrides — NOT in the struct
-    "child": @component.FieldSpec::comp("Item"), // component-typed field
+  // swap= — replace this node with another instance; see The handler buckets
+  slot_args={ // the ONE thing no type can state: a child's ctor arguments
+    "child": { "label": Str("pick one") },
   },
   // provide={ ... }, lookup={ ... }   // see advanced.md,
 )
@@ -448,26 +474,21 @@ views built in MoonBit, so there is nothing to default `views~` to. The state
 type still has to implement `@component.Fields`; a component that declares
 less does not get a runtime that infers the difference.
 
-> **Two bucket spellings, by call target.** The generated wrapper
-> (`my_comp_component(...)`) types each bucket as a function from a
-> generated enum returning the handler as an `Option` —
-> `compute=m => match m { Label => Some((s, _args) => ...) }`, exactly
-> like the skeleton above (return `None` to fall through to a generated
-> mutator). The raw `@component.component(...)` call instead takes a
-> **string-keyed map**: `compute={ "label": (s, _args) => ... }`.
-> Snippets in this skill that show the map form are showing the raw
-> call; with a generated wrapper, translate them to the enum match — the
-> wrapper's parameter type will not accept a map.
+> **Two bucket spellings, by call target.** The generated wrapper takes an
+> enum match, the raw `@component.component(...)` call takes a string-keyed
+> map, and they are not interchangeable. The full rule — plus which bucket
+> answers which name, and the dispatch precedence between them — is
+> [The handler buckets](#the-handler-buckets).
 
 `comp.make({...})` builds an instance from a `Map[String, Value]` of
 args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
 lists, maps, or example args. Missing fields get their defaults from
 `init`, and every arg is coerced through its DECLARED kind (a wrong-shaped
 value falls back to the default — silently).
-Component-typed fields declared with
-`specs={ "child": FieldSpec::comp("Item", args={...}) }` build their
-default instance through the registration scope at `make()` time, so
-forward references work by name.
+A component-typed field (a **slot**) builds its default instance through the
+registration scope at `make()` time, so forward references work by name. The
+schema names the component; `slot_args={ "child": {...} }` supplies the
+arguments it is built with — see [schema.md](./schema.md#slots).
 
 > **No statics.** The JS `statics:` block has no MoonBit counterpart —
 > nothing in the framework calls statics in either language. Write a
@@ -479,49 +500,30 @@ forward references work by name.
 > `Component` value (new id, separately compiled CSS) to register into
 > a scope.
 
-## Field Types & Auto-generated API
+## Fields
 
-**The state struct is the fields**: names, defaults (from `init`) and
-kinds all come from the struct, and every handler body is
-compiler-checked against it — `s.cuont` is a compile error, not a
-silently-Null render. Set/omap kinds and component slots use explicit
-`specs=` entries.
+**The schema is the fields.** Names, types and kinds are declared in the view
+file's `<script type="tutuca/state">` block; `gen-views` writes the struct, and
+every handler body is compiler-checked against it — `s.cuont` is a compile
+error, not a silently-Null render.
 
-| Declared as                              | Field kind | Extra auto-generated mutators (for field `x`)                                            |
-| ---------------------------------------- | ---------- | ---------------------------------------------------------------------------------------- |
-| `x : String`                             | text       | —                                                                                        |
-| `x : Int` / `x : Double`                 | int / float | —                                                                                       |
-| `x : Bool`                               | bool       | `toggleX`                                                                                |
-| `x : @tutuca.Value`                      | any        | — (`Null`, instances, `Fn`s, heterogeneous data)                                         |
-| `x : Array[...]`                         | list       | `pushInX`, `insertInXAt`, `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`         |
-| `x : Map[String, ...]`                   | map        | `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt`                                   |
-| `specs={ "x": FieldSpec::omap(default?={...}) }` | omap | same as map (MoonBit `Map` already preserves insertion order) |
-| `specs={ "x": FieldSpec::set(members?=[...]) }` | set  | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
-| `specs={ "x": FieldSpec::comp("Item", args?={...}) }` | comp | — slot field, **not** in the struct (default instance made through the scope at `make` time) |
+Which WIT spelling a field wants, and which camelCase mutators each kind
+generates (`pushInX`, `toggleInX`, `setInXAt`, …), is one table in
+[schema.md](./schema.md#what-each-field-kind-generates). Two consequences worth
+carrying here:
 
-A `set`/`omap` specs entry works two ways: standing alone it declares a
-Value-level slot field (default from the spec), or it **overrides the
-kind** of a matching `Map[...]` struct field (e.g. `sel : Map[String,
-Bool]` + `specs={ "sel": FieldSpec::set() }` keeps the typed default and
-gains the set mutators). `comp` entries are always slots.
+- The generated mutator names keep their **JS camelCase spelling** — that is
+  what makes views port verbatim: `@on.click="removeInItemsAt @key"`,
+  `@on.input="setQuery value"`, `@on.click="toggleView"` all call generated
+  mutators. A `compute` entry of the same name wins over the generated one.
+- Emptiness / truthiness / null checks are **not** generated — use the boolean
+  predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?` in a conditional
+  slot instead (e.g. `@hide="empty? .x"`, `@show="equals? .view 'detail'"`).
 
-**Every** field additionally gets `setX`, `updateX` (takes a `Fn` value —
-code-side use), `resetX`, and `xLen` (`Null` for non-sized values). The
-generated names keep their **JS camelCase spelling** — that is what makes
-views port verbatim: `@on.click="removeInItemsAt @key"`,
-`@on.input="setQuery value"`, `@on.click="toggleView"` all call
-generated mutators. A `compute` entry of the same name wins over the
-generated one.
-
-A field that can hold "anything" is declared `@tutuca.Value` — the
-dynamic escape hatch inside an otherwise typed struct. That includes
-fields holding component instances or `Fn` values: they survive state
-updates losslessly.
-
-Emptiness / truthiness / null checks are not generated — use
-the boolean predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?`
-in a conditional slot instead (e.g. `@hide="empty? .x"`,
-`@show="equals? .view 'detail'"`).
+A field that can hold "anything" is declared `any` (MoonBit `@tutuca.Value`) —
+the dynamic escape hatch inside an otherwise typed struct. That includes fields
+holding component instances or `Fn` values: they survive state updates
+losslessly.
 
 ## Computed values & predicates (`compute`)
 
@@ -531,11 +533,12 @@ value is used. Works anywhere a value is read — `@text`, `:attr`,
 field read and never invokes; `$name` is the call.)
 
 The map form below is the raw `@component.component(...)` spelling; a
-generated wrapper takes the enum-match form instead (see *Component
-Skeleton* above), with one `Some(...)` arm per name in place of each map
-entry:
+generated wrapper takes the enum-match form instead, with one `Some(...)` arm
+per name in place of each map entry — see
+[The handler buckets](#the-handler-buckets):
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 compute={
   "canSubmit": (s : FormState, _args) => Bool(s.title.length() > 0 && !s.isLoading),
   "buttonClass": (s : FormState, _args) => if s.isActive {
@@ -568,7 +571,8 @@ the value lives behind a field, your options are:
 - **Add a `compute`** — reading through the value coercers when the
   field is a `@tutuca.Value`:
 
-  ```moonbit
+  ```moonbit nocheck
+  // nocheck: a fragment (a match arm or an expression), not a top-level item
   "userName": (s : PageState, _args) => s.user.field("name"),
   ```
 
@@ -612,9 +616,9 @@ pass a boolean field. `style` is a plain string attribute like any other
 — there is no style-object form.
 
 A static `class="…"` and a dynamic `:class`/`@if.class` **cannot coexist on the
-same element** — setting one attribute two ways is a lint error
-(`DUPLICATE_ATTR_DEFINITION`), and at runtime the dynamic value wins and the
-static class is dropped. Fold any structural classes into the bound expression,
+same element**: the dynamic value wins and the static class is silently dropped.
+Nothing reports it — they are different attribute names to the HTML parser, so no
+duplicate-attribute rule fires. Fold any structural classes into the bound expression,
 e.g. `:class="$'btn {.color}'"` (note `btn` is part of the template, not a
 separate `class="btn"`). The same applies to other attributes.
 
@@ -664,129 +668,31 @@ first**: several of these become build errors that way. The usual suspects:
 ## Event Handling
 
 ```html
-<!-- $-handler (`$`) vs update dispatch (no prefix) -->
+<!-- a bare name dispatches an `Input` arm of `update` -->
 <button @on.click="inc">+</button>
-<button @on.click="dec">-</button>
 
 <!-- pass args by name -->
 <input @on.input="setStr value" />
 <input @on.input="setN valueAsInt" />
 <button @on.click="pick @key isAlt">pick</button>
-<button @on.click="loadAnotherWay">load</button>
 ```
 
-Written args arrive in the handler's `args` array in template order —
-pattern-match them directly (`Input("search", [Str(q), ..]) => ...`).
-For an `update` arm the `&Ctx` is the explicit third parameter of the
-update fn; a `$`-handler gets no ctx (`compute` is pure). So
-`$pick @key isAlt` calls the `$`-handler with `args = [key, isAlt]`, and
-`loadAnotherWay` dispatches `Input("loadAnotherWay", [])` plus ctx.
+Every `@on` handler is written **bare** — a leading `$` is refused in an event
+position. Written args arrive in the handler's `args` array in template order, so
+an arm pattern-matches them directly
+(`Input("search", [Str(q), ..]) => ...`). With generated views each `@on` name
+becomes a case of `<Comp>Msg`, its payload type inferred from what the call site
+writes.
 
-Built-in handler argument names: `value`, `valueAsInt`, `valueAsFloat`,
-`target`, `event`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `key`, `keyCode`,
-`isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey`, `ctx`,
-`dragInfo`.
+The named args the glue resolves (`value`, `valueAsInt`, `key`, `isCtrl`, …), the
+`<Comp>Msg` payload-type table, event modifiers, and custom-element events are all
+in **[events.md](./events.md)**. Two things worth knowing before you get there:
 
-The content of `value` depends on the event source:
-
-| Source                      | What `value` resolves to                         |
-|-----------------------------|--------------------------------------------------|
-| `<input type="checkbox">`   | the checked state (`Bool`)                       |
-| `<input type="file">`       | the picked file's metadata as a `Map` (name/size/type/lastModified), `Null` if none |
-| `CustomEvent`               | the event's `detail`, mapped to a `Value` (`Map` for objects) |
-| anything else               | the input's value (`Str`), or `Null` if absent   |
-
-For numeric inputs, prefer `valueAsInt` / `valueAsFloat` to skip the
-string parse.
-
-### Generated `Msg` payload types
-
-When the views are generated (`gen-views`), each `@on` name becomes a
-case of the `<Comp>Msg` enum, and the payload type of each argument is
-inferred from what is **written at the call site**:
-
-| Written in the template | Payload type in `<Comp>Msg` |
-| ----------------------- | --------------------------- |
-| `'literal'` / `1` / `true` | `String` / `Double` / `Bool` |
-| `value` | `String` — but `Bool` on `<input type="checkbox">` and `@tutuca.Value` on `<input type="file">` (the host element's static `type` decides) |
-| `key` | `String` |
-| `valueAsInt`, `valueAsFloat`, `keyCode` | `Double` |
-| `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey` | `Bool` |
-| a binding (`@key`, `@value.x`), `target`, `event`, `dragInfo`, anything else | `@tutuca.Value` |
-
-So `@on.click="setTab 'edit'"` generates `SetTab(String)` (unwrapped —
-match `Some(SetTab(tab))`, not `Some(SetTab(Str(tab)))`),
-`@on.input="setCompleted value"` on a checkbox generates
-`SetCompleted(Bool)`, and `@on.click="removeInItemsAt @key"` generates
-`RemoveInItemsAt(@tutuca.Value)`. Two call sites that disagree on an
-argument's shape join to `@tutuca.Value`. At runtime, arguments that
-don't match the inferred shape land in `Unknown(name, args)` with the
-raw `Array[@tutuca.Value]`.
-
-> The `value` inference reads the host element's **static** `type`
-> attribute, matching what the glue delivers (checkbox → the checked
-> state, file → the metadata `Map` / `Null`). An input whose `type` is
-> dynamic (`:type=".kind"`) keeps the default `String` — if such an
-> input can render as a checkbox at runtime, handle its `value` via the
-> generated mutator or a raw `Input(name, args)` arm rather than a
-> typed case.
-
-Ask for the most granular arg the handler actually uses — `value` /
-`valueAsInt` / `key`, not the raw `event` — when the specific value is
-all you need. An arm that pattern-matches `[Str(q), ..]` off a plain
-`value` is trivial to call from a test; one that takes `event` needs an
-event-shaped `Map`. (The value layer deliberately exposes no DOM
-objects — file inputs and custom events already arrive as plain `Map`
-metadata, see the table above.) See [testing.md](./testing.md)
-*Designing handlers so tests stay simple*.
-
-### Event Modifiers
-
-`@on.<event>+<mod>+<mod>=...`
-
-- All events: `+ctrl`, `+cmd`/`+meta`, `+alt`
-- `keydown` only: `+send` (Enter), `+cancel` (Escape)
-
-```html
-<input @on.keydown+send="submit value" @on.keydown+cancel="reset" />
-<button @on.click+ctrl="soloOnly">ctrl-click</button>
-```
-
-### Web Components & Custom Events
-
-Custom elements just work, and any `CustomEvent` they fire is reachable
-via `@on.<event-name>`. The event's `detail` surfaces as `value` — the
-glue maps it to a `Value::Map`:
-
-```moonbit
-// the host page loads <emoji-picker> (emoji-picker-element) from a CDN;
-// the component just hosts the tag and handles its event.
-// `current : @tutuca.Value` in the state struct
-update=(s : PickerState, msg, _ctx) => match msg {
-  Input("onEmojiClick", [Map(detail), ..]) =>
-    Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
-  _ => None
-},
-```
-
-```html
-<section @on.emoji-click="onEmojiClick value">
-  <emoji-picker @show=".isPickerVisible"></emoji-picker>
-</section>
-```
-
-Handle these events declaratively with `@on.<event-name>` in the view —
-don't grab the node from host/glue code and `addEventListener` on it. A
-listener attached from outside the component runs outside the handler
-model: no new-state return, no transactor batching, and the mutation
-is invisible to the component that owns the state. For any event with a
-real element in the tree, `@on.` is the only entry point you need.
-Genuinely external inbound sources (WebSocket, `postMessage`, timers)
-have no element to bind — route those through `app.send_at_root` instead
-(see [request-response.md](./request-response.md)).
-
-Pitfall: binding a camelCase JS property on a custom element silently
-fails — see the lowercasing rules in *Attribute Binding* above.
+- There is **no `event`, `target` or `ctx` argument** — a DOM object is not a
+  `Value`, so each resolves to `Null` and the handler silently receives nothing.
+  Ask for the narrowest named arg instead.
+- Modifiers are **guards only**, on `keydown` and `click`. `+prevent` / `+stop`
+  do not exist and are ignored rather than refused.
 
 ## Conditional Display
 
@@ -883,6 +789,7 @@ Named views are `<template id="Comp:name">` entries in the view file:
 ```
 
 ```moonbit nocheck
+// nocheck: one expression, shown to make the point that nothing else is needed
 note_component() // the wrapper passes both views
 ```
 
@@ -907,10 +814,52 @@ declarations, and the at-rules that must live in `global_style`: see
 [styles.md](./styles.md). Tailwind / MargaUI utility classes:
 [margaui.md](./margaui.md).
 
-## Triggers and Handlers
+## The handler buckets
 
-Tutuca has four orchestration channels. Each maps a trigger to one arm
-of the **same `update` match**:
+Everything you write beside a generated view goes in one of these. This is the
+canonical list; other files link here rather than restating it.
+
+| Bucket | Signature | Answers |
+| ------ | --------- | ------- |
+| `update` | `(S, Dispatch, &Ctx) -> S?` | every event and message; one match over all four channels |
+| `compute` | `(S, Array[Value]) -> Value` | a `$name` in a **value** position — pure, no ctx |
+| `swap` | `(S, Array[Value], &Ctx) -> Value?` | an `Input` that replaces this node with a different **Value** |
+| `when` | `(S, key, value, iterData) -> Bool` | `@when` iteration filters |
+| `enrich` | `(S, binds, key, value, iterData) -> Unit` | `@enrich-with` per-item binds |
+| `enrich_scope` | `(S) -> Map[String, Value]` | scope-level derived binds |
+| `loop_with` | `(S, seq, LoopCtx) -> LoopWith` | `@loop-with` slicing / filtering / key lists |
+
+### Two spellings, by call target
+
+The **generated wrapper** (`my_comp_component(...)`) types each bucket as a
+function from a generated enum returning the handler as an `Option`:
+
+```moonbit nocheck
+// nocheck: one bucket argument, not a compilable item
+compute=m => match m { Label => Some((s, _args) => Str("n=\{s.count}")) }
+```
+
+Return `None` for a case to fall through to a generated mutator. The raw
+`@component.component(...)` call instead takes a **string-keyed map**:
+
+```moonbit nocheck
+// nocheck: one bucket argument, not a compilable item
+compute={ "label": (s, _args) => Str("n=\{s.count}") }
+```
+
+Snippets in this skill showing the map form are showing the raw call. With a
+generated wrapper, translate them to the enum match — the wrapper's parameter
+type will not accept a map.
+
+The enums are **closed and view-driven**: their cases come from the names the
+views reference (plus any `func` the schema declares). You cannot pre-declare a
+handler no view calls yet — the constructor doesn't exist. Add the name to the
+view first, regenerate, then write the handler. A bucket the views never use is
+not a parameter at all.
+
+### The four channels
+
+Each maps a trigger to one arm of the **same `update` match**:
 
 | Triggered by                                | `update` arm            | Use for                                             |
 | ------------------------------------------- | ----------------------- | --------------------------------------------------- |
@@ -919,19 +868,54 @@ of the **same `update` match**:
 | `ctx.send(name, args)` — message to a target path | `Receive(name, args)` | addressing one known component (or self)        |
 | `ctx.request(name, args, opts)` — async request | `Response(name, args)` | fetch / timer / storage, result routed back      |
 
-The `update` fn — `(s, msg : Dispatch, ctx : &@tutuca.Ctx) => S?` — is
-one pattern match over all four; the framework swaps the returned state
-into the dispatch path (`None` = no change). `Input` dispatch that no
-`update` arm claims falls back to a generated mutator of the same name. The three channels beyond `Input` — plus `ctx.at()`,
-catch-all arms, per-call handler-name overrides, error handling, and
-`RequestFn` registration — are in
+The `update` fn is one pattern match over all four; the framework swaps the
+returned state into the dispatch path (`None` = no change). The three channels
+beyond `Input` — plus `ctx.at()`, catch-all arms, per-call handler-name
+overrides, error handling, and `RequestFn` registration — are in
 [request-response.md](./request-response.md); worked snippets in
 [patterns/coordinate-components.md](./patterns/coordinate-components.md).
 
-The render buckets (`when` / `enrich` / `enrich_scope` / `loop_with`)
-aren't event-triggered — the renderer invokes them to filter iterations
-and produce binds, not state changes (see *Mental model*, and *Scope
-Enrichment* in [iteration.md](./iteration.md)).
+### Dispatch precedence for `Input`
+
+An `Input` name is offered to three things, in order
+(`component/instance.mbt:360-408`):
+
+1. **`swap`**, if it has an entry for that name — it wins over `update`;
+2. **`update`**, if its match claims the name (returns `Some`);
+3. the **generated mutator** of that name (`setX`, `pushInX`, `toggleX`, …).
+
+So a view writing `setTitle 'x'` reaches the setter every field gets without the
+component declaring anything, and an `update` arm returning `None` falls through
+to it rather than swallowing the event.
+
+### What `swap` is for
+
+`update` returns a new **state struct**, so it can only ever produce another
+instance of the same component. A `swap` handler returns a bare `Value`, which
+means it can replace the node with something else entirely — most usefully
+*another component's instance*:
+
+```moonbit nocheck
+// nocheck: one bucket argument, not a compilable item
+// `@on.click="becomeEditor"` — replace this node with an Editor instance
+swap=i => match i {
+  BecomeEditor => Some((s, _args, _ctx) => Some(editor.make({ "text": Str(s.text) })))
+  _ => None
+}
+```
+
+Return `None` from the handler to leave the node alone. Reach for `swap` only for
+a genuine change of identity; a view that merely looks different wants
+`@push-view` or an `as=` view (see *Multiple Views & View Stack*). Because it is
+keyed off the `<T>Input` enum, a swap name must be an `@on` handler some view
+calls.
+
+### The render buckets
+
+`when` / `enrich` / `enrich_scope` / `loop_with` aren't event-triggered — the
+renderer invokes them to filter iterations and produce binds, not state changes
+(see *Mental model*, and *Scope Enrichment* in
+[iteration.md](./iteration.md)).
 
 ## Macros
 
@@ -956,7 +940,9 @@ Bypasses all escaping; children of the element are ignored when active.
 Underneath the typed structs, all state is the `@tutuca.Value` enum —
 there is no immutable.js layer in this port:
 
-```moonbit
+```moonbit nocheck
+// nocheck: reproduces core's own declaration for reference; `&Obj` only
+// resolves inside the package that declares it
 pub(all) enum Value {
   Null
   Bool(Bool)
@@ -986,9 +972,9 @@ pub(all) enum Value {
   ordinary mutable containers — handlers must **copy before changing**
   (`s.items.copy()` then `push`) and return a **new** struct
   (`Some({ ..s, items: next })`), never mutate in place.
-- Sets are modeled as a `Map` keyed by member (value `Bool(true)`) via
-  `specs=` + `FieldSpec::set`; ordered maps are plain `Map`s via
-  `FieldSpec::omap`.
+- Sets are modeled as a `Map` keyed by member (value `Bool(true)`), declared
+  `text-set` or `flags` in the schema; ordered maps are plain `Map`s, declared
+  `value-omap` / `text-omap`. See [schema.md](./schema.md#field-types).
 - Custom collections implement the `@tutuca.Obj` trait (notably
   `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
   *Custom collections*.
@@ -1000,7 +986,8 @@ The JS `getComponents()` / `getMacros()` / `getRequestHandlers()` /
 `@component.ModuleDef`. A native binary cannot load user code, so
 modules are built programmatically and handed to tooling:
 
-```moonbit
+```moonbit nocheck
+// nocheck: the comps, macros and request fns are the reader's own
 pub fn my_module() -> @component.ModuleDef {
   @component.ModuleDef::new(
     name="my-module",
@@ -1028,7 +1015,8 @@ test and a working page are the same artifact.
 an optional `requests?` argument, defaulting to the real handlers, and
 build the module with a fixture map in tests/demos:
 
-```moonbit
+```moonbit nocheck
+// nocheck: the real handlers and comps are the reader's own
 pub fn request_module(
   requests? : Map[String, @component.RequestFn] = real_request_handlers(),
 ) -> @component.ModuleDef {
@@ -1044,6 +1032,11 @@ its examples never reach the storybook or a harness test.
 
 ## See also
 
+- [schema.md](./schema.md) — the `<script type="tutuca/state">` language: field
+  spellings, the mutators each kind generates, slots, message buckets, declared
+  `$`-callables, and `tutuca/init` fixtures.
+- [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
+  payload types, event modifiers, and custom-element events.
 - [iteration.md](./iteration.md) — `@each` / `render-each`, `@when`,
   `@enrich-with`, `@loop-with` pagination, and the loop lifecycle.
 - [macros.md](./macros.md) — `Macro` definitions, `<x:name>` calls,
@@ -1066,7 +1059,7 @@ its examples never reach the storybook or a harness test.
 - [testing.md](./testing.md) — `moon test` blocks and the `@harness`
   mount/drive/read API.
 - [cli.md](./cli.md) — the embedded CLI: commands, flags, exit codes, and
-  the linter rules.
+  every diagnostic `gen-views` can report.
 - [playground.md](./playground.md) — authoring in an in-browser playground:
   same generated names, the view+code pair convention, verifying without
   `moon`.

@@ -8,9 +8,10 @@ scoped/global component CSS, [styles.md](./styles.md) is enough.
 In the MoonBit port the split is: **tutuca collects, a Tailwind v4
 compiler compiles, the host injects.** The MoonBit side gathers every
 literal class the compiled views can show —
-`app.scope.comps.collect_classes()` (or, per compiled view,
-`@anode.ANode::collect_classes`) — that class list is compiled to CSS,
-and the host injects the result as `<style id="margaui-css">`.
+`app.scope.comps.collect_classes() -> Array[String]` (or, per compiled view,
+`@anode.ANode::collect_classes(set) -> Unit`, which *fills* a `@set.Set[String]`
+you pass in rather than returning one) — that class list is compiled to CSS, and
+the host injects the result as `<style id="margaui-css">`.
 
 The compile step runs **in MoonBit** via
 [`marianoguerra/tailwindcss`](https://github.com/marianoguerra/tailwindcss-moonbit),
@@ -111,12 +112,15 @@ styling works offline. The moving parts, all in-repo:
   exact Tailwind tag — so the stylesheets are pinned to that same tag, and
   `fetch-tailwind.mjs` fails the build if the two pins drift apart.
 
-- **The compile helpers.** `css`'s `compile_margaui(classes) -> String` builds a
+- **The compile helpers.** `css`'s
+  `compile_margaui(ArrayView[String], polyfills? : Int) -> String raise` builds a
   `MemoryStylesheetLoader` over both bundles (margaui's entry imports `./tw/*`,
   which live in the Tailwind one) and calls
   `@tw.compile_sync(margaui_entry, …).build(classes)` — `compile_sync` is the
-  wasm-gc-safe path, no async runtime. `compile_tailwind(classes)` is the same
-  against stock Tailwind alone, with no component layers.
+  wasm-gc-safe path, no async runtime. `compile_tailwind` is the same against
+  stock Tailwind alone, with no component layers. Both **raise**, so a caller
+  needs a `try` or its own `raise`; both take the class list as an `ArrayView`,
+  which `collect_classes()`'s `Array` coerces to.
 
 - **The host.** After `mount()`, the host compiles + injects in one step:
 
@@ -183,7 +187,8 @@ MoonBit; the page only pre-places an empty `<style id="margaui-css">` in
 `<head>` (so injection keeps a stable, early cascade position — palette links
 appended later still win) and calls `exports.mount()`:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `app` is the reader's mounted App
 // in the host's mount(), after the app is built:
 let css = @css.compile_margaui(app.scope.comps.collect_classes())
 @wglue.inject_style(doc, "margaui-css", css) // app/wasm inject_style upserts by id
@@ -221,7 +226,8 @@ collected, so those don't need the workaround.)
 Workaround: add a hidden "decoy"/palette view on the component that lists every
 possible assembled class as a real literal, so the collector picks them up:
 
-```moonbit
+```moonbit nocheck
+// nocheck: a bucket argument, not a top-level item
 views={
   // enumerate color × utility so each full class name appears verbatim;
   // never rendered — registration is enough for the collector to see it
@@ -234,7 +240,8 @@ kind → class map), keep one source of truth by interpolating a helper
 into the view **string at construction time** — the template still
 carries plain literals by the time the collector reads it:
 
-```moonbit
+```moonbit nocheck
+// nocheck: `COLORS` is the reader's own list
 fn decoy_classes() -> String {
   // one entry per assembled class, joined space-separated:
   // "bg-red bg-blue progress-red progress-blue"

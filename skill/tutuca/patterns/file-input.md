@@ -31,7 +31,8 @@
 `%type` is a MoonBit keyword, so the generated struct binds it as `type_`
 while the view keeps reading `.type` — the codec keys by the runtime name.
 
-```moonbit nocheck
+```moonbit
+///|
 fn file_picker_comp() -> @component.Component {
   file_picker_component(
     update=(s, msg, _ctx) => match msg {

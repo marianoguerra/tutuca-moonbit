@@ -35,10 +35,10 @@ handler runs against — a **position**, not a captured reference (see
 | `EachRenderItStep(field~, key~)` | an iterated `render-it` item | `<x render-it>` per iter |
 | `BindStep` / `ScopeBindStep` / `EachBindStep` | nothing — frame-only (carry scope binds, no addressing) | `@each`, `@enrich-with` |
 
-Dispatch additionally wraps steps in a `DispatchPath` of
-`DispatchStep`s: `Plain(step~, origin~)`, plus `Dyn` / `DynEach` — the
-dynamic-var (`*x`) render-target **teleport markers** carrying the
-producer id, its own steps, and the interior component ids to drop.
+Dispatch additionally wraps steps in a `DispatchPath` of `DispatchStep`s, of
+which there are exactly two: `Plain(step~, origin~)` and `Dyn` — the
+dynamic-var (`*x`) render-target **teleport marker**, carrying the producer id,
+its own steps, and the interior component ids to drop.
 
 `SeqAccessStep` is the important one for async correctness: it stores the
 field *names* `seq_field` and `key_field`, and resolves the key from the
@@ -89,8 +89,8 @@ The core of applying one is `Path::update(root, bucket, name, args)`:
 1. compute the transaction path (`to_transaction_path()`, or a pinned
    path for a response);
 2. `lookup` the addressed leaf value **now**;
-3. find the handler on it (exact name, then the `$unknown` fallback),
-   call it — old self in, new self out;
+3. find the handler on it — **one** lookup, by exact name, with no fallback
+   sentinel behind it — and call it: old self in, new self out;
 4. if the result differs, `set_value` rebuilds the root spine; otherwise
    the root is returned unchanged.
 
@@ -155,7 +155,8 @@ after teleporting, because the `SeqAccessStep` may have come from a
 
 **Opt out per request with `live_path=true`:**
 
-```moonbit
+```moonbit nocheck
+// nocheck: a fragment (a match arm or an expression), not a top-level item
 ctx.request("save", [payload], @tutuca.RequestOpts::new(live_path=true))
 ```
 
