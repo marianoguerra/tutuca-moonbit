@@ -113,6 +113,43 @@ pub(all) enum Value {
 }
 
 ///|
+/// A render-cache bucket for one instance: a structural fingerprint fixed when
+/// the instance was created, and a revision bumped by each successor.
+///
+/// NOT an identity, and deliberately not unique. Two unrelated instances can
+/// land on the same pair — two bundles loaded at runtime declaring the same
+/// component, or two structurally equal siblings of one — and that is fine: a
+/// bucket collision costs a MISS, never a wrong subtree, because the cache
+/// validates its stored value by physical identity before returning it.
+///
+/// Giving up on uniqueness is what removes the need for a process-global
+/// counter, and with it the question of how two independently loaded
+/// components avoid clashing: they do not have to.
+pub(all) struct ObjId {
+  origin : UInt64
+  /// 0 at creation, +1 per successor. Two generations of one instance differ
+  /// here even when nothing else does, so a pass that still holds both does
+  /// not make them fight for one bucket.
+  rev : Int
+} derive(Eq, Debug)
+
+///|
+/// The fingerprint of a freshly created instance: its component's schema
+/// fingerprint mixed with the fields it starts with.
+declare pub fn ObjId::of(
+  fingerprint : String,
+  fields : Map[String, Value],
+) -> ObjId
+
+///|
+/// The successor's id: same origin, next revision.
+declare pub fn ObjId::next(self : ObjId) -> ObjId
+
+///|
+/// The origin as 16 hex digits — for looking at, not for keying on.
+declare pub fn ObjId::to_hex(self : ObjId) -> String
+
+///|
 /// Component-instance protocol (the port of JS's runtime Records tagged with
 /// a hidden component symbol). ONE trait serves both hybrid representations:
 /// the Value-backed Instance (component package) and user-defined typed
@@ -160,6 +197,14 @@ pub(open) trait Obj {
   // None for a custom collection. The default counts the entries; override
   // when the length is known without materializing them.
   fn obj_size(Self) -> Int? = _
+  // This instance's render-cache bucket (see ObjId). None is the honest answer
+  // for an ad-hoc Obj that does not track its own generations, and it is what
+  // makes the cache DECLINE at that render site rather than build a key and
+  // miss — the reintroduction condition benchmarks/OPTIMIZATIONS.md #8 sets.
+  //
+  // MUST return a STORED value, never compute one: it is read once per render
+  // site per pass.
+  fn obj_identity(Self) -> ObjId? = _
   fn obj_eq(Self, other : &Obj) -> Bool = _ // structural over the schema; false when there is none
   fn obj_debug(Self) -> String = _
 }
@@ -215,6 +260,11 @@ impl Obj with fn obj_size(self) {
     Some(entries) => Some(entries.length())
     None => None
   }
+}
+
+///|
+impl Obj with fn obj_identity(_self) {
+  None
 }
 
 ///|

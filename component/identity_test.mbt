@@ -179,6 +179,117 @@ test "writing a list back unchanged leaves the parent instance alone" {
   assert_true(physical_equal(set_at([Null, Num(0), kids[0]]), v))
 }
 
+// The render-cache bucket (@tutuca.ObjId) rides on the same machinery: it is
+// minted where an instance is minted, and the no-op paths above never mint
+// one, so "the revision moved" means "the instance really changed".
+
+///|
+/// The id of an instance Value. Every test below reads it this way, so none of
+/// them can accidentally pass by looking at something else.
+fn id_of(v : @tutuca.Value) -> @tutuca.ObjId {
+  match v.identity() {
+    Some(id) => id
+    None => abort("instance has no id")
+  }
+}
+
+///|
+test "an update keeps the origin and moves the revision" {
+  let v = seeded()
+  let before = id_of(v)
+  assert_eq(before.rev, 0)
+  let after = id_of(send(v, "rename", [Str("goodbye")]))
+  // Same instance, one update later: the origin is what says "same", the
+  // revision is what says "later".
+  assert_eq(after.to_hex(), before.to_hex())
+  assert_eq(after.rev, 1)
+  // and it keeps counting, so two generations never share a bucket
+  let third = id_of(send(send(v, "rename", [Str("a")]), "rename", [Str("b")]))
+  assert_eq(third.to_hex(), before.to_hex())
+  assert_eq(third.rev, 2)
+}
+
+///|
+test "a no-op update moves nothing, revision included" {
+  // This is the invariant the cache leans on hardest: a pass that re-renders
+  // after a no-op must still find every bucket where it left it.
+  let v = seeded()
+  let before = id_of(v)
+  let after = id_of(send(v, "touch", []))
+  assert_eq(after.to_hex(), before.to_hex())
+  assert_eq(after.rev, before.rev)
+}
+
+///|
+test "a field set to the value it already holds moves nothing" {
+  let v = seeded()
+  let before = id_of(v)
+  guard v is Obj(o)
+  guard o.obj_with_field("title", Str("hello")) is Some(same)
+  assert_eq(id_of(same).to_hex(), before.to_hex())
+  assert_eq(id_of(same).rev, before.rev)
+  // a write that DOES change something moves the revision, through the same
+  // path — `set` and the update handler are not two different rules
+  guard o.obj_with_field("title", Str("other")) is Some(changed)
+  assert_eq(id_of(changed).to_hex(), before.to_hex())
+  assert_eq(id_of(changed).rev, before.rev + 1)
+}
+
+///|
+test "two instances made from the same arguments share a bucket, by design" {
+  // NOT a defect to be fixed with a counter. The origin is a render-cache
+  // bucket, not an identity: these two render the same thing at the same site,
+  // and where they do not, the cache's own physical-identity check on the
+  // stored value turns the shared bucket into a miss. Giving this up is what
+  // removes the process-global counter, and with it the question of how two
+  // separately loaded components avoid clashing.
+  assert_eq(id_of(seeded()).to_hex(), id_of(seeded()).to_hex())
+  // Different arguments still spread, which is all a bucket owes anyone.
+  let other = id_comp().make({ "title": Str("elsewhere") })
+  assert_not_eq(id_of(other).to_hex(), id_of(seeded()).to_hex())
+}
+
+///|
+test "a child contributes its origin to its parent, not its contents" {
+  // The rule that keeps fingerprinting cheap: mixing a nested instance costs
+  // one UInt64, so a parent's fingerprint is proportional to its OWN fields
+  // rather than to the subtree under it. Observable as: children that are
+  // structurally equal give their parents equal origins, and a child that
+  // differs changes its parent's.
+  let child = id_comp()
+  let parent = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Parent",
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+  )
+  let a = parent.make({ "items": List([child.make({ "title": Str("one") })]) })
+  let b = parent.make({ "items": List([child.make({ "title": Str("one") })]) })
+  let c = parent.make({ "items": List([child.make({ "title": Str("two") })]) })
+  assert_eq(id_of(a).to_hex(), id_of(b).to_hex())
+  assert_not_eq(id_of(c).to_hex(), id_of(a).to_hex())
+}
+
+///|
+test "a parent's own bucket moves when a child is written through it" {
+  // The parent is a new instance after the write, so it is a later revision of
+  // itself — the child's new bucket does not leak upward into a new origin.
+  let child = id_comp()
+  let parent = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Parent",
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+  )
+  let kids = [child.make({ "title": Str("one") })]
+  let v = parent.make({ "items": List(kids) })
+  let before = id_of(v)
+  guard v is Obj(o)
+  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  let renamed = send(kids[0], "rename", [Str("ONE")])
+  let after = id_of(set_at([Null, Num(0), renamed]))
+  assert_eq(after.to_hex(), before.to_hex())
+  assert_eq(after.rev, before.rev + 1)
+}
+
 ///|
 impl @component.Fields for IdState with fn encode(s) {
   {

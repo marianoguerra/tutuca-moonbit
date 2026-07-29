@@ -288,6 +288,31 @@ test "bundle mounts into a live app and dispatches through stock machinery" {
 }
 
 ///|
+test "a guest successor keeps its origin and moves its revision" {
+  // A guest instance is replaced by a NEW DynObj around a new handle on every
+  // dispatch, so without carrying the bucket forward each update would look
+  // like a brand-new component to the render cache and never hit.
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
+  // Two live guest instances of one component are two handles, so they spread
+  // across buckets even though their state is identical.
+  guard a.to_value().identity() is Some(id_a)
+  guard b.to_value().identity() is Some(id_b)
+  assert_not_eq(id_a.to_hex(), id_b.to_hex())
+  assert_eq(id_a.rev, 0)
+  h.send_at_root("setSlot", args=[a.to_value()])
+  h.click(".inc")
+  inspect(h.text(".count"), content="11")
+  guard h.app.root_value().field("slot").identity() is Some(after)
+  assert_eq(after.to_hex(), id_a.to_hex())
+  assert_eq(after.rev, 1)
+  collect_superseded()
+}
+
+///|
 test "guest request round-trips through a host RequestFn" {
   collect_superseded()
   let fake = FakeGuest::new()

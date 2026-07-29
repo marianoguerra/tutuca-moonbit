@@ -27,7 +27,7 @@ type ManifestError derive(@debug.Debug)
 pub struct Bundle {
   guest : &Guest
   manifest : DynManifest
-  comps : Map[String, (Int, DynComponentDef)]
+  comps : Map[String, (Int, String, DynComponentDef)]
 }
 pub fn Bundle::component_names(Self) -> Array[String]
 pub fn Bundle::drop_instance(Self, Int) -> Unit
@@ -69,9 +69,10 @@ pub struct DynObj {
   def : DynComponentDef
   guest : &Guest
   handle : Int
+  id : @core.ObjId
 }
 pub fn DynObj::handle(Self) -> Int
-pub fn DynObj::new(Int, DynComponentDef, &Guest, Int) -> Self
+pub fn DynObj::new(Int, DynComponentDef, &Guest, Int, fingerprint~ : String) -> Self
 pub fn DynObj::to_value(Self) -> @core.Value
 pub impl @core.Obj for DynObj
 

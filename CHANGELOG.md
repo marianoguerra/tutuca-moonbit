@@ -6,6 +6,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **An instance carries a fingerprint and a revision (`@tutuca.ObjId`), so a
+  render cache has something cheap to key on.** `0.7.0` removed all render
+  memoization; `benchmarks/OPTIMIZATIONS.md` #8 recorded that the render-site
+  cache paid for itself where it hit (`toggle todo 1000` +58.9% without it) and
+  was a net loss where it missed, because it built a per-site string key and
+  then missed with it. The fingerprint replaces that string.
+
+  `ObjId` is a **bucket, not an identity**, and it is deliberately not unique.
+  Two instances created from the same arguments get the same origin; so do the
+  same component loaded twice at runtime from two different bundles. That is
+  what removes the need for a process-global counter, and with it the question
+  of how two independently loaded components avoid clashing — they do not have
+  to, because a bucket collision costs a miss and the cache checks physical
+  identity on the value it stored before returning anything.
+
+  It rides on machinery that already existed. `TypedInstance::make` is the only
+  place a host instance comes into being — creation, an `update` handler and a
+  field write all land there — and it already returns the ORIGINAL instance
+  when nothing changed, so "the revision moved" means "the instance really
+  changed" without a second rule being written. Guest instances get the same
+  treatment through `DynObj::successor`, which already threaded a struct copy.
+
+  Fingerprinting stays cheap through one rule: a nested `Obj` contributes its
+  own origin and never its contents, so a parent costs a pass over its own
+  fields rather than a walk of the subtree under it. `Bundle.comps` carries the
+  manifest fingerprint hashed once at registration for the same reason.
+
+  The id is absent from `obj_field`, `obj_eq`, `obj_debug`, the schema and the
+  JSON projection: a bucket is not state, and every DOM snapshot, inspector row
+  and `gen-views` output is unchanged by this.
+
 ## [0.7.0] - 2026-07-29
 
 ### Added

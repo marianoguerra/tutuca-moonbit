@@ -43,6 +43,9 @@ priv struct TypedInstance[S] {
   spec : TypedSpec[S]
   state : S
   fields : Map[String, @tutuca.Value]
+  /// The render cache's bucket for this instance (see `@tutuca.ObjId`):
+  /// fingerprinted once at creation, revision bumped by every successor.
+  id : @tutuca.ObjId
   // Memoized `Obj(self)`. The seams downstream of an instance — Path
   // copy-on-write, the transactor's root-swap check — compare Values by
   // IDENTITY, and each `Obj(self)` cast allocates a fresh box. One stable
@@ -52,12 +55,33 @@ priv struct TypedInstance[S] {
 }
 
 ///|
+/// The one place an instance comes into being — creation (`make_typed`),
+/// an update (`with_state`) and a field write (`set`) all land here.
+///
+/// `id` is what tells the two apart. Absent, this is a NEW instance and gets a
+/// fresh fingerprint over the fields it starts with; present, it is a
+/// successor and carries the predecessor's origin with the next revision. The
+/// no-op paths never reach this function at all — they return the instance
+/// they were given — which is exactly why a revision moving means the
+/// instance really did change.
 fn[S] TypedInstance::make(
   spec : TypedSpec[S],
   state : S,
   fields : Map[String, @tutuca.Value],
+  id? : @tutuca.ObjId,
 ) -> TypedInstance[S] {
-  { spec, state, fields, boxed: None }
+  let id = match id {
+    Some(prev) => prev
+    None =>
+      @tutuca.ObjId::of(
+        match spec.comp {
+          Some(c) => c.schema.fingerprint
+          None => ""
+        },
+        fields,
+      )
+  }
+  { spec, state, fields, id, boxed: None }
 }
 
 ///|
@@ -165,7 +189,7 @@ fn[S] TypedInstance::with_state(
   if !changed && fields.length() == self.fields.length() {
     return self
   }
-  TypedInstance::make(self.spec, s, fields)
+  TypedInstance::make(self.spec, s, fields, id=self.id.next())
 }
 
 ///|
@@ -201,11 +225,11 @@ fn[S] TypedInstance::set(
   fields[name] = coerced
   if self.spec.s_fields.contains(name) {
     match (self.spec.decode)(fields) {
-      Some(s) => TypedInstance::make(self.spec, s, fields)
+      Some(s) => TypedInstance::make(self.spec, s, fields, id=self.id.next())
       None => self
     }
   } else {
-    TypedInstance::make(self.spec, self.state, fields)
+    TypedInstance::make(self.spec, self.state, fields, id=self.id.next())
   }
 }
 
@@ -402,6 +426,18 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_schema(self) {
     Some(c) => Some(c.schema)
     None => None
   }
+}
+
+///|
+/// The render cache's bucket for this instance — stored, like the schema
+/// above, because it is read once per render site per pass.
+///
+/// It is deliberately absent from `obj_field`, `obj_eq`, `obj_debug` and the
+/// JSON projection: a bucket is not state, and an instance that reported one
+/// as a field would put a hash into every DOM snapshot and every inspector
+/// row.
+impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_identity(self) {
+  Some(self.id)
 }
 
 ///|

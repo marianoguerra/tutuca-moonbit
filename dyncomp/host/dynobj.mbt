@@ -10,6 +10,12 @@ pub struct DynObj {
   def : DynComponentDef
   guest : &Guest
   handle : Int
+  /// The render cache's bucket (see `@tutuca.ObjId`), seeded from the
+  /// component's manifest fingerprint and the handle this instance started on.
+  /// A guest's fields are lazy — reading them means crossing the bridge — so
+  /// the handle is the only thing about the instance the host can hash without
+  /// paying for a round trip, and it is enough: a bucket only has to spread.
+  id : @tutuca.ObjId
 }
 
 ///|
@@ -29,8 +35,15 @@ pub fn DynObj::new(
   def : DynComponentDef,
   guest : &Guest,
   handle : Int,
+  fingerprint~ : String,
 ) -> DynObj {
-  { comp_id, def, guest, handle }
+  {
+    comp_id,
+    def,
+    guest,
+    handle,
+    id: @tutuca.ObjId::of(fingerprint, { "handle": Num(handle.to_double()) }),
+  }
 }
 
 ///|
@@ -68,8 +81,11 @@ pub fn DynObj::handle(self : DynObj) -> Int {
 }
 
 ///|
+/// The instance that replaces this one: same component, new guest handle, and
+/// the same bucket at the next revision — a successor is the same logical
+/// instance one update later, which is exactly what the revision means.
 fn DynObj::successor(self : DynObj, handle : Int) -> DynObj {
-  { comp_id: self.comp_id, def: self.def, guest: self.guest, handle }
+  { ..self, handle, id: self.id.next() }
 }
 
 ///|
@@ -91,6 +107,14 @@ fn DynObj::method_fn(self : DynObj, name : String) -> @tutuca.Value {
 ///|
 pub impl @tutuca.Obj for DynObj with fn component_id(self) {
   Some(self.comp_id)
+}
+
+///|
+/// The render cache's bucket — stored, never computed here: it is read once
+/// per render site per pass, and every read that crossed the guest bridge
+/// would cost more than the cache saves.
+pub impl @tutuca.Obj for DynObj with fn obj_identity(self) {
+  Some(self.id)
 }
 
 ///|

@@ -136,6 +136,14 @@ pub(all) struct NullStack {
 }
 pub impl Stack for NullStack
 
+pub(all) struct ObjId {
+  origin : UInt64
+  rev : Int
+} derive(Eq, @debug.Debug)
+pub fn ObjId::next(Self) -> Self
+pub fn ObjId::of(String, Map[String, Value]) -> Self
+pub fn ObjId::to_hex(Self) -> String
+
 pub struct ParseCtx {
   macro_vars : Map[String, String]
   issues : Array[Issue]
@@ -295,6 +303,7 @@ pub fn Value::field_names(Self) -> Array[String]
 pub fn Value::field_opt(Self, String) -> Self?
 pub fn Value::from_json(Json) -> Self
 pub fn Value::handler(Self, HandlerBucket, String) -> Handler?
+pub fn Value::identity(Self) -> ObjId?
 pub fn Value::index(Self, Int, default? : Self) -> Self
 pub fn Value::int(Self, default? : Int) -> Int
 pub fn Value::int_opt(Self) -> Int?
@@ -359,6 +368,7 @@ pub(open) trait Obj {
   fn obj_handler(Self, HandlerBucket, String) -> Handler? = _
   fn obj_schema(Self) -> SchemaInfo? = _
   fn obj_size(Self) -> Int? = _
+  fn obj_identity(Self) -> ObjId? = _
   fn obj_eq(Self, &Obj) -> Bool = _
   fn obj_debug(Self) -> String = _
 }

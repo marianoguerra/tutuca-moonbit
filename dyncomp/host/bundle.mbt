@@ -7,7 +7,11 @@
 pub struct Bundle {
   guest : &Guest
   manifest : DynManifest
-  comps : Map[String, (Int, DynComponentDef)]
+  /// name -> (synthesized component id, manifest fingerprint, manifest def).
+  /// The fingerprint is hashed ONCE here and carried, because every instance
+  /// needs it to seed its render-cache bucket and hashing the whole manifest
+  /// per `make_instance` would be a real cost for a value that cannot change.
+  comps : Map[String, (Int, String, DynComponentDef)]
 }
 
 ///|
@@ -34,7 +38,7 @@ pub fn register_bundle(
   manifest : DynManifest,
 ) -> Bundle raise {
   let child = scope.enter()
-  let comps : Map[String, (Int, DynComponentDef)] = Map([])
+  let comps : Map[String, (Int, String, DynComponentDef)] = Map([])
   let synthesized = []
   for def in manifest.components {
     // Guest view HTML arrives at runtime from the manifest, so it is parsed
@@ -50,12 +54,13 @@ pub fn register_bundle(
     // nothing else. `fields` stays empty on purpose — guest state is opaque
     // by design (only views and handlers cross the boundary), and saying that
     // is different from having no descriptor at all.
+    let fingerprint = manifest_fingerprint(def)
     let comp = @component.Component::for_type(
       name=def.name,
       views=cviews,
       schema=@component.SchemaInfo::new(
         name=def.name,
-        fingerprint=manifest_fingerprint(def),
+        fingerprint~,
         inputs=def.input_handlers,
         receives=def.receive_handlers,
         responses=def.response_handlers,
@@ -64,7 +69,7 @@ pub fn register_bundle(
       ),
     )
     synthesized.push(comp)
-    comps[def.name] = (comp.id, def)
+    comps[def.name] = (comp.id, fingerprint, def)
   }
   child.register_components(synthesized)
   for comp in synthesized {
@@ -83,9 +88,9 @@ pub fn Bundle::make_instance(
   args? : Map[String, @tutuca.Value] = Map([]),
 ) -> DynObj? {
   match self.comps.get(component) {
-    Some((comp_id, def)) => {
+    Some((comp_id, fingerprint, def)) => {
       let handle = self.guest.create(component, args)
-      Some({ comp_id, def, guest: self.guest, handle })
+      Some(DynObj::new(comp_id, def, self.guest, handle, fingerprint~))
     }
     None => None
   }
@@ -100,8 +105,10 @@ pub fn Bundle::wrap_instance(
   handle : Int,
 ) -> @tutuca.Value? {
   match self.comps.get(component) {
-    Some((comp_id, def)) =>
-      Some(DynObj::new(comp_id, def, self.guest, handle).to_value())
+    Some((comp_id, fingerprint, def)) =>
+      Some(
+        DynObj::new(comp_id, def, self.guest, handle, fingerprint~).to_value(),
+      )
     None => None
   }
 }

@@ -356,6 +356,20 @@ pub fn Value::schema(self : Value) -> SchemaInfo? {
 }
 
 ///|
+/// This value's render-cache bucket, when it is an instance that tracks one.
+///
+/// None for every plain value — a `Map` render site, a component-less
+/// embedding — and that is the answer the render cache reads as "decline":
+/// there is nothing here whose generations can be told apart, so keying on it
+/// would only build a key and miss.
+pub fn Value::identity(self : Value) -> ObjId? {
+  match self {
+    Obj(o) => o.obj_identity()
+    _ => None
+  }
+}
+
+///|
 /// The declared description of one field.
 pub fn Value::field_info(self : Value, name : String) -> FieldInfo? {
   match self.schema() {
