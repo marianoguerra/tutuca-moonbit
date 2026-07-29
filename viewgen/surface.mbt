@@ -116,6 +116,13 @@ priv struct Collect {
   enriches : @set.Set[String]
   enrich_scopes : @set.Set[String]
   loop_withs : @set.Set[String]
+  /// What the `value` handler arg decodes to, per event id (`data-eid`), for
+  /// the elements where the glue does NOT deliver the input's text: a
+  /// checkbox delivers its checked state (Bool), a file input its metadata
+  /// Map / Null (Value). Absent = the default `String`. Filled by the tree
+  /// walk, read by the events pass; eids restart per view, so walk_view
+  /// clears it before each walk.
+  value_kinds : Map[Int, ArgType]
 }
 
 ///|
@@ -129,6 +136,7 @@ fn Collect::new() -> Collect {
     enriches: Set([], capacity=4),
     enrich_scopes: Set([], capacity=4),
     loop_withs: Set([], capacity=4),
+    value_kinds: Map([]),
   }
 }
 
@@ -239,6 +247,10 @@ fn walk_node(
   match node {
     Text(_) | Comment(_) => ()
     Dom(d) => {
+      match (eid_of(d.attrs), value_arg_kind(d)) {
+        (Some(id), Some(kind)) => c.value_kinds[id] = kind
+        _ => ()
+      }
       walk_attrs(d.attrs, c, root_scope, in_loop)
       for child in d.childs {
         walk_node(child, c, root_scope, in_loop)
@@ -299,19 +311,78 @@ fn walk_node(
 // Argument-shape inference
 
 ///|
+/// What `value` decodes to for THIS element, when that differs from the
+/// default text read: the glue delivers a checkbox's checked state (Bool)
+/// and a file input's metadata Map / Null (Value) — keep in sync with
+/// `event_value` in the app glue. Only a STATIC `type` attribute is visible
+/// here; a dynamic `:type` keeps the default `String` inference.
+fn value_arg_kind(d : @anode.DomData) -> ArgType? {
+  guard d.tag == "input" else { return None }
+  match static_attr(d.attrs, "type") {
+    Some("checkbox") => Some(VBool)
+    Some("file") => Some(VValue)
+    _ => None
+  }
+}
+
+///|
+/// A constant string attribute's value, whichever attrs representation the
+/// element ended up with.
+fn static_attr(attrs : @anode.Attrs, name : String) -> String? {
+  match attrs {
+    ConstAttrs(m) =>
+      match m.get(name) {
+        Some(LStr(s)) => Some(s)
+        _ => None
+      }
+    DynAttrs(items) => {
+      for it in items {
+        if it is ConstA(name=n, val=Const(lit=LStr(s), ..)) && n == name {
+          return Some(s)
+        }
+      }
+      None
+    }
+  }
+}
+
+///|
+/// The element's `data-eid` stamp — the key into its NodeEvents entry.
+fn eid_of(attrs : @anode.Attrs) -> Int? {
+  match attrs {
+    ConstAttrs(m) =>
+      match m.get("data-eid") {
+        Some(LNum(n)) => Some(n.to_int())
+        _ => None
+      }
+    DynAttrs(items) => {
+      for it in items {
+        if it is ConstA(name="data-eid", val=Const(lit=LNum(n), ..)) {
+          return Some(n.to_int())
+        }
+      }
+      None
+    }
+  }
+}
+
+///|
 /// The type a handler argument decodes to, from the value written at the call
 /// site. A bare name in argument position is a DOM event field (the
 /// `known_handler_arg_names` vocabulary the linter checks) — keep this table
 /// in sync with `event_field` in render/dom_event.mbt. `@value` and friends
-/// are binds, whose contents are not statically known.
-fn arg_type_of(val : @tutuca.Val) -> ArgType {
+/// are binds, whose contents are not statically known. `value_kind` is what
+/// the `value` arg decodes to on the HOST element (String by default; Bool on
+/// a checkbox, Value on a file input — see `value_arg_kind`).
+fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
   match val {
     Const(lit=LNum(_), ..) => VDouble
     Const(lit=LStr(_), ..) => VString
     Const(lit=LBool(_), ..) => VBool
     Name(name) =>
       match name {
-        "value" | "key" => VString
+        "value" => value_kind
+        "key" => VString
         "valueAsInt" | "valueAsFloat" | "keyCode" => VDouble
         "isAlt"
         | "isShift"
@@ -383,6 +454,9 @@ fn walk_view(
   c : Collect,
   inputs : Map[String, InputSig],
 ) -> Unit raise GenError {
+  // Eids restart at 0 for every view's ParseContext, so a stale entry from
+  // the previous view must not leak into this one's events pass.
+  c.value_kinds.clear()
   walk_node(root, c, true, false)
   if c.loop_ids.length() > 0 {
     // Sorted so the message does not depend on set iteration order.
@@ -402,7 +476,8 @@ fn walk_view(
         Method(name) =>
           raise MethodInEventPosition(view=view_name, name~, site~)
         HandlerName(name~, ..) => {
-          let shape = h.handler.args.map(arg_type_of)
+          let value_kind = c.value_kinds.get(ev.id).unwrap_or(VString)
+          let shape = h.handler.args.map(a => arg_type_of(a, value_kind))
           for a in h.handler.args {
             walk_val(a, c, false)
           }

@@ -93,7 +93,7 @@ pub fn PersonInput::parse(s : String) -> PersonInput? {
 /// until it is handled.
 pub(all) enum PersonMsg {
   /// `@on.input="setActive …"`
-  SetActive(String)
+  SetActive(Bool)
   /// `@on.input="setEmail …"`
   SetEmail(String)
   /// `@on.input="setName …"`
@@ -110,7 +110,7 @@ pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setActive", [Str(a0)]) => SetActive(a0)
+      ("setActive", [Bool(a0)]) => SetActive(a0)
       ("setEmail", [Str(a0)]) => SetEmail(a0)
       ("setName", [Str(a0)]) => SetName(a0)
       _ => Unknown(name, args)

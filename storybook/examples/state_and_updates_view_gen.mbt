@@ -101,7 +101,7 @@ pub fn AttributeBindingInput::parse(s : String) -> AttributeBindingInput? {
 /// until it is handled.
 pub(all) enum AttributeBindingMsg {
   /// `@on.input="setBool …"`
-  SetBool(String)
+  SetBool(Bool)
   /// `@on.input="setRawNumber …"`
   SetRawNumber(String)
   /// `@on.input="setStr …"`
@@ -120,7 +120,7 @@ pub fn AttributeBindingMsg::from_dispatch(
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setBool", [Str(a0)]) => SetBool(a0)
+      ("setBool", [Bool(a0)]) => SetBool(a0)
       ("setRawNumber", [Str(a0)]) => SetRawNumber(a0)
       ("setStr", [Str(a0)]) => SetStr(a0)
       _ => Unknown(name, args)

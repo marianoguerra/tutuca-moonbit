@@ -88,7 +88,7 @@ pub fn ItemInput::parse(s : String) -> ItemInput? {
 /// until it is handled.
 pub(all) enum ItemMsg {
   /// `@on.input="setCompleted …"`
-  SetCompleted(String)
+  SetCompleted(Bool)
   /// `@on.input="setText …"`
   SetText(String)
   /// An Input dispatch the views do not declare, or a declared name
@@ -103,7 +103,7 @@ pub fn ItemMsg::from_dispatch(d : @component.Dispatch) -> ItemMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("setCompleted", [Str(a0)]) => SetCompleted(a0)
+      ("setCompleted", [Bool(a0)]) => SetCompleted(a0)
       ("setText", [Str(a0)]) => SetText(a0)
       _ => Unknown(name, args)
     },

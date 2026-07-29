@@ -103,7 +103,7 @@ pub fn FilePickerInput::parse(s : String) -> FilePickerInput? {
 /// until it is handled.
 pub(all) enum FilePickerMsg {
   /// `@on.change="onPickFile …"`
-  OnPickFile(String)
+  OnPickFile(@tutuca.Value)
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -116,7 +116,7 @@ pub fn FilePickerMsg::from_dispatch(d : @component.Dispatch) -> FilePickerMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("onPickFile", [Str(a0)]) => OnPickFile(a0)
+      ("onPickFile", [a0]) => OnPickFile(a0)
       _ => Unknown(name, args)
     },
   )

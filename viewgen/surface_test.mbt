@@ -37,6 +37,46 @@ test "the counter view's surface" {
 }
 
 ///|
+test "value's type follows the host element: checkbox Bool, file Value" {
+  // The glue delivers a checkbox's `value` as the checked state and a file
+  // input's as a metadata Map / Null — the inferred payload must match, or
+  // every runtime dispatch would fall into Unknown.
+  let s = surface_of(
+    (
+      #|<div>
+      #|  <input type="checkbox" @on.input="setDone value">
+      #|  <input type="file" @on.change="onPick value">
+      #|  <input type="text" @on.input="setName value">
+      #|</div>
+    ),
+  )
+  assert_eq(s.inputs.map(i => i.name), ["onPick", "setDone", "setName"])
+  assert_eq(s.inputs[0].args, Some([VValue]))
+  assert_eq(s.inputs[1].args, Some([VBool]))
+  assert_eq(s.inputs[2].args, Some([VString]))
+}
+
+///|
+test "a dynamic :type keeps the default String inference for value" {
+  // Only a static type attribute is visible at generation time.
+  let s = surface_of("<input :type=\".kind\" @on.input=\"setIt value\">")
+  assert_eq(s.inputs[0].args, Some([VString]))
+}
+
+///|
+test "checkbox and text call sites of one handler join to Value" {
+  let s = surface_of(
+    (
+      #|<div>
+      #|  <input type="checkbox" @on.input="setIt value">
+      #|  <input @on.input="setIt value">
+      #|</div>
+    ),
+  )
+  assert_eq(s.inputs[0].args, Some([VValue]))
+}
+
+///|
 test "call sites that disagree on arity carry the raw args" {
   let s = surface_of(
     (
