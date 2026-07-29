@@ -12,7 +12,7 @@ import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
-import { ensureCompiler } from "./fetch-compiler.mjs";
+import { ensureCompiler, TOOLCHAIN } from "./fetch-compiler.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MOON_HOME = process.env.MOON_HOME || join(process.env.HOME, ".moon");
@@ -21,7 +21,28 @@ const OUT = join(REPO, "dist/playground");
 // hasn't got it yet (see playground/build/fetch-compiler.mjs).
 const WORKER = ensureCompiler();
 const WEB = join(REPO, "playground/web");
-const TOOLCHAIN = "v0.10.3+16975d007"; // must match the vendored/fetched moonc-web.cjs (see fetch-compiler.mjs)
+
+// The payload is a PAIR: .mi/.core bundles emitted by the installed moonc, read
+// by the js_of_ocaml moonc inside moonc-web.cjs. When the two come from
+// different builds the mismatch is silent here and surfaces in the browser as
+// nonsense — typically `[E4018] Type X does not implement trait ...Fields`,
+// because a stale reader can't see the impls a newer writer emitted. So check
+// it at the only moment we still know both halves.
+function assertToolchain() {
+  const got = execSync("moon version --all", { cwd: REPO, encoding: "utf8" });
+  if (got.includes(TOOLCHAIN.moonc)) return;
+  const msg =
+    `toolchain mismatch: playground/build/toolchain.json pins moonc ${TOOLCHAIN.moonc} ` +
+    `(paired with @moonbit/moonc-worker@${TOOLCHAIN.mooncWorker}), but the installed toolchain reports:\n` +
+    `${got}\n` +
+    `The payload bakes the INSTALLED toolchain's core bundles, so a mismatched in-browser\n` +
+    `moonc fails to link user code. Either install the matching toolchain, or bump\n` +
+    `toolchain.json + \`node playground/build/fetch-compiler.mjs --force\` and re-run this.\n` +
+    `Set TUTUCA_ALLOW_TOOLCHAIN_MISMATCH=1 to assemble anyway (the payload may not work).`;
+  if (process.env.TUTUCA_ALLOW_TOOLCHAIN_MISMATCH) console.warn("WARNING: " + msg);
+  else throw new Error(msg);
+}
+assertToolchain();
 
 // packages a user may import directly (distinct aliases — no browser/browser clash).
 // The value+path runtime lives in the `core/` package (marianoguerra/tutuca/core),
@@ -148,7 +169,11 @@ await esbuild({
 });
 console.log("bundled editor.bundle.js");
 
-const manifest = { toolchain: TOOLCHAIN, targets: {} };
+const manifest = {
+  toolchain: TOOLCHAIN.moonc,
+  mooncWorker: TOOLCHAIN.mooncWorker,
+  targets: {},
+};
 // By default assemble BOTH backends so the shipped playground offers the
 // wasm-gc toggle (its CompileError is intentionally surfaced — see
 // WASM_TARGET_STATUS.md). Set JS_ONLY=1 to assemble the js backend only.

@@ -6,25 +6,28 @@
 // toolchain's core `.mi`/`.core` bundles into its payload (see assemble.mjs),
 // so the fetched `moonc-web.cjs` MUST be built from the same `moonc` version.
 // The npm package `@moonbit/moonc-worker` publishes date-versioned nightly
-// builds; there is no exact-hash selector. Pin below the version whose `moonc`
-// build matches the toolchain contributors are expected to install, and keep
-// `TOOLCHAIN` in assemble.mjs and the note in playground/vendor/README.md in
-// sync when you bump it.
+// builds; there is no exact-hash selector. Both halves of that pair are pinned
+// in ONE place — playground/build/toolchain.json — which this script and
+// assemble.mjs both read, so they cannot drift apart from each other.
 //
 // Run directly:  node playground/build/fetch-compiler.mjs [--force]
 // Or import:     import { ensureCompiler } from "./fetch-compiler.mjs"
-import { existsSync, mkdirSync, cpSync, rmSync, readdirSync } from "node:fs";
+import { existsSync, mkdirSync, cpSync, rmSync, readFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { tmpdir } from "node:os";
 
-// The pinned @moonbit/moonc-worker version. Its `moonc` build must match the
-// `moon` toolchain used to build the playground's core bundles. Bump together
-// with TOOLCHAIN in assemble.mjs and playground/vendor/README.md.
-export const MOONC_WORKER_VERSION = "0.1.202607161";
+const HERE = dirname(fileURLToPath(import.meta.url));
 
-const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
+/// The one toolchain pin: { mooncWorker, moonc, mooncBuild, moon }. Read rather
+/// than duplicated so a bump is a single-file edit.
+export const TOOLCHAIN = JSON.parse(
+  readFileSync(join(HERE, "toolchain.json"), "utf8"),
+);
+export const MOONC_WORKER_VERSION = TOOLCHAIN.mooncWorker;
+
+const REPO = join(HERE, "..", "..");
 const VENDOR = join(REPO, "playground/vendor");
 const TARGET = join(VENDOR, "moonc-web.cjs");
 

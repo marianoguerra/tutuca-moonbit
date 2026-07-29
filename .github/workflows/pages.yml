@@ -7,11 +7,18 @@
 #
 # NOTE — playground live-compile coupling: the precompiled demos (counter,
 # examples, storybook, wasm) work regardless of toolchain. The in-browser
-# playground editor compiles against the pinned @moonbit/moonc-worker (see
-# playground/build/fetch-compiler.mjs) and needs the installed `moon` to match
-# that build. This job installs the latest toolchain; if the live playground
-# mismatches, pin it by setting MOONBIT_INSTALL_VERSION to the matching nightly
-# (uncomment below) and keep it in sync with the moonc-web pin.
+# playground editor compiles against the pinned @moonbit/moonc-worker and needs
+# the installed `moon` to match it; both are pinned in
+# playground/build/toolchain.json.
+#
+# This job installs the LATEST toolchain, because cli.moonbitlang.com serves
+# only `latest`/`nightly` — every dated or versioned identifier we tried 404s,
+# so MOONBIT_INSTALL_VERSION has nothing to point at. The guard is instead at
+# assemble time: `assemble.mjs` compares `moon version --all` against the pin
+# and fails this build rather than deploying a playground that reports
+# nonsense errors on every edit. When it fails, bump toolchain.json and
+# re-fetch (see playground/vendor/README.md) — do not paper over it with
+# TUTUCA_ALLOW_TOOLCHAIN_MISMATCH.
 name: Deploy dist to GitHub Pages
 
 on:
@@ -33,8 +40,6 @@ concurrency:
 jobs:
   build:
     runs-on: ubuntu-latest
-    # env:
-    #   MOONBIT_INSTALL_VERSION: "<nightly matching the moonc-web pin>"
     steps:
       - name: Checkout code
         uses: actions/checkout@v5

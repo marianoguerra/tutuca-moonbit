@@ -59,6 +59,8 @@ type linkCoreParams = {
   main: string;
   pkgSources: string[];
   target: Target;
+  useJsBuiltinString?: boolean;
+  importedStringConstants?: string;
   exportedFunctions: string[];
   outputFormat: "wasm" | "wat";
   testMode: boolean;
