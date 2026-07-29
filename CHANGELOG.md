@@ -6,6 +6,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.1] - 2026-07-29
+
+### Fixed
+
+- **Every compiler warning is gone, on all three targets.** `moon check`
+  reported 11 and `cmd/dev -- check` — which opts into
+  `--warn-list +unnecessary_annotation` — reported 362 more.
+
+  The 11: `to_repr(x)` as a *free* function is deprecated in favour of
+  `Repr(x)` (the `impl Debug with fn to_repr` definitions are untouched — only
+  the free form moved); `storybook/ui` reached `@string.parse_int` without
+  importing `moonbitlang/core/string`; and three structs in the js smoke test
+  still derived `ToJson`/`FromJson`, unread since the state codec replaced the
+  Json bridge.
+
+  The 362 were all `unnecessary_annotation` — `T::{ … }` where the position
+  already has a type. 294 were in generated modules, so they are fixed in the
+  **emitters** and the modules regenerated, never hand-edited: `<T>State::zero`,
+  the state and user-record decoders, an init fixture's full-record form, and
+  `StateDef::zero_expr` for enums, variants and records. A zero always lands
+  somewhere its type is known, and MoonBit resolves a constructor against the
+  expected type — two enums in one module both declaring `low` stay
+  unambiguous. `ty_info_src` already wrote its constructors bare for a related
+  reason; the two now say so as a pair.
+
+### Changed
+
+- **A field-less generated state derives `Default` and is built through it.**
+  This is the one interface change in this release, and it is a workaround, not
+  a preference: MoonBit has no warning-free literal for an empty struct. A bare
+  `{  }` parses as an empty `Map` and fails to type, and `<T>State::{  }` — the
+  only form that compiles — is then reported as an unnecessary annotation. So
+  the struct derives `Default` and `zero()`/`decode` call
+  `<T>State::default()`. Empty structs in hand-written code take the same route
+  spelled `Default::default()`, because a `priv` struct's derived `default` is
+  not implicitly promoted.
+
 ## [0.8.0] - 2026-07-29
 
 ### Added
