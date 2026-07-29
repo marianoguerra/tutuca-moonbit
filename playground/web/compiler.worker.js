@@ -130,16 +130,25 @@ async function compile(userCode, viewsCode, viewsIrCode) {
   // js links to a runnable JS module (nothing to export — `main` self-mounts).
   // wasm-gc has no callable `main` from JS: the host facade is driven through
   // exported wrappers, so those must be named as link exports.
-  const exportedFunctions =
-    fs.target === "wasm-gc"
-      ? ["mount", "on_event", "state_json", "classes_json", "activity_json"]
-      : [];
+  const wasm = fs.target === "wasm-gc";
+  const exportedFunctions = wasm
+    ? ["mount", "on_event", "state_json", "classes_json", "activity_json"]
+    : [];
+  // On wasm-gc a MoonBit String lowers either as a JS-String-Builtins externref
+  // or as MoonBit's native `(ref 1)` char array, and the choice is made HERE, at
+  // link time, for every core in the set at once. The baked cores were built for
+  // the js-string ABI (as are the shipped wasm demos), so linking without this
+  // mixes the two and the module fails to validate — `array.new_fixed expected
+  // type externref, found local.get of type (ref 1)`. `runtime.js` instantiates
+  // with the matching { builtins: ["js-string"], importedStringConstants: "_" }.
+  const stringAbi = wasm ? { useJsBuiltinString: true, importedStringConstants: "_" } : {};
   const lk = moonc.linkCore({
     coreFiles: [...fs.cores, bp.core],
     main: fs.userPkg,
     pkgSources: [fs.userPkg + ":."],
     target: fs.target,
     exportedFunctions,
+    ...stringAbi,
     outputFormat: "wasm",
     testMode: false,
     debug: false,

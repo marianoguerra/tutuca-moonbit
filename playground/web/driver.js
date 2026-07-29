@@ -99,9 +99,9 @@ function scheduleGenerate() {
   }, 250);
 }
 
-// Which targets the assembled payload actually carries (the wasm-gc option is
-// only real when the site was built with WASMGC=1). Filled in at boot from the
-// manifest so the toggle can't offer a backend the worker can't load.
+// Which targets the assembled payload actually carries (assemble.mjs emits both
+// unless it was run with JS_ONLY=1). Filled in at boot from the manifest so the
+// toggle can't offer a backend the worker can't load.
 let availableTargets = ["js"];
 const currentTarget = () => targetSel.value;
 
@@ -249,7 +249,9 @@ targetSel.addEventListener("change", run);
     fillExamples();
     generate();
     const info = await compiler.init(currentTarget());
-    const wasmNote = availableTargets.includes("wasm-gc") ? "" : " (wasm-gc: rebuild with WASMGC=1)";
+    const wasmNote = availableTargets.includes("wasm-gc")
+      ? ""
+      : " (wasm-gc: rebuild without JS_ONLY=1)";
     setStatus(`ready (compiler + ${info.std + info.lib} interfaces, ${info.cores} cores). Ctrl/⌘+Enter to run.${wasmNote}`, "ok");
     run();
   } catch (e) {

@@ -6,6 +6,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The playground's wasm-gc target runs.** It has compiled and linked user
+  code for a while, but the linked module never validated: on wasm-gc a MoonBit
+  `String` lowers either as a JS-String-Builtins `externref` or as MoonBit's
+  native `(ref 1)` char array, the choice is made at link time for every core in
+  the set at once, and the baked cores are built for the js-string ABI. Linking
+  without asking for it mixed the two, and the browser rejected the bytes with
+  `array.new_fixed[0] expected type externref, found local.get of type (ref 1)`.
+
+  `linkCore` had no knob for this when the blocker was first written up; the
+  pin moved to `@moonbit/moonc-worker@0.1.202607282`, which exposes one. The
+  worker now passes `useJsBuiltinString: true` and `importedStringConstants:
+  "_"` for wasm-gc, matching what `runtime.js` already instantiated with. The
+  module's imports come out as `jscore`/`tdom`/`console` — the same surface the
+  shipped `demo/counter_wasm` links to through the native `moonc`.
+
+  That left a second fault of its own: the module instantiated, `mount()` ran,
+  and nothing appeared. The wasm host reads the DOM as
+  `@core.global_this()._get("document")`, and the `jscore` import handed back
+  the shell page's `globalThis`, so the app looked for `#app` outside the
+  preview iframe and logged that it was missing. `jsCoreImports` now takes the
+  realm to answer with and `mountWasm` passes the iframe's window.
+
+  All four picker examples now compile, render, route events through the
+  exported `on_event`, and report state and activity through the exported
+  getters on wasm-gc. `WASM_TARGET_STATUS.md` stops being a blocker report and
+  describes the two couplings that keep the backend working.
+
 ## [0.8.1] - 2026-07-29
 
 ### Fixed

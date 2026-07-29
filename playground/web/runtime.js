@@ -159,7 +159,11 @@ export function mount(container, jsText, { onState, margaui = true } = {}) {
 // `state_json`/`classes_json` rather than closures published on the page.
 
 // The jscore namespace mizchi/js/core's @core.Any lowers to on wasm-gc.
-function jsCoreImports() {
+// `realm` is the window every `global_this()` resolves against: the wasm host
+// reaches the DOM as `global_this()._get("document")` (app/wasm/glue.mbt), so
+// pointing it at the preview iframe's window is what makes the app mount THERE
+// instead of hunting for #app in the shell page and warning that it is missing.
+function jsCoreImports(realm) {
   return {
     get: (o, k) => o[k], get_by_index: (o, i) => o[i],
     set: (o, k, v) => { o[k] = v; }, set_by_index: (o, i, v) => { o[i] = v; },
@@ -172,7 +176,7 @@ function jsCoreImports() {
     typeof: (v) => typeof v, is_nullish: (v) => v == null, is_null: (v) => v === null,
     is_undefined: (v) => v === undefined, is_array: (v) => Array.isArray(v),
     is_object: (v) => typeof v === "object" && v !== null, instanceof: (v, c) => v instanceof c,
-    equal: (a, b) => a === b, global_this: () => globalThis, undefined: () => undefined,
+    equal: (a, b) => a === b, global_this: () => realm, undefined: () => undefined,
     null: () => null, new_object: () => ({}), new_array: () => [],
     object_keys: (o) => Object.keys(o), object_values: (o) => Object.values(o),
     object_assign: (t, s) => Object.assign(t, s), object_has_own: (o, k) => Object.hasOwn(o, k),
@@ -232,7 +236,7 @@ export async function mountWasm(container, wasmBytes, { onState } = {}) {
 
   let exports = null;
   const imports = {
-    jscore: jsCoreImports(),
+    jscore: jsCoreImports(iframe.contentWindow),
     tdom: tdomImports(() => exports, doc),
     console: { log: (...a) => console.log(...a) },
   };
@@ -242,9 +246,8 @@ export async function mountWasm(container, wasmBytes, { onState } = {}) {
   const { instance } = await WebAssembly.instantiate(wasmBytes, imports, opts);
   exports = instance.exports;
   if (exports._start) exports._start();
-  // The user module's exported mount() targets #app in ITS document; @core's
-  // global_this() is the shell realm, so document lookups resolve here — mount
-  // into the iframe by pointing the wasm host at the iframe's document.
+  // The user module's exported mount() targets #app in whatever document
+  // global_this() names — the iframe's, via the `realm` handed to jsCoreImports.
   exports.mount();
 
   let last = null;

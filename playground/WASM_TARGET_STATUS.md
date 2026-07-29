@@ -1,174 +1,103 @@
-# Playground wasm-gc target — status & blocker report
+# Playground wasm-gc target — how it works
 
-_Investigated 2026-07-16._
+_Blocker cleared 2026-07-29 (investigated 2026-07-16)._
 
 ## TL;DR
 
-- `js` is the only backend that **runs**; the playground defaults its toggle to it.
-- A **target toggle** (`js` / `wasm-gc`) is wired into the standalone
-  playground shell, and `assemble.mjs` emits **both** payloads by default
-  (`JS_ONLY=1 node playground/build/assemble.mjs` assembles js alone).
-- **wasm-gc does not yet run.** Compilation and linking of user code succeed, but
-  the linked module fails to instantiate with a `WebAssembly.CompileError`. The
-  cause is in the **vendored in-browser compiler** (`@moonbit/moonc-worker`), not
-  in tutuca's code or cores. See _Root cause_. The toggle ships anyway so the
-  error surfaces in the diagnostics pane instead of hiding the backend.
+- **Both backends run.** The target toggle (`js` / `wasm-gc`) compiles, links,
+  instantiates and mounts; events, the state panel and the activity panel all
+  work on wasm-gc. `js` stays the default and is what the landing-page embeds
+  (`playground/site/embed.js`) use.
+- `assemble.mjs` emits both payloads by default; `JS_ONLY=1 node
+  playground/build/assemble.mjs` assembles js alone.
+- The two things that make wasm-gc work — and that a compiler bump can silently
+  break — are the **link-time string ABI** and the **realm the wasm host sees**.
+  Both are described below.
 
-## Why js is the working backend
-
-- `playground/site/embed.js` (landing-page `<mb-playground>`) calls
-  `compiler.init("js")` and `mount(previewEl, js, {})` — the embeds are js-only.
-- The worker's `linkCore` used `exportedFunctions: []` — fine for js (the user's
-  `main` self-mounts) but wrong for wasm-gc (JS must call exported wrappers).
-
-wasm-gc scaffolding (`playground/host_wasm/`, `demo/counter_wasm`) is complete
-and assembled; only the link-time string ABI below blocks it.
-
-## What the wasm-gc backend needs (and why it differs from js)
+## How the backends differ
 
 | Concern | js backend | wasm-gc backend |
 |---|---|---|
 | linkCore output | JS module text, mounted as an iframe blob module | wasm binary, `WebAssembly.instantiate` |
 | entry | user's `fn main { @host.mount(build(), "app") }` runs itself | no JS-callable `main`; JS calls exported `mount()` |
 | events | MoonBit closures cross freely into JS | closures can't cross; JS installs a delegated listener that calls exported `on_event(ev)` |
-| inspector | closures published on `globalThis.__tutuca` | read back through exported `state_json()` / `classes_json()` |
+| inspector | closures published on `globalThis.__tutuca` | read back through exported `state_json()` / `classes_json()` / `activity_json()` |
 | host facade | `@host` (`playground/host`) | `@host_wasm` (`playground/host_wasm`) |
 | imports the user must name | `@component`, `@tutuca`, `@host` | `@component`, `@tutuca`, `@host_wasm`, **and `@core`** (to name `@core.Any` in the `on_event` signature) |
-| string ABI | n/a | JS-String-Builtins (`use-js-builtin-string`), instantiated with `{ builtins: ["js-string"], importedStringConstants: "_" }` |
+| string ABI | n/a | JS-String-Builtins, chosen at link time and matched at instantiate |
 
 The reference for a working wasm-gc mount is the shipped demo
-`demo/counter_wasm/` (`loader.mjs` + `main.mbt`). The new `mountWasm()` in
+`demo/counter_wasm/` (`loader.mjs` + `main.mbt`); `mountWasm()` in
 `playground/web/runtime.js` mirrors it.
 
-## The chain of failures found (and what was fixed)
+## The string ABI must be chosen at link time
 
-1. **assemble.mjs copied the js host core for every target.** It hardcoded
-   `playground/host/host.core`, so wasm-gc assembly crashed with `ENOENT …
-   _build/wasm-gc/…/playground/host/host.core`.
-   **Fixed:** host core + host `.mi` are now target-aware
-   (`playground/host_wasm/host_wasm.*` for wasm-gc).
+On wasm-gc a MoonBit `String` lowers either as the JS-String-Builtins
+`externref` or as MoonBit's native `(ref 1)` char array. The choice is made **at
+link time**, for every `.core` in the link set at once, and the baked cores are
+built for the js-string ABI (as are the shipped wasm demos).
 
-2. **The wasm user module needs `@core` as a direct import**, but it was only in
-   the indirect (`lib`) set, so `@core.Any` failed to resolve (`E4020 Package
-   "core" not found`). moonc-web derives aliases from the last path segment, so
-   `mizchi/js/core` → `@core`.
-   **Fixed:** assemble adds `mizchi/js/core` to the manifest `direct` set for
-   wasm-gc.
+`compiler.worker.js` therefore passes, for `wasm-gc` only:
 
-3. **linkCore exported nothing.** `exportedFunctions: []` would leave the wasm
-   module with no `mount`/`on_event` to call.
-   **Fixed:** the worker now passes
-   `["mount","on_event","state_json","classes_json"]` for wasm-gc.
-
-After 1–3, the pipeline gets all the way through compile + link:
-
-```
-== buildPackage (target wasm-gc) ==
-diagnostics: []            # user module compiles clean
-== linkCore ==
-linked bytes: 474166       # link succeeds, produces a wasm binary
+```js
+useJsBuiltinString: true,
+importedStringConstants: "_",
 ```
 
-4. **The linked wasm module is invalid.** `WebAssembly.instantiate` (and the raw
-   `new WebAssembly.Module`) reject it:
+and `runtime.js` instantiates with the matching
+`{ builtins: ["js-string"], importedStringConstants: "_" }`. Under those options
+the module's imports collapse to `jscore` / `tdom` / `console` — exactly the
+demo's surface. Chrome-class engines only.
 
-   ```
-   CompileError: WebAssembly.Module(): Compiling function #53 failed:
-   array.new_fixed[0] expected type externref, found local.get of type (ref 1)
-   ```
+Link **without** `useJsBuiltinString` and the byte stream mixes the two
+representations, so the module fails to validate before it can be instantiated:
 
-   This fails **with and without** `{ builtins: ["js-string"], … }`, so it is not
-   an instantiation-option problem — the byte stream itself mixes two string
-   ABIs (js-string `externref` in one place, MoonBit-native `(ref 1)` array in
-   another). **This is the remaining blocker.**
+```
+CompileError: WebAssembly.Module(): Compiling function #67 failed:
+array.new_fixed[0] expected type externref, found local.get of type (ref 1)
+```
 
-## Root cause
+That was the long-standing blocker: `@moonbit/moonc-worker`'s `linkCore` used to
+expose no string-ABI knob at all, so the playground could not ask for a
+consistent link. The pin at `0.1.202607282` does expose it
+(`playground/vendor/moonc-web.d.ts`), which is what cleared this.
 
-`array.new_fixed … expected externref, found (ref 1)` is a **string-ABI
-mismatch** inside the linked module. On wasm-gc, a MoonBit `String` can be
-lowered either as the JS-String-Builtins `externref` or as MoonBit's native
-`(ref 1)` char array. The representation is chosen at **link time** by the
-`-use-js-builtin-string` flag, and it must be applied uniformly across every
-`.core` in the link set.
+## The wasm host mounts into whatever realm `global_this()` names
 
-- The vendored in-browser linker, `@moonbit/moonc-worker`'s `linkCore`, exposes
-  **no** string-ABI / `use-js-builtin-string` / `builtins` parameter. Its
-  `linkCoreParams` (see `playground/vendor/moonc-web.d.ts`) only has
-  `exportedFunctions` and `outputFormat: "wasm" | "wat"`. Grep of
-  `moonc-web.cjs` finds no `use-js-builtin-string` / `builtins` /
-  `importedStringConstants` knob. It therefore links tutuca's cores with a
-  default ABI that is **inconsistent** with the pinned core release bundle,
-  producing an invalid module.
+The wasm host reaches the DOM as `@core.global_this()._get("document")`
+(`app/wasm/glue.mbt`). The preview lives in an **iframe**, so `jsCoreImports()`
+in `runtime.js` takes the realm to hand back and `mountWasm()` passes
+`iframe.contentWindow`. Pass the shell's `globalThis` instead and the app looks
+for `#app` in the shell page, finds nothing, and logs
+`playground(wasm): no #app element` — it links and instantiates fine and simply
+renders nothing.
 
-- **Proof the cores are fine, the linker is the fault:** the *same* library
-  cores linked by the real `moonc link-core` with `use-js-builtin-string: true`
-  — i.e. the shipped `demo/counter_wasm/counter_wasm.wasm` — validate cleanly
-  (`new WebAssembly.Module(bytes)` succeeds; imports are `jscore`/`tdom`/
-  `console` only). Only the moonc-web-linked module is invalid.
+## Toolchain coupling
 
-## What must change in deps to fix it
+The payload bakes the **installed** moon toolchain's core `.mi`/`.core` bundles
+and hands them to a `js_of_ocaml` moonc built elsewhere, so the two must come
+from the same moonc. Both are pinned in one place,
+`playground/build/toolchain.json`; bump the fields together, re-fetch with
+`node playground/build/fetch-compiler.mjs --force`, and re-run
+`cmd/dev -- playground`.
 
-The fix is **upstream in the vendored compiler**, not in tutuca:
-
-1. **Preferred — `@moonbit/moonc-worker` must expose the wasm-gc string-ABI flag
-   on `linkCore`.** It needs a `useJsBuiltinString: boolean` (and, ideally,
-   `importedStringConstants` / `exportMemory`) parameter that maps to the native
-   `moonc link-core -use-js-builtin-string` option, so the worker can link the
-   whole set with a single, consistent ABI. Track/file this against the
-   `@moonbit/moonc-worker` package (the `js_of_ocaml` build of `moonc`). Then in
-   `playground/web/compiler.worker.js`, pass `useJsBuiltinString: true` for the
-   `wasm-gc` target and instantiate (already done in `runtime.js`) with
-   `{ builtins: ["js-string"], importedStringConstants: "_" }`.
-
-2. **Alternative — pin a `moonc-worker` whose `linkCore` already defaults wasm-gc
-   to a consistent js-string ABI**, if a later nightly does so. This must be done
-   in lockstep with the installed `moon` toolchain and the baked core bundle:
-   - `MOONC_WORKER_VERSION` in `playground/build/fetch-compiler.mjs`
-   - `TOOLCHAIN` in `playground/build/assemble.mjs`
-   - the pin note in `playground/vendor/README.md`
-   (Current pin: `@moonbit/moonc-worker@0.1.202607161`, nightly 2026-07-16;
-   `TOOLCHAIN` reads `v0.10.3+16975d007`. Confirm those two name the same moonc
-   before bumping — they are written in different formats.) Verify with the
-   probe below before shipping.
-
-3. **Fallback — link wasm-gc with the native (non-js-string) ABI on both sides.**
-   If moonc-worker can be made to link with MoonBit-native strings consistently
-   (no `externref`), the module would validate without js-string builtins; the
-   `runtime.js`/loader instantiation options and the `jscore` string helpers
-   (`from_string`, `to_string`, `json_*`) would then need to match that ABI.
-   This is more code churn and loses the js-string interop the demos use, so (1)
-   is preferred.
-
-Until one of these lands, the toggle correctly surfaces the `CompileError` in the
-diagnostics pane rather than silently failing.
-
-## How to reproduce / verify a fix
+## How to verify after a bump
 
 ```sh
-# assemble.mjs builds the moon artifacts each target needs and emits both
-node playground/build/assemble.mjs
-
-# drive the worker pipeline headless and inspect the linked module
-#   (buildPackage -> linkCore -> WebAssembly.Module)
-# a fix makes `new WebAssembly.Module(linkedBytes, {builtins:["js-string"],
-# importedStringConstants:"_"})` succeed instead of throwing the ABI CompileError.
+node playground/build/assemble.mjs      # builds what each target needs, emits both
+node playground/build/check-viewgen-tab.mjs
+python3 -m http.server -d dist/playground 8231
 ```
 
-Serve `dist/playground/` and flip the **target** dropdown to `wasm-gc`: today it
-compiles + links, then reports `wasm instantiate failed` with the `CompileError`
-in the diagnostics pane.
+Flip the **target** dropdown to `wasm-gc` and run each picker example: the
+preview should render, the buttons should drive it (that exercises the delegated
+`on_event` bridge), and the State/Activity panels should track it (that
+exercises the exported getters). A string-ABI regression shows up as the
+`CompileError` above in the diagnostics pane, reported by the driver as
+`wasm instantiate failed`.
 
-## Files touched by this investigation
-
-- `playground/build/assemble.mjs` — target-aware host core + `.mi`; `@core`
-  direct import for wasm-gc.
-- `playground/web/compiler.worker.js` — `exportedFunctions` + `target` for
-  wasm-gc.
-- `playground/web/runtime.js` — per-target `init` memo; new `mountWasm()`
-  (instantiate + jscore/tdom/console imports + event bridge + exported-getter
-  inspector).
-- `playground/web/driver.js` — target dropdown handling; dispatch to
-  `mount` (js) vs `mountWasm` (wasm-gc); manifest-driven target availability.
-- `playground/web/index.html` — the `#target` `<select>`.
-- `playground/web/starter.js` — `EXAMPLES_WASM` (wasm-shaped Counter that exports
-  the host wrappers).
+Note that moonc-web accumulates state across compiles in one worker instance:
+several back-to-back compiles can end in an OCaml `Stack_overflow` that has
+nothing to do with the example being compiled. Reload between runs when a
+failure looks implausible (`compiler.worker.js`'s `compilerDirty` handling
+covers the error path, not this).
