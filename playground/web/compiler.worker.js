@@ -16,7 +16,16 @@ self.require = (m) => {
 
 let moonc = null;
 let mooncSrc = null; // the compiler source text, fetched once and re-evaluated
-let fs = null; // { std:[[name,bytes]], lib:[[name,bytes]], direct:[[name,bytes]], cores:[bytes], userPkg }
+// Every payload this worker has loaded, keyed by target:
+//   { target, std:[[name,bytes]], lib:[[name,bytes]], direct:[[name,bytes]], cores:[bytes], userPkg }
+// ONE worker serves the whole page — the standalone playground, or every
+// <mb-playground> element on the landing page — and those callers do not agree
+// on a backend: a reader can leave one embed on wasm-gc and another on js. So
+// the payload is picked PER COMPILE from this map. Holding it as worker state
+// instead means whichever init() ran last silently decides what everyone else
+// compiles against, which surfaces as a wasm module handed to a JS mount (or
+// the reverse) rather than as an error anyone can read.
+const payloads = new Map();
 
 // A failed compile leaves moonc UNUSABLE: on an error it calls process.exit,
 // which this worker stubs out, so it returns mid-abort and every later
@@ -70,6 +79,10 @@ fn main {
 };
 
 async function init(manifestUrl, target) {
+  // Already loaded: hand back the same summary without touching the compiler.
+  // (Re-evaluating it here would throw away the warm instance for nothing.)
+  const loaded = payloads.get(target);
+  if (loaded) return loaded.summary;
   await loadCompiler();
   const manifest = await (await fetch(manifestUrl)).json();
   const m = manifest.targets[target];
@@ -82,15 +95,16 @@ async function init(manifestUrl, target) {
     Promise.all(m.linkOrder.map((p) => bytes(base + p))),
   ]);
   const directSet = new Set(m.direct);
-  fs = {
+  payloads.set(target, {
     target,
     std,
     lib: lib.filter(([p]) => !directSet.has(p)),
     direct: lib.filter(([p]) => directSet.has(p)),
     cores,
     userPkg: m.userPkg,
-  };
-  return { std: std.length, lib: lib.length, cores: cores.length };
+    summary: { std: std.length, lib: lib.length, cores: cores.length },
+  });
+  return payloads.get(target).summary;
 }
 
 // `viewsCode` is the module `tutuca gen-views` produced from the View tab
@@ -99,10 +113,15 @@ async function init(manifestUrl, target) {
 // CounterMsg / counter_main_view with no import at all — same package, same
 // scope. Kept in its own file so the user's diagnostics keep their line
 // numbers, exactly like _boot.mbt.
-async function compile(userCode, viewsCode, viewsIrCode) {
+async function compile(userCode, viewsCode, viewsIrCode, target) {
   const t0 = Date.now();
   // the previous compile failed: start from a clean compiler (see above)
   if (compilerDirty) await loadCompiler();
+  // Resolve the payload AFTER the awaits above and hold it in a local: message
+  // handling is async, so another caller's compile can interleave here, and the
+  // rest of this function must see one target's .mi/.core set throughout.
+  const fs = payloads.get(target);
+  if (!fs) throw new Error("worker has no payload for target " + target + " (init first)");
   const boot = BOOT[fs.target] || BOOT.js;
   const files = [["main.mbt", userCode], ["_boot.mbt", boot]];
   if (viewsCode) files.push(["_views.mbt", viewsCode]);
@@ -165,7 +184,7 @@ self.onmessage = async (e) => {
   try {
     if (kind === "init") self.postMessage({ id, ok: true, value: await init(args.manifest, args.target) });
     else if (kind === "compile") {
-      const r = await compile(args.code, args.views, args.viewsIr);
+      const r = await compile(args.code, args.views, args.viewsIr, args.target);
       // transfer the linked bytes to avoid a copy
       self.postMessage({ id, ok: true, value: r }, r.result ? [r.result.buffer] : []);
     }

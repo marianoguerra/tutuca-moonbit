@@ -47,8 +47,12 @@ export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
     // Compile + link one MoonBit source; returns { ok, diagnostics, result, ms }.
     // `views` / `viewsIr` are the modules generated from the View tab; they
     // join the user's package as extra files (see the worker's compile()).
-    compile(code, views, viewsIr) {
-      return call("compile", { code, views, viewsIr }, []);
+    // The target travels WITH the request: one worker serves every caller on
+    // the page, and they need not agree on a backend, so it can't be left as
+    // worker state that the last init() decides (see compiler.worker.js).
+    // `init(target)` must have resolved first — it is what loads that payload.
+    compile(code, views, viewsIr, target = "js") {
+      return call("compile", { code, views, viewsIr, target }, []);
     },
   };
 }
@@ -218,9 +222,11 @@ function tdomImports(getExports, doc) {
 
 // Mount a wasm-gc-linked module (the bytes `linkCore` returned) in a fresh
 // iframe realm and drive the DOM from wasm. `onState` is polled through the
-// module's exported `state_json`. Returns the iframe. Throws (rejects) if the
-// module fails to compile/instantiate — the caller surfaces that to the user.
-export async function mountWasm(container, wasmBytes, { onState } = {}) {
+// module's exported `state_json`, and the margaui class set is read back
+// through `classes_json` — the twin of what the js mount reads off
+// `__tutuca`. Returns the iframe. Throws (rejects) if the module fails to
+// compile/instantiate — the caller surfaces that to the user.
+export async function mountWasm(container, wasmBytes, { onState, margaui = true } = {}) {
   container.innerHTML = "";
   const iframe = document.createElement("iframe");
   container.appendChild(iframe);
@@ -249,6 +255,22 @@ export async function mountWasm(container, wasmBytes, { onState } = {}) {
   // The user module's exported mount() targets #app in whatever document
   // global_this() names — the iframe's, via the `realm` handed to jsCoreImports.
   exports.mount();
+
+  // The margaui class set, compiled to CSS and injected — what makes a
+  // class-styled example look the same here as in the compiled gallery. The js
+  // mount has to retry this on a timer (its blob module runs after the iframe's
+  // load event); here mount() is a plain synchronous call, so by this line the
+  // classes are already collected and one read is enough.
+  if (margaui) {
+    try {
+      const classesJson = exports.classes_json ? exports.classes_json() : null;
+      if (classesJson && JSON.parse(classesJson).length) {
+        const style = doc.createElement("style");
+        style.textContent = (await margauiCompile())(classesJson);
+        doc.head.appendChild(style);
+      }
+    } catch {}
+  }
 
   let last = null;
   const readState = () => {

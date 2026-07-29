@@ -6,8 +6,13 @@ _Blocker cleared 2026-07-29 (investigated 2026-07-16)._
 
 - **Both backends run.** The target toggle (`js` / `wasm-gc`) compiles, links,
   instantiates and mounts; events, the state panel and the activity panel all
-  work on wasm-gc. `js` stays the default and is what the landing-page embeds
-  (`playground/site/embed.js`) use.
+  work on wasm-gc.
+- **The landing-page embeds default to wasm-gc** (`playground/site/embed.js`) —
+  a linked module is ~0.26 MB against ~1.1 MB of JS, which is the better trade
+  on a page that mounts ten of them. They fall back to `js` when the payload
+  has no wasm-gc (a `JS_ONLY=1` build) or when the mount throws, which is what
+  an engine without JS-String-Builtins looks like. The standalone playground
+  still opens on `js`.
 - `assemble.mjs` emits both payloads by default; `JS_ONLY=1 node
   playground/build/assemble.mjs` assembles js alone.
 - The two things that make wasm-gc work — and that a compiler bump can silently
@@ -62,6 +67,17 @@ expose no string-ABI knob at all, so the playground could not ask for a
 consistent link. The pin at `0.1.202607282` does expose it
 (`playground/vendor/moonc-web.d.ts`), which is what cleared this.
 
+## One worker, many callers: the target travels with each compile
+
+A whole page of `<mb-playground>` elements shares ONE compiler worker, and they
+need not agree on a backend. So the worker keeps every payload it has loaded in
+a map and picks one **per compile** from the target on the request
+(`compiler.worker.js`), rather than holding the last `init()`'s payload as
+worker state. Get this wrong and the symptom is not an error message: it is a
+wasm binary handed to the JS mount (`Invalid or unexpected token`) or JS text
+handed to `WebAssembly.instantiate` (`expected magic word 00 61 73 6d, found
+66 75 6e 63`).
+
 ## The wasm host mounts into whatever realm `global_this()` names
 
 The wasm host reaches the DOM as `@core.global_this()._get("document")`
@@ -85,9 +101,15 @@ from the same moonc. Both are pinned in one place,
 
 ```sh
 node playground/build/assemble.mjs      # builds what each target needs, emits both
-node playground/build/check-viewgen-tab.mjs
+node playground/build/check-viewgen-tab.mjs   # every example, BOTH backends
 python3 -m http.server -d dist/playground 8231
 ```
+
+`check-viewgen-tab.mjs` is the gate on the string ABI: it links each example for
+wasm-gc and validates the bytes with `new WebAssembly.Module`, so a link that
+loses `useJsBuiltinString` fails there rather than in a visitor's browser. It
+cannot reach the realm or the shared-worker paths, which is what the manual pass
+below is for.
 
 Flip the **target** dropdown to `wasm-gc` and run each picker example: the
 preview should render, the buttons should drive it (that exercises the delegated
@@ -95,6 +117,13 @@ preview should render, the buttons should drive it (that exercises the delegated
 exercises the exported getters). A string-ABI regression shows up as the
 `CompileError` above in the diagnostics pane, reported by the driver as
 `wasm instantiate failed`.
+
+Then flip it **back and forth** — js → wasm-gc → js → wasm-gc — on one embed and
+on the standalone playground. That is the shared-worker path, and it fails only
+on the second switch, so a single toggle proves nothing. Serve `dist/` (not
+`dist/playground/`) for the landing page: the embeds should come up on wasm-gc
+with their margaui styling, which is read back through the exported
+`classes_json` and is a separate path from the js mount's.
 
 Note that moonc-web accumulates state across compiles in one worker instance:
 several back-to-back compiles can end in an OCaml `Stack_overflow` that has

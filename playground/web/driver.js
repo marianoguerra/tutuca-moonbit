@@ -156,7 +156,7 @@ async function run() {
   setStatus(`compiling (${target})…`, "busy");
   diags.textContent = "";
   try {
-    await compiler.init(target); // switch the worker's payload if the target changed
+    await compiler.init(target); // load this target's payload (once per target)
     // Always regenerate before compiling: the View tab is the source of truth
     // for the generated module, and a debounce may still be pending.
     if (!generate()) {
@@ -167,6 +167,7 @@ async function run() {
       editor.getValue(),
       generated.module,
       generated.ir,
+      target,
     );
     const errs = errorDiagnostics(r.diagnostics);
     diags.textContent = (r.diagnostics || []).join("\n\n");

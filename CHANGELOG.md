@@ -6,6 +6,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The landing page's embedded playgrounds compile to wasm-gc.** A linked
+  wasm-gc module is ~0.26 MB where the js one is ~1.1 MB of JavaScript, which is
+  the better trade on a page that mounts ten of them. Each embed falls back to
+  js on its own if the payload carries no wasm-gc (a `JS_ONLY=1` build) or if
+  the mount throws — what an engine without JS-String-Builtins looks like — so
+  the toggle is still there and the page still works where wasm-gc doesn't. The
+  standalone playground still opens on js.
+
+  Two things had to work first. `mountWasm` did not compile the app's margaui
+  classes, so a class-styled example would have rendered unstyled; it now reads
+  them back through the exported `classes_json`, and the injected CSS is
+  byte-identical to what the js mount produces. And the compiler worker — ONE
+  worker for the whole page — held a single payload, so whichever `init()` ran
+  last decided what every element compiled against. It keeps a payload per
+  target now and picks one per compile from the request. That bug was reachable
+  before this change too: toggling any single playground's target and back
+  handed a wasm binary to the js mount (`Invalid or unexpected token`) or JS
+  text to `WebAssembly.instantiate` (`expected magic word 00 61 73 6d`).
+
 ### Fixed
 
 - **The playground's wasm-gc target runs.** It has compiled and linked user

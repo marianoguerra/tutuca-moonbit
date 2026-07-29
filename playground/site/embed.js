@@ -141,8 +141,8 @@ class MbPlayground extends HTMLElement {
           <div class="toolbar">
             <button class="run" type="button">Run ▶</button>
             <select class="target" title="Compile target" hidden>
-              <option value="js">js</option>
               <option value="wasm-gc">wasm-gc</option>
+              <option value="js">js</option>
             </select>
             <span class="status"></span>
             <span style="font-size:0.7rem;opacity:0.5;margin-left:auto">Ctrl/⌘+Enter</span>
@@ -172,13 +172,18 @@ class MbPlayground extends HTMLElement {
     this.noteEl = this.shadowRoot.querySelector(".note");
 
     // Reveal the target toggle only for backends the payload actually carries;
-    // re-compile the current editor content whenever the target changes.
+    // re-compile the current editor content whenever the target changes. A
+    // reader who picks a backend keeps it — `_pinned` stops run() from
+    // second-guessing the choice (see resolveTarget).
     availableTargets().then((targets) => {
       for (const opt of this.targetEl.options) opt.disabled = !targets.includes(opt.value);
       // Show the toggle only when there's more than one runnable target.
       this.targetEl.hidden = targets.length < 2;
     });
-    this.targetEl.addEventListener("change", () => this.run());
+    this.targetEl.addEventListener("change", () => {
+      this._pinned = true;
+      this.run();
+    });
 
     // CodeMirror lives in the shadow root; pass `root` so it resolves its DOM.
     this.editors = {
@@ -328,17 +333,33 @@ class MbPlayground extends HTMLElement {
     }, 250);
   }
 
+  // Which backend to compile for. wasm-gc is the default — it links to a
+  // ~0.26 MB module where js links to a ~1.1 MB JS blob, which is the better
+  // trade on a page that mounts several of these — and js is the fallback for
+  // the two ways it can be unavailable: a payload assembled with JS_ONLY, and
+  // an engine without JS-String-Builtins (see `_wasmFailed` in run()). Reading
+  // the resolved list here rather than trusting the toggle's initial value is
+  // what keeps an element that scrolls into view early from asking the worker
+  // for a backend this build doesn't carry.
+  async resolveTarget() {
+    const targets = await availableTargets();
+    const wasmOk = targets.includes("wasm-gc") && !this._wasmFailed;
+    if (!this._pinned && !wasmOk) this.targetEl.value = "js";
+    return this.targetEl.value;
+  }
+
   async run() {
     if (this._compiling) return;
     this._compiling = true;
-    const target = this.targetEl.value;
+    let fallback = false;
+    const target = await this.resolveTarget();
     this.setStatus(`compiling (${target})…`, "busy");
     this.diagsEl.textContent = "";
     try {
       // The generator is a separate 1.3 MB payload; load it only for the
       // elements that have a View tab, and only when one actually runs.
       if (this._viewSrc) await ensureViewgen();
-      await compiler.init(target); // switch the worker's payload if the target changed
+      await compiler.init(target); // load this target's payload (once per target)
       // Always regenerate before compiling: the View tab is the source of
       // truth for the generated module, and a debounce may still be pending.
       if (!this.generate()) {
@@ -349,6 +370,7 @@ class MbPlayground extends HTMLElement {
         this.editors.component.getValue(),
         this._generated.module,
         this._generated.ir,
+        target,
       );
       const errs = errorDiagnostics(r.diagnostics);
       this.diagsEl.textContent = (r.diagnostics || []).join("\n\n");
@@ -361,15 +383,32 @@ class MbPlayground extends HTMLElement {
         this.setStatus(errs.length ? `compile errors (${errs.length})` : "compile failed", "error");
         return;
       }
-      if (target === "wasm-gc") {
-        // linkCore returned a wasm binary; instantiate + drive the DOM from wasm.
-        // A string-ABI mismatch in the vendored in-browser linker currently makes
-        // this throw a WebAssembly.CompileError — surfaced in the diagnostics pane.
-        await mountWasm(this.previewEl, r.result, {});
-      } else {
-        mount(this.previewEl, new TextDecoder().decode(r.result), {});
+      let mountErr = null;
+      try {
+        if (target === "wasm-gc") {
+          // linkCore returned a wasm binary; instantiate + drive the DOM from wasm.
+          await mountWasm(this.previewEl, r.result, {});
+        } else {
+          mount(this.previewEl, new TextDecoder().decode(r.result), {});
+        }
+      } catch (e) {
+        mountErr = e;
       }
-      this.setStatus(`ok — ${target} — ${r.ms} ms`, "ok");
+      // The code compiled AND linked, so a throw from the mount alone is the
+      // runtime's fault rather than the reader's — most likely an engine with
+      // no JS-String-Builtins, which the wasm payload needs. Drop this element
+      // to js once and re-run instead of showing an error nobody can act on.
+      // Only the mount is treated this way: a compile that throws is a real
+      // failure and still reports (falling back there would hide it).
+      if (!mountErr) {
+        this.setStatus(`ok — ${target} — ${r.ms} ms`, "ok");
+      } else if (target === "wasm-gc" && !this._wasmFailed) {
+        this._wasmFailed = true;
+        this.targetEl.value = "js";
+        fallback = true;
+      } else {
+        throw mountErr;
+      }
     } catch (e) {
       this.setStatus(target === "wasm-gc" ? "wasm instantiate failed" : "error", "error");
       this.diagsEl.textContent = String(e.stack || e.message || e);
@@ -377,6 +416,7 @@ class MbPlayground extends HTMLElement {
     } finally {
       this._compiling = false;
     }
+    if (fallback) await this.run();
   }
 }
 
