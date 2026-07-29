@@ -29,10 +29,11 @@ fn render_html(
 }
 
 ///|
-/// Rendering memoizes nothing: two passes over the same node with the same ctx
-/// build two distinct trees that compare equal. This pins the contract the
-/// three render caches used to break — while they existed, the second pass
-/// returned the FIRST pass's object and `physical_equal` held.
+/// A `RenderCtx` with no cache memoizes nothing: two passes over the same node
+/// build two distinct trees that compare equal. Only a component render SITE
+/// is ever cached (see cache_test.mbt), and only when the ctx carries a cache;
+/// the constant subtrees and constant attribute maps the port used to memoize
+/// are gone and are not coming back with it.
 test "a second render pass reuses nothing, and renders the same thing" {
   let node = parse_node("<p class=\"x\">hi</p>")
   let ctx = @render.RenderCtx::new()
@@ -45,6 +46,10 @@ test "a second render pass reuses nothing, and renders the same thing" {
 }
 
 ///|
+/// The component-less path, which the cache DECLINES: a `ViewMap` render site
+/// is handed a plain `Map`, which carries no `ObjId`, so nothing is keyed and
+/// every pass rebuilds. Supplying a cache here would change nothing, which is
+/// the point of declining rather than keying and missing.
 test "a component render site rebuilds every pass, and tracks its value" {
   let card = parse_node("<div class=\"card\">static</div>")
   let resolver : &@render.ViewResolver = @render.ViewMap::{

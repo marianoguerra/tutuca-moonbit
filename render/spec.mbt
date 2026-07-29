@@ -141,18 +141,24 @@ declare pub impl ViewResolver for ViewMap
 ///|
 /// Per-render context (JS Renderer instance state, minus comps).
 ///
-/// Rendering carries no memo of any kind: every pass rebuilds every subtree and
-/// every attribute map from the value tree, and `@vdom`'s differ is what keeps
-/// the DOM writes proportional to the change. The port used to memoize here
-/// three ways (component render sites keyed on value identity, constant
-/// subtrees, constant attribute maps); all three were removed while the core
-/// design is still moving, to be reintroduced once it settles.
+/// ONE memo, and it is optional. The port used to carry three (component
+/// render sites, constant subtrees, constant attribute maps), and #8 removed
+/// all of them: the other two reached into the AST and made `viewgen` parse
+/// each view two different ways, which is a lot of structure to hold still.
+/// They have not come back. This one is a field, and `None` renders exactly as
+/// the uncached port did.
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
+  /// Component render-site cache (JS _rValComp DomCache). None = uncached (the
+  /// JS NullDomCache); the App supplies one persisted across passes.
+  render_cache : RenderCache?
 }
 
 ///|
-declare pub fn RenderCtx::new(view_resolver? : &ViewResolver) -> RenderCtx
+declare pub fn RenderCtx::new(
+  view_resolver? : &ViewResolver,
+  render_cache? : RenderCache,
+) -> RenderCtx
 
 ///|
 /// A `§{json}§` boundary marker parsed from / emitted into a comment node.

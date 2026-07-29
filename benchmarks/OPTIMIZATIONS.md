@@ -482,6 +482,93 @@ Four things the split says, worth keeping for whoever reintroduces caching:
 Output unchanged: 890 default / 890 native / 8 js green, `gen-views` drift-clean
 (the markers were minted at load time and never reached a `*_view_gen.mbt`).
 
+## 9. The render-site cache back, keyed on a fingerprint — updates −30% to −56%
+
+#8 removed the render caches and left two instructions for whoever brought one
+back: **the render-site cache is a net loss where it misses**, because building
+`site_cache_key` costs a `StringBuilder` per site per pass whether or not it
+hits; and **a reintroduced cache should be able to decline.** This does both, by
+changing what the key IS.
+
+An instance now carries a `@tutuca.ObjId` — a structural fingerprint fixed at
+creation plus a revision each successor bumps. The cache keys a
+`Map[UInt64, CacheEntry]` on the origin. Nothing is built at lookup time, and a
+value with no `ObjId` (a plain `Map` render site, a component-less `ViewMap`
+embedding) is declined before anything is spent on it.
+
+The fingerprint is a **bucket, not an identity**, and deliberately not unique —
+which is what lets it be minted with no process-global counter, so a component
+loaded at runtime brings everything it needs to make its own. A collision costs
+a miss: the entry stores the source value and a hit still requires
+`physical_equal` on it, plus the revision, the `node_id`, the `(cid, vid)` and
+the dyn-binds chain. That list is exactly what a render site reads. It is not
+longer because a component boundary is a bind barrier (`render_site` enters with
+`is_frame=true` and empty binds, and `lookup_bind_chain` stops at a frame), so
+the enclosing `@each` binds cannot reach inside; and because position is never
+baked into a subtree — `events.mbt` reconstructs the dispatch path from
+`data-eid` stamps and the metas. Both are why the innermost loop key the old
+`site_cache_key` carried is gone: sibling list items are different instances,
+so they are already different buckets.
+
+`RenderOnce` and the constant-attribute memo did NOT come back. They were the
+half that put a variant in `ANode` and a `mut attrs_id` on `DomData` and made
+`viewgen` parse each view two ways — and #8 unblocked sharing one parse by
+removing them.
+
+wasm-gc, release, medians of 4 interleaved rounds (stash / measure / pop /
+measure). **This machine was not quiet** — a browser held 1–1.5 cores for two of
+the four rounds, and single-round error bars reached ±40% there; the two
+sub-5% rows below are within that and should be re-read on an idle machine. The
+rows that carry the result are an order of magnitude outside it.
+
+| Workload | before (#8's state) | after | |
+|---|---|---|---|
+| `patch noop todo 10` | 14.47 µs | 14.26 µs | −1.5% |
+| `patch noop todo 1000` | 14.23 µs | 14.18 µs | −0.4% |
+| `patch counter` | 22.75 µs | 23.03 µs | +1.2% |
+| `patch toggle todo 10` | 120.64 µs | 84.44 µs | **−30.0%** |
+| `patch toggle todo 100` | 1.08 ms | 557.85 µs | **−48.3%** |
+| `patch toggle todo 1000` | 20.43 ms | 12.76 ms | **−37.5%** |
+| `patch add+remove todo 10` | 109.48 µs | 107.06 µs | −2.2% |
+| `patch add+remove todo 100` | 1.02 ms | 965.57 µs | −5.3% |
+| `patch add+remove todo 1000` | 23.92 ms | 16.38 ms | **−31.5%** |
+| `patch move json 8x4` | 421.56 µs | 187.29 µs | **−55.6%** |
+| `patch page people 1000` | 296.09 µs | 304.57 µs | +2.9% |
+| `patch refilter people 100` | 315.67 µs | 311.38 µs | −1.4% |
+| `patch refilter people 1000` | 1.52 ms | 1.49 ms | −2.0% |
+| `patch switch view` | 56.57 µs | 54.87 µs | −3.0% |
+| `find .checkbox todo 1000` | 3.59 µs | 3.50 µs | −2.4% |
+| `find .next people 1000` | 27.25 µs | 26.58 µs | −2.5% |
+
+Read against #8's `RenderCache alone` column, which is the same cache measured
+the other way round:
+
+1. **The wins came back, most of the way.** `move json 8x4` recovers −55.6%
+   against the old cache's −86.3%/+86.3% pairing — effectively the same row.
+   `toggle todo 1000` recovers −37.5% where the old cache was worth −58.9%, so
+   this version leaves something on the table there; the likeliest reason is
+   bucket thrash between structurally equal todo rows (see below).
+2. **The losses did not.** Every row where the old cache cost time is now flat
+   or faster: `counter` +1.2% against −9.8%, `refilter people` −1.4/−2.0%
+   against −3.3/−3.6%, and both mount-heavy `find` benches −2.4/−2.5% against
+   −6.9/−9.7%. Declining is cheaper than keying and missing, which is the whole
+   point of the change.
+3. **Fingerprinting at creation is not visible.** The `find` and `page` benches
+   are the mount-heavy ones and they did not move, which is the O(own fields)
+   rule holding: a nested `Obj` mixes its own origin and never its contents, so
+   a parent costs its own fields rather than its subtree.
+
+Where the remaining headroom is: two structurally equal instances share a
+bucket and evict each other every pass (`render/cache_test.mbt` pins that this
+is a thrash and never a wrong subtree). Mixing the innermost loop key into the
+bucket would separate them — the one piece of the old `site_cache_key` that
+would then have a reason to exist. Measure before adding it; on this corpus the
+todo rows have distinct titles, so it may not be what the gap on `toggle todo
+1000` is.
+
+Output unchanged: 903 default / 903 native / 8 js green, `gen-views`
+drift-clean. The DOM snapshots are the proof the cache never returns stale.
+
 ## Not yet tried
 
 Ranked by what the profiles say is left. **#8 removed the render caches, so the

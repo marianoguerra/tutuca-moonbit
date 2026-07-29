@@ -39,6 +39,27 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   JSON projection: a bucket is not state, and every DOM snapshot, inspector row
   and `gen-views` output is unchanged by this.
 
+- **The component render-site cache, rebuilt on that key — updates are 30–56%
+  faster.** `@render.RenderCache` keys a `Map[UInt64, _]` on the fingerprint, so
+  nothing is built at lookup time, and it DECLINES for a value that has no one
+  (a plain `Map` render site, a component-less `ViewMap` embedding) rather than
+  keying and missing — the two things `benchmarks/OPTIMIZATIONS.md` #8 asked a
+  reintroduced cache to fix. `App` holds one across passes and rolls a
+  generation per render; `RenderCtx` carries it as `RenderCache?`, and `None`
+  renders exactly as the uncached port did.
+
+  A hit requires the revision, the render-site `node_id`, the resolved
+  `(cid, vid)`, `physical_equal` on the stored value and on the dyn-binds
+  chain. That is all a site reads: a component boundary is a bind barrier, so
+  the enclosing `@each` binds cannot reach inside it, and position is never
+  baked into a subtree (the dispatch path is reconstructed from the DOM at
+  event time). Anything else is a miss that overwrites, so a bucket collision
+  can cost time and never correctness.
+
+  `RenderOnce` and the constant-attribute memo did NOT come back — they are the
+  half that reached into the AST and made `viewgen` parse each view two ways.
+  Full numbers and the comparison against #8's table are entry #9.
+
 ## [0.7.0] - 2026-07-29
 
 ### Added

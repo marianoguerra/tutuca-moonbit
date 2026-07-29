@@ -49,11 +49,15 @@ pub impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
 }
 
 ///|
-pub fn RenderCtx::new(view_resolver? : &ViewResolver) -> RenderCtx {
+pub fn RenderCtx::new(
+  view_resolver? : &ViewResolver,
+  render_cache? : RenderCache,
+) -> RenderCtx {
   {
     view_resolver: match view_resolver {
       Some(r) => r
       None => NullViewResolver::{  }
     },
+    render_cache,
   }
 }

@@ -133,17 +133,35 @@ fn render_site(
     None => stack.view_trail()
   }
   match ctx.view_resolver.resolve_view(names, value) {
-    Some(rv) =>
+    Some(rv) => {
+      // Decline before spending anything on a value with no bucket: a plain
+      // Map/List render site, or a component-less ViewMap embedding, has
+      // nothing whose generations can be told apart, so keying on it could
+      // only build a key and miss. (OPTIMIZATIONS #8: the previous cache lost
+      // time on exactly that.)
+      let slot = match (ctx.render_cache, value.identity()) {
+        (Some(cache), Some(id)) =>
+          match cache.get(id, node_id, rv, value, stack.dyn_binds) {
+            Some(v) => return Some(v)
+            None => Some((cache, id))
+          }
+        _ => None
+      }
       match render(rv.node, stack.enter(value, Map([])), ctx) {
-        Some(body) =>
-          Some(
-            @vdom.fragment([
-              Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
-              body,
-            ]),
-          )
+        Some(body) => {
+          let frag = @vdom.fragment([
+            Meta::Comp(nid=node_id, cid=rv.cid, vid=rv.vid).to_comment(),
+            body,
+          ])
+          // JS caches only a rendered (non-null) body.
+          if slot is Some((cache, id)) {
+            cache.set(id, node_id, rv, value, stack.dyn_binds, frag)
+          }
+          Some(frag)
+        }
         None => None
       }
+    }
     None => None
   }
 }

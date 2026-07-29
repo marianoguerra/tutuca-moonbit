@@ -23,6 +23,10 @@ pub struct App[N] {
   mut drag : DragState[N]?
   /// the element currently carrying data-draggingover
   mut cur_drag_over : N?
+  /// Component render-site cache (JS _rValComp DomCache), persisted across
+  /// passes and generation-rolled each render, so a subtree whose instance did
+  /// not change is reused instead of rebuilt.
+  render_cache : @render.RenderCache
 }
 
 ///|
@@ -46,6 +50,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     render_count: 0,
     drag: None,
     cur_drag_over: None,
+    render_cache: @render.RenderCache::new(),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -104,6 +109,7 @@ pub fn[N : @vdom.DomWalk] App::start(self : App[N]) -> Unit {
 pub fn[N] App::destroy(self : App[N]) -> Unit {
   self.transactor.clear_subscriptions()
   self.prev = None
+  self.render_cache.clear()
   self.drag = None
   self.cur_drag_over = None
 }
@@ -160,7 +166,13 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   self.render_count += 1
   let root_val = self.transactor.root
   let stack = @render.RenderStack::new(root_val, comps=self.scope.comps)
-  let ctx = @render.RenderCtx::new(view_resolver=self.scope.comps)
+  // Roll the cache to a fresh generation: subtrees reused this pass are
+  // promoted, anything untouched falls out after the next one.
+  self.render_cache.next_generation()
+  let ctx = @render.RenderCtx::new(
+    view_resolver=self.scope.comps,
+    render_cache=self.render_cache,
+  )
   match @render.render_root(root_val, stack, ctx) {
     Some(vdom) => {
       let prev = self.prev
