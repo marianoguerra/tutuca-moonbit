@@ -72,7 +72,7 @@ before(async () => {
   guest = root.guest;
 });
 
-test('manifest declares the component, views, handlers, style', () => {
+test('manifest declares the component, views and handlers', () => {
   const m = guest.getManifest();
   assert.equal(m.apiVersion, 1);
   assert.equal(m.moduleName, 'counterlib');
@@ -85,7 +85,9 @@ test('manifest declares the component, views, handlers, style', () => {
   assert.equal(comp.views[0].name, 'main');
   assert.match(comp.views[0].html, /@on\.click="inc"/);
   assert.match(comp.views[0].html, /@text="\.count"/);
-  assert.match(comp.style, /\.counter/);
+  // the guests carry no CSS of their own any more — the views style
+  // themselves with margaui utility classes (the universal-wasm commit)
+  assert.equal(comp.style, '');
 });
 
 test('instances are independent and constructor args apply', () => {
