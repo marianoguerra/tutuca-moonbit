@@ -39,7 +39,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   JSON projection: a bucket is not state, and every DOM snapshot, inspector row
   and `gen-views` output is unchanged by this.
 
-- **The component render-site cache, rebuilt on that key — updates are 30–56%
+- **The component render-site cache, rebuilt on that key — updates are 27–57%
   faster.** `@render.RenderCache` keys a `Map[UInt64, _]` on the fingerprint, so
   nothing is built at lookup time, and it DECLINES for a value that has no one
   (a plain `Map` render site, a component-less `ViewMap` embedding) rather than
@@ -58,7 +58,12 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
   `RenderOnce` and the constant-attribute memo did NOT come back — they are the
   half that reached into the AST and made `viewgen` parse each view two ways.
-  Full numbers and the comparison against #8's table are entry #9.
+
+  One row costs: `patch counter` is 3.0% slower, because a single component
+  whose state changes on every click misses every pass and the lookup buys
+  nothing. The old cache cost 9.8% there; the rest of it was `site_cache_key`
+  building a string to miss with. Full numbers and the comparison against #8's
+  table are entry #9.
 
 ## [0.7.0] - 2026-07-29
 

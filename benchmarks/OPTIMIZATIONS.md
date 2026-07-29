@@ -515,56 +515,71 @@ half that put a variant in `ANode` and a `mut attrs_id` on `DomData` and made
 `viewgen` parse each view two ways — and #8 unblocked sharing one parse by
 removing them.
 
-wasm-gc, release, medians of 4 interleaved rounds (stash / measure / pop /
-measure). **This machine was not quiet** — a browser held 1–1.5 cores for two of
-the four rounds, and single-round error bars reached ±40% there; the two
-sub-5% rows below are within that and should be re-read on an idle machine. The
-rows that carry the result are an order of magnitude outside it.
+wasm-gc, release, medians of **5 interleaved rounds** on an idle machine, the
+two sides alternating in one loop. The `before` side is the previous commit
+(the fingerprint, no cache) checked out in a `git worktree`, so alternating
+costs a `cd` rather than a stash — and neither side is ever the one that just
+rebuilt.
 
 | Workload | before (#8's state) | after | |
 |---|---|---|---|
-| `patch noop todo 10` | 14.47 µs | 14.26 µs | −1.5% |
-| `patch noop todo 1000` | 14.23 µs | 14.18 µs | −0.4% |
-| `patch counter` | 22.75 µs | 23.03 µs | +1.2% |
-| `patch toggle todo 10` | 120.64 µs | 84.44 µs | **−30.0%** |
-| `patch toggle todo 100` | 1.08 ms | 557.85 µs | **−48.3%** |
-| `patch toggle todo 1000` | 20.43 ms | 12.76 ms | **−37.5%** |
-| `patch add+remove todo 10` | 109.48 µs | 107.06 µs | −2.2% |
-| `patch add+remove todo 100` | 1.02 ms | 965.57 µs | −5.3% |
-| `patch add+remove todo 1000` | 23.92 ms | 16.38 ms | **−31.5%** |
-| `patch move json 8x4` | 421.56 µs | 187.29 µs | **−55.6%** |
-| `patch page people 1000` | 296.09 µs | 304.57 µs | +2.9% |
-| `patch refilter people 100` | 315.67 µs | 311.38 µs | −1.4% |
-| `patch refilter people 1000` | 1.52 ms | 1.49 ms | −2.0% |
-| `patch switch view` | 56.57 µs | 54.87 µs | −3.0% |
-| `find .checkbox todo 1000` | 3.59 µs | 3.50 µs | −2.4% |
-| `find .next people 1000` | 27.25 µs | 26.58 µs | −2.5% |
+| `patch noop todo 10` | 15.98 µs | 15.98 µs | +0.0% |
+| `patch noop todo 1000` | 13.88 µs | 13.77 µs | −0.8% |
+| `patch counter` | 21.34 µs | 21.98 µs | **+3.0%** |
+| `patch toggle todo 10` | 113.26 µs | 82.60 µs | **−27.1%** |
+| `patch toggle todo 100` | 943.16 µs | 530.72 µs | **−43.7%** |
+| `patch toggle todo 1000` | 19.93 ms | 12.57 ms | **−36.9%** |
+| `patch add+remove todo 10` | 106.99 µs | 106.05 µs | −0.9% |
+| `patch add+remove todo 100` | 956.66 µs | 938.46 µs | −1.9% |
+| `patch add+remove todo 1000` | 23.18 ms | 14.96 ms | **−35.5%** |
+| `patch move json 8x4` | 395.11 µs | 169.87 µs | **−57.0%** |
+| `patch page people 1000` | 290.05 µs | 288.14 µs | −0.7% |
+| `patch refilter people 100` | 297.95 µs | 294.11 µs | −1.3% |
+| `patch refilter people 1000` | 1.42 ms | 1.40 ms | −1.4% |
+| `patch switch view` | 54.71 µs | 54.40 µs | −0.6% |
+| `find .checkbox todo 1000` | 3.56 µs | 3.46 µs | −2.8% |
+| `find .next people 1000` | 25.87 µs | 25.74 µs | −0.5% |
 
 Read against #8's `RenderCache alone` column, which is the same cache measured
 the other way round:
 
-1. **The wins came back, most of the way.** `move json 8x4` recovers −55.6%
-   against the old cache's −86.3%/+86.3% pairing — effectively the same row.
-   `toggle todo 1000` recovers −37.5% where the old cache was worth −58.9%, so
-   this version leaves something on the table there; the likeliest reason is
-   bucket thrash between structurally equal todo rows (see below).
-2. **The losses did not.** Every row where the old cache cost time is now flat
-   or faster: `counter` +1.2% against −9.8%, `refilter people` −1.4/−2.0%
-   against −3.3/−3.6%, and both mount-heavy `find` benches −2.4/−2.5% against
-   −6.9/−9.7%. Declining is cheaper than keying and missing, which is the whole
-   point of the change.
-3. **Fingerprinting at creation is not visible.** The `find` and `page` benches
-   are the mount-heavy ones and they did not move, which is the O(own fields)
-   rule holding: a nested `Obj` mixes its own origin and never its contents, so
-   a parent costs its own fields rather than its subtree.
+1. **The wins came back, most of the way.** `move json 8x4` recovers −57.0%
+   against the old cache's −86.3% — effectively the same row. `toggle todo
+   1000` recovers −36.9% where the old cache was worth −58.9%, so this version
+   leaves something on the table there; the likeliest reason is bucket thrash
+   between structurally equal rows (see below).
+2. **`counter` still costs, but a third as much: +3.0% against −9.8%.** This
+   one is real and not noise — five rounds put `before` in 21.0–21.9 µs and
+   `after` in 21.8–22.4 µs, distributions that barely touch. `counter` is one
+   component whose state changes on every click, so every pass is a guaranteed
+   miss and the lookup plus store buys nothing. That is the irreducible floor
+   of having a cache at all; what the fingerprint removed is the *other* two
+   thirds, which was `site_cache_key` building a string to miss with.
+3. **The rest of the losses went away.** `refilter people` −1.3/−1.4% against
+   the old −3.3/−3.6%, and both mount-heavy `find` benches −2.8/−0.5% against
+   −6.9/−9.7%. Those sites render plain values, so the cache declines and pays
+   nothing at all, which is the whole point of being able to.
+4. **Fingerprinting at creation is not visible.** The mount-heavy `find` and
+   `page` benches did not move, which is the O(own fields) rule holding: a
+   nested `Obj` mixes its own origin and never its contents, so a parent costs
+   its own fields rather than its subtree.
 
-Where the remaining headroom is: two structurally equal instances share a
-bucket and evict each other every pass (`render/cache_test.mbt` pins that this
-is a thrash and never a wrong subtree). Mixing the innermost loop key into the
-bucket would separate them — the one piece of the old `site_cache_key` that
-would then have a reason to exist. Measure before adding it; on this corpus the
-todo rows have distinct titles, so it may not be what the gap on `toggle todo
-1000` is.
+`patch noop todo 10` is bimodal on BOTH sides (13.7–16.9 µs before, 14.4–16.4
+after, n=5 each) and its median lands on +0.0%. It is a ~14 µs bench; do not
+read a single round of it as a signal.
+
+Where the remaining headroom is:
+
+- **Bucket thrash.** Two structurally equal instances share a bucket and evict
+  each other every pass (`render/cache_test.mbt` pins that this is a thrash and
+  never a wrong subtree). Mixing the innermost loop key into the bucket would
+  separate them — the one piece of the old `site_cache_key` that would then have
+  a reason to exist. Measure first: on this corpus the todo rows have distinct
+  titles, so it may not be what the gap on `toggle todo 1000` is.
+- **Letting a guaranteed-miss site opt out**, which would take `counter`'s +3.0%
+  back. The cache can already decline for a value with no fingerprint; declining
+  for a site whose recent history is all misses is the same idea with a
+  different signal, and the `hit`/`miss` counters are already there.
 
 Output unchanged: 903 default / 903 native / 8 js green, `gen-views`
 drift-clean. The DOM snapshots are the proof the cache never returns stale.
