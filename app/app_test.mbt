@@ -175,7 +175,7 @@ impl @component.Fields for ItemState with fn encode(s) {
 ///|
 impl @component.Fields for ItemState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(ItemState::{ label: v_label })
+  Some({ label: v_label })
 }
 
 ///|
@@ -186,7 +186,7 @@ impl @component.Fields for PanelState with fn encode(s) {
 ///|
 impl @component.Fields for PanelState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some(PanelState::{ title: v_title })
+  Some({ title: v_title })
 }
 
 ///|

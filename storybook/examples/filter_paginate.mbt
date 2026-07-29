@@ -130,7 +130,7 @@ fn fp_pager_info(s : NaivePeopleState) -> Map[String, @tutuca.Value] {
 /// scans again for the count. Two independent walks, nothing shared.
 fn naive_people_comp() -> @component.Component {
   naive_people_component(
-    init=NaivePeopleState::{ items: [], query: "", page: 0, pageSize: 5 },
+    init={ items: [], query: "", page: 0, pageSize: 5 },
     update=fp_update(),
     when=w => {
       match w {

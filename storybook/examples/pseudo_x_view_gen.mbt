@@ -27,7 +27,7 @@ pub(all) struct TableRowState {
 ///
 ///   init={ ..TableRowState::zero(), label: "Counter" }
 pub fn TableRowState::zero() -> TableRowState {
-  TableRowState::{ name: "", qty: 0, price: 0.0 }
+  { name: "", qty: 0, price: 0.0 }
 }
 
 ///|
@@ -49,7 +49,7 @@ impl @component.Fields for TableRowState with fn decode(f) {
   guard f.get("qty") is Some(Num(t1_qty)) else { return None }
   let v_qty = t1_qty.to_int()
   guard f.get("price") is Some(Num(v_price)) else { return None }
-  Some(TableRowState::{ name: v_name, qty: v_qty, price: v_price })
+  Some({ name: v_name, qty: v_qty, price: v_price })
 }
 
 ///|
@@ -98,7 +98,7 @@ pub(all) struct ItemTableState {
 ///
 ///   init={ ..ItemTableState::zero(), label: "Counter" }
 pub fn ItemTableState::zero() -> ItemTableState {
-  ItemTableState::{ rows: [] }
+  { rows: [] }
 }
 
 ///|
@@ -123,7 +123,7 @@ impl @component.Fields for ItemTableState with fn decode(f) {
     let x1_rows = e1_rows
     v_rows.push(x1_rows)
   }
-  Some(ItemTableState::{ rows: v_rows })
+  Some({ rows: v_rows })
 }
 
 ///|
@@ -169,7 +169,7 @@ pub(all) struct SelectOptionState {
 ///
 ///   init={ ..SelectOptionState::zero(), label: "Counter" }
 pub fn SelectOptionState::zero() -> SelectOptionState {
-  SelectOptionState::{ value: "", label: "" }
+  { value: "", label: "" }
 }
 
 ///|
@@ -189,7 +189,7 @@ impl @component.Fields for SelectOptionState with fn encode(s) {
 impl @component.Fields for SelectOptionState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(SelectOptionState::{ value: v_value, label: v_label })
+  Some({ value: v_value, label: v_label })
 }
 
 ///|
@@ -238,7 +238,7 @@ pub(all) struct ItemSelectState {
 ///
 ///   init={ ..ItemSelectState::zero(), label: "Counter" }
 pub fn ItemSelectState::zero() -> ItemSelectState {
-  ItemSelectState::{ options: [], current: "" }
+  { options: [], current: "" }
 }
 
 ///|
@@ -267,7 +267,7 @@ impl @component.Fields for ItemSelectState with fn decode(f) {
     v_options.push(x1_options)
   }
   guard f.get("current") is Some(Str(v_current)) else { return None }
-  Some(ItemSelectState::{ options: v_options, current: v_current })
+  Some({ options: v_options, current: v_current })
 }
 
 ///|
@@ -364,7 +364,7 @@ pub(all) struct PseudoXDemoState {
 ///
 ///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
 pub fn PseudoXDemoState::zero() -> PseudoXDemoState {
-  PseudoXDemoState::{ table: Null, select: Null }
+  { table: Null, select: Null }
 }
 
 ///|
@@ -384,7 +384,7 @@ impl @component.Fields for PseudoXDemoState with fn encode(s) {
 impl @component.Fields for PseudoXDemoState with fn decode(f) {
   let v_table = f.get("table").unwrap_or(Null)
   let v_select = f.get("select").unwrap_or(Null)
-  Some(PseudoXDemoState::{ table: v_table, select: v_select })
+  Some({ table: v_table, select: v_select })
 }
 
 ///|

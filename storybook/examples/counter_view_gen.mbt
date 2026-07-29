@@ -25,7 +25,7 @@ pub(all) struct CounterState {
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
 pub fn CounterState::zero() -> CounterState {
-  CounterState::{ count: 0 }
+  { count: 0 }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for CounterState with fn encode(s) {
 impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some(CounterState::{ count: v_count })
+  Some({ count: v_count })
 }
 
 ///|

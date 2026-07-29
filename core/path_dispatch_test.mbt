@@ -89,7 +89,7 @@ test "teleported path addresses the producer's data (end to end)" {
   // Workspace(cid 0) provides active=.sheet; Toolbar(cid 2) renders *active.
   // The event path walks Toolbar's tree but the mutation must land on
   // Workspace.sheet (semantics.md §7).
-  let root : @core.Value = @core.Value::Map({
+  let root : @core.Value = Map({
     "sheet": Map({ "title": Str("Q1") }),
     "panel": Map({ "toolbar": Null }),
   })
@@ -102,7 +102,7 @@ test "teleported path addresses the producer's data (end to end)" {
   let txn = dispatch.to_transaction_path()
   assert_true(txn.steps is [FieldStep("sheet"), FieldStep("title")])
   assert_true(txn.lookup(root) is Some(n) && n is Str("Q1"))
-  let root2 = txn.set_value(root, @core.Value::Str("Q2"))
+  let root2 = txn.set_value(root, Str("Q2"))
   assert_true(txn.lookup(root2) is Some(n2) && n2 is Str("Q2"))
 }
 

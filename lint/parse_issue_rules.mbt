@@ -87,7 +87,7 @@ fn bad_value_role_info(role : @anode.BadValueRole) -> Array[(String, String)] {
     Attr(name~) => [("role", "attr"), ("attr", name)]
     Directive(name~) => [("role", "directive"), ("directive", name)]
     IfDirective(name~) => [("role", "if"), ("attr", name)]
-    ValueIssue(vr) => [("role", "value"), ("value-role", "\{to_repr(vr)}")]
+    ValueIssue(vr) => [("role", "value"), ("value-role", "\{Repr(vr)}")]
   }
 }
 

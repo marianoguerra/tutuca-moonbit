@@ -593,7 +593,7 @@ pub(all) struct JsonBooleanState {
 pub fn JsonBooleanState::zero() -> Self
 
 pub(all) struct JsonNullState {
-}
+} derive(Default)
 pub fn JsonNullState::zero() -> Self
 
 pub(all) enum JsonNumberMethod {
@@ -1086,7 +1086,7 @@ pub(all) struct StateEditorState {
 pub fn StateEditorState::zero() -> Self
 
 pub(all) struct ValueFnState {
-}
+} derive(Default)
 pub fn ValueFnState::zero() -> Self
 
 pub(all) struct ValueObjState {

@@ -307,7 +307,7 @@ impl @component.Fields for IdState with fn decode(f) {
   let v_count = n_count.to_int()
   guard f.get("items") is Some(List(v_items)) else { return None }
   guard f.get("tags") is Some(Map(v_tags)) else { return None }
-  Some(IdState::{ title: v_title, count: v_count, items: v_items, tags: v_tags })
+  Some({ title: v_title, count: v_count, items: v_items, tags: v_tags })
 }
 
 ///|

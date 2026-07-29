@@ -33,7 +33,7 @@ pub(all) struct SchemaScalarState {
 ///
 ///   init={ ..SchemaScalarState::zero(), label: "Counter" }
 pub fn SchemaScalarState::zero() -> SchemaScalarState {
-  SchemaScalarState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -94,7 +94,7 @@ impl @component.Fields for SchemaScalarState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaScalarState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -273,7 +273,7 @@ pub(all) struct SchemaObjectState {
 ///
 ///   init={ ..SchemaObjectState::zero(), label: "Counter" }
 pub fn SchemaObjectState::zero() -> SchemaObjectState {
-  SchemaObjectState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -334,7 +334,7 @@ impl @component.Fields for SchemaObjectState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaObjectState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -513,7 +513,7 @@ pub(all) struct SchemaArrayState {
 ///
 ///   init={ ..SchemaArrayState::zero(), label: "Counter" }
 pub fn SchemaArrayState::zero() -> SchemaArrayState {
-  SchemaArrayState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -574,7 +574,7 @@ impl @component.Fields for SchemaArrayState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaArrayState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -753,7 +753,7 @@ pub(all) struct SchemaEnumState {
 ///
 ///   init={ ..SchemaEnumState::zero(), label: "Counter" }
 pub fn SchemaEnumState::zero() -> SchemaEnumState {
-  SchemaEnumState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -814,7 +814,7 @@ impl @component.Fields for SchemaEnumState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaEnumState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -991,7 +991,7 @@ pub(all) struct SchemaCombinatorState {
 ///
 ///   init={ ..SchemaCombinatorState::zero(), label: "Counter" }
 pub fn SchemaCombinatorState::zero() -> SchemaCombinatorState {
-  SchemaCombinatorState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -1052,7 +1052,7 @@ impl @component.Fields for SchemaCombinatorState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaCombinatorState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -1225,7 +1225,7 @@ pub(all) struct SchemaConstState {
 ///
 ///   init={ ..SchemaConstState::zero(), label: "Counter" }
 pub fn SchemaConstState::zero() -> SchemaConstState {
-  SchemaConstState::{ value: Null }
+  { value: Null }
 }
 
 ///|
@@ -1244,7 +1244,7 @@ impl @component.Fields for SchemaConstState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaConstState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some(SchemaConstState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -1294,7 +1294,7 @@ pub(all) struct SchemaConditionalState {
 ///
 ///   init={ ..SchemaConditionalState::zero(), label: "Counter" }
 pub fn SchemaConditionalState::zero() -> SchemaConditionalState {
-  SchemaConditionalState::{
+  {
     ifNode: Null,
     thenNode: Null,
     elseNode: Null,
@@ -1332,7 +1332,7 @@ impl @component.Fields for SchemaConditionalState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
   guard f.get("deprecated") is Some(Bool(v_deprecated)) else { return None }
-  Some(SchemaConditionalState::{
+  Some({
     ifNode: v_ifNode,
     thenNode: v_thenNode,
     elseNode: v_elseNode,
@@ -1391,7 +1391,7 @@ pub(all) struct SchemaNotState {
 ///
 ///   init={ ..SchemaNotState::zero(), label: "Counter" }
 pub fn SchemaNotState::zero() -> SchemaNotState {
-  SchemaNotState::{ child: Null }
+  { child: Null }
 }
 
 ///|
@@ -1410,7 +1410,7 @@ impl @component.Fields for SchemaNotState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaNotState with fn decode(f) {
   let v_child = f.get("child").unwrap_or(Null)
-  Some(SchemaNotState::{ child: v_child })
+  Some({ child: v_child })
 }
 
 ///|
@@ -1455,7 +1455,7 @@ pub(all) struct SchemaBooleanState {
 ///
 ///   init={ ..SchemaBooleanState::zero(), label: "Counter" }
 pub fn SchemaBooleanState::zero() -> SchemaBooleanState {
-  SchemaBooleanState::{ value: false }
+  { value: false }
 }
 
 ///|
@@ -1474,7 +1474,7 @@ impl @component.Fields for SchemaBooleanState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
-  Some(SchemaBooleanState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -1535,7 +1535,7 @@ pub(all) struct SchemaRefState {
 ///
 ///   init={ ..SchemaRefState::zero(), label: "Counter" }
 pub fn SchemaRefState::zero() -> SchemaRefState {
-  SchemaRefState::{ target: "" }
+  { target: "" }
 }
 
 ///|
@@ -1554,7 +1554,7 @@ impl @component.Fields for SchemaRefState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for SchemaRefState with fn decode(f) {
   guard f.get("target") is Some(Str(v_target)) else { return None }
-  Some(SchemaRefState::{ target: v_target })
+  Some({ target: v_target })
 }
 
 ///|

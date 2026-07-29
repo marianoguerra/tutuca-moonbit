@@ -31,7 +31,7 @@ pub(all) struct ComposabilityState {
 ///
 ///   init={ ..ComposabilityState::zero(), label: "Counter" }
 pub fn ComposabilityState::zero() -> ComposabilityState {
-  ComposabilityState::{
+  {
     activeSection: "",
     todo: Null,
     json: Null,
@@ -74,7 +74,7 @@ impl @component.Fields for ComposabilityState with fn decode(f) {
   let v_personalSite = f.get("personalSite").unwrap_or(Null)
   let v_visualWasm = f.get("visualWasm").unwrap_or(Null)
   let v_dnd = f.get("dnd").unwrap_or(Null)
-  Some(ComposabilityState::{
+  Some({
     activeSection: v_activeSection,
     todo: v_todo,
     json: v_json,

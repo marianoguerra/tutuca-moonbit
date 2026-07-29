@@ -121,14 +121,14 @@ priv struct Collect {
 ///|
 fn Collect::new() -> Collect {
   {
-    methods: @set.Set::Set([], capacity=8),
-    fields: @set.Set::Set([], capacity=8),
-    ids: @set.Set::Set([], capacity=8),
-    loop_ids: @set.Set::Set([], capacity=2),
-    whens: @set.Set::Set([], capacity=4),
-    enriches: @set.Set::Set([], capacity=4),
-    enrich_scopes: @set.Set::Set([], capacity=4),
-    loop_withs: @set.Set::Set([], capacity=4),
+    methods: Set([], capacity=8),
+    fields: Set([], capacity=8),
+    ids: Set([], capacity=8),
+    loop_ids: Set([], capacity=2),
+    whens: Set([], capacity=4),
+    enriches: Set([], capacity=4),
+    enrich_scopes: Set([], capacity=4),
+    loop_withs: Set([], capacity=4),
   }
 }
 

@@ -27,7 +27,7 @@ pub(all) struct DseRootState {
 ///
 ///   init={ ..DseRootState::zero(), label: "Counter" }
 pub fn DseRootState::zero() -> DseRootState {
-  DseRootState::{ items: Map([]), selectedKey: "", editor: Null }
+  { items: Map([]), selectedKey: "", editor: Null }
 }
 
 ///|
@@ -64,11 +64,7 @@ impl @component.Fields for DseRootState with fn decode(f) {
   }
   guard f.get("selectedKey") is Some(Str(v_selectedKey)) else { return None }
   let v_editor = f.get("editor").unwrap_or(Null)
-  Some(DseRootState::{
-    items: v_items,
-    selectedKey: v_selectedKey,
-    editor: v_editor,
-  })
+  Some({ items: v_items, selectedKey: v_selectedKey, editor: v_editor })
 }
 
 ///|
@@ -165,7 +161,7 @@ pub(all) struct DseEditorState {
 ///
 ///   init={ ..DseEditorState::zero(), label: "Counter" }
 pub fn DseEditorState::zero() -> DseEditorState {
-  DseEditorState::{ missing: Null }
+  { missing: Null }
 }
 
 ///|
@@ -184,7 +180,7 @@ impl @component.Fields for DseEditorState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DseEditorState with fn decode(f) {
   let v_missing = f.get("missing").unwrap_or(Null)
-  Some(DseEditorState::{ missing: v_missing })
+  Some({ missing: v_missing })
 }
 
 ///|
@@ -229,7 +225,7 @@ pub(all) struct DseEntryState {
 ///
 ///   init={ ..DseEntryState::zero(), label: "Counter" }
 pub fn DseEntryState::zero() -> DseEntryState {
-  DseEntryState::{ name: "" }
+  { name: "" }
 }
 
 ///|
@@ -248,7 +244,7 @@ impl @component.Fields for DseEntryState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DseEntryState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some(DseEntryState::{ name: v_name })
+  Some({ name: v_name })
 }
 
 ///|

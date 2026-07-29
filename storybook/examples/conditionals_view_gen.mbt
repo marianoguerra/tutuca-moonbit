@@ -25,7 +25,7 @@ pub(all) struct TrafficLightState {
 ///
 ///   init={ ..TrafficLightState::zero(), label: "Counter" }
 pub fn TrafficLightState::zero() -> TrafficLightState {
-  TrafficLightState::{ lightIndex: 0 }
+  { lightIndex: 0 }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for TrafficLightState with fn encode(s) {
 impl @component.Fields for TrafficLightState with fn decode(f) {
   guard f.get("lightIndex") is Some(Num(t1_lightIndex)) else { return None }
   let v_lightIndex = t1_lightIndex.to_int()
-  Some(TrafficLightState::{ lightIndex: v_lightIndex })
+  Some({ lightIndex: v_lightIndex })
 }
 
 ///|
@@ -154,7 +154,7 @@ pub(all) struct TabbedUIState {
 ///
 ///   init={ ..TabbedUIState::zero(), label: "Counter" }
 pub fn TabbedUIState::zero() -> TabbedUIState {
-  TabbedUIState::{ tab: "" }
+  { tab: "" }
 }
 
 ///|
@@ -173,7 +173,7 @@ impl @component.Fields for TabbedUIState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for TabbedUIState with fn decode(f) {
   guard f.get("tab") is Some(Str(v_tab)) else { return None }
-  Some(TabbedUIState::{ tab: v_tab })
+  Some({ tab: v_tab })
 }
 
 ///|
@@ -268,7 +268,7 @@ pub(all) struct ListAndFilterState {
 ///
 ///   init={ ..ListAndFilterState::zero(), label: "Counter" }
 pub fn ListAndFilterState::zero() -> ListAndFilterState {
-  ListAndFilterState::{ items: [], query: "" }
+  { items: [], query: "" }
 }
 
 ///|
@@ -297,7 +297,7 @@ impl @component.Fields for ListAndFilterState with fn decode(f) {
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some(ListAndFilterState::{ items: v_items, query: v_query })
+  Some({ items: v_items, query: v_query })
 }
 
 ///|

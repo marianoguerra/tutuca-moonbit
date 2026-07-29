@@ -29,7 +29,7 @@ pub(all) struct InstanceFieldsState {
 ///
 ///   init={ ..InstanceFieldsState::zero(), label: "Counter" }
 pub fn InstanceFieldsState::zero() -> InstanceFieldsState {
-  InstanceFieldsState::{
+  {
     items: [],
     isExpanded: false,
     itemsPerPage: 0,
@@ -72,7 +72,7 @@ impl @component.Fields for InstanceFieldsState with fn decode(f) {
   guard f.get("currentPage") is Some(Num(t1_currentPage)) else { return None }
   let v_currentPage = t1_currentPage.to_int()
   guard f.get("typeName") is Some(Str(v_typeName)) else { return None }
-  Some(InstanceFieldsState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -235,7 +235,7 @@ pub(all) struct InstanceInspectorState {
 ///
 ///   init={ ..InstanceInspectorState::zero(), label: "Counter" }
 pub fn InstanceInspectorState::zero() -> InstanceInspectorState {
-  InstanceInspectorState::{ value: Null }
+  { value: Null }
 }
 
 ///|
@@ -254,7 +254,7 @@ impl @component.Fields for InstanceInspectorState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for InstanceInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some(InstanceInspectorState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -302,7 +302,7 @@ pub(all) struct InstanceExplorerState {
 ///
 ///   init={ ..InstanceExplorerState::zero(), label: "Counter" }
 pub fn InstanceExplorerState::zero() -> InstanceExplorerState {
-  InstanceExplorerState::{
+  {
     activeTab: "",
     instanceView: Null,
     componentView: Null,
@@ -334,7 +334,7 @@ impl @component.Fields for InstanceExplorerState with fn decode(f) {
   let v_instanceView = f.get("instanceView").unwrap_or(Null)
   let v_componentView = f.get("componentView").unwrap_or(Null)
   guard f.get("hasComponent") is Some(Bool(v_hasComponent)) else { return None }
-  Some(InstanceExplorerState::{
+  Some({
     activeTab: v_activeTab,
     instanceView: v_instanceView,
     componentView: v_componentView,

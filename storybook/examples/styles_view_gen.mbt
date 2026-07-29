@@ -13,7 +13,7 @@
 /// Declared as `interface styles-example` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct StylesExampleState {}
+pub(all) struct StylesExampleState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -23,7 +23,7 @@ pub(all) struct StylesExampleState {}
 ///
 ///   init={ ..StylesExampleState::zero(), label: "Counter" }
 pub fn StylesExampleState::zero() -> StylesExampleState {
-  StylesExampleState::{  }
+  StylesExampleState::default()
 }
 
 ///|
@@ -41,7 +41,7 @@ impl @component.Fields for StylesExampleState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleState with fn decode(_f) {
-  Some(StylesExampleState::{  })
+  Some(StylesExampleState::default())
 }
 
 ///|
@@ -89,7 +89,7 @@ pub(all) struct StylesExampleRootState {
 ///
 ///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
 pub fn StylesExampleRootState::zero() -> StylesExampleRootState {
-  StylesExampleRootState::{ value: Null }
+  { value: Null }
 }
 
 ///|
@@ -108,7 +108,7 @@ impl @component.Fields for StylesExampleRootState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StylesExampleRootState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some(StylesExampleRootState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|

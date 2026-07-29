@@ -26,7 +26,7 @@ pub(all) struct EmojiPickerState {
 ///
 ///   init={ ..EmojiPickerState::zero(), label: "Counter" }
 pub fn EmojiPickerState::zero() -> EmojiPickerState {
-  EmojiPickerState::{ current: Null, isPickerVisible: false }
+  { current: Null, isPickerVisible: false }
 }
 
 ///|
@@ -48,10 +48,7 @@ impl @component.Fields for EmojiPickerState with fn decode(f) {
   guard f.get("isPickerVisible") is Some(Bool(v_isPickerVisible)) else {
     return None
   }
-  Some(EmojiPickerState::{
-    current: v_current,
-    isPickerVisible: v_isPickerVisible,
-  })
+  Some({ current: v_current, isPickerVisible: v_isPickerVisible })
 }
 
 ///|

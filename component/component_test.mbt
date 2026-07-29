@@ -101,12 +101,12 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
 }
 
 ///|
-priv struct NoFields {}
+priv struct NoFields {} derive(Default)
 
 ///|
 /// A component whose only field is a closed set the STRUCT does not hold —
 /// declared, so its members are its default.
-priv struct FacetsOnly {}
+priv struct FacetsOnly {} derive(Default)
 
 ///|
 priv struct OMapInState {
@@ -115,7 +115,7 @@ priv struct OMapInState {
 
 ///|
 /// A parent whose only field is a child-component slot.
-priv struct ParentWithKid {}
+priv struct ParentWithKid {} derive(Default)
 
 ///|
 test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
@@ -697,7 +697,7 @@ impl @component.Fields for TodoState with fn decode(f) {
   let v_count = n_count.to_int()
   guard f.get("items") is Some(List(v_items)) else { return None }
   guard f.get("tags") is Some(Map(v_tags)) else { return None }
-  Some(TodoState::{
+  Some({
     title: v_title,
     done: v_done,
     count: v_count,
@@ -713,7 +713,7 @@ impl @component.Fields for NoFields with fn encode(_s) {
 
 ///|
 impl @component.Fields for NoFields with fn decode(_f) {
-  Some(NoFields::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -736,7 +736,7 @@ impl @component.Fields for SetInState with fn decode(f) {
   for k2, x in m_sel {
     v_sel[k2] = x is Bool(true)
   }
-  Some(SetInState::{ sel: v_sel })
+  Some({ sel: v_sel })
 }
 
 ///|
@@ -748,7 +748,7 @@ impl @component.Fields for CountOnly with fn encode(s) {
 impl @component.Fields for CountOnly with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
-  Some(CountOnly::{ count: v_count })
+  Some({ count: v_count })
 }
 
 ///|
@@ -759,7 +759,7 @@ impl @component.Fields for TitleOnly with fn encode(s) {
 ///|
 impl @component.Fields for TitleOnly with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some(TitleOnly::{ title: v_title })
+  Some({ title: v_title })
 }
 
 ///|
@@ -770,7 +770,7 @@ impl @component.Fields for LabelOnly with fn encode(s) {
 ///|
 impl @component.Fields for LabelOnly with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(LabelOnly::{ label: v_label })
+  Some({ label: v_label })
 }
 
 ///|
@@ -781,7 +781,7 @@ impl @component.Fields for StashedState with fn encode(s) {
 ///|
 impl @component.Fields for StashedState with fn decode(f) {
   guard f.get("items") is Some(List(v_items)) else { return None }
-  Some(StashedState::{ items: v_items })
+  Some({ items: v_items })
 }
 
 ///|
@@ -792,7 +792,7 @@ impl @component.Fields for FilterState with fn encode(s) {
 ///|
 impl @component.Fields for FilterState with fn decode(f) {
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some(FilterState::{ query: v_query })
+  Some({ query: v_query })
 }
 
 ///|
@@ -803,7 +803,7 @@ impl @component.Fields for SwapAState with fn encode(s) {
 ///|
 impl @component.Fields for SwapAState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(SwapAState::{ label: v_label })
+  Some({ label: v_label })
 }
 
 ///|
@@ -814,7 +814,7 @@ impl @component.Fields for SwapBState with fn encode(s) {
 ///|
 impl @component.Fields for SwapBState with fn decode(f) {
   guard f.get("note") is Some(Str(v_note)) else { return None }
-  Some(SwapBState::{ note: v_note })
+  Some({ note: v_note })
 }
 
 ///|
@@ -847,7 +847,7 @@ impl @component.Fields for ParentWithKid with fn encode(_s) {
 
 ///|
 impl @component.Fields for ParentWithKid with fn decode(_f) {
-  Some(ParentWithKid::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -864,7 +864,7 @@ impl @component.Fields for FacetsOnly with fn encode(_s) {
 
 ///|
 impl @component.Fields for FacetsOnly with fn decode(_f) {
-  Some(FacetsOnly::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -882,7 +882,7 @@ impl @component.Fields for OMapInState with fn encode(s) {
 ///|
 impl @component.Fields for OMapInState with fn decode(f) {
   guard f.get("m") is Some(Map(m)) else { return None }
-  Some(OMapInState::{ m, })
+  Some({ m, })
 }
 
 ///|

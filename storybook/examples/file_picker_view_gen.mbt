@@ -29,13 +29,7 @@ pub(all) struct FilePickerState {
 ///
 ///   init={ ..FilePickerState::zero(), label: "Counter" }
 pub fn FilePickerState::zero() -> FilePickerState {
-  FilePickerState::{
-    name: "",
-    size: 0.0,
-    type_: "",
-    lastModified: 0.0,
-    hasFile: false,
-  }
+  { name: "", size: 0.0, type_: "", lastModified: 0.0, hasFile: false }
 }
 
 ///|
@@ -64,7 +58,7 @@ impl @component.Fields for FilePickerState with fn decode(f) {
   guard f.get("type") is Some(Str(v_type_)) else { return None }
   guard f.get("lastModified") is Some(Num(v_lastModified)) else { return None }
   guard f.get("hasFile") is Some(Bool(v_hasFile)) else { return None }
-  Some(FilePickerState::{
+  Some({
     name: v_name,
     size: v_size,
     type_: v_type_,

@@ -221,7 +221,7 @@ impl @component.Fields for EditorState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
   guard f.get("count") is Some(Num(n_count)) else { return None }
   let v_count = n_count.to_int()
-  Some(EditorState::{ text: v_text, count: v_count })
+  Some({ text: v_text, count: v_count })
 }
 
 ///|
@@ -241,7 +241,7 @@ impl @component.Fields for PickerState with fn decode(f) {
     v_items.push(s)
   }
   guard f.get("picked") is Some(Str(v_picked)) else { return None }
-  Some(PickerState::{ items: v_items, picked: v_picked })
+  Some({ items: v_items, picked: v_picked })
 }
 
 ///|
@@ -253,7 +253,7 @@ impl @component.Fields for ChattyState with fn encode(s) {
 impl @component.Fields for ChattyState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
-  Some(ChattyState::{ n: v_n })
+  Some({ n: v_n })
 }
 
 ///|

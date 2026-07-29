@@ -6,7 +6,7 @@
 
 ///|
 fn tree_repr(node : @anode.ANode) -> String {
-  @debug.render(to_repr(node))
+  @debug.render(Repr(node))
 }
 
 ///|
@@ -34,7 +34,7 @@ test "a hand-built tree is the parsed tree" {
   // The event table the same markup registers, rebuilt from its positions.
   assert_eq(
     @debug.render(
-      to_repr(
+      Repr(
         @anode.events_of([
           [
             @anode.on("click", HandlerName(name="add", ns=Input), args=[
@@ -45,7 +45,7 @@ test "a hand-built tree is the parsed tree" {
         ]),
       ),
     ),
-    @debug.render(to_repr(px.events)),
+    @debug.render(Repr(px.events)),
   )
 }
 

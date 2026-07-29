@@ -14,7 +14,7 @@
 ///|
 /// A state with every schema shape populated, and `note` set.
 fn ns_full() -> NestedStateState {
-  NestedStateState::{
+  {
     title: "t",
     labels: [{ text: "a", done: true }, { text: "b", done: false }],
     priority: High,
@@ -28,7 +28,7 @@ fn ns_full() -> NestedStateState {
 /// The same, in its zero-ish shape: the payload-free variant case, and `note`
 /// unset — the one field whose encoding is its ABSENCE.
 fn ns_empty() -> NestedStateState {
-  NestedStateState::{
+  {
     title: "",
     labels: [],
     priority: Low,
@@ -91,18 +91,18 @@ test "nested state: decode rebuilds the typed values" {
   )
   guard round is Some(s) else { fail("decode rejected its own encoding") }
   @debug.assert_eq(s.labels, [
-    NestedStateLabel::{ text: "a", done: true },
-    NestedStateLabel::{ text: "b", done: false },
+    { text: "a", done: true },
+    { text: "b", done: false },
   ])
-  @debug.assert_eq(s.priority, NestedStatePriority::High)
-  @debug.assert_eq(s.due, NestedStateDue::OnDay(3))
+  @debug.assert_eq(s.priority, High)
+  @debug.assert_eq(s.due, OnDay(3))
   @debug.assert_eq(s.note, Some("n"))
   @debug.assert_eq(s.size, (2, 5))
   let empty : NestedStateState? = @component.Fields::decode(
     @component.Fields::encode(ns_empty()),
   )
   guard empty is Some(e) else { fail("decode rejected the zero-ish encoding") }
-  @debug.assert_eq(e.due, NestedStateDue::Unscheduled)
+  @debug.assert_eq(e.due, Unscheduled)
   @debug.assert_eq(e.note, None)
 }
 

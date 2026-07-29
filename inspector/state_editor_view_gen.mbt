@@ -32,7 +32,7 @@ pub(all) struct StateEditorRowState {
 ///
 ///   init={ ..StateEditorRowState::zero(), label: "Counter" }
 pub fn StateEditorRowState::zero() -> StateEditorRowState {
-  StateEditorRowState::{
+  {
     name: "",
     type_: "",
     kind: "",
@@ -76,7 +76,7 @@ impl @component.Fields for StateEditorRowState with fn decode(f) {
   guard f.get("flag") is Some(Bool(v_flag)) else { return None }
   guard f.get("readonly") is Some(Str(v_readonly_)) else { return None }
   guard f.get("editable") is Some(Bool(v_editable)) else { return None }
-  Some(StateEditorRowState::{
+  Some({
     name: v_name,
     type_: v_type_,
     kind: v_kind,
@@ -191,7 +191,7 @@ pub(all) struct StateEditorState {
 ///
 ///   init={ ..StateEditorState::zero(), label: "Counter" }
 pub fn StateEditorState::zero() -> StateEditorState {
-  StateEditorState::{ target: Null, rows: [], name: "" }
+  { target: Null, rows: [], name: "" }
 }
 
 ///|
@@ -222,7 +222,7 @@ impl @component.Fields for StateEditorState with fn decode(f) {
     v_rows.push(x1_rows)
   }
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some(StateEditorState::{ target: v_target, rows: v_rows, name: v_name })
+  Some({ target: v_target, rows: v_rows, name: v_name })
 }
 
 ///|

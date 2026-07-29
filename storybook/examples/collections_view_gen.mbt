@@ -25,7 +25,7 @@ pub(all) struct RenderWithScopeState {
 ///
 ///   init={ ..RenderWithScopeState::zero(), label: "Counter" }
 pub fn RenderWithScopeState::zero() -> RenderWithScopeState {
-  RenderWithScopeState::{ text: "" }
+  { text: "" }
 }
 
 ///|
@@ -44,7 +44,7 @@ impl @component.Fields for RenderWithScopeState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for RenderWithScopeState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
-  Some(RenderWithScopeState::{ text: v_text })
+  Some({ text: v_text })
 }
 
 ///|
@@ -155,7 +155,7 @@ pub(all) struct ListFilterEnrichState {
 ///
 ///   init={ ..ListFilterEnrichState::zero(), label: "Counter" }
 pub fn ListFilterEnrichState::zero() -> ListFilterEnrichState {
-  ListFilterEnrichState::{ items: [], query: "" }
+  { items: [], query: "" }
 }
 
 ///|
@@ -184,7 +184,7 @@ impl @component.Fields for ListFilterEnrichState with fn decode(f) {
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some(ListFilterEnrichState::{ items: v_items, query: v_query })
+  Some({ items: v_items, query: v_query })
 }
 
 ///|
@@ -315,7 +315,7 @@ pub(all) struct ListFilterEnrichWithState {
 ///
 ///   init={ ..ListFilterEnrichWithState::zero(), label: "Counter" }
 pub fn ListFilterEnrichWithState::zero() -> ListFilterEnrichWithState {
-  ListFilterEnrichWithState::{ items: [], query: "" }
+  { items: [], query: "" }
 }
 
 ///|
@@ -344,7 +344,7 @@ impl @component.Fields for ListFilterEnrichWithState with fn decode(f) {
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some(ListFilterEnrichWithState::{ items: v_items, query: v_query })
+  Some({ items: v_items, query: v_query })
 }
 
 ///|

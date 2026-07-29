@@ -285,32 +285,40 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
     TOption(_) => "None"
     TTuple(ts) => "(" + ts.map(t => self.zero_expr(t)).join(", ") + ")"
     TFlags(_) | TSet | TOMap(_) => "Map([])"
+    // Every zero lands in a position whose type is already known — a field of
+    // the generated state struct, or a field of another zero — so none of
+    // these names itself. MoonBit resolves a constructor against the expected
+    // type, so two enums in one module both declaring `low` stay unambiguous,
+    // and naming them anyway is the `unnecessary_annotation` `check` turns on.
     TEnum(n) =>
       match self.user_ty(n) {
         // The first case is the zero: WIT enums are ordered, and an enum
         // with no cases cannot be declared.
-        Some({ name, kind: UEnum(cs), .. }) if !cs.is_empty() =>
-          name + "::" + cs[0].1
+        Some({ kind: UEnum(cs), .. }) if !cs.is_empty() => cs[0].1
         _ => "Null"
       }
     TRecord(n) =>
       match self.user_ty(n) {
+        // An empty record declares no MoonBit type (emit_user_types skips it
+        // as a transparent alias), so there is nothing to build; a bare `{}`
+        // would be an empty Map rather than a struct.
         Some({ name, kind: URecord(fs), .. }) =>
-          name +
-          "::{ " +
-          fs.map(f => f.binding + ": " + self.zero_expr(f.ty)).join(", ") +
-          " }"
+          if fs.is_empty() {
+            name + "::{  }"
+          } else {
+            "{ " +
+            fs.map(f => f.binding + ": " + self.zero_expr(f.ty)).join(", ") +
+            " }"
+          }
         _ => "Null"
       }
     TVariant(n) =>
       match self.user_ty(n) {
-        Some({ name, kind: UVariant(cs), .. }) if !cs.is_empty() => {
+        Some({ kind: UVariant(cs), .. }) if !cs.is_empty() => {
           let c = cs[0]
           if c.payload.is_empty() {
-            name + "::" + c.variant
+            c.variant
           } else {
-            name +
-            "::" +
             c.variant +
             "(" +
             c.payload.map(p => self.zero_expr(p)).join(", ") +

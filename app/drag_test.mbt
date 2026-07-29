@@ -130,12 +130,7 @@ impl @component.Fields for BoardState with fn decode(f) {
   guard f.get("received") is Some(Str(v_received)) else { return None }
   guard f.get("from") is Some(Str(v_from)) else { return None }
   guard f.get("kind") is Some(Str(v_kind)) else { return None }
-  Some(BoardState::{
-    cards: v_cards,
-    received: v_received,
-    from: v_from,
-    kind: v_kind,
-  })
+  Some({ cards: v_cards, received: v_received, from: v_from, kind: v_kind })
 }
 
 ///|

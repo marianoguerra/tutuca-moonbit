@@ -26,7 +26,7 @@ pub(all) struct AltUrlState {
 ///
 ///   init={ ..AltUrlState::zero(), label: "Counter" }
 pub fn AltUrlState::zero() -> AltUrlState {
-  AltUrlState::{ label: "", url: "" }
+  { label: "", url: "" }
 }
 
 ///|
@@ -46,7 +46,7 @@ impl @component.Fields for AltUrlState with fn encode(s) {
 impl @component.Fields for AltUrlState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   guard f.get("url") is Some(Str(v_url)) else { return None }
-  Some(AltUrlState::{ label: v_label, url: v_url })
+  Some({ label: v_label, url: v_url })
 }
 
 ///|
@@ -103,7 +103,7 @@ pub(all) struct PsEntryState {
 ///
 ///   init={ ..PsEntryState::zero(), label: "Counter" }
 pub fn PsEntryState::zero() -> PsEntryState {
-  PsEntryState::{
+  {
     title: "",
     description: "",
     lang: "",
@@ -165,7 +165,7 @@ impl @component.Fields for PsEntryState with fn decode(f) {
     let x1_categories = e1_categories
     v_categories.push(x1_categories)
   }
-  Some(PsEntryState::{
+  Some({
     title: v_title,
     description: v_description,
     lang: v_lang,
@@ -270,7 +270,7 @@ pub(all) struct RootState {
 ///
 ///   init={ ..RootState::zero(), label: "Counter" }
 pub fn RootState::zero() -> RootState {
-  RootState::{
+  {
     allEntries: [],
     allCategories: [],
     allRoles: [],
@@ -358,7 +358,7 @@ impl @component.Fields for RootState with fn decode(f) {
   }
   guard f.get("sortByEnd") is Some(Bool(v_sortByEnd)) else { return None }
   guard f.get("sortAsc") is Some(Bool(v_sortAsc)) else { return None }
-  Some(RootState::{
+  Some({
     allEntries: v_allEntries,
     allCategories: v_allCategories,
     allRoles: v_allRoles,

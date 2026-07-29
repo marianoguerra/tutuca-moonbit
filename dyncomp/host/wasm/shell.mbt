@@ -112,7 +112,7 @@ impl @component.Fields for ShellState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   let v_slot = f.get("slot").unwrap_or(Null)
   let v_pair = f.get("pair").unwrap_or(Null)
-  Some(ShellState::{ status: v_status, slot: v_slot, pair: v_pair })
+  Some({ status: v_status, slot: v_slot, pair: v_pair })
 }
 
 ///|

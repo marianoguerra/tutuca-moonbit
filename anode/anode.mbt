@@ -75,7 +75,7 @@ fn ANode::wrap_node(self : ANode, node : ANode) -> Unit {
     }
     Slot(d) => d.node = node
     Each(d) => d.node = node
-    _ => @tutuca.warn("wrap_node not supported for \{to_repr(self)}")
+    _ => @tutuca.warn("wrap_node not supported for \{Repr(self)}")
   }
 }
 
@@ -108,7 +108,7 @@ priv struct MacroCallRepr {
 
 ///|
 pub impl Debug for MacroData with fn to_repr(self) {
-  to_repr(MacroCallRepr::{
+  Repr(MacroCallRepr::{
     name: self.name,
     attrs: self.attrs,
     slots: self.slots,

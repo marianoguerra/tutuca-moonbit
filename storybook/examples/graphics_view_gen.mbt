@@ -26,7 +26,7 @@ pub(all) struct SwatchPickerState {
 ///
 ///   init={ ..SwatchPickerState::zero(), label: "Counter" }
 pub fn SwatchPickerState::zero() -> SwatchPickerState {
-  SwatchPickerState::{ color: "", palette: [] }
+  { color: "", palette: [] }
 }
 
 ///|
@@ -55,7 +55,7 @@ impl @component.Fields for SwatchPickerState with fn decode(f) {
     let x1_palette = e1_palette
     v_palette.push(x1_palette)
   }
-  Some(SwatchPickerState::{ color: v_color, palette: v_palette })
+  Some({ color: v_color, palette: v_palette })
 }
 
 ///|
@@ -168,7 +168,7 @@ pub(all) struct QuadraticState {
 ///
 ///   init={ ..QuadraticState::zero(), label: "Counter" }
 pub fn QuadraticState::zero() -> QuadraticState {
-  QuadraticState::{ a: 0, b: 0, c: 0 }
+  { a: 0, b: 0, c: 0 }
 }
 
 ///|
@@ -196,7 +196,7 @@ impl @component.Fields for QuadraticState with fn decode(f) {
   let v_b = t1_b.to_int()
   guard f.get("c") is Some(Num(t1_c)) else { return None }
   let v_c = t1_c.to_int()
-  Some(QuadraticState::{ a: v_a, b: v_b, c: v_c })
+  Some({ a: v_a, b: v_b, c: v_c })
 }
 
 ///|

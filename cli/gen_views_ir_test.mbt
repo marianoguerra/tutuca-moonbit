@@ -266,7 +266,7 @@ impl @component.Fields for IrState with fn decode(f) {
     guard x is Num(n) else { return None }
     v_history.push(n.to_int())
   }
-  Some(IrState::{ label: v_label, count: v_count, history: v_history })
+  Some({ label: v_label, count: v_count, history: v_history })
 }
 
 ///|
@@ -277,7 +277,7 @@ impl @component.Fields for BadgeState with fn encode(s) {
 ///|
 impl @component.Fields for BadgeState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some(BadgeState::{ title: v_title })
+  Some({ title: v_title })
 }
 
 ///|

@@ -10,16 +10,15 @@
 /// `schema_viewer_component` are generated from it.
 fn schema_viewer_comp() -> @component.Component {
   schema_viewer_component(
-    init=SchemaViewerState::{
-      value: Null,
-      raw: Null,
-      rawSchema: Null,
-      showRaw: false,
-    },
-    // A raw `match msg`: `toggleIsExpanded` is raised inside the rendered
-    // child, so no view of THIS component declares it and SchemaViewerMsg
-    // cannot type it.
-    update=(s, msg, _ctx) => {
+    init={ value: Null, raw: Null, rawSchema: Null, showRaw: false },
+    update=(
+      // A raw `match msg`: `toggleIsExpanded` is raised inside the rendered
+      // child, so no view of THIS component declares it and SchemaViewerMsg
+      // cannot type it.
+      s,
+      msg,
+      _ctx,
+    ) => {
       match msg {
         Input("toggleIsExpanded", _) =>
           Some({ ..s, value: toggle_wrapped(s.value) })

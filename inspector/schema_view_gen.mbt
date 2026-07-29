@@ -27,7 +27,7 @@ pub(all) struct SchemaPropertyState {
 ///
 ///   init={ ..SchemaPropertyState::zero(), label: "Counter" }
 pub fn SchemaPropertyState::zero() -> SchemaPropertyState {
-  SchemaPropertyState::{ key: "", child: Null, required: false }
+  { key: "", child: Null, required: false }
 }
 
 ///|
@@ -48,7 +48,7 @@ impl @component.Fields for SchemaPropertyState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   guard f.get("required") is Some(Bool(v_required)) else { return None }
-  Some(SchemaPropertyState::{ key: v_key, child: v_child, required: v_required })
+  Some({ key: v_key, child: v_child, required: v_required })
 }
 
 ///|
@@ -99,7 +99,7 @@ pub(all) struct SchemaBranchState {
 ///
 ///   init={ ..SchemaBranchState::zero(), label: "Counter" }
 pub fn SchemaBranchState::zero() -> SchemaBranchState {
-  SchemaBranchState::{ label: "", child: Null, labelClass: "" }
+  { label: "", child: Null, labelClass: "" }
 }
 
 ///|
@@ -120,11 +120,7 @@ impl @component.Fields for SchemaBranchState with fn decode(f) {
   guard f.get("label") is Some(Str(v_label)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
   guard f.get("labelClass") is Some(Str(v_labelClass)) else { return None }
-  Some(SchemaBranchState::{
-    label: v_label,
-    child: v_child,
-    labelClass: v_labelClass,
-  })
+  Some({ label: v_label, child: v_child, labelClass: v_labelClass })
 }
 
 ///|

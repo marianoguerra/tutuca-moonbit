@@ -51,11 +51,11 @@ pub(all) struct NestedStateState {
 ///
 ///   init={ ..NestedStateState::zero(), label: "Counter" }
 pub fn NestedStateState::zero() -> NestedStateState {
-  NestedStateState::{
+  {
     title: "",
     labels: [],
-    priority: NestedStatePriority::Low,
-    due: NestedStateDue::Unscheduled,
+    priority: Low,
+    due: Unscheduled,
     note: None,
     size: (0, 0),
   }
@@ -106,7 +106,7 @@ fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
   guard v is Map(m) else { return None }
   guard m.get("text") is Some(Str(f_text)) else { return None }
   guard m.get("done") is Some(Bool(f_done)) else { return None }
-  Some(NestedStateLabel::{ text: f_text, done: f_done })
+  Some({ text: f_text, done: f_done })
 }
 
 ///|
@@ -187,7 +187,7 @@ impl @component.Fields for NestedStateState with fn decode(f) {
   guard u1_size.get(1) is Some(Num(t1_1_size)) else { return None }
   let e1_size = t1_1_size.to_int()
   let v_size = (e0_size, e1_size)
-  Some(NestedStateState::{
+  Some({
     title: v_title,
     labels: v_labels,
     priority: v_priority,

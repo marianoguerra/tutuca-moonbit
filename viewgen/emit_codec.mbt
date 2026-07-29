@@ -95,7 +95,9 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
             ),
           )
         }
-        out.write_string("  Some(\{ty.name}::{\n")
+        // `\{ty.name}?` return type, so the name is inferable — see the state
+        // decoder for why spelling it is a warning.
+        out.write_string("  Some({\n")
         for f in fields {
           out.write_string("    \{f.binding}: f_\{f.binding},\n")
         }
@@ -274,7 +276,15 @@ fn emit_codec(
       ),
     )
   }
-  out.write_string("  Some(\{t}State::{\n")
+  // `Some(...)` against a `\{t}State?` return type, so the struct name is
+  // inferable and spelling it is `unnecessary_annotation`. The field-less
+  // state has no usable literal at all (see `emit_state_struct`) and goes
+  // through its derived `default()`.
+  if carried.is_empty() {
+    out.write_string("  Some(\{t}State::default())\n}\n\n")
+    return
+  }
+  out.write_string("  Some({\n")
   for f in carried {
     out.write_string("    \{f.binding}: v_\{f.binding},\n")
   }

@@ -26,7 +26,7 @@ pub(all) struct StatusState {
 ///
 ///   init={ ..StatusState::zero(), label: "Counter" }
 pub fn StatusState::zero() -> StatusState {
-  StatusState::{ message: "", count: 0 }
+  { message: "", count: 0 }
 }
 
 ///|
@@ -47,7 +47,7 @@ impl @component.Fields for StatusState with fn decode(f) {
   guard f.get("message") is Some(Str(v_message)) else { return None }
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some(StatusState::{ message: v_message, count: v_count })
+  Some({ message: v_message, count: v_count })
 }
 
 ///|
@@ -96,7 +96,7 @@ pub(all) struct SendReceiveState {
 ///
 ///   init={ ..SendReceiveState::zero(), label: "Counter" }
 pub fn SendReceiveState::zero() -> SendReceiveState {
-  SendReceiveState::{ draft: "", status: Null }
+  { draft: "", status: Null }
 }
 
 ///|
@@ -116,7 +116,7 @@ impl @component.Fields for SendReceiveState with fn encode(s) {
 impl @component.Fields for SendReceiveState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
   let v_status = f.get("status").unwrap_or(Null)
-  Some(SendReceiveState::{ draft: v_draft, status: v_status })
+  Some({ draft: v_draft, status: v_status })
 }
 
 ///|
@@ -229,7 +229,7 @@ pub(all) struct TreeItemState {
 ///
 ///   init={ ..TreeItemState::zero(), label: "Counter" }
 pub fn TreeItemState::zero() -> TreeItemState {
-  TreeItemState::{ type_: "", label: "", isOpen: false, items: [] }
+  { type_: "", label: "", isOpen: false, items: [] }
 }
 
 ///|
@@ -262,12 +262,7 @@ impl @component.Fields for TreeItemState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some(TreeItemState::{
-    type_: v_type_,
-    label: v_label,
-    isOpen: v_isOpen,
-    items: v_items,
-  })
+  Some({ type_: v_type_, label: v_label, isOpen: v_isOpen, items: v_items })
 }
 
 ///|
@@ -380,7 +375,7 @@ pub(all) struct TreeRootState {
 ///
 ///   init={ ..TreeRootState::zero(), label: "Counter" }
 pub fn TreeRootState::zero() -> TreeRootState {
-  TreeRootState::{ log: [], root: Null }
+  { log: [], root: Null }
 }
 
 ///|
@@ -406,7 +401,7 @@ impl @component.Fields for TreeRootState with fn decode(f) {
     v_log.push(x1_log)
   }
   let v_root = f.get("root").unwrap_or(Null)
-  Some(TreeRootState::{ log: v_log, root: v_root })
+  Some({ log: v_log, root: v_root })
 }
 
 ///|

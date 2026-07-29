@@ -36,5 +36,5 @@ fn value_repr(v : Value) -> ValueRepr {
 
 ///|
 pub impl Debug for Value with fn to_repr(self) {
-  to_repr(value_repr(self))
+  Repr(value_repr(self))
 }

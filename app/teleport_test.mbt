@@ -49,10 +49,10 @@ priv struct TeleWorkspaceState {
 }
 
 ///|
-priv struct TeleSoloState {}
+priv struct TeleSoloState {} derive(Default)
 
 ///|
-priv struct TeleLonelyState {}
+priv struct TeleLonelyState {} derive(Default)
 
 ///|
 priv struct SeenState {
@@ -95,7 +95,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     init=TelePanelState::{ seen: false },
     update=(_s, msg, _ctx) => {
       match msg {
-        Bubble("sheet-poked", _) => Some(TelePanelState::{ seen: true })
+        Bubble("sheet-poked", _) => Some({ seen: true })
         _ => None
       }
     },
@@ -112,7 +112,7 @@ fn teleport_scope() -> @component.ComponentStack raise {
     provide={ "active": ".sheet" },
     update=(_s, msg, _ctx) => {
       match msg {
-        Bubble("sheet-poked", _) => Some(TeleWorkspaceState::{ seen: true })
+        Bubble("sheet-poked", _) => Some({ seen: true })
         _ => None
       }
     },
@@ -392,7 +392,7 @@ test "lookup default: a consumer without its producer falls back" {
 }
 
 ///|
-priv struct NoState {}
+priv struct NoState {} derive(Default)
 
 ///|
 priv struct RowsState {
@@ -413,7 +413,7 @@ impl @component.Fields for SheetState with fn encode(s) {
 ///|
 impl @component.Fields for SheetState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
-  Some(SheetState::{ title: v_title })
+  Some({ title: v_title })
 }
 
 ///|
@@ -424,7 +424,7 @@ impl @component.Fields for SeenState with fn encode(s) {
 ///|
 impl @component.Fields for SeenState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v_seen)) else { return None }
-  Some(SeenState::{ seen: v_seen })
+  Some({ seen: v_seen })
 }
 
 ///|
@@ -434,7 +434,7 @@ impl @component.Fields for NoState with fn encode(_s) {
 
 ///|
 impl @component.Fields for NoState with fn decode(_f) {
-  Some(NoState::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -445,7 +445,7 @@ impl @component.Fields for RowsState with fn encode(s) {
 ///|
 impl @component.Fields for RowsState with fn decode(f) {
   guard f.get("rows") is Some(Map(v_rows)) else { return None }
-  Some(RowsState::{ rows: v_rows })
+  Some({ rows: v_rows })
 }
 
 ///|
@@ -457,7 +457,7 @@ impl @component.Fields for DeckState with fn encode(s) {
 impl @component.Fields for DeckState with fn decode(f) {
   guard f.get("sheets") is Some(Map(v_sheets)) else { return None }
   guard f.get("selId") is Some(Str(v_selId)) else { return None }
-  Some(DeckState::{ sheets: v_sheets, selId: v_selId })
+  Some({ sheets: v_sheets, selId: v_selId })
 }
 
 ///|
@@ -490,7 +490,7 @@ impl @component.Fields for TelePanelState with fn encode(s) {
 ///|
 impl @component.Fields for TelePanelState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
-  Some(TelePanelState::{ seen: v })
+  Some({ seen: v })
 }
 
 ///|
@@ -510,7 +510,7 @@ impl @component.Fields for TeleWorkspaceState with fn encode(s) {
 ///|
 impl @component.Fields for TeleWorkspaceState with fn decode(f) {
   guard f.get("seen") is Some(Bool(v)) else { return None }
-  Some(TeleWorkspaceState::{ seen: v })
+  Some({ seen: v })
 }
 
 ///|
@@ -527,7 +527,7 @@ impl @component.Fields for TeleSoloState with fn encode(_s) {
 
 ///|
 impl @component.Fields for TeleSoloState with fn decode(_f) {
-  Some(TeleSoloState::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -544,7 +544,7 @@ impl @component.Fields for TeleLonelyState with fn encode(_s) {
 
 ///|
 impl @component.Fields for TeleLonelyState with fn decode(_f) {
-  Some(TeleLonelyState::{  })
+  Some(Default::default())
 }
 
 ///|

@@ -5,7 +5,7 @@
 
 ///|
 fn empty_root() -> @tutuca.Value {
-  @tutuca.Value::Map(Map([]))
+  Map(Map([]))
 }
 
 ///|

@@ -455,7 +455,7 @@ impl @component.Fields for TestShellState with fn encode(s) {
 impl @component.Fields for TestShellState with fn decode(f) {
   let v_slot = f.get("slot").unwrap_or(Null)
   guard f.get("note") is Some(Str(v_note)) else { return None }
-  Some(TestShellState::{ slot: v_slot, note: v_note })
+  Some({ slot: v_slot, note: v_note })
 }
 
 ///|

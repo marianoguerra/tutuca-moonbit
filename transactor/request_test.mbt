@@ -16,7 +16,7 @@ fn rsheet(title : String) -> @tutuca.Value {
 ///|
 impl @tutuca.Obj for RSheet with fn obj_field(self, name) {
   match name {
-    "title" => Some(@tutuca.Value::Str(self.title))
+    "title" => Some(Str(self.title))
     _ => None
   }
 }
@@ -102,7 +102,7 @@ priv struct RApp {
 impl @tutuca.Obj for RApp with fn obj_field(self, name) {
   match name {
     "sheets" => Some(self.sheets)
-    "selId" => Some(@tutuca.Value::Str(self.sel_id))
+    "selId" => Some(Str(self.sel_id))
     _ => None
   }
 }

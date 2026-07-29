@@ -18,8 +18,8 @@ fn item_node(label : String, acked : Bool) -> @tutuca.Value {
 ///|
 impl @tutuca.Obj for Item with fn obj_field(self, name) {
   match name {
-    "label" => Some(@tutuca.Value::Str(self.label))
-    "acked" => Some(@tutuca.Value::Bool(self.acked))
+    "label" => Some(Str(self.label))
+    "acked" => Some(Bool(self.acked))
     _ => None
   }
 }
@@ -68,7 +68,7 @@ priv struct Panel {
 impl @tutuca.Obj for Panel with fn obj_field(self, name) {
   match name {
     "item" => Some(self.item)
-    "seen" => Some(@tutuca.Value::Str(self.seen))
+    "seen" => Some(Str(self.seen))
     _ => None
   }
 }
@@ -121,7 +121,7 @@ priv struct RootComp {
 impl @tutuca.Obj for RootComp with fn obj_field(self, name) {
   match name {
     "panel" => Some(self.panel)
-    "seen" => Some(@tutuca.Value::Str(self.seen))
+    "seen" => Some(Str(self.seen))
     _ => None
   }
 }

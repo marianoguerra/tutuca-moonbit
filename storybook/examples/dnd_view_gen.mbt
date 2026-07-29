@@ -26,7 +26,7 @@ pub(all) struct DnDExampleState {
 ///
 ///   init={ ..DnDExampleState::zero(), label: "Counter" }
 pub fn DnDExampleState::zero() -> DnDExampleState {
-  DnDExampleState::{ items: [], query: "" }
+  { items: [], query: "" }
 }
 
 ///|
@@ -55,7 +55,7 @@ impl @component.Fields for DnDExampleState with fn decode(f) {
     v_items.push(x1_items)
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
-  Some(DnDExampleState::{ items: v_items, query: v_query })
+  Some({ items: v_items, query: v_query })
 }
 
 ///|

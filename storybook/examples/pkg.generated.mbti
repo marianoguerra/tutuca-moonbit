@@ -1161,7 +1161,7 @@ pub(all) struct JsonBoolState {
 pub fn JsonBoolState::zero() -> Self
 
 pub(all) struct JsonNullState {
-}
+} derive(Default)
 pub fn JsonNullState::zero() -> Self
 
 pub(all) enum JsonNumberInput {
@@ -1244,7 +1244,7 @@ pub(all) enum JsonSelectorMsg {
 pub fn JsonSelectorMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) struct JsonSelectorState {
-}
+} derive(Default)
 pub fn JsonSelectorState::zero() -> Self
 
 pub(all) enum JsonStringInput {
@@ -1384,11 +1384,11 @@ pub(all) struct MacroSlotsState {
 pub fn MacroSlotsState::zero() -> Self
 
 pub(all) struct MacrosNoState {
-}
+} derive(Default)
 pub fn MacrosNoState::zero() -> Self
 
 pub(all) struct MinimumViableComponentState {
-}
+} derive(Default)
 pub fn MinimumViableComponentState::zero() -> Self
 
 pub(all) struct MultipleViewsState {
@@ -1936,7 +1936,7 @@ pub(all) struct SongState {
 pub fn SongState::zero() -> Self
 
 pub(all) struct StaticViewComponentState {
-}
+} derive(Default)
 pub fn StaticViewComponentState::zero() -> Self
 
 pub(all) struct StatusState {
@@ -1958,7 +1958,7 @@ pub(all) struct StylesExampleRootState {
 pub fn StylesExampleRootState::zero() -> Self
 
 pub(all) struct StylesExampleState {
-}
+} derive(Default)
 pub fn StylesExampleState::zero() -> Self
 
 pub(all) enum SwatchPickerEnrich {
@@ -2033,7 +2033,7 @@ pub(all) struct TmItemsState {
 pub fn TmItemsState::zero() -> Self
 
 pub(all) struct ToolbarState {
-}
+} derive(Default)
 pub fn ToolbarState::zero() -> Self
 
 pub(all) enum TrafficLightInput {
@@ -2097,7 +2097,7 @@ pub(all) struct VwContainerState {
 pub fn VwContainerState::zero() -> Self
 
 pub(all) struct VwEmptyState {
-}
+} derive(Default)
 pub fn VwEmptyState::zero() -> Self
 
 pub(all) struct VwIfState {

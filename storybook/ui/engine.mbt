@@ -730,7 +730,7 @@ fn build_shell(
       name="Storybook",
       // The section list IS the shape, so it is what the fingerprint hashes.
       fingerprint="shell\{num_sections}x\{filter_text.length()}",
-      fields=field_names.map(n => @component.FieldInfo::new(n, @tutuca.TyAny)),
+      fields=field_names.map(n => @component.FieldInfo::new(n, TyAny)),
       inputs=[
         "onClearFilter", "onFilter", "onFocusClose", "onFocusStory", "onSelect",
         "onSelectTheme", "onToggleSection",

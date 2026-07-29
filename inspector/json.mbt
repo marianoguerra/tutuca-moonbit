@@ -250,7 +250,7 @@ fn json_number_comp() -> @component.Component {
     match m {
       Text =>
         Some((s, _args) => {
-          Str((@tutuca.Value::Num(s.value) : @tutuca.Value).to_display_string())
+          Str((Num(s.value) : @tutuca.Value).to_display_string())
         })
     }
   })

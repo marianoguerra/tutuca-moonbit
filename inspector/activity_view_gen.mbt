@@ -33,7 +33,7 @@ pub(all) struct ActivityEntryState {
 ///
 ///   init={ ..ActivityEntryState::zero(), label: "Counter" }
 pub fn ActivityEntryState::zero() -> ActivityEntryState {
-  ActivityEntryState::{
+  {
     kind: "",
     name: "",
     handlerName: "",
@@ -80,7 +80,7 @@ impl @component.Fields for ActivityEntryState with fn decode(f) {
   let v_before = f.get("before").unwrap_or(Null)
   let v_after = f.get("after").unwrap_or(Null)
   guard f.get("hasAfter") is Some(Bool(v_hasAfter)) else { return None }
-  Some(ActivityEntryState::{
+  Some({
     kind: v_kind,
     name: v_name,
     handlerName: v_handlerName,
@@ -146,7 +146,7 @@ pub(all) struct ActivityLogState {
 ///
 ///   init={ ..ActivityLogState::zero(), label: "Counter" }
 pub fn ActivityLogState::zero() -> ActivityLogState {
-  ActivityLogState::{ events: [], hasEvents: false }
+  { events: [], hasEvents: false }
 }
 
 ///|
@@ -175,7 +175,7 @@ impl @component.Fields for ActivityLogState with fn decode(f) {
     v_events.push(x1_events)
   }
   guard f.get("hasEvents") is Some(Bool(v_hasEvents)) else { return None }
-  Some(ActivityLogState::{ events: v_events, hasEvents: v_hasEvents })
+  Some({ events: v_events, hasEvents: v_hasEvents })
 }
 
 ///|

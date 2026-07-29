@@ -13,7 +13,7 @@
 /// Declared as `interface json-selector` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct JsonSelectorState {}
+pub(all) struct JsonSelectorState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -23,7 +23,7 @@ pub(all) struct JsonSelectorState {}
 ///
 ///   init={ ..JsonSelectorState::zero(), label: "Counter" }
 pub fn JsonSelectorState::zero() -> JsonSelectorState {
-  JsonSelectorState::{  }
+  JsonSelectorState::default()
 }
 
 ///|
@@ -41,7 +41,7 @@ impl @component.Fields for JsonSelectorState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonSelectorState with fn decode(_f) {
-  Some(JsonSelectorState::{  })
+  Some(JsonSelectorState::default())
 }
 
 ///|
@@ -155,7 +155,7 @@ impl @component.Fields for JsonSelectorState with fn schema() {
 /// Declared as `interface json-null` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct JsonNullState {}
+pub(all) struct JsonNullState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -165,7 +165,7 @@ pub(all) struct JsonNullState {}
 ///
 ///   init={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
-  JsonNullState::{  }
+  JsonNullState::default()
 }
 
 ///|
@@ -183,7 +183,7 @@ impl @component.Fields for JsonNullState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNullState with fn decode(_f) {
-  Some(JsonNullState::{  })
+  Some(JsonNullState::default())
 }
 
 ///|
@@ -225,7 +225,7 @@ pub(all) struct JsonBoolState {
 ///
 ///   init={ ..JsonBoolState::zero(), label: "Counter" }
 pub fn JsonBoolState::zero() -> JsonBoolState {
-  JsonBoolState::{ value: false }
+  { value: false }
 }
 
 ///|
@@ -244,7 +244,7 @@ impl @component.Fields for JsonBoolState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonBoolState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
-  Some(JsonBoolState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -337,7 +337,7 @@ pub(all) struct JsonStringState {
 ///
 ///   init={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
-  JsonStringState::{ value: "" }
+  { value: "" }
 }
 
 ///|
@@ -356,7 +356,7 @@ impl @component.Fields for JsonStringState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
-  Some(JsonStringState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -450,7 +450,7 @@ pub(all) struct JsonNumberState {
 ///
 ///   init={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
-  JsonNumberState::{ strValue: "", value: 0.0 }
+  { strValue: "", value: 0.0 }
 }
 
 ///|
@@ -470,7 +470,7 @@ impl @component.Fields for JsonNumberState with fn encode(s) {
 impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("strValue") is Some(Str(v_strValue)) else { return None }
   guard f.get("value") is Some(Num(v_value)) else { return None }
-  Some(JsonNumberState::{ strValue: v_strValue, value: v_value })
+  Some({ strValue: v_strValue, value: v_value })
 }
 
 ///|
@@ -566,7 +566,7 @@ pub(all) struct JsonArrayState {
 ///
 ///   init={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
-  JsonArrayState::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -591,7 +591,7 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some(JsonArrayState::{ items: v_items })
+  Some({ items: v_items })
 }
 
 ///|
@@ -697,7 +697,7 @@ pub(all) struct JsonObjectKeyValState {
 ///
 ///   init={ ..JsonObjectKeyValState::zero(), label: "Counter" }
 pub fn JsonObjectKeyValState::zero() -> JsonObjectKeyValState {
-  JsonObjectKeyValState::{ key: "", value: Null }
+  { key: "", value: Null }
 }
 
 ///|
@@ -717,7 +717,7 @@ impl @component.Fields for JsonObjectKeyValState with fn encode(s) {
 impl @component.Fields for JsonObjectKeyValState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_value = f.get("value").unwrap_or(Null)
-  Some(JsonObjectKeyValState::{ key: v_key, value: v_value })
+  Some({ key: v_key, value: v_value })
 }
 
 ///|
@@ -815,7 +815,7 @@ pub(all) struct JsonObjectState {
 ///
 ///   init={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
-  JsonObjectState::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -840,7 +840,7 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
     let x1_items = e1_items
     v_items.push(x1_items)
   }
-  Some(JsonObjectState::{ items: v_items })
+  Some({ items: v_items })
 }
 
 ///|

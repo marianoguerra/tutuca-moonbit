@@ -29,7 +29,7 @@ extern "js" fn inner_html_ffi(node : @core.Any) -> String =
 priv struct SmokeCounterState {
   n : Int
   label : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 fn counter_comp() -> @component.Component {
@@ -172,12 +172,12 @@ test "browser: real drag events run the drag lifecycle" {
 }
 
 ///|
-priv struct SmokeEmptyState {} derive(ToJson, FromJson)
+priv struct SmokeEmptyState {} derive(Default)
 
 ///|
 priv struct DropBoardState {
   landed_kind : String
-} derive(ToJson, FromJson)
+}
 
 ///|
 impl @component.Fields for SmokeCounterState with fn encode(s) {
@@ -189,7 +189,7 @@ impl @component.Fields for SmokeCounterState with fn decode(f) {
   guard f.get("n") is Some(Num(n_n)) else { return None }
   let v_n = n_n.to_int()
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(SmokeCounterState::{ n: v_n, label: v_label })
+  Some({ n: v_n, label: v_label })
 }
 
 ///|
@@ -199,7 +199,7 @@ impl @component.Fields for SmokeEmptyState with fn encode(_s) {
 
 ///|
 impl @component.Fields for SmokeEmptyState with fn decode(_f) {
-  Some(SmokeEmptyState::{  })
+  Some(Default::default())
 }
 
 ///|
@@ -210,7 +210,7 @@ impl @component.Fields for DropBoardState with fn encode(s) {
 ///|
 impl @component.Fields for DropBoardState with fn decode(f) {
   guard f.get("landed_kind") is Some(Str(v_landed_kind)) else { return None }
-  Some(DropBoardState::{ landed_kind: v_landed_kind })
+  Some({ landed_kind: v_landed_kind })
 }
 
 ///|

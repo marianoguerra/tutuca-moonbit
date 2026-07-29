@@ -152,11 +152,17 @@ test "records, enums and variants become named MoonBit types" {
   assert_eq(d.types.map(t => t.name), ["EditorItem", "EditorMode", "EditorSel"])
   assert_eq(d.moonbit_ty(d.fields[0].ty), "EditorMode")
   assert_eq(d.moonbit_ty(d.fields[1].ty), "Array[EditorItem]")
-  assert_eq(d.zero_expr(d.fields[0].ty), "EditorMode::View")
+  // A zero names no type. Every one of them lands in a position that already
+  // has one — a field of the generated state struct, or a field of another
+  // zero — and MoonBit resolves a constructor against the expected type, so
+  // writing `EditorMode::` there is the `unnecessary_annotation` the `check`
+  // task turns on. `ty_info_src` writes its constructors bare for a related
+  // reason.
+  assert_eq(d.zero_expr(d.fields[0].ty), "View")
   assert_eq(d.zero_expr(d.fields[1].ty), "[]")
   // A record's zero names every field, so `init` only writes what differs.
   let item = d.user_ty("item").unwrap()
-  assert_eq(d.zero_expr(TRecord("item")), "EditorItem::{ title: \"\", n: 0 }")
+  assert_eq(d.zero_expr(TRecord("item")), "{ title: \"\", n: 0 }")
   assert_eq(item.name, "EditorItem")
   // A variant payload of `tuple<a, b>` is a two-argument message, because
   // dispatch arguments are a list.

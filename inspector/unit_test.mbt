@@ -568,7 +568,7 @@ impl @component.Fields for RichState with fn decode(f) {
   let v_count = n_count.to_int()
   guard f.get("tags") is Some(List(v_tags)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some(RichState::{ title: v_title, count: v_count, tags: v_tags, open: v_open })
+  Some({ title: v_title, count: v_count, tags: v_tags, open: v_open })
 }
 
 ///|
@@ -624,12 +624,7 @@ impl @component.Fields for DescribedState with fn decode(f) {
   guard f.get("count") is Some(Num(n_count)) else { return None }
   guard f.get("tags") is Some(List(v_tags)) else { return None }
   guard f.get("open") is Some(Bool(v_open)) else { return None }
-  Some(DescribedState::{
-    title: v_title,
-    count: n_count.to_int(),
-    tags: v_tags,
-    open: v_open,
-  })
+  Some({ title: v_title, count: n_count.to_int(), tags: v_tags, open: v_open })
 }
 
 ///|

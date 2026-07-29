@@ -13,7 +13,7 @@
 /// Declared as `interface minimum-viable-component` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct MinimumViableComponentState {}
+pub(all) struct MinimumViableComponentState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -23,7 +23,7 @@ pub(all) struct MinimumViableComponentState {}
 ///
 ///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
 pub fn MinimumViableComponentState::zero() -> MinimumViableComponentState {
-  MinimumViableComponentState::{  }
+  MinimumViableComponentState::default()
 }
 
 ///|
@@ -41,7 +41,7 @@ impl @component.Fields for MinimumViableComponentState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MinimumViableComponentState with fn decode(_f) {
-  Some(MinimumViableComponentState::{  })
+  Some(MinimumViableComponentState::default())
 }
 
 ///|
@@ -73,7 +73,7 @@ impl @component.Fields for MinimumViableComponentState with fn schema() {
 /// Declared as `interface static-view-component` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct StaticViewComponentState {}
+pub(all) struct StaticViewComponentState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -83,7 +83,7 @@ pub(all) struct StaticViewComponentState {}
 ///
 ///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
 pub fn StaticViewComponentState::zero() -> StaticViewComponentState {
-  StaticViewComponentState::{  }
+  StaticViewComponentState::default()
 }
 
 ///|
@@ -101,7 +101,7 @@ impl @component.Fields for StaticViewComponentState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StaticViewComponentState with fn decode(_f) {
-  Some(StaticViewComponentState::{  })
+  Some(StaticViewComponentState::default())
 }
 
 ///|
@@ -148,7 +148,7 @@ pub(all) struct TextDirectiveState {
 ///
 ///   init={ ..TextDirectiveState::zero(), label: "Counter" }
 pub fn TextDirectiveState::zero() -> TextDirectiveState {
-  TextDirectiveState::{ str: "", num: 0, bool: false, notSet: Null }
+  { str: "", num: 0, bool: false, notSet: Null }
 }
 
 ///|
@@ -176,12 +176,7 @@ impl @component.Fields for TextDirectiveState with fn decode(f) {
   let v_num = t1_num.to_int()
   guard f.get("bool") is Some(Bool(v_bool)) else { return None }
   let v_notSet = f.get("notSet").unwrap_or(Null)
-  Some(TextDirectiveState::{
-    str: v_str,
-    num: v_num,
-    bool: v_bool,
-    notSet: v_notSet,
-  })
+  Some({ str: v_str, num: v_num, bool: v_bool, notSet: v_notSet })
 }
 
 ///|
@@ -245,7 +240,7 @@ pub(all) struct DangerSetInnerHtmlState {
 ///
 ///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
 pub fn DangerSetInnerHtmlState::zero() -> DangerSetInnerHtmlState {
-  DangerSetInnerHtmlState::{ content: "" }
+  { content: "" }
 }
 
 ///|
@@ -264,7 +259,7 @@ impl @component.Fields for DangerSetInnerHtmlState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DangerSetInnerHtmlState with fn decode(f) {
   guard f.get("content") is Some(Str(v_content)) else { return None }
-  Some(DangerSetInnerHtmlState::{ content: v_content })
+  Some({ content: v_content })
 }
 
 ///|

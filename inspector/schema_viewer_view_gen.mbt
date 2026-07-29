@@ -28,7 +28,7 @@ pub(all) struct SchemaViewerState {
 ///
 ///   init={ ..SchemaViewerState::zero(), label: "Counter" }
 pub fn SchemaViewerState::zero() -> SchemaViewerState {
-  SchemaViewerState::{ value: Null, raw: Null, rawSchema: Null, showRaw: false }
+  { value: Null, raw: Null, rawSchema: Null, showRaw: false }
 }
 
 ///|
@@ -55,7 +55,7 @@ impl @component.Fields for SchemaViewerState with fn decode(f) {
   let v_raw = f.get("raw").unwrap_or(Null)
   let v_rawSchema = f.get("rawSchema").unwrap_or(Null)
   guard f.get("showRaw") is Some(Bool(v_showRaw)) else { return None }
-  Some(SchemaViewerState::{
+  Some({
     value: v_value,
     raw: v_raw,
     rawSchema: v_rawSchema,

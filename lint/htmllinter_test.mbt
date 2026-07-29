@@ -410,7 +410,7 @@ test "representative tutuca templates produce zero findings" {
     ] {
     let f = lint(tpl)
     if f.length() > 0 {
-      fail("expected zero findings for \{tpl}, got \{to_repr(f)}")
+      fail("expected zero findings for \{tpl}, got \{Repr(f)}")
     }
   }
 }

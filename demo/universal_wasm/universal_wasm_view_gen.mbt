@@ -26,7 +26,7 @@ pub(all) struct UniversalWasmState {
 ///
 ///   init={ ..UniversalWasmState::zero(), label: "Counter" }
 pub fn UniversalWasmState::zero() -> UniversalWasmState {
-  UniversalWasmState::{ status: "", list: Null }
+  { status: "", list: Null }
 }
 
 ///|
@@ -46,7 +46,7 @@ impl @component.Fields for UniversalWasmState with fn encode(s) {
 impl @component.Fields for UniversalWasmState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
   let v_list = f.get("list").unwrap_or(Null)
-  Some(UniversalWasmState::{ status: v_status, list: v_list })
+  Some({ status: v_status, list: v_list })
 }
 
 ///|
@@ -100,7 +100,7 @@ pub(all) struct ComponentListState {
 ///
 ///   init={ ..ComponentListState::zero(), label: "Counter" }
 pub fn ComponentListState::zero() -> ComponentListState {
-  ComponentListState::{
+  {
     entries: [],
     showSettings: false,
     dir: "",
@@ -148,7 +148,7 @@ impl @component.Fields for ComponentListState with fn decode(f) {
   guard f.get("gap") is Some(Num(t1_gap)) else { return None }
   let v_gap = t1_gap.to_int()
   guard f.get("wrap") is Some(Bool(v_wrap)) else { return None }
-  Some(ComponentListState::{
+  Some({
     entries: v_entries,
     showSettings: v_showSettings,
     dir: v_dir,
@@ -314,7 +314,7 @@ pub(all) struct ComponentPickerState {
 ///
 ///   init={ ..ComponentPickerState::zero(), label: "Counter" }
 pub fn ComponentPickerState::zero() -> ComponentPickerState {
-  ComponentPickerState::{ filterText: "", items: [], selected: Null }
+  { filterText: "", items: [], selected: Null }
 }
 
 ///|
@@ -345,11 +345,7 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
     v_items.push(x1_items)
   }
   let v_selected = f.get("selected").unwrap_or(Null)
-  Some(ComponentPickerState::{
-    filterText: v_filterText,
-    items: v_items,
-    selected: v_selected,
-  })
+  Some({ filterText: v_filterText, items: v_items, selected: v_selected })
 }
 
 ///|
@@ -463,7 +459,7 @@ pub(all) struct ComponentEntryState {
 ///
 ///   init={ ..ComponentEntryState::zero(), label: "Counter" }
 pub fn ComponentEntryState::zero() -> ComponentEntryState {
-  ComponentEntryState::{ module_: "", name: "", label: "" }
+  { module_: "", name: "", label: "" }
 }
 
 ///|
@@ -484,7 +480,7 @@ impl @component.Fields for ComponentEntryState with fn decode(f) {
   guard f.get("module") is Some(Str(v_module_)) else { return None }
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some(ComponentEntryState::{ module_: v_module_, name: v_name, label: v_label })
+  Some({ module_: v_module_, name: v_name, label: v_label })
 }
 
 ///|

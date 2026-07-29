@@ -25,7 +25,7 @@ pub(all) struct IconGalleryState {
 ///
 ///   init={ ..IconGalleryState::zero(), label: "Counter" }
 pub fn IconGalleryState::zero() -> IconGalleryState {
-  IconGalleryState::{ size: 0 }
+  { size: 0 }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for IconGalleryState with fn encode(s) {
 impl @component.Fields for IconGalleryState with fn decode(f) {
   guard f.get("size") is Some(Num(t1_size)) else { return None }
   let v_size = t1_size.to_int()
-  Some(IconGalleryState::{ size: v_size })
+  Some({ size: v_size })
 }
 
 ///|
@@ -82,7 +82,7 @@ pub(all) struct BarChartState {
 ///
 ///   init={ ..BarChartState::zero(), label: "Counter" }
 pub fn BarChartState::zero() -> BarChartState {
-  BarChartState::{ values: [] }
+  { values: [] }
 }
 
 ///|
@@ -107,7 +107,7 @@ impl @component.Fields for BarChartState with fn decode(f) {
     let x1_values = e1_values
     v_values.push(x1_values)
   }
-  Some(BarChartState::{ values: v_values })
+  Some({ values: v_values })
 }
 
 ///|

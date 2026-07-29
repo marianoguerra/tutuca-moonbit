@@ -13,7 +13,7 @@
 /// Declared as `interface json-null` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct JsonNullState {}
+pub(all) struct JsonNullState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -23,7 +23,7 @@ pub(all) struct JsonNullState {}
 ///
 ///   init={ ..JsonNullState::zero(), label: "Counter" }
 pub fn JsonNullState::zero() -> JsonNullState {
-  JsonNullState::{  }
+  JsonNullState::default()
 }
 
 ///|
@@ -41,7 +41,7 @@ impl @component.Fields for JsonNullState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNullState with fn decode(_f) {
-  Some(JsonNullState::{  })
+  Some(JsonNullState::default())
 }
 
 ///|
@@ -83,7 +83,7 @@ pub(all) struct JsonBooleanState {
 ///
 ///   init={ ..JsonBooleanState::zero(), label: "Counter" }
 pub fn JsonBooleanState::zero() -> JsonBooleanState {
-  JsonBooleanState::{ value: false }
+  { value: false }
 }
 
 ///|
@@ -102,7 +102,7 @@ impl @component.Fields for JsonBooleanState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonBooleanState with fn decode(f) {
   guard f.get("value") is Some(Bool(v_value)) else { return None }
-  Some(JsonBooleanState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -163,7 +163,7 @@ pub(all) struct JsonNumberState {
 ///
 ///   init={ ..JsonNumberState::zero(), label: "Counter" }
 pub fn JsonNumberState::zero() -> JsonNumberState {
-  JsonNumberState::{ value: 0.0 }
+  { value: 0.0 }
 }
 
 ///|
@@ -182,7 +182,7 @@ impl @component.Fields for JsonNumberState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonNumberState with fn decode(f) {
   guard f.get("value") is Some(Num(v_value)) else { return None }
-  Some(JsonNumberState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -241,7 +241,7 @@ pub(all) struct JsonStringState {
 ///
 ///   init={ ..JsonStringState::zero(), label: "Counter" }
 pub fn JsonStringState::zero() -> JsonStringState {
-  JsonStringState::{ value: "" }
+  { value: "" }
 }
 
 ///|
@@ -260,7 +260,7 @@ impl @component.Fields for JsonStringState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for JsonStringState with fn decode(f) {
   guard f.get("value") is Some(Str(v_value)) else { return None }
-  Some(JsonStringState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|
@@ -307,7 +307,7 @@ impl @component.Fields for JsonStringState with fn schema() {
 /// Declared as `interface value-fn` in the state block. Adding a
 /// field there adds it here, so a view that reads it type-checks and one
 /// that reads a name this struct lacks fails generation.
-pub(all) struct ValueFnState {}
+pub(all) struct ValueFnState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
@@ -317,7 +317,7 @@ pub(all) struct ValueFnState {}
 ///
 ///   init={ ..ValueFnState::zero(), label: "Counter" }
 pub fn ValueFnState::zero() -> ValueFnState {
-  ValueFnState::{  }
+  ValueFnState::default()
 }
 
 ///|
@@ -335,7 +335,7 @@ impl @component.Fields for ValueFnState with fn encode(_s) {
 /// The fields map back into the state. None on a shape mismatch, which
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ValueFnState with fn decode(_f) {
-  Some(ValueFnState::{  })
+  Some(ValueFnState::default())
 }
 
 ///|
@@ -377,7 +377,7 @@ pub(all) struct ValueObjState {
 ///
 ///   init={ ..ValueObjState::zero(), label: "Counter" }
 pub fn ValueObjState::zero() -> ValueObjState {
-  ValueObjState::{ text: "" }
+  { text: "" }
 }
 
 ///|
@@ -396,7 +396,7 @@ impl @component.Fields for ValueObjState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for ValueObjState with fn decode(f) {
   guard f.get("text") is Some(Str(v_text)) else { return None }
-  Some(ValueObjState::{ text: v_text })
+  Some({ text: v_text })
 }
 
 ///|
@@ -444,12 +444,7 @@ pub(all) struct JsonArrayState {
 ///
 ///   init={ ..JsonArrayState::zero(), label: "Counter" }
 pub fn JsonArrayState::zero() -> JsonArrayState {
-  JsonArrayState::{
-    items: [],
-    isExpanded: false,
-    itemsPerPage: 0,
-    currentPage: 0,
-  }
+  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0 }
 }
 
 ///|
@@ -484,7 +479,7 @@ impl @component.Fields for JsonArrayState with fn decode(f) {
   let v_itemsPerPage = t1_itemsPerPage.to_int()
   guard f.get("currentPage") is Some(Num(t1_currentPage)) else { return None }
   let v_currentPage = t1_currentPage.to_int()
-  Some(JsonArrayState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -646,12 +641,7 @@ pub(all) struct JsonObjectState {
 ///
 ///   init={ ..JsonObjectState::zero(), label: "Counter" }
 pub fn JsonObjectState::zero() -> JsonObjectState {
-  JsonObjectState::{
-    items: [],
-    isExpanded: false,
-    itemsPerPage: 0,
-    currentPage: 0,
-  }
+  { items: [], isExpanded: false, itemsPerPage: 0, currentPage: 0 }
 }
 
 ///|
@@ -686,7 +676,7 @@ impl @component.Fields for JsonObjectState with fn decode(f) {
   let v_itemsPerPage = t1_itemsPerPage.to_int()
   guard f.get("currentPage") is Some(Num(t1_currentPage)) else { return None }
   let v_currentPage = t1_currentPage.to_int()
-  Some(JsonObjectState::{
+  Some({
     items: v_items,
     isExpanded: v_isExpanded,
     itemsPerPage: v_itemsPerPage,
@@ -846,7 +836,7 @@ pub(all) struct JsonPropertyState {
 ///
 ///   init={ ..JsonPropertyState::zero(), label: "Counter" }
 pub fn JsonPropertyState::zero() -> JsonPropertyState {
-  JsonPropertyState::{ key: "", child: Null }
+  { key: "", child: Null }
 }
 
 ///|
@@ -866,7 +856,7 @@ impl @component.Fields for JsonPropertyState with fn encode(s) {
 impl @component.Fields for JsonPropertyState with fn decode(f) {
   guard f.get("key") is Some(Str(v_key)) else { return None }
   let v_child = f.get("child").unwrap_or(Null)
-  Some(JsonPropertyState::{ key: v_key, child: v_child })
+  Some({ key: v_key, child: v_child })
 }
 
 ///|
@@ -914,7 +904,7 @@ pub(all) struct DataInspectorState {
 ///
 ///   init={ ..DataInspectorState::zero(), label: "Counter" }
 pub fn DataInspectorState::zero() -> DataInspectorState {
-  DataInspectorState::{ value: Null }
+  { value: Null }
 }
 
 ///|
@@ -933,7 +923,7 @@ impl @component.Fields for DataInspectorState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for DataInspectorState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some(DataInspectorState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|

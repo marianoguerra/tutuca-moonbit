@@ -29,13 +29,7 @@ pub(all) struct RequestExampleState {
 ///
 ///   init={ ..RequestExampleState::zero(), label: "Counter" }
 pub fn RequestExampleState::zero() -> RequestExampleState {
-  RequestExampleState::{
-    items: [],
-    query: "",
-    view: "",
-    isLoading: false,
-    error: Null,
-  }
+  { items: [], query: "", view: "", isLoading: false, error: Null }
 }
 
 ///|
@@ -70,7 +64,7 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
   guard f.get("view") is Some(Str(v_view)) else { return None }
   guard f.get("isLoading") is Some(Bool(v_isLoading)) else { return None }
   let v_error = f.get("error").unwrap_or(Null)
-  Some(RequestExampleState::{
+  Some({
     items: v_items,
     query: v_query,
     view: v_view,

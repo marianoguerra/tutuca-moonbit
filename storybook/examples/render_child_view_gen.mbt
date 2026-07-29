@@ -25,7 +25,7 @@ pub(all) struct GreetingState {
 ///
 ///   init={ ..GreetingState::zero(), label: "Counter" }
 pub fn GreetingState::zero() -> GreetingState {
-  GreetingState::{ name: "" }
+  { name: "" }
 }
 
 ///|
@@ -44,7 +44,7 @@ impl @component.Fields for GreetingState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for GreetingState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some(GreetingState::{ name: v_name })
+  Some({ name: v_name })
 }
 
 ///|
@@ -89,7 +89,7 @@ pub(all) struct PageState {
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
-  PageState::{ greeting: Null }
+  { greeting: Null }
 }
 
 ///|
@@ -108,7 +108,7 @@ impl @component.Fields for PageState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PageState with fn decode(f) {
   let v_greeting = f.get("greeting").unwrap_or(Null)
-  Some(PageState::{ greeting: v_greeting })
+  Some({ greeting: v_greeting })
 }
 
 ///|
@@ -154,7 +154,7 @@ pub(all) struct EntryState {
 ///
 ///   init={ ..EntryState::zero(), label: "Counter" }
 pub fn EntryState::zero() -> EntryState {
-  EntryState::{ title: "", description: "" }
+  { title: "", description: "" }
 }
 
 ///|
@@ -174,7 +174,7 @@ impl @component.Fields for EntryState with fn encode(s) {
 impl @component.Fields for EntryState with fn decode(f) {
   guard f.get("title") is Some(Str(v_title)) else { return None }
   guard f.get("description") is Some(Str(v_description)) else { return None }
-  Some(EntryState::{ title: v_title, description: v_description })
+  Some({ title: v_title, description: v_description })
 }
 
 ///|
@@ -290,7 +290,7 @@ pub(all) struct MultipleViewsState {
 ///
 ///   init={ ..MultipleViewsState::zero(), label: "Counter" }
 pub fn MultipleViewsState::zero() -> MultipleViewsState {
-  MultipleViewsState::{ value: Null }
+  { value: Null }
 }
 
 ///|
@@ -309,7 +309,7 @@ impl @component.Fields for MultipleViewsState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for MultipleViewsState with fn decode(f) {
   let v_value = f.get("value").unwrap_or(Null)
-  Some(MultipleViewsState::{ value: v_value })
+  Some({ value: v_value })
 }
 
 ///|

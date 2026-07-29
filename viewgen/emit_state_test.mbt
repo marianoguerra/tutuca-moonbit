@@ -141,7 +141,9 @@ test "named types become MoonBit types, and a keyword field escapes" {
   assert_true(src.contains("pub(all) enum EditorMode {"))
   assert_true(src.contains("pub(all) struct EditorItem {"))
   assert_true(src.contains("  items : Array[EditorItem]"))
-  assert_true(src.contains("m: EditorMode::View,"))
+  // Bare, not `EditorMode::View`: the zero sits in a field of the state struct
+  // whose type is already known (see `StateDef::zero_expr`).
+  assert_true(src.contains("m: View,"))
   // The runtime name stays `type` — it is what the view reads and what the
   // fields map carries — so only the MoonBit binding bends. It used to take a
   // `derive(ToJson(fields(type_(rename="type"))))` to put the name back; the

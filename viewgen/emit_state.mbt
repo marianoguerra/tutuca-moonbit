@@ -68,10 +68,12 @@ fn emit_inits(
     } else {
       // A fixture that sets EVERY field needs no spread — and MoonBit warns
       // about one that has no effect, which a generated file must not trip.
+      // Neither form names the struct: the return type already does, and
+      // repeating it is the `unnecessary_annotation` `check` turns on.
       let full = st.fields.length() == def.fields.length()
       out.write_string(
         if full {
-          "  \{t}State::{\n"
+          "  {\n"
         } else {
           "  {\n    ..\{t}State::zero(),\n"
         },
@@ -194,7 +196,14 @@ fn emit_state_struct(
   if carried.is_empty() {
     // MoonBit has no empty struct body on one line worth breaking; a state
     // with no fields is common (a toolbar is behaviour, not data).
-    out.write_string("pub(all) struct \{t}State {}\n\n")
+    //
+    // `Default` is derived only here, and it is how the field-less state gets
+    // BUILT: `\{t}State::{  }` is the only literal the compiler accepts for an
+    // empty struct — a bare `{  }` parses as an empty Map — and it then reports
+    // that same literal as `unnecessary_annotation`, which the `check` task
+    // turns on. `\{t}State::default()` is a call rather than a literal, so it
+    // satisfies both. See `emit_zero` and the decoder.
+    out.write_string("pub(all) struct \{t}State {} derive(Default)\n\n")
     return
   }
   out.write_string("pub(all) struct \{t}State {\n")
@@ -225,11 +234,15 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
     // directly, and the encoded form nobody asked for goes away.
     "pub fn \{t}State::zero() -> \{t}State {\n",
   )
+  // The return type names the struct, so a `\{t}State::` prefix is the
+  // `unnecessary_annotation` the `check` task turns on. The field-less state
+  // cannot use a literal at all (see `emit_state_struct`) and goes through its
+  // derived `default()` instead.
   let carried = def.fields.filter(f => f.ty.in_struct())
   if carried.is_empty() {
-    out.write_string("  \{t}State::{  }\n}\n\n")
+    out.write_string("  \{t}State::default()\n}\n\n")
   } else {
-    out.write_string("  \{t}State::{\n")
+    out.write_string("  {\n")
     for f in carried {
       out.write_string("    \{f.binding}: \{def.zero_expr(f.ty)},\n")
     }

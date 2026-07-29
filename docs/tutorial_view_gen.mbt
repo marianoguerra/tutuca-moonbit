@@ -25,7 +25,7 @@ pub(all) struct CounterState {
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
 pub fn CounterState::zero() -> CounterState {
-  CounterState::{ count: 0 }
+  { count: 0 }
 }
 
 ///|
@@ -45,7 +45,7 @@ impl @component.Fields for CounterState with fn encode(s) {
 impl @component.Fields for CounterState with fn decode(f) {
   guard f.get("count") is Some(Num(t1_count)) else { return None }
   let v_count = t1_count.to_int()
-  Some(CounterState::{ count: v_count })
+  Some({ count: v_count })
 }
 
 ///|
@@ -145,7 +145,7 @@ pub(all) struct ProfileState {
 ///
 ///   init={ ..ProfileState::zero(), label: "Counter" }
 pub fn ProfileState::zero() -> ProfileState {
-  ProfileState::{ name: "", waving: false }
+  { name: "", waving: false }
 }
 
 ///|
@@ -165,7 +165,7 @@ impl @component.Fields for ProfileState with fn encode(s) {
 impl @component.Fields for ProfileState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
   guard f.get("waving") is Some(Bool(v_waving)) else { return None }
-  Some(ProfileState::{ name: v_name, waving: v_waving })
+  Some({ name: v_name, waving: v_waving })
 }
 
 ///|
@@ -268,7 +268,7 @@ pub(all) struct SearchState {
 ///
 ///   init={ ..SearchState::zero(), label: "Counter" }
 pub fn SearchState::zero() -> SearchState {
-  SearchState::{ draft: "", sent: "" }
+  { draft: "", sent: "" }
 }
 
 ///|
@@ -288,7 +288,7 @@ impl @component.Fields for SearchState with fn encode(s) {
 impl @component.Fields for SearchState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
   guard f.get("sent") is Some(Str(v_sent)) else { return None }
-  Some(SearchState::{ draft: v_draft, sent: v_sent })
+  Some({ draft: v_draft, sent: v_sent })
 }
 
 ///|
@@ -397,7 +397,7 @@ pub(all) struct ToggleState {
 ///
 ///   init={ ..ToggleState::zero(), label: "Counter" }
 pub fn ToggleState::zero() -> ToggleState {
-  ToggleState::{ on: false, message: Null }
+  { on: false, message: Null }
 }
 
 ///|
@@ -417,7 +417,7 @@ impl @component.Fields for ToggleState with fn encode(s) {
 impl @component.Fields for ToggleState with fn decode(f) {
   guard f.get("on") is Some(Bool(v_on)) else { return None }
   let v_message = f.get("message").unwrap_or(Null)
-  Some(ToggleState::{ on: v_on, message: v_message })
+  Some({ on: v_on, message: v_message })
 }
 
 ///|
@@ -513,7 +513,7 @@ pub(all) struct FruitsState {
 ///
 ///   init={ ..FruitsState::zero(), label: "Counter" }
 pub fn FruitsState::zero() -> FruitsState {
-  FruitsState::{ items: [] }
+  { items: [] }
 }
 
 ///|
@@ -538,7 +538,7 @@ impl @component.Fields for FruitsState with fn decode(f) {
     guard e1_items is Str(x1_items) else { return None }
     v_items.push(x1_items)
   }
-  Some(FruitsState::{ items: v_items })
+  Some({ items: v_items })
 }
 
 ///|
@@ -596,7 +596,7 @@ pub(all) struct GreetingState {
 ///
 ///   init={ ..GreetingState::zero(), label: "Counter" }
 pub fn GreetingState::zero() -> GreetingState {
-  GreetingState::{ name: "" }
+  { name: "" }
 }
 
 ///|
@@ -615,7 +615,7 @@ impl @component.Fields for GreetingState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for GreetingState with fn decode(f) {
   guard f.get("name") is Some(Str(v_name)) else { return None }
-  Some(GreetingState::{ name: v_name })
+  Some({ name: v_name })
 }
 
 ///|
@@ -660,7 +660,7 @@ pub(all) struct PageState {
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
 pub fn PageState::zero() -> PageState {
-  PageState::{ greeting: Null }
+  { greeting: Null }
 }
 
 ///|
@@ -679,7 +679,7 @@ impl @component.Fields for PageState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for PageState with fn decode(f) {
   let v_greeting = f.get("greeting").unwrap_or(Null)
-  Some(PageState::{ greeting: v_greeting })
+  Some({ greeting: v_greeting })
 }
 
 ///|
@@ -724,7 +724,7 @@ pub(all) struct StatusState {
 ///
 ///   init={ ..StatusState::zero(), label: "Counter" }
 pub fn StatusState::zero() -> StatusState {
-  StatusState::{ message: "" }
+  { message: "" }
 }
 
 ///|
@@ -743,7 +743,7 @@ impl @component.Fields for StatusState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for StatusState with fn decode(f) {
   guard f.get("message") is Some(Str(v_message)) else { return None }
-  Some(StatusState::{ message: v_message })
+  Some({ message: v_message })
 }
 
 ///|
@@ -840,7 +840,7 @@ pub(all) struct ChatState {
 ///
 ///   init={ ..ChatState::zero(), label: "Counter" }
 pub fn ChatState::zero() -> ChatState {
-  ChatState::{ draft: "", status: Null }
+  { draft: "", status: Null }
 }
 
 ///|
@@ -860,7 +860,7 @@ impl @component.Fields for ChatState with fn encode(s) {
 impl @component.Fields for ChatState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
   let v_status = f.get("status").unwrap_or(Null)
-  Some(ChatState::{ draft: v_draft, status: v_status })
+  Some({ draft: v_draft, status: v_status })
 }
 
 ///|
@@ -963,7 +963,7 @@ pub(all) struct QuotesState {
 ///
 ///   init={ ..QuotesState::zero(), label: "Counter" }
 pub fn QuotesState::zero() -> QuotesState {
-  QuotesState::{ items: [], isLoading: false }
+  { items: [], isLoading: false }
 }
 
 ///|
@@ -992,7 +992,7 @@ impl @component.Fields for QuotesState with fn decode(f) {
     v_items.push(x1_items)
   }
   guard f.get("isLoading") is Some(Bool(v_isLoading)) else { return None }
-  Some(QuotesState::{ items: v_items, isLoading: v_isLoading })
+  Some({ items: v_items, isLoading: v_isLoading })
 }
 
 ///|
@@ -1134,7 +1134,7 @@ pub(all) struct FeaturesState {
 ///
 ///   init={ ..FeaturesState::zero(), label: "Counter" }
 pub fn FeaturesState::zero() -> FeaturesState {
-  FeaturesState::{ status: "" }
+  { status: "" }
 }
 
 ///|
@@ -1153,7 +1153,7 @@ impl @component.Fields for FeaturesState with fn encode(s) {
 /// callers treat as a no-op write — the same contract as the JSON path.
 impl @component.Fields for FeaturesState with fn decode(f) {
   guard f.get("status") is Some(Str(v_status)) else { return None }
-  Some(FeaturesState::{ status: v_status })
+  Some({ status: v_status })
 }
 
 ///|

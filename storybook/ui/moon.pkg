@@ -12,6 +12,8 @@ import {
   "marianoguerra/tutuca/storybook" @sb,
   // the per-story Instance tab renders the inspector over the live instance
   "marianoguerra/tutuca/inspector",
+  // `@string.parse_int`, for the story-index suffix in a pane name
+  "moonbitlang/core/string",
 }
 
 import {

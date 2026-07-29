@@ -27,7 +27,7 @@ pub(all) struct PushViewState {
 ///
 ///   init={ ..PushViewState::zero(), label: "Counter" }
 pub fn PushViewState::zero() -> PushViewState {
-  PushViewState::{ items: [], query: "", view: "" }
+  { items: [], query: "", view: "" }
 }
 
 ///|
@@ -58,7 +58,7 @@ impl @component.Fields for PushViewState with fn decode(f) {
   }
   guard f.get("query") is Some(Str(v_query)) else { return None }
   guard f.get("view") is Some(Str(v_view)) else { return None }
-  Some(PushViewState::{ items: v_items, query: v_query, view: v_view })
+  Some({ items: v_items, query: v_query, view: v_view })
 }
 
 ///|
@@ -197,12 +197,7 @@ pub(all) struct SeqItemAccessState {
 ///
 ///   init={ ..SeqItemAccessState::zero(), label: "Counter" }
 pub fn SeqItemAccessState::zero() -> SeqItemAccessState {
-  SeqItemAccessState::{
-    byKey: Map([]),
-    byIndex: [],
-    currentKey: Null,
-    currentIndex: 0,
-  }
+  { byKey: Map([]), byIndex: [], currentKey: Null, currentIndex: 0 }
 }
 
 ///|
@@ -248,7 +243,7 @@ impl @component.Fields for SeqItemAccessState with fn decode(f) {
   let v_currentKey = f.get("currentKey").unwrap_or(Null)
   guard f.get("currentIndex") is Some(Num(t1_currentIndex)) else { return None }
   let v_currentIndex = t1_currentIndex.to_int()
-  Some(SeqItemAccessState::{
+  Some({
     byKey: v_byKey,
     byIndex: v_byIndex,
     currentKey: v_currentKey,
@@ -375,7 +370,7 @@ pub(all) struct PaginationState {
 ///
 ///   init={ ..PaginationState::zero(), label: "Counter" }
 pub fn PaginationState::zero() -> PaginationState {
-  PaginationState::{ items: [], page: 0, pageSize: 0 }
+  { items: [], page: 0, pageSize: 0 }
 }
 
 ///|
@@ -408,7 +403,7 @@ impl @component.Fields for PaginationState with fn decode(f) {
   let v_page = t1_page.to_int()
   guard f.get("pageSize") is Some(Num(t1_pageSize)) else { return None }
   let v_pageSize = t1_pageSize.to_int()
-  Some(PaginationState::{ items: v_items, page: v_page, pageSize: v_pageSize })
+  Some({ items: v_items, page: v_page, pageSize: v_pageSize })
 }
 
 ///|

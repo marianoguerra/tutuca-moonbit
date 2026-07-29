@@ -23,7 +23,7 @@ fn ns_toggle_label(
   let i = n.to_int()
   guard i >= 0 && i < labels.length() else { return labels }
   let out = labels.copy()
-  out[i] = NestedStateLabel::{ text: out[i].text, done: !out[i].done }
+  out[i] = { text: out[i].text, done: !out[i].done }
   out
 }
 

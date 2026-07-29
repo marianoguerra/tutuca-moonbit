@@ -17,7 +17,7 @@ impl @component.Fields for CardState with fn encode(s) {
 ///|
 impl @component.Fields for CardState with fn decode(f) {
   guard f.get("title") is Some(Str(t)) else { return None }
-  Some(CardState::{ title: t })
+  Some({ title: t })
 }
 
 ///|
@@ -41,7 +41,7 @@ fn card_scope() -> (@component.ComponentStack, @component.Component) raise {
     init=CardState::{ title: "" },
     update=(_s : CardState, msg, _ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Some(CardState::{ title: t })
+        Receive("rename", [Str(t)]) => Some({ title: t })
         _ => None
       }
     },
