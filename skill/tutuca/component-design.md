@@ -76,8 +76,8 @@ A compact worked version of the first four (an `Input` arm, `bubble`, `send`/`re
   model the nested thing as a component instead. → [core.md](./core.md) "Common
   pitfalls" (Paths are not allowed in values) and
   [patterns/render-a-child-component.md](./patterns/render-a-child-component.md).
-  (When many kinds dispatch mutually — `json.mbt`'s 8 node types — keep a `reg`
-  map of name → `Component` that the constructors close over.)
+  (When many kinds dispatch mutually — e.g. a JSON tree's node types — keep a
+  `reg` map of name → `Component` that the constructors close over.)
 
 - **Do keep state in the component that owns and uses it, and lift it only as far
   up the tree as it needs to live. Don't thread a value through every component in
@@ -142,10 +142,9 @@ A compact worked version of the first four (an `Input` arm, `bubble`, `send`/`re
 
 - **Do add a decoy view when a margaui class is assembled at runtime.** The margaui
   compiler only scans constant class literals — a class built by interpolation or
-  in a `compute` entry emits no CSS and renders unstyled. → the workaround in
-  [margaui.md](./margaui.md) "Pitfall: assembled class names are invisible to the
-  scanner", and the worked decoy view in `storybook/examples/personal_site.mbt`
-  (`_margauiClasses`).
+  in a `compute` entry emits no CSS and renders unstyled. → the workaround
+  (a `_margauiClasses` decoy view) in [margaui.md](./margaui.md) "Pitfall:
+  assembled class names are invisible to the scanner".
 
 - **Do close the loop after every change** with `gen-views` → `moon check` →
   `moon test`. → [core.md](./core.md) "Verifying changes"
@@ -155,7 +154,7 @@ A compact worked version of the first four (an `Input` arm, `bubble`, `send`/`re
 - **Hand-written `isTodoSelected` / `selectTodo` handlers → predicate +
   generated setter.** Replace `@on.click="selectTodo"` / `@show="$isTodoSelected"`
   with `@on.click="setActiveSection 'todo'"` / `@show="equals? .activeSection 'todo'"`,
-  derive the current value from one field. (See `storybook/examples/composability.mbt`.)
+  derive the current value from one field.
 - **A view that `@if`-branches on a `kind` field → one component per kind**, each
   rendered with `<x render>`.
 - **A value passed down through three components that don't use it → move the

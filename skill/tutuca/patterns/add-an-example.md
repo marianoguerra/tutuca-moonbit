@@ -26,9 +26,10 @@ component-typed slot must hold a real instance —
 bare `Map`. To show request-driven
 states, parameterize the module with `requests?` and build the example's
 module with a fixture (`respond(Ok(...))` / `respond(Err(...))` / never
-respond to hold a loading state) — the pattern in `storybook/examples/request.mbt`.
+respond to hold a loading state) — see *The ModuleDef convention* in
+[core.md](../core.md).
 
 The same example is then reachable two ways: `@harness.mount_example(
 foo_module(), "Loading")` in a test, and the storybook / a demo host page
-mounting the module. If a demo host keeps a catalog (like `demo/examples`),
-register the module in its example list.
+mounting the module. If a demo host keeps a catalog, register the module
+in its example list.

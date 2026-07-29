@@ -17,7 +17,7 @@ or when using the embedded `tutuca` CLI.
 > [component-design.md](./component-design.md) · [testing.md](./testing.md) ·
 > [cli.md](./cli.md) · [semantics.md](./semantics.md) ·
 > [advanced.md](./advanced.md) · [margaui.md](./margaui.md) ·
-> [patterns/README.md](./patterns/README.md).
+> [playground.md](./playground.md) · [patterns/README.md](./patterns/README.md).
 
 ## Verifying changes
 
@@ -45,7 +45,7 @@ compiler — there is no run-time linter to run.
    single static render), run the test suite:
 
         moon test                       # the package's test blocks
-        moon test storybook/examples    # one package
+        moon test -p <package>          # one package
         moon test --update              # refresh inspect/debug_inspect snapshots
 
    There is **no `tutuca test` command** — `moon test` is the runner, and
@@ -57,10 +57,9 @@ compiler — there is no run-time linter to run.
    what it rendered. Authoring
    patterns in [testing.md](./testing.md).
 
-4. **Look at it, if it is visual** — build the gallery and serve it:
-
-        moon run --target native cmd/dev -- dist
-        tutuca storybook
+4. **Look at it, if it is visual** — mount the module in a browser host,
+   or serve the project's storybook gallery if it has one
+   (`tutuca storybook` serves a pre-built bundle).
 
 Full reference: [cli.md](./cli.md).
 
@@ -87,6 +86,12 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
 - **`update` returns `S?`; `None` means "no change".** Returning `None`
   leaves the root untouched (a cheap no-op); return `Some(new_state)` to
   commit. The match must be total — always end with `_ => None`.
+- **The bucket enums are closed and view-driven.** With generated views,
+  `compute` / `when` / `enrich` / … are functions over enums whose cases
+  come from the names the views reference. You cannot pre-declare a
+  handler the view doesn't call yet — the constructor doesn't exist and
+  the match won't compile. Add the name to the view first, regenerate,
+  then write the handler.
 - **Paths are not allowed in values.** `.foo` resolves a single field on
   the state — `@text=".foo.bar"`, `:value=".user.name"`,
   `@show=".item.isOpen"` all fail. To reach into nested data: render the
@@ -163,9 +168,8 @@ pub fn counter_module() -> @component.ModuleDef {
 }
 ```
 
-Then `moon run --target native cmd/dev -- gen-views` (never the CLI directly —
-the task formats after generating, which is what keeps the checked-in pair
-reproducible).
+Then regenerate (`tutuca gen-views counter.html --name Counter`) and run
+`moon fmt`, so the checked-in pair stays reproducible.
 
 Adding `@on.click="del"` to the view and regenerating makes that match
 non-exhaustive: a compile error naming `Some(Del)`, where a string-keyed
@@ -351,7 +355,7 @@ list `ctx` in the template.
 > (`@on.click="onAddItem Item"`). In MoonBit the value language has no
 > component-reference value — instead the handler **captures** the
 > `Component` in its closure and the view just calls `onAddItem`
-> (see the `dynamic.mbt` example's `onAddItem`).
+> (worked version in [patterns/todo-list.md](./patterns/todo-list.md)).
 
 ## Quoting & String Literals
 
@@ -406,7 +410,10 @@ my_comp_component(
   },
   // Each bucket is keyed by an enum generated from the names the views use,
   // so the match is exhaustive over them and a name added to a view is a
-  // build error. A bucket the views never use is not a parameter at all.
+  // build error. The enum is a CLOSED set: an entry for a name no view
+  // references does not compile (no such constructor), so handlers cannot
+  // be pre-declared "for later". A bucket the views never use is not a
+  // parameter at all.
   compute=m => match m { // pure value read, $name: (s, args) => Value
     Label => Some((s, _args) => Str("n=\{s.count}"))
   },
@@ -440,6 +447,17 @@ Call `@component.component(...)` directly only when there is no wrapper —
 views built in MoonBit, so there is nothing to default `views~` to. The state
 type still has to implement `@component.Fields`; a component that declares
 less does not get a runtime that infers the difference.
+
+> **Two bucket spellings, by call target.** The generated wrapper
+> (`my_comp_component(...)`) types each bucket as a function from a
+> generated enum returning the handler as an `Option` —
+> `compute=m => match m { Label => Some((s, _args) => ...) }`, exactly
+> like the skeleton above (return `None` to fall through to a generated
+> mutator). The raw `@component.component(...)` call instead takes a
+> **string-keyed map**: `compute={ "label": (s, _args) => ... }`.
+> Snippets in this skill that show the map form are showing the raw
+> call; with a generated wrapper, translate them to the enum match — the
+> wrapper's parameter type will not accept a map.
 
 `comp.make({...})` builds an instance from a `Map[String, Value]` of
 args and returns it as a `@tutuca.Value` (the `Obj`) — ready to store in
@@ -511,6 +529,11 @@ A no-arg `compute` entry called via `$name` is invoked and its return
 value is used. Works anywhere a value is read — `@text`, `:attr`,
 `@show` / `@hide`, `@if.<attr>`, and `{…}` interpolation. (`.name` is a
 field read and never invokes; `$name` is the call.)
+
+The map form below is the raw `@component.component(...)` spelling; a
+generated wrapper takes the enum-match form instead (see *Component
+Skeleton* above), with one `Some(...)` arm per name in place of each map
+entry:
 
 ```moonbit
 compute={
@@ -676,6 +699,38 @@ The content of `value` depends on the event source:
 For numeric inputs, prefer `valueAsInt` / `valueAsFloat` to skip the
 string parse.
 
+### Generated `Msg` payload types
+
+When the views are generated (`gen-views`), each `@on` name becomes a
+case of the `<Comp>Msg` enum, and the payload type of each argument is
+inferred from what is **written at the call site**:
+
+| Written in the template | Payload type in `<Comp>Msg` |
+| ----------------------- | --------------------------- |
+| `'literal'` / `1` / `true` | `String` / `Double` / `Bool` |
+| `value` | `String` — but `Bool` on `<input type="checkbox">` and `@tutuca.Value` on `<input type="file">` (the host element's static `type` decides) |
+| `key` | `String` |
+| `valueAsInt`, `valueAsFloat`, `keyCode` | `Double` |
+| `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey` | `Bool` |
+| a binding (`@key`, `@value.x`), `target`, `event`, `dragInfo`, anything else | `@tutuca.Value` |
+
+So `@on.click="setTab 'edit'"` generates `SetTab(String)` (unwrapped —
+match `Some(SetTab(tab))`, not `Some(SetTab(Str(tab)))`),
+`@on.input="setCompleted value"` on a checkbox generates
+`SetCompleted(Bool)`, and `@on.click="removeInItemsAt @key"` generates
+`RemoveInItemsAt(@tutuca.Value)`. Two call sites that disagree on an
+argument's shape join to `@tutuca.Value`. At runtime, arguments that
+don't match the inferred shape land in `Unknown(name, args)` with the
+raw `Array[@tutuca.Value]`.
+
+> The `value` inference reads the host element's **static** `type`
+> attribute, matching what the glue delivers (checkbox → the checked
+> state, file → the metadata `Map` / `Null`). An input whose `type` is
+> dynamic (`:type=".kind"`) keeps the default `String` — if such an
+> input can render as a checkbox at runtime, handle its `value` via the
+> generated mutator or a raw `Input(name, args)` arm rather than a
+> typed case.
+
 Ask for the most granular arg the handler actually uses — `value` /
 `valueAsInt` / `key`, not the raw `event` — when the specific value is
 all you need. An arm that pattern-matches `[Str(q), ..]` off a plain
@@ -719,8 +774,6 @@ update=(s : PickerState, msg, _ctx) => match msg {
   <emoji-picker @show=".isPickerVisible"></emoji-picker>
 </section>
 ```
-
-(Worked example: `storybook/examples/web_component.mbt`.)
 
 Handle these events declaratively with `@on.<event-name>` in the view —
 don't grab the node from host/glue code and `addEventListener` on it. A
@@ -938,7 +991,7 @@ pub(all) enum Value {
   `FieldSpec::omap`.
 - Custom collections implement the `@tutuca.Obj` trait (notably
   `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
-  *Custom collections* and `storybook/examples/custom_collection.mbt`.
+  *Custom collections*.
 
 ## The ModuleDef convention
 
@@ -973,8 +1026,7 @@ test and a working page are the same artifact.
 
 **Per-example request mocking**: parameterize the module function with
 an optional `requests?` argument, defaulting to the real handlers, and
-build the module with a fixture map in tests/demos (the pattern in
-`storybook/examples/request.mbt`):
+build the module with a fixture map in tests/demos:
 
 ```moonbit
 pub fn request_module(
@@ -1015,6 +1067,9 @@ its examples never reach the storybook or a harness test.
   mount/drive/read API.
 - [cli.md](./cli.md) — the embedded CLI: commands, flags, exit codes, and
   the linter rules.
+- [playground.md](./playground.md) — authoring in an in-browser playground:
+  same generated names, the view+code pair convention, verifying without
+  `moon`.
 - [patterns/README.md](./patterns/README.md) — task-oriented recipes ("how do I
   iterate / filter / paginate / show-hide / build tabs / share state / …"),
-  each linking back here and to a runnable example.
+  including a complete todo-list pairing.

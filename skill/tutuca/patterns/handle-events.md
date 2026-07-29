@@ -38,6 +38,16 @@ update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
 },
 ```
 
+Each `Msg` case's payload type is inferred from the call site: literals
+and `value`/`valueAsInt`-style names arrive **unwrapped** (`String` /
+`Double` / `Bool`), bindings like `@key` arrive as `@tutuca.Value`, and
+runtime args that don't match the inferred shape land in
+`Unknown(name, args)` — the full table is in [core.md](../core.md)
+*Generated `Msg` payload types*. `value` follows the host element's
+static `type`: `Bool` on a checkbox, metadata `@tutuca.Value` on a file
+input, `String` otherwise (including when `:type` is dynamic — handle
+that case via the generated mutator or a raw `Input` arm).
+
 Bind events declaratively with `@on.` rather than reaching for the node and
 `addEventListener` — an outside listener bypasses the transactor. A handler
 that needs `ctx` (to `send`/`bubble`/`request`) must be an `update` arm —

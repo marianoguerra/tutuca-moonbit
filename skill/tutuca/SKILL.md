@@ -39,7 +39,9 @@ When authoring tutuca code, also load this if available:
 - **margaui** — the Tailwind v4 / daisyUI-compatible class library. Reach
   for it when the project uses MargaUI / Tailwind class lists in `class=` /
   `:class=`. See [margaui.md](./margaui.md) for how the MoonBit port
-  collects class names and hands them to margaui's compiler.
+  collects class names and hands them to margaui's compiler — it also
+  carries a starter class vocabulary for when no margaui skill is
+  available.
 
 (The JS skill's `immutable-js` companion does not apply here: state is the
 `@tutuca.Value` enum — `Null` / `Bool` / `Num` / `Str` / `List` / `Map` /
@@ -60,7 +62,8 @@ When authoring tutuca code, also load this if available:
 | Setting up MargaUI styling — `collect_classes()`, the MoonBit compile step, `inject_style` | [margaui.md](./margaui.md)     |
 | Runtime semantics — path steps, transaction lifecycle, dyn-var teleporting, async key pinning (`live_path`) | [semantics.md](./semantics.md) |
 | Authoring tests — `moon test` blocks, the `@harness` mount/drive/read API, designing handlers for testability | [testing.md](./testing.md) |
-| Task-oriented recipes — iteration, filtering, conditional content, conditional attributes, dynamic vars, composition, events | [patterns/README.md](./patterns/README.md) |
+| Authoring in an in-browser playground — generated names without the CLI, the view+code pair convention, verifying without `moon` | [playground.md](./playground.md) |
+| Task-oriented recipes — iteration, filtering, conditional content, conditional attributes, dynamic vars, composition, events, a complete todo app | [patterns/README.md](./patterns/README.md) |
 
 Read `core.md` first. Reach for the others only when the task touches
 them — each is referenced inline from `core.md` so you'll be pointed

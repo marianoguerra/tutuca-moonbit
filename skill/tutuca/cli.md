@@ -96,7 +96,9 @@ For `--name Counter` the module declares `counter_views()` /
 `component()` as `views~` / `common_style~` / `global_style~`),
 `CounterInput` + `CounterMsg` with `CounterMsg::from_dispatch` (payload types
 inferred from the argument shapes at the `@on` call sites: `add 1` ->
-`Add(Double)`, `setLabel value` -> `SetLabel(String)`, anything unresolvable
+`Add(Double)`, `setLabel value` -> `SetLabel(String)` — `value` becomes
+`Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
+element's static `type` — anything unresolvable
 -> `@tutuca.Value`), `CounterMethod` + `counter_compute`/`_swap`
 (the `$`-callables, built from an exhaustive match). A file that also carries
 a `<script type="tutuca/state">` block gets the state half: `CounterState`
@@ -186,6 +188,25 @@ open type and no user generics, so a set with open membership, an ORDERED map
 no structural spelling. A slot declared here is checked in the views and
 generates its `specs~` entry, but does NOT become a struct field — the
 runtime still creates it through the registration scope.
+
+`values` is exactly `list<any>` — the spelling for a heterogeneous list,
+most often a list of component instances:
+
+```html
+<script type="tutuca/state">
+  interface items {
+    record state { items: values }
+  }
+</script>
+```
+
+generates `items : Array[@tutuca.Value]`. Iterate it with
+`<div @each=".items"><x render-it></x></div>` and append instances with
+`Some({ items: s.items + [item.make(Map([]))] })` (the complete pairing
+is in [patterns/todo-list.md](./patterns/todo-list.md)). When every
+element has one known shape, prefer `list<T>` — the reads stay typed and
+the views are checked against the element schema. `any` is the scalar
+counterpart: one `@tutuca.Value` field.
 
 Out of the subset, each with its own message: `s64`/`u64` (state travels as
 JSON, where integers past 2^53 lose precision), `result`, `future`, `stream`,

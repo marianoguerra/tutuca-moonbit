@@ -246,7 +246,7 @@ Because the request handler is registered **outside** the component, the
 same component can be driven by a real fetch in production and by a
 fixture in a test — parameterize the module function with
 `requests? : Map[String, RequestFn] = real_handlers()` and pass a fixture
-map when testing (the pattern in `storybook/examples/request.mbt`).
+map when testing.
 
 ### The `err` argument and the error path
 
@@ -308,8 +308,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
 
 The combined `[res, err]` shape is only for the default /
 `on_res_name` case. Mixing them up — a split arm matching
-`[res, err]` — silently misreads the args, a common bug. (Worked
-version of both routes: `storybook/examples/request.mbt`.)
+`[res, err]` — silently misreads the args, a common bug.
 
 ### `live_path` — pinning vs following a moving key
 
@@ -431,4 +430,4 @@ per-step-kind pinning rules are in [semantics.md](./semantics.md).
   key-pinning rules `live_path` toggles.
 - [testing.md](./testing.md) — driving `Receive` / `Response` flows from
   tests via the harness.
-- [cli.md](./cli.md) — linter rules, exit codes, and `render` flags.
+- [cli.md](./cli.md) — the embedded CLI commands and exit codes.

@@ -36,8 +36,9 @@ fn card_macro() -> @anode.Macro {
 A macro is pure template expansion — no fields, no handlers. Parameters are
 read as `^name`; calls inside the body (`$handler`, `.field`) resolve against
 the *host* component. Params substitute as source text, so a handler name
-threads through: `<x:btn-rm :handler="$removeInItemsAt" :arg="@key">` (see
-`storybook/examples/todo_macros.mbt`). `<x:slot>` (or `<x:slot name="…">` for named
+threads through: `<x:btn-rm :handler="$removeInItemsAt" :arg="@key">`
+expands to `@on.click="removeInItemsAt @key"` inside the loop.
+`<x:slot>` (or `<x:slot name="…">` for named
 slots) receives the caller's children. Registry keys are lowercased
 (`<x:Card>` → `card`). Full semantics (named slots, quoting of parameter
 values) in [macros.md](../macros.md). For repeated markup that *does* need

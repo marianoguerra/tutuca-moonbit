@@ -40,5 +40,5 @@ drives both the panel's `@show` and the active-tab class via `@if.class` /
 string-literal arg (`@on.click="setCurrentView 'pricing'"`). This toggles
 **sibling panels** by predicate; to swap a *component's own* rendered view
 instead, see the switch-between-views recipe. The field name is yours to pick
-(`tab`, `currentView`, …). A large runnable version (tabs over whole
-sub-apps): `storybook/examples/composability.mbt`.
+(`tab`, `currentView`, …). The same shape scales up to tabs over whole
+sub-apps — each panel a component rendered with `<x render=".field">`.

@@ -18,16 +18,18 @@ string from several values.
 ```
 
 ```moonbit
-compute={
-  "getStrUpper": (s : TextState, _args) => Str(s.str.to_upper()),
+// generated wrapper: enum-keyed buckets ("getStrUpper" -> GetStrUpper)
+compute=m => match m {
+  GetStrUpper => Some((s, _args) => Str(s.str.to_upper())),
 },
-enrich_scope={
+enrich_scope=e => match e {
   // scope enrich: takes only the state; returned Map keys become @len, …
-  "enrichScope": (s : TextState) => {
-    "len": Num(s.text.length().to_double()),
-  },
+  EnrichScope => Some(s => { "len": Num(s.text.length().to_double()) }),
 },
 ```
+
+(Raw `@component.component(...)` call: string-keyed maps instead —
+`compute={ "getStrUpper": (s : TextState, _args) => ... }`.)
 
 Value slots take `.field`, `$handler`, or `@binding` — never a path
 (`.user.name` fails). Multi-word strings **must** be quoted (`'flex gap-3'`) or

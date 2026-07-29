@@ -10,14 +10,21 @@
 ```
 
 ```moonbit
-when={
+// generated wrapper: the bucket is a match over a generated enum whose
+// cases are the names the views use ("filterItem" -> FilterItem)
+when=w => match w {
   // (s, key, value, iterData) -> Bool — false skips the item
-  "filterItem": (s : ListState, _key, value, _iter) => match value {
-    Str(item) => item.to_lower().contains(s.query.to_lower())
-    _ => true
-  },
+  FilterItem =>
+    Some((s, _key, value, _iter) => match value {
+      Str(item) => item.to_lower().contains(s.query.to_lower())
+      _ => true
+    }),
 },
 ```
+
+(A raw `@component.component(...)` call takes a string-keyed map
+instead: `when={ "filterItem": (s : ListState, _key, value, _iter) =>
+... }` — same signature, different keying.)
 
 `@when` names a `when` entry called per item with
 `(state, key, value, iter_data)`; return `false` to skip. It filters

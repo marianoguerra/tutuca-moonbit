@@ -3,10 +3,16 @@
 Task-oriented recipes: "how do I do X" with a minimal working snippet and the
 one pitfall worth knowing. Each recipe is self-contained and brief; for the
 full directive *semantics* behind a pattern, see [core.md](../core.md) and its
-spokes. Many map 1:1 to runnable modules in this repo's `examples/*.mbt`.
+spokes.
 
 New to Tutuca? Read [core.md](../core.md) first, then reach here for a specific
 task.
+
+## Putting it together
+
+- [Build a todo list](todo-list.md) — a complete view + code pairing: a
+  `values` list of child components, `@when` filtering, add/toggle/delete
+  handlers, controlled inputs, and a harness test.
 
 ## Iteration & lists
 

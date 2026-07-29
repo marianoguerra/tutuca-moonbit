@@ -10,14 +10,20 @@ without storing it on the data.
 ```
 
 ```moonbit
-enrich={
+// generated wrapper: enum-keyed ("enrichItem" -> EnrichItem)
+enrich=e => match e {
   // (s, binds, key, value, iterData) -> Unit; write into binds
-  "enrichItem": (_s : ListState, binds, _key, value, _iter) => match value {
-    Str(item) => binds["count"] = Num(item.length().to_double()) // becomes @count
-    _ => ()
-  },
+  EnrichItem =>
+    Some((_s, binds, _key, value, _iter) => match value {
+      Str(item) => binds["count"] = Num(item.length().to_double()) // becomes @count
+      _ => ()
+    }),
 },
 ```
+
+(Raw `@component.component(...)` call: a string-keyed map,
+`enrich={ "enrichItem": (_s : ListState, binds, _key, value, _iter) =>
+... }`.)
 
 An `enrich` handler receives a **mutable** `binds` `Map` (seeded with
 `{ key, value }`); every key you write becomes an `@`-prefixed binding for

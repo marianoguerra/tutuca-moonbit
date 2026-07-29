@@ -81,10 +81,6 @@ before returning (CSS-selector addressed; `nth?` picks among matches):
 | `h.drive_value()` | the settled root `Value` |
 | `h.styles()` | the compiled CSS text |
 
-Worked references: `testing/harness/harness_test.mbt` (the shape) and
-the `examples/*_test.mbt` suite (forty modules' worth of interaction
-tests).
-
 ## Assertions — jest → MoonBit built-ins
 
 No matcher DSL. `@tutuca.Value` derives `Eq` (deep) and `Debug`, so
@@ -115,16 +111,15 @@ you want to look at it.
   events, assert the DOM. This exercises the template wiring, the
   dispatch path, and the handler in one go.
 - **Pure logic** — extract it into a plain `fn` next to the component
-  (the `format_size` pattern in `storybook/examples/file_picker.mbt`) and
+  (e.g. a `format_size` helper beside a file-picker component) and
   unit-test it directly.
 - **Handlers in isolation** — the typed handlers are erased behind the
   compiled `Component` (only the name lists — `compute_names`,
   `swap_names`, `alter_names`, `generated_names`, `has_update` — remain
   for introspection), so there is no handler table to call into.
-  For unit-level checks, keep the handler a named `fn` (or a bucket-map
-  builder like `fp_update()` in `storybook/examples/filter_paginate.mbt`) and call
-  it directly with a state struct — the arguments are plain typed
-  values, no mounting needed:
+  For unit-level checks, keep the handler a named `fn` (or a builder
+  `fn` returning the update fn) and call it directly with a state
+  struct — the arguments are plain typed values, no mounting needed:
 
   ```moonbit
   test "update: dec at unit level" {
@@ -174,12 +169,11 @@ test "the error path routes to on_error_name" {
 }
 ```
 
-(These are condensed from `storybook/examples/request_test.mbt`.)
-
 - Request fixtures are ordinary `RequestFn` values that call
   `respond(Ok(...))` / `respond(Err(...))` synchronously — the
-  parameterized-module pattern in `storybook/examples/request.mbt`
-  (`request_module(requests? = fixture_request_handlers())`).
+  parameterized-module pattern
+  (`request_module(requests? = fixture_request_handlers())`, see *The
+  ModuleDef convention* in [core.md](./core.md)).
 - To exercise a handler on a nested child, click the element inside it
   (the dispatch path reconstruction is part of what you're testing) or
   call the child's extracted update fn directly on a state value.
@@ -217,8 +211,6 @@ h.fire(
   ),
 )
 ```
-
-(See `storybook/examples/new_examples_test.mbt` for both, live.)
 
 ## Designing handlers so tests stay simple
 
@@ -265,7 +257,7 @@ custom events deliver plain `Map` metadata as `value`.
 ## Worked example
 
 Interaction tests covering two `update` `Input` arms and a generated
-mutator, mirroring `storybook/examples/counter_test.mbt`:
+mutator:
 
 ```moonbit
 test "counter: inc and dec round-trip" {
@@ -300,5 +292,5 @@ test "counter: immutability — one render per interaction" {
   *Component Skeleton*.
 - [request-response.md](./request-response.md) — the `Bubble` /
   `Receive` / `Response` arms, override forms, catch-all arms.
-- [cli.md](./cli.md) — the embedded CLI (`lint` / `render`) that pairs
-  with `moon test` in the verification recipe.
+- [cli.md](./cli.md) — the embedded CLI (`gen-views` / `watch`) that
+  pairs with `moon test` in the verification recipe.

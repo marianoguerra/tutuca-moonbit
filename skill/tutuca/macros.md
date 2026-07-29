@@ -56,9 +56,6 @@ fn btn_rm_macro() -> @anode.Macro {
 <x:btn-rm :handler="$removeInItemsAt" :arg="@key"></x:btn-rm>
 ```
 
-(Worked example with layout wrappers, checkbox/input/button macros and
-the indirection: `storybook/examples/todo_macros.mbt`.)
-
 If registering into a scope by hand (outside `ModuleDef::build_scope`),
 use `ComponentStack::register_macros(macros)` **before**
 `compile_all()` — views are compiled against the scope's macros.

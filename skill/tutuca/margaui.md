@@ -193,13 +193,12 @@ Export a `refresh_margaui()` that re-runs the same two lines, and call it from
 the loader after a dyncomp bundle registers new classes.
 
 **js target**: same shape with `app/browser`'s `@glue.inject_style`. If the
-compile must run in the page instead of the module (e.g. the in-browser
-playground, which mounts freshly-compiled user code in an iframe), ship the
+compile must run in the page instead of the module (e.g. an in-browser
+playground that mounts freshly-compiled user code in an iframe), ship the
 compiler as a small **wasm-gc** executable exporting `compile(classesJson) ->
-css` — see `playground/margaui_wasm` (built release + wasm-opt to `margaui.wasm`,
-~0.47 MB) and its use in `playground/web/runtime.js`. Either way there is no JS
-margaui package, no CDN import, and no `globalThis` class hand-off between
-MoonBit and the page.
+css` (built release plus `wasm-opt`, roughly 0.5 MB) and call it from the page
+after mount. Either way there is no JS margaui package, no CDN import, and no
+`globalThis` class hand-off between MoonBit and the page.
 
 ## Pitfall: assembled class names are invisible to the scanner
 
@@ -230,25 +229,75 @@ views={
 },
 ```
 
-`storybook/examples/personal_site.mbt` has the worked version: its
-`_margauiClasses` view interpolates a **MoonBit** helper
-(`ps_category_decoy_classes()`) into the view **string at construction
-time**, so the color tables stay the single source of truth while the
-template still carries literals. The cost is that the palette and the
-compute entries can drift apart with no check catching it; keep them adjacent and
-update both together. (This is the same rule
-[component-design.md](./component-design.md) gives for runtime-assembled
-margaui classes.)
+When the class set is driven by a MoonBit table (a color list, a
+kind → class map), keep one source of truth by interpolating a helper
+into the view **string at construction time** — the template still
+carries plain literals by the time the collector reads it:
+
+```moonbit
+fn decoy_classes() -> String {
+  // one entry per assembled class, joined space-separated:
+  // "bg-red bg-blue progress-red progress-blue"
+  COLORS.map(c => "bg-\{c} progress-\{c}").join(" ")
+}
+
+views["_margauiClasses"] = @anode.View::new(
+  "_margauiClasses",
+  raw_view="<p class=\"\{decoy_classes()}\"></p>",
+)
+```
+
+The cost is that the palette and the compute entries can drift apart
+with no check catching it; keep them adjacent and update both together.
+(This is the same rule [component-design.md](./component-design.md)
+gives for runtime-assembled margaui classes.)
 
 ## When authoring class lists
 
 Write margaui/Tailwind classes as **literal lists** in `class=` /
-`:class` so the collector sees them. For the component catalogue, load
-margaui's own skill alongside this one: it lives in the margaui repo
-under `.claude/skills/margaui/` (one file per component, with the
-canonical class strings the `compile` step expects). `tutuca
-install-skill` does **not** ship it — the MoonBit port bundles only the
-tutuca skill.
+`:class` so the collector sees them. margaui is daisyUI-compatible:
+component classes (`btn`, `card`, `input`, `badge`, `join`, …) plus the
+Tailwind v4 utilities. A starter vocabulary — enough for a typical app
+shell, all compiling against the embedded bundle:
+
+```html
+<!-- app shell: a centered column -->
+<div class="max-w-md mx-auto p-4 flex flex-col gap-3">
+  <!-- panel -->
+  <div class="card bg-base-200">
+    <div class="card-body">
+      <h2 class="card-title">Todos</h2>
+      <!-- toolbar row -->
+      <div class="flex gap-2 items-center">
+        <input class="input w-full" placeholder="What needs doing?" />
+        <button class="btn btn-primary btn-sm">Add</button>
+      </div>
+      <!-- an item row; completed state = 'opacity-60 line-through' -->
+      <div class="flex gap-3 items-center w-full">
+        <input type="checkbox" class="checkbox" />
+        <span class="w-full">Buy milk</span>
+        <button class="btn btn-soft btn-sm btn-error btn-circle">✕</button>
+      </div>
+      <!-- grouped controls + a counter -->
+      <div class="join">
+        <button class="btn btn-sm join-item">All</button>
+        <button class="btn btn-sm join-item btn-outline">Active</button>
+      </div>
+      <span class="badge badge-neutral">3 left</span>
+    </div>
+  </div>
+</div>
+```
+
+Buttons compose a kind (`btn-primary` / `btn-success` / `btn-error` /
+`btn-ghost` / `btn-soft` / `btn-outline`) and a size (`btn-xs` /
+`btn-sm`) onto the base `btn`; `input`, `checkbox`, `badge` and `card`
+follow the same base-plus-modifier pattern. For state-dependent styling,
+remember the collector rule above: switch between **full literals** with
+`@if.class` (`@then="'opacity-60 line-through'" @else="''"`), never
+assemble a class name from parts. If a dedicated margaui skill is
+available in your environment it has the full component catalogue; this
+vocabulary is enough when it isn't.
 
 ## See also
 

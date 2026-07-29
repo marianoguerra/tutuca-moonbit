@@ -19,50 +19,52 @@ list more than necessary.
 ```
 
 ```moonbit
-when={
+// generated wrapper: each bucket is a match over a generated enum
+// ("onlyMatches" -> OnlyMatches; a raw component() call would take
+// string-keyed maps instead)
+when=w => match w {
   // the @when predicate: (s, key, value, iterData) -> Bool
-  "onlyMatches": (s : PeopleState, _key, person, _iter) => matches(
-    person,
-    s.query,
-  ),
+  OnlyMatches => Some((s, _key, person, _iter) => matches(person, s.query)),
 },
-enrich_scope={
+enrich_scope=e => match e {
   // scope enrich (state only): the COUNT scan — clamp the page, publish
   // the pager bindings the controls outside the loop read
-  "pagerInfo": (s : PeopleState) => {
-    let total = match_count(s)
-    let (page_count, current) = clamp(s.page, total, s.pageSize)
-    {
-      "currentPage": Num(current.to_double()),
-      "isFirst": Bool(current <= 0),
-      "isLast": Bool(current >= page_count - 1),
-      "pageLabel": Str("Page \{current + 1} of \{page_count} · \{total}"),
-    }
-  },
+  PagerInfo =>
+    Some(s => {
+      let total = match_count(s)
+      let (page_count, current) = clamp(s.page, total, s.pageSize)
+      {
+        "currentPage": Num(current.to_double()),
+        "isFirst": Bool(current <= 0),
+        "isLast": Bool(current >= page_count - 1),
+        "pageLabel": Str("Page \{current + 1} of \{page_count} · \{total}"),
+      }
+    }),
 },
-loop_with={
+loop_with=l => match l {
   // the COLLECT scan: (s, seq, loopCtx) -> LoopWith
-  "page": (s : PeopleState, seq, ctx) => {
-    let current = match (ctx.lookup)("currentPage") { // reuse the enrich
-      Num(n) => n.to_int()
-      _ => 0
-    }
-    let (start, end) = (current * s.pageSize, (current + 1) * s.pageSize)
-    let keys : Array[@tutuca.Value] = []
-    let mut m = 0
-    for i, v in seq.list() {                // early-exit: stops at page end
-      if m >= end {
-        break
+  Page =>
+    Some((s, seq, ctx) => {
+      let current = match (ctx.lookup)("currentPage") { // reuse the enrich
+        Num(n) => n.to_int()
+        _ => 0
       }
-      if (ctx.filter)(Num(i.to_double()), v, Null) { // reuse the declared @when
-        if m >= start {
-          keys.push(Num(i.to_double()))
+      let (start, end) = (current * s.pageSize, (current + 1) * s.pageSize)
+      let keys : Array[@tutuca.Value] = []
+      let mut m = 0
+      for i, v in seq.list() {                // early-exit: stops at page end
+        if m >= end {
+          break
         }
-        m += 1
+        if (ctx.filter)(Num(i.to_double()), v, Null) { // reuse the declared @when
+          if m >= start {
+            keys.push(Num(i.to_double()))
+          }
+          m += 1
+        }
       }
-    }
-    @component.LoopWith::new(keys~)
-  },
+      @component.LoopWith::new(keys~)
+    }),
 },
 ```
 
@@ -82,8 +84,6 @@ collect pass scans just far enough to fill the page.
 
 This is one of three wiring strategies (naive two-scan, shared, coupled
 one-scan) — the trade-offs and the other two are in
-[iteration.md](../iteration.md) *Filter-then-paginate strategies*; the
-complete runnable versions of all three are `storybook/examples/filter_paginate.mbt`
-(tests in `storybook/examples/filter_paginate_test.mbt`). See
+[iteration.md](../iteration.md) *Filter-then-paginate strategies*. See
 [filter-a-list.md](filter-a-list.md) and
 [paginate-a-list.md](paginate-a-list.md) for each half on its own.

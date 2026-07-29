@@ -43,37 +43,47 @@ host-element `@each` loop when you need enrichment.
 
 Each iteration directive has its own **typed bucket** on the component,
 so the handler signatures say exactly what the renderer hands them —
-state first, always:
+state first, always. With generated views the bucket is a match over a
+generated enum (one case per name the views use — a closed set), and the
+wrapper types the lambdas, so no annotations are needed:
 
 ```moonbit
 // @when: (s, key, value, iterData) -> Bool — true keeps the item
-when={
-  "filterItem": (s : ListState, _key, value, _iter) => value
-  .str()
-  .to_lower()
-  .contains(s.query.to_lower()),
+when=w => match w {
+  FilterItem =>
+    Some((s, _key, value, _iter) => value
+      .str()
+      .to_lower()
+      .contains(s.query.to_lower())),
 },
 // @enrich-with (with @each): (s, binds, key, value, iterData) -> Unit
 // binds is a MUTABLE Map seeded { key, value } — write into it,
 // the return value is Unit
-enrich={
-  "enrichItem": (_s : ListState, binds, _key, value, _iter) => binds["count"] = Num(
-    value.str().length().to_double(),
-  ),
+enrich=e => match e {
+  EnrichItem =>
+    Some((_s, binds, _key, value, _iter) => binds["count"] = Num(
+      value.str().length().to_double(),
+    )),
 },
 // @loop-with: (s, seq, loopCtx) -> LoopWith, with optional
 // iter_data / start / end / keys
-loop_with={
-  "getIterData": (s : ListState, seq, _ctx) => {
-    let start = s.page * s.pageSize
-    @component.LoopWith::new(
-      iter_data=Map({ "total": Num(seq.list().length().to_double()) }),
-      start~,
-      end=start + s.pageSize,
-    )
-  },
+loop_with=l => match l {
+  GetIterData =>
+    Some((s, seq, _ctx) => {
+      let start = s.page * s.pageSize
+      @component.LoopWith::new(
+        iter_data=Map({ "total": Num(seq.list().length().to_double()) }),
+        start~,
+        end=start + s.pageSize,
+      )
+    }),
 },
 ```
+
+(A raw `@component.component(...)` call — no generated wrapper — takes
+string-keyed maps instead: `when={ "filterItem": (s : ListState, _key,
+value, _iter) => ... }`, with the state annotated. The signatures are
+the same; only the keying differs.)
 
 Loop keys and values arrive as `@tutuca.Value` — read them with the
 coercers (`.str()`, `.int()`, `.list()`, `.field("x")`) or pattern-match
@@ -221,17 +231,14 @@ Operations must return **new** instances so state transactions see a
 change. One trait-object caveat: a handler sees the field as `&Obj` and
 there is no downcast back to the concrete struct — rebuild the
 collection from `obj_seq_entries()` when mutating (the port's
-trait-object rule). Complete worked example:
-`storybook/examples/custom_collection.mbt` (a keyed playlist whose `@key`s resolve
-in remove handlers).
+trait-object rule).
 
 ## Filter-then-paginate strategies
 
 The recipe form is in
 [patterns/filter-and-paginate.md](./patterns/filter-and-paginate.md).
 There are three ways to wire it, trading simplicity for scans-per-render
-(all return `keys`, so all keep identity). The complete worked MoonBit
-version of all three is `storybook/examples/filter_paginate.mbt`:
+(all return `keys`, so all keep identity):
 
 **1. Naive — two independent scans.** The loop scans + slices the whole
 list itself; a separate `@enrich-with` scans again for the pager labels.
@@ -254,29 +261,29 @@ but the two handlers are welded together — name them so it shows:
 
 ```moonbit
 // the only scan: count + labels + keys, stashed under "__keys__"
-enrich_scope={
-  "pagerInfo": (s : PeopleState) => {
-    "__keys__": List(page_keys(s)), // consumed ONLY by the loop-with below
-    "isFirst": Bool(...), "isLast": Bool(...), "pageLabel": Str(...),
-  },
+enrich_scope=e => match e {
+  PagerInfo =>
+    Some(s => {
+      "__keys__": List(page_keys(s)), // consumed ONLY by the loop-with below
+      "isFirst": Bool(...), "isLast": Bool(...), "pageLabel": Str(...),
+    }),
 },
 // useless without the enrich: just forwards its keys
-loop_with={
-  "forwardKeys": (_s : PeopleState, _seq, ctx) => match
-    (ctx.lookup)("__keys__") {
-    List(keys) => @component.LoopWith::new(keys~)
-    _ => @component.LoopWith::new(keys=[])
-  },
+loop_with=l => match l {
+  ForwardKeys =>
+    Some((_s, _seq, ctx) => match (ctx.lookup)("__keys__") {
+      List(keys) => @component.LoopWith::new(keys~)
+      _ => @component.LoopWith::new(keys=[])
+    }),
 },
 ```
 
 Test any strategy end-to-end with the harness — mount the example, type
 into the search box, click the pager, and assert the visible rows
-(`h.texts(".row")`); see `storybook/examples/filter_paginate_test.mbt` and
-[testing.md](./testing.md). (The JS `collectIterBindings` helper has no
-MoonBit counterpart — the bucket handlers are plain typed functions, so
-call them directly for unit-level checks, or go through the mounted
-view.)
+(`h.texts(".row")`); see [testing.md](./testing.md). (The JS
+`collectIterBindings` helper has no MoonBit counterpart — the bucket
+handlers are plain typed functions, so call them directly for unit-level
+checks, or go through the mounted view.)
 
 ## See also
 
