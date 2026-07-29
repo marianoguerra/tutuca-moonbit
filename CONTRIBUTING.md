@@ -81,6 +81,40 @@ package imports, make sure it is not under an excluded directory — verify by
 unpacking `_build/publish/*.zip` into an empty directory and running
 `moon check` / `moon test` there, which is what a consumer sees.
 
+## Releasing the playground to npm
+
+The playground ships as two npm packages, staged and packed from an assembled
+`dist/` by `playground/build/pack-npm.mjs` (their manifests and READMEs live in
+`playground/npm/`):
+
+| package | holds | ~size |
+| --- | --- | --- |
+| `@marianoguerra/tutuca-playground` | the shell: `<mb-playground>`, worker, editor, view generator, margaui | 0.5 MB |
+| `@marianoguerra/tutuca-playground-payload` | `manifest.json` + `fs/` — the `.mi`/`.core` bundles user code compiles against | 8.6 MB |
+
+Two packages because they turn over for different reasons — the payload is
+rebuilt whenever the MoonBit toolchain moves, the shell isn't. They unpack into
+the same `playground/` + `site/` layout, so a consumer copying both into a
+static directory gets the arrangement everything resolves against by default.
+
+The in-browser compiler (`moonc-web.cjs`) is **not** packed: it is upstream's
+`@moonbit/moonc-worker` build, published with no license field, and the
+playground can be pointed at a consumer's own copy. The payload names the exact
+version in `peerDependencies` instead, and its `manifest.json` carries the pin
+so the worker can check a served compiler against it.
+
+```sh
+moon run --target native cmd/dev -- dist       # or: -- playground, then assemble-site.mjs
+moon run --target native cmd/dev -- npm-pack   # stages + packs into _build/npm/
+tar tzf _build/npm/marianoguerra-tutuca-playground-0.8.1.tgz   # review what ships
+npm publish _build/npm/<file>.tgz --access public              # scoped: public on first release
+```
+
+Both packages take their version from `moon.mod`, so they release with the
+library; `npm-pack` refuses to run against a `dist/` assembled under a different
+toolchain than `playground/build/toolchain.json` currently pins. Publishing is
+deliberately manual — the script only packs, and prints the commands.
+
 ### `moon doc` does not work here
 
 `moon doc` builds *every* package of *every* dependency module and ignores

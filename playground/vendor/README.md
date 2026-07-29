@@ -53,3 +53,14 @@ because the reader can't see impls the writer emitted.
 If you have a `moonc-web.cjs` matching a toolchain that npm doesn't publish,
 drop it in this directory manually — `ensureCompiler()` won't overwrite an
 existing file unless you pass `--force`.
+
+### Serving someone else's copy
+
+Nothing in the shipped playground requires the compiler to sit beside the
+payload: a host can point it at their own installed `@moonbit/moonc-worker`
+with `globalThis.MB_PLAYGROUND = { compilerUrl }` (see `playgroundConfig` in
+`playground/web/runtime.js`), which is how the playground can be packaged
+without redistributing the blob. The pairing rule above still holds, and the
+worker enforces what it can: `manifest.json` records the `mooncWorker` version
+the payload was built against, and a compiler served out of an npm package —
+`package.json` beside it — is checked against that before anything loads.

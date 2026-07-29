@@ -1,6 +1,7 @@
 // Compiler worker: drives @moonbit/moonc-worker (the in-browser MoonBit
-// compiler, vendored as moonc-web.cjs) to compile a user package against the
-// prebuilt tutuca-mb library and link it to a runnable module.
+// compiler, served as moonc-web.cjs — vendored here, or a consumer's own copy
+// of the npm package) to compile a user package against the prebuilt tutuca-mb
+// library and link it to a runnable module.
 //
 // moonc-web.cjs is a CommonJS module built for both Node and the browser: it
 // only touches node:fs when it detects a Node runtime, so in a worker we just
@@ -16,6 +17,16 @@ self.require = (m) => {
 
 let moonc = null;
 let mooncSrc = null; // the compiler source text, fetched once and re-evaluated
+
+// Everything this worker fetches. The init message hands over ABSOLUTE URLs
+// (runtime.js resolves them); the defaults below keep a hand-written page that
+// drops this file beside an assembled payload working. Nothing here is resolved
+// against the worker's own location, which is what lets the payload live in a
+// different folder — or on a different origin — from this script, and what lets
+// the cross-origin blob shim (see runtime.js) work at all: a blob worker's base
+// URL points at nothing.
+const urls = { compiler: "./moonc-web.cjs", fsBase: "./fs/" };
+
 // Every payload this worker has loaded, keyed by target:
 //   { target, std:[[name,bytes]], lib:[[name,bytes]], direct:[[name,bytes]], cores:[bytes], userPkg }
 // ONE worker serves the whole page — the standalone playground, or every
@@ -46,7 +57,7 @@ const bytes = async (url) => new Uint8Array(await (await fetch(url)).arrayBuffer
 // (importScripts surfaces any in-module error as an opaque NetworkError, so we
 // avoid it.)
 async function loadCompiler() {
-  mooncSrc ??= await (await fetch("./moonc-web.cjs")).text();
+  mooncSrc ??= await (await fetch(urls.compiler)).text();
   self.module = { exports: {} };
   self.exports = self.module.exports;
   (0, eval)(mooncSrc);
@@ -78,16 +89,61 @@ fn main {
 `,
 };
 
-async function init(manifestUrl, target) {
+// The baked .mi/.core payload and the in-browser compiler are a PAIR: both come
+// out of one moonc build, and a compiler from another build reads the baked
+// interfaces wrong and reports it as nonsense about the user's code — typically
+// `[E4018] Type X does not implement trait …: no impl is defined` (see
+// playground/vendor/README.md). Nothing in moonc-web.cjs reports its own
+// version, so probe the package.json npm ships beside it: present when the
+// compiler is served out of an installed @moonbit/moonc-worker, which is how a
+// consumer supplies their own rather than us redistributing 5.5 MB of it.
+// Absent for a bare vendored blob — then there is nothing to compare and this
+// says nothing rather than guessing.
+async function assertCompilerPairing(manifest) {
+  const want = manifest.mooncWorker;
+  if (!want) return;
+  let got;
+  try {
+    const r = await fetch(new URL("./package.json", urls.compiler));
+    if (!r.ok) return;
+    got = (await r.json()).version;
+  } catch {
+    return;
+  }
+  if (!got) return;
+  // The published version carries semver build metadata (0.1.202607282+5e7afb0c0)
+  // that the registry — and the pin, and npm's own resolution — leaves off, so
+  // compare identities, not strings. When the compiler does name its moonc build
+  // that way, hold it to the one the payload was written by: same-day rebuilds
+  // share a version and are still a different pair.
+  const identity = (v) => String(v).split("+")[0];
+  const build = (v) => String(v).split("+")[1] || "";
+  if (identity(got) === identity(want)) {
+    const b = build(got);
+    if (!b || !manifest.mooncBuild || b === manifest.mooncBuild) return;
+  }
+  throw new Error(
+    `playground payload/compiler mismatch: this payload was built against ` +
+      `@moonbit/moonc-worker@${want} (moonc ${manifest.toolchain}), but the compiler at ` +
+      `${urls.compiler} is @moonbit/moonc-worker@${got}. Serve the matching version — ` +
+      `a mismatched compiler misreads the baked interfaces and blames your code for it.`,
+  );
+}
+
+async function init(args, target) {
   // Already loaded: hand back the same summary without touching the compiler.
   // (Re-evaluating it here would throw away the warm instance for nothing.)
   const loaded = payloads.get(target);
   if (loaded) return loaded.summary;
+  if (args.compiler) urls.compiler = args.compiler;
+  if (args.fsBase) urls.fsBase = args.fsBase;
+  const manifest = await (await fetch(args.manifest ?? "./manifest.json")).json();
+  // before the 5.5 MB fetch: a mismatch makes loading it pointless
+  await assertCompilerPairing(manifest);
   await loadCompiler();
-  const manifest = await (await fetch(manifestUrl)).json();
   const m = manifest.targets[target];
   if (!m) throw new Error("no manifest for target " + target);
-  const base = `./fs/${target}/`;
+  const base = `${urls.fsBase}${target}/`;
   const load = (list) => Promise.all(list.map(async (p) => [p, await bytes(base + p)]));
   const [std, lib, cores] = await Promise.all([
     load(m.std),
@@ -182,7 +238,7 @@ async function compile(userCode, viewsCode, viewsIrCode, target) {
 self.onmessage = async (e) => {
   const { id, kind, args } = e.data;
   try {
-    if (kind === "init") self.postMessage({ id, ok: true, value: await init(args.manifest, args.target) });
+    if (kind === "init") self.postMessage({ id, ok: true, value: await init(args, args.target) });
     else if (kind === "compile") {
       const r = await compile(args.code, args.views, args.viewsIr, args.target);
       // transfer the linked bytes to avoid a copy

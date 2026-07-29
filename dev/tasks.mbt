@@ -233,6 +233,17 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "npm-pack",
+      about: "stage + `npm pack` the playground's two npm packages from an assembled dist/ (packs only — publishing stays manual; see CONTRIBUTING.md)",
+      commands: [
+        {
+          label: "pack npm packages",
+          prog: "node",
+          args: ["playground/build/pack-npm.mjs"],
+        },
+      ],
+    },
+    {
       name: "setup",
       about: "install js-test deps (happy-dom) and enable the git hooks",
       commands: [

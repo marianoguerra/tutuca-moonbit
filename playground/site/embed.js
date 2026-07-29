@@ -15,14 +15,19 @@
 // single-editor look and compiles its source alone.
 //
 // All instances share ONE compiler worker (the 5.5 MB in-browser MoonBit
-// compiler), reused from the sibling standalone playground payload under
-// ./playground/. The worker fetches its interfaces/cores relative to its own
-// URL, so pointing at ./playground/compiler.worker.js loads dist/playground/'s
-// payload with no duplication. Compiles are cheap once the compiler is loaded;
-// each element compiles LAZILY the first time it scrolls into view, so a page
-// full of playgrounds doesn't pay for every compile up front.
+// compiler), reused from the standalone playground payload that ships next to
+// this file — so a page of embeds costs one compiler load, not one per element.
+// Compiles are cheap once it is up; each element compiles LAZILY the first time
+// it scrolls into view, so a page full of playgrounds doesn't pay for every
+// compile up front.
 
-import { errorDiagnostics, makeCompiler, mount, mountWasm } from "../playground/runtime.js";
+import {
+  errorDiagnostics,
+  makeCompiler,
+  mount,
+  mountWasm,
+  playgroundConfig,
+} from "../playground/runtime.js";
 import { createEditor } from "../playground/editor.bundle.js";
 import {
   componentName,
@@ -31,8 +36,24 @@ import {
   generateViews,
 } from "../playground/viewgen-client.js";
 
-// one shared compiler for the whole page; init() is memoized inside makeCompiler
-const compiler = makeCompiler("./playground/compiler.worker.js");
+// Resolved against THIS module, not the page: the pair of folders relocates
+// together (into a package dir, a subfolder, a CDN) with nothing to configure.
+// A host that splits them apart — payload served from elsewhere, compiler from
+// their own @moonbit/moonc-worker — sets globalThis.MB_PLAYGROUND before the
+// first compile; see playgroundConfig in ../playground/runtime.js.
+const urls = () => playgroundConfig(new URL("../playground/", import.meta.url));
+
+// One shared compiler for the whole page; init() is memoized inside
+// makeCompiler. Built on first use rather than at import, so MB_PLAYGROUND can
+// be set by any script that runs before the first playground scrolls into view.
+let _compiler;
+function compiler() {
+  if (!_compiler) {
+    const u = urls();
+    _compiler = makeCompiler(u.workerUrl, u);
+  }
+  return _compiler;
+}
 
 // Which backends the assembled payload actually carries (wasm-gc is only real
 // when the site was built without JS_ONLY). Fetched once from the manifest and
@@ -40,7 +61,7 @@ const compiler = makeCompiler("./playground/compiler.worker.js");
 // load. Falls back to js-only if the manifest can't be read.
 let _availableTargets;
 function availableTargets() {
-  return (_availableTargets ??= fetch("./playground/manifest.json")
+  return (_availableTargets ??= fetch(urls().manifestUrl)
     .then((r) => r.json())
     .then((m) => Object.keys(m.targets || { js: 1 }))
     .catch(() => ["js"]));
@@ -179,6 +200,18 @@ class MbPlayground extends HTMLElement {
       for (const opt of this.targetEl.options) opt.disabled = !targets.includes(opt.value);
       // Show the toggle only when there's more than one runnable target.
       this.targetEl.hidden = targets.length < 2;
+      // `target="js"` pins a backend for one element, the way `?target=` does
+      // for the standalone playground: a page about one backend says so in the
+      // markup instead of hoping the reader flips the toggle. Pinned like a
+      // reader's own pick, so resolveTarget leaves it alone — but only if the
+      // payload carries it, so a JS_ONLY build ignores `target="wasm-gc"`
+      // rather than asking the worker for something it hasn't got. This lands
+      // before run(), which awaits the same memoized promise.
+      const asked = this.getAttribute("target");
+      if (targets.includes(asked)) {
+        this.targetEl.value = asked;
+        this._pinned = true;
+      }
     });
     this.targetEl.addEventListener("change", () => {
       this._pinned = true;
@@ -352,6 +385,10 @@ class MbPlayground extends HTMLElement {
     if (this._compiling) return;
     this._compiling = true;
     let fallback = false;
+    // Loading the compiler/payload can fail on its own (a missing payload, a
+    // compiler that doesn't pair with it) — that is not the target's fault, and
+    // labelling it "wasm instantiate failed" hides the message that says so.
+    let loaded = false;
     const target = await this.resolveTarget();
     this.setStatus(`compiling (${target})…`, "busy");
     this.diagsEl.textContent = "";
@@ -359,14 +396,15 @@ class MbPlayground extends HTMLElement {
       // The generator is a separate 1.3 MB payload; load it only for the
       // elements that have a View tab, and only when one actually runs.
       if (this._viewSrc) await ensureViewgen();
-      await compiler.init(target); // load this target's payload (once per target)
+      await compiler().init(target); // load this target's payload (once per target)
+      loaded = true;
       // Always regenerate before compiling: the View tab is the source of
       // truth for the generated module, and a debounce may still be pending.
       if (!this.generate()) {
         this.setStatus("view error", "error");
         return;
       }
-      const r = await compiler.compile(
+      const r = await compiler().compile(
         this.editors.component.getValue(),
         this._generated.module,
         this._generated.ir,
@@ -410,7 +448,10 @@ class MbPlayground extends HTMLElement {
         throw mountErr;
       }
     } catch (e) {
-      this.setStatus(target === "wasm-gc" ? "wasm instantiate failed" : "error", "error");
+      this.setStatus(
+        !loaded ? "compiler failed to load" : target === "wasm-gc" ? "wasm instantiate failed" : "error",
+        "error",
+      );
       this.diagsEl.textContent = String(e.stack || e.message || e);
       this.editors.component.setDiagnostics([]);
     } finally {

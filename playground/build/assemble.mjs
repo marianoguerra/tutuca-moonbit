@@ -169,8 +169,14 @@ await esbuild({
 });
 console.log("bundled editor.bundle.js");
 
+// The pin travels WITH the payload, not just in the repo: once these bundles
+// are served from somewhere else (a package, a CDN) the toolchain.json that
+// produced them is out of reach, and `mooncWorker` is what the worker checks a
+// consumer-supplied compiler against (compiler.worker.js assertCompilerPairing).
 const manifest = {
   toolchain: TOOLCHAIN.moonc,
+  mooncBuild: TOOLCHAIN.mooncBuild,
+  moon: TOOLCHAIN.moon,
   mooncWorker: TOOLCHAIN.mooncWorker,
   targets: {},
 };

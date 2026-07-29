@@ -6,7 +6,79 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The playground is packaged for npm.** `cmd/dev -- npm-pack` stages and packs
+  two packages out of an assembled `dist/`:
+  `@marianoguerra/tutuca-playground` (the shell — `<mb-playground>`, worker,
+  editor, view generator, margaui; ~0.5 MB) and
+  `@marianoguerra/tutuca-playground-payload` (`manifest.json` + `fs/`, the
+  `.mi`/`.core` bundles user code compiles against; ~8.6 MB). Manifests and
+  READMEs live in `playground/npm/`; both take their version from `moon.mod`.
+
+  Two packages because they turn over for different reasons — the payload is
+  rebuilt whenever the MoonBit toolchain moves, the shell is not — and they
+  unpack into the same `playground/` + `site/` layout, so a consumer copying
+  both into a static directory gets the arrangement everything resolves against
+  by default. The in-browser compiler is not packed: it is upstream's
+  `@moonbit/moonc-worker` build, published with no license field, so the payload
+  names the exact version in `peerDependencies` and the playground is pointed at
+  the consumer's own copy. `npm-pack` refuses a `dist/` assembled under a
+  different toolchain than `playground/build/toolchain.json` pins, and packs
+  only — publishing stays a deliberate manual step (see CONTRIBUTING.md).
+
+- **`<mb-playground target="js">`** pins one element's backend, the way
+  `?target=` does for the standalone playground, so a page about one backend can
+  say so in the markup. Ignored when the payload has no such target.
+
 ### Changed
+
+- **The playground shell stopped assuming it is the site.** Every URL it fetches
+  — the worker, `moonc-web.cjs`, `manifest.json`, `fs/` — used to be written
+  relative to the page (`./playground/compiler.worker.js`) or resolved by the
+  worker against its own location. Both are now resolved once, absolutely, from
+  the calling module's `import.meta.url` and handed to the worker in the init
+  message (`playgroundConfig` + `makeCompiler` in `playground/web/runtime.js`),
+  so the worker resolves nothing itself.
+
+  That buys three things the old layout could not do. The folders relocate — a
+  package directory, a subfolder, a CDN — with nothing to configure. A host can
+  split them apart with `globalThis.MB_PLAYGROUND = { payloadBase, compilerUrl,
+  workerUrl }`, which is what lets them serve their own installed
+  `@moonbit/moonc-worker` instead of a copy of the 5.5 MB blob. And a worker on
+  another origin now works at all: a `Worker` script must be same-origin, so a
+  cross-origin one gets a same-origin blob shim that `importScripts` it — which
+  is only safe because the worker no longer resolves anything against the blob's
+  base URL, which points at nothing.
+
+  A host-supplied compiler is checked against the payload it was built for:
+  `manifest.json` carries `mooncWorker` (plus `mooncBuild` and `moon`, so the
+  pin travels with the bundles), and the worker compares it against the
+  `package.json` npm ships beside `moonc-web.cjs` when one is there. The payload
+  and the compiler are one pair; a mismatch used to surface as `[E4018] … no
+  impl is defined` against perfectly good user code, and now says so before
+  fetching 5.5 MB. Versions are compared as semver identities, not strings —
+  npm publishes the compiler with build metadata the registry and the pin both
+  leave off (`0.1.202607282+5e7afb0c0`), and when it is there the build must
+  match `manifest.mooncBuild` too. Either shell also stops labelling a failed
+  compiler load "wasm instantiate failed", which hid exactly that message.
+
+- **The standalone playground opens on wasm-gc, and `?target=` pins a backend.**
+  A linked wasm-gc module is ~0.26 MB where the js one is ~1.1 MB of
+  JavaScript, and it is what the landing page's embeds already run. `?target=js`
+  or `?target=wasm-gc` wins over the default, so a link can pin the backend it
+  is about; the toggle keeps the query parameter in step, so the URL in the
+  address bar always reproduces what is on screen. A payload without wasm-gc
+  (`JS_ONLY=1`) still opens on js, and — since the default now needs
+  JS-String-Builtins — a mount that throws drops the page to js once and says
+  why, the same fallback the embeds make.
+
+- **The playground toolbar got a once-over.** One height and one shape for every
+  control (the UA widgets agreed on neither, which is what made the row look
+  ragged), a primary Run button, uppercase labels on both selects, and a status
+  chip with a state-coloured dot at the far end. The chrome's colours moved into
+  CSS custom properties, so dark mode is a token swap rather than a second copy
+  of every rule that draws a line.
 
 - **The landing page's embedded playgrounds compile to wasm-gc.** A linked
   wasm-gc module is ~0.26 MB where the js one is ~1.1 MB of JavaScript, which is

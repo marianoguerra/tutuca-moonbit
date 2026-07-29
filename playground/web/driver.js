@@ -17,12 +17,16 @@
 // name CounterMsg / counter_views with no import — that is what
 // "auto-imported" amounts to here.
 
-import { errorDiagnostics, makeCompiler, mount, mountWasm } from "./runtime.js";
+import { errorDiagnostics, makeCompiler, mount, mountWasm, playgroundConfig } from "./runtime.js";
 import { createEditor } from "./editor.bundle.js";
 import { componentName, componentNames, generateViews } from "./viewgen-client.js";
 
 const $ = (s) => document.querySelector(s);
-const compiler = makeCompiler("./compiler.worker.js");
+// This shell ships inside the payload folder, so everything defaults to a
+// sibling of THIS module rather than of the page — the folder can be served
+// from anywhere. See playgroundConfig for the globalThis.MB_PLAYGROUND knobs.
+const urls = playgroundConfig(new URL("./", import.meta.url));
+const compiler = makeCompiler(urls.workerUrl, urls);
 
 const editor = createEditor({ parent: $("#editor"), doc: window.STARTER || "", onRun: run });
 const viewEditor = createEditor({
@@ -105,6 +109,26 @@ function scheduleGenerate() {
 let availableTargets = ["js"];
 const currentTarget = () => targetSel.value;
 
+// Which backend a fresh load compiles to. `?target=wasm-gc|js` wins, so a link
+// can pin one (a bug report, a doc that needs the other backend); otherwise
+// wasm-gc, which links ~0.26 MB against the js payload's ~1.1 MB and is what
+// the landing page's embeds run. A payload without wasm-gc (JS_ONLY=1) or a
+// `?target=` naming a backend it doesn't carry falls back to js rather than
+// offering a toggle the worker can't honour.
+function bootTarget() {
+  const asked = new URLSearchParams(location.search).get("target");
+  if (asked && availableTargets.includes(asked)) return asked;
+  return availableTargets.includes("wasm-gc") ? "wasm-gc" : "js";
+}
+
+// Keep ?target= in step with the toggle, so the URL in the address bar is
+// always the one that reproduces what is on screen.
+function rememberTarget(target) {
+  const url = new URL(location.href);
+  url.searchParams.set("target", target);
+  history.replaceState(null, "", url);
+}
+
 function setStatus(msg, cls) {
   status.textContent = msg;
   status.className = cls || "";
@@ -149,14 +173,23 @@ function tryPretty(s) {
 
 // --- compile + run ---
 let compiling = false;
+// set once if a wasm-gc mount throws — the engine has no JS-String-Builtins, so
+// don't offer that backend again this session (see the fallback below)
+let wasmFellBack = false;
 async function run() {
   if (compiling) return;
   compiling = true;
+  let fallback = false;
+  // Loading the compiler/payload can fail on its own (a missing payload, a
+  // compiler that doesn't pair with it); that is not the backend's fault, and
+  // calling it "wasm instantiate failed" buries the message that explains it.
+  let loaded = false;
   const target = currentTarget();
   setStatus(`compiling (${target})…`, "busy");
   diags.textContent = "";
   try {
     await compiler.init(target); // load this target's payload (once per target)
+    loaded = true;
     // Always regenerate before compiling: the View tab is the source of truth
     // for the generated module, and a debounce may still be pending.
     if (!generate()) {
@@ -180,21 +213,46 @@ async function run() {
       setStatus(errs.length ? `compile errors (${errs.length})` : "compile failed", "error");
       return;
     }
-    if (target === "wasm-gc") {
-      // linkCore returned a wasm binary; instantiate + drive the DOM from wasm.
-      // A string-ABI mismatch in the vendored in-browser linker currently makes
-      // this throw a WebAssembly.CompileError — surfaced in the diagnostics pane.
-      await mountPreviewWasm(r.result);
-    } else {
-      mountPreview(new TextDecoder().decode(r.result));
+    let mountErr = null;
+    try {
+      if (target === "wasm-gc") {
+        // linkCore returned a wasm binary; instantiate + drive the DOM from wasm.
+        await mountPreviewWasm(r.result);
+      } else {
+        mountPreview(new TextDecoder().decode(r.result));
+      }
+    } catch (e) {
+      mountErr = e;
     }
-    setStatus(`ok — compiled + linked (${target}) in ${r.ms} ms`, "ok");
+    // It compiled AND linked, so a throw from the mount alone is the engine's
+    // fault rather than the reader's — most likely no JS-String-Builtins, which
+    // the wasm payload needs. wasm-gc is the default now, so a browser without
+    // them would otherwise fail on every load: drop to js once, say so, and
+    // re-run. Same move the landing page's embeds make. Only the mount is
+    // treated this way; a compile that throws is a real failure and reports.
+    if (!mountErr) {
+      setStatus(`ok — compiled + linked (${target}) in ${r.ms} ms`, "ok");
+    } else if (target === "wasm-gc" && !wasmFellBack) {
+      wasmFellBack = true;
+      targetSel.value = "js";
+      rememberTarget("js");
+      fallback = true;
+    } else {
+      throw mountErr;
+    }
   } catch (e) {
-    setStatus(target === "wasm-gc" ? "wasm instantiate failed" : "worker error", "error");
+    setStatus(
+      !loaded ? "compiler failed to load" : target === "wasm-gc" ? "wasm instantiate failed" : "worker error",
+      "error",
+    );
     diags.textContent = String(e.stack || e.message || e);
     editor.setDiagnostics([]);
   } finally {
     compiling = false;
+  }
+  if (fallback) {
+    await run();
+    setStatus(`${status.textContent} — wasm-gc not supported here, fell back to js`, "ok");
   }
 }
 
@@ -231,7 +289,10 @@ examplesSel.addEventListener("change", () => {
 
 // target toggle — recompile the SAME source against the other backend (the
 // worker swaps its payload on init and injects that target's boot glue).
-targetSel.addEventListener("change", run);
+targetSel.addEventListener("change", () => {
+  rememberTarget(currentTarget());
+  run();
+});
 
 // --- boot ---
 (async () => {
@@ -240,13 +301,13 @@ targetSel.addEventListener("change", run);
     // The manifest lists the targets the payload actually carries; hide any
     // toggle option the build didn't assemble (wasm-gc needs a WASMGC=1 build).
     try {
-      const manifest = await (await fetch("./manifest.json")).json();
+      const manifest = await (await fetch(urls.manifestUrl)).json();
       availableTargets = Object.keys(manifest.targets || { js: 1 });
     } catch {}
     for (const opt of targetSel.options) {
       opt.disabled = !availableTargets.includes(opt.value);
     }
-    if (!availableTargets.includes(targetSel.value)) targetSel.value = "js";
+    targetSel.value = bootTarget();
     fillExamples();
     generate();
     const info = await compiler.init(currentTarget());

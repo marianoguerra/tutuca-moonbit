@@ -107,6 +107,10 @@ guest-bindings:
 package:
     moon package
 
+# stage + npm pack the playground's npm packages into _build/npm (run `just dist` first)
+npm-pack:
+    {{dev}} npm-pack
+
 # ── publish ────────────────────────────────────────────────────────────────
 
 # publish to mooncakes.io (runs the full ci gate first; needs `moon login`)

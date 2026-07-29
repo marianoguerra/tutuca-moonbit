@@ -1,14 +1,69 @@
 // Shared playground runtime: a compiler client (worker RPC) and an iframe
 // mounter. Used by both the standalone playground driver (driver.js) and the
-// embeddable <mb-playground> element (../site/embed.js). The worker URL is a
-// parameter so the two callers can point at the same compiler.worker.js from
-// different folders (the worker fetches its payload relative to its own URL, so
-// the manifest/`fs`/cores resolve the same way regardless of the caller's path).
+// embeddable <mb-playground> element (../site/embed.js).
+//
+// Every URL the worker needs is resolved HERE, absolutely, and handed over in
+// the init message; the worker resolves nothing against its own location. That
+// is what lets the three movable parts move independently — this shell's own
+// scripts, the payload (manifest + `fs/`), and the compiler blob — instead of
+// all three having to sit in one folder. `playgroundConfig` below is where a
+// shell decides that layout.
+
+// Where a shell's four URLs come from. `defaultBase` is the folder that shell's
+// own bundle sits in, resolved by the caller against its `import.meta.url`
+// ("./" for driver.js, which lives IN the payload folder; "../playground/" for
+// site/embed.js). Overrides go on `globalThis.MB_PLAYGROUND` before the first
+// compile — all optional, all resolved against the page:
+//
+//   payloadBase   folder holding manifest.json + fs/ (the toolchain-coupled
+//                 half — the part worth versioning and shipping separately)
+//   compilerUrl   moonc-web.cjs, e.g. an installed @moonbit/moonc-worker
+//                 served from the consumer's own static dir
+//   workerUrl     compiler.worker.js, if this shell's scripts were split off
+//
+// ES imports (runtime.js, editor.bundle.js, viewgen.js, margaui.wasm) are NOT
+// covered by this: they are code, resolved by whoever imports them. This is for
+// what has to be fetched by URL.
+export function playgroundConfig(defaultBase) {
+  const cfg = globalThis.MB_PLAYGROUND ?? {};
+  // a base must end in "/" or the last segment is a sibling, not a folder
+  const dir = (u) => (String(u).endsWith("/") ? String(u) : String(u) + "/");
+  const code = new URL(dir(defaultBase), document.baseURI);
+  const payload = cfg.payloadBase ? new URL(dir(cfg.payloadBase), document.baseURI) : code;
+  const at = (override, name) =>
+    override ? new URL(override, document.baseURI) : new URL(name, code);
+  return {
+    workerUrl: at(cfg.workerUrl, "compiler.worker.js"),
+    compilerUrl: at(cfg.compilerUrl, "moonc-web.cjs"),
+    manifestUrl: new URL("manifest.json", payload),
+    fsBase: new URL("fs/", payload),
+  };
+}
+
+// Spawn the compiler worker. A Worker script must be same-origin, so one served
+// from a CDN is wrapped in a one-line same-origin blob that importScripts() the
+// real URL (the CDN has to send CORS headers; unpkg and jsdelivr do). The blob's
+// own base URL is opaque, which is fine precisely because the worker fetches
+// nothing relative to itself.
+function spawnWorker(href) {
+  if (new URL(href).origin === location.origin) return new Worker(href);
+  const shim = `importScripts(${JSON.stringify(href)});`;
+  return new Worker(URL.createObjectURL(new Blob([shim], { type: "text/javascript" })));
+}
 
 // A compiler client backed by one worker. `init()` is memoized, so many callers
 // (e.g. a page full of embedded playgrounds) share a single compiler load.
-export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
-  const worker = new Worker(workerUrl);
+// The three URLs default to siblings of the worker, which is the layout
+// `assemble.mjs` produces; pass `playgroundConfig()`'s result to relocate them.
+export function makeCompiler(workerUrl, { manifestUrl, compilerUrl, fsBase } = {}) {
+  const workerHref = new URL(workerUrl, document.baseURI).href;
+  const rel = (u, dflt) => new URL(u ?? dflt, workerHref).href;
+  const urls = {
+    manifest: rel(manifestUrl, "./manifest.json"),
+    compiler: rel(compilerUrl, "./moonc-web.cjs"),
+    fsBase: rel(fsBase, "./fs/"),
+  };
+  const worker = spawnWorker(workerHref);
   let seq = 0;
   const pending = new Map();
   worker.onmessage = (e) => {
@@ -36,7 +91,7 @@ export function makeCompiler(workerUrl, manifestUrl = "./manifest.json") {
       if (!initPromises.has(target)) {
         initPromises.set(
           target,
-          call("init", { manifest: manifestUrl, target }).catch((e) => {
+          call("init", { ...urls, target }).catch((e) => {
             initPromises.delete(target);
             throw e;
           }),

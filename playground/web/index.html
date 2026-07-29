@@ -8,6 +8,19 @@
       * { box-sizing: border-box; }
       /* let the UA theme canvas, text, form controls and scrollbars for us */
       html { color-scheme: light dark; }
+      /* One place for the chrome's colours, so dark mode is a token swap
+         rather than a second copy of every rule that draws a line. */
+      :root {
+        --border: #dcdfe4;
+        --border-soft: #eceef1;
+        --muted: #5c6570;
+        --header-bg: #f7f8fa;
+        --accent: #2563eb;
+        --on-accent: #fff;
+        --ok: #1a7f4b;
+        --busy: #9a6b00;
+        --error: #c33;
+      }
       html, body { margin: 0; height: 100%; }
       body {
         font-family: system-ui, sans-serif;
@@ -16,27 +29,81 @@
         height: 100vh;
       }
       header {
-        padding: 0.5rem 1rem;
-        border-bottom: 1px solid #ddd;
+        padding: 0.4rem 0.9rem;
+        border-bottom: 1px solid var(--border);
+        background: var(--header-bg);
         display: flex;
         align-items: center;
-        gap: 1rem;
+        gap: 0.55rem;
       }
-      header h1 { font-size: 1rem; margin: 0; font-family: ui-monospace, monospace; }
-      #run { padding: 0.3rem 0.9rem; font-size: 0.85rem; cursor: pointer; }
-      #status { font-size: 0.8rem; }
-      #status.busy { color: #b58900; }
-      #status.ok { color: #2a7; }
-      #status.error { color: #c33; }
+      header h1 {
+        font-size: 0.95rem;
+        margin: 0 0.45rem 0 0;
+        font-family: ui-monospace, monospace;
+        font-weight: 600;
+        letter-spacing: -0.01em;
+      }
+      /* One height and one shape for every control in the bar — the default UA
+         widgets disagree on both, which is what made the row look ragged. */
+      #run, header select {
+        font: inherit;
+        font-size: 0.8rem;
+        height: 1.85rem;
+        padding: 0 0.5rem;
+        border: 1px solid var(--border);
+        border-radius: 6px;
+        background: Canvas;
+        color: inherit;
+        cursor: pointer;
+      }
+      header select:hover { border-color: var(--muted); }
+      #run {
+        padding: 0 0.85rem;
+        font-weight: 600;
+        background: var(--accent);
+        color: var(--on-accent);
+        border-color: transparent;
+      }
+      #run:hover { filter: brightness(1.1); }
+      #run:active { transform: translateY(1px); }
+      #run:focus-visible, header select:focus-visible { outline: 2px solid var(--accent); outline-offset: 1px; }
+      header label {
+        display: inline-flex;
+        align-items: center;
+        gap: 0.3rem;
+        font-size: 0.68rem;
+        letter-spacing: 0.05em;
+        text-transform: uppercase;
+        color: var(--muted);
+      }
+      /* status sits at the far end, with a dot that carries the state colour */
+      #status {
+        margin-left: auto;
+        font-size: 0.78rem;
+        color: var(--muted);
+        display: inline-flex;
+        align-items: center;
+        gap: 0.4rem;
+      }
+      #status::before {
+        content: "";
+        width: 7px; height: 7px;
+        border-radius: 50%;
+        background: currentColor;
+      }
+      #status:empty::before { display: none; }
+      #status.busy { color: var(--busy); }
+      #status.ok { color: var(--ok); }
+      #status.error { color: var(--error); }
       main {
         display: grid;
         grid-template-columns: 1fr 1fr;
         min-height: 0;
       }
-      .pane { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid #ddd; }
+      .pane { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
       /* Tabs over the left pane: the component the user writes, the view HTML
          it is generated from, and the read-only generated module. */
-      .tabs { display: flex; gap: 0; border-bottom: 1px solid #ddd; flex: 0 0 auto; }
+      .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
       .tabs button {
         appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
         padding: 0.4rem 0.8rem; font: inherit; font-size: 0.8rem; cursor: pointer; opacity: 0.65;
@@ -51,42 +118,51 @@
       #diagnostics {
         max-height: 30%;
         overflow: auto;
-        border-top: 1px solid #ddd;
+        border-top: 1px solid var(--border);
         padding: 0.5rem 0.75rem;
         font-family: ui-monospace, monospace;
         font-size: 12px;
         white-space: pre-wrap;
-        color: #c33;
+        color: var(--error);
       }
       .right { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
       #preview { overflow: auto; }
       #preview iframe { width: 100%; height: 100%; border: 0; }
-      .inspector { border-top: 1px solid #ddd; max-height: 45%; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; }
-      .inspector section { padding: 0.5rem 0.75rem; border-right: 1px solid #eee; }
+      .inspector { border-top: 1px solid var(--border); max-height: 45%; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; }
+      .inspector section { padding: 0.5rem 0.75rem; border-right: 1px solid var(--border-soft); }
       .inspector h2 { font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin: 0 0 0.35rem; }
       .inspector pre { margin: 0; font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
-      /* dark mode: the UA handles bg/text/controls; recolour the hardcoded
-         light borders and accents so the chrome stays coherent with the editor. */
+      /* dark mode: the UA handles bg/text/controls; swap the tokens above so
+         the chrome stays coherent with the editor. */
       @media (prefers-color-scheme: dark) {
-        header { border-bottom-color: #30363d; }
-        .tabs { border-bottom-color: #30363d; }
-        .pane { border-right-color: #30363d; }
-        #diagnostics { border-top-color: #30363d; color: #ff7b72; }
+        :root {
+          --border: #30363d;
+          --border-soft: #21262d;
+          --muted: #8b949e;
+          --header-bg: #161b22;
+          --accent: #3b82f6;
+          --on-accent: #f0f6fc;
+          --ok: #3fb950;
+          --busy: #d29922;
+          --error: #ff7b72;
+        }
         #preview { background: #0d1117; }
-        .inspector { border-top-color: #30363d; }
-        .inspector section { border-right-color: #21262d; }
       }
     </style>
   </head>
   <body>
     <header>
       <h1>tutuca-mb</h1>
-      <button id="run">Run ▶</button>
-      <select id="examples" title="Load an example"></select>
-      <label style="font-size:0.8rem">target
+      <button id="run" title="Run (Ctrl/⌘+Enter)">Run ▶</button>
+      <label>example
+        <select id="examples" title="Load an example"></select>
+      </label>
+      <!-- The default is picked at boot (wasm-gc where the payload has it) and
+           an explicit ?target= wins over both; see driver.js. -->
+      <label>target
         <select id="target" title="Compile backend">
-          <option value="js">js</option>
           <option value="wasm-gc">wasm-gc</option>
+          <option value="js">js</option>
         </select>
       </label>
       <span id="status"></span>

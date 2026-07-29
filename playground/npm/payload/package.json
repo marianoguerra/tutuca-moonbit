@@ -1,0 +1,33 @@
+{
+  "name": "@marianoguerra/tutuca-playground-payload",
+  "version": "0.0.0-stamped-at-pack-time",
+  "description": "Prebuilt .mi/.core bundles the tutuca-mb playground compiles user code against. Pairs with one exact @moonbit/moonc-worker build.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": false,
+  "exports": {
+    "./manifest.json": "./playground/manifest.json",
+    "./package.json": "./package.json",
+    "./playground/*": "./playground/*"
+  },
+  "files": [
+    "playground",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "moonbit",
+    "playground",
+    "tutuca"
+  ],
+  "peerDependencies": {
+    "@moonbit/moonc-worker": "0.0.0-stamped-at-pack-time"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marianoguerra/tutuca-moonbit.git",
+    "directory": "playground"
+  },
+  "homepage": "https://marianoguerra.github.io/tutuca-moonbit/",
+  "bugs": "https://github.com/marianoguerra/tutuca-moonbit/issues"
+}

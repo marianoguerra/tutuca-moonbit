@@ -1,0 +1,40 @@
+{
+  "name": "@marianoguerra/tutuca-playground",
+  "version": "0.0.0-stamped-at-pack-time",
+  "description": "The tutuca-mb playground: an embeddable <mb-playground> element and the shell that compiles MoonBit in the browser.",
+  "license": "MIT",
+  "type": "module",
+  "sideEffects": [
+    "./site/embed.js",
+    "./playground/driver.js"
+  ],
+  "exports": {
+    ".": "./site/embed.js",
+    "./runtime": "./playground/runtime.js",
+    "./viewgen-client": "./playground/viewgen-client.js",
+    "./package.json": "./package.json",
+    "./playground/*": "./playground/*",
+    "./site/*": "./site/*"
+  },
+  "files": [
+    "playground",
+    "site",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "moonbit",
+    "playground",
+    "tutuca",
+    "ui",
+    "web-component",
+    "in-browser-compiler"
+  ],
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/marianoguerra/tutuca-moonbit.git",
+    "directory": "playground"
+  },
+  "homepage": "https://marianoguerra.github.io/tutuca-moonbit/",
+  "bugs": "https://github.com/marianoguerra/tutuca-moonbit/issues"
+}

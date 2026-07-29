@@ -81,6 +81,7 @@ moon run --target native cmd/dev -- <task>
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
+| `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -101,6 +102,21 @@ and nowhere else) AND every landing-site example pair
 `<mb-playground>` elements compile in a visitor's browser). The cheaper
 `check-examples` task covers the same examples through `moon check` instead,
 generating their views with the same generator built to js.
+
+Nothing in the playground shell resolves a fetched URL against the page.
+`runtime.js`'s `playgroundConfig` derives the four of them — the worker, the
+compiler blob, `manifest.json`, `fs/` — from the calling module's own
+`import.meta.url`, and `makeCompiler` hands them to the worker **absolutely**,
+so the worker resolves nothing against its own location either. That is what
+lets the payload sit somewhere other than the shell (a different folder,
+package, or origin — a cross-origin worker gets a same-origin blob shim,
+since a `Worker` script must be same-origin), and what lets a host serve their
+own `@moonbit/moonc-worker` rather than a copy of the 5.5 MB blob:
+`globalThis.MB_PLAYGROUND = { payloadBase, compilerUrl, workerUrl }` (all
+optional) before the first compile. A host-supplied compiler is checked against
+`manifest.mooncWorker` when npm's `package.json` sits beside it — the payload
+and the compiler are one pair, and a mismatch otherwise surfaces as nonsense
+about the user's code (`playground/vendor/README.md`).
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`
