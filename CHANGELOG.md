@@ -6,6 +6,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.1] - 2026-07-29
+
+### Fixed
+
+- **`value`'s inferred payload type follows the host element.** The generated
+  `<Comp>Msg` case for a `value` handler arg on `<input type="checkbox">` now
+  carries `Bool` (the checked state the glue delivers) and on
+  `<input type="file">` the metadata `@tutuca.Value` — previously both
+  inferred `String`, so those dispatches could only ever land in `Unknown`.
+  Only a static `type` attribute participates: a dynamic `:type` keeps the
+  `String` default, and call sites that disagree still join to
+  `@tutuca.Value`.
+
+### Changed
+
+- **The bundled skill is self-contained.** No more pointers at repo files
+  (`storybook/examples/*.mbt`, the margaui repo's skill) — worked examples are
+  inlined, since the skill ships in the CLI binary and the reader may have
+  nothing else. New content driven by coding-agent feedback: the two bucket
+  spellings are labeled everywhere (enum-match for generated wrappers vs
+  string-keyed maps for raw `component()` calls) with examples leading with
+  the enum form, core.md gained a generated-`Msg` payload-type table and the
+  closed/view-driven bucket-enum rule, cli.md a `values` / `list<any>` worked
+  example, margaui.md an inline starter class vocabulary, plus two new files:
+  a complete todo-list pattern (`patterns/todo-list.md`) and a playground
+  authoring guide (`playground.md`).
+
 ## [0.9.0] - 2026-07-29
 
 ### Added
@@ -1027,5 +1054,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.9.0...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.9.1...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
