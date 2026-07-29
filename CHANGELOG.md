@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.8.0] - 2026-07-29
+
 ### Added
 
 - **An instance carries a fingerprint and a revision (`@tutuca.ObjId`), so a
