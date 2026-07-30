@@ -6,6 +6,46 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.9.3] - 2026-07-30
+
+### Fixed
+
+- **`slots~` now names a slot the schema declared as the bare `component`
+  marker.** A state block can say "this field is a component slot" without saying
+  *which* — most often because the name is not spellable there, kebab-case being
+  unable to round-trip `DnDExample` (`d-n-d-example` comes back as
+  `DNDExample`). `slots~` is then the only place the name can come from, and it
+  was read and dropped: `component()` only added slots for fields the schema did
+  **not** declare, so a declared-but-unnamed slot kept its empty component name,
+  `lookup_component("")` found nothing, and the field stayed `Null`.
+
+  The visible cost was the composability example's Drag-and-Drop tab rendering
+  empty, in the storybook and in every demo host. That example had no test, which
+  is why it went unnoticed; it has one now, asserting on the child's own markup
+  after clicking the tab rather than on the slot merely being non-null.
+
+  A slot the schema **names** is still not overridable — a caller contradicting a
+  declared type would leave the inspector and structural equality disagreeing with
+  the block — and that half is now pinned by a test too.
+
+  This also restores, in a narrower and true form, the reason the `as=`-view check
+  in `gen-views` is a hint rather than an error: the component filling a bare
+  `component` slot is MoonBit the generator cannot see. The comments in
+  `viewgen/` and `cli/gen_views.mbt` that stated the old, broader rationale are
+  corrected.
+
+- **Two stale doc comments in the library.** `Path::update`'s contract in
+  `core/path_spec.mbt` still described resolving a handler "exact name, then the
+  `$unknown` fallback" — that sentinel was removed in 0.9.0 and dispatch does one
+  lookup. `component()`'s doc comment still described the `specs` parameter and
+  `FieldSpec::comp`, both removed; it documents `slots` / `slot_args` now.
+
+- **`testing.md` overpromised the harness's selectors.** They are ONE compound
+  selector — a tag plus `#id` / `.class` / `[attr]` qualifiers — with no
+  descendant combinator, so `.pane .row` silently matches nothing rather than
+  scoping. Found while writing the composability test; the skill said
+  "CSS-selector addressed".
+
 ## [0.9.2] - 2026-07-30
 
 ### Added
