@@ -715,7 +715,7 @@ pub fn AttributeBindingInput::name(Self) -> String
 pub fn AttributeBindingInput::parse(String) -> Self?
 
 pub(all) enum AttributeBindingMsg {
-  SetBool(String)
+  SetBool(Bool)
   SetRawNumber(String)
   SetStr(String)
   Unknown(String, Array[@core.Value])
@@ -1031,7 +1031,7 @@ pub(all) enum FilePickerMethod {
 pub fn FilePickerMethod::name(Self) -> String
 
 pub(all) enum FilePickerMsg {
-  OnPickFile(String)
+  OnPickFile(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn FilePickerMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1068,7 +1068,7 @@ pub fn ItemInput::name(Self) -> String
 pub fn ItemInput::parse(String) -> Self?
 
 pub(all) enum ItemMsg {
-  SetCompleted(String)
+  SetCompleted(Bool)
   SetText(String)
   Unknown(String, Array[@core.Value])
 }
@@ -1528,7 +1528,7 @@ pub fn PersonInput::name(Self) -> String
 pub fn PersonInput::parse(String) -> Self?
 
 pub(all) enum PersonMsg {
-  SetActive(String)
+  SetActive(Bool)
   SetEmail(String)
   SetName(String)
   Unknown(String, Array[@core.Value])

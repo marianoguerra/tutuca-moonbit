@@ -296,9 +296,10 @@ declare pub fn DispatchPath::compact(self : DispatchPath) -> DispatchPath
 declare pub fn DispatchPath::to_transaction_path(self : DispatchPath) -> Path
 
 ///|
-/// The transactor's updateRootValue: resolve the leaf, resolve its handler
-/// (exact name, then the "$unknown" fallback), invoke it, and rebuild the
-/// spine only when the handler produced a new leaf. Unresolvable path,
+/// The transactor's updateRootValue: resolve the leaf, resolve its handler by
+/// exact name — ONE lookup, with no fallback sentinel behind it (see
+/// path_path.mbt) — invoke it, and rebuild the spine only when the handler
+/// produced a new leaf. Unresolvable path,
 /// missing handler, a handler answering None, or a physically-unchanged leaf
 /// all return the SAME `root` object — the spine is not rebuilt when nothing
 /// changed.

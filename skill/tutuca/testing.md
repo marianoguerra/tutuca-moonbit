@@ -61,7 +61,13 @@ in-memory DOM (`memdom`), and render once:
   the same thing).
 
 **Driving** — each fires a real event through the transactor and settles
-before returning (CSS-selector addressed; `nth?` picks among matches):
+before returning (`nth?` picks among matches):
+
+> **Selectors are ONE compound selector**, not a CSS selector list: a tag, plus
+> any number of `#id`, `.class` and `[attr]` qualifiers — `input.query`,
+> `[data-dragtype]`, `#tab-dnd`. There is no descendant combinator, so
+> `.pane .row` matches nothing (silently — it is read as one malformed token).
+> To scope, pick a class the target itself carries.
 
 | Call | Simulates |
 |---|---|

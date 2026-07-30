@@ -118,6 +118,12 @@ priv struct OMapInState {
 priv struct ParentWithKid {} derive(Default)
 
 ///|
+/// A parent whose slot is declared as the bare `component` marker — "a component
+/// slot" with no name, which is what a state block spells when the name is not
+/// spellable there. `slots~` is the only place the name can come from.
+priv struct ParentWithAnyKid {} derive(Default)
+
+///|
 test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
@@ -438,6 +444,77 @@ test "FComp slot fields default through the registration scope" {
   let p = parent.make(Map([]))
   guard p.field("kid") is Obj(o) else { fail("kid not made") }
   assert_true(o.obj_field("label") == Some(Str("hi")))
+}
+
+///|
+/// A schema can say "a component slot" without saying WHICH — the bare
+/// `component` marker — because a name like `DnDExample` is not spellable in the
+/// block (kebab-case cannot round-trip it). `slots~` is then the only place the
+/// name can come from, and before this it was read and dropped: the slot stayed
+/// Null and the child never rendered.
+test "slots~ names a slot the schema declared as bare `component`" {
+  let scope = @component.ComponentStack::new()
+  let child = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
+    name="DNDExample",
+    init=LabelOnly::{ label: "hi" },
+  )
+  let parent = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render=\".kid\"></x></div>",
+      ),
+    },
+    name="Parent",
+    init=ParentWithAnyKid::{  },
+    slots={ "kid": "DNDExample" },
+    slot_args={ "kid": { "label": Str("named through slots") } },
+  )
+  scope.register_components([child, parent])
+  let p = parent.make(Map([]))
+  guard p.field("kid") is Obj(o) else { fail("kid not made through slots~") }
+  assert_true(o.obj_field("label") == Some(Str("named through slots")))
+  // the descriptor carries the resolved name, so the inspector and structural
+  // equality see the same slot the runtime built
+  guard parent.schema.field("kid") is Some(fi) else {
+    fail("kid not in schema")
+  }
+  assert_true(fi.ty == TyComp(Some("DNDExample")))
+}
+
+///|
+/// The other direction: a slot the schema NAMES is not overridable. A caller
+/// saying something different from the declared type would leave every reader of
+/// the descriptor disagreeing with the block.
+test "slots~ does not override a slot the schema already names" {
+  let scope = @component.ComponentStack::new()
+  let child = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<i>c</i>") },
+    name="Child",
+    init=LabelOnly::{ label: "declared" },
+  )
+  let other = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<b>o</b>") },
+    name="Other",
+    init=LabelOnly::{ label: "usurper" },
+  )
+  let parent = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><x render=\".kid\"></x></div>",
+      ),
+    },
+    name="Parent",
+    // the schema says Child; this says Other, and the schema wins
+    init=ParentWithKid::{  },
+    slots={ "kid": "Other" },
+  )
+  scope.register_components([child, other, parent])
+  let p = parent.make(Map([]))
+  guard p.field("kid") is Obj(o) else { fail("kid not made") }
+  assert_true(o.obj_field("label") == Some(Str("declared")))
 }
 
 ///|
@@ -847,6 +924,23 @@ impl @component.Fields for ParentWithKid with fn encode(_s) {
 
 ///|
 impl @component.Fields for ParentWithKid with fn decode(_f) {
+  Some(Default::default())
+}
+
+///|
+impl @component.Fields for ParentWithAnyKid with fn schema() {
+  @component.SchemaInfo::new(fingerprint="parent_with_any_kid", fields=[
+    @component.FieldInfo::new("kid", TyComp(None)),
+  ])
+}
+
+///|
+impl @component.Fields for ParentWithAnyKid with fn encode(_s) {
+  Map([])
+}
+
+///|
+impl @component.Fields for ParentWithAnyKid with fn decode(_f) {
   Some(Default::default())
 }
 

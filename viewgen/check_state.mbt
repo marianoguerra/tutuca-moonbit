@@ -50,8 +50,8 @@ priv struct Checker {
   view : String
   /// Findings that are ADVISORY rather than fatal. A view name resolves at
   /// render time against whatever component the registration scope actually
-  /// holds, and `component()`'s `slots~` can point a declared slot at a
-  /// different component than the schema names — which this generator cannot
+  /// holds, and a slot declared as the bare `component` marker takes its
+  /// component from `component()`'s `slots~` — MoonBit this generator cannot
   /// see. So a missing view is reported, not raised: the alternative is a
   /// build that cannot be fixed without a new opt-out.
   hints : Array[String]

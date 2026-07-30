@@ -166,18 +166,33 @@ There is no `specs~` parameter and no `FieldSpec` type. Both were removed once
 the schema became the single source of kinds and slot component names; only
 `slot_args~` survived (`component/component.mbt:158-172`).
 
-`slots~` is the remaining escape hatch, and it only **adds**: an entry whose name
-the schema does not already declare becomes a `component`-typed field
-(`component/component.mbt:173-183`). Reach for it when a component is built by
-hand and several components share its state type while holding different
-children — a view file gives each component its own interface, so it never needs
-this.
+`slots~` names a slot the **schema could not name**, in either of the two ways it
+can fail to:
 
-> **`slots~` cannot rename a slot the schema already declares.** Declaring
-> `dnd: component` and passing `slots={ "dnd": "DnDExample" }` leaves the slot
-> `Null`: the schema field wins, and a bare `component` carries no name to look
-> up. Name the child in the schema — a sibling interface, or a `resource` for one
-> from another module.
+- **the schema does not declare the field at all** — several components share one
+  state type and hold different children. A view file gives each component its own
+  interface and so never needs this; a component built by hand does.
+- **the schema declares it as the bare `component` marker** — "a component slot"
+  without saying which. The usual reason is a name kebab-case cannot round-trip
+  (`DnDExample` → `d-n-d-example` → `DNDExample`), so the block cannot spell it:
+
+  ```html
+  record state { dnd: component }
+  ```
+  ```moonbit nocheck
+  // nocheck: one bucket argument, not a compilable item
+  slots={ "dnd": "DnDExample" }
+  ```
+
+Either way the name is folded **into** the schema, so the descriptor still
+describes every field an instance has — which is what the inspector and
+structural equality read.
+
+> **A slot the schema NAMES is not overridable.** With `editor: sheet` declared,
+> `slots={ "editor": "Other" }` is ignored and the slot still holds a `Sheet`:
+> a caller contradicting a declared type would leave every reader of the
+> descriptor disagreeing with the block
+> (`component/component.mbt:173-200`). Change the spelling in the schema.
 
 ## Message buckets
 

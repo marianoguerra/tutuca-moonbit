@@ -211,8 +211,8 @@ declare pub fn view_surface(
 ///|
 /// Emit the generated MoonBit module.
 /// `hints` collects ADVISORY findings the schema check turns up — the ones a
-/// runtime `slots~` override could legitimately defeat, so they are reported
-/// rather than raised. Pass the caller's diagnostics array; omit it and they
+/// `slots~` entry naming a bare `component` slot could legitimately defeat, so
+/// they are reported rather than raised. Pass the caller's diagnostics array; omit it and they
 /// are discarded, which is what a caller with nowhere to print them wants.
 declare pub fn emit_module(
   name : String,

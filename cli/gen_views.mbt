@@ -363,9 +363,9 @@ pub fn gen_views_all(
       for d in view_diagnostics(views, f.name) {
         diagnostics.push(where_prefixed(files, f, d))
       }
-      // `hints` is the schema check's advisory half — the findings a runtime
-      // `slots~` override could legitimately defeat, so they are reported here
-      // rather than failing generation. Passed rather than re-derived: the
+      // `hints` is the schema check's advisory half — the findings a `slots~`
+      // entry naming a bare `component` slot could legitimately defeat, so they
+      // are reported here rather than failing generation. Passed rather than re-derived: the
       // check runs inside emit_module, and asking for it separately would
       // parse every view a fourth time.
       let hints : Array[String] = []

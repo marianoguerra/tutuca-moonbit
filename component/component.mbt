@@ -116,8 +116,8 @@ fn new_component(
 ///   @loop-with returns a LoopWith slice/order plan).
 /// Auto-mutators are generated per field (setX / updateX / resetX / toggleX /
 /// xLen / pushInX / setInXAt / ...); a user `compute` entry wins over them.
-/// `specs` adds Value-level slot fields (child components via
-/// FieldSpec::comp) and overrides FSet/FOMap kinds for S fields.
+/// `slots` names a component slot the schema could not name; `slot_args` gives a
+/// slot's child its construction arguments.
 pub fn[S : @tutuca.Fields] component(
   name~ : String,
   views~ : Map[String, @anode.View],
@@ -164,22 +164,45 @@ pub fn[S : @tutuca.Fields] component(
   // interface, or a `resource` for one from another module). The third — a
   // child's construction ARGUMENTS — is a value the author picks, which no type
   // can express, and it is all `slot_args~` carries.
-  // A slot the STATE TYPE cannot declare, because several components share that
-  // type and hold different children. A view file gives each component its own
-  // interface and so never needs this; a component built by hand does, and
-  // there is nowhere else for it to say so. Folded INTO the schema rather than
-  // kept beside it, so the descriptor still names every field an instance has —
-  // which is what the inspector and structural equality read.
+  // A slot the SCHEMA cannot name, in either of the two ways it can fail to.
+  // Folded INTO the schema rather than kept beside it, so the descriptor still
+  // names every field an instance has — which is what the inspector and
+  // structural equality read.
+  //
+  //  1. It does not declare the field at all — several components share one state
+  //     type and hold different children. A view file gives each component its
+  //     own interface and so never needs this; a component built by hand does,
+  //     and there is nowhere else for it to say so.
+  //  2. It declares the field as the bare `component` marker: "a component slot"
+  //     without saying which, because the name is not spellable there. The
+  //     commonest reason is a component whose name kebab-case cannot round-trip
+  //     (`DnDExample` -> `d-n-d-example` -> `DNDExample`).
+  //
+  // A slot the schema NAMES is not overridable: the caller would be contradicting
+  // a declared type, and every reader of the descriptor would then disagree with
+  // the block. Nothing is silently dropped either way — an entry that matches
+  // neither case is a field this component does not have, which `all_specs`
+  // below leaves untouched.
   let schema = if slots.is_empty() {
     schema
   } else {
-    let extra : Array[@tutuca.FieldInfo] = []
+    let fields : Array[@tutuca.FieldInfo] = []
+    for fi in schema.fields {
+      // case 2: the declared slot has no name, and this entry supplies it
+      fields.push(
+        match (fi.ty, slots.get(fi.name)) {
+          (TyComp(None), Some(comp)) => { ..fi, ty: TyComp(Some(comp)) }
+          _ => fi
+        },
+      )
+    }
     for name, comp in slots {
+      // case 1: a field the schema does not declare
       if schema.field(name) is None {
-        extra.push(@tutuca.FieldInfo::new(name, TyComp(Some(comp))))
+        fields.push(@tutuca.FieldInfo::new(name, TyComp(Some(comp))))
       }
     }
-    { ..schema, fields: schema.fields + extra }
+    { ..schema, fields, }
   }
   // Every declared field, from the schema. The kind is `fi.kind()` and the
   // default the encoded seed where there is one, `fi.ty.zero()` otherwise, so
