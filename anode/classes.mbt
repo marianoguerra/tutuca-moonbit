@@ -69,27 +69,8 @@ fn add_attr_classes(attrs : Attrs, into : Set[String]) -> Unit {
 
 ///|
 pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit {
-  match self {
-    Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => ()
-    Dom(d) => {
-      add_attr_classes(d.attrs, into)
-      for child in d.childs {
-        child.collect_classes(into)
-      }
-    }
-    Fragment(f) =>
-      for child in f.childs {
-        child.collect_classes(into)
-      }
-    Show(w) | Hide(w) | PushView(w) | Scope(w) => w.node.collect_classes(into)
-    Each(e) => e.node.collect_classes(into)
-    Slot(s) => s.node.collect_classes(into)
-    // A compiled MacroCall holds its expanded body; uncompiled has nothing
-    // to scan.
-    MacroCall(m) =>
-      match m.node {
-        Some(n) => n.collect_classes(into)
-        None => ()
-      }
+  if self is Dom(d) {
+    add_attr_classes(d.attrs, into)
   }
+  self.for_each_child(child => child.collect_classes(into))
 }

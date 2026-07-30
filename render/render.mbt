@@ -2,6 +2,21 @@
 // component and event thirds are mocked/deferred per render-plan.md).
 
 ///|
+fn render_childs(
+  nodes : Array[@anode.ANode],
+  stack : RenderStack,
+  ctx : RenderCtx,
+) -> Array[@vdom.Vdom] {
+  let rendered : Array[@vdom.Vdom] = []
+  for node in nodes {
+    if render(node, stack, ctx) is Some(child) {
+      rendered.push(child)
+    }
+  }
+  rendered
+}
+
+///|
 pub fn render(
   node : @anode.ANode,
   stack : RenderStack,
@@ -13,30 +28,21 @@ pub fn render(
     Dom(d) => {
       // JS keeps null child slots in the array; our Vdom drops suppressed
       // children instead (no null nodes).
-      let childs : Array[@vdom.Vdom] = []
-      for c in d.childs {
-        match render(c, stack, ctx) {
-          Some(v) => childs.push(v)
-          None => ()
-        }
-      }
       let ns : @vdom.Ns? = match d.ns {
         Some(Svg) => Some(Svg)
         Some(MathML) => Some(MathMl)
         None => None
       }
-      Some(@vdom.h(d.tag, attrs=eval_attrs(d.attrs, stack), childs~, ns?))
+      Some(
+        @vdom.h(
+          d.tag,
+          attrs=eval_attrs(d.attrs, stack),
+          childs=render_childs(d.childs, stack, ctx),
+          ns?,
+        ),
+      )
     }
-    Fragment(d) => {
-      let childs : Array[@vdom.Vdom] = []
-      for c in d.childs {
-        match render(c, stack, ctx) {
-          Some(v) => childs.push(v)
-          None => ()
-        }
-      }
-      Some(@vdom.fragment(childs))
-    }
+    Fragment(d) => Some(@vdom.fragment(render_childs(d.childs, stack, ctx)))
     // JS RenderTextNode returns the raw evaluated value into the child list;
     // a null drops out, everything else stringifies.
     RenderText(d) =>

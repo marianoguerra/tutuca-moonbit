@@ -297,6 +297,12 @@ declare pub fn ANode::is_whitespace(self : ANode) -> Bool
 declare pub fn ANode::has_newline(self : ANode) -> Bool
 
 ///|
+/// Visit this node's immediate structural children in source order. Keeping
+/// this package-internal makes the variant-to-child mapping one fact shared by
+/// tree walkers without exposing traversal mechanics as public API.
+declare fn ANode::for_each_child(self : ANode, visit : (ANode) -> Unit) -> Unit
+
+///|
 /// Replace a whitespace-only Text/Comment's text (whitespace condensing).
 declare fn ANode::condense_whitespace(
   self : ANode,

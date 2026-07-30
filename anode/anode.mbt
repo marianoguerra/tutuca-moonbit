@@ -37,6 +37,25 @@ pub fn ANode::has_newline(self : ANode) -> Bool {
 }
 
 ///|
+fn ANode::for_each_child(self : ANode, visit : (ANode) -> Unit) -> Unit {
+  match self {
+    Dom(d) =>
+      for child in d.childs {
+        visit(child)
+      }
+    Fragment(d) =>
+      for child in d.childs {
+        visit(child)
+      }
+    Show(d) | Hide(d) | PushView(d) | Scope(d) => visit(d.node)
+    Slot(d) => visit(d.node)
+    Each(d) => visit(d.node)
+    MacroCall(d) => if d.node is Some(node) { visit(node) }
+    Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => ()
+  }
+}
+
+///|
 fn ANode::condense_whitespace(self : ANode, replacement? : String = "") -> Unit {
   match self {
     Text(d) | Comment(d) => d.val = replacement
@@ -48,17 +67,11 @@ fn ANode::condense_whitespace(self : ANode, replacement? : String = "") -> Unit 
 fn ANode::set_data_attr(self : ANode, key : String, val : @tutuca.Lit) -> Unit {
   match self {
     Dom(d) => d.attrs.set_data_attr(key, val)
-    Fragment(d) =>
-      for child in d.childs {
-        child.set_data_attr(key, val)
-      }
-    Show(d) | Hide(d) | PushView(d) | Scope(d) => d.node.set_data_attr(key, val)
-    Slot(d) => d.node.set_data_attr(key, val)
-    Each(d) => d.node.set_data_attr(key, val)
     MacroCall(d) => d.data_attrs[key] = val
     // Text/Comment render to text, RenderText/Render/RenderIt produce no
-    // element of their own to carry the attribute: explicit no-ops in JS.
-    Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => ()
+    // element of their own to carry the attribute. Containers and wrappers
+    // pass it to their structural children.
+    _ => self.for_each_child(child => child.set_data_attr(key, val))
   }
 }
 

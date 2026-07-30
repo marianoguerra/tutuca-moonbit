@@ -99,6 +99,22 @@ test "fragment root renders all children" {
 }
 
 ///|
+test "elements and fragments both drop suppressed children" {
+  let state = state_of([("visible", Bool(false))])
+  assert_eq(
+    render_html(
+      "<main><b>a</b><i @show=\".visible\">b</i><u>c</u></main>",
+      state~,
+    ),
+    "<main><b>a</b><u>c</u></main>",
+  )
+  assert_eq(
+    render_html("<b>a</b><i @show=\".visible\">b</i><u>c</u>", state~),
+    "<b>a</b><u>c</u>",
+  )
+}
+
+///|
 test "svg subtree keeps its namespace" {
   let node = parse_node("<svg viewBox=\"0 0 1 1\"><circle/></svg>")
   let stack = @render.RenderStack::new(Map(Map([])))

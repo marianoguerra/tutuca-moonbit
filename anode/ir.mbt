@@ -23,15 +23,6 @@ fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
   }
 
   match node {
-    Text(_) | Comment(_) => ()
-    Dom(d) =>
-      for c in d.childs {
-        collect_registered(c, into)
-      }
-    Fragment(d) =>
-      for c in d.childs {
-        collect_registered(c, into)
-      }
     RenderText(d) =>
       match d.node_id {
         Some(id) => put(id)
@@ -39,24 +30,15 @@ fn collect_registered(node : ANode, into : Array[ANode?]) -> Unit {
       }
     Render(d) => put(d.node_id)
     RenderIt(d) => put(d.node_id)
-    Show(d) | Hide(d) | PushView(d) | Scope(d) => {
+    Show(d) | Hide(d) | PushView(d) | Scope(d) =>
       match d.node_id {
         Some(id) => put(id)
         None => ()
       }
-      collect_registered(d.node, into)
-    }
-    Slot(d) => collect_registered(d.node, into)
-    Each(d) => {
-      put(d.node_id)
-      collect_registered(d.node, into)
-    }
-    MacroCall(d) =>
-      match d.node {
-        Some(n) => collect_registered(n, into)
-        None => ()
-      }
+    Each(d) => put(d.node_id)
+    Text(_) | Comment(_) | Dom(_) | Fragment(_) | Slot(_) | MacroCall(_) => ()
   }
+  node.for_each_child(child => collect_registered(child, into))
 }
 
 ///|
