@@ -28,7 +28,7 @@ pub(all) struct RenderStack {
   /// namespace — an `@name` lookup that misses here STOPS instead of walking
   /// to the parent frame. Scopes (@each items, @enrich-with) are transparent.
   is_frame : Bool
-  /// Component registry; None = component-less mode (ViewMap/ViewRegistry).
+  /// Component registry; None = component-less mode.
   comps : @component.Components?
   /// Provide frames (JS dynBinds), consed by component-frame enters.
   dyn_binds : @component.DynBinds?
@@ -122,21 +122,10 @@ pub(all) struct ResolvedView {
 /// the `@push-view` trail innermost-first — JS lookupBestView) and the value
 /// being rendered; resolvers fall back to "main" and return None to suppress
 /// the site (JS renderIt returns null when no component matches).
-/// Implemented by ViewMap/ViewRegistry (component-less) and by
-/// @component.Components (value → its component's views).
+/// Implemented by @component.Components in production.
 pub(open) trait ViewResolver {
   fn resolve_view(Self, Array[String], @tutuca.Value) -> ResolvedView?
 }
-
-///|
-/// Name → view-root map for tests and simple embedding. A None view name
-/// falls back to the "main" entry (mirroring the JS default view name).
-pub(all) struct ViewMap {
-  views : Map[String, @anode.ANode]
-}
-
-///|
-declare pub impl ViewResolver for ViewMap
 
 ///|
 /// Per-render context (JS Renderer instance state, minus comps).
@@ -199,15 +188,6 @@ declare pub fn render(
 ) -> @vdom.Vdom?
 
 ///|
-/// Convenience for a compiled View (View::compile ran): render its anode;
-/// a suppressed root or uncompiled view yields a placeholder comment.
-declare pub fn render_view(
-  view : @anode.View,
-  stack : RenderStack,
-  ctx : RenderCtx,
-) -> @vdom.Vdom
-
-///|
 /// A copy of a rendered tree without §…§ metas or internal data-* stamps
 /// (JS renderToString's cleanup) — for headless/snapshot output. None when
 /// the node itself is a meta comment.
@@ -249,42 +229,6 @@ impl Boundaries with fn events_for(_self, _cid, _vid, _eid) {
 impl Boundaries with fn dyn_producer(_self, _cid, _name) {
   None
 }
-
-///|
-/// A view compiled under a component id: the render root plus the
-/// ParseContext holding its nid/eid registries.
-pub(all) struct CompiledView {
-  cid : Int
-  vid : String
-  node : @anode.ANode
-  px : @anode.ParseContext
-}
-
-///|
-/// Name-keyed registry serving BOTH render-time view resolution
-/// (ViewResolver) and reconstruction-time boundary lookups (Boundaries), so
-/// the cid baked into §Comp§ metas and the cid looked up afterwards cannot
-/// disagree. Registration compiles the view (stamping data-cid/data-vid)
-/// with the next sequential cid.
-pub(all) struct ViewRegistry {
-  by_name : Map[String, CompiledView]
-}
-
-///|
-declare pub fn ViewRegistry::new() -> ViewRegistry
-
-///|
-declare pub fn ViewRegistry::add(
-  self : ViewRegistry,
-  name : String,
-  raw_view : String,
-) -> Unit raise
-
-///|
-declare pub impl ViewResolver for ViewRegistry
-
-///|
-declare pub impl Boundaries for ViewRegistry
 
 ///|
 /// A reconstructed event: the dispatch path (one Plain step per crossed

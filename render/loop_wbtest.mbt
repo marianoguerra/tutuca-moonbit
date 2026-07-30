@@ -86,7 +86,7 @@ test "@loop-with iterData flows into @when" {
 
 ///|
 test "@loop-with iterData reaches @enrich-with at render AND rebuild" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\" @loop-with=\"plan\" @enrich-with=\"deco\"><button @on.click=\"go\"><x text=\"@label\"></x></button></li></ul>",
   )
@@ -119,17 +119,17 @@ test "@loop-with iterData reaches @enrich-with at render AND rebuild" {
 
 ///|
 test "clean_vdom strips metas and internal stamps, keeps user content" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<div data-test=\"keep\"><!-- note --><ul><li @each=\".items\"><x text=\"@value\"></x></li></ul><button @on.click=\"go\">x</button></div>",
   )
   let state : @tutuca.Value = Map({ "items": List([Str("a"), Str("b")]) })
-  let stack = @render.RenderStack::new(state)
-  let ctx = @render.RenderCtx::new(view_resolver=reg)
-  guard @render.render_root(state, stack, ctx) is Some(v) else {
+  let stack = RenderStack::new(state)
+  let ctx = RenderCtx::new(view_resolver=reg)
+  guard render_root(state, stack, ctx) is Some(v) else {
     fail("did not render")
   }
-  guard @render.clean_vdom(v) is Some(clean) else { fail("cleaned to None") }
+  guard clean_vdom(v) is Some(clean) else { fail("cleaned to None") }
   let doc = @memdom.document()
   let html = @vdom.to_dom(clean, @vdom.RenderOpts::new(doc)).to_html()
   assert_eq(

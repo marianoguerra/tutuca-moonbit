@@ -1,6 +1,5 @@
-// Component-less ViewResolver implementations (ViewMap here, ViewRegistry in
-// registry.mbt): the seam render's own tests and simple embeddings use. The
-// production resolver is @component.Components (components_impl.mbt).
+// ViewResolver helpers shared by the production @component.Components
+// implementation and the package's white-box test resolvers.
 
 ///|
 /// Always unresolved (`<x render*>` sites render nothing): RenderCtx::new's
@@ -29,23 +28,6 @@ fn best_name(names : Array[String], has : (String) -> Bool) -> String? {
   } else {
     None
   }
-}
-
-///|
-/// Component ids are the map's insertion order — stable per registry, so
-/// §Comp§ metas and Boundaries lookups agree.
-pub impl ViewResolver for ViewMap with fn resolve_view(self, names, _value) {
-  guard best_name(names, n => self.views.contains(n)) is Some(name) else {
-    return None
-  }
-  let mut cid = 0
-  for k, node in self.views {
-    if k == name {
-      return Some({ node, cid, vid: name })
-    }
-    cid += 1
-  }
-  None
 }
 
 ///|

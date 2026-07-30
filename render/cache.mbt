@@ -14,8 +14,8 @@
 //
 //   - The key is an instance's `@tutuca.ObjId` origin — a UInt64 the instance
 //     already carries. Nothing is built at lookup time.
-//   - A value with no id (a plain Map render site, a component-less ViewMap
-//     embedding) is DECLINED before anything is spent on it.
+//   - A value with no id (for example a plain Map render site) is DECLINED
+//     before anything is spent on it.
 //
 // What a bucket does NOT have to be is unique. An `ObjId` is a fingerprint, so
 // two instances made from the same arguments land in one bucket, as do two
@@ -40,9 +40,7 @@
 /// from `data-eid` stamps and the meta comments (see events.mbt), never baked
 /// into the subtree. What IS baked in is the `§Comp§` meta, which carries
 /// `nid`/`cid`/`vid` — hence those three.
-/// `pub` only because `RenderCache` is, and a public definition cannot name a
-/// private type. Nothing outside this file reads a field of one.
-pub struct CacheEntry {
+priv struct CacheEntry {
   rev : Int
   node_id : Int?
   cid : Int
@@ -57,15 +55,13 @@ pub struct CacheEntry {
 
 ///|
 pub struct RenderCache {
-  mut cur : Map[UInt64, CacheEntry]
-  mut prev : Map[UInt64, CacheEntry]
-  mut hit : Int
-  mut miss : Int
+  priv mut cur : Map[UInt64, CacheEntry]
+  priv mut prev : Map[UInt64, CacheEntry]
 }
 
 ///|
 pub fn RenderCache::new() -> RenderCache {
-  { cur: Map([]), prev: Map([]), hit: 0, miss: 0 }
+  { cur: Map([]), prev: Map([]) }
 }
 
 ///|
@@ -109,7 +105,7 @@ fn CacheEntry::valid(
 /// The cached vdom for this site, when everything it was built from still
 /// holds. A previous-generation hit is promoted into the current generation so
 /// it survives another pass.
-pub fn RenderCache::get(
+fn RenderCache::get(
   self : RenderCache,
   id : @tutuca.ObjId,
   node_id : Int?,
@@ -118,27 +114,20 @@ pub fn RenderCache::get(
   dyn_binds : @component.DynBinds?,
 ) -> @vdom.Vdom? {
   match self.cur.get(id.origin) {
-    Some(e) if e.valid(id, node_id, rv, value, dyn_binds) => {
-      self.hit += 1
-      Some(e.vdom)
-    }
+    Some(e) if e.valid(id, node_id, rv, value, dyn_binds) => Some(e.vdom)
     _ =>
       match self.prev.get(id.origin) {
         Some(e) if e.valid(id, node_id, rv, value, dyn_binds) => {
-          self.hit += 1
           self.cur[id.origin] = e
           Some(e.vdom)
         }
-        _ => {
-          self.miss += 1
-          None
-        }
+        _ => None
       }
   }
 }
 
 ///|
-pub fn RenderCache::set(
+fn RenderCache::set(
   self : RenderCache,
   id : @tutuca.ObjId,
   node_id : Int?,
@@ -164,33 +153,4 @@ pub fn RenderCache::set(
 pub fn RenderCache::next_generation(self : RenderCache) -> Unit {
   self.prev = self.cur
   self.cur = Map([])
-}
-
-///|
-/// (hit, miss) since the last evict, WITHOUT clearing — the instrumentation
-/// read. `evict` answers the same question but empties the cache doing it,
-/// which makes it useless for watching a running app (or for a test that wants
-/// to assert what the next pass did).
-pub fn RenderCache::stats(self : RenderCache) -> (Int, Int) {
-  (self.hit, self.miss)
-}
-
-///|
-/// The number of entries held, current generation plus the one behind it.
-/// Bounded growth is the whole reason there are two generations, so it is
-/// worth being able to look.
-pub fn RenderCache::size(self : RenderCache) -> (Int, Int) {
-  (self.cur.length(), self.prev.length())
-}
-
-///|
-/// Clear everything and return (hit, miss) since the last evict
-/// (JS WeakMapDomCache.evict).
-pub fn RenderCache::evict(self : RenderCache) -> (Int, Int) {
-  let stats = (self.hit, self.miss)
-  self.hit = 0
-  self.miss = 0
-  self.cur = Map([])
-  self.prev = Map([])
-  stats
 }

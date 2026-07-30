@@ -1,8 +1,13 @@
-// The render-site cache, from outside: what it reuses, what it declines, and
+// The render-site cache: what it reuses, what it declines, and
 // what it does when two instances land in one bucket.
 //
-// `parse_node` and `to_html` come from render_test.mbt — same blackbox test
-// module.
+// `parse_node` and `to_html` come from render_wbtest.mbt — the same white-box
+// test module.
+
+///|
+fn RenderCache::size(self : RenderCache) -> (Int, Int) {
+  (self.cur.length(), self.prev.length())
+}
 
 ///|
 priv struct CardState {
@@ -68,15 +73,12 @@ fn pass(
   node : @anode.ANode,
   root : @tutuca.Value,
   scope : @component.ComponentStack,
-  cache : @render.RenderCache,
+  cache : RenderCache,
 ) -> @vdom.Vdom {
   cache.next_generation()
-  let stack = @render.RenderStack::new(root, comps=scope.comps)
-  let ctx = @render.RenderCtx::new(
-    view_resolver=scope.comps,
-    render_cache=cache,
-  )
-  @render.render(node, stack, ctx).unwrap()
+  let stack = RenderStack::new(root, comps=scope.comps)
+  let ctx = RenderCtx::new(view_resolver=scope.comps, render_cache=cache)
+  render(node, stack, ctx).unwrap()
 }
 
 ///|
@@ -114,17 +116,24 @@ fn texts(v : @vdom.Vdom) -> Array[String] {
 }
 
 ///|
+fn first_child(v : @vdom.Vdom) -> @vdom.Vdom {
+  guard v is Node(node) && node.childs is [child, ..] else {
+    abort("expected a node with a child")
+  }
+  child
+}
+
+///|
 test "an unchanged instance is reused, as the very same Vdom" {
   // The reuse IS the physical identity: that is what @vdom's differ
   // short-circuits on, so a hit that returned an equal-but-fresh tree would
   // save the render and none of the patch.
   let (scope, card) = card_scope()
   let node = one_slot()
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let root : @tutuca.Value = Map({ "a": card.make({ "title": Str("one") }) })
   let first = pass(node, root, scope, cache)
   let second = pass(node, root, scope, cache)
-  assert_eq(cache.stats(), (1, 1)) // one miss to fill it, one hit to reuse it
   assert_eq(texts(second), ["one"])
   // the rendered site inside the wrapper is the reused object
   guard first is Node(f)
@@ -136,13 +145,13 @@ test "an unchanged instance is reused, as the very same Vdom" {
 test "an updated instance misses, because its revision moved" {
   let (scope, card) = card_scope()
   let node = one_slot()
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let inst = card.make({ "title": Str("one") })
-  let _ = pass(node, Map({ "a": inst }), scope, cache)
+  let before = pass(node, Map({ "a": inst }), scope, cache)
   let renamed = send(inst, "rename", [Str("two")])
   let after = pass(node, Map({ "a": renamed }), scope, cache)
-  assert_eq(cache.stats(), (0, 2))
   assert_eq(texts(after), ["two"])
+  assert_false(physical_equal(first_child(before), first_child(after)))
 }
 
 ///|
@@ -154,17 +163,19 @@ test "two instances sharing a bucket are correct, and thrash" {
   // would be the only way this design could fail; a thrash is a cost.
   let (scope, card) = card_scope()
   let node = one_slot()
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let a = card.make({ "title": Str("same") })
   let b = card.make({ "title": Str("same") })
   guard a.identity() is Some(id_a)
   guard b.identity() is Some(id_b)
   assert_eq(id_a.to_hex(), id_b.to_hex())
-  assert_eq(texts(pass(node, Map({ "a": a }), scope, cache)), ["same"])
+  let first_a = pass(node, Map({ "a": a }), scope, cache)
+  assert_eq(texts(first_a), ["same"])
   assert_eq(texts(pass(node, Map({ "a": b }), scope, cache)), ["same"])
-  assert_eq(texts(pass(node, Map({ "a": a }), scope, cache)), ["same"])
-  // never a hit: each pass evicts the other's entry
-  assert_eq(cache.stats(), (0, 3))
+  let second_a = pass(node, Map({ "a": a }), scope, cache)
+  assert_eq(texts(second_a), ["same"])
+  // The intervening instance overwrote the shared bucket, so A rebuilt.
+  assert_false(physical_equal(first_child(first_a), first_child(second_a)))
 }
 
 ///|
@@ -174,10 +185,9 @@ test "one instance at two sites in one pass: a miss that overwrites" {
   // is why the §Comp§ metas below carry their own nids and not one nid twice.
   let (scope, card) = card_scope()
   let node = parse_node("<div><x render=\".a\"></x><x render=\".a\"></x></div>")
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let root : @tutuca.Value = Map({ "a": card.make({ "title": Str("twice") }) })
   assert_eq(texts(pass(node, root, scope, cache)), ["twice", "twice"])
-  assert_eq(cache.stats(), (0, 2))
   // one bucket, so the two sites cannot both be held
   assert_eq(cache.size(), (1, 0))
 }
@@ -188,17 +198,14 @@ test "a value with no bucket is declined, not missed" {
   // nothing whose generations can be told apart. The cache is not consulted at
   // all — building a key and missing with it is what OPTIMIZATIONS #8 measured
   // as the reason the previous cache lost time where it did not hit.
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let card = parse_node("<div class=\"plain\">static</div>")
-  let resolver : &@render.ViewResolver = @render.ViewMap::{
-    views: { "main": card },
-  }
+  let resolver : &ViewResolver = ViewMap::{ views: { "main": card } }
   let v : @tutuca.Value = Map({ "a": Num(1) })
-  let ctx = @render.RenderCtx::new(view_resolver=resolver, render_cache=cache)
-  let stack = @render.RenderStack::new(v)
-  guard @render.render_root(v, stack, ctx) is Some(first)
-  guard @render.render_root(v, stack, ctx) is Some(second)
-  assert_eq(cache.stats(), (0, 0))
+  let ctx = RenderCtx::new(view_resolver=resolver, render_cache=cache)
+  let stack = RenderStack::new(v)
+  guard render_root(v, stack, ctx) is Some(first)
+  guard render_root(v, stack, ctx) is Some(second)
   assert_eq(cache.size(), (0, 0))
   assert_false(physical_equal(first, second))
   assert_true(first.is_equal_to(second))
@@ -213,13 +220,12 @@ test "an entry is reusable for one pass, then falls out" {
   let (scope, card) = card_scope()
   let node = one_slot()
   let empty = parse_node("<div></div>")
-  let cache = @render.RenderCache::new()
+  let cache = RenderCache::new()
   let root : @tutuca.Value = Map({ "a": card.make({ "title": Str("one") }) })
-  let _ = pass(node, root, scope, cache)
-  assert_eq(cache.stats(), (0, 1)) // filled
-  let _ = pass(node, root, scope, cache)
-  assert_eq(cache.stats(), (1, 1)) // found in the previous generation
+  let first = pass(node, root, scope, cache)
+  let second = pass(node, root, scope, cache)
+  assert_true(physical_equal(first_child(first), first_child(second)))
   let _ = pass(empty, root, scope, cache) // a pass that renders no site
-  let _ = pass(node, root, scope, cache)
-  assert_eq(cache.stats(), (1, 2)) // and it is gone
+  let after_gap = pass(node, root, scope, cache)
+  assert_false(physical_equal(first_child(second), first_child(after_gap)))
 }

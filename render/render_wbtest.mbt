@@ -15,14 +15,29 @@ fn to_html(v : @vdom.Vdom) -> String {
 }
 
 ///|
+fn render_view(
+  view : @anode.View,
+  stack : RenderStack,
+  ctx : RenderCtx,
+) -> @vdom.Vdom {
+  match view.anode {
+    Some(node) =>
+      render(node, stack, ctx).unwrap_or(
+        @vdom.comment("view \{view.name} rendered nothing"),
+      )
+    None => @vdom.comment("view \{view.name} was not compiled")
+  }
+}
+
+///|
 fn render_html(
   html : String,
   state? : @tutuca.Value = Map(Map([])),
-  resolver? : &@render.ViewResolver,
+  resolver? : &ViewResolver,
 ) -> String {
-  let stack = @render.RenderStack::new(state)
-  let ctx = @render.RenderCtx::new(view_resolver?=resolver)
-  match @render.render(parse_node(html), stack, ctx) {
+  let stack = RenderStack::new(state)
+  let ctx = RenderCtx::new(view_resolver?=resolver)
+  match render(parse_node(html), stack, ctx) {
     Some(v) => to_html(v)
     None => "<!-- suppressed -->"
   }
@@ -31,15 +46,15 @@ fn render_html(
 ///|
 /// A `RenderCtx` with no cache memoizes nothing: two passes over the same node
 /// build two distinct trees that compare equal. Only a component render SITE
-/// is ever cached (see cache_test.mbt), and only when the ctx carries a cache;
+/// is ever cached (see cache_wbtest.mbt), and only when the ctx carries a cache;
 /// the constant subtrees and constant attribute maps the port used to memoize
 /// are gone and are not coming back with it.
 test "a second render pass reuses nothing, and renders the same thing" {
   let node = parse_node("<p class=\"x\">hi</p>")
-  let ctx = @render.RenderCtx::new()
-  let stack = @render.RenderStack::new(Map(Map([])))
-  guard @render.render(node, stack, ctx) is Some(first)
-  guard @render.render(node, stack, ctx) is Some(second)
+  let ctx = RenderCtx::new()
+  let stack = RenderStack::new(Map(Map([])))
+  guard render(node, stack, ctx) is Some(first)
+  guard render(node, stack, ctx) is Some(second)
   assert_false(physical_equal(first, second))
   assert_true(first.is_equal_to(second))
   assert_eq(to_html(second), "<p class=\"x\">hi</p>")
@@ -52,14 +67,12 @@ test "a second render pass reuses nothing, and renders the same thing" {
 /// the point of declining rather than keying and missing.
 test "a component render site rebuilds every pass, and tracks its value" {
   let card = parse_node("<div class=\"card\">static</div>")
-  let resolver : &@render.ViewResolver = @render.ViewMap::{
-    views: { "main": card },
-  }
-  let ctx = @render.RenderCtx::new(view_resolver=resolver)
+  let resolver : &ViewResolver = ViewMap::{ views: { "main": card } }
+  let ctx = RenderCtx::new(view_resolver=resolver)
   let v1 : @tutuca.Value = Map({ "a": Num(1) })
-  let stack = @render.RenderStack::new(v1)
-  guard @render.render_root(v1, stack, ctx) is Some(first)
-  guard @render.render_root(v1, stack, ctx) is Some(second)
+  let stack = RenderStack::new(v1)
+  guard render_root(v1, stack, ctx) is Some(first)
+  guard render_root(v1, stack, ctx) is Some(second)
   // An unchanged value no longer buys a reused subtree — a fresh tree that
   // compares equal is what the differ now has to work from.
   assert_false(physical_equal(first, second))
@@ -68,8 +81,8 @@ test "a component render site rebuilds every pass, and tracks its value" {
   // Different values still render distinct trees, as they always did.
   let a : @tutuca.Value = Map({ "n": Num(1) })
   let b : @tutuca.Value = Map({ "n": Num(2) })
-  guard @render.render_root(a, @render.RenderStack::new(a), ctx) is Some(ra)
-  guard @render.render_root(b, @render.RenderStack::new(b), ctx) is Some(rb)
+  guard render_root(a, RenderStack::new(a), ctx) is Some(ra)
+  guard render_root(b, RenderStack::new(b), ctx) is Some(rb)
   assert_false(physical_equal(ra, rb))
 }
 
@@ -117,8 +130,8 @@ test "elements and fragments both drop suppressed children" {
 ///|
 test "svg subtree keeps its namespace" {
   let node = parse_node("<svg viewBox=\"0 0 1 1\"><circle/></svg>")
-  let stack = @render.RenderStack::new(Map(Map([])))
-  guard @render.render(node, stack, @render.RenderCtx::new()) is Some(v)
+  let stack = RenderStack::new(Map(Map([])))
+  guard render(node, stack, RenderCtx::new()) is Some(v)
   guard v is Node(el)
   assert_true(el.ns is Some(Svg))
   assert_true(el.attrs.get("viewBox") is Some(Str("0 0 1 1")))
@@ -127,7 +140,7 @@ test "svg subtree keeps its namespace" {
 ///|
 test "render-it resolves through a ViewMap and enters the value" {
   let card = parse_node("<div class=\"card\">static</div>")
-  let resolver = @render.ViewMap::{ views: { "main": card } }
+  let resolver = ViewMap::{ views: { "main": card } }
   assert_eq(
     render_html("<section><x render-it></x></section>", resolver~),
     "<section><!--§{\"$\":\"Comp\",\"nid\":0,\"cid\":0,\"vid\":\"main\"}§--><div class=\"card\">static</div></section>",
@@ -137,7 +150,7 @@ test "render-it resolves through a ViewMap and enters the value" {
 ///|
 test "render-it with as= picks the named view" {
   let detail = parse_node("<p>detail</p>")
-  let resolver = @render.ViewMap::{ views: { "detail": detail } }
+  let resolver = ViewMap::{ views: { "detail": detail } }
   assert_eq(
     render_html("<x render-it as=\"detail\"></x>", resolver~),
     "<!--§{\"$\":\"Comp\",\"nid\":0,\"cid\":0,\"vid\":\"detail\"}§--><p>detail</p>",
@@ -175,8 +188,8 @@ test "compiled macro call renders its expansion" {
   )
   let px = @anode.ParseContext::new()
   v.compile(px, MacroTestScope::{ macros: { "card": card } })
-  let stack = @render.RenderStack::new(Map(Map([])))
-  let html = to_html(@render.render_view(v, stack, @render.RenderCtx::new()))
+  let stack = RenderStack::new(Map(Map([])))
+  let html = to_html(render_view(v, stack, RenderCtx::new()))
   // View::compile stamps data-vid on the root (JS strips data-* only in
   // renderToString's cleanAttrs pass, which is not ported).
   assert_eq(
@@ -187,7 +200,7 @@ test "compiled macro call renders its expansion" {
 ///|
 test "RenderStack lookups: binds chain, it fields, view names" {
   let state : @tutuca.Value = Map({ "title": Str("hello") })
-  let root = @render.RenderStack::new(state)
+  let root = RenderStack::new(state)
   assert_true(root.it is Map(_))
   let child = root.enter(Str("item"), { "key": Num(0) }, is_frame=false)
   let grand = child.enter(Str("inner"), { "value": Str("v") }, is_frame=false)
@@ -220,7 +233,7 @@ test "state Fn fields back methods and handlers" {
       }
     }),
   })
-  let stack = @render.RenderStack::new(state)
+  let stack = RenderStack::new(state)
   // lookup_method invokes; get_handler_for returns the raw Fn
   assert_true(@tutuca.Stack::lookup_method(stack, "greet") is Str("hi"))
   assert_true(@tutuca.Stack::get_handler_for(stack, "greet", Input) is Fn(_))
@@ -427,7 +440,7 @@ test "loop-less @enrich-with opens a scope frame" {
 ///|
 test "render-each over a sequence via ViewMap" {
   let item_view = parse_node("<li>item</li>")
-  let resolver = @render.ViewMap::{ views: { "main": item_view } }
+  let resolver = ViewMap::{ views: { "main": item_view } }
   assert_eq(
     render_html(
       "<ul><x render-each=\".items\"></x></ul>",

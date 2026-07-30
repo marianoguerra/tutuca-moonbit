@@ -6,6 +6,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- Render's package-only tests are white-box tests now, so their source-view
+  resolvers and cache probes no longer inflate the published API. The render
+  cache also stops maintaining hit/miss counters on every lookup; tests prove
+  reuse and eviction directly through VDOM identity and cache generations.
+
+### Removed
+
+- Test-only and internal `@render` exports: `ViewMap`, `ViewRegistry`,
+  `CompiledView`, `CacheEntry`, `render_view`, and the non-lifecycle
+  `RenderCache` methods (`get`, `set`, `stats`, `size`, `evict`). Production
+  integrations keep `render_root`, the resolver/boundary traits, and
+  `RenderCache::new` / `clear` / `next_generation`.
+
 ## [0.9.3] - 2026-07-30
 
 ### Fixed

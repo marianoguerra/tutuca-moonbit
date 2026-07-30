@@ -5,17 +5,16 @@
 
 ///|
 fn rebuilt(
-  reg : @render.ViewRegistry,
+  reg : ViewRegistry,
   state : @tutuca.Value,
   container : @memdom.MemNode,
   btn : @memdom.MemNode,
-) -> @render.RenderStack raise {
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+) -> RenderStack raise {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
-  let stack = @render.RenderStack::new(state)
-  guard @render.build_stack(ed.path.to_transaction_path(), stack) is Some(st) else {
+  let stack = RenderStack::new(state)
+  guard build_stack(ed.path.to_transaction_path(), stack) is Some(st) else {
     fail("stack rebuild failed")
   }
   st
@@ -23,7 +22,7 @@ fn rebuilt(
 
 ///|
 test "@each binds are visible to a handler in the SAME component" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\"><button @on.click=\"pick\">x</button></li></ul>",
   )
@@ -44,7 +43,7 @@ test "@each binds are visible to a handler in the SAME component" {
 
 ///|
 test "frame boundary: @key/@value do NOT leak into a rendered child component" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\"><x render-it as=\"item\"></x></li></ul>",
   )
@@ -67,7 +66,7 @@ test "frame boundary: @key/@value do NOT leak into a rendered child component" {
 
 ///|
 test "@enrich-with scope binds are replayed by ScopeBindStep" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<div @enrich-with=\"info\"><button @on.click=\"go\">x</button></div>",
   )
@@ -83,7 +82,7 @@ test "@enrich-with scope binds are replayed by ScopeBindStep" {
 
 ///|
 test "@each + @enrich-with: enriched binds replay per item" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\" @enrich-with=\"decorate\"><button @on.click=\"go\">x</button></li></ul>",
   )
@@ -112,18 +111,17 @@ test "@each + @enrich-with: enriched binds replay per item" {
 
 ///|
 test "a stale path fails the rebuild instead of building a wrong stack" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add("main", "<div><x render=\".child\" as=\"detail\"></x></div>")
   reg.add("detail", "<button @on.click=\"hit\">x</button>")
   let state : @tutuca.Value = Map({ "child": Map(Map([])) })
   let container = mount(reg, state)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   // the state moved on: the child is gone
   let gone : @tutuca.Value = Map(Map([]))
-  let stack = @render.RenderStack::new(gone)
-  assert_true(@render.build_stack(ed.path.to_transaction_path(), stack) is None)
+  let stack = RenderStack::new(gone)
+  assert_true(build_stack(ed.path.to_transaction_path(), stack) is None)
 }

@@ -25,13 +25,10 @@ fn find_el(
 
 ///|
 /// Render `state` as the app root through `reg` into a fresh container.
-fn mount(
-  reg : @render.ViewRegistry,
-  state : @tutuca.Value,
-) -> @memdom.MemNode raise {
-  let stack = @render.RenderStack::new(state)
-  let ctx = @render.RenderCtx::new(view_resolver=reg)
-  guard @render.render_root(state, stack, ctx) is Some(v) else {
+fn mount(reg : ViewRegistry, state : @tutuca.Value) -> @memdom.MemNode raise {
+  let stack = RenderStack::new(state)
+  let ctx = RenderCtx::new(view_resolver=reg)
+  guard render_root(state, stack, ctx) is Some(v) else {
     fail("root did not render")
   }
   let doc = @memdom.document()
@@ -41,10 +38,7 @@ fn mount(
 }
 
 ///|
-fn resolve_leaf(
-  ed : @render.EventDispatch,
-  state : @tutuca.Value,
-) -> @tutuca.Value {
+fn resolve_leaf(ed : EventDispatch, state : @tutuca.Value) -> @tutuca.Value {
   let root : @tutuca.Value = state
   match ed.path.to_transaction_path().lookup(root) {
     Some(n) => n
@@ -54,13 +48,12 @@ fn resolve_leaf(
 
 ///|
 test "click on the root component: empty path, handlers found" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add("main", "<div><button @on.click=\"doIt\">go</button></div>")
   let state : @tutuca.Value = Map({ "title": Str("t") })
   let container = mount(reg, state)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
@@ -71,15 +64,13 @@ test "click on the root component: empty path, handlers found" {
 
 ///|
 test "no handler for the event name aborts (stop_on_no_event)" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add("main", "<div><button @on.click=\"doIt\">go</button></div>")
   let container = mount(reg, Map(Map([])))
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
-  assert_true(
-    @render.from_node_and_event_name(btn, "keydown", container, reg) is None,
-  )
+  assert_true(from_node_and_event_name(btn, "keydown", container, reg) is None)
   // stop_on_no_event=false still returns the path (two-way binds use this)
-  guard @render.from_node_and_event_name(
+  guard from_node_and_event_name(
       btn,
       "keydown",
       container,
@@ -94,15 +85,14 @@ test "no handler for the event name aborts (stop_on_no_event)" {
 
 ///|
 test "click inside a rendered child component: one FieldStep per boundary" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add("main", "<div><x render=\".child\" as=\"detail\"></x></div>")
   reg.add("detail", "<button @on.click=\"hit\">x</button>")
   let child : @tutuca.Value = Map({ "name": Str("c1") })
   let state : @tutuca.Value = Map({ "child": child })
   let container = mount(reg, state)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
@@ -112,7 +102,7 @@ test "click inside a rendered child component: one FieldStep per boundary" {
 
 ///|
 test "click on an @each + render-it item resolves the keyed item" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\"><x render-it as=\"item\"></x></li></ul>",
   )
@@ -125,8 +115,7 @@ test "click on an @each + render-it item resolves the keyed item" {
   guard find_el(container, "BUTTON", nth=1) is Some(btn) else {
     fail("no second button")
   }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)
@@ -144,7 +133,7 @@ test "click on an @each + render-it item resolves the keyed item" {
 
 ///|
 test "an @each over a list resolves the indexed item" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<ul><li @each=\".items\"><x render-it as=\"item\"></x></li></ul>",
   )
@@ -156,8 +145,7 @@ test "an @each over a list resolves the indexed item" {
   guard find_el(container, "BUTTON", nth=1) is Some(btn) else {
     fail("no second button")
   }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   assert_true(
@@ -169,7 +157,7 @@ test "an @each over a list resolves the indexed item" {
 
 ///|
 test "a scope boundary contributes a frame-only ScopeBindStep" {
-  let reg = @render.ViewRegistry::new()
+  let reg = ViewRegistry::new()
   reg.add(
     "main", "<div @enrich-with=\"info\"><button @on.click=\"go\">x</button></div>",
   )
@@ -178,8 +166,7 @@ test "a scope boundary contributes a frame-only ScopeBindStep" {
   })
   let container = mount(reg, state)
   guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
-  guard @render.from_node_and_event_name(btn, "click", container, reg)
-    is Some(ed) else {
+  guard from_node_and_event_name(btn, "click", container, reg) is Some(ed) else {
     fail("no event info")
   }
   assert_eq(ed.handlers.length(), 1)

@@ -20,28 +20,9 @@ pub fn render(@anode.ANode, RenderStack, RenderCtx) -> @vdom.Vdom?
 
 pub fn render_root(@core.Value, RenderStack, RenderCtx) -> @vdom.Vdom?
 
-pub fn render_view(@anode.View, RenderStack, RenderCtx) -> @vdom.Vdom
-
 // Errors
 
 // Types and methods
-pub struct CacheEntry {
-  rev : Int
-  node_id : Int?
-  cid : Int
-  vid : String
-  value : @core.Value
-  dyn_binds : @component.DynBinds?
-  vdom : @vdom.Vdom
-}
-
-pub(all) struct CompiledView {
-  cid : Int
-  vid : String
-  node : @anode.ANode
-  px : @anode.ParseContext
-}
-
 pub(all) struct DomEvent {
   name : String
   value : @core.Value
@@ -69,19 +50,11 @@ pub fn Meta::parse(String) -> Self?
 pub fn Meta::to_comment_text(Self) -> String
 
 pub struct RenderCache {
-  mut cur : Map[UInt64, CacheEntry]
-  mut prev : Map[UInt64, CacheEntry]
-  mut hit : Int
-  mut miss : Int
+  // private fields
 }
 pub fn RenderCache::clear(Self) -> Unit
-pub fn RenderCache::evict(Self) -> (Int, Int)
-pub fn RenderCache::get(Self, @core.ObjId, Int?, ResolvedView, @core.Value, @component.DynBinds?) -> @vdom.Vdom?
 pub fn RenderCache::new() -> Self
 pub fn RenderCache::next_generation(Self) -> Unit
-pub fn RenderCache::set(Self, @core.ObjId, Int?, ResolvedView, @core.Value, @component.DynBinds?, @vdom.Vdom) -> Unit
-pub fn RenderCache::size(Self) -> (Int, Int)
-pub fn RenderCache::stats(Self) -> (Int, Int)
 
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
@@ -109,19 +82,6 @@ pub(all) struct ResolvedView {
   cid : Int
   vid : String
 } derive(@debug.Debug)
-
-pub(all) struct ViewMap {
-  views : Map[String, @anode.ANode]
-}
-pub impl ViewResolver for ViewMap
-
-pub(all) struct ViewRegistry {
-  by_name : Map[String, CompiledView]
-}
-pub fn ViewRegistry::add(Self, String, String) -> Unit raise
-pub fn ViewRegistry::new() -> Self
-pub impl Boundaries for ViewRegistry
-pub impl ViewResolver for ViewRegistry
 
 // Type aliases
 

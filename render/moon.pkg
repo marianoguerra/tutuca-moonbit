@@ -11,4 +11,4 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
   "moonbitlang/core/debug",
-} for "test"
+} for "wbtest"

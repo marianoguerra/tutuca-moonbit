@@ -105,21 +105,6 @@ pub fn render(
 }
 
 ///|
-pub fn render_view(
-  view : @anode.View,
-  stack : RenderStack,
-  ctx : RenderCtx,
-) -> @vdom.Vdom {
-  match view.anode {
-    Some(node) =>
-      render(node, stack, ctx).unwrap_or(
-        @vdom.comment("view \{view.name} rendered nothing"),
-      )
-    None => @vdom.comment("view \{view.name} was not compiled")
-  }
-}
-
-///|
 /// `<x render>` / `<x render-it>`: enter a frame on the rendered value and
 /// render the resolved view behind a §Comp§ boundary meta (JS _rValComp).
 /// An unresolved view suppresses the site; a component whose view renders
@@ -141,7 +126,7 @@ fn render_site(
   match ctx.view_resolver.resolve_view(names, value) {
     Some(rv) => {
       // Decline before spending anything on a value with no bucket: a plain
-      // Map/List render site, or a component-less ViewMap embedding, has
+      // A Map/List render site under a component-less resolver has
       // nothing whose generations can be told apart, so keying on it could
       // only build a key and miss. (OPTIMIZATIONS #8: the previous cache lost
       // time on exactly that.)
