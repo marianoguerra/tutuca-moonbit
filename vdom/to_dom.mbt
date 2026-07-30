@@ -111,17 +111,13 @@ fn[N : DomNode] apply_properties(
 /// (b) <select><option> diff completes before we tell the select which
 ///     option should be selected.
 fn[N : DomNode] apply_value_last(node : N, value : AttrValue?) -> Unit {
-  // <progress value=0> via the IDL setter is treated as indeterminate;
-  // force the attribute path so the bar shows 0% instead of unknown.
-  let progress_zero = match value {
-    None => true
-    Some(Num(d)) => d == 0.0
-    _ => false
-  }
-  if node.tag_name() == "PROGRESS" && progress_zero {
-    node.remove_attribute("value")
-  } else {
-    set_prop(node, "value", value, is_namespaced(node))
+  // A progress bar is indeterminate exactly when its value ATTRIBUTE is
+  // absent. Keep zero on the attribute path so `<progress value=0>` remains a
+  // determinate bar at 0%; None still goes through set_prop and removes it.
+  match value {
+    Some(Num(d)) if node.tag_name() == "PROGRESS" && d == 0.0 =>
+      node.set_attribute("value", "0")
+    _ => set_prop(node, "value", value, is_namespaced(node))
   }
 }
 

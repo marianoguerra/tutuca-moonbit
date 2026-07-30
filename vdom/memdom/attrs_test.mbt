@@ -299,19 +299,21 @@ test "checkbox checked applied after other props" {
 }
 
 ///|
-test "progress with value=0 removes the attribute (not indeterminate)" {
+test "progress with value=0 keeps the determinate value attribute" {
   let dom = to_dom(
     @vdom.h("progress", attrs={
       "value": @vdom.AttrValue::int(0),
       "max": @vdom.AttrValue::int(100),
     }),
   )
-  assert_true(dom.get_attribute("value") is None)
+  assert_eq(dom.get_attribute("value"), Some("0"))
   // nonzero value goes through the normal property path
   let dom2 = to_dom(
     @vdom.h("progress", attrs={ "value": @vdom.AttrValue::int(50) }),
   )
   assert_true(dom2.get_property("value") is Some(Num(50)))
+  let dom3 = to_dom(@vdom.h("progress"))
+  assert_true(dom3.get_attribute("value") is None)
 }
 
 ///|

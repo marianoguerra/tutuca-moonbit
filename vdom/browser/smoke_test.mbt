@@ -62,6 +62,31 @@ test "browser: render, attributes and properties" {
 }
 
 ///|
+test "browser: progress zero is determinate" {
+  let (c, o) = env()
+  let r1 = @vdom.render(
+    @vdom.h("progress", attrs={
+      "value": @vdom.AttrValue::int(0),
+      "max": @vdom.AttrValue::int(100),
+    }),
+    c,
+    o,
+  )
+  let progress = @vdom.DomNode::child_nodes(c)[0]
+  let value : String = progress
+    .as_any()
+    ._call("getAttribute", [@core.any("value")])
+    .cast()
+  inspect(value, content="0")
+  let position : Double = progress.as_any()._get("position").cast()
+  inspect(position, content="0")
+  let _ = @vdom.render(@vdom.h("progress"), c, o, prev=r1)
+  assert_true(
+    @core.is_null(progress.as_any()._call("getAttribute", [@core.any("value")])),
+  )
+}
+
+///|
 test "browser: morph patches in place and updates text" {
   let (c, o) = env()
   let r1 = @vdom.render(
