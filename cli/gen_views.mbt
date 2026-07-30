@@ -365,19 +365,24 @@ pub fn gen_views_all(
       }
       // `hints` is the schema check's advisory half — the findings a `slots~`
       // entry naming a bare `component` slot could legitimately defeat, so they
-      // are reported here rather than failing generation. Passed rather than re-derived: the
-      // check runs inside emit_module, and asking for it separately would
-      // parse every view a fourth time.
+      // are reported here rather than failing generation.
       let hints : Array[String] = []
-      let src = @viewgen.emit_module(f.name, file, views, hints~, program=index)
+      let generated = @viewgen.emit_modules(
+        f.name,
+        file,
+        views,
+        include_ir=ir,
+        hints~,
+        program=index,
+      )
       for h in hints {
         diagnostics.push(where_prefixed(files, f, h))
       }
-      out.push((f.target, src))
+      out.push((f.target, generated.types_source))
       // The compiled tree goes in its own module: it is by far the biggest
       // part of the output and nothing in the types file depends on it, so a
       // component that opts out just never references it.
-      if ir && @viewgen.emit_ir_module_opt(f.name, file, views) is Some(ir_src) {
+      if generated.ir_source is Some(ir_src) {
         out.push((gen_views_ir_target(f.target), ir_src))
       }
     } catch {

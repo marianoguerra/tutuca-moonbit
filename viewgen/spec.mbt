@@ -108,6 +108,15 @@ pub(all) struct Surface {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// Both generated modules from one shared view-compilation pass. `ir_source`
+/// is absent for a schema-only file or when the compiled-tree emitter cannot
+/// represent the views.
+pub(all) struct GeneratedModules {
+  types_source : String
+  ir_source : String?
+}
+
+///|
 /// Anything that makes generation impossible. Rendered by `Show` into the
 /// message the CLI reports.
 pub suberror GenError {
@@ -222,6 +231,20 @@ declare pub fn emit_module(
   hints? : Array[String],
   program? : ProgramIndex,
 ) -> String raise GenError
+
+///|
+/// Compile every view once, then emit the types module and optional compiled
+/// tree module from the same roots and event tables. This is the preferred
+/// entry point for build tools that need both outputs.
+declare pub fn emit_modules(
+  name : String,
+  source_file : String,
+  file : ViewFile,
+  include_ir? : Bool,
+  debug_derive? : Bool,
+  hints? : Array[String],
+  program? : ProgramIndex,
+) -> GeneratedModules raise GenError
 
 ///|
 /// True when every view can be emitted as a compiled tree. A view whose tree

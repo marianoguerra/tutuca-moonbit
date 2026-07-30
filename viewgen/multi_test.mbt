@@ -69,6 +69,20 @@ test "the IR module carries every component too, macros expanded" {
 }
 
 ///|
+test "emit_modules produces the same public modules in one compilation" {
+  let f = @viewgen.split_file(multi_html)
+  let generated = @viewgen.emit_modules("Ignored", "json.html", f)
+  assert_eq(
+    generated.types_source,
+    @viewgen.emit_module("Ignored", "json.html", f),
+  )
+  assert_eq(
+    generated.ir_source,
+    Some(@viewgen.emit_ir_module("Ignored", "json.html", f)),
+  )
+}
+
+///|
 test "a file either names its components or does not" {
   let msg = try {
     @viewgen.split_file(

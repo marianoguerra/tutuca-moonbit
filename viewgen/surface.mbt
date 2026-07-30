@@ -418,26 +418,7 @@ pub fn view_surface(
   macros? : Array[MacroDef] = [],
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
-  let c = Collect::new()
-  // Insertion-ordered so the emitted variants follow first use, and the
-  // signature of a name seen in two views is the join of both.
-  let inputs : Map[String, InputSig] = Map([])
-  for view in views {
-    let collector = IssueCollector::{ issues: [] }
-    let px = @anode.ParseContext::new(handler=collector)
-    let v = @anode.View::new(view.name, raw_view=view.source)
-    v.compile(px, scope) catch {
-      RecursiveMacro(name) =>
-        raise ViewParseIssue(view=view.name, issue="recursive macro '\{name}'")
-    }
-    check_macros_resolved(view.name, px, scope)
-    if collector.issues.length() > 0 {
-      raise ViewParseIssue(view=view.name, issue=collector.issues[0])
-    }
-    guard v.anode is Some(root) else { raise EmptyView(view.name) }
-    walk_view(view.name, root, px.events, c, inputs)
-  }
-  finish_surface(c, inputs)
+  surface_of(compile_views(views, scope))
 }
 
 ///|

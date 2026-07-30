@@ -36,23 +36,8 @@ let q : String = "@anode."
 /// view sends the whole file back to the source path, so a component never
 /// mixes the two.
 pub fn ir_supported(file : ViewFile) -> Bool {
-  let scope = FileMacros::of(file.macros)
-  for comp in file.components {
-    // The surface walk is part of the answer, not just the tree: the wrapper's
-    // handler buckets are the names the views use, so a file whose surface
-    // cannot be extracted cannot be emitted either. Walking the trees this
-    // loop already compiled keeps that free — it is the same work
-    // `emit_ir_component` does, in the same order.
-    let c = Collect::new()
-    let inputs : Map[String, InputSig] = Map([])
-    for view in comp.views {
-      try {
-        let (root, events) = compiled_tree(view, scope)
-        walk_view(view.name, root, events, c, inputs)
-      } catch {
-        _ => return false
-      }
-    }
+  try compile_file(file) |> ignore catch {
+    _ => return false
   }
   true
 }
@@ -431,16 +416,25 @@ pub fn emit_ir_module(
   source_file : String,
   file : ViewFile,
 ) -> String raise GenError {
+  emit_ir_module_compiled(name, source_file, file, compile_file(file))
+}
+
+///|
+fn emit_ir_module_compiled(
+  name : String,
+  source_file : String,
+  file : ViewFile,
+  compiled : CompiledFile,
+) -> String raise GenError {
   let out = StringBuilder::new()
   // A schema-only file declares no views, so there is no tree to compile —
   // and no header to write, since the header names the first component.
   guard !file.components.is_empty() else { raise NoViewsToCompile }
   let first = file.components[0].component_name(name)
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
-  let scope = FileMacros::of(file.macros)
-  for comp in file.components {
-    let cname = comp.component_name(name)
-    emit_ir_component(cname, comp, scope, state_for(file, cname), out)
+  for comp in compiled.components {
+    let cname = comp.raw.component_name(name)
+    emit_ir_component(cname, comp, state_for(file, cname), out)
   }
   out.to_string()
 }
@@ -497,39 +491,30 @@ fn emit_ir_header(
 /// schema — the `component()` wrapper that defaults to them.
 fn emit_ir_component(
   name : String,
-  views : ViewSet,
-  scope : FileMacros,
+  compiled : CompiledComponent,
   state : @statedef.StateDef?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
   let v = value_prefix(name)
-  // The wrapper's handler buckets are the ones the views name, so the surface
-  // is needed here — collected from the trees this loop compiles rather than
-  // by parsing them again, which is the third parse per view that
-  // benchmarks/OPTIMIZATIONS.md #1 removed.
-  let c = Collect::new()
-  let inputs : Map[String, InputSig] = Map([])
-  for view in views.views {
-    let (root, events) = compiled_tree(view, scope)
-    walk_view(view.name, root, events, c, inputs)
-    let fname = "\{v}_\{value_prefix(view.name)}_view_ir"
-    let style = if view.style == "" {
+  for view in compiled.views {
+    let fname = "\{v}_\{value_prefix(view.raw.name)}_view_ir"
+    let style = if view.raw.style == "" {
       ""
     } else {
-      "    style=\{quote(view.style)},\n"
+      "    style=\{quote(view.raw.style)},\n"
     }
     out.write_string(
-      "///|\n/// The compiled `\{view.name}` view.\nfn \{fname}() -> @anode.View {\n",
+      "///|\n/// The compiled `\{view.raw.name}` view.\nfn \{fname}() -> @anode.View {\n",
     )
     out.write_string(
       "  @anode.View::from_ir(\n" +
-      "    \{quote(view.name)},\n" +
+      "    \{quote(view.raw.name)},\n" +
       "    " +
-      node_expr(root, "    ") +
+      node_expr(view.root, "    ") +
       ",\n" +
       "    " +
-      events_expr(events, "    ") +
+      events_expr(view.events, "    ") +
       ",\n" +
       style +
       "  )\n}\n\n",
@@ -541,9 +526,9 @@ fn emit_ir_component(
     "/// @component.component.\n" +
     "pub fn \{v}_views() -> Map[String, @anode.View] {\n  {\n",
   )
-  for view in views.views {
+  for view in compiled.views {
     out.write_string(
-      "    \{quote(view.name)}: \{v}_\{value_prefix(view.name)}_view_ir(),\n",
+      "    \{quote(view.raw.name)}: \{v}_\{value_prefix(view.raw.name)}_view_ir(),\n",
     )
   }
   out.write_string("  }\n}\n\n")
@@ -552,7 +537,7 @@ fn emit_ir_component(
   // together. A component with no schema has no state type to make its
   // parameters out of, and keeps calling `component()` directly.
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, finish_surface(c, inputs), out)
+    emit_wrapper(name, t, v, def, compiled.surface, out)
   }
 }
 
@@ -567,40 +552,13 @@ pub fn build_views(
 ) -> Map[String, @anode.View] raise GenError {
   let scope = FileMacros::of(macros)
   let out : Map[String, @anode.View] = Map([])
-  for view in views.views {
-    let (root, events) = compiled_tree(view, scope)
-    out[view.name] = @anode.View::from_ir(
-      view.name,
-      root,
-      events.map(ev => ev.handlers),
-      style=view.style,
+  for view in compile_views(views.views, scope) {
+    out[view.raw.name] = @anode.View::from_ir(
+      view.raw.name,
+      view.root,
+      view.events.map(ev => ev.handlers),
+      style=view.raw.style,
     )
   }
   out
-}
-
-///|
-/// Parse one view and hand back the tree plus its event table, exactly as the
-/// runtime would have built them — but BEFORE data-cid and optimization,
-/// which are load-time concerns, and without the data-vid stamp, which
-/// View::from_ir applies again.
-fn compiled_tree(
-  view : RawView,
-  scope : FileMacros,
-) -> (@anode.ANode, Array[@anode.NodeEvents]) raise GenError {
-  let collector = IssueCollector::{ issues: [] }
-  let px = @anode.ParseContext::new(handler=collector)
-  let v = @anode.View::new(view.name, raw_view=view.source)
-  v.compile(px, scope) catch {
-    RecursiveMacro(n) =>
-      raise ViewParseIssue(view=view.name, issue="recursive macro '\{n}'")
-  }
-  if collector.issues.length() > 0 {
-    raise ViewParseIssue(view=view.name, issue=collector.issues[0])
-  }
-  check_macros_resolved(view.name, px, scope)
-  guard v.anode is Some(root) else { raise EmptyView(view.name) }
-  let tree = strip_macro_calls(root)
-  strip_data_vid(tree)
-  (tree, px.events)
 }

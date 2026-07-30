@@ -21,18 +21,19 @@ extern "js" fn publish_viewgen(gen : (String, String) -> String) -> Unit =
 fn generate_json(html : String, name : String) -> String {
   let obj : Map[String, Json] = try {
     let views = @viewgen.split_file(html)
+    let generated = @viewgen.emit_modules(
+      name,
+      "view.html",
+      views,
+      debug_derive=false,
+    )
     let m : Map[String, Json] = {
       "ok": true.to_json(),
       // No moon.pkg in the playground package to import
       // moonbitlang/core/debug from, so the enums derive Eq alone.
-      "module": @viewgen.emit_module(
-        name,
-        "view.html",
-        views,
-        debug_derive=false,
-      ).to_json(),
+      "module": generated.types_source.to_json(),
     }
-    if @viewgen.emit_ir_module_opt(name, "view.html", views) is Some(src) {
+    if generated.ir_source is Some(src) {
       m["ir"] = src.to_json()
     }
     m

@@ -18,6 +18,8 @@ pub fn emit_ir_module_opt(String, String, ViewFile) -> String?
 
 pub fn emit_module(String, String, ViewFile, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> String raise GenError
 
+pub fn emit_modules(String, String, ViewFile, include_ir? : Bool, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> GeneratedModules raise GenError
+
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 
 pub fn ir_supported(ViewFile) -> Bool
@@ -61,6 +63,11 @@ pub(all) enum ArgType {
   VBool
   VValue
 } derive(Eq, @debug.Debug)
+
+pub(all) struct GeneratedModules {
+  types_source : String
+  ir_source : String?
+}
 
 pub(all) struct InputSig {
   name : String

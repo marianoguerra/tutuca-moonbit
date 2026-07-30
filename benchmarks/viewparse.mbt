@@ -59,11 +59,11 @@ pub fn build(source : String) -> Int {
 /// types module, then the companion IR module.
 pub fn gen(source : String) -> Int {
   let file = split_corpus(source)
-  let mut n = (@viewgen.emit_module(WORKLOAD_NAME, WORKLOAD_FILE, file) catch {
+  let generated = @viewgen.emit_modules(WORKLOAD_NAME, WORKLOAD_FILE, file) catch {
     e => fail_stage("gen", e)
-  }).length()
-  if @viewgen.emit_ir_module_opt(WORKLOAD_NAME, WORKLOAD_FILE, file)
-    is Some(src) {
+  }
+  let mut n = generated.types_source.length()
+  if generated.ir_source is Some(src) {
     n = n + src.length()
   }
   n

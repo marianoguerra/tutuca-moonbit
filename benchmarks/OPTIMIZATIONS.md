@@ -584,11 +584,40 @@ Where the remaining headroom is:
 Output unchanged: 903 default / 903 native / 8 js green, `gen-views`
 drift-clean. The DOM snapshots are the proof the cache never returns stale.
 
+# The view pipeline, revisited
+
+## 10. Compile each view once per generated pair — `gen` −26% / −28%
+
+The types emitter needed a compiled tree to collect the component surface and
+check state reads; the IR emitter independently compiled the same source again
+to serialize that tree. `CompiledFile` now owns each view's expanded tree,
+events and collected surface, and both emitters consume that artifact.
+`emit_modules` is the high-level operation used by the CLI, playground and
+benchmark; the individual emitters remain compatibility wrappers.
+
+Native release, 10 × N runs. This after-run shared the machine with interactive
+work, so treat sub-5% movement in the unrelated stages as noise rather than a
+result:
+
+| Stage                    | before   | after    | change |
+|--------------------------|----------|----------|--------|
+| `many-views split`       | 3.39 ms  | 3.50 ms  | +3.2%  |
+| `many-views surface`     | 7.78 ms  | 7.95 ms  | +2.2%  |
+| `many-views build`       | 7.78 ms  | 7.63 ms  | −1.9%  |
+| `many-views gen`         | 18.20 ms | 13.46 ms | **−26.0%** |
+| `one-big-view split`     | 3.02 ms  | 3.01 ms  | −0.3%  |
+| `one-big-view surface`   | 8.63 ms  | 8.22 ms  | −4.8%  |
+| `one-big-view build`     | 8.35 ms  | 8.27 ms  | −1.0%  |
+| `one-big-view gen`       | 17.77 ms | 12.82 ms | **−27.9%** |
+
+The generation-only drop is much larger than both the confidence intervals
+(±1.6% / ±4.7% after) and the movement in stages the change cannot affect.
+Output stayed byte-identical: the compatibility test compares both emitted
+modules, their pinned benchmark checksums pass, and `gen-views` is drift-clean.
+
 ## Not yet tried
 
-Ranked by what the profiles say is left. **#8 removed the render caches, so the
-`cache_const_nodes` divergence named below is gone — `viewgen`'s three parses
-now produce identical trees, and sharing one is unblocked.**
+Ranked by what the profiles say is left.
 
 In the update path (the biggest numbers on the board):
 
@@ -610,10 +639,9 @@ In the view pipeline:
 
 - **`Tokenizer::new` per view** (6.7% self on the many-views corpus). It is
   `input.to_array()` plus setup in the vendored `moonbit-community/html`; the
-  view pipeline calls it once per view per pass. Fixing it means either fewer
-  passes — one parse shared between `view_surface` and `compiled_tree`, which
-  #8 unblocked by removing the `cache_const_nodes` divergence that made the two
-  produce different trees — or an upstream change.
+  compile-once pipeline now calls it once per view. Further improvement needs
+  an upstream tokenizer change or compiling several template bodies in one
+  tokenizer pass.
 - **`split_file`'s second `Array[Char]`** (`String::to_array`, 4.3–5.7%). The
   file is copied to an array twice: once here for slicing, once inside
   `Tokenizer::new`. Sharing one would need the tokenizer to expose its own, or

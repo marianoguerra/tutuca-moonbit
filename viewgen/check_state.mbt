@@ -60,28 +60,14 @@ priv struct Checker {
 ///|
 /// Check every view of one component against its schema.
 fn check_views(
-  views : Array[RawView],
-  macros : Array[MacroDef],
+  views : Array[CompiledView],
   def : @statedef.StateDef,
   prog : ProgramIndex,
   hints : Array[String],
 ) -> Unit raise GenError {
-  let scope = FileMacros::of(macros)
   for view in views {
-    // Compiled again rather than shared with view_surface: a ParseContext is
-    // consumed by compilation, and a second parse of an already-validated
-    // view costs far less than threading the first one through two walks
-    // with different needs.
-    let collector = IssueCollector::{ issues: [] }
-    let px = @anode.ParseContext::new(handler=collector)
-    let v = @anode.View::new(view.name, raw_view=view.source)
-    v.compile(px, scope) catch {
-      RecursiveMacro(name) =>
-        raise ViewParseIssue(view=view.name, issue="recursive macro '\{name}'")
-    }
-    guard v.anode is Some(root) else { raise EmptyView(view.name) }
-    let c = Checker::{ def, prog, view: view.name, hints }
-    c.node(root, { self_ty: SState, item: SOpaque })
+    let c = Checker::{ def, prog, view: view.raw.name, hints }
+    c.node(view.root, { self_ty: SState, item: SOpaque })
   }
 }
 
