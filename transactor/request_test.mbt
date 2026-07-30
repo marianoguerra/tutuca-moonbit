@@ -216,7 +216,7 @@ test "the response lands on the request-time item even if the key moved" {
   tx.push_request(sel_dispatch(), "load", [])
   // the user switches selection while the request is in flight
   let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [Str("a")])
-  tx.settle()
+  tx.settle() |> ignore
   reqs.pending[0](Ok(Str("late")))
   assert_true(rtitle(tx.root, "b") == Str("late"))
   assert_true(rtitle(tx.root, "a") == Str("first"))
@@ -233,7 +233,7 @@ test "live_path re-evaluates the key on response" {
     opts=@tutuca.RequestOpts::new(live_path=true),
   )
   let _ = tx.push_send(@tutuca.DispatchPath::new(), "select", [Str("a")])
-  tx.settle()
+  tx.settle() |> ignore
   reqs.pending[0](Ok(Str("late")))
   assert_true(rtitle(tx.root, "a") == Str("late"))
   assert_true(rtitle(tx.root, "b") == Str("second"))
@@ -245,7 +245,7 @@ test "a pinned target deleted before the response is a physical no-op" {
   let tx = @transactor.Transactor::new(make_rapp("b"), requests=reqs)
   tx.push_request(sel_dispatch(), "load", [])
   let _ = tx.push_send(@tutuca.DispatchPath::new(), "clear", [])
-  tx.settle()
+  tx.settle() |> ignore
   let after_clear = tx.root
   reqs.pending[0](Ok(Str("late")))
   assert_true(physical_equal(tx.root, after_clear))
@@ -300,7 +300,7 @@ test "completion: a parent's subtree stays open until the response settles" {
   let t = tx.push_send(sel_dispatch(), "load-sel", [])
   let settled : Ref[Bool] = { val: false }
   t.completion().on_subtree_settled(() => settled.val = true)
-  tx.settle()
+  tx.settle() |> ignore
   // the handler ran, but its request is still in flight
   assert_false(settled.val)
   reqs.pending[0](Ok(Str("done")))

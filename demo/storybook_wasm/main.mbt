@@ -290,7 +290,7 @@ pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
 /// real navigation — the same guard the JS storybook relies on.
 pub fn on_popstate() -> Unit {
   match current_app.val {
-    Some(app) => app.send_at_root("init")
+    Some(app) => app.send_at_root("init") |> ignore
     None => ()
   }
 }

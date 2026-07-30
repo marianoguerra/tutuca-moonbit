@@ -201,6 +201,23 @@ test "batching: a cascade of swaps renders exactly once per dispatch" {
 }
 
 ///|
+test "host draining reports bounded progress and rejects a zero batch" {
+  let (a, _container) = mk_app(text_editor(), Map([]))
+  let sent = a.send_at_root("noop")
+  assert_eq(sent, { processed: 1, pending: false })
+  a.transactor.push_send(
+    @tutuca.DispatchPath::new(),
+    "noop",
+    ([] : Array[@tutuca.Value]),
+  )
+  |> ignore
+  let invalid = a.drain_batched(max_per_batch=0, () => ())
+  assert_eq(invalid, { processed: 0, pending: true })
+  let drained = a.drain_batched(max_per_batch=1, () => ())
+  assert_eq(drained, { processed: 1, pending: false })
+}
+
+///|
 priv struct PickerState {
   items : Array[String]
   picked : String

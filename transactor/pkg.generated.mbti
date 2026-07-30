@@ -57,6 +57,11 @@ pub fn ObserveRecord::to_json(Self) -> Json
 
 pub(all) struct RequestHandler((Array[@core.Value], (Result[@core.Value, @core.Value]) -> Unit) -> Unit)
 
+pub(all) struct SettleResult {
+  processed : Int
+  pending : Bool
+} derive(Eq, @debug.Debug)
+
 pub struct Transaction {
   path : @core.DispatchPath
   bucket : @core.HandlerBucket
@@ -84,7 +89,7 @@ pub fn Transactor::on_drained(Self, () -> Unit) -> Unit
 pub fn Transactor::push_input(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction) -> Transaction
 pub fn Transactor::push_request(Self, @core.DispatchPath, String, Array[@core.Value], opts? : @core.RequestOpts, parent? : Transaction) -> Unit
 pub fn Transactor::push_send(Self, @core.DispatchPath, String, Array[@core.Value], parent? : Transaction, skip_self? : Bool, bubbles? : Bool) -> Transaction
-pub fn Transactor::settle(Self, max_turns? : Int) -> Unit
+pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 
 // Type aliases
 

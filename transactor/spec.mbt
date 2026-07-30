@@ -166,6 +166,15 @@ pub(all) struct ObserveRecord {
 }
 
 ///|
+/// Outcome of one bounded settle pass. `pending` tells the caller whether it
+/// must schedule another pass; a non-positive budget processes nothing and
+/// reports the queue unchanged.
+pub(all) struct SettleResult {
+  processed : Int
+  pending : Bool
+} derive(Eq, Debug)
+
+///|
 /// One queued dispatch (JS Transaction subclasses collapsed onto
 /// HandlerBucket): `path` drives dispatch and bubbling, `target_path` stays
 /// the fixed origin across bubble hops, `txn_path` is a pre-pinned
@@ -202,7 +211,8 @@ declare pub fn Transaction::completion(self : Transaction) -> Completion
 pub struct Transactor {
   priv requests : &Requests
   mut root : @tutuca.Value
-  priv queue : Array[Transaction]
+  priv mut queue : Array[Transaction]
+  priv mut queue_head : Int
   priv change_subs : Array[(@tutuca.Value, @tutuca.Value) -> Unit]
   priv mut draining : Bool
   priv observers : Array[(ObserveRecord) -> Unit]
@@ -293,10 +303,14 @@ declare pub fn Transactor::push_request(
 ) -> Unit
 
 ///|
-/// Drain queued transactions until quiescent (`max_turns` backstops a
-/// non-terminating cascade). Re-entrant calls (a respond firing mid-drain)
-/// are no-ops — the outer loop picks the new work up.
-declare pub fn Transactor::settle(self : Transactor, max_turns? : Int) -> Unit
+/// Process at most `max_turns` queued transactions and report whether more
+/// remain. Re-entrant calls (a respond firing mid-drain) process nothing — the
+/// outer loop picks the new work up. A non-positive budget is also a no-op,
+/// making invalid batching explicit without trapping a caller in a loop.
+declare pub fn Transactor::settle(
+  self : Transactor,
+  max_turns? : Int,
+) -> SettleResult
 
 ///|
 /// Whether transactions remain queued (JS hasPendingTransactions): the pending

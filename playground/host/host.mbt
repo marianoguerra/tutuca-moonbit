@@ -88,7 +88,7 @@ pub fn mount(
     activity_json()
   })
   // tutuca has no lifecycle: the HOST dispatches `init` (JS app.sendAtRoot).
-  app.send_at_root("init")
+  app.send_at_root("init") |> ignore
 }
 
 ///|

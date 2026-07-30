@@ -106,7 +106,7 @@ test "observe: send records carry kind, matched, before/after and pinned keys" {
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
   let _ = tx.push_send(p, "rename", [Str("b")])
   let _ = tx.push_send(p, "no-such", [])
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(records.length(), 2)
   let r0 = records[0]
   assert_true(r0.kind is Receive)
@@ -133,7 +133,7 @@ test "observe: bubble chains emit one record per hop; skipSelf emits none" {
   })
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
   let _ = tx.push_send(p, "poke-up", [])
-  tx.settle()
+  tx.settle() |> ignore
   // the receive that bubbled + one Bubble hop at the root (the skipSelf
   // first hop of ctx.bubble emits nothing)
   assert_true(kinds is [Receive, Bubble])
@@ -168,7 +168,7 @@ test "observe: request records pin live keys; unsubscribe stops delivery" {
     "rename",
     [Str("x")],
   )
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(records.length(), seen) // unsubscribed: nothing new
 }
 
@@ -180,16 +180,16 @@ test "on_drained fires once per outermost settle that did work" {
   let drains : Ref[Int] = { val: 0 }
   tx.on_drained(() => drains.val = drains.val + 1)
   // empty settle: no work, no callback
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(drains.val, 0)
   // a bubbling cascade drains in ONE outer settle -> one callback
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
   let _ = tx.push_send(p, "poke-up", [])
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(drains.val, 1)
   // two separate drains -> two callbacks
   let _ = tx.push_send(p, "rename", [Str("b")])
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(drains.val, 2)
 }
 
@@ -253,7 +253,7 @@ test "observe: a record serializes, state change and all" {
   let p = @tutuca.DispatchPath::of_steps([FieldStep("sheet")])
   let _ = tx.push_send(p, "rename", [Str("b")])
   let _ = tx.push_send(p, "no-such", [])
-  tx.settle()
+  tx.settle() |> ignore
   inspect(
     records[0].to_json().stringify(),
     content=(

@@ -108,7 +108,7 @@ Dispatch from anywhere:
 
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
-app.send_at_root("init")                             // host code, top-level
+app.send_at_root("init") |> ignore                   // host code, top-level
 ctx.at().field("personalSite").send("init", [])      // child by field name
 ctx.at().index("items", 3).send("init", [])          // list element at index 3
 ctx.at().key("byKey", "k1").send("init", [])         // map entry by key
@@ -158,7 +158,11 @@ through handlers — never around them.
 ```moonbit nocheck
 // nocheck: a fragment (a match arm or an expression), not a top-level item
 // host / glue code, outside the component tree (e.g. inside a JS-FFI callback)
-app.send_at_root("serverPushed", args=[@tutuca.Value::from_json(payload)])
+app.send_at_root(
+  "serverPushed",
+  args=[@tutuca.Value::from_json(payload)],
+)
+|> ignore
 ```
 
 ```moonbit nocheck

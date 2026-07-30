@@ -546,7 +546,7 @@ One event can trigger a cascade: a handler `send`s to a child, whose handler
 `bubble`s up, which fires a `request`, whose response mutates again. The
 `transactor` package serializes that cascade. `Transactor` owns the root
 (`mut root : Value` — the *only* mutable state cell in the framework),
-queues `Transaction`s, and `settle()` runs them until quiet — each one a
+queues `Transaction`s, and `settle()` runs a bounded batch — each one a
 `Path::update` producing the next root:
 
 ```mbt check
@@ -563,7 +563,8 @@ test "transactor: messages queue, settle produces one new root" {
     "write",
     [Str("hello")],
   )
-  txr.settle()
+  let settled = txr.settle()
+  assert_false(settled.pending)
   inspect(changes, content="1")
   guard txr.root.field("note") is Obj(o)
   debug_inspect(

@@ -362,9 +362,9 @@ fn notify(load_id : Int, name : String, args : Array[@tutuca.Value]) -> Unit {
     Some(path) => {
       notify_paths.remove(load_id) |> ignore
       let _ = app.transactor.push_send(path, name, args)
-      app.transactor.settle()
+      app.transactor.settle() |> ignore
     }
-    None => app.send_at_root(name, args~)
+    None => app.send_at_root(name, args~) |> ignore
   }
 }
 

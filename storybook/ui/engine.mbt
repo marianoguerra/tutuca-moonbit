@@ -811,6 +811,6 @@ pub fn[N : @vdom.DomWalk] mount(
   // to restore URL state and to fan `init` out to the panes that load data on
   // init (request-example, personal-site, …). Always sent so the URL restore
   // runs even when no story needs a data init.
-  app.send_at_root("init")
+  app.send_at_root("init") |> ignore
   app
 }

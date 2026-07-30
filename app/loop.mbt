@@ -123,14 +123,16 @@ pub fn[N] App::destroy(self : App[N]) -> Unit {
 /// run. This is that hook.
 ///
 /// Goes through the Receive bucket, like any other send, so `receive.init` is an
-/// ordinary handler and not a special case.
+/// ordinary handler and not a special case. The returned result makes the
+/// default 10,000-transaction bound visible to hosts.
 pub fn[N] App::send_at_root(
   self : App[N],
   name : String,
   args? : Array[@tutuca.Value] = [],
-) -> Unit {
+  max_turns? : Int = 10000,
+) -> @transactor.SettleResult {
   let _ = self.transactor.push_send(@tutuca.DispatchPath::new(), name, args)
-  self.transactor.settle()
+  self.transactor.settle(max_turns~)
 }
 
 ///|
@@ -146,19 +148,26 @@ pub fn[N] App::root_value(self : App[N]) -> @tutuca.Value {
 /// time-slicing (maxRunTimeMs), count-based instead of clock-based so it runs
 /// on every backend. A backend passes a real yield (setTimeout(0) on js) so a
 /// large cascade doesn't block the host between renders; the synchronous
-/// callers (send_at_root, the on_drained re-render) simply drain fully in one
-/// batch. `max_per_batch` bounds transactions processed before each yield.
+/// callers can pass a no-op yield. `max_per_batch` bounds transactions processed
+/// before each yield; a non-positive value reports no progress and leaves the
+/// queue pending.
 pub fn[N] App::drain_batched(
   self : App[N],
   max_per_batch~ : Int,
   yield_between : () -> Unit,
-) -> Unit {
+) -> @transactor.SettleResult {
+  let mut processed = 0
   while self.transactor.has_pending() {
-    self.transactor.settle(max_turns=max_per_batch)
-    if self.transactor.has_pending() {
+    let batch = self.transactor.settle(max_turns=max_per_batch)
+    processed += batch.processed
+    if batch.processed == 0 {
+      return { processed, pending: batch.pending }
+    }
+    if batch.pending {
       yield_between()
     }
   }
+  { processed, pending: false }
 }
 
 ///|

@@ -200,7 +200,7 @@ The same `ModuleDef` value drives three hosts:
     @glue.install(app) // wire DOM events into the transactor
     @glue.install_styles(app, @bdom.BrowserNode::from_document(doc))
     // tutuca has no lifecycle: the HOST dispatches `init` if the root wants one
-    app.send_at_root("init")
+    app.send_at_root("init") |> ignore
   }
   ```
 

@@ -109,7 +109,7 @@ fn run_handlers(
     }
     let _ = tx.push_input(ed.path, name, args)
   }
-  tx.settle()
+  tx.settle() |> ignore
 }
 
 ///|

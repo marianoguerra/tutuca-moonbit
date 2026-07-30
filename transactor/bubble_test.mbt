@@ -190,7 +190,7 @@ fn assert_v(got : @tutuca.Value, want : @tutuca.Value) -> Unit raise {
 test "send dispatches to the leaf's receive bucket" {
   let tx = @transactor.Transactor::new(make_tree())
   let _ = tx.push_send(item_path(), "set-label", [Str("hi")])
-  tx.settle()
+  tx.settle() |> ignore
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("label")]),
     Str("hi"),
@@ -205,7 +205,7 @@ test "send dispatches to the leaf's receive bucket" {
 test "a named handler wins; an unregistered name changes nothing" {
   let tx = @transactor.Transactor::new(make_tree())
   let _ = tx.push_send(item_path(), "catch-all", [])
-  tx.settle()
+  tx.settle() |> ignore
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("item"), FieldStep("label")]),
     Str("unknown!"),
@@ -222,7 +222,7 @@ test "a missing handler is a silent physical no-op" {
     "anything",
     [],
   )
-  tx.settle()
+  tx.settle() |> ignore
   assert_true(physical_equal(tx.root, before))
 }
 
@@ -230,7 +230,7 @@ test "a missing handler is a silent physical no-op" {
 test "bubble walks ancestors: path shortens per hop, target_path is fixed" {
   let tx = @transactor.Transactor::new(make_tree())
   let _ = tx.push_send(item_path(), "poke", [])
-  tx.settle()
+  tx.settle() |> ignore
   // Panel saw the bubble with a 1-hop path and the item's payload
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("seen")]),
@@ -249,7 +249,7 @@ test "bubble walks ancestors: path shortens per hop, target_path is fixed" {
 test "stop_propagation halts the bubble before the root" {
   let tx = @transactor.Transactor::new(make_tree())
   let _ = tx.push_send(item_path(), "poke-stop", [])
-  tx.settle()
+  tx.settle() |> ignore
   assert_v(
     scalar(tx.root, [FieldStep("panel"), FieldStep("seen")]),
     Str("stopped"),
@@ -266,7 +266,7 @@ test "completion: subtree settles only after the whole bubble cascade" {
   t.completion().on_settled(() => self_done.val = true)
   t.completion().on_subtree_settled(() => subtree_done.val = true)
   assert_false(self_done.val)
-  tx.settle()
+  tx.settle() |> ignore
   assert_true(self_done.val)
   assert_true(subtree_done.val)
   // and the cascade really ran to the end before settling
@@ -289,6 +289,6 @@ test "on_change fires once per root swap with new and old" {
   let _ = tx.push_send(item_path(), "set-label", [Str("x")])
   // a name nothing registers is a no-op, so it does not swap the root
   let _ = tx.push_send(item_path(), "does-not-exist-anywhere", [])
-  tx.settle()
+  tx.settle() |> ignore
   assert_eq(swaps.val, 1)
 }

@@ -13,6 +13,7 @@ pub fn Transactor::new(
     },
     root,
     queue: [],
+    queue_head: 0,
     change_subs: [],
     draining: false,
     observers: [],
@@ -323,7 +324,7 @@ pub fn Transactor::push_request(
       None => ()
     }
     self.queue.push(t)
-    self.settle()
+    self.settle() |> ignore
   }
   match found {
     Some(RequestHandler(f)) => f(args, respond)
@@ -337,29 +338,42 @@ pub fn Transactor::push_request(
 /// yield to the host, and loop while this is true. The pure layer stays
 /// clock-free — the actual yield (setTimeout on js) lives in the backend.
 pub fn Transactor::has_pending(self : Transactor) -> Bool {
-  self.queue.length() > 0
+  self.queue_head < self.queue.length()
 }
 
 ///|
-pub fn Transactor::settle(self : Transactor, max_turns? : Int = 10000) -> Unit {
-  if self.draining {
-    return // re-entrant respond mid-drain: the outer loop picks it up
+pub fn Transactor::settle(
+  self : Transactor,
+  max_turns? : Int = 10000,
+) -> SettleResult {
+  if self.draining || max_turns <= 0 {
+    return { processed: 0, pending: self.has_pending() }
   }
   self.draining = true
-  let mut turns = max_turns
-  let mut worked = false
-  while self.queue.length() > 0 && turns > 0 {
-    let t = self.queue.remove(0)
+  let mut processed = 0
+  while self.has_pending() && processed < max_turns {
+    let t = self.queue[self.queue_head]
+    self.queue_head += 1
     self.transact(t)
-    worked = true
-    turns -= 1
+    processed += 1
   }
   self.draining = false
-  if worked {
+  if !self.has_pending() {
+    self.queue.clear()
+    self.queue_head = 0
+  } else if self.queue_head >= 1024 &&
+    self.queue_head * 2 >= self.queue.length() {
+    // Keep front-removal amortized O(1): compact only after a substantial
+    // consumed prefix is at least half of the allocation.
+    self.queue = self.queue[self.queue_head:].to_owned()
+    self.queue_head = 0
+  }
+  if processed > 0 {
     for cb in self.drain_subs {
       cb()
     }
   }
+  { processed, pending: self.has_pending() }
 }
 
 ///|

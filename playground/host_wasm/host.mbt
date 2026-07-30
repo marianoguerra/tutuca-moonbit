@@ -53,7 +53,7 @@ pub fn mount(
     }
   })
   |> ignore
-  app.send_at_root("init")
+  app.send_at_root("init") |> ignore
 }
 
 ///|

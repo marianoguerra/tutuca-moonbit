@@ -69,7 +69,7 @@ test "walk_path visits component instances leaf -> root" {
     "walk",
     ([] : Array[@tutuca.Value]),
   )
-  tx.settle()
+  tx.settle() |> ignore
   inspect(collector.map(x => x.to_string()).join(","), content="2,1")
 }
 
@@ -88,7 +88,7 @@ test "walk_path callback can stop early by returning false" {
     "walk1",
     ([] : Array[@tutuca.Value]),
   )
-  tx.settle()
+  tx.settle() |> ignore
   // returning false after the leaf stops before the root is visited
   inspect(collector.map(x => x.to_string()).join(","), content="2")
 }

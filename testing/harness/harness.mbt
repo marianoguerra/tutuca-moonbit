@@ -454,5 +454,8 @@ pub fn Harness::send_at_root(
   name : String,
   args? : Array[@tutuca.Value] = [],
 ) -> Unit {
-  self.app.send_at_root(name, args~)
+  let first = self.app.send_at_root(name, args~)
+  if first.pending {
+    self.app.drain_batched(max_per_batch=10000, () => ()) |> ignore
+  }
 }
