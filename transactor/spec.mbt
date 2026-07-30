@@ -92,9 +92,6 @@ declare fn Completion::track(self : Completion) -> () -> Unit
 declare fn Completion::mark_self_settled(self : Completion) -> Unit
 
 ///|
-declare fn Completion::ensure_self_settled(self : Completion) -> Unit
-
-///|
 declare fn Completion::release_self(self : Completion) -> Unit
 
 ///|
@@ -191,6 +188,8 @@ pub struct Transaction {
   txn_path : @tutuca.Path?
   parent : Transaction?
   priv mut cmpl : Completion?
+  priv mut self_settled : Bool
+  priv mut finished : Bool
   // observer capture (JS _matched/_before/_after); obs_matched None means no
   // handler resolution ran (skipSelf sends emit no record)
   priv mut obs_matched : ObserveMatch?
@@ -200,8 +199,8 @@ pub struct Transaction {
 
 ///|
 /// Lazily-created completion scope (a transaction nobody awaits never
-/// allocates one). Subscribe BEFORE draining — a completion first requested
-/// after the transaction ran can no longer settle.
+/// allocates one). The transaction retains its lifecycle flags, so a completion
+/// first requested after the transaction ran is returned already settled.
 declare pub fn Transaction::completion(self : Transaction) -> Completion
 
 ///|

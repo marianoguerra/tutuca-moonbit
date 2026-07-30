@@ -176,6 +176,8 @@ fn Transactor::mk_txn(
     txn_path,
     parent,
     cmpl: None,
+    self_settled: false,
+    finished: false,
     obs_matched: None,
     obs_before: None,
     obs_after: None,
@@ -400,13 +402,7 @@ fn Transactor::transact(self : Transactor, t : Transaction) -> Unit {
       self.emit(ObserveKind::of_bucket(t.bucket), t, cur, matched)
     None => ()
   }
-  match t.cmpl {
-    Some(c) => {
-      c.ensure_self_settled()
-      c.release_self()
-    }
-    None => ()
-  }
+  t.finish()
 }
 
 ///|
@@ -467,6 +463,12 @@ pub fn Transaction::completion(self : Transaction) -> Completion {
     Some(c) => c
     None => {
       let c = Completion::new()
+      if self.self_settled {
+        c.mark_self_settled()
+      }
+      if self.finished {
+        c.release_self()
+      }
       self.cmpl = Some(c)
       c
     }
@@ -475,10 +477,24 @@ pub fn Transaction::completion(self : Transaction) -> Completion {
 
 ///|
 fn Transaction::mark_settled(self : Transaction) -> Unit {
+  if self.self_settled {
+    return
+  }
+  self.self_settled = true
   match self.cmpl {
     Some(c) => c.mark_self_settled()
     None => ()
   }
+}
+
+///|
+fn Transaction::finish(self : Transaction) -> Unit {
+  self.mark_settled()
+  match self.cmpl {
+    Some(c) => c.release_self()
+    None => ()
+  }
+  self.finished = true
 }
 
 ///|

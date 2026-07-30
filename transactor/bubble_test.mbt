@@ -277,6 +277,19 @@ test "completion: subtree settles only after the whole bubble cascade" {
 }
 
 ///|
+test "completion requested after settlement is already settled" {
+  let tx = @transactor.Transactor::new(make_tree())
+  let t = tx.push_send(item_path(), "poke", [])
+  tx.settle() |> ignore
+  let self_done : Ref[Bool] = { val: false }
+  let subtree_done : Ref[Bool] = { val: false }
+  t.completion().on_settled(() => self_done.val = true)
+  t.completion().on_subtree_settled(() => subtree_done.val = true)
+  assert_true(self_done.val)
+  assert_true(subtree_done.val)
+}
+
+///|
 test "on_change fires once per root swap with new and old" {
   let tx = @transactor.Transactor::new(make_tree())
   let swaps : Ref[Int] = { val: 0 }
