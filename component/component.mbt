@@ -470,12 +470,9 @@ fn[S] gen_mutators(
       // the Map-backed set (key = member display string, value Bool(true)).
       FSet => {
         into[mut_name("addIn", name)] = (inst, args) => {
-          match (inst.get(name), args) {
-            (Map(m), [v, ..]) => {
-              let out = m.copy()
-              out[v.to_display_string()] = Bool(true)
-              inst.set(name, Map(out)).to_value()
-            }
+          match args {
+            [v, ..] =>
+              put_seq_item(inst, name, KStr(v.to_display_string()), Bool(true))
             _ => inst.to_value()
           }
         }
@@ -484,16 +481,7 @@ fn[S] gen_mutators(
         let delete_member = (
           inst : TypedInstance[S],
           args : Array[@tutuca.Value],
-        ) => {
-          match (inst.get(name), args) {
-            (Map(m), [v, ..]) => {
-              let out = m.copy()
-              out.remove(v.to_display_string()) |> ignore
-              inst.set(name, Map(out)).to_value()
-            }
-            _ => inst.to_value()
-          }
-        }
+        ) => seq_delete(inst, name, args)
         into[mut_name("deleteIn", name)] = delete_member
         into[mut_name("removeIn", name)] = delete_member
         into[mut_name("hasIn", name)] = (inst, args) => {
@@ -506,13 +494,11 @@ fn[S] gen_mutators(
           match (inst.get(name), args) {
             (Map(m), [v, ..]) => {
               let key = v.to_display_string()
-              let out = m.copy()
-              if out.contains(key) {
-                out.remove(key) |> ignore
+              if m.contains(key) {
+                seq_delete(inst, name, [Str(key)])
               } else {
-                out[key] = Bool(true)
+                put_seq_item(inst, name, KStr(key), Bool(true))
               }
-              inst.set(name, Map(out)).to_value()
             }
             _ => inst.to_value()
           }
@@ -570,27 +556,41 @@ fn[S] gen_mutators(
 }
 
 ///|
+fn mutator_key(v : @tutuca.Value) -> @tutuca.PathKey? {
+  match v {
+    Num(i) => Some(KInt(i.to_int()))
+    Str(k) => Some(KStr(k))
+    _ => None
+  }
+}
+
+///|
+/// Replace one sequence item through core's identity-preserving COW
+/// operation. Invalid keys keep the original instance.
+fn[S] put_seq_item(
+  inst : TypedInstance[S],
+  field : String,
+  key : @tutuca.PathKey,
+  value : @tutuca.Value,
+) -> @tutuca.Value {
+  match inst.get(field).with_item_opt(key, value) {
+    Some(seq) => inst.set(field, seq).to_value()
+    None => inst.to_value()
+  }
+}
+
+///|
 fn[S] seq_set(
   inst : TypedInstance[S],
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  match (inst.get(field), args) {
-    (List(a), [Num(i), v, ..]) => {
-      let idx = i.to_int()
-      if idx >= 0 && idx < a.length() {
-        let out = a.copy()
-        out[idx] = v
-        inst.set(field, List(out)).to_value()
-      } else {
-        inst.to_value()
+  match args {
+    [key_arg, value, ..] =>
+      match mutator_key(key_arg) {
+        Some(key) => put_seq_item(inst, field, key, value)
+        None => inst.to_value()
       }
-    }
-    (Map(m), [Str(k), v, ..]) => {
-      let out = m.copy()
-      out[k] = v
-      inst.set(field, Map(out)).to_value()
-    }
     _ => inst.to_value()
   }
 }
@@ -601,18 +601,14 @@ fn[S] seq_update(
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  match (inst.get(field), args) {
-    (List(a), [Num(i), Fn(f), ..]) => {
-      let idx = i.to_int()
-      if idx >= 0 && idx < a.length() {
-        seq_set(inst, field, [Num(i), f([a[idx]])])
-      } else {
-        inst.to_value()
-      }
-    }
-    (Map(m), [Str(k), Fn(f), ..]) =>
-      match m.get(k) {
-        Some(cur) => seq_set(inst, field, [Str(k), f([cur])])
+  match args {
+    [key_arg, Fn(f), ..] =>
+      match mutator_key(key_arg) {
+        Some(key) =>
+          match inst.get(field).item_opt(key) {
+            Some(current) => put_seq_item(inst, field, key, f([current]))
+            None => inst.to_value()
+          }
         None => inst.to_value()
       }
     _ => inst.to_value()
@@ -625,9 +621,10 @@ fn[S] seq_delete(
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  match (inst.get(field), args) {
-    (List(a), [Num(i), ..]) => {
-      let idx = i.to_int()
+  guard args is [key_arg, ..] else { return inst.to_value() }
+  guard mutator_key(key_arg) is Some(key) else { return inst.to_value() }
+  match (inst.get(field), key) {
+    (List(a), KInt(idx)) =>
       if idx >= 0 && idx < a.length() {
         let out = a.copy()
         let _ = out.remove(idx)
@@ -635,12 +632,14 @@ fn[S] seq_delete(
       } else {
         inst.to_value()
       }
-    }
-    (Map(m), [Str(k), ..]) => {
-      let out = m.copy()
-      out.remove(k)
-      inst.set(field, Map(out)).to_value()
-    }
+    (Map(m), KStr(k)) =>
+      if m.contains(k) {
+        let out = m.copy()
+        out.remove(k)
+        inst.set(field, Map(out)).to_value()
+      } else {
+        inst.to_value()
+      }
     _ => inst.to_value()
   }
 }

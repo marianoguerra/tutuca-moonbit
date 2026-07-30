@@ -174,8 +174,8 @@ test "writing a list back unchanged leaves the parent instance alone" {
   let v = parent.make({ "items": List(kids) })
   guard v is Obj(o)
   guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
-  // set index 0 to the object already there: a fresh List is built and then
-  // discarded, because it is equal to the one stored.
+  // Core's COW item write recognizes the same object before copying the list,
+  // and the unchanged container keeps the parent instance unchanged too.
   assert_true(physical_equal(set_at([Null, Num(0), kids[0]]), v))
 }
 

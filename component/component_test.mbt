@@ -90,6 +90,19 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
     fail("setAt failed")
   }
   assert_true(o5.obj_field("items") == Some(List([Str("b")])))
+  guard o4.obj_field("updateInItemsAt") is Some(Fn(update_at)) else {
+    fail("no updateAt")
+  }
+  let add_bang : @tutuca.Value = Fn(args => {
+    match args {
+      [Str(s)] => Str(s + "!")
+      _ => Null
+    }
+  })
+  guard update_at([Null, Num(0), add_bang]) is Obj(o5u) else {
+    fail("updateAt failed")
+  }
+  assert_true(o5u.obj_field("items") == Some(List([Str("a!")])))
   guard o5.obj_field("deleteInItemsAt") is Some(Fn(del)) else { fail("no del") }
   guard del([Null, Num(0)]) is Obj(o6) else { fail("del failed") }
   assert_true(o6.obj_field("items") == Some(List([])))
@@ -145,6 +158,8 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   assert_true(has([Null, Str("z")]) == Bool(false))
   // addIn
   guard o.obj_field("addInSel") is Some(Fn(add))
+  // Adding an existing member is a no-op all the way through core's COW map.
+  assert_true(physical_equal(add([Null, Str("a")]), t))
   guard add([Null, Str("c")]) is Obj(o2)
   assert_true(o2.obj_field("hasInSel").unwrap() is Fn(_))
   assert_true(
@@ -162,6 +177,7 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   )
   // deleteIn / removeIn alias
   guard o.obj_field("deleteInSel") is Some(Fn(del))
+  assert_true(physical_equal(del([Null, Str("missing")]), t))
   guard del([Null, Str("b")]) is Obj(o5)
   assert_true(o5.obj_field("sel").unwrap() == Map({ "a": Bool(true) }))
   assert_true(o.obj_field("removeInSel").unwrap() is Fn(_))
@@ -210,6 +226,16 @@ test "omap slot field: keyed mutators over an ordered Map" {
   guard o.obj_field("setInMAt") is Some(Fn(set_at))
   guard set_at([Null, Str("y"), Num(2)]) is Obj(o2)
   assert_true(o2.obj_field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
+  guard o.obj_field("updateInMAt") is Some(Fn(update_at))
+  let double : @tutuca.Value = Fn(args => {
+    match args {
+      [Num(n)] => Num(n * 2)
+      _ => Null
+    }
+  })
+  guard update_at([Null, Str("x"), double]) is Obj(o2u)
+  assert_true(o2u.obj_field("m").unwrap() == Map({ "x": Num(2) }))
+  assert_true(physical_equal(update_at([Null, Str("missing"), double]), t))
   guard o.obj_field("deleteInMAt") is Some(Fn(del))
   guard del([Null, Str("x")]) is Obj(o3)
   assert_true(o3.obj_field("m").unwrap() == Map(Map([])))
