@@ -45,12 +45,33 @@ extern "js" fn event_target_ffi(e : @core.Any) -> @core.Any =
   #|(e) => e.target ?? null
 
 ///|
-/// JS getValue(e): checkbox -> checked, file input -> the first file's
-/// metadata (File objects can't be read synchronously, but name/size/type/
-/// lastModified are available immediately), elements with a value -> value,
-/// else CustomEvent detail.
+/// JS getValue(e): an external drop's files, checkbox -> checked, file input ->
+/// the first file's metadata (File objects can't be read synchronously, but
+/// name/size/type/lastModified are available immediately), elements with a
+/// value -> value, else CustomEvent detail.
+///
+/// A drop's files are registered in a table and described by id, the twin of
+/// the wasm bridge's `dropped_files`: the File itself never crosses into
+/// MoonBit, so a handler receives a descriptor and names the file again by id
+/// when it wants the bytes (`window.__tutucaDroppedFile(id)`). Only the last
+/// drop is kept — a handler acts on the drop it just received.
 extern "js" fn event_value_ffi(e : @core.Any) -> @core.Any =
   #|(e) => {
+  #|  if (e.type === "drop") {
+  #|    const files = e.dataTransfer && e.dataTransfer.files;
+  #|    if (files && files.length) {
+  #|      const table = new Map();
+  #|      let next = 1;
+  #|      const out = [];
+  #|      for (const f of files) {
+  #|        const id = next++;
+  #|        table.set(id, f);
+  #|        out.push({ id, name: f.name, size: f.size, type: f.type, lastModified: f.lastModified });
+  #|      }
+  #|      globalThis.__tutucaDroppedFile = (id) => table.get(id);
+  #|      return out;
+  #|    }
+  #|  }
   #|  const t = e.target;
   #|  if (t && t.type === "checkbox") return t.checked;
   #|  if (t && t.type === "file") {

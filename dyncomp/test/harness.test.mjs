@@ -48,7 +48,10 @@ const control = {
   log: () => {},
   emit: (name, args) => controlBuf.push({ kind: 'emit', name, args }),
   send: (name, args) => controlBuf.push({ kind: 'send', name, args }),
-  request: (name, args) => controlBuf.push({ kind: 'request', name, args }),
+  sendAt: (path, name, args) => controlBuf.push({ kind: 'sendAt', path, name, args }),
+  bubbleAt: (path, name, args) => controlBuf.push({ kind: 'bubbleAt', path, name, args }),
+  stopPropagation: () => controlBuf.push({ kind: 'stopPropagation' }),
+  request: (name, args, opts) => controlBuf.push({ kind: 'request', name, args, opts }),
   makeInstance: (component, args) => {
     const t = nextChild++;
     pendingChildren.push({ token: t, component, args });
@@ -64,24 +67,36 @@ before(async () => {
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.1.0': values,
+    'tutuca:component/values@0.2.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.1.0': control,
+    'tutuca:component/control@0.2.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
 });
 
-test('manifest declares the component, views and handlers', () => {
+test('manifest declares the component, its views and its state', () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 1);
+  assert.equal(m.apiVersion, 2);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
-  assert.deepEqual(comp.inputHandlers, ['inc', 'dec', 'double']);
-  assert.deepEqual(comp.receiveHandlers, ['init', 'sum']);
-  assert.deepEqual(comp.responseHandlers, ['double']);
-  assert.deepEqual(comp.methodNames, ['label']);
+  // the declared schema: fields over a flat type table (WIT has no recursion)
+  assert.deepEqual(comp.fields, [{ name: 'count', ty: 0 }, { name: 'history', ty: 1 }]);
+  assert.equal(comp.types[0].kind, 'ty-float');
+  assert.equal(comp.types[1].kind, 'ty-list');
+  assert.equal(comp.types[1].elem, 0);
+  assert.deepEqual(comp.handlers, ['inc', 'dec', 'double', 'triple', 'announce']);
+  assert.deepEqual(comp.receives, ['init', 'sum']);
+  assert.deepEqual(comp.bubbles, []);
+  assert.deepEqual(comp.responses, ['doubled', 'triple']);
+  assert.deepEqual(comp.methods, ['label']);
+  assert.deepEqual(comp.whens, ['nonZero']);
+  // this component serves no requests; the Pair declares the bundle's one
+  assert.deepEqual(comp.requests, []);
+  assert.deepEqual(m.components[1].requests, ['triple']);
+  // input handler names are NOT declared: the host reads them off the views
+  assert.equal(comp.inputHandlers, undefined);
   assert.equal(comp.views[0].name, 'main');
   assert.match(comp.views[0].html, /@on\.click="inc"/);
   assert.match(comp.views[0].html, /@text="\.count"/);
@@ -100,27 +115,31 @@ test('instances are independent and constructor args apply', () => {
 
 test('handle-event is functional: new instance out, old unchanged', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
-  const a2 = a.handleEvent('input', 'inc', undefined, []);
+  const a2 = a.handleEvent('input', 'inc', []);
   assert.ok(a2 instanceof guest.Instance);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 11 });
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
-  assert.equal(a.handleEvent('input', 'unknown', undefined, []), undefined);
-  assert.equal(a.handleEvent('receive', 'init', undefined, []), undefined);
+  assert.equal(a.handleEvent('input', 'unknown', []), undefined);
+  assert.equal(a.handleEvent('receive', 'init', []), undefined);
 });
 
-test('eq and to-json project the opaque state', () => {
+test('the declared fields ARE the projection: no to-json, no eq', () => {
+  // Both used to be guest methods. The host reads the fields the manifest
+  // declares instead (Value::to_json / Obj::obj_eq over obj_schema), so a
+  // guest states its shape once and cannot restate it wrongly.
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 5 }]]);
-  const b = new guest.Instance('Counter', [['count', { tag: 'number', val: 5 }]]);
-  const c = a.handleEvent('input', 'inc', undefined, []);
-  assert.equal(a.eq(b), true);
-  assert.equal(a.eq(c), false);
-  assert.equal(c.toJson(), '{"count": 6, "history": [5]}');
+  const c = a.handleEvent('input', 'inc', []);
+  assert.equal(a.toJson, undefined);
+  assert.equal(a.eq, undefined);
+  assert.deepEqual(c.getField('count'), { tag: 'number', val: 6 });
+  const hist = c.getField('history');
+  assert.deepEqual(arena.get(hist.val).map((v) => v.val), [5]);
 });
 
 test('history crosses as an arena list; label is a callable method', () => {
   const a = new guest.Instance('Counter', []);
-  const a1 = a.handleEvent('input', 'inc', undefined, []);
-  const a2 = a1.handleEvent('input', 'inc', undefined, []);
+  const a1 = a.handleEvent('input', 'inc', []);
+  const a2 = a1.handleEvent('input', 'inc', []);
   const hist = a2.getField('history');
   assert.equal(hist.tag, 'list');
   assert.deepEqual(arena.get(hist.val).map((v) => v.val), [0, 1]);
@@ -130,15 +149,73 @@ test('history crosses as an arena list; label is a callable method', () => {
 test('input "double" buffers a control request; the response applies it', () => {
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 21 }]]);
   controlBuf = [];
-  assert.equal(a.handleEvent('input', 'double', undefined, []), undefined);
+  assert.equal(a.handleEvent('input', 'double', []), undefined);
   assert.equal(controlBuf.length, 1);
   assert.equal(controlBuf[0].kind, 'request');
   assert.equal(controlBuf[0].name, 'double');
   assert.deepEqual(controlBuf[0].args[0], { tag: 'number', val: 21 });
-  // host resolves the request and dispatches the response bucket
-  const a2 = a.handleEvent('response', 'double', undefined,
-    [{ tag: 'number', val: 42 }, { tag: 'nil' }]);
+  // the guest asked for the answer at a name of its own, carrying just the
+  // value (host RequestOpts.on_ok_name)
+  assert.equal(controlBuf[0].opts.onOk, 'doubled');
+  assert.equal(controlBuf[0].opts.livePath, false);
+  const a2 = a.handleEvent('response', 'doubled', [{ tag: 'number', val: 42 }]);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 42 });
+});
+
+test('the bundle serves its own requests', () => {
+  // "triple" is declared by the Pair and answered here, in the guest — the
+  // host registers it into the bundle's scope and calls back in
+  const ok = guest.handleRequest('triple', [{ tag: 'number', val: 7 }]);
+  assert.deepEqual(ok, { tag: 'ok', val: { tag: 'number', val: 21 } });
+  const err = guest.handleRequest('nope', []);
+  assert.equal(err.tag, 'err');
+});
+
+test('a guest emits a bubble, and a guest parent stops it', () => {
+  const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 4 }]]);
+  controlBuf = [];
+  assert.equal(a.handleEvent('input', 'announce', []), undefined);
+  assert.deepEqual(controlBuf, [
+    { kind: 'emit', name: 'counted', args: [{ tag: 'number', val: 4 }] },
+  ]);
+  // the Pair hears that bubble one level up: it swaps its children and stops
+  // the message from travelling further
+  const p = new guest.Instance('Pair', []);
+  drainChildren();
+  const left = p.getField('left');
+  const right = p.getField('right');
+  controlBuf = [];
+  const p2 = p.handleEvent('bubble', 'counted', [{ tag: 'number', val: 4 }]);
+  assert.deepEqual(controlBuf, [{ kind: 'stopPropagation' }]);
+  assert.deepEqual(p2.getField('left'), right);
+  assert.deepEqual(p2.getField('right'), left);
+});
+
+test('a guest addresses its own subtree with send-at', () => {
+  const p = new guest.Instance('Pair', []);
+  drainChildren();
+  controlBuf = [];
+  assert.equal(p.handleEvent('input', 'zeroLeft', []), undefined);
+  assert.equal(controlBuf.length, 1);
+  const [msg] = controlBuf;
+  assert.equal(msg.kind, 'sendAt');
+  assert.equal(msg.name, 'sum');
+  // one relative step: the child the `left` field holds
+  assert.deepEqual(msg.path, [{ tag: 'field', val: 'left' }]);
+});
+
+test('a @when filter is a method that answers a boolean', () => {
+  const a = new guest.Instance('Counter', []);
+  // called with (key, item, iter-data) — the zero the counter started at is
+  // filtered out of the history badges
+  assert.deepEqual(
+    a.callMethod('nonZero', [{ tag: 'text', val: 'h0' }, { tag: 'number', val: 0 }, { tag: 'nil' }]),
+    { tag: 'boolean', val: false },
+  );
+  assert.deepEqual(
+    a.callMethod('nonZero', [{ tag: 'text', val: 'h1' }, { tag: 'number', val: 3 }, { tag: 'nil' }]),
+    { tag: 'boolean', val: true },
+  );
 });
 
 test('Pair creates children via control.make-instance and exposes tokens', () => {
@@ -177,7 +254,7 @@ test('guest reads host arena compounds mid-dispatch (re-entrancy)', () => {
     { tag: 'number', val: 39 },
   ]);
   importCalls = 0;
-  const summed = b.handleEvent('receive', 'sum', undefined, [{ tag: 'list', val: list }]);
+  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]);
   assert.deepEqual(summed.getField('count'), { tag: 'number', val: 42 });
   assert.equal(importCalls, 4); // 1 list-len + 3 list-get
 });

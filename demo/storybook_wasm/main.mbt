@@ -201,26 +201,11 @@ pub fn mount() -> Unit {
     @tutuca.warn("no #app element")
     return
   }
+  // Runtime-loaded wasm component bundles are NOT a story here: the universal
+  // demo (demo/universal_wasm) is the one place that loading UX lives, and a
+  // second shell to maintain bought nothing the drop page does not do —
+  // including the hot-swap-with-migration this pane used to be for.
   let sections = @sb.sections_of(@sb.stories())
-  // a live pane hosting runtime-loaded wasm component bundles
-  // (dyncomp/DESIGN.md); load completion routes back to the pane itself
-  // via ctx.path(), so it works like any other story
-  sections.push({
-    title: "Dynamic",
-    stories: [
-      {
-        id: "dyncomp",
-        title: "Dynamic wasm components",
-        section: "Dynamic",
-        description: "load a tutuca:component bundle at runtime and mount its components; reloading hot-swaps with state migration",
-        module_: @dhw.shell_module(bundle_url="./counter/counter.component.js"),
-        root: "DynShell",
-        args: Map([]),
-        renderable: true,
-        init: false,
-      },
-    ],
-  })
   let opts = @vdom.RenderOpts::new(doc)
   let app = try! @sbui.mount(
     sections,
@@ -229,10 +214,8 @@ pub fn mount() -> Unit {
     url_handlers=url_request_handlers(),
   )
   current_app.val = Some(app)
-  app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @wglue.install(app)
   @wglue.install_styles(app, doc)
-  @dhw.set_app(app, doc)
   // compile the collected margaui class set (gallery chrome + every example's
   // classes) to CSS in MoonBit and inject it — same path as the other wasm demo.
   apply_margaui(app, doc)
@@ -255,9 +238,9 @@ fn apply_margaui(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
 }
 
 ///|
-/// Recompile + reinject margaui CSS for the mounted gallery. JS calls this after
-/// a dyncomp bundle registers new views (and thus new utility classes). No-op
-/// before mount.
+/// Recompile + reinject margaui CSS for the mounted gallery. No-op before
+/// mount; kept as an export so a host can refresh the sheet after registering
+/// views the initial compile did not see.
 pub fn refresh_margaui() -> Unit {
   guard current_app.val is Some(app) else { return }
   apply_margaui(app, @wglue.document())
@@ -267,20 +250,6 @@ pub fn refresh_margaui() -> Unit {
 /// The delegated DOM event entry point JS calls (via tdom.add_listener).
 pub fn on_event(ev : @core.Any) -> Unit {
   @wglue.on_event(ev)
-}
-
-///|
-pub fn dyncomp_on_loaded(
-  load_id : Int,
-  bundle_id : Int,
-  manifest_json : String,
-) -> Unit {
-  @dhw.on_loaded(load_id, bundle_id, manifest_json)
-}
-
-///|
-pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
-  @dhw.on_load_error(load_id, msg)
 }
 
 ///|

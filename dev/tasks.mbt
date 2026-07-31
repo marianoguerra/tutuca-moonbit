@@ -512,16 +512,12 @@ fn dist_steps() -> Array[Step] {
       to="\{DIST}/storybook/wasm-loader-lib.mjs",
     ),
   )
-  steps.push(Mkdir("\{DIST}/storybook/counter"))
   steps.push(
     Copy(
       from="demo/storybook_wasm/index.html",
       to="\{DIST}/storybook/index.html",
     ),
   )
-  // the counter guest bundle for the Dynamic pane is copied by the
-  // `storybook-bundle` task (it needs the component toolchain); without it the pane
-  // shows a load error and everything else works.
   steps.push(
     WriteRewritten(
       from="demo/counter/index.html",
@@ -586,9 +582,6 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "skill-embed" {
     return Some(skill_embed_steps())
   }
-  if name == "storybook-bundle" {
-    return Some(storybook_bundle_steps())
-  }
   if name == "css-bundle" {
     return Some(css_bundle_steps())
   }
@@ -599,47 +592,16 @@ pub fn plan(name : String) -> Array[Step]? {
 }
 
 ///|
-/// Build the jco-transpiled counter guest bundle and copy it into
-/// dist/storybook/counter, where the storybook "Dynamic" story loads it at
-/// runtime. Kept out of `dist`: the guest pipeline needs the component
-/// toolchain (wasm-tools + @bytecodealliance/jco — see guests/counter/README.md),
-/// which plain dist users may not have. (The standalone dyncomp demo page was
-/// removed — its loading UX lives in the universal demo, its state-migrating
-/// hot-swap in this storybook story.)
-pub fn storybook_bundle_steps() -> Array[Step] {
-  let steps : Array[Step] = [
-    Run({
-      label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
-      prog: "node",
-      args: ["guests/build-guest.mjs", "counter"],
-    }),
-    Mkdir("\{DIST}/storybook"),
-    Mkdir("\{DIST}/storybook/counter"),
-  ]
-  for
-    f in [
-      "counter.component.js", "counter.component.core.wasm", "counter.component.core2.wasm",
-      "counter.component.core3.wasm",
-    ] {
-    steps.push(
-      Copy(
-        from="guests/counter/dist/js/\{f}",
-        to="\{DIST}/storybook/counter/\{f}",
-      ),
-    )
-  }
-  steps
-}
-
-///|
 const UNIVERSAL_WASM = "_build/wasm-gc/release/build/demo/universal_wasm/universal_wasm.wasm"
 
 ///|
 /// Assemble the universal wasm-component demo into dist/universal: the wasm-gc
 /// drop-shell app, its loader, and sample single-file bundles
-/// (examples/*.tutuca.tar.gz) to drag onto the page. Like `storybook-bundle`,
-/// kept out of `dist` — the guest bundles need the component toolchain
-/// (wasm-tools + @bytecodealliance/jco; see guests/counter/README.md).
+/// (examples/*.tutuca.tar.gz) to drop on the page or load by URL. Kept out of
+/// `dist` — the guest bundles need the component toolchain (wasm-tools +
+/// @bytecodealliance/jco; see guests/counter/README.md). This is the ONE page
+/// that hosts runtime-loaded bundles; the storybook gallery used to carry a
+/// second, smaller shell for the same job and no longer does.
 pub fn universal_steps() -> Array[Step] {
   [
     Run(
@@ -825,9 +787,6 @@ pub fn help_text() -> String {
   }
   line("dist", "build all + assemble a runnable dist/ folder")
   line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
-  line(
-    "storybook-bundle", "build the counter guest bundle into dist/storybook/counter (the storybook Dynamic story)",
-  )
   line(
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
   )

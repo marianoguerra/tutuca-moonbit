@@ -38,21 +38,48 @@ impl DynComponent for Counter with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Counter with fn handle(self, bucket, name, _event, args) {
+impl DynComponent for Counter with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     (INPUT, "inc") => Some(self.next(self.count + 1.0) as &DynComponent)
     (INPUT, "dec") => Some(self.next(self.count - 1.0) as &DynComponent)
-    // fire a host-side request; the response arrives below
+    // a request the HOST serves; `on_ok` routes the answer to a handler of
+    // its own, which then carries just the value instead of [result, error]
     (INPUT, "double") => {
-      @control.request("double", [@values.Value::Number(self.count)])
+      @control.request("double", [@values.Value::Number(self.count)], {
+        on_ok: Some("doubled"),
+        on_error: None,
+        on_res: None,
+        live_path: false,
+      })
       None
     }
-    (RESPONSE, "double") =>
+    (RESPONSE, "doubled") =>
       match args {
-        // response args are [result, error]
         [@values.Value::Number(n), ..] => Some(self.next(n) as &DynComponent)
         _ => None
       }
+    // a request this BUNDLE serves (dyn_module's `serve`), which its own
+    // components find before any host handler of the same name
+    (INPUT, "triple") => {
+      @control.request("triple", [@values.Value::Number(self.count)], {
+        on_ok: None,
+        on_error: None,
+        on_res: None,
+        live_path: false,
+      })
+      None
+    }
+    (RESPONSE, "triple") =>
+      match args {
+        // no on_ok: response args are [result, error]
+        [@values.Value::Number(n), ..] => Some(self.next(n) as &DynComponent)
+        _ => None
+      }
+    // tell whoever is above: a Pair parent hears this, and so would the host
+    (INPUT, "announce") => {
+      @control.emit("counted", [@values.Value::Number(self.count)])
+      None
+    }
     // boundary exercise: sum a host list of numbers (guest -> values import)
     (RECEIVE, "sum") =>
       match args {
@@ -85,9 +112,17 @@ impl DynComponent for Counter with fn seq_entries(self) {
 }
 
 ///|
-impl DynComponent for Counter with fn call_method(self, name, _args) {
+impl DynComponent for Counter with fn call_method(self, name, args) {
   match name {
     "label" => @values.Value::Text("count is \{self.count}")
+    // a `@when` filter over the history: called with (key, item, iter-data),
+    // answered as a boolean — the zero the counter started at is not worth a
+    // badge of its own
+    "nonZero" =>
+      match args {
+        [_, @values.Value::Number(v), ..] => @values.Value::Boolean(v != 0.0)
+        _ => @values.Value::Boolean(true)
+      }
     _ => @values.Value::Nil
   }
 }
@@ -101,12 +136,6 @@ impl DynComponent for Counter with fn with_field(self, name, v) {
 }
 
 ///|
-impl DynComponent for Counter with fn to_json(self) {
-  let hist = self.history.map(n => n.to_string()).join(", ")
-  "{\"count\": \{self.count}, \"history\": [\{hist}]}"
-}
-
-///|
 fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut count = 0.0
   let history = []
@@ -114,7 +143,7 @@ fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
     let (name, v) = arg
     match (name, v) {
       ("count", @values.Value::Number(n)) => count = n
-      // hot-swap migration hands the to-json projection back as args
+      // hot-swap migration hands the declared fields back as args
       ("history", @values.Value::List(h)) =>
         for i in 0U..<@values.list_len(h) {
           match @values.list_get(h, i) {
@@ -144,18 +173,42 @@ fn counter_def() -> ComponentDef {
           #|      <span class="btn btn-sm join-item no-animation pointer-events-none count" @text=".count"></span>
           #|      <button class="btn btn-sm join-item inc" @on.click="inc">+</button>
           #|    </div>
-          #|    <button class="btn btn-sm btn-secondary double" @on.click="double">double</button>
+          #|    <div class="join">
+          #|      <button class="btn btn-sm btn-secondary join-item double" @on.click="double">double</button>
+          #|      <button class="btn btn-sm btn-secondary join-item triple" @on.click="triple">triple</button>
+          #|      <button class="btn btn-sm btn-ghost join-item announce" @on.click="announce">announce</button>
+          #|    </div>
           #|    <span class="text-sm opacity-70 label" @text="$label"></span>
-          #|    <ul class="flex gap-1 flex-wrap history"><li class="badge badge-sm badge-ghost" @each=".history" @text="@value"></li></ul>
+          #|    <ul class="flex gap-1 flex-wrap history"><li class="badge badge-sm badge-ghost" @each=".history" @when="nonZero" @text="@value"></li></ul>
           #|  </div>
           #|</div>
         ),
       },
     ],
-    input_handlers: ["inc", "dec", "double"],
-    receive_handlers: ["init", "sum"],
-    response_handlers: ["double"],
-    method_names: ["label"],
+    // The state this component holds. Declaring it is what gives the host the
+    // JSON projection, structural equality and the generated `setCount` /
+    // `pushInHistory` mutators — none of which is implemented below.
+    types: [
+      { kind: TY_FLOAT, elem: None, items: [], name: "", members: [] },
+      { kind: TY_LIST, elem: Some(0), items: [], name: "", members: [] },
+    ],
+    fields: [{ name: "count", ty: 0 }, { name: "history", ty: 1 }],
+    // `setCount` is deliberately NOT here: it is the mutator `count` implies,
+    // and the host answers it — declaring it would take it back.
+    handlers: ["inc", "dec", "double", "triple", "announce"],
+    receives: ["init", "sum"],
+    bubbles: [],
+    responses: ["doubled", "triple"],
+    methods: ["label"],
+    whens: ["nonZero"],
+    requests: [],
+    // a named initial state a host can offer instead of the bare constructor
+    inits: [
+      {
+        name: "with-history",
+        args_json: "{\"count\": 3, \"history\": [0, 1, 2]}",
+      },
+    ],
     // styling is entirely margaui (daisyUI) classes above; the universal demo
     // compiles them, so no scoped fallback CSS
     style: "",
@@ -180,6 +233,27 @@ impl DynComponent for Pair with fn get_field(self, name) {
 }
 
 ///|
+impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
+  match (bucket, name) {
+    // a child announced itself: swap the two, and keep the bubble from
+    // travelling further up (the host would hear it otherwise)
+    (BUBBLE, "counted") => {
+      @control.stop_propagation()
+      Some({ left: self.right, right: self.left } as &DynComponent)
+    }
+    // reach INTO this component's own subtree: `.left` is the child the left
+    // field holds, and "sum" is its receive handler
+    (INPUT, "zeroLeft") => {
+      @control.send_at([@control.PathStep::Field("left")], "sum", [
+        @values.Value::List(@values.list_new()),
+      ])
+      None
+    }
+    _ => None
+  }
+}
+
+///|
 impl DynComponent for Pair with fn with_field(self, name, v) {
   match (name, v) {
     ("left", @values.Value::Instance(t)) => {
@@ -192,11 +266,6 @@ impl DynComponent for Pair with fn with_field(self, name, v) {
     }
     _ => None
   }
-}
-
-///|
-impl DynComponent for Pair with fn to_json(self) {
-  "{\"left\": \{self.left}, \"right\": \{self.right}}"
 }
 
 ///|
@@ -220,17 +289,43 @@ fn pair_def() -> ComponentDef {
         name: "main",
         html: (
           #|<div class="flex flex-col gap-2 pair">
+          #|  <button class="btn btn-xs btn-ghost self-start zeroleft" @on.click="zeroLeft">zero the left one</button>
           #|  <div class="left"><x render=".left"></div>
           #|  <div class="right"><x render=".right"></div>
           #|</div>
         ),
       },
     ],
-    input_handlers: [],
-    receive_handlers: ["init"],
-    response_handlers: [],
-    method_names: [],
+    // both children are Counters from this same module, held as instance
+    // tokens (control.make-instance) — a `component` slot to the host
+    types: [
+      { kind: TY_COMP, elem: None, items: [], name: "Counter", members: [] },
+    ],
+    fields: [{ name: "left", ty: 0 }, { name: "right", ty: 0 }],
+    handlers: ["zeroLeft"],
+    receives: ["init"],
+    // what its children raise with control.emit
+    bubbles: ["counted"],
+    responses: [],
+    methods: [],
+    whens: [],
+    // the bundle serves this one itself; a host handler of the same name
+    // would only be reached if this bundle did not declare it
+    requests: ["triple"],
+    inits: [],
     style: "",
+  }
+}
+
+///|
+/// The bundle's own request handlers, which its components reach before any
+/// host handler of the same name (see `pair_def`'s `requests`).
+fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
+  match (name, args) {
+    ("triple", [@values.Value::Number(n), ..]) =>
+      RequestResult::Ok(@values.Value::Number(n * 3.0))
+    _ =>
+      RequestResult::Err(@values.Value::Text("counterlib: no request \{name}"))
   }
 }
 
@@ -242,5 +337,7 @@ fn dyn_module() -> DynModule {
       { def: counter_def(), make: make_counter },
       { def: pair_def(), make: make_pair },
     ],
+    // the bundle's own request service (WIT handle-request)
+    serve: serve_request,
   }
 }

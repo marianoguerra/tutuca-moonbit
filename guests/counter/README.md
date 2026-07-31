@@ -15,8 +15,9 @@ same shape and differs only in what it computes.
   implements every generated `declare` over the `DynComponent` trait
 - `gen/interface/tutuca/component/guest/counter.mbt` — **the only file a
   component author writes**: a `Counter` struct implementing
-  `DynComponent`, its `ComponentDef` (views/handlers/style), and
-  `dyn_module()`
+  `DynComponent`, its `ComponentDef` (views, the declared state schema, the
+  message buckets, style) and `dyn_module()` (the components, their factories,
+  and the bundle's own request handlers)
 
 There is no `wit/` here. The one WIT in the repo is
 [`dyncomp/wit/tutuca-component.wit`](../../dyncomp/wit/tutuca-component.wit):
@@ -76,13 +77,20 @@ is a dependency-confusion placeholder — never install it).
   the same call that requested it (its token is immediately valid to
   store and return, though).
 - The generated guest package's `moon.pkg` must import the `control`
-  interface package for `@control.*` calls; that is why the regeneration
-  task drops the `moon.pkg.json` files wit-bindgen recreates — the
-  extensionless ones are hand-maintained.
+  interface package for `@control.*` calls, and `gen/moon.pkg` lists the
+  export names the canonical ABI expects (`…#[method]instance.get-field`,
+  …) — including the WIT PACKAGE VERSION, so a version bump is edited
+  there too. That is why the regeneration task drops the `moon.pkg.json`
+  files wit-bindgen recreates: the extensionless ones are hand-maintained.
+- A component declares its FIELDS, and gets the host's per-field mutators
+  (`setCount`, `pushInHistory`, …) for free — through `with-field`, which
+  is therefore worth implementing even for a component with no children.
+  A name the schema generates that the guest wants for logic of its own
+  has to appear in the def's `handlers`.
 - jco (1.25) emits **unversioned** import keys at runtime
   (`'tutuca:component/values'`) even though its `.d.ts` says versioned;
   hosts should provide both.
 - Imports the guest never calls are dead-code-eliminated from the
   component (this counter only imports `values`; `control` disappears).
 - Measured on node: ~5.4µs per `get-field` round trip steady-state
-  (~0.3ms for a 50-field render), 38 KB component.
+  (~0.3ms for a 50-field render), ~40 KB component.

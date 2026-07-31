@@ -7,10 +7,17 @@
 ///|
 /// A framework call the guest buffered during a dispatch (WIT `control`);
 /// the DynObj handler drains these through the dispatching `&Ctx`.
+///
+/// Paths are RELATIVE to the dispatching instance — a guest addresses its own
+/// subtree and nothing above it, so what crosses is steps to concat onto
+/// `ctx.path()`, never an absolute path.
 pub(all) enum ControlMsg {
   Emit(String, Array[@tutuca.Value])
   Send(String, Array[@tutuca.Value])
-  Request(String, Array[@tutuca.Value])
+  SendAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
+  BubbleAt(Array[@tutuca.Step], String, Array[@tutuca.Value])
+  Request(String, Array[@tutuca.Value], @tutuca.RequestOpts)
+  StopPropagation
 } derive(Debug, Eq)
 
 ///|
@@ -35,6 +42,11 @@ pub(open) trait Guest {
   ) -> DispatchResult
   fn call_method(Self, handle : Int, name : String, args : Array[@tutuca.Value]) -> @tutuca.Value
   fn with_field(Self, handle : Int, name : String, v : @tutuca.Value) -> Int?
-  fn to_json_string(Self, handle : Int) -> String
+  /// Serve one of the requests the bundle declares. Synchronous, like every
+  /// call across this boundary: a guest that must wait asks the host instead.
+  fn handle_request(Self, name : String, args : Array[@tutuca.Value]) -> Result[
+    @tutuca.Value,
+    @tutuca.Value,
+  ]
   fn drop_instance(Self, handle : Int) -> Unit
 }

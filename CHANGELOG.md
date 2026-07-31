@@ -6,12 +6,111 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **A wasm guest DECLARES its state, and stops implementing what the
+  declaration already says.** `tutuca:component` is `0.2.0` (manifest
+  `api-version: 2`, and a manifest declaring anything else is refused rather
+  than adapted — the contract is prototype-stage and breaks cleanly). A
+  `component-def` now carries its fields over a flat `ty-def` table (WIT has no
+  recursive types, so a compound points at its parts by index), its message
+  buckets, its `@when` filters, the requests it serves and its named `init`
+  fixtures. From that the host builds a real `SchemaInfo`, which is what gives
+  a guest — with no guest code — structural equality, `Value::to_json`, the
+  debug rendering, hot-swap migration, the inspector's form, and the generated
+  per-field mutators. A guest that declares `count: s32` gets `setCount`.
+
+- **`@component.FieldBox` and `@component.schema_mutators`.** The generated
+  mutators (`setX`, `toggleX`, `pushInX`, `setInXAt`, …) used to be written
+  against `TypedInstance`; they are written against three closures now — read a
+  field, write one, name the instance — so the same generator serves a typed
+  instance and a wasm guest whose fields live behind `get-field` /
+  `with-field`. One implementation, one set of semantics.
+
+- **`SchemaInfo::shape_fingerprint`**, for a schema that arrives at runtime and
+  has no generated `<v>_schema_fingerprint` to carry. The runtime twin of
+  `@statedef.fingerprint`, which hashes the same shape one step earlier.
+
+- **`Component::view_handler_names`**, and `compile()` filling in a schema's
+  `inputs` when nothing stated them. The names a view raises live in the parsed
+  tree; the generator states them ahead of time, and a component whose views
+  arrive at RUNTIME now recovers them instead of having an empty descriptor.
+
+- **A drop's files reach handlers as `value`.** `@on.drop="load value"` gets a
+  `List` of the dropped files (`id`, name, size, type, lastModified) on both
+  backends. The `File` itself never becomes a `Value` — the backend keeps the
+  last drop's files and a host reads one back by id — which is what lets a page
+  take a dropped file without installing a listener of its own. The universal
+  demo's page-level drop-zone JS is gone.
+
+- **Guests reach the rest of the framework**: the `bubble` bucket (a guest
+  parent hears a guest child's `emit`), `stop-propagation`, `send-at` /
+  `bubble-at` over paths relative to the dispatching component, `request-opts`
+  (`on-ok` / `on-error` / `on-res` / `live-path`), `@when` filters answered
+  through `call-method`, and requests a BUNDLE serves — registered in its own
+  scope, so its components find them before the host's.
+
+- **A bundle's views are linted when it loads** (`Bundle::diagnostics`), with
+  the findings logged by the wasm glue. A guest's views are the one part of a
+  component that never went through a build step, so this is the only feedback
+  its author gets.
+
+### Fixed
+
+- **`<input class="a" />` is not a duplicate attribute.** The vendored
+  tokenizer finishes the last attribute a second time when a solidus follows
+  whitespace and reports its name as a duplicate of itself, so every
+  self-closing element with attributes carried a bogus
+  `HTML_DUPLICATE_ATTRIBUTE` warning. Found by running the linter over a wasm
+  guest's views, which is where the warning had nowhere to be seen.
+
+- **The universal demo's picker showed its chrome over the component it had
+  already selected**, when that component's own `seq-entries` were empty (a
+  fresh counter, whose history is). `truthy?` is the SIZED predicate; asking
+  whether something has been picked is `null?`. Its layout buttons were also
+  unclickable with a real mouse: `.btn:active` sets `translate`, which
+  overrode `.indicator-item`'s and moved the button out from under the cursor
+  between mousedown and mouseup.
+
+### Removed
+
+- **From the guest contract: `instance.eq`, `instance.to-json`, the
+  `dom-event` record and `handle-event`'s event parameter, and the manifest's
+  four handler-name lists.** Equality and the JSON projection are the declared
+  schema's; a handler's arguments arrive evaluated (`event` / `target` / `ctx`
+  are not handler arguments in tutuca); the names a view raises are read off
+  the compiled views. What a guest still declares is `handlers` — the input
+  names it answers ITSELF, the rest being mutators the host applies.
+
+- **The storybook's "Dynamic" pane and `dyncomp/host/wasm`'s `shell_module`**,
+  a second loading UX maintained beside the universal demo's. The demo gained
+  what the pane demonstrated: loading a bundle by URL, and hot-swapping a
+  loaded module with the mounted components migrating into it. `cmd/dev --
+  storybook-bundle` goes with it.
+
+- Test-only and internal `@render` exports: `ViewMap`, `ViewRegistry`,
+  `CompiledView`, `CacheEntry`, `render_view`, and the non-lifecycle
+  `RenderCache` methods (`get`, `set`, `stats`, `size`, `evict`). Production
+  integrations keep `render_root`, the resolver/boundary traits, and
+  `RenderCache::new` / `clear` / `next_generation`.
+
 ### Changed
 
 - Render's package-only tests are white-box tests now, so their source-view
   resolvers and cache probes no longer inflate the published API. The render
   cache also stops maintaining hit/miss counters on every lookup; tests prove
   reuse and eviction directly through VDOM identity and cache generations.
+
+- **Superseded guest handles are collected on the transactor's drained
+  cascade** (`@dyncomp.install_gc`), after the App's re-render, rather than at
+  the start of the next guest dispatch. The explicit settling work landed the
+  hook this always wanted.
+
+- **The universal demo is the one page that hosts runtime-loaded bundles**, and
+  it is written the way the framework asks for now: a `component` slot instead
+  of `any`, declared `receive` / `bubble` / `response` variants instead of
+  string-matched dispatches, and typed messages raised through the generated
+  `bubble` helper.
 
 ### Removed
 

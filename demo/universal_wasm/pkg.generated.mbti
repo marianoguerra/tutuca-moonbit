@@ -46,7 +46,7 @@ pub fn state_json() -> String
 
 pub let universal_wasm_common_style : String
 
-pub fn universal_wasm_component(name? : String, views? : Map[String, @anode.View], init? : UniversalWasmState, common_style? : String, global_style? : String, update? : (UniversalWasmState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> UniversalWasmState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn universal_wasm_component(name? : String, views? : Map[String, @anode.View], init? : UniversalWasmState, common_style? : String, global_style? : String, update? : (UniversalWasmState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> UniversalWasmState?, swap? : (UniversalWasmInput) -> ((UniversalWasmState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let universal_wasm_global_style : String
 
@@ -75,6 +75,7 @@ pub fn ComponentEntryMsg::from_dispatch(@component.Dispatch) -> Self?
 pub(all) struct ComponentEntryState {
   module_ : String
   name : String
+  init_ : String
   label : String
 }
 pub fn ComponentEntryState::zero() -> Self
@@ -108,6 +109,22 @@ pub(all) enum ComponentListMsg {
 }
 pub fn ComponentListMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ComponentListReceive {
+  Refresh
+  Migrate(String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentListReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentListReceive::send(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn ComponentListReceive::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+
+pub(all) enum ComponentListResponse {
+  ComponentPicker(@marianoguerra/tutuca/core.Value)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentListResponse::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentListResponse::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+
 pub(all) struct ComponentListState {
   entries : Array[@marianoguerra/tutuca/core.Value]
   showSettings : Bool
@@ -118,6 +135,14 @@ pub(all) struct ComponentListState {
   wrap : Bool
 }
 pub fn ComponentListState::zero() -> Self
+
+pub(all) enum ComponentPickerBubble {
+  ComponentSelected(String, String, String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentPickerBubble::bubble(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn ComponentPickerBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentPickerBubble::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
 
 pub(all) enum ComponentPickerInput {
   SetFilterText
@@ -131,6 +156,22 @@ pub(all) enum ComponentPickerMsg {
 }
 pub fn ComponentPickerMsg::from_dispatch(@component.Dispatch) -> Self?
 
+pub(all) enum ComponentPickerReceive {
+  Migrate(String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentPickerReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentPickerReceive::send(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn ComponentPickerReceive::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+
+pub(all) enum ComponentPickerResponse {
+  ListComponents(@marianoguerra/tutuca/core.Value)
+  MakeComponent(@marianoguerra/tutuca/core.Value)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn ComponentPickerResponse::from_dispatch(@component.Dispatch) -> Self?
+pub fn ComponentPickerResponse::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+
 pub(all) struct ComponentPickerState {
   filterText : String
   items : Array[@marianoguerra/tutuca/core.Value]
@@ -142,6 +183,29 @@ pub(all) enum ComponentPickerWhen {
   MatchesFilter
 } derive(Eq, @debug.Debug)
 pub fn ComponentPickerWhen::name(Self) -> String
+
+pub(all) enum UniversalWasmInput {
+  LoadDropped
+  LoadSample
+} derive(Eq, @debug.Debug)
+pub fn UniversalWasmInput::name(Self) -> String
+pub fn UniversalWasmInput::parse(String) -> Self?
+
+pub(all) enum UniversalWasmMsg {
+  LoadDropped(String)
+  LoadSample(String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn UniversalWasmMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum UniversalWasmReceive {
+  DyncompLoaded(String)
+  DyncompError(String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn UniversalWasmReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalWasmReceive::send(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn UniversalWasmReceive::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
 
 pub(all) struct UniversalWasmState {
   status : String

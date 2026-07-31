@@ -414,3 +414,27 @@ test "representative tutuca templates produce zero findings" {
     }
   }
 }
+
+///|
+test "a self-closing void element is not a duplicate attribute" {
+  // The vendored tokenizer finishes the last attribute twice when a solidus
+  // follows whitespace, and calls the second one a duplicate of itself. Every
+  // `<input … />` in every view would carry a bogus warning.
+  for
+    html in [
+      "<input class=\"a\" />", "<input type=\"checkbox\" :checked=\"@value.done\" @on.input=\"toggleAt @key\" />",
+      "<div><br /></div>",
+    ] {
+    assert_false(has_code(lint_html(html), HtmlDuplicateAttribute))
+  }
+  // ...and a REAL duplicate still reports, self-closing or not
+  assert_true(
+    has_code(
+      lint_html("<input class=\"a\" class=\"b\" />"),
+      HtmlDuplicateAttribute,
+    ),
+  )
+  assert_true(
+    has_code(lint_html("<div id=\"a\" id=\"b\"></div>"), HtmlDuplicateAttribute),
+  )
+}

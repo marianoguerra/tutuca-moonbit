@@ -8,6 +8,8 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/lint",
+  "marianoguerra/tutuca/transactor",
   "moonbitlang/core/json",
 }
 

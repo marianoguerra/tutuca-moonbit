@@ -77,12 +77,6 @@ jobs:
       - name: Build dist
         run: moon run --target native cmd/dev -- dist
 
-      # storybook "Dynamic" story bundle: builds the MoonBit counter guest
-      # bundle (moon -> wasm-tools -> jco) into dist/storybook/counter, which
-      # the story loads at runtime.
-      - name: Build storybook dynamic bundle
-        run: moon run --target native cmd/dev -- storybook-bundle
-
       # the universal demo also builds the Rust guest (polyglot sample), which
       # needs the wasm32 target; cargo is preinstalled on the runner.
       - name: Add Rust wasm target

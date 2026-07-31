@@ -2,26 +2,126 @@
 
 ///|
 /// A named view in tutuca template syntax. The HOST parses it (anode):
-/// event bindings are attributes resolved at view parse time, so
-/// `input-handlers` names referenced by the markup dispatch back into
-/// `instance.handle-event`. Every component needs a "main" view.
+/// event bindings are attributes resolved at view parse time, so the handler
+/// names the markup references dispatch back into `instance.handle-event`.
+/// Every component needs a "main" view.
 pub(all) struct ViewDef {
   name : String
   html : String
 } derive(Show, Eq)
 
 ///|
+/// What a declared field HOLDS, as a flat table: WIT has no recursive types,
+/// so a compound points at its parts by index into `component-def.types`.
+/// The kinds are the host's `TyInfo` — a guest declares the same shapes a
+/// host component declares in `<script type="tutuca/state">`.
+pub(all) enum TyKind {
+  TY_BOOL
+  TY_INT
+  TY_FLOAT
+  TY_TEXT
+  TY_LIST
+  TY_TUPLE
+  TY_OPTION
+  TY_OMAP
+  TY_RECORD
+  TY_ENUM
+  TY_VARIANT
+  TY_FLAGS
+  TY_SET
+  TY_COMP
+  TY_ANY
+} derive(Show, Eq)
+
+///|
+pub fn TyKind::ordinal(self : TyKind) -> Int {
+  match self {
+    TY_BOOL => 0
+    TY_INT => 1
+    TY_FLOAT => 2
+    TY_TEXT => 3
+    TY_LIST => 4
+    TY_TUPLE => 5
+    TY_OPTION => 6
+    TY_OMAP => 7
+    TY_RECORD => 8
+    TY_ENUM => 9
+    TY_VARIANT => 10
+    TY_FLAGS => 11
+    TY_SET => 12
+    TY_COMP => 13
+    TY_ANY => 14
+  }
+}
+
+///|
+pub fn TyKind::from(self : Int) -> TyKind {
+  match self {
+    0 => TY_BOOL
+    1 => TY_INT
+    2 => TY_FLOAT
+    3 => TY_TEXT
+    4 => TY_LIST
+    5 => TY_TUPLE
+    6 => TY_OPTION
+    7 => TY_OMAP
+    8 => TY_RECORD
+    9 => TY_ENUM
+    10 => TY_VARIANT
+    11 => TY_FLAGS
+    12 => TY_SET
+    13 => TY_COMP
+    14 => TY_ANY
+    _ => panic()
+  }
+}
+
+///|
+pub(all) struct TyDef {
+  kind : TyKind
+  elem : UInt?
+  items : FixedArray[UInt]
+  name : String
+  members : Array[String]
+} derive(Show, Eq)
+
+///|
+pub(all) struct FieldDef {
+  name : String
+  ty : UInt
+} derive(Show, Eq)
+
+///|
+/// A named initial state — the guest's `<script type="tutuca/init">`. The
+/// args are JSON rather than `value`s because a manifest is DATA the host
+/// keeps: an arena handle would be stale the moment `get-manifest` returned.
+pub(all) struct InitDef {
+  name : String
+  args_json : String
+} derive(Show, Eq)
+
+///|
 pub(all) struct ComponentDef {
   name : String
   views : Array[ViewDef]
-  input_handlers : Array[String]
-  receive_handlers : Array[String]
-  response_handlers : Array[String]
-  method_names : Array[String]
+  types : Array[TyDef]
+  fields : Array[FieldDef]
+  handlers : Array[String]
+  receives : Array[String]
+  bubbles : Array[String]
+  responses : Array[String]
+  methods : Array[String]
+  whens : Array[String]
+  requests : Array[String]
+  inits : Array[InitDef]
   style : String
 } derive(Show, Eq)
 
 ///|
+/// What the views RAISE is not declared: the host compiles them, so it reads
+/// those names off the compiled tree (Component::view_handler_names) and puts
+/// them in the component's descriptor. `handlers` above is the other
+/// question — which of them the guest answers rather than the host.
 pub(all) struct Manifest {
   api_version : UInt
   module_name : String
@@ -29,17 +129,12 @@ pub(all) struct Manifest {
 } derive(Show, Eq)
 
 ///|
-/// The host-normalized DOM event handed to input handlers.
-pub(all) struct DomEvent {
-  name : String
-  payload : @values.Value
-  key : String
-  key_code : Int
-  alt : Bool
-  shift : Bool
-  ctrl_or_cmd : Bool
-  meta : Bool
-  drag_info : @values.Value
+/// The answer to a request this bundle serves. Synchronous, because every
+/// call across this boundary is: a guest that needs to wait asks the host
+/// instead (`control.request`).
+pub(all) enum RequestResult {
+  Ok(@values.Value)
+  Err(@values.Value)
 } derive(Show, Eq)
 
 ///|
@@ -47,6 +142,7 @@ pub(all) enum Bucket {
   INPUT
   RECEIVE
   RESPONSE
+  BUBBLE
 } derive(Show, Eq)
 
 ///|
@@ -55,6 +151,7 @@ pub fn Bucket::ordinal(self : Bucket) -> Int {
     INPUT => 0
     RECEIVE => 1
     RESPONSE => 2
+    BUBBLE => 3
   }
 }
 
@@ -64,6 +161,7 @@ pub fn Bucket::from(self : Int) -> Bucket {
     0 => INPUT
     1 => RECEIVE
     2 => RESPONSE
+    3 => BUBBLE
     _ => panic()
   }
 }
@@ -83,7 +181,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.1.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.2.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -93,7 +191,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.1.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.2.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -103,7 +201,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.1.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.2.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.
@@ -111,6 +209,15 @@ declare pub fn Instance::dtor(_self : Instance) -> Unit
 
 ///|
 declare pub fn get_manifest() -> Manifest
+
+///|
+/// Serve one of the `requests` a component-def declares. Module-scoped like
+/// the manifest: a request is a service the BUNDLE provides, not state an
+/// instance holds.
+declare pub fn handle_request(
+  name : String,
+  args : Array[@values.Value],
+) -> RequestResult
 
 ///|
 /// `component` is a component-def name from the manifest; `args` are
@@ -137,12 +244,18 @@ declare pub fn Instance::seq_entries(
 
 ///|
 /// Self in, self out: return the successor instance, or none if the
-/// event caused no state change.
+/// event caused no state change. The `bubble` bucket is how a guest
+/// component hears from a guest child of its own (`control.emit` one level
+/// down); the host walks it up exactly as it does between host components.
+///
+/// There is no event object: what a handler needs from the DOM event is
+/// named in the view (`@on.input="setName value"`) and arrives evaluated
+/// in `args`, which is also how a host component receives it — `event`,
+/// `target` and `ctx` are not handler arguments in tutuca.
 declare pub fn Instance::handle_event(
   self : Instance,
   b : Bucket,
   name : String,
-  event : DomEvent?,
   args : Array[@values.Value],
 ) -> Instance?
 
@@ -155,20 +268,12 @@ declare pub fn Instance::call_method(
 ) -> @values.Value
 
 ///|
-/// COW write-through: successor with one field replaced. Only needed
-/// when host paths write THROUGH this instance to a nested child;
-/// leaf components may return none (unsupported).
+/// COW write-through: successor with one field replaced. It is what host
+/// paths write through to reach a nested child, AND what the generated
+/// mutators write through, so a component that declares fields wants it
+/// even with no children of its own.
 declare pub fn Instance::with_field(
   self : Instance,
   name : String,
   v : @values.Value,
 ) -> Instance?
-
-///|
-/// Structural equality (host obj-eq).
-declare pub fn Instance::eq(self : Instance, other : Instance) -> Bool
-
-///|
-/// JSON projection of the state, for host inspection/state-json
-/// (host Value::to-json cannot see opaque state).
-declare pub fn Instance::to_json(self : Instance) -> String

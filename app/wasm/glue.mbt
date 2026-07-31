@@ -33,6 +33,14 @@ extern "wasm" fn tdom_json_stringify(v : @core.Any) -> @core.Any = "tdom" "json_
 extern "wasm" fn tdom_file_meta(input : @core.Any) -> @core.Any = "tdom" "file_meta"
 
 ///|
+/// The files an external drop carried, as JSON text — `[{id, name, size, type,
+/// lastModified}, ...]`, or "" when the drop carried none (an in-app drag).
+/// The `id` addresses the File the browser still holds: a File cannot cross
+/// into wasm-gc, so what a handler gets is a descriptor plus a way to name it
+/// again (the bridge's `load_dropped`).
+extern "wasm" fn tdom_dropped_files(ev : @core.Any) -> @core.Any = "tdom" "dropped_files"
+
+///|
 extern "wasm" fn tdom_inject_css(
   doc : @core.Any,
   id : String,
@@ -67,10 +75,19 @@ fn prevent_default(ev : @core.Any) -> Unit {
 }
 
 ///|
-/// getValue(e): checkbox -> checked, file input -> the first file's metadata,
-/// elements with a value -> value, else CustomEvent detail (structured
-/// payloads ride through the JSON bridge as Value::Map/List).
+/// getValue(e): a drop's files, checkbox -> checked, file input -> the first
+/// file's metadata, elements with a value -> value, else CustomEvent detail
+/// (structured payloads ride through the JSON bridge as Value::Map/List).
 fn event_value(ev : @core.Any) -> @tutuca.Value {
+  // An external drop is the one event whose payload is neither on the target
+  // nor in `detail`: the files hang off dataTransfer, and they are what
+  // `@on.drop="load value"` is asking for.
+  if to_str(ev._get("type")) == "drop" {
+    let files = json_value(tdom_dropped_files(ev))
+    if !(files is Null) {
+      return files
+    }
+  }
   let target = ev._get("target")
   if !@core.is_nullish(target) {
     if tdom_has_prop(target, "type") {

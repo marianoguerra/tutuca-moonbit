@@ -11,10 +11,10 @@ wit_bindgen::generate!({
 });
 
 use exports::tutuca::component::guest::{
-    Bucket, ComponentDef, DomEvent, Guest, GuestInstance, Instance, InstanceBorrow, Manifest,
-    ViewDef,
+    Bucket, ComponentDef, FieldDef, Guest, GuestInstance, Instance, Manifest, RequestResult, TyDef,
+    TyKind, ViewDef,
 };
-use tutuca::component::control;
+use tutuca::component::control::{self, RequestOpts};
 use tutuca::component::values::Value;
 
 struct Component;
@@ -24,7 +24,7 @@ impl Guest for Component {
 
     fn get_manifest() -> Manifest {
         Manifest {
-            api_version: 1,
+            api_version: 2,
             module_name: "rustcounterlib".into(),
             components: vec![ComponentDef {
                 name: "Counter".into(),
@@ -46,14 +46,37 @@ impl Guest for Component {
 </div>"#
                         .into(),
                 }],
-                input_handlers: vec!["inc".into(), "dec".into(), "double".into()],
-                receive_handlers: vec!["init".into()],
-                response_handlers: vec!["double".into()],
-                method_names: vec!["label".into()],
+                // The declared state. The host builds a schema from it, and
+                // with it come equality, the JSON projection and the
+                // generated `setCount` mutator — none of them written here.
+                types: vec![TyDef {
+                    kind: TyKind::TyFloat,
+                    elem: None,
+                    items: vec![],
+                    name: "".into(),
+                    members: vec![],
+                }],
+                fields: vec![FieldDef {
+                    name: "count".into(),
+                    ty: 0,
+                }],
+                handlers: vec!["inc".into(), "dec".into(), "double".into()],
+                receives: vec!["init".into()],
+                bubbles: vec![],
+                responses: vec!["double".into()],
+                methods: vec!["label".into()],
+                whens: vec![],
+                requests: vec![],
+                inits: vec![],
                 // styling is entirely margaui (daisyUI) classes; no fallback CSS
                 style: "".into(),
             }],
         }
+    }
+
+    /// This bundle serves no requests of its own; "double" is the host's.
+    fn handle_request(name: String, _args: Vec<Value>) -> RequestResult {
+        RequestResult::Err(Value::Text(format!("rustcounterlib: no request {name}")))
     }
 }
 
@@ -91,18 +114,21 @@ impl GuestInstance for Counter {
         None
     }
 
-    fn handle_event(
-        &self,
-        b: Bucket,
-        name: String,
-        _event: Option<DomEvent>,
-        args: Vec<Value>,
-    ) -> Option<Instance> {
+    fn handle_event(&self, b: Bucket, name: String, args: Vec<Value>) -> Option<Instance> {
         match (b, name.as_str()) {
             (Bucket::Input, "inc") => Counter::next(self.count + 1.0),
             (Bucket::Input, "dec") => Counter::next(self.count - 1.0),
             (Bucket::Input, "double") => {
-                control::request("double", &[Value::Number(self.count)]);
+                control::request(
+                    "double",
+                    &[Value::Number(self.count)],
+                    &RequestOpts {
+                        on_ok: None,
+                        on_error: None,
+                        on_res: None,
+                        live_path: false,
+                    },
+                );
                 None
             }
             (Bucket::Response, "double") => match args.first() {
@@ -125,14 +151,6 @@ impl GuestInstance for Counter {
             ("count", Value::Number(n)) => Counter::next(n),
             _ => None,
         }
-    }
-
-    fn eq(&self, other: InstanceBorrow<'_>) -> bool {
-        self.count == other.get::<Counter>().count
-    }
-
-    fn to_json(&self) -> String {
-        format!("{{\"count\": {}}}", self.count)
     }
 }
 

@@ -14,6 +14,8 @@ pub fn[S : @core.Fields] component(name~ : String, views~ : Map[String, @anode.V
 
 pub fn resolve_dyn_producer(Component, String) -> DynProducer?
 
+pub fn schema_mutators(@core.SchemaInfo) -> Map[String, (FieldBox, Array[@core.Value]) -> @core.Value]
+
 // Errors
 
 // Types and methods
@@ -25,7 +27,7 @@ pub struct Component {
   global_style : String
   swap_names : Array[String]
   alter_names : Array[String]
-  schema : @core.SchemaInfo
+  mut schema : @core.SchemaInfo
   mut make_fn : (Map[String, @core.Value]) -> @core.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]
@@ -39,6 +41,7 @@ pub fn Component::compile_style(Self) -> String
 pub fn Component::for_type(name~ : String, views~ : Map[String, @anode.View], schema~ : @core.SchemaInfo, common_style? : String, global_style? : String, provide? : Map[String, String], lookup? : Map[String, LookupSpec]) -> Self
 pub fn Component::get_view(Self, String?) -> @anode.View?
 pub fn Component::make(Self, Map[String, @core.Value]) -> @core.Value
+pub fn Component::view_handler_names(Self) -> Array[String]
 
 pub struct ComponentStack {
   comps : Components
@@ -90,6 +93,12 @@ pub(all) struct ExampleDef {
   title : String
   args : Map[String, @core.Value]
   view : String?
+}
+
+pub(all) struct FieldBox {
+  get : (String) -> @core.Value
+  set : (String, @core.Value) -> @core.Value
+  value : () -> @core.Value
 }
 
 pub(all) struct LookupInfo {

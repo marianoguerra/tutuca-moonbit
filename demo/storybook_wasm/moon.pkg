@@ -8,7 +8,6 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/storybook" @sb,
   "marianoguerra/tutuca/storybook/ui" @sbui,

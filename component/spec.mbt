@@ -47,6 +47,34 @@ declare fn FieldSpec::coerce_or_default(
 ) -> @tutuca.Value
 
 ///|
+/// The three things a generated mutator needs of the instance it runs on: read
+/// a field, write one (answering with the SUCCESSOR as a Value), and name the
+/// instance itself for the no-op paths.
+///
+/// It exists so `setX` / `toggleX` / `pushInX` / … are written once for every
+/// kind of instance rather than once per implementation. A `TypedInstance`
+/// supplies it over its encoded fields; the dynamic-component host supplies it
+/// over `Obj::obj_field` / `Obj::obj_with_field`, which is what gives a wasm
+/// guest that declares `count: s32` a working `setCount` with no guest code —
+/// the same mutators, over the same declared schema, through a different seam.
+pub(all) struct FieldBox {
+  get : (String) -> @tutuca.Value
+  /// The instance one field later. Answering with `value()` is how a write
+  /// that changed nothing (or that the instance refused) stays a no-op.
+  set : (String, @tutuca.Value) -> @tutuca.Value
+  value : () -> @tutuca.Value
+}
+
+///|
+/// The generated per-field mutators a schema implies, by name — `setCount`,
+/// `toggleDone`, `pushInItems`, `itemsLen`, … (the table in
+/// skill/tutuca/schema.md). `component()` builds an instance's set from here,
+/// and so does any other holder of a declared schema.
+declare pub fn schema_mutators(
+  schema : SchemaInfo,
+) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
+
+///|
 /// The JS provide Symbol: a per-(component, provide-name) identity used to
 /// key dynamic-binding frames.
 pub(all) struct ProvideKey {
@@ -207,7 +235,11 @@ pub struct Component {
   /// runtime descriptor could recover by reflection; this is the thing that
   /// was stated, and it is no longer optional — there is nothing left that
   /// reconstructs it.
-  schema : SchemaInfo
+  ///
+  /// `mut` for ONE reason: `compile()` fills in `inputs` when nothing stated
+  /// them, which is the case for a component whose views arrive at runtime
+  /// (see `Component::view_handler_names`). Nothing else writes it.
+  mut schema : SchemaInfo
   mut make_fn : (Map[String, @tutuca.Value]) -> @tutuca.Value
   raw_provide : Map[String, String]
   raw_lookup : Map[String, LookupSpec]

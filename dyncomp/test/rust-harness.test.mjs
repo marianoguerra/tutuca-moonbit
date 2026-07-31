@@ -36,9 +36,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.1.0': values,
+    'tutuca:component/values@0.2.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.1.0': control,
+    'tutuca:component/control@0.2.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -46,27 +46,25 @@ before(async () => {
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 1);
+  assert.equal(m.apiVersion, 2);
   assert.equal(m.moduleName, 'rustcounterlib');
   assert.match(m.components[0].views[0].html, /@on\.click="inc"/);
 
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
-  const a2 = a.handleEvent('input', 'inc', undefined, []);
+  const a2 = a.handleEvent('input', 'inc', []);
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 11 });
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
   assert.deepEqual(a2.callMethod('label', []), { tag: 'text', val: 'rust count is 11' });
-  assert.equal(a2.toJson(), '{"count": 11}');
+  // the same declared schema every guest ships: fields over a flat type table
+  assert.deepEqual(m.components[0].fields, [{ name: 'count', ty: 0 }]);
+  assert.equal(m.components[0].types[0].kind, 'ty-float');
 
   controlBuf = [];
-  assert.equal(a.handleEvent('input', 'double', undefined, []), undefined);
+  assert.equal(a.handleEvent('input', 'double', []), undefined);
   assert.deepEqual(controlBuf, [
     { kind: 'request', name: 'double', args: [{ tag: 'number', val: 10 }] },
   ]);
-  const a3 = a.handleEvent('response', 'double', undefined,
+  const a3 = a.handleEvent('response', 'double',
     [{ tag: 'number', val: 20 }, { tag: 'nil' }]);
   assert.deepEqual(a3.getField('count'), { tag: 'number', val: 20 });
-
-  const b = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
-  assert.equal(a.eq(b), true);
-  assert.equal(a.eq(a2), false);
 });

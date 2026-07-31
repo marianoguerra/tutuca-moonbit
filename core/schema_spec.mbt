@@ -126,6 +126,12 @@ declare pub fn SchemaInfo::new(
 ) -> SchemaInfo
 
 ///|
+/// A structural fingerprint of a schema built at RUNTIME, for a holder with no
+/// generated one to carry (the dynamic-component host). See the implementation
+/// for how it relates to `@statedef.fingerprint`.
+declare pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String
+
+///|
 /// The declared description of a field, by runtime name.
 declare pub fn SchemaInfo::field(self : SchemaInfo, name : String) -> FieldInfo?
 

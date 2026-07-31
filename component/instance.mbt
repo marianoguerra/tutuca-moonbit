@@ -22,10 +22,7 @@ priv struct TypedSpec[S] {
   ]
   enrich_scope : Map[String, (S) -> Map[String, @tutuca.Value]]
   loop_with : Map[String, (S, @tutuca.Value, LoopCtx) -> LoopWith]
-  generated : Map[
-    String,
-    (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value,
-  ]
+  generated : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value]
   /// Direct state <-> fields conversion, field by field.
   ///
   /// There used to be a JSON bridge behind these — `S -> Json -> Value` and
@@ -201,6 +198,17 @@ fn[S] TypedInstance::get(
 }
 
 ///|
+/// This instance as the generated mutators see it (see `FieldBox`): read a
+/// field, write one and answer with the successor, name the instance itself.
+fn[S] TypedInstance::field_box(self : TypedInstance[S]) -> FieldBox {
+  {
+    get: name => self.get(name),
+    set: (name, v) => self.set(name, v).to_value(),
+    value: () => self.to_value(),
+  }
+}
+
+///|
 /// Coerced field write; unknown names and undecodable results keep the
 /// instance unchanged.
 fn[S] TypedInstance::set(
@@ -265,7 +273,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
         Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
         None =>
           match self.spec.generated.get(name) {
-            Some(g) => Some(Fn(args => g(self, drop_this(args))))
+            Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
             None => None
           }
       }
@@ -350,7 +358,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
     Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
     None =>
       match self.spec.generated.get(name) {
-        Some(g) => Some(Fn(args => g(self, drop_this(args))))
+        Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
         None => None
       }
   }
@@ -400,7 +408,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
       if bucket is Input {
         match self.spec.generated.get(name) {
           Some(g) =>
-            match g(self, args) {
+            match g(self.field_box(), args) {
               Obj(_) as nv => return Some(nv)
               _ => ()
             }

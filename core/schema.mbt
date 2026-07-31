@@ -65,6 +65,55 @@ pub fn SchemaInfo::field_names(self : SchemaInfo) -> Array[String] {
 }
 
 ///|
+/// A structural fingerprint of a schema that arrives at RUNTIME, for a caller
+/// with no generated one to carry: the dynamic-component host, which receives a
+/// guest's declared shape over the `tutuca:component` boundary and needs the
+/// same thing `<v>_schema_fingerprint` gives a compiled component — a value
+/// that changes when the shape does, and not otherwise (it seeds the render
+/// cache's bucket, and says when stored state can no longer be read back).
+///
+/// The twin of `@statedef.fingerprint`, which hashes the same shape one step
+/// earlier — from the SOURCE schema, where a variant's payload types and the
+/// user types are still visible. The two hash different inputs and do not
+/// produce the same string for the same component; neither is compared against
+/// the other, and each is stable for its own producer, which is all either one
+/// is for.
+pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
+  let sb = StringBuilder::new()
+  sb.write_string("i:\{self.name};")
+  for f in self.fields {
+    sb.write_string("f:\{f.name}:\{f.ty.show_wit()};")
+    for m in f.ty.members() {
+      sb.write_string("m:\{m},")
+    }
+  }
+  for
+    pair in [
+      ("r", self.receives),
+      ("b", self.bubbles),
+      ("p", self.responses),
+      ("c", self.methods),
+      ("v", self.view_names),
+    ] {
+    for n in pair.1 {
+      sb.write_string("\{pair.0}:\{n};")
+    }
+  }
+  // FNV-1a, hex — not cryptographic and does not need to be: it distinguishes
+  // schemas a human wrote, not ones an attacker did.
+  let mut h : UInt64 = 0xcbf29ce484222325UL
+  for c in sb.to_string().to_array() {
+    h = (h ^ c.to_int().reinterpret_as_uint().to_uint64()) * 0x100000001b3UL
+  }
+  let digits = "0123456789abcdef".to_array()
+  let out = StringBuilder::new()
+  for i in 0..<16 {
+    out.write_char(digits[((h >> ((15 - i) * 4)) & 0xfUL).to_int()])
+  }
+  out.to_string()
+}
+
+///|
 /// The name of a field's generated mutator: `count` + `set` -> `setCount`.
 ///
 /// The convention lives HERE, in one function, because two places have to agree

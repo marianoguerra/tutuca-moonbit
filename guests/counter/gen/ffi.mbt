@@ -25,6 +25,18 @@ pub fn wasmExportGetManifestPostReturn(p0 : Int) -> Unit {
 
 ///|
 #doc(hidden)
+pub fn wasmExportHandleRequest(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int {
+  @guest.wasmExportHandleRequest(p0, p1, p2, p3)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportHandleRequestPostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportHandleRequestPostReturn(p0)
+}
+
+///|
+#doc(hidden)
 pub fn wasmExportInstanceDtor(handle : Int) -> Unit {
   @guest.wasmExportInstanceDtor(handle)
 }
@@ -49,12 +61,6 @@ pub fn wasmExportMethodInstanceCallMethodPostReturn(p0 : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceEq(p0 : Int, p1 : Int) -> Int {
-  @guest.wasmExportMethodInstanceEq(p0, p1)
-}
-
-///|
-#doc(hidden)
 pub fn wasmExportMethodInstanceGetField(p0 : Int, p1 : Int, p2 : Int) -> Int {
   @guest.wasmExportMethodInstanceGetField(p0, p1, p2)
 }
@@ -67,8 +73,15 @@ pub fn wasmExportMethodInstanceGetFieldPostReturn(p0 : Int) -> Unit {
 
 ///|
 #doc(hidden)
-pub fn wasmExportMethodInstanceHandleEvent(p0 : Int) -> Int {
-  @guest.wasmExportMethodInstanceHandleEvent(p0)
+pub fn wasmExportMethodInstanceHandleEvent(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+  p4 : Int,
+  p5 : Int,
+) -> Int {
+  @guest.wasmExportMethodInstanceHandleEvent(p0, p1, p2, p3, p4, p5)
 }
 
 ///|
@@ -81,18 +94,6 @@ pub fn wasmExportMethodInstanceSeqEntries(p0 : Int) -> Int {
 #doc(hidden)
 pub fn wasmExportMethodInstanceSeqEntriesPostReturn(p0 : Int) -> Unit {
   @guest.wasmExportMethodInstanceSeqEntriesPostReturn(p0)
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportMethodInstanceToJson(p0 : Int) -> Int {
-  @guest.wasmExportMethodInstanceToJson(p0)
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportMethodInstanceToJsonPostReturn(p0 : Int) -> Unit {
-  @guest.wasmExportMethodInstanceToJsonPostReturn(p0)
 }
 
 ///|

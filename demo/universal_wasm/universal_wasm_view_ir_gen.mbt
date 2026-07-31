@@ -22,38 +22,92 @@
 fn universal_wasm_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h(
-      "div",
+    @anode.frag([
+      @anode.comment(
+        " The whole page is the drop target, and the drop is an ORDINARY tutuca\n     event: `value` carries the dropped files (id + metadata), so loading a\n     bundle is a handler like any other. This page used to install a\n     document-level listener in JS to get at dataTransfer.files. ",
+      ),
+      @anode.text(" "),
+      @anode.h(
+        "div",
+        [
+          @anode.attr(
+            "class", "min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3",
+          ),
+          @anode.attr("data-droptarget", "tutuca-wasm-component"),
+          @anode.eid(3),
+        ],
+        [
+          @anode.h(
+            "div",
+            [
+              @anode.attr(
+                "class", "rounded-box border-2 border-dashed border-base-300 bg-base-100 p-4 text-center opacity-70 flex flex-col gap-2 items-center",
+              ),
+            ],
+            [
+              @anode.h("span", [], [
+                @anode.text("Drop a "),
+                @anode.h("code", [@anode.attr("class", "font-mono")], [
+                  @anode.text(".tutuca.tar.gz"),
+                ]),
+                @anode.text(" bundle to register its wasm components"),
+              ]),
+              @anode.text(" "),
+              @anode.comment(
+                " ...or fetch one: the same archive, named by URL instead of by drop.\n         Loading a bundle that is already registered HOT-SWAPS it, and the\n         pickers migrate what they hold into the new one. ",
+              ),
+              @anode.text(" "),
+              @anode.h("div", [@anode.attr("class", "join")], [
+                @anode.h(
+                  "button",
+                  [@anode.attr("class", "btn btn-xs join-item"), @anode.eid(0)],
+                  [@anode.text("load counter")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [@anode.attr("class", "btn btn-xs join-item"), @anode.eid(1)],
+                  [@anode.text("load todo")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [@anode.attr("class", "btn btn-xs join-item"), @anode.eid(2)],
+                  [@anode.text("load rust-counter")],
+                ),
+              ]),
+            ],
+          ),
+          @anode.h("p", [@anode.attr("class", "text-sm opacity-70")], [
+            @anode.dyn_text(Field("status")),
+          ]),
+          @anode.text(" "),
+          @anode.render(0, Field("list")),
+        ],
+      ),
+    ]),
+    [
       [
-        @anode.attr(
-          "class", "min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3",
-        ),
-      ],
-      [
-        @anode.h(
-          "div",
-          [
-            @anode.attr(
-              "class", "rounded-box border-2 border-dashed border-base-300 bg-base-100 p-4 text-center opacity-70",
-            ),
-            @anode.attr("data-droptarget", "tutuca-wasm-component"),
-          ],
-          [
-            @anode.text("\n    Drop a "),
-            @anode.h("code", [@anode.attr("class", "font-mono")], [
-              @anode.text(".tutuca.tar.gz"),
-            ]),
-            @anode.text(" bundle to register its wasm components\n  "),
-          ],
-        ),
-        @anode.h("p", [@anode.attr("class", "text-sm opacity-70")], [
-          @anode.dyn_text(Field("status")),
+        @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
+          @anode.const_str("./examples/counter.tutuca.tar.gz"),
         ]),
-        @anode.text(" "),
-        @anode.render(0, Field("list")),
       ],
-    ),
-    [],
+      [
+        @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
+          @anode.const_str("./examples/todo.tutuca.tar.gz"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
+          @anode.const_str("./examples/rust-counter.tutuca.tar.gz"),
+        ]),
+      ],
+      [
+        @anode.on("drop", HandlerName(name="loadDropped", ns=Input), args=[
+          Name("value"),
+        ]),
+      ],
+    ],
   )
 }
 
@@ -81,6 +135,11 @@ pub fn universal_wasm_component(
   common_style? : String = universal_wasm_common_style,
   global_style? : String = universal_wasm_global_style,
   update? : (UniversalWasmState, @component.Dispatch, &@tutuca.Ctx) -> UniversalWasmState?,
+  swap? : (UniversalWasmInput) -> ((
+    UniversalWasmState,
+    Array[@tutuca.Value],
+    &@tutuca.Ctx,
+  ) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -93,6 +152,15 @@ pub fn universal_wasm_component(
     common_style~,
     global_style~,
     update?,
+    swap=match swap {
+      Some(f) =>
+        @component.build_bucket(
+          ([LoadDropped, LoadSample] : Array[UniversalWasmInput]),
+          UniversalWasmInput::name,
+          f,
+        )
+      None => Map([])
+    },
     slots~,
     slot_args~,
     provide~,
@@ -106,101 +174,113 @@ fn component_list_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("section", [@anode.attr("class", "indicator w-full")], [
+      @anode.comment(
+        " The btn stays INSIDE the indicator-item, never on it: `.btn:active`\n       sets `translate: 0 0.5px`, which would override the indicator's own\n       `translate: 50% -50%` and jump the button ~16px out from under the\n       cursor on mousedown — mouseup then lands on an ancestor and no click\n       event ever reaches the button. ",
+      ),
+      @anode.text(" "),
       @anode.h(
-        "button",
-        [
-          @anode.attr(
-            "class", "indicator-item indicator-top indicator-start btn btn-sm btn-ghost btn-circle",
-          ),
-          @anode.attr("title", "Layout settings"),
-          @anode.eid(0),
-        ],
+        "span",
+        [@anode.attr("class", "indicator-item indicator-top indicator-start")],
         [
           @anode.h(
-            "svg",
+            "button",
             [
-              @anode.attr("width", "15"),
-              @anode.attr("height", "15"),
-              @anode.attr("viewBox", "0 0 24 24"),
-              @anode.attr("fill", "none"),
-              @anode.attr("stroke", "currentColor"),
-              @anode.attr("stroke-width", "2"),
-              @anode.attr("stroke-linecap", "round"),
-              @anode.attr("stroke-linejoin", "round"),
+              @anode.attr("class", "btn btn-sm btn-ghost btn-circle"),
+              @anode.attr("title", "Layout settings"),
+              @anode.eid(0),
             ],
             [
               @anode.h(
-                "circle",
+                "svg",
                 [
-                  @anode.attr("cx", "12"),
-                  @anode.attr("cy", "12"),
-                  @anode.attr("r", "3"),
+                  @anode.attr("width", "15"),
+                  @anode.attr("height", "15"),
+                  @anode.attr("viewBox", "0 0 24 24"),
+                  @anode.attr("fill", "none"),
+                  @anode.attr("stroke", "currentColor"),
+                  @anode.attr("stroke-width", "2"),
+                  @anode.attr("stroke-linecap", "round"),
+                  @anode.attr("stroke-linejoin", "round"),
                 ],
-                [],
-                ns=Svg,
-              ),
-              @anode.h(
-                "path",
                 [
-                  @anode.attr(
-                    "d", "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
+                  @anode.h(
+                    "circle",
+                    [
+                      @anode.attr("cx", "12"),
+                      @anode.attr("cy", "12"),
+                      @anode.attr("r", "3"),
+                    ],
+                    [],
+                    ns=Svg,
+                  ),
+                  @anode.h(
+                    "path",
+                    [
+                      @anode.attr(
+                        "d", "M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z",
+                      ),
+                    ],
+                    [],
+                    ns=Svg,
                   ),
                 ],
-                [],
                 ns=Svg,
               ),
             ],
-            ns=Svg,
           ),
         ],
       ),
       @anode.text(" "),
       @anode.h(
-        "button",
-        [
-          @anode.attr(
-            "class", "indicator-item indicator-top indicator-end btn btn-sm btn-ghost btn-circle",
-          ),
-          @anode.attr("title", "Add component"),
-          @anode.eid(1),
-        ],
+        "span",
+        [@anode.attr("class", "indicator-item indicator-top indicator-end")],
         [
           @anode.h(
-            "svg",
+            "button",
             [
-              @anode.attr("width", "16"),
-              @anode.attr("height", "16"),
-              @anode.attr("viewBox", "0 0 24 24"),
-              @anode.attr("fill", "none"),
-              @anode.attr("stroke", "currentColor"),
-              @anode.attr("stroke-width", "2"),
-              @anode.attr("stroke-linecap", "round"),
+              @anode.attr("class", "btn btn-sm btn-ghost btn-circle"),
+              @anode.attr("title", "Add component"),
+              @anode.eid(1),
             ],
             [
               @anode.h(
-                "line",
+                "svg",
                 [
-                  @anode.attr("x1", "12"),
-                  @anode.attr("y1", "5"),
-                  @anode.attr("x2", "12"),
-                  @anode.attr("y2", "19"),
+                  @anode.attr("width", "16"),
+                  @anode.attr("height", "16"),
+                  @anode.attr("viewBox", "0 0 24 24"),
+                  @anode.attr("fill", "none"),
+                  @anode.attr("stroke", "currentColor"),
+                  @anode.attr("stroke-width", "2"),
+                  @anode.attr("stroke-linecap", "round"),
                 ],
-                [],
-                ns=Svg,
-              ),
-              @anode.h(
-                "line",
                 [
-                  @anode.attr("x1", "5"),
-                  @anode.attr("y1", "12"),
-                  @anode.attr("x2", "19"),
-                  @anode.attr("y2", "12"),
+                  @anode.h(
+                    "line",
+                    [
+                      @anode.attr("x1", "12"),
+                      @anode.attr("y1", "5"),
+                      @anode.attr("x2", "12"),
+                      @anode.attr("y2", "19"),
+                    ],
+                    [],
+                    ns=Svg,
+                  ),
+                  @anode.h(
+                    "line",
+                    [
+                      @anode.attr("x1", "5"),
+                      @anode.attr("y1", "12"),
+                      @anode.attr("x2", "19"),
+                      @anode.attr("y2", "12"),
+                    ],
+                    [],
+                    ns=Svg,
+                  ),
                 ],
-                [],
                 ns=Svg,
               ),
             ],
-            ns=Svg,
           ),
         ],
       ),
@@ -558,8 +638,12 @@ fn component_picker_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.h("div", [@anode.attr("class", "w-full")], [
-      @anode.hide(
-        Predicate(pred=IsTruthy, args=[Field("selected")]),
+      @anode.comment(
+        " `null? .selected` and not `truthy? .selected`: the pick is a component\n       instance, and `truthy?` is the SIZED predicate — a guest whose\n       `seq_entries` answers with an empty list (an as-yet-empty custom\n       collection) is size 0, hence falsy, and the picker would sit there\n       showing its chrome over a component it had already selected. ",
+      ),
+      @anode.text(" "),
+      @anode.show(
+        Predicate(pred=IsNull, args=[Field("selected")]),
         @anode.h(
           "div",
           [
@@ -620,8 +704,8 @@ fn component_picker_main_view_ir() -> @anode.View {
         ),
       ),
       @anode.text(" "),
-      @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("selected")]),
+      @anode.hide(
+        Predicate(pred=IsNull, args=[Field("selected")]),
         @anode.h("div", [], [@anode.render(2, Field("selected"))]),
       ),
     ]),

@@ -56,16 +56,12 @@ impl DynComponent for Todo with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Todo with fn handle(self, bucket, name, _event, args) {
+impl DynComponent for Todo with fn handle(self, bucket, name, args) {
   guard bucket is INPUT else { return None }
   match name {
-    // draft input: `@on.input="setDraft value"` -> args = [text]
-    "setDraft" =>
-      match args {
-        [@values.Value::Text(s), ..] =>
-          Some({ items: self.items, draft: s } as &DynComponent)
-        _ => None
-      }
+    // There is no "setDraft" case: `draft` is a declared field, so the host
+    // generates `setDraft` from the schema and writes it through `with_field`
+    // below. A handler here would be the same assignment written twice.
     // Add button, or Enter in the input via `addOnEnter isSend`
     "add" => self.add_draft()
     "addOnEnter" =>
@@ -133,41 +129,54 @@ impl DynComponent for Todo with fn call_method(self, name, _args) {
 }
 
 ///|
-/// JSON projection used for inspection and hot-swap migration; make_todo
-/// reads it back.
-impl DynComponent for Todo with fn to_json(self) {
-  let root = @values.map_new()
-  @values.map_set(root, "draft", @values.Value::Text(self.draft))
-  @values.map_set(root, "items", self.items_value())
-  @values.to_json(@values.Value::Map(root))
+/// The COW write-through every declared field needs: it is what the host's
+/// generated mutators (`setDraft`, `pushInItems`, `removeInItemsAt`, …) write
+/// through, and what a host path writes through to reach this instance.
+impl DynComponent for Todo with fn with_field(self, name, v) {
+  match (name, v) {
+    ("draft", @values.Value::Text(s)) =>
+      Some({ items: self.items, draft: s } as &DynComponent)
+    ("items", @values.Value::List(h)) =>
+      Some({ items: items_of(h), draft: self.draft } as &DynComponent)
+    _ => None
+  }
+}
+
+///|
+/// The inverse of `items_value`: a host list of {text, done} maps back into
+/// items. Both a fresh instance (constructor args, including the ones hot-swap
+/// migration hands back) and a `with_field` write arrive in this shape.
+fn items_of(h : UInt64) -> Array[TodoItem] {
+  let items : Array[TodoItem] = []
+  for i in 0U..<@values.list_len(h) {
+    match @values.list_get(h, i) {
+      @values.Value::Map(mh) => {
+        let text = match @values.map_get(mh, "text") {
+          Some(@values.Value::Text(t)) => t
+          _ => ""
+        }
+        let done = match @values.map_get(mh, "done") {
+          Some(@values.Value::Boolean(b)) => b
+          _ => false
+        }
+        items.push({ text, done })
+      }
+      _ => ()
+    }
+  }
+  items
 }
 
 ///|
 fn make_todo(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut draft = ""
-  let items : Array[TodoItem] = []
+  let mut items : Array[TodoItem] = []
   for arg in args {
     let (name, v) = arg
     match (name, v) {
       ("draft", @values.Value::Text(s)) => draft = s
-      // hot-swap migration hands the to-json projection back as args
-      ("items", @values.Value::List(h)) =>
-        for i in 0U..<@values.list_len(h) {
-          match @values.list_get(h, i) {
-            @values.Value::Map(mh) => {
-              let text = match @values.map_get(mh, "text") {
-                Some(@values.Value::Text(t)) => t
-                _ => ""
-              }
-              let done = match @values.map_get(mh, "done") {
-                Some(@values.Value::Boolean(b)) => b
-                _ => false
-              }
-              items.push({ text, done })
-            }
-            _ => ()
-          }
-        }
+      // hot-swap migration hands the declared fields back as args
+      ("items", @values.Value::List(h)) => items = items_of(h)
       _ => ()
     }
   }
@@ -202,12 +211,30 @@ fn todo_def() -> ComponentDef {
         ),
       },
     ],
-    input_handlers: [
-      "setDraft", "add", "addOnEnter", "toggleAt", "removeAt", "clearDone",
+    // `items` is a list of {text, done} records; declaring it is what gives
+    // the host `setDraft` (which this guest no longer implements), the item
+    // mutators, structural equality and the JSON projection.
+    types: [
+      { kind: TY_TEXT, elem: None, items: [], name: "", members: [] },
+      { kind: TY_RECORD, elem: None, items: [], name: "todo-item", members: [] },
+      { kind: TY_LIST, elem: Some(1), items: [], name: "", members: [] },
     ],
-    receive_handlers: [],
-    response_handlers: [],
-    method_names: ["summary"],
+    fields: [{ name: "draft", ty: 0 }, { name: "items", ty: 2 }],
+    // `setDraft` is absent on purpose: the `draft` field implies it, and the
+    // host answers it (see `with_field`)
+    handlers: ["add", "addOnEnter", "toggleAt", "removeAt", "clearDone"],
+    receives: [],
+    bubbles: [],
+    responses: [],
+    methods: ["summary"],
+    whens: [],
+    requests: [],
+    inits: [
+      {
+        name: "groceries",
+        args_json: "{\"items\": [{\"text\": \"milk\", \"done\": false}, {\"text\": \"bread\", \"done\": true}]}",
+      },
+    ],
     // styling is entirely margaui (daisyUI) classes; no scoped fallback CSS
     style: "",
   }
@@ -215,5 +242,10 @@ fn todo_def() -> ComponentDef {
 
 ///|
 fn dyn_module() -> DynModule {
-  { name: "todolib", components: [{ def: todo_def(), make: make_todo }] }
+  {
+    name: "todolib",
+    components: [{ def: todo_def(), make: make_todo }],
+    // this bundle serves no requests of its own
+    serve: no_requests,
+  }
 }

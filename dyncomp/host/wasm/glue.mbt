@@ -10,12 +10,12 @@
 ///   - args/maps cross as plain JSON (Value::to_json / from_json)
 ///   - get_field/call_method return "" for none, else a JSON value
 ///   - seq_entries returns "" for none, else [[key, value], ...]
-///   - dispatch returns {"next": handle|null, "msgs": [{kind,name,args}]}
+///   - dispatch returns {"next": handle|null, "msgs": [{kind,name,args,...}]},
+///     where a msg may also carry `path` (relative steps) or `opts` (request
+///     routing) — see control_msg below
+///   - handle_request returns {"ok": value} or {"err": value}
 ///   - with_field returns -1 for none, else the successor handle
-///   - bucket ints follow WIT order: 0=input, 1=receive, 2=response
-
-///|
-extern "wasm" fn tcomp_load(load_id : Int, url : String) -> Unit = "tcomp" "load"
+///   - bucket ints follow WIT order: 0=input, 1=receive, 2=response, 3=bubble
 
 ///|
 extern "wasm" fn tcomp_create(
@@ -60,7 +60,21 @@ extern "wasm" fn tcomp_with_field(
 ) -> Int = "tcomp" "with_field"
 
 ///|
-extern "wasm" fn tcomp_to_json(bundle : Int, handle : Int) -> String = "tcomp" "to_json"
+extern "wasm" fn tcomp_handle_request(
+  bundle : Int,
+  name : String,
+  args_json : String,
+) -> String = "tcomp" "handle_request"
+
+///|
+/// Load a bundle from a file the user DROPPED, by the id the drop event's
+/// value carried (see the app bridge's `dropped_files`).
+extern "wasm" fn tcomp_load_dropped(file_id : Int, load_id : Int) -> Unit = "tcomp" "load_dropped"
+
+///|
+/// Load the same kind of bundle from a URL. One archive format, two ways to
+/// name one: what the page dropped, or what it can fetch.
+extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "load_url"
 
 ///|
 extern "wasm" fn tcomp_drop_instance(bundle : Int, handle : Int) -> Unit = "tcomp" "drop_instance"
@@ -173,8 +187,69 @@ fn bucket_int(bucket : @tutuca.HandlerBucket) -> Int {
     Input => 0
     Receive => 1
     Response => 2
-    Bubble => -1 // never forwarded: DynObj declares no bubble handlers
+    Bubble => 3
   }
+}
+
+///|
+/// One relative path step of a `send-at` / `bubble-at` (WIT `path-step`, as
+/// the bridge's JSON: `{"field": "left"}`, `{"item": ["seq", "k"]}` or
+/// `{"at": ["seq", 3]}`).
+fn path_step(j : Json) -> @tutuca.Step? {
+  guard j is Object(o) else { return None }
+  match o.get("field") {
+    Some(String(name)) => return Some(FieldStep(name))
+    _ => ()
+  }
+  match o.get("item") {
+    Some(Array([String(field), String(key)])) =>
+      return Some(SeqStep(field~, key=KStr(key)))
+    _ => ()
+  }
+  match o.get("at") {
+    Some(Array([String(field), Number(i, ..)])) =>
+      return Some(SeqStep(field~, key=KInt(i.to_int())))
+    _ => ()
+  }
+  None
+}
+
+///|
+fn path_steps(j : Json?) -> Array[@tutuca.Step] {
+  let out : Array[@tutuca.Step] = []
+  match j {
+    Some(Array(items)) =>
+      for item in items {
+        match path_step(item) {
+          Some(s) => out.push(s)
+          None => ()
+        }
+      }
+    _ => ()
+  }
+  out
+}
+
+///|
+/// A request's response routing (WIT `request-opts`), defaulted the way
+/// `RequestOpts::new()` does when the guest sends nothing.
+fn request_opts(j : Json?) -> @tutuca.RequestOpts {
+  guard j is Some(Object(o)) else { return @tutuca.RequestOpts::new() }
+  let name = (key : String) => {
+    match o.get(key) {
+      Some(String(s)) => Some(s)
+      _ => None
+    }
+  }
+  @tutuca.RequestOpts::new(
+    on_ok_name?=name("onOk"),
+    on_error_name?=name("onError"),
+    on_res_name?=name("onRes"),
+    live_path=match o.get("livePath") {
+      Some(True) => true
+      _ => false
+    },
+  )
 }
 
 ///|
@@ -245,6 +320,11 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     Some(Array(items)) =>
       for item in items {
         guard item is Object(m) else { continue }
+        // the one message with no name at all
+        if m.get("kind") is Some(String("stopPropagation")) {
+          msgs.push(StopPropagation)
+          continue
+        }
         let name = match m.get("name") {
           Some(String(s)) => s
           _ => continue
@@ -256,7 +336,12 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
         match m.get("kind") {
           Some(String("emit")) => msgs.push(Emit(name, args))
           Some(String("send")) => msgs.push(Send(name, args))
-          Some(String("request")) => msgs.push(Request(name, args))
+          Some(String("sendAt")) =>
+            msgs.push(SendAt(path_steps(m.get("path")), name, args))
+          Some(String("bubbleAt")) =>
+            msgs.push(BubbleAt(path_steps(m.get("path")), name, args))
+          Some(String("request")) =>
+            msgs.push(Request(name, args, request_opts(m.get("opts"))))
           _ => ()
         }
       }
@@ -295,8 +380,27 @@ pub impl @dyncomp.Guest for WasmGuest with fn with_field(self, handle, name, v) 
 }
 
 ///|
-pub impl @dyncomp.Guest for WasmGuest with fn to_json_string(self, handle) {
-  tcomp_to_json(self.bundle, handle)
+pub impl @dyncomp.Guest for WasmGuest with fn handle_request(self, name, args) {
+  let raw = tcomp_handle_request(self.bundle, name, args_json(args))
+  let j = @json.parse(raw) catch {
+    _ => {
+      bad_payload("handle_request", raw)
+      return Err(Str("guest request \{name} returned invalid JSON"))
+    }
+  }
+  guard j is Object(o) else {
+    return Err(Str("guest request \{name} returned a non-object"))
+  }
+  match o.get("ok") {
+    Some(v) => Ok(self.json_to_value(v))
+    None =>
+      Err(
+        match o.get("err") {
+          Some(v) => self.json_to_value(v)
+          None => Str("guest request \{name} answered neither ok nor err")
+        },
+      )
+  }
 }
 
 ///|
@@ -322,10 +426,13 @@ let by_name : Map[String, Int] = Map([])
 let next_load : Ref[Int] = { val: 1 }
 
 ///|
-/// Hand the live app to the glue after mounting (mirrors @wglue.install).
+/// Hand the live app to the glue after mounting (mirrors @wglue.install), and
+/// subscribe the superseded-handle sweep to the app's drained cascades — after
+/// the App's own re-render, since that is what still reads the successors.
 pub fn set_app(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
   current.val = Some(app)
   current_doc.val = Some(doc)
+  @dyncomp.install_gc(app.transactor)
 }
 
 ///|
@@ -335,23 +442,37 @@ pub fn set_app(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
 let notify_paths : Map[Int, @tutuca.DispatchPath] = Map([])
 
 ///|
-/// Start loading a bundle (a jco-transpiled ESM URL). Completion arrives via
-/// the exported dyncomp_on_loaded / dyncomp_on_load_error callbacks as a
-/// "dyncompLoaded" / "dyncompError" receive at the ROOT.
-pub fn load(url : String) -> Int {
+/// The next load id, with `path` recorded as where its completion messages
+/// dispatch — pass `ctx.path()` from the loading handler so any component
+/// anywhere in the tree can host bundles without root-level plumbing.
+fn next_load_at(path : @tutuca.DispatchPath) -> Int {
   let id = next_load.val
   next_load.val = id + 1
-  tcomp_load(id, url)
+  notify_paths[id] = path
   id
 }
 
 ///|
-/// Like load, but completion messages dispatch at `path` — pass ctx.path()
-/// from the loading handler so any component anywhere in the tree (e.g. a
-/// storybook pane) can host bundles without root-level plumbing.
-pub fn load_from(path : @tutuca.DispatchPath, url : String) -> Int {
-  let id = load(url)
-  notify_paths[id] = path
+/// Load a `.tutuca.tar.gz` bundle from a URL. Completion arrives via the
+/// exported dyncomp_on_loaded / dyncomp_on_load_error callbacks as a
+/// "dyncompLoaded" / "dyncompError" receive at `path`.
+pub fn load_url(path : @tutuca.DispatchPath, url : String) -> Int {
+  let id = next_load_at(path)
+  tcomp_load_url(url, id)
+  id
+}
+
+///|
+/// Load a dropped `.tutuca.tar.gz` bundle: `file_id` is what the drop event's
+/// value named (`@on.drop="loadDropped value"` -> a list of file descriptors),
+/// and completion messages dispatch at `path` like `load_url`.
+///
+/// This is the whole of what the universal demo's page-level JS used to do:
+/// the drop is an ordinary tutuca event now, so the handler that acts on it is
+/// an ordinary handler.
+pub fn load_dropped(path : @tutuca.DispatchPath, file_id : Int) -> Int {
+  let id = next_load_at(path)
+  tcomp_load_dropped(file_id, id)
   id
 }
 
@@ -398,6 +519,12 @@ pub fn on_loaded(
     }
   }
   registered.val = Some(bundle)
+  // A guest's views are the one part that never went through a build step, so
+  // the lint findings are the only feedback its author gets. Console, not the
+  // app: they are advice about the bundle, not a state change in the page.
+  for line in bundle.diagnostics() {
+    @core.log(@core.any("tutuca dyncomp [\{bundle.module_name()}]: \{line}"))
+  }
   let old_bid = by_name.get(bundle.module_name())
   bundles[bundle_id] = bundle
   by_name[bundle.module_name()] = bundle_id
@@ -466,6 +593,33 @@ pub fn loaded_components() -> Array[(String, String)] {
     }
   }
   out
+}
+
+///|
+/// The named initial states a loaded component declares (see
+/// `Bundle::init_names`). Empty when the module or component is unknown.
+pub fn component_inits(
+  module_name : String,
+  component : String,
+) -> Array[String] {
+  guard by_name.get(module_name) is Some(bid) else { return [] }
+  guard bundles.get(bid) is Some(bundle) else { return [] }
+  bundle.init_names(component)
+}
+
+///|
+/// Create an instance from one of the component's NAMED initial states.
+pub fn make_init(
+  module_name : String,
+  component : String,
+  init : String,
+) -> @tutuca.Value? {
+  guard by_name.get(module_name) is Some(bid) else { return None }
+  guard bundles.get(bid) is Some(bundle) else { return None }
+  match bundle.make_init(component, init) {
+    Some(d) => Some(d.to_value())
+    None => None
+  }
 }
 
 ///|

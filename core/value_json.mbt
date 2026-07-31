@@ -52,8 +52,9 @@ pub impl @json.FromJson for Value with fn from_json(j, _path) {
 /// is what makes a state dump JSON rather than a debug string. It used to
 /// flatten to null along with `Fn`, because nothing could enumerate an `Obj`;
 /// the consequence was a `state_json()` that returned the `Show` rendering and
-/// said so in a comment, and a dyncomp migration path that parsed a
-/// `__dyncomp_state_json` pseudo-field instead.
+/// said so in a comment, and a dyncomp migration path that asked the GUEST to
+/// project its own state (a `to-json` method, since removed from the contract:
+/// a wasm guest declares its fields now, so this walks them like any other).
 ///
 /// An instance that declares nothing is still null: with no schema there is
 /// no field list to project, and inventing one is what the schema work

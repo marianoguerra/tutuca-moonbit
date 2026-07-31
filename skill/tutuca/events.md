@@ -50,8 +50,16 @@ The content of `value` depends on the event source:
 |-----------------------------|--------------------------------------------------|
 | `<input type="checkbox">`   | the checked state (`Bool`)                       |
 | `<input type="file">`       | the picked file's metadata as a `Map` (name/size/type/lastModified), `Null` if none |
+| a `drop` carrying FILES     | a `List` of the dropped files as `Map`s (`id`/name/size/type/lastModified), on any element — `Null` for an in-app drag, which carries `dragInfo` instead |
 | `CustomEvent`               | the event's `detail`, mapped to a `Value` (`Map` for objects) |
 | anything else               | the input's value (`Str`), or `Null` if absent   |
+
+A dropped file's `id` is how a handler names it again: the `File` itself is a
+browser object and never becomes a `Value`, so the backend keeps the last
+drop's files and a host reads one by id (the wasm bridge's `load_dropped`,
+`globalThis.__tutucaDroppedFile(id)` on js). That is what lets a page take a
+dropped file without a listener of its own — `@on.drop="load value"` is an
+ordinary handler.
 
 For numeric inputs, prefer `valueAsInt` / `valueAsFloat` to skip the string
 parse.
@@ -75,7 +83,7 @@ When the views are generated (`gen-views`), each `@on` name becomes a case of th
 | `key` | `String` |
 | `valueAsInt`, `valueAsFloat`, `keyCode` | `Double` |
 | `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey` | `Bool` |
-| a binding (`@key`, `@value.x`), `dragInfo`, anything else | `@tutuca.Value` |
+| a binding (`@key`, `@value.x`), `dragInfo`, a drop's files, anything else | `@tutuca.Value` |
 
 So `@on.click="setTab 'edit'"` generates `SetTab(String)` (unwrapped — match
 `Some(SetTab(tab))`, not `Some(SetTab(Str(tab)))`), `@on.input="setCompleted

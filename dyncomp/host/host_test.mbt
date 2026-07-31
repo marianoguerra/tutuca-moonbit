@@ -8,22 +8,48 @@
 ///|
 priv struct FakeGuest {
   counters : Map[Int, Double]
+  /// every value this counter has held, so a view can `@each` over it with a
+  /// `@when` filter the GUEST answers
+  histories : Map[Int, Array[Double]]
   pairs : Map[Int, (Int, Int)]
   next : Ref[Int]
   bundle : Ref[Bundle?]
+  /// requests the bundle served, in order (the guest-served request test)
+  served : Array[String]
 }
 
 ///|
 fn FakeGuest::new() -> FakeGuest {
-  { counters: Map([]), pairs: Map([]), next: { val: 0 }, bundle: { val: None } }
+  {
+    counters: Map([]),
+    histories: Map([]),
+    pairs: Map([]),
+    next: { val: 0 },
+    bundle: { val: None },
+    served: [],
+  }
 }
 
 ///|
-fn FakeGuest::alloc(self : FakeGuest, count : Double) -> Int {
+fn FakeGuest::alloc(
+  self : FakeGuest,
+  count : Double,
+  history? : Array[Double] = [],
+) -> Int {
   let h = self.next.val
   self.next.val = h + 1
   self.counters[h] = count
+  self.histories[h] = history
   h
+}
+
+///|
+/// A successor of `handle` at `count`, keeping the history and appending the
+/// value being left behind (mirrors the real counter guest).
+fn FakeGuest::next_of(self : FakeGuest, handle : Int, count : Double) -> Int {
+  let history = self.histories.get(handle).unwrap_or([]).copy()
+  history.push(self.counters.get(handle).unwrap())
+  self.alloc(count, history~)
 }
 
 ///|
@@ -78,6 +104,15 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
     None =>
       match name {
         "count" => Some(Num(self.counters.get(handle).unwrap()))
+        "history" =>
+          Some(
+            List(
+              self.histories
+              .get(handle)
+              .unwrap_or([])
+              .map(n => (Num(n) : @tutuca.Value)),
+            ),
+          )
         _ => None
       }
   }
@@ -95,27 +130,88 @@ impl Guest for FakeGuest with fn seq_entries(self, handle) {
 
 ///|
 impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
+  // the Pair's own buckets: it hears its children's bubbles and addresses them
+  // by relative path
+  if self.pairs.get(handle) is Some((l, r)) {
+    return match (bucket, name) {
+      // a child announced itself: swap the two, and keep the bubble from
+      // reaching the host shell above
+      (Bubble, "counted") =>
+        { next: Some(self.alloc_pair(r, l)), msgs: [StopPropagation] }
+      // reach INTO the subtree: `.left` is the child the left field holds
+      (Input, "resetLeft") =>
+        { next: None, msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])] }
+      _ => { next: None, msgs: [] }
+    }
+  }
   let count = self.counters.get(handle).unwrap()
   match (bucket, name) {
-    (Input, "inc") => { next: Some(self.alloc(count + 1.0)), msgs: [] }
-    (Input, "dec") => { next: Some(self.alloc(count - 1.0)), msgs: [] }
-    (Input, "double") => { next: None, msgs: [Request("double", [Num(count)])] }
-    (Response, "double") =>
+    (Input, "inc") =>
+      { next: Some(self.next_of(handle, count + 1.0)), msgs: [] }
+    (Input, "dec") =>
+      { next: Some(self.next_of(handle, count - 1.0)), msgs: [] }
+    // the response comes back at "doubled" with just the value (on_ok_name)
+    (Input, "double") =>
+      {
+        next: None,
+        msgs: [
+          Request(
+            "double",
+            [Num(count)],
+            @tutuca.RequestOpts::new(on_ok_name="doubled"),
+          ),
+        ],
+      }
+    (Response, "doubled") =>
       match args {
-        [Num(n), ..] => { next: Some(self.alloc(n)), msgs: [] }
+        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
+        _ => { next: None, msgs: [] }
+      }
+    // a request the BUNDLE serves (see handle_request), not the host
+    (Input, "triple") =>
+      {
+        next: None,
+        msgs: [Request("triple", [Num(count)], @tutuca.RequestOpts::new())],
+      }
+    (Response, "triple") =>
+      match args {
+        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
         _ => { next: None, msgs: [] }
       }
     (Input, "notify") =>
       { next: None, msgs: [Emit("counterChanged", [Str("changed!")])] }
-    (Input, "reset") => { next: Some(self.alloc(0.0)), msgs: [] }
+    // bubbles to whatever is above: a Pair parent, or the host shell
+    (Input, "announce") => { next: None, msgs: [Emit("counted", [Num(count)])] }
+    (Input, "reset") => { next: Some(self.next_of(handle, 0.0)), msgs: [] }
+    (Receive, "setTo") =>
+      match args {
+        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
+        _ => { next: None, msgs: [] }
+      }
     _ => { next: None, msgs: [] }
   }
 }
 
 ///|
-impl Guest for FakeGuest with fn call_method(self, handle, name, _args) {
+/// The bundle's own request service: its components find it before the host's.
+impl Guest for FakeGuest with fn handle_request(self, name, args) {
+  self.served.push(name)
+  match (name, args) {
+    ("triple", [Num(n), ..]) => Ok(Num(n * 3.0))
+    _ => Err(Str("no such request: \{name}"))
+  }
+}
+
+///|
+impl Guest for FakeGuest with fn call_method(self, handle, name, args) {
   match name {
     "label" => Str("count is \{self.counters.get(handle).unwrap()}")
+    // a `@when` filter: called with (key, item, iter-data), answers a boolean
+    "nonZero" =>
+      match args {
+        [_, Num(v), ..] => Bool(v != 0.0)
+        _ => Bool(true)
+      }
     _ => Null
   }
 }
@@ -132,30 +228,39 @@ impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
       }
     None =>
       match (name, v) {
-        ("count", Num(n)) => Some(self.alloc(n))
+        ("count", Num(n)) => Some(self.next_of(handle, n))
         _ => None
       }
   }
 }
 
 ///|
-impl Guest for FakeGuest with fn to_json_string(self, handle) {
-  match self.pairs.get(handle) {
-    Some((l, r)) => "{\"left\": \{l}, \"right\": \{r}}"
-    None => "{\"count\": \{self.counters.get(handle).unwrap()}}"
-  }
-}
-
-///|
 impl Guest for FakeGuest with fn drop_instance(self, handle) {
   self.counters.remove(handle) |> ignore
+  self.histories.remove(handle) |> ignore
   self.pairs.remove(handle) |> ignore
 }
 
 ///|
 fn counter_manifest() -> DynManifest {
+  // `types` is the flat table a guest ships (WIT has no recursive types);
+  // 0 = f64 for the counter's `count`, 1 = the Counter a Pair holds.
+  let num_ty : DynTyDef = {
+    kind: "ty-float",
+    elem: None,
+    items: [],
+    name: "",
+    members: [],
+  }
+  let counter_ty : DynTyDef = {
+    kind: "ty-comp",
+    elem: None,
+    items: [],
+    name: "Counter",
+    members: [],
+  }
   {
-    api_version: 1,
+    api_version: 2,
     module_name: "counterlib",
     components: [
       {
@@ -170,16 +275,34 @@ fn counter_manifest() -> DynManifest {
               #|  <button class="inc" @on.click="inc">+</button>
               #|  <button class="double" @on.click="double">double</button>
               #|  <button class="notify" @on.click="notify">notify</button>
+              #|  <button class="announce" @on.click="announce">announce</button>
+              #|  <button class="triple" @on.click="triple">triple</button>
+              #|  <button class="zero" @on.click="setCount 0">zero</button>
               #|  <span class="label" @text="$label"></span>
+              #|  <ul class="hist"><li class="h" @each=".history" @when="nonZero" @text="@value"></li></ul>
               #|  <input class="kbd" @on.keydown+cancel="reset">
               #|</div>
             ),
           },
         ],
-        input_handlers: ["inc", "dec", "double", "notify", "reset"],
-        receive_handlers: ["init"],
-        response_handlers: ["double"],
-        method_names: ["label"],
+        types: [
+          num_ty,
+          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [] },
+        ],
+        fields: [{ name: "count", ty: 0 }, { name: "history", ty: 1 }],
+        // `setCount` is deliberately absent: it is the mutator the `count`
+        // field implies, and the host answers it
+        handlers: [
+          "inc", "dec", "double", "triple", "notify", "announce", "reset",
+        ],
+        receives: ["init", "setTo"],
+        bubbles: [],
+        responses: ["doubled", "triple"],
+        methods: ["label"],
+        whens: ["nonZero"],
+        requests: [],
+        // a named initial state a host can offer instead of a bare instance
+        inits: [{ name: "with-history", args: { "count": Num(3) } }],
         style: ".counter { color: red; }",
       },
       {
@@ -189,16 +312,26 @@ fn counter_manifest() -> DynManifest {
             name: "main",
             html: (
               #|<div class="pair">
+              #|  <button class="resetleft" @on.click="resetLeft">reset left</button>
               #|  <div class="left"><x render=".left"></div>
               #|  <div class="right"><x render=".right"></div>
               #|</div>
             ),
           },
         ],
-        input_handlers: [],
-        receive_handlers: [],
-        response_handlers: [],
-        method_names: [],
+        types: [counter_ty],
+        fields: [{ name: "left", ty: 0 }, { name: "right", ty: 0 }],
+        // `resetLeft` is ALSO the generated mutator name for a `left` field;
+        // saying so here is what makes it the guest's
+        handlers: ["resetLeft"],
+        receives: [],
+        bubbles: ["counted"],
+        responses: [],
+        methods: [],
+        whens: [],
+        // the bundle serves this one itself; the host never sees the name
+        requests: ["triple"],
+        inits: [],
         style: "",
       },
     ],
@@ -216,7 +349,7 @@ fn shell_module() -> @component.ModuleDef {
         raw_view=(
           #|<div class="shell">
           #|  <span class="note" @text=".note"></span>
-          #|  <ul class="seq"><li @each=".slot" @text="@value"></li></ul>
+          #|  <ul class="seq"><li class="s" @each=".slot" @text="@value"></li></ul>
           #|  <x render=".slot">
           #|</div>
         ),
@@ -228,6 +361,9 @@ fn shell_module() -> @component.ModuleDef {
       match msg {
         Receive("setSlot", [v, ..]) => Some({ ..s, slot: v })
         Bubble("counterChanged", [v, ..]) => Some({ ..s, note: v.str() })
+        // only reached when nothing below stopped the bubble
+        Bubble("counted", [v, ..]) =>
+          Some({ ..s, note: "counted \{v.to_display_string()}" })
         _ => None
       }
     },
@@ -244,6 +380,9 @@ priv struct TestShellState {
 ///|
 fn mount_with_bundle(fake : FakeGuest) -> (@harness.Harness, Bundle) raise {
   let h = @harness.mount(shell_module(), "Shell")
+  // what a host does after mounting: sweep superseded guest handles at the end
+  // of every drained cascade (see install_gc)
+  install_gc(h.app.transactor)
   let bundle = register_bundle(h.app.scope, fake, counter_manifest())
   fake.bundle.val = Some(bundle)
   (h, bundle)
@@ -264,16 +403,14 @@ test "bundle mounts into a live app and dispatches through stock machinery" {
   inspect(h.text(".label"), content="count is 10")
 
   // input dispatch: guest returns a successor handle -> new DynObj -> render;
-  // right after the click the OLD instance is queued but not yet dropped
+  // the cascade drains, the render reads the successor, and the sweep drops
+  // the handle it replaced
   h.click(".inc")
   inspect(h.text(".count"), content="11")
-  assert_true(fake.counters.get(inst0.handle()) is Some(10.0))
-  assert_true(superseded_count() > 0)
-
-  // the NEXT dispatch collects it (one-transaction delay)
+  assert_true(fake.counters.get(inst0.handle()) is None)
+  inspect(superseded_count(), content="0")
   h.click(".dec")
   inspect(h.text(".count"), content="10")
-  assert_true(fake.counters.get(inst0.handle()) is None)
 
   // control drain: guest Emit -> ctx.bubble -> shell's bubble handler
   inspect(h.text(".note"), content="")
@@ -378,9 +515,9 @@ test "host @each iterates a guest instance via seq-entries" {
   let (h, bundle) = mount_with_bundle(fake)
   guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
-  debug_inspect(h.texts("li"), content="[\"10\"]")
+  debug_inspect(h.texts("li.s"), content="[\"10\"]")
   h.click(".inc")
-  debug_inspect(h.texts("li"), content="[\"11\"]")
+  debug_inspect(h.texts("li.s"), content="[\"11\"]")
 }
 
 ///|
@@ -413,6 +550,160 @@ test "event_names reflects a bundle registered after boot" {
 }
 
 ///|
+test "a guest's declared schema describes, compares and projects it" {
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
+  guard bundle.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
+  guard a.to_value() is Obj(oa)
+  guard b.to_value() is Obj(ob)
+  guard c.to_value() is Obj(oc)
+  // structural equality over the DECLARED fields — the guest implements none
+  assert_true(oa.obj_eq(ob))
+  assert_false(oa.obj_eq(oc))
+  // the JSON projection walks the same fields (no guest `to-json`)
+  inspect(
+    a.to_value().to_json().stringify(),
+    content="{\"count\":7,\"history\":[]}",
+  )
+  // ...and so does the debug rendering
+  inspect(oa.obj_debug(), content="Counter{count: RNum(7), history: RList([])}")
+}
+
+///|
+test "a guest gets the generated mutators its schema implies" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  inspect(h.text(".count"), content="10")
+  // `@on.click="setCount 0"` in the GUEST's view: no such handler crosses to
+  // the guest — the mutator the schema implies writes through with-field
+  h.click(".zero")
+  inspect(h.text(".count"), content="0")
+}
+
+///|
+test "inputs are read off the compiled views, not declared" {
+  let (_h, bundle) = mount_with_bundle(FakeGuest::new())
+  guard bundle.schema_of("Counter") is Some(schema)
+  // every @on handler the view names, and nothing else: `setCount` is a
+  // mutator the schema implies, not a name the guest answers
+  debug_inspect(
+    schema.inputs,
+    content=(
+      #|[
+      #|  "dec",
+      #|  "inc",
+      #|  "double",
+      #|  "notify",
+      #|  "announce",
+      #|  "triple",
+      #|  "setCount",
+      #|  "reset",
+      #|]
+    ),
+  )
+  debug_inspect(schema.field_names(), content="[\"count\", \"history\"]")
+}
+
+///|
+test "a guest child's bubble reaches a guest PARENT, which can stop it" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
+  // the left child emits "counted"; the Pair declares that bubble and hears it
+  // one level up, swapping the two children...
+  h.click(".announce")
+  debug_inspect(h.texts(".count"), content="[\"100\", \"1\"]")
+  // ...and its stop_propagation keeps the bubble from reaching the host shell
+  inspect(h.text(".note"), content="")
+}
+
+///|
+test "a bubble no guest stops still reaches the host" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // no Pair in between: the same emit walks all the way up to the shell
+  h.click(".announce")
+  inspect(h.text(".note"), content="counted 3")
+}
+
+///|
+test "a guest addresses its own subtree by relative path" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
+  // `send-at [field("left")] "setTo" [0]`: the left CHILD's receive handler runs
+  h.click(".resetleft")
+  debug_inspect(h.texts(".count"), content="[\"0\", \"100\"]")
+}
+
+///|
+test "request opts route the response to the name the guest asked for" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  h.app.scope.register_request_handlers({
+    "double": RequestFn((args, respond) => {
+      match args {
+        [Num(n)] => respond(Ok(Num(n * 2.0)))
+        _ => respond(Err(Str("bad args")))
+      }
+    }),
+  })
+  guard bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // the guest requested with on_ok_name="doubled", so the response dispatches
+  // "doubled" with just the value — not "double" with [result, error]
+  h.click(".double")
+  inspect(h.text(".count"), content="42")
+}
+
+///|
+test "a bundle serves its own requests, ahead of the host's" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  // a host handler of the SAME name, which the guest's must win over
+  h.app.scope.register_request_handlers({
+    "triple": RequestFn((args, respond) => {
+      match args {
+        [Num(n)] => respond(Ok(Num(n * 100.0)))
+        _ => respond(Err(Str("bad args")))
+      }
+    }),
+  })
+  guard bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  h.click(".triple")
+  // 5 * 3 (the bundle's own handler), not 5 * 100 (the host's)
+  inspect(h.text(".count"), content="15")
+  debug_inspect(fake.served, content="[\"triple\"]")
+}
+
+///|
+test "a guest answers a view's @when filter" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
+  h.send_at_root("setSlot", args=[c.to_value()])
+  // history is empty
+  debug_inspect(h.texts("li.h"), content="[]")
+  h.click(".inc") // history [0]
+  h.click(".inc") // history [0, 1]
+  h.click(".inc") // history [0, 1, 2]
+  // `@when="nonZero"` reaches the guest's call-method with (key, item, iter)
+  // and its answer filters the iteration: the leading 0 is gone
+  debug_inspect(h.texts("li.h"), content="[\"1\", \"2\"]")
+}
+
+///|
 test "component_names lists the manifest's components in order" {
   let (_, bundle) = mount_with_bundle(FakeGuest::new())
   debug_inspect(bundle.component_names(), content="[\"Counter\", \"Pair\"]")
@@ -421,21 +712,46 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 1, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 2, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
-    #|   "inputHandlers": ["inc"], "receiveHandlers": [],
-    #|   "responseHandlers": [], "methodNames": [], "style": ""}]}
+    #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
+    #|             {"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
+    #|   "fields": [{"name": "count", "ty": 0}, {"name": "history", "ty": 1}],
+    #|   "receives": ["init"], "bubbles": [], "responses": ["double"],
+    #|   "methods": ["label"], "style": ""}]}
   let m = DynManifest::from_json_string(json)
   inspect(m.module_name, content="counterlib")
-  debug_inspect(m.components[0].input_handlers, content="[\"inc\"]")
   inspect(m.components[0].views[0].html, content="<div>{.count}</div>")
+  // the flat type table rebuilds into nested TyInfo
+  let fields = m.components[0].field_infos()
+  debug_inspect(
+    fields.map(f => "\{f.name}:\{f.ty.show_wit()}"),
+    content="[\"count:s32\", \"history:list<s32>\"]",
+  )
+  debug_inspect(m.components[0].methods, content="[\"label\"]")
+}
+
+///|
+test "a cyclic or out-of-range type index reads as `any`, not a hang" {
+  let json =
+    #|{"apiVersion": 2, "moduleName": "m", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
+    #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
+    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  let fields = m.components[0].field_infos()
+  // the guard bottoms out in `any` at its depth limit; the missing index too
+  assert_true(fields[0].ty.show_wit().has_prefix("list<"))
+  inspect(fields[1].ty.show_wit(), content="any")
 }
 
 ///|
 test "manifest with wrong api version is rejected" {
   let bad =
-    #|{"apiVersion": 2, "moduleName": "x", "components": []}
+    #|{"apiVersion": 1, "moduleName": "x", "components": []}
   let mut failed = false
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
@@ -464,4 +780,60 @@ impl @component.Fields for TestShellState with fn schema() {
     @component.FieldInfo::new("slot", TyAny),
     @component.FieldInfo::new("note", TyText),
   ])
+}
+
+///|
+test "a bundle's views are linted at load" {
+  let bad : DynManifest = {
+    api_version: 2,
+    module_name: "sloppylib",
+    components: [
+      {
+        name: "Sloppy",
+        // an unclosed <div> and a `.field` in a handler position: two things
+        // no build step ever checked for a guest, because its views arrive at
+        // RUNTIME
+        views: [
+          { name: "main", html: "<div><span @on.click=\".nope\">hi</div>" },
+        ],
+        types: [],
+        fields: [],
+        handlers: [],
+        receives: [],
+        bubbles: [],
+        responses: [],
+        methods: [],
+        whens: [],
+        requests: [],
+        inits: [],
+        style: "",
+      },
+    ],
+  }
+  let h = @harness.mount(shell_module(), "Shell")
+  let bundle = register_bundle(h.app.scope, FakeGuest::new(), bad)
+  let lines = bundle.diagnostics()
+  assert_true(lines.length() > 0)
+  // every line names the component and view it is about
+  for line in lines {
+    assert_true(line.contains("Sloppy/main"))
+  }
+  // ...and a clean bundle says nothing
+  let (_h2, ok) = mount_with_bundle(FakeGuest::new())
+  debug_inspect(ok.diagnostics(), content="[]")
+}
+
+///|
+test "a component's named initial states are offered by name" {
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  debug_inspect(bundle.init_names("Counter"), content="[\"with-history\"]")
+  debug_inspect(bundle.init_names("Pair"), content="[]")
+  guard bundle.make_init("Counter", "with-history") is Some(c)
+  assert_true(fake.counters.get(c.handle()) is Some(3.0))
+  // the schema carries them too, so a descriptor reader sees them
+  guard bundle.schema_of("Counter") is Some(schema)
+  debug_inspect(schema.init_names, content="[\"with-history\"]")
+  // an unknown fixture is not a bare instance: the caller decides
+  assert_true(bundle.make_init("Counter", "nope") is None)
 }

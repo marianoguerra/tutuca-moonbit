@@ -1,5 +1,5 @@
-///| Universal wasm-component host: the wasm counterpart of the JS "universal"
-/// app (../../docs/src/universal.js), styled with margaui utility classes.
+///| Universal wasm-component host: drop a `.tutuca.tar.gz` bundle on the page
+/// and mount any component it declares, styled with margaui utility classes.
 ///
 /// Layout: a root shell (drop zone + status) renders one builtin ComponentList
 /// — a flexbox canvas with a settings gear (layout controls) and an "add"
@@ -31,11 +31,15 @@ fn main {
 ///|
 fn component_entry_comp() -> @component.Component {
   component_entry_component(
-    init={ module_: "", name: "", label: "" },
+    init={ module_: "", name: "", init_: "", label: "" },
     update=(s, msg, ctx) => {
       match ComponentEntryMsg::from_dispatch(msg) {
         Some(OnSelect) => {
-          ctx.bubble("componentSelected", [Str(s.module_), Str(s.name)])
+          // the picker DECLARES this bubble, so the name and payload come from
+          // its generated message rather than from a string written twice
+          ComponentPickerBubble::ComponentSelected(s.module_, s.name, s.init_).bubble(
+            ctx,
+          )
           Some(s)
         }
         Some(Unknown(_, _)) | None => None
@@ -67,40 +71,69 @@ fn component_picker_comp(entry : @component.Component) -> @component.Component {
   component_picker_component(
     init={ filterText: "", items: [], selected: Null },
     update=(s, msg, ctx) => {
+      // The three channels this component uses are DECLARED in the state
+      // block, so each arrives as a typed message instead of a name and a
+      // list of Values to take apart by hand.
       match msg {
         // fetch the list of registered components on init (forwarded here when
         // the picker is added to a list)
         Receive("init", _) => {
-          ctx.request("listComponents", [], @tutuca.RequestOpts::new())
+          ctx.request(
+            "listComponents",
+            [],
+            @tutuca.RequestOpts::new(on_ok_name="listComponents"),
+          )
           Some(s)
         }
-        // args = [result, error]; turn the result rows into ComponentEntry
-        // instances (mirrors entries_from_response in the parent's request demo)
-        Response("listComponents", [res, _err]) =>
-          Some({ ..s, items: entries_from_list(entry, res) })
-        // the chosen component's instance came back — swap it in for the picker
-        Response("makeComponent", [res, _err]) =>
-          match res {
-            Null => None
-            v => Some({ ..s, selected: v })
+        _ =>
+          match ComponentPickerResponse::from_dispatch(msg) {
+            // the rows of registered components, as ComponentEntry instances
+            Some(ListComponents(res)) =>
+              Some({ ..s, items: entries_from_list(entry, res) })
+            // the chosen component's instance came back — swap it in for the
+            // picker chrome (the views key on `null? .selected`)
+            Some(MakeComponent(Null)) => None
+            Some(MakeComponent(v)) => Some({ ..s, selected: v })
+            Some(Unknown(_, _)) | None =>
+              // a bundle was reloaded: rebuild what this picker holds INTO the
+              // new bundle, keeping its state. The instance says which
+              // component it is — that is its declared schema's name — so the
+              // picker needs to remember nothing about what it picked.
+              match ComponentPickerReceive::from_dispatch(msg) {
+                Some(Migrate(module_name)) =>
+                  match s.selected {
+                    Obj(o) =>
+                      match o.obj_schema() {
+                        Some(schema) =>
+                          match
+                            @dhw.migrate_instance(
+                              module_name,
+                              schema.name,
+                              s.selected,
+                            ) {
+                            Some(next) => Some({ ..s, selected: next })
+                            None => None
+                          }
+                        None => None
+                      }
+                    _ => None
+                  }
+                Some(Unknown(_, _)) | None =>
+                  // a row was clicked: request that component's instance
+                  match ComponentPickerBubble::from_dispatch(msg) {
+                    Some(ComponentSelected(module_, name, init)) => {
+                      ctx.stop_propagation()
+                      ctx.request(
+                        "makeComponent",
+                        [Str(module_), Str(name), Str(init)],
+                        @tutuca.RequestOpts::new(on_ok_name="makeComponent"),
+                      )
+                      Some(s)
+                    }
+                    Some(Unknown(_, _)) | None => None
+                  }
+              }
           }
-        // a row was clicked: request its instance (builtin or guest); the
-        // response swaps it in for the picker chrome
-        Bubble("componentSelected", args) => {
-          ctx.stop_propagation()
-          match args {
-            [Str(m), Str(n)] => {
-              ctx.request(
-                "makeComponent",
-                [Str(m), Str(n)],
-                @tutuca.RequestOpts::new(),
-              )
-              Some(s)
-            }
-            _ => None
-          }
-        }
-        _ => None
       }
     },
     // @when predicate for render-each; keep rows whose entry's containsText
@@ -138,6 +171,7 @@ fn entries_from_list(
             entry.make({
               "module": m.get("module").unwrap_or(Str("")),
               "name": m.get("name").unwrap_or(Str("")),
+              "init": m.get("init").unwrap_or(Str("")),
               "label": m.get("label").unwrap_or(Str("")),
             })
           _ => Null
@@ -168,32 +202,53 @@ fn component_list_comp() -> @component.Component {
       match msg {
         // append a fresh picker: request one, seed + init it in the response
         Input("onAdd", _) => {
-          ctx.request("componentPicker", [], @tutuca.RequestOpts::new())
-          Some(s)
-        }
-        Response("componentPicker", [picker, _err]) => {
-          let entries = s.entries + [picker]
-          let idx = entries.length() - 1
-          // let the new picker fetch its component list (on init)
-          ctx.send_at_path(
-            ctx.path().concat([SeqStep(field="entries", key=KInt(idx))]),
-            "init",
+          ctx.request(
+            "componentPicker",
             [],
+            @tutuca.RequestOpts::new(on_ok_name="componentPicker"),
           )
-          Some({ ..s, entries, })
-        }
-        // a bundle loaded: re-init each picker so its list includes it
-        Receive("refresh", _) => {
-          for i in 0..<s.entries.length() {
-            ctx.send_at_path(
-              ctx.path().concat([SeqStep(field="entries", key=KInt(i))]),
-              "init",
-              [],
-            )
-          }
           Some(s)
         }
-        _ => None
+        _ =>
+          match ComponentListResponse::from_dispatch(msg) {
+            Some(ComponentPicker(picker)) => {
+              let entries = s.entries + [picker]
+              let idx = entries.length() - 1
+              // let the new picker fetch its component list (on init)
+              ctx.send_at_path(
+                ctx.path().concat([SeqStep(field="entries", key=KInt(idx))]),
+                "init",
+                [],
+              )
+              Some({ ..s, entries, })
+            }
+            Some(Unknown(_, _)) | None =>
+              // a bundle loaded: re-init each picker so its list includes it
+              match ComponentListReceive::from_dispatch(msg) {
+                Some(Refresh) => {
+                  for i in 0..<s.entries.length() {
+                    ctx.send_at_path(
+                      ctx.path().concat([SeqStep(field="entries", key=KInt(i))]),
+                      "init",
+                      [],
+                    )
+                  }
+                  Some(s)
+                }
+                // a hot swap: every picker rebuilds what it holds
+                Some(Migrate(module_name)) => {
+                  for i in 0..<s.entries.length() {
+                    ctx.send_at_path(
+                      ctx.path().concat([SeqStep(field="entries", key=KInt(i))]),
+                      "migrate",
+                      [Str(module_name)],
+                    )
+                  }
+                  Some(s)
+                }
+                Some(Unknown(_, _)) | None => None
+              }
+          }
       }
     },
     compute=m => {
@@ -223,25 +278,40 @@ fn universal_shell_comp() -> @component.Component {
     },
     update=(s, msg, ctx) => {
       match msg {
-        Receive("dyncompLoaded", args) => {
-          let module_name = match args {
-            [Str(name)] => name
-            _ => "?"
-          }
-          ctx.send_at_path(ctx.path().concat([FieldStep("list")]), "refresh", [])
-          Some({
-            ..s,
-            status: "loaded \{module_name} — add a component to place it",
-          })
+        // A dropped file: `value` is the list of descriptors the drop event
+        // carried, and the id names the file the browser still holds. No
+        // page-level JS is involved — this is an ordinary input handler.
+        // the same archive, fetched instead of dropped
+        Input("loadSample", [Str(url), ..]) => {
+          @dhw.load_url(ctx.path(), url) |> ignore
+          Some({ ..s, status: "loading \{url}…" })
         }
-        Receive("dyncompError", args) => {
-          let msg2 = match args {
-            [Str(m)] => m
-            _ => "unknown error"
+        Input("loadDropped", [List(files), ..]) => {
+          for f in files {
+            match f.field("id") {
+              Num(id) => @dhw.load_dropped(ctx.path(), id.to_int()) |> ignore
+              _ => ()
+            }
           }
-          Some({ ..s, status: "load failed: \{msg2}" })
+          Some({ ..s, status: "loading…" })
         }
-        _ => None
+        _ =>
+          match UniversalWasmReceive::from_dispatch(msg) {
+            Some(DyncompLoaded(module_name)) => {
+              let list_path = ctx.path().concat([FieldStep("list")])
+              ctx.send_at_path(list_path, "refresh", [])
+              // loading a module that was already registered is a HOT SWAP:
+              // the components mounted from the old bundle rebuild into the
+              // new one, keeping their state (Bundle::migrate_instance).
+              ctx.send_at_path(list_path, "migrate", [Str(module_name)])
+              Some({
+                ..s,
+                status: "loaded \{module_name} — add a component to place it",
+              })
+            }
+            Some(DyncompError(m)) => Some({ ..s, status: "load failed: \{m}" })
+            Some(Unknown(_, _)) | None => None
+          }
       }
     },
   )
@@ -264,37 +334,72 @@ fn universal_module() -> @component.ModuleDef {
         Map({
           "module": Str("builtin"),
           "name": Str("ComponentList"),
+          "init": Str(""),
           "label": Str("Flex list (builtin)"),
         }),
       ]
       for pair in @dhw.loaded_components() {
         let (m, n) = pair
         rows.push(
-          Map({ "module": Str(m), "name": Str(n), "label": Str("\{m} / \{n}") }),
+          Map({
+            "module": Str(m),
+            "name": Str(n),
+            "init": Str(""),
+            "label": Str("\{m} / \{n}"),
+          }),
         )
+        // ...and one row per NAMED initial state the component declares, so a
+        // guest's fixtures are offered the way a host component's are
+        for init in @dhw.component_inits(m, n) {
+          rows.push(
+            Map({
+              "module": Str(m),
+              "name": Str(n),
+              "init": Str(init),
+              "label": Str("\{m} / \{n} (\{init})"),
+            }),
+          )
+        }
       }
       respond(Ok(List(rows)))
     }),
     "componentPicker": RequestFn((_args, respond) => {
       respond(Ok(picker.make(Map([]))))
     }),
+    // A service the HOST provides to whatever it hosts: the sample counters
+    // call it (control.request "double"). A bundle that serves a request of
+    // the same name answers its own components first — see the counter
+    // bundle's "triple".
+    "double": RequestFn((args, respond) => {
+      match args {
+        [Num(n)] => respond(Ok(Num(n * 2.0)))
+        _ => respond(Err(Str("double: expected one number")))
+      }
+    }),
     // create a component instance by (module_, name): builtins natively, guest
     // components through the dyncomp bridge
     "makeComponent": RequestFn((args, respond) => {
       match args {
-        [Str(m), Str(n)] =>
+        [Str(m), Str(n), Str(init)] =>
           if m == "builtin" {
             match n {
               "ComponentList" => respond(Ok(list.make(Map([]))))
               _ => respond(Err(Str("unknown builtin \{n}")))
             }
           } else {
-            match @dhw.make_instance(m, n) {
+            // a named fixture when the row carried one, a bare instance
+            // otherwise
+            let made = if init == "" {
+              @dhw.make_instance(m, n)
+            } else {
+              @dhw.make_init(m, n, init)
+            }
+            match made {
               Some(v) => respond(Ok(v))
               None => respond(Err(Str("could not make \{m}/\{n}")))
             }
           }
-        _ => respond(Err(Str("makeComponent: expected [module_, name]")))
+        _ => respond(Err(Str("makeComponent: expected [module_, name, init]")))
       }
     }),
   }
@@ -343,9 +448,6 @@ pub fn mount() -> Unit {
     return
   }
   app_ref.val = Some(app)
-  // host-provided request services a dropped guest may call (e.g. "double",
-  // used by the sample counter). The picker/list requests are in the module_.
-  app.scope.register_request_handlers(@dhw.shell_request_handlers())
   @dhw.set_app(app, @wglue.document())
   apply_margaui()
 }

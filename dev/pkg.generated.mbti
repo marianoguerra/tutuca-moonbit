@@ -18,8 +18,6 @@ pub fn skill_assets_source(Array[(String, String)]) -> String
 
 pub fn skill_embed_steps() -> Array[Step]
 
-pub fn storybook_bundle_steps() -> Array[Step]
-
 pub fn tasks() -> Array[Task]
 
 pub fn universal_steps() -> Array[Step]

@@ -72,6 +72,32 @@ export function createJsCoreImports() {
   };
 }
 
+// The files of the LAST drop, by id. A drop event's `value` carries these
+// descriptors, and a handler acts on them by id (see `dropped_file` and
+// tcomp's `load_dropped`) — the File object itself cannot cross into wasm-gc.
+// Cleared on every drop, because a handler acts on the drop it just received.
+const droppedFiles = new Map();
+let nextDroppedId = 1;
+
+export function takeDroppedFile(id) {
+  return droppedFiles.get(id);
+}
+
+// The `value` of a drop event: [{id, name, size, type, lastModified}, ...],
+// or "" when the drop carried no files (an in-app drag).
+export function registerDroppedFiles(ev) {
+  const files = ev?.dataTransfer?.files;
+  if (!files || !files.length) return "";
+  droppedFiles.clear();
+  const out = [];
+  for (const f of files) {
+    const id = nextDroppedId++;
+    droppedFiles.set(id, f);
+    out.push({ id, name: f.name, size: f.size, type: f.type, lastModified: f.lastModified });
+  }
+  return JSON.stringify(out);
+}
+
 export function createTdomImports(getExports) {
   const installed = new WeakMap(); // node -> Set<event name>
   return {
@@ -80,6 +106,7 @@ export function createTdomImports(getExports) {
     try_set_prop: (o, k, v) => { try { o[k] = v; return true; } catch { return false; } },
     json_parse: (s) => JSON.parse(s),
     json_stringify: (v) => { try { return JSON.stringify(v) ?? ""; } catch { return ""; } },
+    dropped_files: (ev) => registerDroppedFiles(ev),
     file_meta: (t) => {
       const f = t.files && t.files[0];
       return f
@@ -232,11 +259,33 @@ export function createTcompImports(getExports) {
     toJson: (v) => JSON.stringify(guestToJson(v)),
     fromJson: (j) => { try { return jsonToGuest(JSON.parse(j)); } catch { return { tag: "nil" }; } },
   };
+  // a WIT path-step variant -> the shape glue.mbt's path_step reads
+  const stepToJson = (s) =>
+    s.tag === "field"
+      ? { field: s.val }
+      : s.tag === "item"
+        ? { item: [s.val.field, s.val.key] }
+        : { at: [s.val.field, Number(s.val.index)] };
+  const optsToJson = (o) => ({
+    onOk: o?.onOk ?? null,
+    onError: o?.onError ?? null,
+    onRes: o?.onRes ?? null,
+    livePath: !!o?.livePath,
+  });
   const controlImpl = {
     log: (level, msg) => console.log(`[guest ${level}]`, msg),
     emit: (name, args) => controlBuf.push({ kind: "emit", name, args: args.map(guestToJson) }),
     send: (name, args) => controlBuf.push({ kind: "send", name, args: args.map(guestToJson) }),
-    request: (name, args) => controlBuf.push({ kind: "request", name, args: args.map(guestToJson) }),
+    sendAt: (path, name, args) => controlBuf.push({
+      kind: "sendAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
+    }),
+    bubbleAt: (path, name, args) => controlBuf.push({
+      kind: "bubbleAt", path: path.map(stepToJson), name, args: args.map(guestToJson),
+    }),
+    stopPropagation: () => controlBuf.push({ kind: "stopPropagation" }),
+    request: (name, args, opts) => controlBuf.push({
+      kind: "request", name, args: args.map(guestToJson), opts: optsToJson(opts),
+    }),
     // same-bundle child factory: the returned token is the bridge handle,
     // the ONLY instance-token space. The Component Model forbids re-entering
     // a component while a call into it is active, so the token is reserved
@@ -255,10 +304,11 @@ export function createTcompImports(getExports) {
   };
   const guestImports = {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
+    // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.1.0": valuesImpl,
+    "tutuca:component/values@0.2.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.1.0": controlImpl,
+    "tutuca:component/control@0.2.0": controlImpl,
   };
   // NOTE: guest constructors invoked from control.makeInstance re-enter the
   // guest while a tcomp call is active; the arena is shared and only cleared
@@ -328,14 +378,22 @@ export function createTcompImports(getExports) {
   };
 
   return {
-    loadArchive,
-    load: (loadId, url) => {
+    // A bundle is a `.tutuca.tar.gz` archive, and there are two ways to name
+    // one: the id of a file the user dropped, or a URL to fetch it from. Both
+    // end in the same unpack-and-instantiate path.
+    load_dropped: (fileId, loadId) => {
+      const file = takeDroppedFile(fileId);
+      if (!file) {
+        getExports().dyncomp_on_load_error(loadId, `no dropped file #${fileId}`);
+        return;
+      }
+      loadArchive(file, loadId);
+    },
+    load_url: (url, loadId) => {
       (async () => {
-        const abs = new URL(url, document.baseURI);
-        const mod = await import(abs);
-        const getCoreModule = (path) =>
-          WebAssembly.compileStreaming(fetch(new URL(path, abs)));
-        await finishLoad(mod, getCoreModule, loadId);
+        const res = await fetch(new URL(url, document.baseURI));
+        if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
+        loadArchive(await res.blob(), loadId);
       })().catch((e) => {
         console.error("dyncomp load failed:", e);
         getExports().dyncomp_on_load_error(loadId, String(e));
@@ -366,12 +424,12 @@ export function createTcompImports(getExports) {
       return out;
     },
     dispatch: (bundle, handle, bucketInt, name, argsJson) => {
-      const bucket = ["input", "receive", "response"][bucketInt] ?? "input";
+      const bucket = ["input", "receive", "response", "bubble"][bucketInt] ?? "input";
       controlBuf = [];
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
       const comp = bundles.get(bundle).instances.get(handle).comp;
-      const next = inst.handleEvent(bucket, name, undefined, args);
+      const next = inst.handleEvent(bucket, name, args);
       drainChildren();
       const out = JSON.stringify({
         next: next === undefined ? null : register(bundle, next, comp),
@@ -389,6 +447,18 @@ export function createTcompImports(getExports) {
       arena.clear();
       return out;
     },
+    // a request the BUNDLE serves; module-scoped, so no instance handle
+    handle_request: (bundle, name, argsJson) => {
+      currentBundle = bundle;
+      const args = JSON.parse(argsJson).map(jsonToGuest);
+      const res = bundles.get(bundle).guest.handleRequest(name, args);
+      drainChildren();
+      const out = JSON.stringify(
+        res.tag === "ok" ? { ok: guestToJson(res.val) } : { err: guestToJson(res.val) },
+      );
+      arena.clear();
+      return out;
+    },
     with_field: (bundle, handle, name, valueJson) => {
       const inst = instOf(bundle, handle);
       const comp = bundles.get(bundle).instances.get(handle).comp;
@@ -398,7 +468,6 @@ export function createTcompImports(getExports) {
       arena.clear();
       return next === undefined ? -1 : register(bundle, next, comp);
     },
-    to_json: (bundle, handle) => instOf(bundle, handle).toJson(),
     drop_instance: (bundle, handle) => {
       const b = bundles.get(bundle);
       if (b) {

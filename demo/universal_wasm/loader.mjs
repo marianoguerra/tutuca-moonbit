@@ -1,31 +1,19 @@
 // Browser loader for the universal drop-a-bundle demo: the shared lib's host
-// machinery + tcomp bridge, plus this page's drop-zone behavior (drop a
-// .tutuca.tar.gz anywhere to load it). The machinery lives in the shared lib
-// (copied beside this file in dist — see dev/tasks.mbt).
+// machinery + tcomp bridge, and nothing else. The machinery lives in the
+// shared lib (copied beside this file in dist — see dev/tasks.mbt).
+//
+// There is no drop-zone code here any more. A drop is an ordinary tutuca
+// event: the app bridge registers the dropped files and hands their
+// descriptors to the handler as `value` (`@on.drop="loadDropped value"` in
+// universal_wasm.html), which loads one by id through the tcomp bridge. What
+// this file used to do — a document-level listener reaching into
+// dataTransfer.files, with its own load-id space — is now something every
+// tutuca app gets from the framework.
 
 import { instantiate, createTcompImports } from "./wasm-loader-lib.mjs";
 
-// Make the page a drop target: cancel the browser's default file-open on both
-// dragover and drop, and feed each dropped file to loadArchive. JS allocates
-// the load ids (negative, never in the host's notify_paths) so completion
-// notifies the root shell.
-function installDropZone(tcomp) {
-  let nextLoad = -1;
-  document.addEventListener("dragover", (ev) => ev.preventDefault());
-  document.addEventListener("drop", (ev) => {
-    ev.preventDefault();
-    const files = ev.dataTransfer?.files;
-    if (!files?.length) return;
-    for (const file of files) tcomp.loadArchive(file, nextLoad--);
-  });
-}
-
 export async function loadWasm(wasmUrl) {
-  let tcomp = null;
-  const exports = await instantiate(wasmUrl, (getExports) => {
-    tcomp = createTcompImports(getExports);
-    return { tcomp };
-  });
-  installDropZone(tcomp);
-  return exports;
+  return await instantiate(wasmUrl, (getExports) => ({
+    tcomp: createTcompImports(getExports),
+  }));
 }

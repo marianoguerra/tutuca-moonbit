@@ -37,7 +37,7 @@ try {
   const getCoreModule = (path) =>
     WebAssembly.compileStreaming(fetch(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.1.0': values,
+    'tutuca:component/values@0.2.0': values,
     'tutuca:component/values': values,
   });
   const guest = root.guest;
@@ -58,12 +58,12 @@ try {
   assert(a.getField('count').val === 10 && b.getField('count').val === 0,
     'independent instances');
 
-  const a2 = a.handleEvent('input', 'inc', undefined, []);
+  const a2 = a.handleEvent('input', 'inc', []);
   assert(a2.getField('count').val === 11 && a.getField('count').val === 10,
     'handle-event: new instance out, old unchanged');
 
   const list = put([{ tag: 'number', val: 40 }, { tag: 'number', val: 2 }]);
-  const summed = b.handleEvent('receive', 'sum', undefined, [{ tag: 'list', val: list }]);
+  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]);
   assert(summed.getField('count').val === 42, 'guest read host arena mid-dispatch (sum=42)');
 
   const N = 1000;

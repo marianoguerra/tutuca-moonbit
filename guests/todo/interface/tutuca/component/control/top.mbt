@@ -30,6 +30,41 @@ pub fn LogLevel::from(self : Int) -> LogLevel {
 }
 
 ///|
+/// One hop of a path RELATIVE to the dispatching instance — the guest's
+/// half of `ctx.at`. Absolute paths are deliberately absent: a component
+/// addresses its own subtree, never the tree it happens to be mounted in.
+pub(all) struct ItemStep {
+  field : String
+  key : String
+} derive(Show, Eq)
+
+///|
+pub(all) struct IndexStep {
+  field : String
+  index : UInt
+} derive(Show, Eq)
+
+///|
+pub(all) enum PathStep {
+  Field(String)
+  Item(ItemStep)
+  At(IndexStep)
+} derive(Show, Eq)
+
+///|
+/// Response routing for a request (host `RequestOpts`). All three names are
+/// optional: with none of them the response arrives as
+/// handle-event(response, <request name>, [result, error]); with `on-ok` /
+/// `on-error` it arrives at those names carrying just the value; `on-res`
+/// renames the combined form.
+pub(all) struct RequestOpts {
+  on_ok : String?
+  on_error : String?
+  on_res : String?
+  live_path : Bool
+} derive(Show, Eq)
+
+///|
 pub fn log(level : LogLevel, msg : String) -> Unit {
   let ptr = mbt_ffi_str2ptr(msg)
   wasmImportLog(level.ordinal(), ptr, msg.length())
@@ -171,9 +206,272 @@ pub fn send(name : String, args : Array[@values.Value]) -> Unit {
 }
 
 ///|
-/// Fire a host-side request handler; its response arrives as a later
-/// handle-event(response, name, ...) with args [result, error].
-pub fn request(name : String, args : Array[@values.Value]) -> Unit {
+/// Send to a component in this one's own subtree (`ctx.send-at-path`): the
+/// message arrives as handle-event(receive, ...) at `path`, e.g.
+/// `[field("left")]` for the child a `left` field holds.
+pub fn send_at(
+  path : Array[PathStep],
+  name : String,
+  args : Array[@values.Value],
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let address = mbt_ffi_malloc(path.length() * 20)
+  for index = 0; index < path.length(); index = index + 1 {
+    let iter_elem : PathStep = path[index]
+    let iter_base = address + index * 20
+
+    match iter_elem {
+      Field(payload) => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        let ptr = mbt_ffi_str2ptr(payload)
+        mbt_ffi_store32(iter_base + 8, payload.length())
+        mbt_ffi_store32(iter_base + 4, ptr)
+        cleanup_list.push(ptr)
+
+        ()
+      }
+      Item(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+
+        let ptr1 = mbt_ffi_str2ptr(payload0.field)
+        mbt_ffi_store32(iter_base + 8, payload0.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr1)
+
+        let ptr2 = mbt_ffi_str2ptr(payload0.key)
+        mbt_ffi_store32(iter_base + 16, payload0.key.length())
+        mbt_ffi_store32(iter_base + 12, ptr2)
+        cleanup_list.push(ptr1)
+        cleanup_list.push(ptr2)
+
+        ()
+      }
+      At(payload3) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+
+        let ptr4 = mbt_ffi_str2ptr(payload3.field)
+        mbt_ffi_store32(iter_base + 8, payload3.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr4)
+        mbt_ffi_store32(iter_base + 12, payload3.index.reinterpret_as_int())
+        cleanup_list.push(ptr4)
+
+        ()
+      }
+    }
+  }
+
+  let ptr5 = mbt_ffi_str2ptr(name)
+
+  let address14 = mbt_ffi_malloc(args.length() * 16)
+  for index15 = 0; index15 < args.length(); index15 = index15 + 1 {
+    let iter_elem : @values.Value = args[index15]
+    let iter_base = address14 + index15 * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload7) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload7 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload8) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload8)
+
+        ()
+      }
+      Text(payload9) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr10 = mbt_ffi_str2ptr(payload9)
+        mbt_ffi_store32(iter_base + 12, payload9.length())
+        mbt_ffi_store32(iter_base + 8, ptr10)
+        cleanup_list.push(ptr10)
+
+        ()
+      }
+      List(payload11) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload11.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload12) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload12.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload13) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload13.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+  wasmImportSendAt(
+    address,
+    path.length(),
+    ptr5,
+    name.length(),
+    address14,
+    args.length(),
+  )
+  mbt_ffi_free(address)
+  mbt_ffi_free(ptr5)
+  mbt_ffi_free(address14)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Raise a bubble AT a descendant, which then travels up through it — the
+/// targeted twin of `emit`.
+pub fn bubble_at(
+  path : Array[PathStep],
+  name : String,
+  args : Array[@values.Value],
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let address = mbt_ffi_malloc(path.length() * 20)
+  for index = 0; index < path.length(); index = index + 1 {
+    let iter_elem : PathStep = path[index]
+    let iter_base = address + index * 20
+
+    match iter_elem {
+      Field(payload) => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        let ptr = mbt_ffi_str2ptr(payload)
+        mbt_ffi_store32(iter_base + 8, payload.length())
+        mbt_ffi_store32(iter_base + 4, ptr)
+        cleanup_list.push(ptr)
+
+        ()
+      }
+      Item(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+
+        let ptr1 = mbt_ffi_str2ptr(payload0.field)
+        mbt_ffi_store32(iter_base + 8, payload0.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr1)
+
+        let ptr2 = mbt_ffi_str2ptr(payload0.key)
+        mbt_ffi_store32(iter_base + 16, payload0.key.length())
+        mbt_ffi_store32(iter_base + 12, ptr2)
+        cleanup_list.push(ptr1)
+        cleanup_list.push(ptr2)
+
+        ()
+      }
+      At(payload3) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+
+        let ptr4 = mbt_ffi_str2ptr(payload3.field)
+        mbt_ffi_store32(iter_base + 8, payload3.field.length())
+        mbt_ffi_store32(iter_base + 4, ptr4)
+        mbt_ffi_store32(iter_base + 12, payload3.index.reinterpret_as_int())
+        cleanup_list.push(ptr4)
+
+        ()
+      }
+    }
+  }
+
+  let ptr5 = mbt_ffi_str2ptr(name)
+
+  let address14 = mbt_ffi_malloc(args.length() * 16)
+  for index15 = 0; index15 < args.length(); index15 = index15 + 1 {
+    let iter_elem : @values.Value = args[index15]
+    let iter_base = address14 + index15 * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload7) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload7 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload8) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload8)
+
+        ()
+      }
+      Text(payload9) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr10 = mbt_ffi_str2ptr(payload9)
+        mbt_ffi_store32(iter_base + 12, payload9.length())
+        mbt_ffi_store32(iter_base + 8, ptr10)
+        cleanup_list.push(ptr10)
+
+        ()
+      }
+      List(payload11) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload11.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload12) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload12.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload13) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload13.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+  wasmImportBubbleAt(
+    address,
+    path.length(),
+    ptr5,
+    name.length(),
+    address14,
+    args.length(),
+  )
+  mbt_ffi_free(address)
+  mbt_ffi_free(ptr5)
+  mbt_ffi_free(address14)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Stop the message being handled from travelling any further up the tree
+/// (host `ctx.stop-propagation`). Only meaningful while handling a bubble.
+pub fn stop_propagation() -> Unit {
+  wasmImportStopPropagation()
+}
+
+///|
+/// Fire a request handler — one this bundle serves (see
+/// `component-def.requests`) or, failing that, one the HOST registered. The
+/// response arrives as a later handle-event(response, ...), routed by `opts`.
+pub fn request(
+  name : String,
+  args : Array[@values.Value],
+  opts : RequestOpts,
+) -> Unit {
   let cleanup_list : Array[Int] = []
 
   let ptr = mbt_ffi_str2ptr(name)
@@ -231,7 +529,56 @@ pub fn request(name : String, args : Array[@values.Value]) -> Unit {
       }
     }
   }
-  wasmImportRequest(ptr, name.length(), address, args.length())
+
+  let (lowered, lowered10, lowered11) = match opts.on_ok {
+    None => (0, 0, 0)
+    Some(payload8) => {
+      let ptr9 = mbt_ffi_str2ptr(payload8)
+      cleanup_list.push(ptr9)
+
+      (1, ptr9, payload8.length())
+    }
+  }
+
+  let (lowered15, lowered16, lowered17) = match opts.on_error {
+    None => (0, 0, 0)
+    Some(payload13) => {
+      let ptr14 = mbt_ffi_str2ptr(payload13)
+      cleanup_list.push(ptr14)
+
+      (1, ptr14, payload13.length())
+    }
+  }
+
+  let (lowered21, lowered22, lowered23) = match opts.on_res {
+    None => (0, 0, 0)
+    Some(payload19) => {
+      let ptr20 = mbt_ffi_str2ptr(payload19)
+      cleanup_list.push(ptr20)
+
+      (1, ptr20, payload19.length())
+    }
+  }
+  wasmImportRequest(
+    ptr,
+    name.length(),
+    address,
+    args.length(),
+    lowered,
+    lowered10,
+    lowered11,
+    lowered15,
+    lowered16,
+    lowered17,
+    lowered21,
+    lowered22,
+    lowered23,
+    if opts.live_path {
+      1
+    } else {
+      0
+    },
+  )
   mbt_ffi_free(ptr)
   mbt_ffi_free(address)
 

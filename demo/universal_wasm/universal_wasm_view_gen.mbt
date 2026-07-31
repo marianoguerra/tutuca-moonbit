@@ -50,12 +50,125 @@ impl @component.Fields for UniversalWasmState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum UniversalWasmReceive {
+  DyncompLoaded(String)
+  DyncompError(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn UniversalWasmReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> UniversalWasmReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("dyncompLoaded", [Str(a0)]) => DyncompLoaded(a0)
+      ("dyncompError", [Str(a0)]) => DyncompError(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn UniversalWasmReceive::to_dispatch(
+  self : UniversalWasmReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    DyncompLoaded(a0) => ("dyncompLoaded", [Str(a0)])
+    DyncompError(a0) => ("dyncompError", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn UniversalWasmReceive::send(
+  self : UniversalWasmReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let universal_wasm_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let universal_wasm_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum UniversalWasmInput {
+  LoadDropped
+  LoadSample
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn UniversalWasmInput::name(self : UniversalWasmInput) -> String {
+  match self {
+    LoadDropped => "loadDropped"
+    LoadSample => "loadSample"
+  }
+}
+
+///|
+pub fn UniversalWasmInput::parse(s : String) -> UniversalWasmInput? {
+  match s {
+    "loadDropped" => Some(LoadDropped)
+    "loadSample" => Some(LoadSample)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to universal_wasm.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum UniversalWasmMsg {
+  /// `@on.drop="loadDropped …"`
+  LoadDropped(String)
+  /// `@on.click="loadSample …"`
+  LoadSample(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn UniversalWasmMsg::from_dispatch(
+  d : @component.Dispatch,
+) -> UniversalWasmMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("loadDropped", [Str(a0)]) => LoadDropped(a0)
+      ("loadSample", [Str(a0)]) => LoadSample(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -67,11 +180,13 @@ pub let universal_wasm_global_style : String = ""
 impl @component.Fields for UniversalWasmState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalWasm",
-    fingerprint="7b662766038025d1",
+    fingerprint="1973ee9f5c583550",
     fields=[
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("list", TyComp(Some("ComponentList"))),
     ],
+    inputs=["loadDropped", "loadSample"],
+    receives=["dyncompLoaded", "dyncompError"],
     view_names=["main"],
   )
 }
@@ -157,6 +272,106 @@ impl @component.Fields for ComponentListState with fn decode(f) {
     gap: v_gap,
     wrap: v_wrap,
   })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ComponentListReceive {
+  Refresh
+  Migrate(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ComponentListReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentListReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("refresh", []) => Refresh
+      ("migrate", [Str(a0)]) => Migrate(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ComponentListReceive::to_dispatch(
+  self : ComponentListReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Refresh => ("refresh", [])
+    Migrate(a0) => ("migrate", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ComponentListReceive::send(
+  self : ComponentListReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
+/// The Response arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant response` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ComponentListResponse {
+  ComponentPicker(@tutuca.Value)
+  /// A response the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Response dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ComponentListResponse::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentListResponse? {
+  guard d is Response(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("componentPicker", [a0]) => ComponentPicker(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ComponentListResponse::to_dispatch(
+  self : ComponentListResponse,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ComponentPicker(a0) => ("componentPicker", [a0])
+    Unknown(n, args) => (n, args)
+  }
 }
 
 ///|
@@ -275,7 +490,7 @@ pub fn ComponentListMethod::name(self : ComponentListMethod) -> String {
 impl @component.Fields for ComponentListState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentList",
-    fingerprint="85aeb3d6986afb5a",
+    fingerprint="522f1f7a3d8e97a1",
     fields=[
       @component.FieldInfo::new("entries", TyList(TyAny)),
       @component.FieldInfo::new("showSettings", TyBool),
@@ -289,6 +504,8 @@ impl @component.Fields for ComponentListState with fn schema() {
       "onAdd", "setAlign", "setDir", "setGap", "setJustify", "toggleShowSettings",
       "toggleWrap",
     ],
+    receives=["refresh", "migrate"],
+    responses=["componentPicker"],
     methods=["flexStyle"],
     view_names=["main"],
   )
@@ -346,6 +563,163 @@ impl @component.Fields for ComponentPickerState with fn decode(f) {
   }
   let v_selected = f.get("selected").unwrap_or(Null)
   Some({ filterText: v_filterText, items: v_items, selected: v_selected })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ComponentPickerReceive {
+  Migrate(String)
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ComponentPickerReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentPickerReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("migrate", [Str(a0)]) => Migrate(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ComponentPickerReceive::to_dispatch(
+  self : ComponentPickerReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Migrate(a0) => ("migrate", [Str(a0)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ComponentPickerReceive::send(
+  self : ComponentPickerReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
+/// The Bubble arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant bubble` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ComponentPickerBubble {
+  ComponentSelected(String, String, String)
+  /// A bubble the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Bubble dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ComponentPickerBubble::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentPickerBubble? {
+  guard d is Bubble(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("componentSelected", [Str(a0), Str(a1), Str(a2)]) =>
+        ComponentSelected(a0, a1, a2)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ComponentPickerBubble::to_dispatch(
+  self : ComponentPickerBubble,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ComponentSelected(a0, a1, a2) =>
+      ("componentSelected", [Str(a0), Str(a1), Str(a2)])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Bubble this message to the parent component.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn ComponentPickerBubble::bubble(
+  self : ComponentPickerBubble,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.bubble(name, args)
+}
+
+///|
+/// The Response arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant response` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum ComponentPickerResponse {
+  ListComponents(@tutuca.Value)
+  MakeComponent(@tutuca.Value)
+  /// A response the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Response dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn ComponentPickerResponse::from_dispatch(
+  d : @component.Dispatch,
+) -> ComponentPickerResponse? {
+  guard d is Response(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("listComponents", [a0]) => ListComponents(a0)
+      ("makeComponent", [a0]) => MakeComponent(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn ComponentPickerResponse::to_dispatch(
+  self : ComponentPickerResponse,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ListComponents(a0) => ("listComponents", [a0])
+    MakeComponent(a0) => ("makeComponent", [a0])
+    Unknown(n, args) => (n, args)
+  }
 }
 
 ///|
@@ -428,13 +802,16 @@ pub fn ComponentPickerWhen::name(self : ComponentPickerWhen) -> String {
 impl @component.Fields for ComponentPickerState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentPicker",
-    fingerprint="d38a8f3626c9ef02",
+    fingerprint="88ff98b6e75014ce",
     fields=[
       @component.FieldInfo::new("filterText", TyText),
       @component.FieldInfo::new("items", TyList(TyAny)),
-      @component.FieldInfo::new("selected", TyAny),
+      @component.FieldInfo::new("selected", TyComp(None)),
     ],
     inputs=["setFilterText"],
+    receives=["migrate"],
+    bubbles=["componentSelected"],
+    responses=["listComponents", "makeComponent"],
     view_names=["main"],
   )
 }
@@ -448,6 +825,7 @@ impl @component.Fields for ComponentPickerState with fn schema() {
 pub(all) struct ComponentEntryState {
   module_ : String
   name : String
+  init_ : String
   label : String
 }
 
@@ -459,7 +837,7 @@ pub(all) struct ComponentEntryState {
 ///
 ///   init={ ..ComponentEntryState::zero(), label: "Counter" }
 pub fn ComponentEntryState::zero() -> ComponentEntryState {
-  { module_: "", name: "", label: "" }
+  { module_: "", name: "", init_: "", label: "" }
 }
 
 ///|
@@ -470,7 +848,12 @@ pub fn ComponentEntryState::zero() -> ComponentEntryState {
 /// through. That is the case a JSON round trip could not do at all: an
 /// `Obj` or an `Fn` does not survive one.
 impl @component.Fields for ComponentEntryState with fn encode(s) {
-  { "module": Str(s.module_), "name": Str(s.name), "label": Str(s.label) }
+  {
+    "module": Str(s.module_),
+    "name": Str(s.name),
+    "init": Str(s.init_),
+    "label": Str(s.label),
+  }
 }
 
 ///|
@@ -479,8 +862,9 @@ impl @component.Fields for ComponentEntryState with fn encode(s) {
 impl @component.Fields for ComponentEntryState with fn decode(f) {
   guard f.get("module") is Some(Str(v_module_)) else { return None }
   guard f.get("name") is Some(Str(v_name)) else { return None }
+  guard f.get("init") is Some(Str(v_init_)) else { return None }
   guard f.get("label") is Some(Str(v_label)) else { return None }
-  Some({ module_: v_module_, name: v_name, label: v_label })
+  Some({ module_: v_module_, name: v_name, init_: v_init_, label: v_label })
 }
 
 ///|
@@ -563,10 +947,11 @@ pub fn ComponentEntryMethod::name(self : ComponentEntryMethod) -> String {
 impl @component.Fields for ComponentEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentEntry",
-    fingerprint="4f88e4ef86812754",
+    fingerprint="871d24e104e2912e",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
+      @component.FieldInfo::new("init", TyText),
       @component.FieldInfo::new("label", TyText),
     ],
     inputs=["onSelect"],

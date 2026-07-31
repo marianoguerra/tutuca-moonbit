@@ -207,19 +207,7 @@ pub fn[S : @tutuca.Fields] component(
   // Every declared field, from the schema. The kind is `fi.kind()` and the
   // default the encoded seed where there is one, `fi.ty.zero()` otherwise, so
   // nothing here can say something different from what the block declared.
-  let all_specs : Map[String, FieldSpec] = Map([])
-  for fi in schema.fields {
-    all_specs[fi.name] = match fi.ty.slot() {
-      // The one thing no type states: which arguments this child is built with.
-      Some(comp) =>
-        FieldSpec::comp(comp, args=slot_args.get(fi.name).unwrap_or(Map([])))
-      None =>
-        {
-          kind: fi.kind(),
-          default: init_fields.get(fi.name).unwrap_or(fi.ty.zero()),
-        }
-    }
-  }
+  let all_specs = field_specs(schema, slot_args~, seed=init_fields)
   // ...and anything the encoder produced that the schema does not name. It
   // exists, but nothing declared what it is.
   for k, v in init_fields {
@@ -381,6 +369,17 @@ pub fn Component::compile(self : Component) -> Unit raise {
       cid=LNum(self.id.to_double()),
     )
   }
+  // `inputs` is the names the VIEWS raise, and a view that has just been
+  // compiled is where they can be read off. The generator states them ahead of
+  // time and this leaves those alone; a component whose views arrive at RUNTIME
+  // (a wasm guest's manifest) has no generator to state them, and recovering
+  // them here is what keeps its descriptor as complete as a compiled one's.
+  if self.schema.inputs.is_empty() {
+    let names = self.view_handler_names()
+    if !names.is_empty() {
+      self.schema = { ..self.schema, inputs: names }
+    }
+  }
   for pname, src in self.raw_provide {
     match @tutuca.parse_provide(src, @tutuca.ParseCtx::new()) {
       Some(val) =>
@@ -413,6 +412,34 @@ pub fn Component::compile(self : Component) -> Unit raise {
 }
 
 ///|
+/// Every `@on` handler name this component's COMPILED views raise, in
+/// first-seen order. Empty before `compile()`: the names live in the parsed
+/// tree, not in the source string.
+pub fn Component::view_handler_names(self : Component) -> Array[String] {
+  let seen : Map[String, Unit] = Map([])
+  let out : Array[String] = []
+  for _, view in self.views {
+    match view.ctx {
+      Some(px) =>
+        for ne in px.events {
+          for h in ne.handlers {
+            match h.handler.handler {
+              HandlerName(name~, ns~) =>
+                if ns is Input && !seen.contains(name) {
+                  seen[name] = ()
+                  out.push(name)
+                }
+              _ => ()
+            }
+          }
+        }
+      None => ()
+    }
+  }
+  out
+}
+
+///|
 pub fn Component::compile_style(self : Component) -> String {
   let sb = StringBuilder()
   if self.common_style != "" {
@@ -430,30 +457,68 @@ pub fn Component::compile_style(self : Component) -> String {
 }
 
 ///|
+/// Every declared field's runtime handling, from the schema alone: the kind is
+/// `fi.kind()` and the default its type's zero, both projections of the
+/// declared type, so nothing here can say something different from what the
+/// block declared. `seed` lets a component start a field at the value its
+/// `init` gives it rather than at the type's zero; `slot_args` carries the one
+/// thing no type states — which arguments a child slot is built with.
+fn field_specs(
+  schema : SchemaInfo,
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  seed? : Map[String, @tutuca.Value] = Map([]),
+) -> Map[String, FieldSpec] {
+  let out : Map[String, FieldSpec] = Map([])
+  for fi in schema.fields {
+    out[fi.name] = match fi.ty.slot() {
+      Some(comp) =>
+        FieldSpec::comp(comp, args=slot_args.get(fi.name).unwrap_or(Map([])))
+      None =>
+        { kind: fi.kind(), default: seed.get(fi.name).unwrap_or(fi.ty.zero()) }
+    }
+  }
+  out
+}
+
+///|
+/// The mutators a declared schema implies, for a holder that is not a
+/// `TypedInstance` — the dynamic-component host, whose guest instances answer
+/// `obj_field` / `obj_with_field` and get the same `setX` / `toggleX` /
+/// `pushInX` set from the same generator.
+pub fn schema_mutators(
+  schema : SchemaInfo,
+) -> Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value] {
+  let out : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value] = Map([],
+  )
+  gen_mutators(field_specs(schema), out)
+  out
+}
+
+///|
 /// Generated per-field mutators (oo.js ClassBuilder), JS camelCase names so
 /// views port verbatim: set/update/reset/toggle/len/pushIn/setInAt/updateInAt/
 /// deleteInAt/removeInAt for list/map/omap, and addIn/deleteIn/removeIn/hasIn/
 /// toggleIn for sets. getInAt is the only deferred accessor.
-fn[S] gen_mutators(
+fn gen_mutators(
   fields : Map[String, FieldSpec],
-  into : Map[String, (TypedInstance[S], Array[@tutuca.Value]) -> @tutuca.Value],
+  into : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value],
 ) -> Unit {
   for name, spec in fields {
     into[mut_name("set", name)] = (inst, args) => {
-      inst.set(name, args.get(0).unwrap_or(Null)).to_value()
+      (inst.set)(name, args.get(0).unwrap_or(Null))
     }
     into[mut_name("reset", name)] = (inst, _args) => {
-      inst.set(name, spec.default).to_value()
+      (inst.set)(name, spec.default)
     }
     // the update fn is a plain lambda: it receives ONLY the current value
     into[mut_name("update", name)] = (inst, args) => {
       match args {
-        [Fn(f), ..] => inst.set(name, f([inst.get(name)])).to_value()
-        _ => inst.to_value()
+        [Fn(f), ..] => (inst.set)(name, f([(inst.get)(name)]))
+        _ => (inst.value)()
       }
     }
     into[name + "Len"] = (inst, _args) => {
-      match @tutuca.size_of(inst.get(name)) {
+      match @tutuca.size_of((inst.get)(name)) {
         Some(n) => Num(n.to_double())
         None => Null
       }
@@ -461,9 +526,9 @@ fn[S] gen_mutators(
     match spec.kind {
       FBool =>
         into[mut_name("toggle", name)] = (inst, _args) => {
-          match inst.get(name) {
-            Bool(b) => inst.set(name, Bool(!b)).to_value()
-            _ => inst.to_value()
+          match (inst.get)(name) {
+            Bool(b) => (inst.set)(name, Bool(!b))
+            _ => (inst.value)()
           }
         }
       // Set fields (JS FieldSet.extendProtoForType): membership mutators over
@@ -473,25 +538,24 @@ fn[S] gen_mutators(
           match args {
             [v, ..] =>
               put_seq_item(inst, name, KStr(v.to_display_string()), Bool(true))
-            _ => inst.to_value()
+            _ => (inst.value)()
           }
         }
         // JS deleteIn<X> and removeIn<X> alias the same delete (oo.js
         // extendDeleteInAt, called with the bare uname for sets).
-        let delete_member = (
-          inst : TypedInstance[S],
-          args : Array[@tutuca.Value],
-        ) => seq_delete(inst, name, args)
+        let delete_member = (inst : FieldBox, args : Array[@tutuca.Value]) => {
+          seq_delete(inst, name, args)
+        }
         into[mut_name("deleteIn", name)] = delete_member
         into[mut_name("removeIn", name)] = delete_member
         into[mut_name("hasIn", name)] = (inst, args) => {
-          match (inst.get(name), args) {
+          match ((inst.get)(name), args) {
             (Map(m), [v, ..]) => Bool(m.contains(v.to_display_string()))
             _ => Bool(false)
           }
         }
         into[mut_name("toggleIn", name)] = (inst, args) => {
-          match (inst.get(name), args) {
+          match ((inst.get)(name), args) {
             (Map(m), [v, ..]) => {
               let key = v.to_display_string()
               if m.contains(key) {
@@ -500,25 +564,25 @@ fn[S] gen_mutators(
                 put_seq_item(inst, name, KStr(key), Bool(true))
               }
             }
-            _ => inst.to_value()
+            _ => (inst.value)()
           }
         }
       }
       FList | FMap | FOMap => {
         into[mut_name("pushIn", name)] = (inst, args) => {
-          match (inst.get(name), args) {
+          match ((inst.get)(name), args) {
             (List(a), [v, ..]) => {
               let out = a.copy()
               out.push(v)
-              inst.set(name, List(out)).to_value()
+              (inst.set)(name, List(out))
             }
-            _ => inst.to_value()
+            _ => (inst.value)()
           }
         }
         // JS FieldList.insertIn<X>At(i, v): insert v BEFORE index i (oo.js:221).
         // List-only in JS; harmless on the (currently absent) map case.
         into[mut_name("insertIn", name) + "At"] = (inst, args) => {
-          match (inst.get(name), args) {
+          match ((inst.get)(name), args) {
             (List(a), [Num(i), v, ..]) => {
               let out = a.copy()
               let at = i.to_int()
@@ -527,9 +591,9 @@ fn[S] gen_mutators(
               } else {
                 out.push(v)
               }
-              inst.set(name, List(out)).to_value()
+              (inst.set)(name, List(out))
             }
-            _ => inst.to_value()
+            _ => (inst.value)()
           }
         }
         into[mut_name("setIn", name) + "At"] = (inst, args) => {
@@ -567,21 +631,21 @@ fn mutator_key(v : @tutuca.Value) -> @tutuca.PathKey? {
 ///|
 /// Replace one sequence item through core's identity-preserving COW
 /// operation. Invalid keys keep the original instance.
-fn[S] put_seq_item(
-  inst : TypedInstance[S],
+fn put_seq_item(
+  inst : FieldBox,
   field : String,
   key : @tutuca.PathKey,
   value : @tutuca.Value,
 ) -> @tutuca.Value {
-  match inst.get(field).with_item_opt(key, value) {
-    Some(seq) => inst.set(field, seq).to_value()
-    None => inst.to_value()
+  match (inst.get)(field).with_item_opt(key, value) {
+    Some(seq) => (inst.set)(field, seq)
+    None => (inst.value)()
   }
 }
 
 ///|
-fn[S] seq_set(
-  inst : TypedInstance[S],
+fn seq_set(
+  inst : FieldBox,
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -589,15 +653,15 @@ fn[S] seq_set(
     [key_arg, value, ..] =>
       match mutator_key(key_arg) {
         Some(key) => put_seq_item(inst, field, key, value)
-        None => inst.to_value()
+        None => (inst.value)()
       }
-    _ => inst.to_value()
+    _ => (inst.value)()
   }
 }
 
 ///|
-fn[S] seq_update(
-  inst : TypedInstance[S],
+fn seq_update(
+  inst : FieldBox,
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
@@ -605,42 +669,42 @@ fn[S] seq_update(
     [key_arg, Fn(f), ..] =>
       match mutator_key(key_arg) {
         Some(key) =>
-          match inst.get(field).item_opt(key) {
+          match (inst.get)(field).item_opt(key) {
             Some(current) => put_seq_item(inst, field, key, f([current]))
-            None => inst.to_value()
+            None => (inst.value)()
           }
-        None => inst.to_value()
+        None => (inst.value)()
       }
-    _ => inst.to_value()
+    _ => (inst.value)()
   }
 }
 
 ///|
-fn[S] seq_delete(
-  inst : TypedInstance[S],
+fn seq_delete(
+  inst : FieldBox,
   field : String,
   args : Array[@tutuca.Value],
 ) -> @tutuca.Value {
-  guard args is [key_arg, ..] else { return inst.to_value() }
-  guard mutator_key(key_arg) is Some(key) else { return inst.to_value() }
-  match (inst.get(field), key) {
+  guard args is [key_arg, ..] else { return (inst.value)() }
+  guard mutator_key(key_arg) is Some(key) else { return (inst.value)() }
+  match ((inst.get)(field), key) {
     (List(a), KInt(idx)) =>
       if idx >= 0 && idx < a.length() {
         let out = a.copy()
         let _ = out.remove(idx)
-        inst.set(field, List(out)).to_value()
+        (inst.set)(field, List(out))
       } else {
-        inst.to_value()
+        (inst.value)()
       }
     (Map(m), KStr(k)) =>
       if m.contains(k) {
         let out = m.copy()
         out.remove(k)
-        inst.set(field, Map(out)).to_value()
+        (inst.set)(field, Map(out))
       } else {
-        inst.to_value()
+        (inst.value)()
       }
-    _ => inst.to_value()
+    _ => (inst.value)()
   }
 }
 

@@ -70,6 +70,15 @@ pub fn lint_html(
 }
 
 ///|
+/// True when `offset` is the `>` of a `/>` — see the DuplicateAttribute arm.
+fn self_closing_artifact(m : Machine, offset : Int) -> Bool {
+  offset > 0 &&
+  offset < m.chars.length() &&
+  m.chars[offset] == '>' &&
+  m.chars[offset - 1] == '/'
+}
+
+///|
 /// Map newly collected tokenizer ParseErrors to findings. Only the codes the
 /// JS linter surfaced are mapped; everything else (charref/doctype noise) is
 /// intentionally dropped.
@@ -91,14 +100,22 @@ fn drain_errors(m : Machine, tk : @html5.Tokenizer, from : Int) -> Int {
         m.report(HtmlSelfClosingEndTag, Warn, offset, [])
       MissingAttributeValue =>
         m.report(HtmlMissingAttributeValue, Warn, offset, [])
+      // `<input class="a" />` is not a duplicate attribute. The vendored
+      // tokenizer finishes the CURRENT attribute a second time when a
+      // self-closing solidus follows whitespace, and reports its own name as
+      // a duplicate of itself. A real duplicate is reported where the second
+      // name ends — at whitespace, at `/`, or at `>` right after the name —
+      // never at the `>` of a `/>`, which is what this drops.
       DuplicateAttribute =>
-        m.report(
-          HtmlDuplicateAttribute,
-          Warn,
-          offset,
-          [],
-          suggestion=Remove(what="the duplicate attribute"),
-        )
+        if !self_closing_artifact(m, offset) {
+          m.report(
+            HtmlDuplicateAttribute,
+            Warn,
+            offset,
+            [],
+            suggestion=Remove(what="the duplicate attribute"),
+          )
+        }
       // CDATA is only valid in foreign content; gate on the machine's
       // namespace at this point in the stream.
       CdataInHtmlContent =>
