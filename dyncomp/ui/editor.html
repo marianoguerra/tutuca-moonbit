@@ -134,8 +134,12 @@
     /// produce ops, both read this document back.
     record state {
       doc: any,
+      /// The rendered document AND the only place a live instance is held: a
+      /// successor lands here when a placed component is used, so a second map
+      /// of instances beside it would be one update behind — and holding a
+      /// guest handle the host has already collected. `live_slots` reads them
+      /// back out when a rebuild needs them.
       tree: component,
-      slots: any,
       selected: string,
       palette: component,
       settings: component,
@@ -148,35 +152,40 @@
       /// A bundle loaded: the catalog changed, so a palette showing results
       /// has to say so.
       catalog-changed(string),
+      /// A layout and its filled slots, from wherever the shell keeps them
+      /// (`{doc, slots}`). The editor does not know about storage — it is
+      /// handed a document and the live instances that go in it, which is the
+      /// same pair `import` produces minus the instances it cannot have.
+      restore-session(any),
     }
   }
 </script>
 
+<!-- SurfaceNode. Two things to know, both about comments and classes rather
+     than about layout, and neither of them expressible INSIDE the template:
+
+     Every class the box and the badge wear is repeated in both `@if.class`
+     branches, structural ones included, because a static `class` and an
+     `@if.class` cannot coexist and nothing reports the one that loses. `pt-5`
+     is chrome rather than layout: it reserves the band the badge sits in, so a
+     child's badge lands below its parent's instead of exactly on top of it,
+     which is where they all land when a container has no padding of its own.
+
+     And this comment is out here because a comment ANYWHERE in the view costs
+     something. Before the root element it makes the view a fragment; inside
+     it, it sits where the renderer's §…§ boundary meta is expected and ends
+     the chain dispatch walks — which is how a click inside a placed component
+     stops reaching that component. -->
 <template id="SurfaceNode">
   <div :style=".style"
        @if.class=".selected"
        @then="'tut-node relative pt-5 outline outline-2 outline-primary'"
        @else="'tut-node relative pt-5'">
-    <!-- Every class this box wears is in the two branches, including the
-         structural ones: a static `class` and an `@if.class` cannot coexist,
-         and nothing reports the one that loses. `pt-5` is chrome rather than
-         layout — it reserves the band the badge sits in, so a child's badge
-         lands below its parent's instead of exactly on top of it, which is
-         where they all land when a container has no padding of its own.
-
-         The comment lives INSIDE the root element on purpose: one before it
-         would make this view a fragment, and a non-§ comment where the
-         renderer's boundary meta is expected ends the chain that dispatch
-         walks — the clicks below would resolve against the wrong instance. -->
-    <!-- A container renders its children; the click that selects it is on the
-         chrome badge rather than the box, so selecting a parent does not mean
-         missing every child. -->
     <span @if.class=".selected"
           @then="'node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-primary'"
           @else="'node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-ghost'"
           @on.click="pick" @text=".label"></span>
     <x render-each=".children"></x>
-    <!-- A slot either holds a component or says it is waiting for one. -->
     <div class="node-empty text-xs opacity-40 italic border border-dashed rounded p-4"
          @show=".empty">empty slot</div>
     <x render=".slot"></x>

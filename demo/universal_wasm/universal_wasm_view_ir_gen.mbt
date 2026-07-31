@@ -34,7 +34,7 @@ fn universal_wasm_main_view_ir() -> @anode.View {
             "class", "min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3",
           ),
           @anode.attr("data-droptarget", "tutuca-wasm-component"),
-          @anode.eid(3),
+          @anode.eid(4),
         ],
         [
           @anode.h(
@@ -71,10 +71,19 @@ fn universal_wasm_main_view_ir() -> @anode.View {
                 @anode.h(
                   "button",
                   [
-                    @anode.attr("class", "btn btn-xs join-item load-rust"),
+                    @anode.attr("class", "btn btn-xs join-item load-todomvc"),
                     @anode.eid(2),
                   ],
-                  [@anode.text("rust counter")],
+                  [@anode.text("todomvc")],
+                ),
+                @anode.text(" "),
+                @anode.h(
+                  "button",
+                  [
+                    @anode.attr("class", "btn btn-xs join-item load-rust"),
+                    @anode.eid(3),
+                  ],
+                  [@anode.text("rust notepad")],
                 ),
               ]),
               @anode.text(" "),
@@ -91,7 +100,7 @@ fn universal_wasm_main_view_ir() -> @anode.View {
               @anode.text(".tutuca.tar.gz"),
             ]),
             @anode.text(
-              " anywhere on this page to register its components.\n  ",
+              " anywhere on this page to register its components.\n    What you place is kept in this browser and restored on the next visit — the samples by URL, a dropped bundle only if you drop it again.\n  ",
             ),
           ]),
           @anode.text(" "),
@@ -112,7 +121,12 @@ fn universal_wasm_main_view_ir() -> @anode.View {
       ],
       [
         @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
-          @anode.const_str("./examples/rust-counter.tutuca.tar.gz"),
+          @anode.const_str("./examples/todomvc.tutuca.tar.gz"),
+        ]),
+      ],
+      [
+        @anode.on("click", HandlerName(name="loadSample", ns=Input), args=[
+          @anode.const_str("./examples/rust-notepad.tutuca.tar.gz"),
         ]),
       ],
       [

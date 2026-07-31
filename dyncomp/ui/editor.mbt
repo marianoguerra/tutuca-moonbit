@@ -65,6 +65,50 @@ fn doc_of(s : @surface.Surface) -> @tutuca.Value {
   @tutuca.Value::from_json(s.to_json())
 }
 
+// --- the live instances -----------------------------------------------------
+
+///|
+/// The instances a rendered editor is holding, by the slot that holds them.
+///
+/// Read out of the TREE rather than from a map kept beside it, because the
+/// tree is where a successor lands: a click inside a placed component
+/// dispatches down the render path and swaps that node's instance for its
+/// successor, and anything else holding the old one is holding a dead handle
+/// one drained cascade later. A copy would be right until the first time
+/// somebody used what was placed, which is the worst kind of right.
+///
+/// Public because the shell needs the same answer for a different reason —
+/// what to store — and two walks of the same tree would be two chances to
+/// disagree about it.
+pub fn live_slots(editor : @tutuca.Value) -> Map[String, @tutuca.Value] {
+  slots_of_tree(editor.field("tree"))
+}
+
+///|
+/// The same walk, from the tree itself — what the editor has in hand.
+fn slots_of_tree(tree : @tutuca.Value) -> Map[String, @tutuca.Value] {
+  let out : Map[String, @tutuca.Value] = Map([])
+  collect_slots(tree, out)
+  out
+}
+
+///|
+fn collect_slots(
+  node : @tutuca.Value,
+  into : Map[String, @tutuca.Value],
+) -> Unit {
+  guard node is Obj(_) else { return }
+  let id = node.field("nodeId").str()
+  if id != "" && node.field("slot") is Obj(_) {
+    into[id] = node.field("slot")
+  }
+  if node.field("children") is List(children) {
+    for child in children {
+      collect_slots(child, into)
+    }
+  }
+}
+
 // --- the rendered tree ------------------------------------------------------
 
 ///|

@@ -41,13 +41,16 @@
                 @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
         <button class="btn btn-xs join-item load-todo"
                 @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
+        <button class="btn btn-xs join-item load-todomvc"
+                @on.click="loadSample './examples/todomvc.tutuca.tar.gz'">todomvc</button>
         <button class="btn btn-xs join-item load-rust"
-                @on.click="loadSample './examples/rust-counter.tutuca.tar.gz'">rust counter</button>
+                @on.click="loadSample './examples/rust-notepad.tutuca.tar.gz'">rust notepad</button>
       </div>
       <span class="text-sm opacity-70 grow status" @text=".status"></span>
     </header>
     <p class="text-xs opacity-50 italic">
       Drop a <code class="font-mono">.tutuca.tar.gz</code> anywhere on this page to register its components.
+      What you place is kept in this browser and restored on the next visit — the samples by URL, a dropped bundle only if you drop it again.
     </p>
     <x render=".editor"></x>
   </div>

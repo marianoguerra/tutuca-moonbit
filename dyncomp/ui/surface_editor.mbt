@@ -36,9 +36,20 @@ fn UniversalUi::edit(
   ops : Array[@surface.SurfaceOp],
   select? : String = "",
   ok? : String = "",
+  slots? : Map[String, @tutuca.Value]? = None,
 ) -> SurfaceEditorState? {
   let before = surface_of(state.doc)
-  let slots = state.slots.map()
+  // From the TREE, not from a map kept beside it: a placed component that was
+  // USED has a successor in the tree, and the copy is one update behind (see
+  // `live_slots`). Rebuilding from the stale one is what would quietly revert
+  // a half-filled form the moment somebody moved the box holding it.
+  //
+  // `slots~` is for the one caller that knows better — `place`, which has an
+  // instance the tree has never seen.
+  let slots = match slots {
+    Some(given) => given
+    None => slots_of_tree(state.tree)
+  }
   match @surface.apply(before, ops) {
     Err(errors) => {
       let shown = errors.map(e => "\{e.pointer}: \{e.message}").join("; ")
@@ -56,7 +67,9 @@ fn UniversalUi::edit(
         after.root
       }
       // Instances the document no longer binds are dropped here, which is the
-      // one place that knows both what was removed and what is live.
+      // one place that knows both what was removed and what is live. They are
+      // dropped by NOT being rebuilt into the tree, which is also the only
+      // place they were.
       let live : Map[String, @tutuca.Value] = Map([])
       for pair in after.bindings() {
         if slots.get(pair.0) is Some(inst) {
@@ -66,7 +79,6 @@ fn UniversalUi::edit(
       Some({
         ..state,
         doc: doc_of(after),
-        slots: Map(live),
         tree: self.build_tree(after, live, selected),
         settings: self.settings_for(after, selected),
         selected,
@@ -135,12 +147,10 @@ fn UniversalUi::editor_comp(self : UniversalUi) -> @component.Component {
   // bare one null. `editor_seed` is what fills them, through `args` for a
   // mount and `slot_args` for a parent that holds one.
   let s = @surface.Surface::new("main")
-  let empty : Map[String, @tutuca.Value] = Map([])
   surface_editor_component(
     init={
       ..SurfaceEditorState::zero(),
       doc: doc_of(s),
-      slots: Map(empty),
       selected: s.root,
       status: "pick a component to place",
     },
@@ -184,7 +194,6 @@ fn UniversalUi::editor_comp(self : UniversalUi) -> @component.Component {
           return Some({
             ..state,
             doc: doc_of(imported),
-            slots: Map(empty),
             selected: imported.root,
             tree: self.build_tree(imported, empty, imported.root),
             settings: self.settings_for(imported, imported.root),
@@ -206,6 +215,35 @@ fn UniversalUi::editor_comp(self : UniversalUi) -> @component.Component {
             status: "loaded \{module_}",
           })
         }
+        // A session coming back: the document, and the live instances the
+        // shell rebuilt for the slots that hold them. The editor treats it
+        // exactly like an import that DID have its instances — same document
+        // path, same rebuild — because "where did this come from" is the
+        // shell's question and not this component's.
+        Some(RestoreSession(payload)) => {
+          guard @surface.Surface::from_json(payload.field("doc").to_json())
+            is Some(imported) else {
+            return Some({ ..state, status: "could not restore the last layout" })
+          }
+          let slots : Map[String, @tutuca.Value] = Map([])
+          if payload.field("slots") is Map(m) {
+            for id, inst in m {
+              if inst is Obj(_) {
+                slots[id] = inst
+              }
+            }
+          }
+          let filled = slots.length()
+          return Some({
+            ..state,
+            doc: doc_of(imported),
+            selected: imported.root,
+            tree: self.build_tree(imported, slots, imported.root),
+            settings: self.settings_for(imported, imported.root),
+            form: Null,
+            status: "restored \{imported.nodes.length()} nodes, \{filled} of them filled",
+          })
+        }
         Some(Unknown(_, _)) | None => ()
       }
       match msg {
@@ -215,7 +253,7 @@ fn UniversalUi::editor_comp(self : UniversalUi) -> @component.Component {
           Some({
             ..state,
             selected: id,
-            tree: self.build_tree(s, state.slots.map(), id),
+            tree: self.build_tree(s, slots_of_tree(state.tree), id),
             settings: self.settings_for(s, id),
           })
         }
@@ -324,10 +362,16 @@ fn UniversalUi::place(
   }
   let all = ops.copy()
   all.push(BindInstance(id=target, binding=Some(binding)))
-  let slots = state.slots.map()
+  let slots = slots_of_tree(state.tree)
   slots[target] = instance
-  let next = { ..state, slots: Map(slots), form: Null }
-  self.edit(next, all, select=target, ok="placed \{ref_.to_id()}")
+  let next = { ..state, form: Null }
+  self.edit(
+    next,
+    all,
+    select=target,
+    ok="placed \{ref_.to_id()}",
+    slots=Some(slots),
+  )
 }
 
 ///|
@@ -380,7 +424,6 @@ pub fn editor_seed(
   let empty : Map[String, @tutuca.Value] = Map([])
   {
     "doc": doc_of(s),
-    "slots": Map(empty),
     "selected": Str(s.root),
     "tree": ui.build_tree(s, empty, s.root),
     "settings": ui.settings_for(s, s.root),

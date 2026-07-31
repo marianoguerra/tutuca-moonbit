@@ -1347,7 +1347,6 @@ impl @component.Fields for SchemaFormState with fn schema() {
 pub(all) struct SurfaceEditorState {
   doc : @tutuca.Value
   tree : @tutuca.Value
-  slots : @tutuca.Value
   selected : String
   palette : @tutuca.Value
   settings : @tutuca.Value
@@ -1368,7 +1367,6 @@ pub fn SurfaceEditorState::zero() -> SurfaceEditorState {
   {
     doc: Null,
     tree: Null,
-    slots: Null,
     selected: "",
     palette: Null,
     settings: Null,
@@ -1390,7 +1388,6 @@ impl @component.Fields for SurfaceEditorState with fn encode(s) {
   {
     "doc": s.doc,
     "tree": s.tree,
-    "slots": s.slots,
     "selected": Str(s.selected),
     "palette": s.palette,
     "settings": s.settings,
@@ -1407,7 +1404,6 @@ impl @component.Fields for SurfaceEditorState with fn encode(s) {
 impl @component.Fields for SurfaceEditorState with fn decode(f) {
   let v_doc = f.get("doc").unwrap_or(Null)
   let v_tree = f.get("tree").unwrap_or(Null)
-  let v_slots = f.get("slots").unwrap_or(Null)
   guard f.get("selected") is Some(Str(v_selected)) else { return None }
   let v_palette = f.get("palette").unwrap_or(Null)
   let v_settings = f.get("settings").unwrap_or(Null)
@@ -1418,7 +1414,6 @@ impl @component.Fields for SurfaceEditorState with fn decode(f) {
   Some({
     doc: v_doc,
     tree: v_tree,
-    slots: v_slots,
     selected: v_selected,
     palette: v_palette,
     settings: v_settings,
@@ -1437,6 +1432,7 @@ impl @component.Fields for SurfaceEditorState with fn decode(f) {
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum SurfaceEditorReceive {
   CatalogChanged(String)
+  RestoreSession(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
   Unknown(String, Array[@tutuca.Value])
@@ -1455,6 +1451,7 @@ pub fn SurfaceEditorReceive::from_dispatch(
   Some(
     match (name, args) {
       ("catalogChanged", [Str(a0)]) => CatalogChanged(a0)
+      ("restoreSession", [a0]) => RestoreSession(a0)
       _ => Unknown(name, args)
     },
   )
@@ -1467,6 +1464,7 @@ pub fn SurfaceEditorReceive::to_dispatch(
 ) -> (String, Array[@tutuca.Value]) {
   match self {
     CatalogChanged(a0) => ("catalogChanged", [Str(a0)])
+    RestoreSession(a0) => ("restoreSession", [a0])
     Unknown(n, args) => (n, args)
   }
 }
@@ -1593,11 +1591,10 @@ pub fn SurfaceEditorMsg::from_dispatch(
 impl @component.Fields for SurfaceEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="SurfaceEditor",
-    fingerprint="d9d242c5c306aea6",
+    fingerprint="0b95774e12c3bb51",
     fields=[
       @component.FieldInfo::new("doc", TyAny),
       @component.FieldInfo::new("tree", TyComp(None)),
-      @component.FieldInfo::new("slots", TyAny),
       @component.FieldInfo::new("selected", TyText),
       @component.FieldInfo::new("palette", TyComp(None)),
       @component.FieldInfo::new("settings", TyComp(None)),
@@ -1610,7 +1607,7 @@ impl @component.Fields for SurfaceEditorState with fn schema() {
       "addBox", "addGrid", "addSlot", "addStack", "exportDoc", "importDoc", "removeNode",
       "setTransfer",
     ],
-    receives=["catalogChanged"],
+    receives=["catalogChanged", "restoreSession"],
     view_names=["main"],
   )
 }

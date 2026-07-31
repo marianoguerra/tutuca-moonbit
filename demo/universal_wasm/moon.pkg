@@ -17,6 +17,10 @@ import {
   // page is the shell that gives it a bridge.
   "marianoguerra/tutuca/dyncomp/ui",
   "marianoguerra/tutuca/dyncomp/registry",
+  // what survives the page: snapshots of the placed components, in the
+  // browser's localStorage
+  "marianoguerra/tutuca/dyncomp/persist",
+  "marianoguerra/tutuca/dyncomp/persist/wasm" @pwasm,
   "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",

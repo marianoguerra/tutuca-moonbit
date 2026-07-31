@@ -20,6 +20,8 @@ pub fn component_palette_views() -> Map[String, @anode.View]
 
 pub fn editor_seed(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, @component.ModuleDef) -> Map[String, @core.Value]
 
+pub fn live_slots(@core.Value) -> Map[String, @core.Value]
+
 pub let node_settings_common_style : String
 
 pub fn node_settings_component(name? : String, views? : Map[String, @anode.View], init? : NodeSettingsState, common_style? : String, global_style? : String, update? : (NodeSettingsState, @component.Dispatch, &@core.Ctx) -> NodeSettingsState?, swap? : (NodeSettingsInput) -> ((NodeSettingsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
@@ -273,6 +275,7 @@ pub fn SurfaceEditorMsg::from_dispatch(@component.Dispatch) -> Self?
 
 pub(all) enum SurfaceEditorReceive {
   CatalogChanged(String)
+  RestoreSession(@core.Value)
   Unknown(String, Array[@core.Value])
 }
 pub fn SurfaceEditorReceive::from_dispatch(@component.Dispatch) -> Self?
@@ -282,7 +285,6 @@ pub fn SurfaceEditorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 pub(all) struct SurfaceEditorState {
   doc : @core.Value
   tree : @core.Value
-  slots : @core.Value
   selected : String
   palette : @core.Value
   settings : @core.Value

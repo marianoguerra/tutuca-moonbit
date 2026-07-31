@@ -59,6 +59,18 @@ impl @dyncomp.Guest for StubGuest with fn handle_request(_self, name, _args) {
 }
 
 ///|
+/// The stub keeps no state, so it persists nothing — which is also the answer
+/// most components should give.
+impl @dyncomp.Guest for StubGuest with fn persist(_self, _handle) {
+  b""
+}
+
+///|
+impl @dyncomp.Guest for StubGuest with fn restore(_self, _component, _state) {
+  None
+}
+
+///|
 impl @dyncomp.Guest for StubGuest with fn drop_instance(_self, _handle) {
 
 }
@@ -73,7 +85,7 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 /// the generated form worth generating.
 fn catalog() -> @registry.Registry raise {
   let manifest : @dyncomp.DynManifest = {
-    api_version: 3,
+    api_version: 4,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",

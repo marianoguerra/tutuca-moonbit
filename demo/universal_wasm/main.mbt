@@ -20,6 +20,154 @@ fn main {
 
 }
 
+// --- the session: what survives the page ----------------------------------
+//
+// Three things, and each one is stored where it belongs. The LAYOUT is a
+// document, so it goes in as JSON. Each PLACED COMPONENT goes in as a
+// `Snapshot` — the guest's own bytes when it has any, the declared fields
+// when it does not — keyed by the slot that holds it, which is a name that
+// still means something after a reload. And the BUNDLES have to be named too,
+// because an instance cannot come back before the code that answers for it:
+// the samples by URL, since a dropped file is a thing the page cannot fetch
+// again and saying so is better than pretending.
+
+///|
+/// The browser's localStorage, under this page's own prefix.
+let store : &@persist.Store = @pwasm.LocalStore::new(prefix="tutuca-universal:")
+
+///|
+/// Loads still in flight. Saving while a session is being restored would
+/// write the empty editor over the thing being restored INTO it, which is the
+/// one way this feature could destroy what it exists to keep.
+let pending : Ref[Int] = { val: 0 }
+
+///|
+/// The sample URLs to load again next time. Only URLs: a dropped file has no
+/// name the page can fetch, so its components come back only if the same
+/// bundle is dropped again.
+let loaded_urls : Array[String] = []
+
+///|
+/// Write the whole session. Runs on the transactor's drained cascade, so it
+/// sees settled state and never a half-applied edit.
+fn save_session() -> Unit {
+  if pending.val > 0 {
+    return
+  }
+  guard @dhw.app_root_value() is Some(root) else { return }
+  let editor = root.field("editor")
+  guard editor is Obj(_) else { return }
+  store.set("doc", editor.field("doc").to_json().stringify())
+  store.set(
+    "urls",
+    Json::array(loaded_urls.map(u => Json::string(u))).stringify(),
+  )
+  // Slots are re-keyed by the node that holds them, which is what makes a
+  // restore able to put each one back where it was. Whatever was saved under
+  // a slot that no longer exists is forgotten, so the store follows the
+  // document rather than accumulating everything ever placed.
+  let live : Array[String] = []
+  // From the editor's TREE (`@ui.live_slots`), never from a map beside it: a
+  // component that has been USED has a successor there, and storing the copy
+  // would store the state it had when it was placed.
+  for id, inst in @ui.live_slots(editor) {
+    match @dhw.snapshot(inst) {
+      Some(snap) => {
+        let key = "slot/\{id}"
+        if @persist.save(store, { ..snap, id: key }) {
+          live.push(key)
+        }
+      }
+      None => ()
+    }
+  }
+  for id in @persist.saved_ids(store) {
+    if id.has_prefix("slot/") && !live.contains(id) {
+      @persist.forget(store, id)
+    }
+  }
+}
+
+///|
+/// Load the bundles the last session used. Called once at mount; each one
+/// finishing pushes a `dyncompLoaded` message, and the last of them triggers
+/// the restore below.
+fn resume_session() -> Unit {
+  guard store.get("urls") is Some(text) else { return }
+  let parsed = @json.parse(text) catch { _ => return }
+  guard parsed is Array(items) else { return }
+  for item in items {
+    if item is String(url) {
+      pending.val = pending.val + 1
+      loaded_urls.push(url)
+      @dhw.load_url(@tutuca.DispatchPath::new(), url) |> ignore
+    }
+  }
+}
+
+///|
+/// The saved layout, and every instance a loaded bundle can rebuild.
+///
+/// A slot whose bundle is missing simply stays empty: the document still says
+/// what belongs there, so dropping that bundle later and restoring again fills
+/// it in. Refusing the whole session because one component is unavailable
+/// would be the wrong trade for a page whose bundles arrive by hand.
+fn restored_session() -> @tutuca.Value? {
+  guard store.get("doc") is Some(text) else { return None }
+  let doc = @json.parse(text) catch { _ => return None }
+  let slots : Map[String, @tutuca.Value] = Map([])
+  for id in @persist.saved_ids(store) {
+    guard id.has_prefix("slot/") else { continue }
+    guard @persist.load(store, id) is Some(snap) else { continue }
+    match @dhw.restore(snap) {
+      Some(v) => slots[id[5:].to_owned()] = v
+      None => ()
+    }
+  }
+  Some(Map({ "doc": @tutuca.Value::from_json(doc), "slots": Map(slots) }))
+}
+
+///|
+/// The session after a bundle (re)loads: the same layout, with every instance
+/// of THAT module carried across.
+///
+/// A reload of a module already loaded is a HOT SWAP — the old bundle is
+/// retired the moment this handler returns — so anything the editor is holding
+/// from it becomes a dead handle unless it is rebuilt here. The rebuild goes
+/// through the same snapshot the store uses, which means a swap keeps what a
+/// reload keeps: the guest's own bytes when it has them, the declared fields
+/// when it does not. A hot swap is a save and a load with no store in between.
+///
+/// None when nothing needs carrying, which is the usual case (a first load).
+fn session_after_load(module_name : String) -> @tutuca.Value? {
+  guard @dhw.app_root_value() is Some(root) else { return None }
+  let editor = root.field("editor")
+  guard editor is Obj(_) else { return None }
+  let slots : Map[String, @tutuca.Value] = Map([])
+  let mut carried = false
+  for id, inst in @ui.live_slots(editor) {
+    match @dhw.snapshot(inst) {
+      Some(snap) if snap.module_ == module_name =>
+        match @dhw.restore(snap) {
+          Some(fresh) => {
+            slots[id] = fresh
+            carried = true
+          }
+          // Nothing from the new bundle answers for it: leaving the slot empty
+          // is the only honest answer, since the instance it held belongs to a
+          // bundle that is about to be retired.
+          None => ()
+        }
+      _ => slots[id] = inst
+    }
+  }
+  if carried {
+    Some(Map({ "doc": editor.field("doc"), "slots": Map(slots) }))
+  } else {
+    None
+  }
+}
+
 ///|
 /// Build a guest instance for the editor to place.
 ///
@@ -80,6 +228,9 @@ fn universal_shell_comp(
         }
         // the same archive, fetched instead of dropped
         Input("loadSample", [Str(url), ..]) => {
+          if !loaded_urls.contains(url) {
+            loaded_urls.push(url)
+          }
           @dhw.load_url(ctx.path(), url) |> ignore
           Some({ ..s, status: "loading \{url}…" })
         }
@@ -90,17 +241,39 @@ fn universal_shell_comp(
             // already registered is a HOT SWAP: the registry replaces it in
             // place, keeping its position in the palette.
             Some(DyncompLoaded(module_name)) => {
-              ctx.send_at_path(
-                ctx.path().concat([FieldStep("editor")]),
-                "catalogChanged",
-                [Str(module_name)],
-              )
+              let editor = ctx.path().concat([FieldStep("editor")])
+              ctx.send_at_path(editor, "catalogChanged", [Str(module_name)])
+              // The last of the resumed loads is what makes a restore
+              // possible: every bundle the saved slots name is now here.
+              if pending.val > 0 {
+                pending.val = pending.val - 1
+                if pending.val == 0 {
+                  match restored_session() {
+                    Some(session) =>
+                      ctx.send_at_path(editor, "restoreSession", [session])
+                    None => ()
+                  }
+                }
+              } else {
+                // Not a resume: a load of something already mounted, which is
+                // a hot swap and has to carry what it replaces.
+                match session_after_load(module_name) {
+                  Some(session) =>
+                    ctx.send_at_path(editor, "restoreSession", [session])
+                  None => ()
+                }
+              }
               Some({ ..s, status: "loaded \{module_name}" })
             }
             // The refusal's own words: "this host takes no CSS from a bundle",
             // "no such component". A generic sentence here would throw away
             // the one thing a person can act on.
-            Some(DyncompError(why)) => Some({ ..s, status: why })
+            Some(DyncompError(why)) => {
+              if pending.val > 0 {
+                pending.val = pending.val - 1
+              }
+              Some({ ..s, status: why })
+            }
             Some(Unknown(_, _)) | None => None
           }
       }
@@ -185,8 +358,15 @@ pub fn mount() -> Unit {
     return
   }
   app_ref.val = Some(app)
+  // BEFORE `set_app`, which installs the superseded-handle sweep: drained
+  // subscribers run in subscription order, so saving first means every handle
+  // this walks is still alive. After the sweep, a slot whose component was
+  // just used can be a handle the host has already collected — and a snapshot
+  // taken through one is not a snapshot at all.
+  app.transactor.on_drained(save_session)
   @dhw.set_app(app, @wglue.document())
   apply_margaui()
+  resume_session()
 }
 
 ///|
