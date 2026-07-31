@@ -123,6 +123,13 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **An `@if` branch that does not parse says so.** `@then="btn btn-primary"` is
+  a class list that forgot its quotes; it used to leave the branch unset, which
+  is indistinguishable from not writing one, so the element rendered with no
+  class and nothing reported why — least visible of all next to a static
+  `class`, which then appears to work. It is a `BadValue` now, and `gen-views`
+  fails on it. An unset branch stays legal and silent.
+
 - **`<input class="a" />` is not a duplicate attribute.** The vendored
   tokenizer finishes the last attribute a second time when a solidus follows
   whitespace and reports its name as a duplicate of itself, so every
