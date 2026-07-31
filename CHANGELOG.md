@@ -160,6 +160,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **An update that changed only what a schema does not name was thrown away.**
+  `reuse_equal` — the check that keeps a rebuilt-but-equal field from
+  propagating a new object to the root — compared two INSTANCES structurally,
+  and `obj_eq` ranges over the declared fields. So a successor that changed
+  something its schema does not name (an opaque guest's draft, a cursor, a
+  parser's arena) looked exactly like its predecessor, the parent kept the
+  predecessor, and the edit vanished — silently, with the successor's handle
+  already queued for collection, which is where the bridge's `no live
+  instance` warnings came from. Instances are compared by `obj_identity` now:
+  same origin and same revision, or not the same instance. Writing the SAME
+  instance back still collapses, so a no-op interaction stays free.
+
 - **A comment inside a view costs more than a comment should.** One before a
   template's root element makes the view a fragment; one INSIDE it sits where
   the renderer's `§…§` boundary meta is expected and ends the chain dispatch

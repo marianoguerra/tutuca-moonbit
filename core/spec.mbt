@@ -183,13 +183,18 @@ pub(open) trait Obj {
   // every consumer worked around that differently (a `Components` registry, a
   // hardcoded name list, a JSON projection).
   //
-  // Answering `Some` is a claim that the schema names EVERY field this
-  // instance has, because the defaults below range over it: a field left out
-  // is a field that does not exist as far as equality, the debug rendering and
-  // the JSON form are concerned, and for equality that is not incomplete but
-  // wrong. None is the honest answer when the description is partial — an
-  // opaque guest instance, an ad-hoc Obj standing in for a record — and it
-  // costs only the defaults, which fall back to what they did before.
+  // Answering `Some` is a claim that the schema names every field this
+  // instance PUBLISHES, because the defaults below range over it: a field left
+  // out is a field that does not exist as far as equality, the debug rendering
+  // and the JSON form are concerned. None is the honest answer when even that
+  // is more than can be said — an ad-hoc Obj standing in for a record.
+  //
+  // Keeping state the schema does not name is legal and ordinary — an opaque
+  // guest's draft, a cursor, a parser's arena — and costs exactly one thing:
+  // two instances that differ only there compare EQUAL. Nothing that detects
+  // change may lean on that, which is why identity (`obj_identity`) rather
+  // than equality is what decides whether a successor replaces its
+  // predecessor.
   //
   // MUST return a STORED value, never build one: the defaults read it in loops.
   fn obj_schema(Self) -> SchemaInfo? = _

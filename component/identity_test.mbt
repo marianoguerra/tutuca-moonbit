@@ -319,3 +319,115 @@ impl @component.Fields for IdState with fn schema() {
     @component.FieldInfo::new("tags", TyOMap(TyAny)),
   ])
 }
+
+///|
+/// A CHILD instance is kept or replaced by its identity, never by how it
+/// looks.
+///
+/// The reuse check above exists to keep a rebuilt-but-equal field from
+/// propagating a new object to the root, and for plain data "equal" is the
+/// whole story. For an instance it is not: `obj_eq` ranges over the DECLARED
+/// fields, so a successor that changed something its schema does not name —
+/// an opaque guest's draft, a cursor, anything a component knows and does not
+/// publish — looks exactly like its predecessor. Keeping the predecessor there
+/// discards the update, and the caller has no way to notice.
+test "a child instance is replaced by a successor that looks identical" {
+  let parent = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Parent",
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+  )
+  let first = Opaque::new("one")
+  let v = parent.make({ "items": List([first.to_value()]) })
+  guard v is Obj(o)
+  // The successor changed something its SCHEMA DOES NOT NAME, so the two
+  // compare equal and only their identities differ — which is the shape every
+  // opaque instance produces when it keeps more than it declares.
+  let next = first.successor("a draft nobody declared")
+  assert_true(@tutuca.Obj::obj_eq(next, first))
+  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  let after = set_at([Null, Num(0), next.to_value()])
+  guard after is Obj(o2)
+  guard o2.obj_field("items") is Some(List(items))
+  // the parent holds the successor, not the thing it resembles
+  guard items[0] is Obj(held)
+  @debug.assert_eq(
+    held.obj_field("hidden"),
+    Some(Str("a draft nobody declared")),
+  )
+}
+
+///|
+test "writing the same child back leaves the parent alone" {
+  let child = id_comp()
+  let parent = @component.component(
+    views={ "main": @anode.View::new("main", raw_view="<div></div>") },
+    name="Parent",
+    init=IdState::{ title: "p", count: 0, items: [], tags: Map([]) },
+  )
+  let kid = child.make({ "title": Str("one") })
+  let v = parent.make({ "items": List([kid]) })
+  guard v is Obj(o)
+  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  // the SAME instance back: nothing changed, so nothing is rebuilt and a
+  // no-op interaction stays free
+  let after = set_at([Null, Num(0), kid])
+  assert_true(physical_equal(after, v))
+}
+
+///|
+/// An instance that keeps MORE than it declares — the case a schema cannot
+/// describe and equality therefore cannot see.
+///
+/// `label` is declared; `hidden` is not, and is what changes between an
+/// instance and its successor. This is a guest with opaque state written small
+/// enough to hold in one hand.
+priv struct Opaque {
+  label : String
+  hidden : String
+  id : @tutuca.ObjId
+}
+
+///|
+fn Opaque::new(label : String) -> Opaque {
+  { label, hidden: "", id: @tutuca.ObjId::of("opaque", { "n": Str(label) }) }
+}
+
+///|
+/// The same instance, one update later: same declared fields, new identity.
+fn Opaque::successor(self : Opaque, hidden : String) -> Opaque {
+  { ..self, hidden, id: self.id.next() }
+}
+
+///|
+fn Opaque::to_value(self : Opaque) -> @tutuca.Value {
+  Obj(self)
+}
+
+///|
+impl @tutuca.Obj for Opaque with fn obj_field(self, name) {
+  match name {
+    "label" => Some(Str(self.label))
+    "hidden" => Some(Str(self.hidden))
+    _ => None
+  }
+}
+
+///|
+impl @tutuca.Obj for Opaque with fn obj_schema(self) {
+  ignore(self)
+  opaque_schema
+}
+
+///|
+/// Stored, because `obj_schema` must return a value rather than build one.
+let opaque_schema : @tutuca.SchemaInfo? = Some(
+  @component.SchemaInfo::new(fingerprint="opaque", fields=[
+    @component.FieldInfo::new("label", TyText),
+  ]),
+)
+
+///|
+impl @tutuca.Obj for Opaque with fn obj_identity(self) {
+  Some(self.id)
+}

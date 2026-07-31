@@ -122,6 +122,24 @@ fn reuse_equal(a : @tutuca.Value, b : @tutuca.Value, fuel : Ref[Int]) -> Bool {
   }
   fuel.val -= 1
   match (a, b) {
+    // Two INSTANCES are the same instance or they are not, and a structural
+    // compare cannot tell: an instance's identity is its state under
+    // copy-on-write, and `obj_eq` ranges over the DECLARED fields — which is
+    // the right answer to "are these two alike" and the wrong one to "may I
+    // keep the old one". A guest whose schema does not name everything it
+    // holds (a draft, a cursor, a parser's arena) hands back a successor that
+    // looks equal on every edit, and keeping the predecessor here threw that
+    // edit away — silently, and with the successor's handle already queued
+    // for collection.
+    //
+    // `ObjId` is exactly the question being asked: same origin, same
+    // revision. An instance that tracks no identity answers false, which the
+    // contract above says is always safe.
+    (Obj(x), Obj(y)) =>
+      match (x.obj_identity(), y.obj_identity()) {
+        (Some(ix), Some(iy)) => ix == iy
+        _ => false
+      }
     (List(x), List(y)) => {
       if x.length() != y.length() {
         return false

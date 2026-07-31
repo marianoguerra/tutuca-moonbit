@@ -10,16 +10,55 @@
 /// is asserting that the projection is faithful.
 
 ///|
-priv struct StubGuest {}
-
-///|
-impl @dyncomp.Guest for StubGuest with fn create(_self, _component, _args) {
-  0
+/// A guest with just enough state to be USED: one number per instance, a
+/// handler that raises it, and successors that are new handles.
+///
+/// Most tests here only need it to answer the manifest, but a placed component
+/// nobody can click proves nothing about what the editor is holding after
+/// somebody clicks one.
+priv struct StubGuest {
+  counts : Map[Int, Double]
+  /// A text field, so a test can drive an `input` event on a form control and
+  /// not only a click on a button.
+  notes : Map[Int, String]
+  next : Ref[Int]
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn get_field(_self, _handle, _name) {
-  None
+fn StubGuest::new() -> StubGuest {
+  { counts: Map([]), notes: Map([]), next: { val: 0 } }
+}
+
+///|
+fn StubGuest::alloc(
+  self : StubGuest,
+  count : Double,
+  note? : String = "",
+) -> Int {
+  let h = self.next.val
+  self.next.val = h + 1
+  self.counts[h] = count
+  self.notes[h] = note
+  h
+}
+
+///|
+impl @dyncomp.Guest for StubGuest with fn create(self, _component, args) {
+  self.alloc(
+    match args.get("count") {
+      Some(Num(n)) => n
+      _ => 0.0
+    },
+  )
+}
+
+///|
+impl @dyncomp.Guest for StubGuest with fn get_field(self, handle, name) {
+  match name {
+    "count" => Some(Num(self.counts.get(handle).unwrap_or(0.0)))
+    "note" => Some(Str(self.notes.get(handle).unwrap_or("")))
+    _ => None
+  }
 }
 
 ///|
@@ -29,13 +68,37 @@ impl @dyncomp.Guest for StubGuest with fn seq_entries(_self, _handle) {
 
 ///|
 impl @dyncomp.Guest for StubGuest with fn dispatch(
-  _self,
-  _handle,
-  _bucket,
-  _name,
+  self,
+  handle,
+  bucket,
+  name,
   _args,
 ) {
-  { next: None, msgs: [] }
+  match (bucket, name) {
+    (Input, "inc") =>
+      {
+        next: Some(
+          self.alloc(
+            self.counts.get(handle).unwrap_or(0.0) + 1.0,
+            note=self.notes.get(handle).unwrap_or(""),
+          ),
+        ),
+        msgs: [],
+      }
+    // the guest's own text handler: `@on.input="jot value"`
+    (Input, "jot") =>
+      match _args {
+        [Str(text), ..] =>
+          {
+            next: Some(
+              self.alloc(self.counts.get(handle).unwrap_or(0.0), note=text),
+            ),
+            msgs: [],
+          }
+        _ => { next: None, msgs: [] }
+      }
+    _ => { next: None, msgs: [] }
+  }
 }
 
 ///|
@@ -49,8 +112,14 @@ impl @dyncomp.Guest for StubGuest with fn call_method(
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn with_field(_self, _handle, _name, _v) {
-  None
+impl @dyncomp.Guest for StubGuest with fn with_field(self, handle, name, v) {
+  match (name, v) {
+    ("count", Num(n)) => Some(self.alloc(n))
+    _ => {
+      ignore(handle)
+      None
+    }
+  }
 }
 
 ///|
@@ -83,8 +152,8 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 ///|
 /// A catalog with one documented, constrained component — which is what makes
 /// the generated form worth generating.
-fn catalog() -> @registry.Registry raise {
-  let manifest : @dyncomp.DynManifest = {
+fn stub_manifest() -> @dyncomp.DynManifest {
+  {
     api_version: 4,
     module_name: "counterlib",
     doc: "Sample counters.",
@@ -102,7 +171,7 @@ fn catalog() -> @registry.Registry raise {
         views: [
           {
             name: "main",
-            html: "<div class=\"the-counter\"><button @on.click=\"inc\">+</button></div>",
+            html: "<div class=\"the-counter\"><span class=\"guest-count\" @text=\".count\"></span><button class=\"guest-inc\" @on.click=\"inc\">+</button><input class=\"guest-note\" :value=\".note\" @on.input=\"jot value\" /></div>",
           },
         ],
         types: [ty("ty-float"), ty("ty-text")],
@@ -126,7 +195,7 @@ fn catalog() -> @registry.Registry raise {
             constraint: None,
           },
         ],
-        handlers: ["inc"],
+        handlers: ["inc", "jot"],
         receives: [],
         bubbles: [],
         responses: [],
@@ -144,15 +213,33 @@ fn catalog() -> @registry.Registry raise {
       },
     ],
   }
+}
+
+///|
+/// The catalog, and the bundle it came from — registered into `scope` when a
+/// test needs instances the app can RENDER, and into a throwaway one when it
+/// only needs the descriptors.
+fn catalog_of(
+  guest : StubGuest,
+  scope? : @component.ComponentStack? = None,
+) -> (@registry.Registry, @dyncomp.Bundle) raise {
   let reg = @registry.Registry::new()
-  reg.register(
-    @dyncomp.register_bundle(
-      @component.ComponentStack::new(),
-      StubGuest::{  },
-      manifest,
-    ),
+  let bundle = @dyncomp.register_bundle(
+    match scope {
+      Some(s) => s
+      None => @component.ComponentStack::new()
+    },
+    guest,
+    stub_manifest(),
   )
-  reg
+  reg.register(bundle)
+  (reg, bundle)
+}
+
+///|
+/// The catalog alone, for the tests that never build an instance from it.
+fn catalog() -> @registry.Registry raise {
+  catalog_of(StubGuest::new()).0
 }
 
 ///|
@@ -197,10 +284,20 @@ fn stub_make() -> (MakeInstance, @component.Component, Ref[Array[String]]) {
     views={
       "main": @anode.View::new(
         "main",
-        raw_view="<div class=\"placed\" @text=\".label\"></div>",
+        // A button, so a test can USE what it placed — which is the one thing
+        // a stand-in that only renders could never check.
+        raw_view=(
+          #|<div class="placed" @text=".label" @on.click="shout"></div>
+        ),
       ),
     },
     init=({ label: "" } : PlacedState),
+    update=(s : PlacedState, msg, _ctx) => {
+      match msg {
+        Input("shout", _) => Some({ label: s.label + "!" })
+        _ => None
+      }
+    },
   )
   let make = fn(
     ref_ : @registry.ComponentRef,
@@ -685,4 +782,248 @@ test "an imported layout keeps its slots and not their contents" {
   inspect(h.find_all(".node-empty").length(), content="1")
   // ...but the document still names what belongs there
   assert_true(exported.contains("\"name\":\"Counter\""))
+}
+
+///|
+/// What the editor holds after a placed component is USED, read the way a
+/// shell reads it: off the app's root value.
+///
+/// This is the seam the universal page's session save sits on, and the one
+/// that was wrong — a successor lands in the rendered tree, so anything that
+/// looks somewhere else finds the instance one update behind, which after the
+/// superseded sweep is a guest handle nobody can answer for.
+test "a shell reading the app root sees what was just used" {
+  let (h, _) = mounted()
+  h.click(".add-slot")
+  h.click(".palette-row")
+  h.type_into(".field-string", "x")
+  h.click(".form-create")
+  inspect(h.text(".placed"), content="Counter:x")
+  // use it
+  h.click(".placed")
+  inspect(h.text(".placed"), content="Counter:x!")
+  // and now the reading a shell does
+  let slots = live_slots(h.drive_value())
+  inspect(slots.length(), content="1")
+  let placed = slots.values().to_array()[0]
+  inspect(placed.field("label").str(), content="Counter:x!")
+}
+
+///|
+/// The shell state the test below mounts: one component-typed field, exactly
+/// like the universal page's.
+priv struct ShellState {
+  editor : @tutuca.Value
+}
+
+///|
+impl @component.Fields for ShellState with fn encode(s) {
+  { "editor": s.editor }
+}
+
+///|
+impl @component.Fields for ShellState with fn decode(f) {
+  Some({ editor: f.get("editor").unwrap_or(Null) })
+}
+
+///|
+impl @component.Fields for ShellState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="shell", fields=[
+    @component.FieldInfo::new("editor", TyComp(Some("SurfaceEditor"))),
+  ])
+}
+
+///|
+/// The same reading, one level down: the editor as a SLOT of a page shell,
+/// which is how the universal demo mounts it.
+///
+/// The hop through the shell's field is the part that was untested, and it is
+/// where a shell looking for what it placed would find the wrong copy.
+test "a shell one level up sees it too" {
+  let (make, placeholder, _) = stub_make()
+  let (editor_module, seed) = seeded_editor(catalog(), make)
+  let shell = @component.component(
+    name="Shell",
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="shell"><x render=".editor"></x></div>
+        ),
+      ),
+    },
+    init=({ editor: Null } : ShellState),
+    slots={ "editor": "SurfaceEditor" },
+    slot_args={ "editor": seed },
+  )
+  let module_ = @component.ModuleDef::new(
+    name="shellmod",
+    components=[shell, placeholder] + editor_module.components,
+  )
+  let h = @harness.mount(module_, "Shell")
+  h.click(".add-slot")
+  h.click(".palette-row")
+  h.type_into(".field-string", "y")
+  h.click(".form-create")
+  h.click(".placed")
+  inspect(h.text(".placed"), content="Counter:y!")
+  // what the shell would store
+  let slots = live_slots(h.drive_value().field("editor"))
+  inspect(slots.length(), content="1")
+  inspect(
+    slots.values().to_array()[0].field("label").str(),
+    content="Counter:y!",
+  )
+}
+
+///|
+/// The browser case, headless: a real GUEST instance in a slot, used, and then
+/// read back the way the universal page's session save reads it.
+///
+/// A guest is the case that matters because its successor is a new opaque
+/// handle rather than a new state struct: whatever the editor is holding
+/// afterwards has to be the successor, or the shell stores an instance the
+/// host has already collected.
+test "a guest instance is current wherever it is read from" {
+  let guest = StubGuest::new()
+  let (registry, _) = catalog_of(guest)
+  // Filled after the mount: a guest's components have to be registered into
+  // the APP's scope for `<x render=".slot">` to resolve them, and the app does
+  // not exist until the module that names its make-function is built.
+  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let placed : Ref[Array[String]] = { val: [] }
+  let make = fn(
+    ref_ : @registry.ComponentRef,
+    _init : String,
+    args : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value? {
+    placed.val.push(ref_.to_id())
+    guard live.val is Some(bundle) else { return None }
+    match bundle.make_instance(ref_.name, args~) {
+      Some(d) => Some(d.to_value())
+      None => None
+    }
+  }
+  let (editor_module, seed) = seeded_editor(registry, make)
+  let shell = @component.component(
+    name="Shell",
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="shell"><x render=".editor"></x></div>
+        ),
+      ),
+    },
+    init=({ editor: Null } : ShellState),
+    slots={ "editor": "SurfaceEditor" },
+    slot_args={ "editor": seed },
+  )
+  let h = @harness.mount(
+    @component.ModuleDef::new(
+      name="shellmod",
+      components=[shell] + editor_module.components,
+    ),
+    "Shell",
+  )
+  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
+  h.click(".add-slot")
+  h.click(".palette-row")
+  h.type_into(".field-number", "2")
+  h.click(".form-create")
+  @debug.assert_eq(placed.val, ["counterlib/Counter"])
+  inspect(h.text(".guest-count"), content="2")
+  // use it: the guest hands back a NEW handle
+  h.click(".guest-inc")
+  inspect(h.text(".guest-count"), content="3")
+  // and the shell, reading the app root, finds that one
+  let slots = live_slots(h.drive_value().field("editor"))
+  inspect(slots.length(), content="1")
+  inspect(
+    slots.values().to_array()[0].field("count").to_display_string(),
+    content="3",
+  )
+  // The same, through a form control rather than a button: an `input` on a
+  // text box is the shape that was losing its successor in the browser, and
+  // it goes through the same dispatch as everything else.
+  h.type_into(".guest-note", "written")
+  let after = live_slots(h.drive_value().field("editor"))
+  inspect(after.values().to_array()[0].field("note").str(), content="written")
+}
+
+///|
+/// The same, with the text edit FIRST: no click before it, so nothing has
+/// replaced the instance the DOM was rendered from.
+test "a guest's first edit is applied too" {
+  let guest = StubGuest::new()
+  let (registry, _) = catalog_of(guest)
+  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let make = fn(
+    ref_ : @registry.ComponentRef,
+    _init : String,
+    args : Map[String, @tutuca.Value],
+  ) -> @tutuca.Value? {
+    guard live.val is Some(bundle) else { return None }
+    match bundle.make_instance(ref_.name, args~) {
+      Some(d) => Some(d.to_value())
+      None => None
+    }
+  }
+  let (editor_module, seed) = seeded_editor(registry, make)
+  let h = @harness.mount(editor_module, "SurfaceEditor", args=seed)
+  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
+  h.click(".add-slot")
+  h.click(".palette-row")
+  h.type_into(".field-number", "0")
+  h.click(".form-create")
+  h.type_into(".guest-note", "first")
+  let slots = live_slots(h.drive_value())
+  inspect(slots.values().to_array()[0].field("note").str(), content="first")
+}
+
+///|
+/// The same guest, the same text edit, with NO editor in the picture: a shell
+/// whose one field holds the instance.
+///
+/// This is the control for the two tests above — it says whether a guest's
+/// `@on.input` successor survives at all, or only survives outside the editor.
+test "a guest's text edit survives in a plain shell" {
+  let guest = StubGuest::new()
+  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let shell = @component.component(
+    name="PlainShell",
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="shell"><x render=".editor"></x></div>
+        ),
+      ),
+    },
+    init=({ editor: Null } : ShellState),
+  )
+  let h = @harness.mount(
+    @component.ModuleDef::new(name="plain", components=[shell]),
+    "PlainShell",
+  )
+  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
+  guard live.val is Some(bundle)
+  guard bundle.make_instance("Counter") is Some(inst)
+  // seed it into the shell's field the way a host does
+  h.app.transactor.push_input(@tutuca.DispatchPath::new(), "setEditor", [
+    inst.to_value(),
+  ])
+  |> ignore
+  h.app.transactor.settle() |> ignore
+  inspect(h.find_all(".the-counter").length(), content="1")
+  // a click changes a DECLARED field, so the successor was never in doubt
+  h.click(".guest-inc")
+  inspect(
+    h.drive_value().field("editor").field("count").to_display_string(),
+    content="1",
+  )
+  // and a text edit changes only what the schema does NOT name — the case a
+  // structural compare called "no change" and threw away
+  h.type_into(".guest-note", "plain")
+  inspect(h.drive_value().field("editor").field("note").str(), content="plain")
 }

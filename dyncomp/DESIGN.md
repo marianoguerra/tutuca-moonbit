@@ -210,17 +210,6 @@ file's id or by URL.
 
 ## Still open
 
-- **A snapshot taken from OUTSIDE the component can lag its last keystroke.**
-  The universal demo saves on the transactor's drained cascade by reading the
-  placed instances out of the app root (`@ui.live_slots`), and the instance it
-  finds there is sometimes the predecessor of the one the renderer just drew —
-  visible as `no live instance N` from the bridge once the superseded sweep has
-  run. The declared half survives (it is saved again on the next cascade) and
-  `Bundle::snapshot` now refuses an instance that answers nothing rather than
-  storing a blank over a good one, but the guest's own bytes can miss the last
-  edit. What needs establishing is where a nested component's successor is
-  written back: the editor's own harvest during dispatch always sees the live
-  one, so the two paths disagree about what the root holds.
 - Host → guest encoding of an instance nested inside a compound value
   (`with-field` covers the write path that exists).
 - A render-generation sweep as an alternative to explicit `destroy` for
