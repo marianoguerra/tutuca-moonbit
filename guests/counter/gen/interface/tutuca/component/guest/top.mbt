@@ -5,6 +5,13 @@
 /// event bindings are attributes resolved at view parse time, so the handler
 /// names the markup references dispatch back into `instance.handle-event`.
 /// Every component needs a "main" view.
+///
+/// This is the widest channel a bundle has, because it is text the host
+/// compiles and renders into its own page. `@dangerouslysetinnerhtml` is
+/// REFUSED in a guest view: its content is a runtime expression, so no
+/// registration-time pass can see what it will hold, and the host will not
+/// render markup it never got to look at. (A sanitizer over the compiled
+/// tree is the next step, and is what would let it back in.)
 pub(all) struct ViewDef {
   name : String
   html : String
@@ -86,9 +93,44 @@ pub(all) struct TyDef {
 } derive(Show, Eq)
 
 ///|
+/// A sentence about a name the component already declares elsewhere —
+/// a handler, a receive, a bubble, a response, a method, a request. One flat
+/// table rather than a doc field on six lists, because the lists stay plain
+/// `list<string>` and the host merges by name.
+pub(all) struct NamedDoc {
+  name : String
+  doc : String
+} derive(Show, Eq)
+
+///|
+/// The part of a field a TYPE cannot say. `ty-def` says a field holds a
+/// string; this says it holds an email between 3 and 254 characters with a
+/// default of "". Both a generated form and a JSON Schema need the second
+/// half, and neither can infer it.
+///
+/// Every member is optional by having an empty spelling: "" for the strings,
+/// `none` for the options. `enum-json` and `default-json` are JSON text for
+/// the same reason `init-def.args-json` is — a manifest is DATA the host
+/// keeps, and an arena handle would be stale the moment `get-manifest`
+/// returned.
+pub(all) struct Constraint {
+  min : Double?
+  max : Double?
+  min_len : UInt?
+  max_len : UInt?
+  pattern : String
+  format : String
+  enum_json : String
+  default_json : String
+} derive(Show, Eq)
+
+///|
 pub(all) struct FieldDef {
   name : String
   ty : UInt
+  doc : String
+  required : Bool
+  constraint : Constraint?
 } derive(Show, Eq)
 
 ///|
@@ -98,11 +140,16 @@ pub(all) struct FieldDef {
 pub(all) struct InitDef {
   name : String
   args_json : String
+  doc : String
 } derive(Show, Eq)
 
 ///|
 pub(all) struct ComponentDef {
   name : String
+  doc : String
+  keywords : Array[String]
+  category : String
+  message_docs : Array[NamedDoc]
   views : Array[ViewDef]
   types : Array[TyDef]
   fields : Array[FieldDef]
@@ -118,6 +165,47 @@ pub(all) struct ComponentDef {
 } derive(Show, Eq)
 
 ///|
+/// Something a component cannot do for itself and the host can. Requested
+/// here, granted (or not) by the host; there is no negotiation and no
+/// partial grant, because a capability that is present but lies is worse
+/// than one that is absent.
+///
+/// `control.request` is deliberately NOT in this list. Whether a guest may
+/// reach a HOST request handler is a decision about the caller, not about
+/// the bundle, so the host makes it per call from the requester's path
+/// rather than reading a claim out of the manifest.
+pub(all) enum Capability {
+  CAP_CLOCK
+  CAP_RANDOM
+  CAP_TIMER
+} derive(Show, Eq)
+
+///|
+pub fn Capability::ordinal(self : Capability) -> Int {
+  match self {
+    CAP_CLOCK => 0
+    CAP_RANDOM => 1
+    CAP_TIMER => 2
+  }
+}
+
+///|
+pub fn Capability::from(self : Int) -> Capability {
+  match self {
+    0 => CAP_CLOCK
+    1 => CAP_RANDOM
+    2 => CAP_TIMER
+    _ => panic()
+  }
+}
+
+///|
+pub(all) struct CapabilityReq {
+  cap : Capability
+  reason : String
+} derive(Show, Eq)
+
+///|
 /// What the views RAISE is not declared: the host compiles them, so it reads
 /// those names off the compiled tree (Component::view_handler_names) and puts
 /// them in the component's descriptor. `handlers` above is the other
@@ -125,6 +213,11 @@ pub(all) struct ComponentDef {
 pub(all) struct Manifest {
   api_version : UInt
   module_name : String
+  doc : String
+  version : String
+  homepage : String
+  authors : Array[String]
+  capabilities : Array[CapabilityReq]
   components : Array[ComponentDef]
 } derive(Show, Eq)
 
@@ -181,7 +274,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.2.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.3.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -191,7 +284,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.2.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.3.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -201,7 +294,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.2.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.3.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.

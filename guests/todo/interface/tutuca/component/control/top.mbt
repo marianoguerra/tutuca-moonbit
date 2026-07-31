@@ -467,6 +467,12 @@ pub fn stop_propagation() -> Unit {
 /// Fire a request handler — one this bundle serves (see
 /// `component-def.requests`) or, failing that, one the HOST registered. The
 /// response arrives as a later handle-event(response, ...), routed by `opts`.
+///
+/// A bundle's OWN handlers run inside the guest, so they inherit the guest's
+/// (absent) authority and need no policy. Reaching a HOST handler is the one
+/// place a guest asks for something it cannot do itself, so the host decides
+/// — by the requester's path, at the moment of the call, not by anything the
+/// manifest claimed. A refusal arrives as an error response.
 pub fn request(
   name : String,
   args : Array[@values.Value],
@@ -578,6 +584,87 @@ pub fn request(
     } else {
       0
     },
+  )
+  mbt_ffi_free(ptr)
+  mbt_ffi_free(address)
+
+  cleanup_list.each(mbt_ffi_free)
+}
+
+///|
+/// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
+/// later handle-event(receive, ...). Buffered like the rest; the host owns
+/// the timer and may coalesce, delay or drop it. There is no cancel and no
+/// handle: a guest cannot cancel what it does not own, and a component that
+/// wants to stop a tick stops acting on it. Requires `cap-timer`.
+pub fn after(
+  delay_ms : UInt,
+  name : String,
+  args : Array[@values.Value],
+) -> Unit {
+  let cleanup_list : Array[Int] = []
+
+  let ptr = mbt_ffi_str2ptr(name)
+
+  let address = mbt_ffi_malloc(args.length() * 16)
+  for index = 0; index < args.length(); index = index + 1 {
+    let iter_elem : @values.Value = args[index]
+    let iter_base = address + index * 16
+
+    match iter_elem {
+      Nil => {
+        mbt_ffi_store8(iter_base + 0, 0)
+
+        ()
+      }
+      Boolean(payload0) => {
+        mbt_ffi_store8(iter_base + 0, 1)
+        mbt_ffi_store8(iter_base + 8, if payload0 { 1 } else { 0 })
+
+        ()
+      }
+      Number(payload1) => {
+        mbt_ffi_store8(iter_base + 0, 2)
+        mbt_ffi_storef64(iter_base + 8, payload1)
+
+        ()
+      }
+      Text(payload2) => {
+        mbt_ffi_store8(iter_base + 0, 3)
+
+        let ptr3 = mbt_ffi_str2ptr(payload2)
+        mbt_ffi_store32(iter_base + 12, payload2.length())
+        mbt_ffi_store32(iter_base + 8, ptr3)
+        cleanup_list.push(ptr3)
+
+        ()
+      }
+      List(payload4) => {
+        mbt_ffi_store8(iter_base + 0, 4)
+        mbt_ffi_store64(iter_base + 8, payload4.reinterpret_as_int64())
+
+        ()
+      }
+      Map(payload5) => {
+        mbt_ffi_store8(iter_base + 0, 5)
+        mbt_ffi_store64(iter_base + 8, payload5.reinterpret_as_int64())
+
+        ()
+      }
+      Instance(payload6) => {
+        mbt_ffi_store8(iter_base + 0, 6)
+        mbt_ffi_store64(iter_base + 8, payload6.reinterpret_as_int64())
+
+        ()
+      }
+    }
+  }
+  wasmImportAfter(
+    delay_ms.reinterpret_as_int(),
+    ptr,
+    name.length(),
+    address,
+    args.length(),
   )
   mbt_ffi_free(ptr)
   mbt_ffi_free(address)

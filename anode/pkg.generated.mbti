@@ -93,6 +93,7 @@ pub(all) enum ANode {
 } derive(@debug.Debug)
 pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
 pub fn ANode::has_newline(Self) -> Bool
+pub fn ANode::has_raw_html(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool
 pub fn ANode::parse(String, ParseContext) -> Self?
 

@@ -1,9 +1,13 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.2.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.3.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
+
+Two companion documents: [`SECURITY.md`](SECURITY.md) — what a bundle can and
+cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
+— the plan for the universal UI and the agent runtime built on this.
 
 - Host: [`host/`](host/) (backend-agnostic) + [`host/wasm/`](host/wasm/) (the
   `tcomp` bridge for wasm-gc), with memdom tests: `moon test dyncomp/host`.
@@ -19,7 +23,7 @@ can fetch, instantiate, and mount into its component tree.
   dyncomp/test/rust-harness.test.mjs`; `test/browser-smoke.html` served from
   the repo root.
 
-## Three principles, in order of consequence
+## Four principles, in order of consequence
 
 1. **The host is the framework** (inversion of control). Guests import
    host-provided interfaces (`values`, `control`); the host calls guests at
@@ -37,12 +41,25 @@ can fetch, instantiate, and mount into its component tree.
    (`get-field`). The schema says what fields exist and what they hold — it
    never carries their values.
 
+4. **Ambient authority is granted, never assumed.** The world imports no WASI.
+   The three facts a component cannot compute for itself — the time, a random
+   number, a fresh id — live in `env`, each behind a capability the manifest
+   requests and the host grants, and each answered more weakly than the
+   platform would (a coarsened, per-dispatch-frozen clock; a seeded PRNG). An
+   ungranted capability refuses the bundle rather than degrading it.
+
 That third principle is what makes the contract small. Everything generic over
 a schema works on a guest without the guest implementing any of it: structural
 equality (`Obj::obj_eq`), the JSON projection (`Value::to_json`), the debug
-rendering, hot-swap migration, the inspector's form, and the generated
-per-field mutators (`setCount`, `toggleDone`, `pushInItems`, …). A guest that
-declares `count: s32` gets a working `setCount` with no guest code at all.
+rendering, hot-swap migration, the inspector's form, the generated per-field
+mutators (`setCount`, `toggleDone`, `pushInItems`, …), and — since v3 — the
+catalog entry a search ranks and a language model reads. A guest that declares
+`count: s32` gets a working `setCount` with no guest code at all.
+
+The fourth is what makes the first three worth having. A component whose state
+is opaque but whose shape is declared can be searched, formed and described
+without anyone trusting it; a component with no ambient authority can be
+mounted from anywhere. Neither property is useful alone.
 
 ## How it maps onto existing tutuca machinery
 
@@ -162,7 +179,10 @@ file's id or by URL.
 | the input names it ANSWERS ITSELF | the rest: those are the mutators its fields imply, applied host-side through `with-field` |
 | `receives` / `bubbles` / `responses` | how they are routed — that is the transactor's |
 | `methods` and `whens` (`@when` filters) | — |
-| `requests` it serves, and named `inits` | — |
+| `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
+| what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is the hash of its archive |
+| the capabilities it needs (`cap-clock` / `cap-random` / `cap-timer`) | whether it gets them |
+| a SCOPED style, or none | any global CSS — there is no field for it, deliberately |
 
 ## Trade-offs accepted
 
@@ -179,6 +199,13 @@ file's id or by URL.
   declared in `handlers` (`resetLeft` is both a plausible handler and the
   mutator a `left` field implies). `handle-event` is one opaque entry point, so
   the host cannot ask "is this yours?" without calling it.
+- `@dangerouslysetinnerhtml` is refused in a guest view, so a bundle that
+  genuinely needs to render markup cannot. Its value is an expression, so no
+  registration-time pass can see what it will hold; refusing the construct is
+  the only decision available ahead of time. A Sanitizer-API pass over the
+  rendered markup is what would let it back in (`SECURITY.md` §3).
+- Nothing in `env` is a real clock or real entropy, by design. A component that
+  needs either asks the host through `control.request`.
 
 ## Still open
 
@@ -189,5 +216,13 @@ file's id or by URL.
 - Playground emission of dyncomp bundles (needs in-browser componentize).
 - `@enrich-with` / `@loop-with` for guests: `@when` reaches `call-method`
   today, the other two render-time buckets do not.
+- The `env` grants are declared and parsed but not yet ENFORCED: the host
+  reads `manifest.capabilities` and does not refuse on them. The bridge
+  supplies `env` unconditionally, which is harmless while jco elides an import
+  no guest calls, and is the first thing `dyncomp/policy` fixes.
+- `control.after` is in the contract and has no host implementation; it needs a
+  timer the transactor owns.
+- Caller-aware authorization of HOST request handlers, which needs `RequestFn`
+  to carry the requester's `DispatchPath` (`SECURITY.md` §5).
 - Whether the `values` arena earns its keep now that compounds already cross
   the JS↔host boundary as JSON — a measurement, not an argument.

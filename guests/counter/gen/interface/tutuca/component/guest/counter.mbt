@@ -160,9 +160,21 @@ fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
 
 ///|
 fn counter_def() -> ComponentDef {
-  {
-    name: "Counter",
-    views: [
+  component_def(
+    "Counter",
+    doc="A number with buttons that raise and lower it, keeping every value it has held.",
+    keywords=["counter", "number", "tally", "increment"],
+    category="input",
+    message_docs=[
+      { name: "inc", doc: "Add one." },
+      { name: "dec", doc: "Subtract one." },
+      { name: "double", doc: "Ask the host to double the count." },
+      { name: "triple", doc: "Ask this bundle to triple the count." },
+      { name: "announce", doc: "Tell the parent what the count is now." },
+      { name: "sum", doc: "Replace the count with the sum of a list." },
+      { name: "label", doc: "The count as a sentence, for a view." },
+    ],
+    views=[
       {
         name: "main",
         html: (
@@ -187,32 +199,42 @@ fn counter_def() -> ComponentDef {
     ],
     // The state this component holds. Declaring it is what gives the host the
     // JSON projection, structural equality and the generated `setCount` /
-    // `pushInHistory` mutators — none of which is implemented below.
-    types: [
+    // `pushInHistory` mutators — none of which is implemented below. The docs
+    // and the constraint are the half a TYPE cannot state, and they are what a
+    // generated form and a catalog search read.
+    types=[
       { kind: TY_FLOAT, elem: None, items: [], name: "", members: [] },
       { kind: TY_LIST, elem: Some(0), items: [], name: "", members: [] },
     ],
-    fields: [{ name: "count", ty: 0 }, { name: "history", ty: 1 }],
+    fields=[
+      field(
+        "count",
+        0,
+        doc="The current value.",
+        required=false,
+        constraint=Some({ ..no_limits(), min: Some(-1000), max: Some(1000) }),
+      ),
+      field("history", 1, doc="Every value the count has held, oldest first."),
+    ],
     // `setCount` is deliberately NOT here: it is the mutator `count` implies,
     // and the host answers it — declaring it would take it back.
-    handlers: ["inc", "dec", "double", "triple", "announce"],
-    receives: ["init", "sum"],
-    bubbles: [],
-    responses: ["doubled", "triple"],
-    methods: ["label"],
-    whens: ["nonZero"],
-    requests: [],
+    handlers=["inc", "dec", "double", "triple", "announce"],
+    receives=["init", "sum"],
+    responses=["doubled", "triple"],
+    methods=["label"],
+    whens=["nonZero"],
     // a named initial state a host can offer instead of the bare constructor
-    inits: [
+    inits=[
       {
         name: "with-history",
         args_json: "{\"count\": 3, \"history\": [0, 1, 2]}",
+        doc: "Starts at three, with the first three counts already behind it.",
       },
     ],
     // styling is entirely margaui (daisyUI) classes above; the universal demo
-    // compiles them, so no scoped fallback CSS
-    style: "",
-  }
+    // compiles them, so no scoped fallback CSS — and under the host's strict
+    // tier an empty `style` is the only thing a bundle may ship.
+  )
 }
 
 ///|
@@ -282,9 +304,17 @@ fn make_pair(_args : Array[(String, @values.Value)]) -> &DynComponent {
 
 ///|
 fn pair_def() -> ComponentDef {
-  {
-    name: "Pair",
-    views: [
+  component_def(
+    "Pair",
+    doc="Two counters side by side; announcing from either one swaps them.",
+    keywords=["counter", "pair", "layout"],
+    category="layout",
+    message_docs=[
+      { name: "zeroLeft", doc: "Set the left counter back to zero." },
+      { name: "counted", doc: "A child counter announced its value." },
+      { name: "triple", doc: "Triple a number (served by this bundle)." },
+    ],
+    views=[
       {
         name: "main",
         html: (
@@ -298,23 +328,21 @@ fn pair_def() -> ComponentDef {
     ],
     // both children are Counters from this same module, held as instance
     // tokens (control.make-instance) — a `component` slot to the host
-    types: [
+    types=[
       { kind: TY_COMP, elem: None, items: [], name: "Counter", members: [] },
     ],
-    fields: [{ name: "left", ty: 0 }, { name: "right", ty: 0 }],
-    handlers: ["zeroLeft"],
-    receives: ["init"],
+    fields=[
+      field("left", 0, doc="The counter on the left.", required=true),
+      field("right", 0, doc="The counter on the right.", required=true),
+    ],
+    handlers=["zeroLeft"],
+    receives=["init"],
     // what its children raise with control.emit
-    bubbles: ["counted"],
-    responses: [],
-    methods: [],
-    whens: [],
+    bubbles=["counted"],
     // the bundle serves this one itself; a host handler of the same name
     // would only be reached if this bundle did not declare it
-    requests: ["triple"],
-    inits: [],
-    style: "",
-  }
+    requests=["triple"],
+  )
 }
 
 ///|
@@ -331,13 +359,19 @@ fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
 
 ///|
 fn dyn_module() -> DynModule {
-  {
-    name: "counterlib",
-    components: [
+  module_def(
+    "counterlib",
+    [
       { def: counter_def(), make: make_counter },
       { def: pair_def(), make: make_pair },
     ],
     // the bundle's own request service (WIT handle-request)
-    serve: serve_request,
-  }
+    serve=serve_request,
+    doc="Sample counters — the reference bundle for the tutuca:component contract.",
+    version="0.3.0",
+    // It asks for nothing: no clock, no randomness, no timer. That is what
+    // most components need, and it is what makes this one trivially safe to
+    // mount from anywhere.
+    capabilities=[],
+  )
 }

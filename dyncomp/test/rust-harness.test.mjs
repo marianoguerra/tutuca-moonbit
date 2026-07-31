@@ -46,7 +46,7 @@ before(async () => {
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 2);
+  assert.equal(m.apiVersion, 3);
   assert.equal(m.moduleName, 'rustcounterlib');
   assert.match(m.components[0].views[0].html, /@on\.click="inc"/);
 
@@ -55,9 +55,14 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
   assert.deepEqual(a2.getField('count'), { tag: 'number', val: 11 });
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
   assert.deepEqual(a2.callMethod('label', []), { tag: 'text', val: 'rust count is 11' });
-  // the same declared schema every guest ships: fields over a flat type table
-  assert.deepEqual(m.components[0].fields, [{ name: 'count', ty: 0 }]);
+  // the same declared schema every guest ships: fields over a flat type table,
+  // and the same v3 metadata — written by hand in Rust, with no tutuca code
+  assert.deepEqual(m.components[0].fields.map((f) => [f.name, f.ty]), [['count', 0]]);
   assert.equal(m.components[0].types[0].kind, 'ty-float');
+  assert.equal(m.components[0].fields[0].doc, 'The current value.');
+  assert.equal(m.components[0].fields[0].constraint.max, 1000);
+  assert.ok(m.components[0].keywords.includes('rust'));
+  assert.deepEqual(m.capabilities, []);
 
   controlBuf = [];
   assert.equal(a.handleEvent('input', 'double', []), undefined);

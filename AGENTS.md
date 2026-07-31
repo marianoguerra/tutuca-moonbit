@@ -43,6 +43,14 @@ You can browse and install extra skills here:
   `skill-embed`. Since `gen-views` and `fmt` both end in `moon fmt`, run
   `skill-embed` after either of them before checking for drift.)
 
+- `dyncomp/` has four documents, and they divide as: `DESIGN.md` is the
+  contract and how it maps onto tutuca; `SECURITY.md` is what a loaded bundle
+  can and cannot do, with the file/line evidence for each claim; `ARCHITECTURE.md`
+  is the plan for the universal UI and the agent runtime on top; and
+  `docs/agent-runtime.md` is the tool surface a language model addresses.
+  Changing the WIT means checking `SECURITY.md`'s "What to check when changing
+  this" — two of its three findings were fields nobody thought were a channel.
+
 - The guest binding trees under `guests/counter/` and `guests/todo/` are
   generated and checked in the same way, by `gen-guest-bindings`, from the ONE
   WIT in the repo (`dyncomp/wit/tutuca-component.wit` — no guest keeps a copy,

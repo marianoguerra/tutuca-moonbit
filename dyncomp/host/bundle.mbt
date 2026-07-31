@@ -78,7 +78,7 @@ pub fn register_bundle(
     for v in def.views {
       let style = if v.name == "main" { def.style } else { "" }
       cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
-      lint_view(diagnostics, "\{def.name}/\{v.name}", v.html)
+      screen_view(diagnostics, "\{def.name}/\{v.name}", v.html)
     }
     // The schema the guest DECLARED, which is the whole difference between a
     // guest component that is a name with handlers hanging off it and one the
@@ -142,11 +142,23 @@ pub fn register_bundle(
 }
 
 ///|
-/// The two lint passes `gen-views` runs over a view's source, appended to
-/// `into` as printable lines: the structural HTML linter, and the parse-issue
-/// / deprecation / bare-directive rules over a fresh SHADOW parse (never the
-/// live tree the component renders from).
-fn lint_view(into : Array[String], where_ : String, html : String) -> Unit {
+/// Everything the host checks about one guest view before it will render it.
+///
+/// Two lint passes, which `gen-views` also runs and which only ADVISE (they
+/// land in `into` as printable lines): the structural HTML linter, and the
+/// parse-issue / deprecation / bare-directive rules. Then one rule that
+/// REFUSES, over the same shadow tree.
+///
+/// The shadow parse is what makes the refusal cheap and correct here: it is a
+/// throwaway tree in a throwaway ParseContext, so this runs before anything is
+/// registered. Deciding after `compile()` would mean the components were
+/// already in the shared registry — contributing event names and CSS classes —
+/// by the time the host said no.
+fn screen_view(
+  into : Array[String],
+  where_ : String,
+  html : String,
+) -> Unit raise {
   let line = (f : @lint.Finding) => {
     let level = match f.level {
       Error => "error"
@@ -162,9 +174,23 @@ fn lint_view(into : Array[String], where_ : String, html : String) -> Unit {
   }
   let collector = @lint.LintCollector::new()
   let px = @anode.ParseContext::new(handler=collector)
-  let _ = @anode.ANode::parse(html, px)
+  let tree = @anode.ANode::parse(html, px)
   for f in @lint.check_collected(collector) {
     line(f)
+  }
+  // A guest view is text the host compiles and renders into its own page.
+  // Everything in one is DESCRIBED — a tag, an attribute, a handler name
+  // resolved at parse time — and so inspectable before it runs.
+  // `@dangerouslysetinnerhtml` is the exception: its value is an
+  // expression, so what it will hold is unknowable until render, and by then
+  // the markup is in the document. Refusing the construct is the only decision
+  // available ahead of time. A sanitizer over the markup it produces is what
+  // would let it back in, and is the next step rather than this one — see
+  // ../SECURITY.md.
+  if tree is Some(t) && t.has_raw_html() {
+    raise ManifestError(
+      "bundle refused: \{where_} sets markup directly (@dangerouslysetinnerhtml)",
+    )
   }
 }
 

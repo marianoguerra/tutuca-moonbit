@@ -56,8 +56,24 @@ pub(all) struct DispatchResult {
   msgs : Array[ControlMsg]
 } derive(Eq, @debug.Debug)
 
+pub(all) enum DynCapability {
+  CapClock
+  CapRandom
+  CapTimer
+  CapUnknown(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct DynCapabilityReq {
+  cap : DynCapability
+  reason : String
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DynComponentDef {
   name : String
+  doc : String
+  keywords : Array[String]
+  category : String
+  message_docs : Map[String, String]
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
@@ -73,19 +89,39 @@ pub(all) struct DynComponentDef {
 } derive(Eq, @debug.Debug)
 pub fn DynComponentDef::field_infos(Self) -> Array[@core.FieldInfo]
 
+pub(all) struct DynConstraint {
+  min : Double?
+  max : Double?
+  min_len : Int?
+  max_len : Int?
+  pattern : String
+  format : String
+  enum_values : Array[@core.Value]?
+  default : @core.Value?
+} derive(Eq, @debug.Debug)
+
 pub(all) struct DynFieldDef {
   name : String
   ty : Int
+  doc : String
+  required : Bool
+  constraint : DynConstraint?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynInitDef {
   name : String
   args : Map[String, @core.Value]
+  doc : String
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynManifest {
   api_version : Int
   module_name : String
+  doc : String
+  version : String
+  homepage : String
+  authors : Array[String]
+  capabilities : Array[DynCapabilityReq]
   components : Array[DynComponentDef]
 } derive(Eq, @debug.Debug)
 pub fn DynManifest::from_json_string(String) -> Self raise

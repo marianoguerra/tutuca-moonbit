@@ -37,7 +37,7 @@ try {
   const getCoreModule = (path) =>
     WebAssembly.compileStreaming(fetch(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.2.0': values,
+    'tutuca:component/values@0.3.0': values,
     'tutuca:component/values': values,
   });
   const guest = root.guest;

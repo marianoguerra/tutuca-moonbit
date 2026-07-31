@@ -185,9 +185,20 @@ fn make_todo(args : Array[(String, @values.Value)]) -> &DynComponent {
 
 ///|
 fn todo_def() -> ComponentDef {
-  {
-    name: "Todo",
-    views: [
+  component_def(
+    "Todo",
+    doc="A task list: type a task, add it, tick it off, remove it.",
+    keywords=["todo", "task", "list", "checklist"],
+    category="input",
+    message_docs=[
+      { name: "add", doc: "Add the drafted task to the list." },
+      { name: "addOnEnter", doc: "Add the draft when the key was Enter." },
+      { name: "toggleAt", doc: "Tick or untick the task at an index." },
+      { name: "removeAt", doc: "Delete the task at an index." },
+      { name: "clearDone", doc: "Remove every ticked task." },
+      { name: "summary", doc: "How many tasks are done, as a sentence." },
+    ],
+    views=[
       {
         name: "main",
         html: (
@@ -214,38 +225,42 @@ fn todo_def() -> ComponentDef {
     // `items` is a list of {text, done} records; declaring it is what gives
     // the host `setDraft` (which this guest no longer implements), the item
     // mutators, structural equality and the JSON projection.
-    types: [
+    types=[
       { kind: TY_TEXT, elem: None, items: [], name: "", members: [] },
       { kind: TY_RECORD, elem: None, items: [], name: "todo-item", members: [] },
       { kind: TY_LIST, elem: Some(1), items: [], name: "", members: [] },
     ],
-    fields: [{ name: "draft", ty: 0 }, { name: "items", ty: 2 }],
+    fields=[
+      field(
+        "draft",
+        0,
+        doc="The task being typed, not yet added.",
+        constraint=Some({ ..no_limits(), max_len: Some(200) }),
+      ),
+      field("items", 2, doc="The tasks, in the order they were added."),
+    ],
     // `setDraft` is absent on purpose: the `draft` field implies it, and the
     // host answers it (see `with_field`)
-    handlers: ["add", "addOnEnter", "toggleAt", "removeAt", "clearDone"],
-    receives: [],
-    bubbles: [],
-    responses: [],
-    methods: ["summary"],
-    whens: [],
-    requests: [],
-    inits: [
+    handlers=["add", "addOnEnter", "toggleAt", "removeAt", "clearDone"],
+    methods=["summary"],
+    inits=[
       {
         name: "groceries",
         args_json: "{\"items\": [{\"text\": \"milk\", \"done\": false}, {\"text\": \"bread\", \"done\": true}]}",
+        doc: "A short shopping list, one item already bought.",
       },
     ],
     // styling is entirely margaui (daisyUI) classes; no scoped fallback CSS
-    style: "",
-  }
+  )
 }
 
 ///|
 fn dyn_module() -> DynModule {
-  {
-    name: "todolib",
-    components: [{ def: todo_def(), make: make_todo }],
-    // this bundle serves no requests of its own
-    serve: no_requests,
-  }
+  module_def(
+    "todolib",
+    [{ def: todo_def(), make: make_todo }],
+    // this bundle serves no requests of its own, and asks the host for nothing
+    doc="A sample task list, for exercising list fields and item mutators.",
+    version="0.3.0",
+  )
 }

@@ -242,6 +242,14 @@ impl Guest for FakeGuest with fn drop_instance(self, handle) {
 }
 
 ///|
+/// A field with no v3 metadata. Most of this fixture is about how the contract
+/// BEHAVES, and spelling three blanks per field there would bury it; the
+/// documented and constrained shapes are exercised in the parsing tests below.
+fn plain_field(name : String, ty : Int) -> DynFieldDef {
+  { name, ty, doc: "", required: false, constraint: None }
+}
+
+///|
 fn counter_manifest() -> DynManifest {
   // `types` is the flat table a guest ships (WIT has no recursive types);
   // 0 = f64 for the counter's `count`, 1 = the Counter a Pair holds.
@@ -260,11 +268,20 @@ fn counter_manifest() -> DynManifest {
     members: [],
   }
   {
-    api_version: 2,
+    api_version: 3,
     module_name: "counterlib",
+    doc: "Sample counters, for exercising the contract.",
+    version: "0.1.0",
+    homepage: "",
+    authors: [],
+    capabilities: [],
     components: [
       {
         name: "Counter",
+        doc: "A number with buttons to change it.",
+        keywords: ["counter", "number", "tally"],
+        category: "input",
+        message_docs: { "inc": "Add one.", "counted": "The count changed." },
         views: [
           {
             name: "main",
@@ -289,7 +306,7 @@ fn counter_manifest() -> DynManifest {
           num_ty,
           { kind: "ty-list", elem: Some(0), items: [], name: "", members: [] },
         ],
-        fields: [{ name: "count", ty: 0 }, { name: "history", ty: 1 }],
+        fields: [plain_field("count", 0), plain_field("history", 1)],
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
         handlers: [
@@ -302,11 +319,21 @@ fn counter_manifest() -> DynManifest {
         whens: ["nonZero"],
         requests: [],
         // a named initial state a host can offer instead of a bare instance
-        inits: [{ name: "with-history", args: { "count": Num(3) } }],
+        inits: [
+          {
+            name: "with-history",
+            args: { "count": Num(3) },
+            doc: "Starts at three.",
+          },
+        ],
         style: ".counter { color: red; }",
       },
       {
         name: "Pair",
+        doc: "Two counters side by side.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
         views: [
           {
             name: "main",
@@ -320,7 +347,7 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         types: [counter_ty],
-        fields: [{ name: "left", ty: 0 }, { name: "right", ty: 0 }],
+        fields: [plain_field("left", 0), plain_field("right", 0)],
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
         handlers: ["resetLeft"],
@@ -712,7 +739,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 2, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 3, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -733,9 +760,148 @@ test "manifest parses from the bridge's JSON projection" {
 }
 
 ///|
+/// The one view construct a host cannot inspect before it runs, and therefore
+/// the one it refuses. Note WHERE the refusal lands: nothing of a refused
+/// bundle reaches the shared component registry, so its markup never
+/// contributes an event name or a CSS class to the page that turned it down.
+test "a guest view that sets markup directly is refused" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  let m : DynManifest = {
+    ..base,
+    module_name: "sneakylib",
+    components: [
+      {
+        ..base.components[0],
+        name: "Sneaky",
+        views: [
+          {
+            name: "main",
+            html: "<div class=\"sneaky-marker\" @dangerouslysetinnerhtml=\".payload\"></div>",
+          },
+        ],
+      },
+    ],
+  }
+  let register = (man : DynManifest) => {
+    let mut ok = true
+    try register_bundle(h.app.scope, FakeGuest::new(), man) |> ignore catch {
+      // `register_bundle` also propagates the compiler's MacroError, so its
+      // raise type is the open one and the payload cannot be matched out here.
+      // What the test is for is the DECISION, not its wording.
+      _ => ok = false
+    }
+    ok
+  }
+  assert_false(register(m))
+  // Nothing of the refused bundle reached the shared registry — which is what
+  // `collect_classes` and `compile_styles` walk, so a turned-down bundle does
+  // not shape the page's stylesheet either.
+  assert_false(h.app.scope.comps.collect_classes().contains("sneaky-marker"))
+  // The same bundle without the one construct is fine: it is the directive
+  // that is refused, not the guest.
+  let ok_m : DynManifest = {
+    ..m,
+    module_name: "tidylib",
+    components: [
+      {
+        ..m.components[0],
+        views: [{ name: "main", html: "<div class=\"tidy-marker\"></div>" }],
+      },
+    ],
+  }
+  assert_true(register(ok_m))
+  assert_true(h.app.scope.comps.collect_classes().contains("tidy-marker"))
+}
+
+///|
+/// The v3 additions are all metadata, so nothing downstream fails without
+/// them — which is exactly why they need a test of their own. A field's `doc`
+/// and `constraint` are the two facts neither the type table nor the views can
+/// supply, and they are what the catalog ranks on and the generated form
+/// validates with.
+test "v3 metadata parses: docs, constraints and capability requests" {
+  let json =
+    #|{"apiVersion": 3, "moduleName": "formlib",
+    #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
+    #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
+    #|                  {"cap": "cap-teleport", "reason": "?"}],
+    #| "components": [
+    #|  {"name": "Signup", "doc": "Collects an address.",
+    #|   "keywords": ["form", "email"], "category": "input",
+    #|   "messageDocs": [{"name": "submit", "doc": "Send it."}, {"doc": "orphan"}],
+    #|   "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "types": [{"kind": "ty-text", "elem": null, "items": [], "name": "", "members": []}],
+    #|   "fields": [{"name": "email", "ty": 0, "doc": "Where to write.",
+    #|               "required": true,
+    #|               "constraint": {"maxLen": 254, "format": "email",
+    #|                              "enumJson": "", "defaultJson": "\"a@b.c\"",
+    #|                              "pattern": ""}}],
+    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "inits": [{"name": "blank", "argsJson": "{}", "doc": "Nothing filled in."}],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  inspect(m.doc, content="Form controls.")
+  inspect(m.version, content="1.2.0")
+  // an unknown capability is KEPT, not dropped: the host has to be able to say
+  // which one it is refusing
+  debug_inspect(
+    m.capabilities.map(c => c.cap),
+    content="[CapClock, CapUnknown(\"cap-teleport\")]",
+  )
+  let c = m.components[0]
+  inspect(c.doc, content="Collects an address.")
+  inspect(c.category, content="input")
+  debug_inspect(c.keywords, content="[\"form\", \"email\"]")
+  // message-docs become a lookup; the entry naming nothing is dropped rather
+  // than keyed on ""
+  debug_inspect(
+    c.message_docs,
+    content=(
+      #|{ "submit": "Send it." }
+    ),
+  )
+  inspect(c.inits[0].doc, content="Nothing filled in.")
+  let f = c.fields[0]
+  inspect(f.doc, content="Where to write.")
+  assert_true(f.required)
+  guard f.constraint is Some(k)
+  debug_inspect(k.max_len, content="Some(254)")
+  inspect(k.format, content="email")
+  // "" is the contract's spelling for "not stated", so an empty enumeration is
+  // None rather than an empty array — the two mean different things to a form
+  assert_true(k.enum_values is None)
+  debug_inspect(
+    k.default,
+    content=(
+      #|Some(RStr("a@b.c"))
+    ),
+  )
+  assert_true(k.min is None)
+}
+
+///|
+/// A guest that says nothing about itself still registers. Every v3 addition
+/// is optional in practice, because jco drops an empty `option` and a
+/// hand-written manifest should not have to spell out blanks.
+test "a manifest with no v3 metadata still parses" {
+  let json =
+    #|{"apiVersion": 3, "moduleName": "bare", "components": [
+    #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
+    #|   "types": [], "fields": [],
+    #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
+    #|   "style": ""}]}
+  let m = DynManifest::from_json_string(json)
+  inspect(m.doc, content="")
+  debug_inspect(m.capabilities, content="[]")
+  inspect(m.components[0].category, content="")
+  debug_inspect(m.components[0].message_docs, content="{}")
+}
+
+///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 2, "moduleName": "m", "components": [
+    #|{"apiVersion": 3, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -756,7 +922,16 @@ test "manifest with wrong api version is rejected" {
   let _ = DynManifest::from_json_string(bad) catch {
     _ => {
       failed = true
-      { api_version: 0, module_name: "", components: [] }
+      {
+        api_version: 0,
+        module_name: "",
+        doc: "",
+        version: "",
+        homepage: "",
+        authors: [],
+        capabilities: [],
+        components: [],
+      }
     }
   }
   assert_true(failed)
@@ -785,11 +960,20 @@ impl @component.Fields for TestShellState with fn schema() {
 ///|
 test "a bundle's views are linted at load" {
   let bad : DynManifest = {
-    api_version: 2,
+    api_version: 3,
     module_name: "sloppylib",
+    doc: "",
+    version: "",
+    homepage: "",
+    authors: [],
+    capabilities: [],
     components: [
       {
         name: "Sloppy",
+        doc: "",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
         // an unclosed <div> and a `.field` in a handler position: two things
         // no build step ever checked for a guest, because its views arrive at
         // RUNTIME

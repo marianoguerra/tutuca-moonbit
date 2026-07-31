@@ -22,9 +22,36 @@ pub(all) struct DynTyDef {
 } derive(Debug, Eq)
 
 ///|
+/// The part of a field its TYPE cannot state: the range, the shape, the
+/// default. Both the generated form and the JSON Schema projection read it,
+/// and neither can infer it from `TyInfo`.
+///
+/// `enum_values` and `default` arrive as JSON text in the manifest (a manifest
+/// is data the host keeps, so an arena handle would be stale) and are decoded
+/// here, once, into the value world everything else already speaks.
+pub(all) struct DynConstraint {
+  min : Double?
+  max : Double?
+  min_len : Int?
+  max_len : Int?
+  /// "" = unconstrained.
+  pattern : String
+  /// A JSON Schema `format` (email, uri, date-time, color, …); "" = none.
+  format : String
+  /// None = not an enumeration, which is not the same as an empty one.
+  enum_values : Array[@tutuca.Value]?
+  default : @tutuca.Value?
+} derive(Debug, Eq)
+
+///|
 pub(all) struct DynFieldDef {
   name : String
   ty : Int
+  /// What the field is FOR. The one fact neither the type table nor the views
+  /// can supply, and what a search index ranks on.
+  doc : String
+  required : Bool
+  constraint : DynConstraint?
 } derive(Debug, Eq)
 
 ///|
@@ -33,11 +60,47 @@ pub(all) struct DynFieldDef {
 pub(all) struct DynInitDef {
   name : String
   args : Map[String, @tutuca.Value]
+  doc : String
+} derive(Debug, Eq)
+
+///|
+/// Something a component cannot do for itself. Requested by the manifest,
+/// granted by the host; an ungranted capability refuses the bundle rather than
+/// degrading it.
+///
+/// `control.request` is absent by design — whether a guest may reach a HOST
+/// request handler is a decision about the caller, made per call from the
+/// requester's path, not a claim read out of a manifest.
+pub(all) enum DynCapability {
+  CapClock
+  CapRandom
+  CapTimer
+  /// A name this host does not know. Kept rather than dropped so the refusal
+  /// can say which one, instead of silently granting nothing.
+  CapUnknown(String)
+} derive(Debug, Eq)
+
+///|
+pub(all) struct DynCapabilityReq {
+  cap : DynCapability
+  /// Why the bundle needs it, shown to whoever decides.
+  reason : String
 } derive(Debug, Eq)
 
 ///|
 pub(all) struct DynComponentDef {
   name : String
+  /// What this component IS. A catalog with nothing but names is a catalog
+  /// nobody — person or model — can choose from.
+  doc : String
+  /// Search terms beyond the name and the doc.
+  keywords : Array[String]
+  /// A grouping for a palette; "" = ungrouped.
+  category : String
+  /// Sentences for the names in `handlers` / `receives` / `bubbles` /
+  /// `responses` / `methods` / `requests`, merged by name — one table rather
+  /// than a doc field on six parallel lists.
+  message_docs : Map[String, String]
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
@@ -62,6 +125,14 @@ pub(all) struct DynComponentDef {
 pub(all) struct DynManifest {
   api_version : Int
   module_name : String
+  /// Catalog metadata. All four are ADVISORY: the host shows them, nothing
+  /// resolves against them, and a bundle's identity is the hash of the archive
+  /// it arrived in rather than anything it says about itself.
+  doc : String
+  version : String
+  homepage : String
+  authors : Array[String]
+  capabilities : Array[DynCapabilityReq]
   components : Array[DynComponentDef]
 } derive(Debug, Eq)
 
@@ -69,7 +140,7 @@ pub(all) struct DynManifest {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 2
+pub let supported_api_version : Int = 3
 
 ///|
 suberror ManifestError {
@@ -108,6 +179,110 @@ fn int_field(m : Map[String, Json], name : String) -> Int raise {
     Some(Number(n, ..)) => n.to_int()
     _ => raise ManifestError("manifest: missing number field \{name}")
   }
+}
+
+///|
+/// A string the manifest MAY carry. Every doc/metadata field added in v3 is
+/// optional in this sense: a guest that says nothing gets "", not a rejection.
+/// The contract requires them to be present, but jco drops an empty option and
+/// a hand-written manifest in a test should not have to spell out six blanks.
+fn opt_str(m : Map[String, Json], name : String) -> String {
+  match m.get(name) {
+    Some(String(s)) => s
+    _ => ""
+  }
+}
+
+///|
+/// A WIT `option<f64>` / `option<u32>`: absent or null both read as None.
+fn opt_num(m : Map[String, Json], name : String) -> Double? {
+  match m.get(name) {
+    Some(Number(n, ..)) => Some(n)
+    _ => None
+  }
+}
+
+///|
+fn opt_int(m : Map[String, Json], name : String) -> Int? {
+  match opt_num(m, name) {
+    Some(n) => Some(n.to_int())
+    None => None
+  }
+}
+
+///|
+fn bool_field(m : Map[String, Json], name : String) -> Bool {
+  m.get(name) is Some(True)
+}
+
+///|
+/// A JSON-text member of `constraint`, decoded into the value world. "" is the
+/// contract's spelling for "not stated", and unparseable text is treated the
+/// same way — a constraint the host cannot read is a constraint it must not
+/// enforce.
+fn opt_json_value(m : Map[String, Json], name : String) -> @tutuca.Value? {
+  let text = opt_str(m, name)
+  if text == "" {
+    return None
+  }
+  let parsed = @json.parse(text) catch { _ => return None }
+  Some(@tutuca.Value::from_json(parsed))
+}
+
+///|
+fn parse_constraint(m : Map[String, Json]) -> DynConstraint? {
+  guard m.get("constraint") is Some(Object(c)) else { return None }
+  let enum_values = match opt_json_value(c, "enumJson") {
+    Some(List(items)) => Some(items)
+    _ => None
+  }
+  Some({
+    min: opt_num(c, "min"),
+    max: opt_num(c, "max"),
+    min_len: opt_int(c, "minLen"),
+    max_len: opt_int(c, "maxLen"),
+    pattern: opt_str(c, "pattern"),
+    format: opt_str(c, "format"),
+    enum_values,
+    default: opt_json_value(c, "defaultJson"),
+  })
+}
+
+///|
+/// `message-docs` as a lookup, which is how every reader wants it. Entries
+/// without a name are dropped rather than keyed on "".
+fn parse_message_docs(c : Map[String, Json]) -> Map[String, String] {
+  let out : Map[String, String] = Map([])
+  guard c.get("messageDocs") is Some(Array(items)) else { return out }
+  for item in items {
+    guard item is Object(d) else { continue }
+    let name = opt_str(d, "name")
+    if name != "" {
+      out[name] = opt_str(d, "doc")
+    }
+  }
+  out
+}
+
+///|
+/// The capabilities a bundle asks for. An unknown name is KEPT as
+/// `CapUnknown` rather than dropped: the host refuses a bundle it cannot
+/// fully understand, and a dropped name would look like a bundle that asked
+/// for nothing.
+fn parse_capabilities(root : Map[String, Json]) -> Array[DynCapabilityReq] {
+  let out : Array[DynCapabilityReq] = []
+  guard root.get("capabilities") is Some(Array(items)) else { return out }
+  for item in items {
+    guard item is Object(r) else { continue }
+    let cap = match opt_str(r, "cap") {
+      "cap-clock" => DynCapability::CapClock
+      "cap-random" => CapRandom
+      "cap-timer" => CapTimer
+      other => CapUnknown(other)
+    }
+    out.push({ cap, reason: opt_str(r, "reason") })
+  }
+  out
 }
 
 ///|
@@ -220,7 +395,7 @@ fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise {
     for k, v in fields {
       args[k] = @tutuca.Value::from_json(v)
     }
-    out.push({ name, args })
+    out.push({ name, args, doc: opt_str(i, "doc") })
   }
   out
 }
@@ -262,12 +437,22 @@ pub fn DynManifest::from_json_string(s : String) -> DynManifest raise {
           guard fj is Object(f) else {
             raise ManifestError("manifest: bad field-def")
           }
-          fields.push({ name: str_field(f, "name"), ty: int_field(f, "ty") })
+          fields.push({
+            name: str_field(f, "name"),
+            ty: int_field(f, "ty"),
+            doc: opt_str(f, "doc"),
+            required: bool_field(f, "required"),
+            constraint: parse_constraint(f),
+          })
         }
       _ => ()
     }
     components.push({
       name: str_field(c, "name"),
+      doc: opt_str(c, "doc"),
+      keywords: str_array(c, "keywords"),
+      category: opt_str(c, "category"),
+      message_docs: parse_message_docs(c),
       views,
       types: parse_types(c),
       fields,
@@ -282,5 +467,14 @@ pub fn DynManifest::from_json_string(s : String) -> DynManifest raise {
       style: str_field(c, "style"),
     })
   }
-  { api_version, module_name, components }
+  {
+    api_version,
+    module_name,
+    doc: opt_str(root, "doc"),
+    version: opt_str(root, "version"),
+    homepage: opt_str(root, "homepage"),
+    authors: str_array(root, "authors"),
+    capabilities: parse_capabilities(root),
+    components,
+  }
 }

@@ -74,3 +74,32 @@ pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit {
   }
   self.for_each_child(child => child.collect_classes(into))
 }
+
+///|
+fn has_raw_html_attr(attrs : Attrs) -> Bool {
+  match attrs {
+    // `@dangerouslysetinnerhtml` parses to a directive item, never to a
+    // plain attribute, so a constant-attribute node cannot carry one.
+    ConstAttrs(_) => false
+    DynAttrs(items) => items.iter().any(item => item is RawHtml(..))
+  }
+}
+
+///|
+/// Whether anything in this tree sets markup directly
+/// (`@dangerouslysetinnerhtml`), which is the one construct that reaches
+/// the DOM as HTML rather than as a described node.
+///
+/// It is a question about the tree rather than about the source text because
+/// the directive's VALUE is an expression: what it will hold is not knowable
+/// until render, so the only decision a caller can make ahead of time is
+/// whether to allow the construct at all. That is what a host compiling
+/// markup it did not write has to ask — see `dyncomp/SECURITY.md`.
+pub fn ANode::has_raw_html(self : ANode) -> Bool {
+  if self is Dom(d) && has_raw_html_attr(d.attrs) {
+    return true
+  }
+  let mut found = false
+  self.for_each_child(child => if child.has_raw_html() { found = true })
+  found
+}

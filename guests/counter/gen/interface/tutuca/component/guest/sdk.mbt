@@ -67,6 +67,106 @@ pub(all) struct DynModule {
   /// `requests`). Module-scoped, because a service belongs to the bundle
   /// rather than to any one instance; the default answers "no such request".
   serve : (String, Array[@values.Value]) -> RequestResult
+  /// Catalog metadata, all advisory: the host shows it, nothing resolves
+  /// against it, and the bundle's identity is the hash of the archive it
+  /// arrived in. Blank is a legal answer for every one of them.
+  doc : String
+  version : String
+  homepage : String
+  authors : Array[String]
+  /// What this bundle asks the host for. An ungranted capability refuses the
+  /// bundle, so ask for what you use and nothing more.
+  capabilities : Array[CapabilityReq]
+}
+
+///|
+/// A module that states no metadata and serves no requests — the shape most
+/// guests want, so that `dyn_module()` names only what it actually has.
+pub fn module_def(
+  name : String,
+  components : Array[DynComponentDef],
+  serve? : (String, Array[@values.Value]) -> RequestResult = no_requests,
+  doc? : String = "",
+  version? : String = "",
+  homepage? : String = "",
+  authors? : Array[String] = [],
+  capabilities? : Array[CapabilityReq] = [],
+) -> DynModule {
+  { name, components, serve, doc, version, homepage, authors, capabilities }
+}
+
+///|
+/// A declared field. `doc` is the one thing worth spelling out even when the
+/// rest is default: it is what a catalog search ranks on and what a model
+/// reads before choosing this component.
+pub fn field(
+  name : String,
+  ty : UInt,
+  doc? : String = "",
+  required? : Bool = false,
+  constraint? : Constraint? = None,
+) -> FieldDef {
+  { name, ty, doc, required, constraint }
+}
+
+///|
+/// A constraint with nothing set — spread it (`{ ..no_limits(), max: … }`)
+/// rather than writing eight blanks.
+pub fn no_limits() -> Constraint {
+  {
+    min: None,
+    max: None,
+    min_len: None,
+    max_len: None,
+    pattern: "",
+    format: "",
+    enum_json: "",
+    default_json: "",
+  }
+}
+
+///|
+/// A component that states no catalog metadata beyond its doc. The six
+/// message-bucket lists and the type table are the interesting part of a
+/// `ComponentDef`; this keeps the four v3 metadata fields from burying them.
+pub fn component_def(
+  name : String,
+  views~ : Array[ViewDef],
+  types? : Array[TyDef] = [],
+  fields? : Array[FieldDef] = [],
+  handlers? : Array[String] = [],
+  receives? : Array[String] = [],
+  bubbles? : Array[String] = [],
+  responses? : Array[String] = [],
+  methods? : Array[String] = [],
+  whens? : Array[String] = [],
+  requests? : Array[String] = [],
+  inits? : Array[InitDef] = [],
+  style? : String = "",
+  doc? : String = "",
+  keywords? : Array[String] = [],
+  category? : String = "",
+  message_docs? : Array[NamedDoc] = [],
+) -> ComponentDef {
+  {
+    name,
+    doc,
+    keywords,
+    category,
+    message_docs,
+    views,
+    types,
+    fields,
+    handlers,
+    receives,
+    bubbles,
+    responses,
+    methods,
+    whens,
+    requests,
+    inits,
+    style,
+  }
 }
 
 ///|
@@ -101,8 +201,13 @@ fn state_of(inst : Instance) -> &DynComponent {
 ///|
 pub fn get_manifest() -> Manifest {
   {
-    api_version: 2,
+    api_version: 3,
     module_name: module_.name,
+    doc: module_.doc,
+    version: module_.version,
+    homepage: module_.homepage,
+    authors: module_.authors,
+    capabilities: module_.capabilities,
     components: module_.components.map(fn(c) { c.def }),
   }
 }

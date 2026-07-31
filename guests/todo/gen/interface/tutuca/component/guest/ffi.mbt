@@ -61,42 +61,119 @@ pub fn wasmExportConstructorInstance(
 #doc(hidden)
 pub fn wasmExportGetManifest() -> Int {
   let result : Manifest = get_manifest()
-  let return_area = mbt_ffi_malloc(20)
+  let return_area = mbt_ffi_malloc(60)
   mbt_ffi_store32(return_area + 0, result.api_version.reinterpret_as_int())
 
   let ptr = mbt_ffi_str2ptr(result.module_name)
   mbt_ffi_store32(return_area + 8, result.module_name.length())
   mbt_ffi_store32(return_area + 4, ptr)
 
-  let address40 = mbt_ffi_malloc(result.components.length() * 104)
-  for index41 = 0; index41 < result.components.length(); index41 = index41 + 1 {
-    let iter_elem : ComponentDef = result.components[index41]
-    let iter_base = address40 + index41 * 104
+  let ptr0 = mbt_ffi_str2ptr(result.doc)
+  mbt_ffi_store32(return_area + 16, result.doc.length())
+  mbt_ffi_store32(return_area + 12, ptr0)
 
-    let ptr0 = mbt_ffi_str2ptr(iter_elem.name)
+  let ptr1 = mbt_ffi_str2ptr(result.version)
+  mbt_ffi_store32(return_area + 24, result.version.length())
+  mbt_ffi_store32(return_area + 20, ptr1)
+
+  let ptr2 = mbt_ffi_str2ptr(result.homepage)
+  mbt_ffi_store32(return_area + 32, result.homepage.length())
+  mbt_ffi_store32(return_area + 28, ptr2)
+
+  let address = mbt_ffi_malloc(result.authors.length() * 8)
+  for index = 0; index < result.authors.length(); index = index + 1 {
+    let iter_elem : String = result.authors[index]
+    let iter_base = address + index * 8
+
+    let ptr3 = mbt_ffi_str2ptr(iter_elem)
+    mbt_ffi_store32(iter_base + 4, iter_elem.length())
+    mbt_ffi_store32(iter_base + 0, ptr3)
+  }
+  mbt_ffi_store32(return_area + 40, result.authors.length())
+  mbt_ffi_store32(return_area + 36, address)
+
+  let address5 = mbt_ffi_malloc(result.capabilities.length() * 12)
+  for index6 = 0; index6 < result.capabilities.length(); index6 = index6 + 1 {
+    let iter_elem : CapabilityReq = result.capabilities[index6]
+    let iter_base = address5 + index6 * 12
+    mbt_ffi_store8(iter_base + 0, iter_elem.cap.ordinal())
+
+    let ptr4 = mbt_ffi_str2ptr(iter_elem.reason)
+    mbt_ffi_store32(iter_base + 8, iter_elem.reason.length())
+    mbt_ffi_store32(iter_base + 4, ptr4)
+  }
+  mbt_ffi_store32(return_area + 48, result.capabilities.length())
+  mbt_ffi_store32(return_area + 44, address5)
+
+  let address74 = mbt_ffi_malloc(result.components.length() * 136)
+  for index75 = 0; index75 < result.components.length(); index75 = index75 + 1 {
+    let iter_elem : ComponentDef = result.components[index75]
+    let iter_base = address74 + index75 * 136
+
+    let ptr7 = mbt_ffi_str2ptr(iter_elem.name)
     mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
-    mbt_ffi_store32(iter_base + 0, ptr0)
+    mbt_ffi_store32(iter_base + 0, ptr7)
 
-    let address = mbt_ffi_malloc(iter_elem.views.length() * 16)
-    for index = 0; index < iter_elem.views.length(); index = index + 1 {
-      let iter_elem : ViewDef = iter_elem.views[index]
-      let iter_base = address + index * 16
+    let ptr8 = mbt_ffi_str2ptr(iter_elem.doc)
+    mbt_ffi_store32(iter_base + 12, iter_elem.doc.length())
+    mbt_ffi_store32(iter_base + 8, ptr8)
 
-      let ptr1 = mbt_ffi_str2ptr(iter_elem.name)
-      mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
-      mbt_ffi_store32(iter_base + 0, ptr1)
+    let address10 = mbt_ffi_malloc(iter_elem.keywords.length() * 8)
+    for index11 = 0
+        index11 < iter_elem.keywords.length()
+        index11 = index11 + 1 {
+      let iter_elem : String = iter_elem.keywords[index11]
+      let iter_base = address10 + index11 * 8
 
-      let ptr2 = mbt_ffi_str2ptr(iter_elem.html)
-      mbt_ffi_store32(iter_base + 12, iter_elem.html.length())
-      mbt_ffi_store32(iter_base + 8, ptr2)
+      let ptr9 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr9)
     }
-    mbt_ffi_store32(iter_base + 12, iter_elem.views.length())
-    mbt_ffi_store32(iter_base + 8, address)
+    mbt_ffi_store32(iter_base + 20, iter_elem.keywords.length())
+    mbt_ffi_store32(iter_base + 16, address10)
 
-    let address9 = mbt_ffi_malloc(iter_elem.types.length() * 36)
-    for index10 = 0; index10 < iter_elem.types.length(); index10 = index10 + 1 {
-      let iter_elem : TyDef = iter_elem.types[index10]
-      let iter_base = address9 + index10 * 36
+    let ptr12 = mbt_ffi_str2ptr(iter_elem.category)
+    mbt_ffi_store32(iter_base + 28, iter_elem.category.length())
+    mbt_ffi_store32(iter_base + 24, ptr12)
+
+    let address15 = mbt_ffi_malloc(iter_elem.message_docs.length() * 16)
+    for index16 = 0
+        index16 < iter_elem.message_docs.length()
+        index16 = index16 + 1 {
+      let iter_elem : NamedDoc = iter_elem.message_docs[index16]
+      let iter_base = address15 + index16 * 16
+
+      let ptr13 = mbt_ffi_str2ptr(iter_elem.name)
+      mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
+      mbt_ffi_store32(iter_base + 0, ptr13)
+
+      let ptr14 = mbt_ffi_str2ptr(iter_elem.doc)
+      mbt_ffi_store32(iter_base + 12, iter_elem.doc.length())
+      mbt_ffi_store32(iter_base + 8, ptr14)
+    }
+    mbt_ffi_store32(iter_base + 36, iter_elem.message_docs.length())
+    mbt_ffi_store32(iter_base + 32, address15)
+
+    let address19 = mbt_ffi_malloc(iter_elem.views.length() * 16)
+    for index20 = 0; index20 < iter_elem.views.length(); index20 = index20 + 1 {
+      let iter_elem : ViewDef = iter_elem.views[index20]
+      let iter_base = address19 + index20 * 16
+
+      let ptr17 = mbt_ffi_str2ptr(iter_elem.name)
+      mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
+      mbt_ffi_store32(iter_base + 0, ptr17)
+
+      let ptr18 = mbt_ffi_str2ptr(iter_elem.html)
+      mbt_ffi_store32(iter_base + 12, iter_elem.html.length())
+      mbt_ffi_store32(iter_base + 8, ptr18)
+    }
+    mbt_ffi_store32(iter_base + 44, iter_elem.views.length())
+    mbt_ffi_store32(iter_base + 40, address19)
+
+    let address27 = mbt_ffi_malloc(iter_elem.types.length() * 36)
+    for index28 = 0; index28 < iter_elem.types.length(); index28 = index28 + 1 {
+      let iter_elem : TyDef = iter_elem.types[index28]
+      let iter_base = address27 + index28 * 36
       mbt_ffi_store8(iter_base + 0, iter_elem.kind.ordinal())
 
       match iter_elem.elem {
@@ -105,165 +182,261 @@ pub fn wasmExportGetManifest() -> Int {
 
           ()
         }
-        Some(payload3) => {
+        Some(payload21) => {
           mbt_ffi_store8(iter_base + 4, 1)
-          mbt_ffi_store32(iter_base + 8, payload3.reinterpret_as_int())
+          mbt_ffi_store32(iter_base + 8, payload21.reinterpret_as_int())
 
           ()
         }
       }
 
-      let ptr4 = mbt_ffi_uint_array2ptr(iter_elem.items)
+      let ptr22 = mbt_ffi_uint_array2ptr(iter_elem.items)
 
       mbt_ffi_store32(iter_base + 16, iter_elem.items.length())
-      mbt_ffi_store32(iter_base + 12, ptr4)
+      mbt_ffi_store32(iter_base + 12, ptr22)
 
-      let ptr5 = mbt_ffi_str2ptr(iter_elem.name)
+      let ptr23 = mbt_ffi_str2ptr(iter_elem.name)
       mbt_ffi_store32(iter_base + 24, iter_elem.name.length())
-      mbt_ffi_store32(iter_base + 20, ptr5)
+      mbt_ffi_store32(iter_base + 20, ptr23)
 
-      let address7 = mbt_ffi_malloc(iter_elem.members.length() * 8)
-      for index8 = 0; index8 < iter_elem.members.length(); index8 = index8 + 1 {
-        let iter_elem : String = iter_elem.members[index8]
-        let iter_base = address7 + index8 * 8
+      let address25 = mbt_ffi_malloc(iter_elem.members.length() * 8)
+      for index26 = 0
+          index26 < iter_elem.members.length()
+          index26 = index26 + 1 {
+        let iter_elem : String = iter_elem.members[index26]
+        let iter_base = address25 + index26 * 8
 
-        let ptr6 = mbt_ffi_str2ptr(iter_elem)
+        let ptr24 = mbt_ffi_str2ptr(iter_elem)
         mbt_ffi_store32(iter_base + 4, iter_elem.length())
-        mbt_ffi_store32(iter_base + 0, ptr6)
+        mbt_ffi_store32(iter_base + 0, ptr24)
       }
       mbt_ffi_store32(iter_base + 32, iter_elem.members.length())
-      mbt_ffi_store32(iter_base + 28, address7)
+      mbt_ffi_store32(iter_base + 28, address25)
     }
-    mbt_ffi_store32(iter_base + 20, iter_elem.types.length())
-    mbt_ffi_store32(iter_base + 16, address9)
+    mbt_ffi_store32(iter_base + 52, iter_elem.types.length())
+    mbt_ffi_store32(iter_base + 48, address27)
 
-    let address12 = mbt_ffi_malloc(iter_elem.fields.length() * 12)
-    for index13 = 0; index13 < iter_elem.fields.length(); index13 = index13 + 1 {
-      let iter_elem : FieldDef = iter_elem.fields[index13]
-      let iter_base = address12 + index13 * 12
+    let address45 = mbt_ffi_malloc(iter_elem.fields.length() * 112)
+    for index46 = 0; index46 < iter_elem.fields.length(); index46 = index46 + 1 {
+      let iter_elem : FieldDef = iter_elem.fields[index46]
+      let iter_base = address45 + index46 * 112
 
-      let ptr11 = mbt_ffi_str2ptr(iter_elem.name)
+      let ptr29 = mbt_ffi_str2ptr(iter_elem.name)
       mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
-      mbt_ffi_store32(iter_base + 0, ptr11)
-      mbt_ffi_store32(iter_base + 8, iter_elem.ty.reinterpret_as_int())
-    }
-    mbt_ffi_store32(iter_base + 28, iter_elem.fields.length())
-    mbt_ffi_store32(iter_base + 24, address12)
-
-    let address15 = mbt_ffi_malloc(iter_elem.handlers.length() * 8)
-    for index16 = 0
-        index16 < iter_elem.handlers.length()
-        index16 = index16 + 1 {
-      let iter_elem : String = iter_elem.handlers[index16]
-      let iter_base = address15 + index16 * 8
-
-      let ptr14 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr14)
-    }
-    mbt_ffi_store32(iter_base + 36, iter_elem.handlers.length())
-    mbt_ffi_store32(iter_base + 32, address15)
-
-    let address18 = mbt_ffi_malloc(iter_elem.receives.length() * 8)
-    for index19 = 0
-        index19 < iter_elem.receives.length()
-        index19 = index19 + 1 {
-      let iter_elem : String = iter_elem.receives[index19]
-      let iter_base = address18 + index19 * 8
-
-      let ptr17 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr17)
-    }
-    mbt_ffi_store32(iter_base + 44, iter_elem.receives.length())
-    mbt_ffi_store32(iter_base + 40, address18)
-
-    let address21 = mbt_ffi_malloc(iter_elem.bubbles.length() * 8)
-    for index22 = 0; index22 < iter_elem.bubbles.length(); index22 = index22 + 1 {
-      let iter_elem : String = iter_elem.bubbles[index22]
-      let iter_base = address21 + index22 * 8
-
-      let ptr20 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr20)
-    }
-    mbt_ffi_store32(iter_base + 52, iter_elem.bubbles.length())
-    mbt_ffi_store32(iter_base + 48, address21)
-
-    let address24 = mbt_ffi_malloc(iter_elem.responses.length() * 8)
-    for index25 = 0
-        index25 < iter_elem.responses.length()
-        index25 = index25 + 1 {
-      let iter_elem : String = iter_elem.responses[index25]
-      let iter_base = address24 + index25 * 8
-
-      let ptr23 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr23)
-    }
-    mbt_ffi_store32(iter_base + 60, iter_elem.responses.length())
-    mbt_ffi_store32(iter_base + 56, address24)
-
-    let address27 = mbt_ffi_malloc(iter_elem.methods.length() * 8)
-    for index28 = 0; index28 < iter_elem.methods.length(); index28 = index28 + 1 {
-      let iter_elem : String = iter_elem.methods[index28]
-      let iter_base = address27 + index28 * 8
-
-      let ptr26 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr26)
-    }
-    mbt_ffi_store32(iter_base + 68, iter_elem.methods.length())
-    mbt_ffi_store32(iter_base + 64, address27)
-
-    let address30 = mbt_ffi_malloc(iter_elem.whens.length() * 8)
-    for index31 = 0; index31 < iter_elem.whens.length(); index31 = index31 + 1 {
-      let iter_elem : String = iter_elem.whens[index31]
-      let iter_base = address30 + index31 * 8
-
-      let ptr29 = mbt_ffi_str2ptr(iter_elem)
-      mbt_ffi_store32(iter_base + 4, iter_elem.length())
       mbt_ffi_store32(iter_base + 0, ptr29)
+      mbt_ffi_store32(iter_base + 8, iter_elem.ty.reinterpret_as_int())
+
+      let ptr30 = mbt_ffi_str2ptr(iter_elem.doc)
+      mbt_ffi_store32(iter_base + 16, iter_elem.doc.length())
+      mbt_ffi_store32(iter_base + 12, ptr30)
+      mbt_ffi_store8(iter_base + 20, if iter_elem.required { 1 } else { 0 })
+
+      match iter_elem.constraint {
+        None => {
+          mbt_ffi_store8(iter_base + 24, 0)
+
+          ()
+        }
+        Some(payload32) => {
+          mbt_ffi_store8(iter_base + 24, 1)
+
+          match payload32.min {
+            None => {
+              mbt_ffi_store8(iter_base + 32, 0)
+
+              ()
+            }
+            Some(payload34) => {
+              mbt_ffi_store8(iter_base + 32, 1)
+              mbt_ffi_storef64(iter_base + 40, payload34)
+
+              ()
+            }
+          }
+
+          match payload32.max {
+            None => {
+              mbt_ffi_store8(iter_base + 48, 0)
+
+              ()
+            }
+            Some(payload36) => {
+              mbt_ffi_store8(iter_base + 48, 1)
+              mbt_ffi_storef64(iter_base + 56, payload36)
+
+              ()
+            }
+          }
+
+          match payload32.min_len {
+            None => {
+              mbt_ffi_store8(iter_base + 64, 0)
+
+              ()
+            }
+            Some(payload38) => {
+              mbt_ffi_store8(iter_base + 64, 1)
+              mbt_ffi_store32(iter_base + 68, payload38.reinterpret_as_int())
+
+              ()
+            }
+          }
+
+          match payload32.max_len {
+            None => {
+              mbt_ffi_store8(iter_base + 72, 0)
+
+              ()
+            }
+            Some(payload40) => {
+              mbt_ffi_store8(iter_base + 72, 1)
+              mbt_ffi_store32(iter_base + 76, payload40.reinterpret_as_int())
+
+              ()
+            }
+          }
+
+          let ptr41 = mbt_ffi_str2ptr(payload32.pattern)
+          mbt_ffi_store32(iter_base + 84, payload32.pattern.length())
+          mbt_ffi_store32(iter_base + 80, ptr41)
+
+          let ptr42 = mbt_ffi_str2ptr(payload32.format)
+          mbt_ffi_store32(iter_base + 92, payload32.format.length())
+          mbt_ffi_store32(iter_base + 88, ptr42)
+
+          let ptr43 = mbt_ffi_str2ptr(payload32.enum_json)
+          mbt_ffi_store32(iter_base + 100, payload32.enum_json.length())
+          mbt_ffi_store32(iter_base + 96, ptr43)
+
+          let ptr44 = mbt_ffi_str2ptr(payload32.default_json)
+          mbt_ffi_store32(iter_base + 108, payload32.default_json.length())
+          mbt_ffi_store32(iter_base + 104, ptr44)
+
+          ()
+        }
+      }
     }
-    mbt_ffi_store32(iter_base + 76, iter_elem.whens.length())
-    mbt_ffi_store32(iter_base + 72, address30)
+    mbt_ffi_store32(iter_base + 60, iter_elem.fields.length())
+    mbt_ffi_store32(iter_base + 56, address45)
 
-    let address33 = mbt_ffi_malloc(iter_elem.requests.length() * 8)
-    for index34 = 0
-        index34 < iter_elem.requests.length()
-        index34 = index34 + 1 {
-      let iter_elem : String = iter_elem.requests[index34]
-      let iter_base = address33 + index34 * 8
+    let address48 = mbt_ffi_malloc(iter_elem.handlers.length() * 8)
+    for index49 = 0
+        index49 < iter_elem.handlers.length()
+        index49 = index49 + 1 {
+      let iter_elem : String = iter_elem.handlers[index49]
+      let iter_base = address48 + index49 * 8
 
-      let ptr32 = mbt_ffi_str2ptr(iter_elem)
+      let ptr47 = mbt_ffi_str2ptr(iter_elem)
       mbt_ffi_store32(iter_base + 4, iter_elem.length())
-      mbt_ffi_store32(iter_base + 0, ptr32)
+      mbt_ffi_store32(iter_base + 0, ptr47)
     }
-    mbt_ffi_store32(iter_base + 84, iter_elem.requests.length())
-    mbt_ffi_store32(iter_base + 80, address33)
+    mbt_ffi_store32(iter_base + 68, iter_elem.handlers.length())
+    mbt_ffi_store32(iter_base + 64, address48)
 
-    let address37 = mbt_ffi_malloc(iter_elem.inits.length() * 16)
-    for index38 = 0; index38 < iter_elem.inits.length(); index38 = index38 + 1 {
-      let iter_elem : InitDef = iter_elem.inits[index38]
-      let iter_base = address37 + index38 * 16
+    let address51 = mbt_ffi_malloc(iter_elem.receives.length() * 8)
+    for index52 = 0
+        index52 < iter_elem.receives.length()
+        index52 = index52 + 1 {
+      let iter_elem : String = iter_elem.receives[index52]
+      let iter_base = address51 + index52 * 8
 
-      let ptr35 = mbt_ffi_str2ptr(iter_elem.name)
+      let ptr50 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr50)
+    }
+    mbt_ffi_store32(iter_base + 76, iter_elem.receives.length())
+    mbt_ffi_store32(iter_base + 72, address51)
+
+    let address54 = mbt_ffi_malloc(iter_elem.bubbles.length() * 8)
+    for index55 = 0; index55 < iter_elem.bubbles.length(); index55 = index55 + 1 {
+      let iter_elem : String = iter_elem.bubbles[index55]
+      let iter_base = address54 + index55 * 8
+
+      let ptr53 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr53)
+    }
+    mbt_ffi_store32(iter_base + 84, iter_elem.bubbles.length())
+    mbt_ffi_store32(iter_base + 80, address54)
+
+    let address57 = mbt_ffi_malloc(iter_elem.responses.length() * 8)
+    for index58 = 0
+        index58 < iter_elem.responses.length()
+        index58 = index58 + 1 {
+      let iter_elem : String = iter_elem.responses[index58]
+      let iter_base = address57 + index58 * 8
+
+      let ptr56 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr56)
+    }
+    mbt_ffi_store32(iter_base + 92, iter_elem.responses.length())
+    mbt_ffi_store32(iter_base + 88, address57)
+
+    let address60 = mbt_ffi_malloc(iter_elem.methods.length() * 8)
+    for index61 = 0; index61 < iter_elem.methods.length(); index61 = index61 + 1 {
+      let iter_elem : String = iter_elem.methods[index61]
+      let iter_base = address60 + index61 * 8
+
+      let ptr59 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr59)
+    }
+    mbt_ffi_store32(iter_base + 100, iter_elem.methods.length())
+    mbt_ffi_store32(iter_base + 96, address60)
+
+    let address63 = mbt_ffi_malloc(iter_elem.whens.length() * 8)
+    for index64 = 0; index64 < iter_elem.whens.length(); index64 = index64 + 1 {
+      let iter_elem : String = iter_elem.whens[index64]
+      let iter_base = address63 + index64 * 8
+
+      let ptr62 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr62)
+    }
+    mbt_ffi_store32(iter_base + 108, iter_elem.whens.length())
+    mbt_ffi_store32(iter_base + 104, address63)
+
+    let address66 = mbt_ffi_malloc(iter_elem.requests.length() * 8)
+    for index67 = 0
+        index67 < iter_elem.requests.length()
+        index67 = index67 + 1 {
+      let iter_elem : String = iter_elem.requests[index67]
+      let iter_base = address66 + index67 * 8
+
+      let ptr65 = mbt_ffi_str2ptr(iter_elem)
+      mbt_ffi_store32(iter_base + 4, iter_elem.length())
+      mbt_ffi_store32(iter_base + 0, ptr65)
+    }
+    mbt_ffi_store32(iter_base + 116, iter_elem.requests.length())
+    mbt_ffi_store32(iter_base + 112, address66)
+
+    let address71 = mbt_ffi_malloc(iter_elem.inits.length() * 24)
+    for index72 = 0; index72 < iter_elem.inits.length(); index72 = index72 + 1 {
+      let iter_elem : InitDef = iter_elem.inits[index72]
+      let iter_base = address71 + index72 * 24
+
+      let ptr68 = mbt_ffi_str2ptr(iter_elem.name)
       mbt_ffi_store32(iter_base + 4, iter_elem.name.length())
-      mbt_ffi_store32(iter_base + 0, ptr35)
+      mbt_ffi_store32(iter_base + 0, ptr68)
 
-      let ptr36 = mbt_ffi_str2ptr(iter_elem.args_json)
+      let ptr69 = mbt_ffi_str2ptr(iter_elem.args_json)
       mbt_ffi_store32(iter_base + 12, iter_elem.args_json.length())
-      mbt_ffi_store32(iter_base + 8, ptr36)
-    }
-    mbt_ffi_store32(iter_base + 92, iter_elem.inits.length())
-    mbt_ffi_store32(iter_base + 88, address37)
+      mbt_ffi_store32(iter_base + 8, ptr69)
 
-    let ptr39 = mbt_ffi_str2ptr(iter_elem.style)
-    mbt_ffi_store32(iter_base + 100, iter_elem.style.length())
-    mbt_ffi_store32(iter_base + 96, ptr39)
+      let ptr70 = mbt_ffi_str2ptr(iter_elem.doc)
+      mbt_ffi_store32(iter_base + 20, iter_elem.doc.length())
+      mbt_ffi_store32(iter_base + 16, ptr70)
+    }
+    mbt_ffi_store32(iter_base + 124, iter_elem.inits.length())
+    mbt_ffi_store32(iter_base + 120, address71)
+
+    let ptr73 = mbt_ffi_str2ptr(iter_elem.style)
+    mbt_ffi_store32(iter_base + 132, iter_elem.style.length())
+    mbt_ffi_store32(iter_base + 128, ptr73)
   }
-  mbt_ffi_store32(return_area + 16, result.components.length())
-  mbt_ffi_store32(return_area + 12, address40)
+  mbt_ffi_store32(return_area + 56, result.components.length())
+  mbt_ffi_store32(return_area + 52, address74)
   let ret = return_area
   return ret
 }
@@ -272,60 +445,78 @@ pub fn wasmExportGetManifest() -> Int {
 #doc(hidden)
 pub fn wasmExportGetManifestPostReturn(p0 : Int) -> Unit {
   mbt_ffi_free(mbt_ffi_load32(p0 + 4))
+  mbt_ffi_free(mbt_ffi_load32(p0 + 12))
+  mbt_ffi_free(mbt_ffi_load32(p0 + 20))
+  mbt_ffi_free(mbt_ffi_load32(p0 + 28))
 
-  for index11 = 0; index11 < mbt_ffi_load32(p0 + 16); index11 = index11 + 1 {
-    let iter_base = mbt_ffi_load32(p0 + 12) + index11 * 104
+  for index = 0; index < mbt_ffi_load32(p0 + 40); index = index + 1 {
+    let iter_base = mbt_ffi_load32(p0 + 36) + index * 8
     mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+  }
+  mbt_ffi_free(mbt_ffi_load32(p0 + 36))
 
-    for index = 0; index < mbt_ffi_load32(iter_base + 12); index = index + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 8) + index * 16
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
-    }
+  for index0 = 0; index0 < mbt_ffi_load32(p0 + 48); index0 = index0 + 1 {
+    let iter_base = mbt_ffi_load32(p0 + 44) + index0 * 12
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 4))
+  }
+  mbt_ffi_free(mbt_ffi_load32(p0 + 44))
+
+  for index15 = 0; index15 < mbt_ffi_load32(p0 + 56); index15 = index15 + 1 {
+    let iter_base = mbt_ffi_load32(p0 + 52) + index15 * 136
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
     mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
 
     for index1 = 0; index1 < mbt_ffi_load32(iter_base + 20); index1 = index1 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 16) + index1 * 36
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 12))
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 20))
-
-      for index0 = 0
-          index0 < mbt_ffi_load32(iter_base + 32)
-          index0 = index0 + 1 {
-        let iter_base = mbt_ffi_load32(iter_base + 28) + index0 * 8
-        mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
-      }
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 28))
+      let iter_base = mbt_ffi_load32(iter_base + 16) + index1 * 8
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 16))
-
-    for index2 = 0; index2 < mbt_ffi_load32(iter_base + 28); index2 = index2 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 24) + index2 * 12
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
-    }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 24))
 
-    for index3 = 0; index3 < mbt_ffi_load32(iter_base + 36); index3 = index3 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 32) + index3 * 8
+    for index2 = 0; index2 < mbt_ffi_load32(iter_base + 36); index2 = index2 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 32) + index2 * 16
       mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 32))
 
-    for index4 = 0; index4 < mbt_ffi_load32(iter_base + 44); index4 = index4 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 40) + index4 * 8
+    for index3 = 0; index3 < mbt_ffi_load32(iter_base + 44); index3 = index3 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 40) + index3 * 16
       mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 40))
 
     for index5 = 0; index5 < mbt_ffi_load32(iter_base + 52); index5 = index5 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 48) + index5 * 8
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      let iter_base = mbt_ffi_load32(iter_base + 48) + index5 * 36
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 12))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 20))
+
+      for index4 = 0
+          index4 < mbt_ffi_load32(iter_base + 32)
+          index4 = index4 + 1 {
+        let iter_base = mbt_ffi_load32(iter_base + 28) + index4 * 8
+        mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      }
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 28))
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 48))
 
     for index6 = 0; index6 < mbt_ffi_load32(iter_base + 60); index6 = index6 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 56) + index6 * 8
+      let iter_base = mbt_ffi_load32(iter_base + 56) + index6 * 112
       mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 12))
+
+      match mbt_ffi_load8_u(iter_base + 24) {
+        0 => ()
+        1 => {
+          mbt_ffi_free(mbt_ffi_load32(iter_base + 80))
+          mbt_ffi_free(mbt_ffi_load32(iter_base + 88))
+          mbt_ffi_free(mbt_ffi_load32(iter_base + 96))
+          mbt_ffi_free(mbt_ffi_load32(iter_base + 104))
+        }
+        _ => panic()
+      }
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 56))
 
@@ -350,14 +541,47 @@ pub fn wasmExportGetManifestPostReturn(p0 : Int) -> Unit {
     for index10 = 0
         index10 < mbt_ffi_load32(iter_base + 92)
         index10 = index10 + 1 {
-      let iter_base = mbt_ffi_load32(iter_base + 88) + index10 * 16
+      let iter_base = mbt_ffi_load32(iter_base + 88) + index10 * 8
       mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
-      mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
     }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 88))
+
+    for index11 = 0
+        index11 < mbt_ffi_load32(iter_base + 100)
+        index11 = index11 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 96) + index11 * 8
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+    }
     mbt_ffi_free(mbt_ffi_load32(iter_base + 96))
+
+    for index12 = 0
+        index12 < mbt_ffi_load32(iter_base + 108)
+        index12 = index12 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 104) + index12 * 8
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+    }
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 104))
+
+    for index13 = 0
+        index13 < mbt_ffi_load32(iter_base + 116)
+        index13 = index13 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 112) + index13 * 8
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+    }
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 112))
+
+    for index14 = 0
+        index14 < mbt_ffi_load32(iter_base + 124)
+        index14 = index14 + 1 {
+      let iter_base = mbt_ffi_load32(iter_base + 120) + index14 * 24
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 0))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 8))
+      mbt_ffi_free(mbt_ffi_load32(iter_base + 16))
+    }
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 120))
+    mbt_ffi_free(mbt_ffi_load32(iter_base + 128))
   }
-  mbt_ffi_free(mbt_ffi_load32(p0 + 12))
+  mbt_ffi_free(mbt_ffi_load32(p0 + 52))
 }
 
 ///|

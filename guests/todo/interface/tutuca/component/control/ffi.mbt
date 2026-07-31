@@ -33,6 +33,9 @@ extern "wasm" fn mbt_ffi_storef64(offset : Int, value : Double) =
   #|(func (param i32) (param f64) local.get 0 local.get 1 f64.store)
 
 ///|
+fn wasmImportAfter(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int) = "tutuca:component/control@0.3.0" "after"
+
+///|
 fn wasmImportBubbleAt(
   p0 : Int,
   p1 : Int,
@@ -40,19 +43,19 @@ fn wasmImportBubbleAt(
   p3 : Int,
   p4 : Int,
   p5 : Int,
-) = "tutuca:component/control@0.2.0" "bubble-at"
+) = "tutuca:component/control@0.3.0" "bubble-at"
 
 ///|
-fn wasmImportDropInstance(p0 : Int64) = "tutuca:component/control@0.2.0" "drop-instance"
+fn wasmImportDropInstance(p0 : Int64) = "tutuca:component/control@0.3.0" "drop-instance"
 
 ///|
-fn wasmImportEmit(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.2.0" "emit"
+fn wasmImportEmit(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.3.0" "emit"
 
 ///|
-fn wasmImportLog(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/control@0.2.0" "log"
+fn wasmImportLog(p0 : Int, p1 : Int, p2 : Int) = "tutuca:component/control@0.3.0" "log"
 
 ///|
-fn wasmImportMakeInstance(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int64 = "tutuca:component/control@0.2.0" "make-instance"
+fn wasmImportMakeInstance(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int64 = "tutuca:component/control@0.3.0" "make-instance"
 
 ///|
 fn wasmImportRequest(
@@ -70,13 +73,13 @@ fn wasmImportRequest(
   p11 : Int,
   p12 : Int,
   p13 : Int,
-) = "tutuca:component/control@0.2.0" "request"
+) = "tutuca:component/control@0.3.0" "request"
 
 ///|
-fn wasmImportSend(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.2.0" "send"
+fn wasmImportSend(p0 : Int, p1 : Int, p2 : Int, p3 : Int) = "tutuca:component/control@0.3.0" "send"
 
 ///|
-fn wasmImportSendAt(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int, p5 : Int) = "tutuca:component/control@0.2.0" "send-at"
+fn wasmImportSendAt(p0 : Int, p1 : Int, p2 : Int, p3 : Int, p4 : Int, p5 : Int) = "tutuca:component/control@0.3.0" "send-at"
 
 ///|
-fn wasmImportStopPropagation() = "tutuca:component/control@0.2.0" "stop-propagation"
+fn wasmImportStopPropagation() = "tutuca:component/control@0.3.0" "stop-propagation"

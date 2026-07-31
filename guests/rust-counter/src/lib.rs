@@ -11,8 +11,8 @@ wit_bindgen::generate!({
 });
 
 use exports::tutuca::component::guest::{
-    Bucket, ComponentDef, FieldDef, Guest, GuestInstance, Instance, Manifest, RequestResult, TyDef,
-    TyKind, ViewDef,
+    Bucket, ComponentDef, Constraint, FieldDef, Guest, GuestInstance, Instance, Manifest, NamedDoc,
+    RequestResult, TyDef, TyKind, ViewDef,
 };
 use tutuca::component::control::{self, RequestOpts};
 use tutuca::component::values::Value;
@@ -24,10 +24,37 @@ impl Guest for Component {
 
     fn get_manifest() -> Manifest {
         Manifest {
-            api_version: 2,
+            api_version: 3,
             module_name: "rustcounterlib".into(),
+            doc: "The polyglot proof: the same contract, in Rust, with no tutuca code.".into(),
+            version: "0.3.0".into(),
+            homepage: "".into(),
+            authors: vec![],
+            // It asks the host for nothing — no clock, no randomness, no timer.
+            capabilities: vec![],
             components: vec![ComponentDef {
                 name: "Counter".into(),
+                doc: "A number with buttons that raise and lower it.".into(),
+                keywords: vec!["counter".into(), "number".into(), "rust".into()],
+                category: "input".into(),
+                message_docs: vec![
+                    NamedDoc {
+                        name: "inc".into(),
+                        doc: "Add one.".into(),
+                    },
+                    NamedDoc {
+                        name: "dec".into(),
+                        doc: "Subtract one.".into(),
+                    },
+                    NamedDoc {
+                        name: "double".into(),
+                        doc: "Ask the host to double the count.".into(),
+                    },
+                    NamedDoc {
+                        name: "label".into(),
+                        doc: "The count as a sentence, for a view.".into(),
+                    },
+                ],
                 views: vec![ViewDef {
                     name: "main".into(),
                     // margaui (daisyUI) classes, matching the universal demo's
@@ -59,6 +86,18 @@ impl Guest for Component {
                 fields: vec![FieldDef {
                     name: "count".into(),
                     ty: 0,
+                    doc: "The current value.".into(),
+                    required: false,
+                    constraint: Some(Constraint {
+                        min: Some(-1000.0),
+                        max: Some(1000.0),
+                        min_len: None,
+                        max_len: None,
+                        pattern: "".into(),
+                        format: "".into(),
+                        enum_json: "".into(),
+                        default_json: "".into(),
+                    }),
                 }],
                 handlers: vec!["inc".into(), "dec".into(), "double".into()],
                 receives: vec!["init".into()],

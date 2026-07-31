@@ -336,6 +336,14 @@ declare fn ANode::wrap_node(self : ANode, node : ANode) -> Unit
 declare pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit
 
 ///|
+/// Whether anything in this tree sets markup directly
+/// (`@dangerouslysetinnerhtml`). Call on COMPILED views. A host that
+/// compiles markup it did not write asks this before rendering it, because
+/// the directive's value is a runtime expression: allowing the construct is
+/// the only decision available ahead of time.
+declare pub fn ANode::has_raw_html(self : ANode) -> Bool
+
+///|
 /// A single child stays bare; several become a Fragment (JS maybeFragment).
 declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 

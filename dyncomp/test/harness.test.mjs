@@ -77,12 +77,20 @@ before(async () => {
 
 test('manifest declares the component, its views and its state', () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 2);
+  assert.equal(m.apiVersion, 3);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
-  // the declared schema: fields over a flat type table (WIT has no recursion)
-  assert.deepEqual(comp.fields, [{ name: 'count', ty: 0 }, { name: 'history', ty: 1 }]);
+  // the declared schema: fields over a flat type table (WIT has no recursion),
+  // each field carrying the half a type cannot state
+  assert.deepEqual(comp.fields.map((f) => [f.name, f.ty]), [['count', 0], ['history', 1]]);
+  assert.equal(comp.fields[0].doc, 'The current value.');
+  assert.equal(comp.fields[0].required, false);
+  assert.equal(comp.fields[0].constraint.min, -1000);
+  assert.equal(comp.fields[0].constraint.max, 1000);
+  // "" is the contract's spelling for "not stated"
+  assert.equal(comp.fields[0].constraint.format, '');
+  assert.equal(comp.fields[1].constraint, undefined);
   assert.equal(comp.types[0].kind, 'ty-float');
   assert.equal(comp.types[1].kind, 'ty-list');
   assert.equal(comp.types[1].elem, 0);
@@ -101,8 +109,28 @@ test('manifest declares the component, its views and its state', () => {
   assert.match(comp.views[0].html, /@on\.click="inc"/);
   assert.match(comp.views[0].html, /@text="\.count"/);
   // the guests carry no CSS of their own any more — the views style
-  // themselves with margaui utility classes (the universal-wasm commit)
+  // themselves with margaui utility classes (the universal-wasm commit), which
+  // is also what the host's strictest style tier requires
   assert.equal(comp.style, '');
+});
+
+test('the manifest carries what a catalog and a model read', () => {
+  const m = guest.getManifest();
+  assert.match(m.doc, /reference bundle/);
+  assert.equal(m.version, '0.3.0');
+  // this bundle needs no clock, no randomness and no timer, so it asks for
+  // nothing — which is what makes it trivially safe to mount from anywhere
+  assert.deepEqual(m.capabilities, []);
+  const [comp] = m.components;
+  assert.match(comp.doc, /buttons that raise and lower it/);
+  assert.ok(comp.keywords.includes('tally'));
+  assert.equal(comp.category, 'input');
+  // one flat table the host merges by name over the six bucket lists
+  const docs = Object.fromEntries(comp.messageDocs.map((d) => [d.name, d.doc]));
+  assert.equal(docs.inc, 'Add one.');
+  assert.equal(docs.label, 'The count as a sentence, for a view.');
+  // a named fixture says when to prefer it over the bare constructor
+  assert.match(comp.inits[0].doc, /Starts at three/);
 });
 
 test('instances are independent and constructor args apply', () => {
