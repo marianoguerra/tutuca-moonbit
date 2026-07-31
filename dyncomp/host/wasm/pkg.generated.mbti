@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
+  "marianoguerra/tutuca/dyncomp/persist",
   "marianoguerra/tutuca/dyncomp/registry",
   "moonbitlang/core/ref",
 }
@@ -28,6 +29,8 @@ pub fn make_init(String, String, String) -> @core.Value?
 
 pub fn make_instance(String, String, args? : Map[String, @core.Value]) -> @core.Value?
 
+pub fn make_instance_at(String, String, String, args? : Map[String, @core.Value]) -> @core.Value?
+
 pub fn migrate_instance(String, String, @core.Value) -> @core.Value?
 
 pub fn on_load_error(Int, String) -> Unit
@@ -36,7 +39,11 @@ pub fn on_loaded(Int, Int, String) -> Unit
 
 pub fn registry() -> @registry.Registry
 
+pub fn restore(@persist.Snapshot) -> @core.Value?
+
 pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
+
+pub fn snapshot(@core.Value) -> @persist.Snapshot?
 
 // Errors
 

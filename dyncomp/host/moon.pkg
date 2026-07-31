@@ -13,6 +13,9 @@ import {
   // What this host will ACCEPT from a bundle. The decisions live there and the
   // mechanics live here, so "what can a dropped bundle do" has one answer.
   "marianoguerra/tutuca/dyncomp/policy",
+  // Where an instance GOES when it has to outlive the page. Another leaf: a
+  // snapshot is a value worth having without a bundle in hand.
+  "marianoguerra/tutuca/dyncomp/persist",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/lint",
@@ -24,4 +27,8 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/testing/harness",
   "moonbitlang/core/debug",
+  // the FakeGuest persists as text of its own, which is what proves the host
+  // never looks inside a guest's bytes
+  "moonbitlang/core/encoding/utf8",
+  "moonbitlang/core/string",
 } for "test"

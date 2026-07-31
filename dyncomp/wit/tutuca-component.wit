@@ -24,7 +24,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.3.0;
+package tutuca:component@0.4.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -384,7 +384,7 @@ interface guest {
   // question — which of them the guest answers rather than the host.
 
   record manifest {
-    /// Contract version; this document describes version 3.
+    /// Contract version; this document describes version 4.
     api-version: u32,
     module-name: string,
     /// What this bundle is, for a catalog entry. All four are advisory: the
@@ -427,6 +427,17 @@ interface guest {
     /// construction fields (host mount arguments).
     constructor(component: string, args: list<tuple<string, value>>);
 
+    /// Rebuild an instance from bytes THIS bundle's `persist` wrote.
+    ///
+    /// none means refuse — bytes from a version this guest no longer reads, or
+    /// a component that does not persist — and the host then falls back to
+    /// constructing from the declared fields, which it can do without the
+    /// guest. Refusing is therefore cheap and always available, which is why
+    /// there is no versioning scheme here: a guest that changed its format
+    /// says no to the old one and the state it could not read is the only
+    /// thing lost.
+    restore: static func(component: string, state: list<u8>) -> option<instance>;
+
     /// Lazy field read used while the host renders this instance's views
     /// (and for path lookups). none = no such field.
     get-field: func(name: string) -> option<value>;
@@ -455,6 +466,18 @@ interface guest {
     /// mutators write through, so a component that declares fields wants it
     /// even with no children of its own.
     with-field: func(name: string, v: value) -> option<instance>;
+
+    /// This instance's state as bytes only this guest interprets. The host
+    /// STORES them and hands them back to `restore`; it never looks inside,
+    /// which is what lets a guest persist state the declared fields do not
+    /// name (a cursor, a cache, a parser's arena) without the contract
+    /// growing a shape for it.
+    ///
+    /// An empty list means "I do not persist". That is not a failure: the host
+    /// can already project the declared fields to JSON and construct from
+    /// them, so a guest that adds nothing beyond its fields should return
+    /// empty and let the host do it.
+    persist: func() -> list<u8>;
   }
 
   // There is no `to-json` and no `eq`: both are answers the DECLARED schema

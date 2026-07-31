@@ -55,6 +55,16 @@ impl @dyncomp.Guest for StubGuest with fn handle_request(_self, name, _args) {
 }
 
 ///|
+impl @dyncomp.Guest for StubGuest with fn persist(_self, _handle) {
+  b""
+}
+
+///|
+impl @dyncomp.Guest for StubGuest with fn restore(_self, _component, _state) {
+  None
+}
+
+///|
 impl @dyncomp.Guest for StubGuest with fn drop_instance(_self, _handle) {
 
 }
@@ -73,7 +83,7 @@ fn plain(name : String, ty_ : Int, doc? : String = "") -> @dyncomp.DynFieldDef {
 /// A counter bundle, documented the way v3 lets a guest document itself.
 fn counter_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 3,
+    api_version: 4,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",
@@ -123,7 +133,7 @@ fn counter_bundle() -> @dyncomp.DynManifest {
 /// component proves nothing.
 fn todo_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 3,
+    api_version: 4,
     module_name: "todolib",
     doc: "A sample task list.",
     version: "0.3.0",

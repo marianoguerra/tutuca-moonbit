@@ -50,7 +50,7 @@ That declared shape is what makes both layers possible from one core.
 
 | package | status | responsibility |
 |---|---|---|
-| `dyncomp/wit` | v0.3.0 | the contract |
+| `dyncomp/wit` | v0.4.0 | the contract |
 | `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
 | `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |

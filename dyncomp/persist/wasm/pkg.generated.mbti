@@ -1,0 +1,22 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/persist/wasm"
+
+import {
+  "marianoguerra/tutuca/dyncomp/persist",
+}
+
+// Values
+
+// Errors
+
+// Types and methods
+pub struct LocalStore {
+  prefix : String
+}
+pub fn LocalStore::new(prefix? : String) -> Self
+pub impl @persist.Store for LocalStore
+
+// Type aliases
+
+// Traits
+

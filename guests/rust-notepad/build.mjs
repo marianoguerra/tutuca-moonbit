@@ -3,7 +3,7 @@
 //   cargo build --release --target wasm32-unknown-unknown
 //   -> wasm-tools component new (the wit-bindgen macro embeds the WIT)
 //   -> jco transpile --instantiation async
-// Output: dist/rust-counter.component.wasm + dist/js/.
+// Output: dist/rust-notepad.component.wasm + dist/js/.
 import { execFileSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
@@ -19,13 +19,13 @@ mkdirSync(dist, { recursive: true });
 run('cargo', ['build', '--release', '--target', 'wasm32-unknown-unknown']);
 run('wasm-tools', [
   'component', 'new',
-  join('target', 'wasm32-unknown-unknown', 'release', 'rust_counter.wasm'),
-  '-o', join(dist, 'rust-counter.component.wasm'),
+  join('target', 'wasm32-unknown-unknown', 'release', 'rust_notepad.wasm'),
+  '-o', join(dist, 'rust-notepad.component.wasm'),
 ]);
 run(process.execPath, [
   join(repoRoot, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
-  'transpile', join(dist, 'rust-counter.component.wasm'),
+  'transpile', join(dist, 'rust-notepad.component.wasm'),
   '--instantiation', 'async',
   '-o', join(dist, 'js'),
 ]);
-console.log('built', join(dist, 'rust-counter.component.wasm'), 'and', join(dist, 'js'));
+console.log('built', join(dist, 'rust-notepad.component.wasm'), 'and', join(dist, 'js'));

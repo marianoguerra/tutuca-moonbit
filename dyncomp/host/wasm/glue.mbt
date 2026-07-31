@@ -77,6 +77,20 @@ extern "wasm" fn tcomp_load_dropped(file_id : Int, load_id : Int) -> Unit = "tco
 extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "load_url"
 
 ///|
+/// The guest's own state, base64 (see the bridge): "" is a guest that does not
+/// persist. Text rather than bytes because that is what this FFI speaks, and
+/// base64 is already the encoding a snapshot and a KV store use.
+extern "wasm" fn tcomp_persist(bundle : Int, handle : Int) -> String = "tcomp" "persist"
+
+///|
+/// Bytes back into an instance; -1 is the guest refusing them.
+extern "wasm" fn tcomp_restore(
+  bundle : Int,
+  component : String,
+  state_b64 : String,
+) -> Int = "tcomp" "restore"
+
+///|
 extern "wasm" fn tcomp_drop_instance(bundle : Int, handle : Int) -> Unit = "tcomp" "drop_instance"
 
 ///|
@@ -404,6 +418,34 @@ pub impl @dyncomp.Guest for WasmGuest with fn handle_request(self, name, args) {
 }
 
 ///|
+/// Base64 in the transport, bytes in the host: the decode happens here so that
+/// everything above (`Snapshot`, `Store`) deals in one shape and the encoding
+/// is a fact about this bridge rather than about persistence.
+pub impl @dyncomp.Guest for WasmGuest with fn persist(self, handle) {
+  let b64 = tcomp_persist(self.bundle, handle)
+  if b64 == "" {
+    b""
+  } else {
+    @base64.decode(b64[:]) catch {
+      _ => {
+        bad_payload("persist", b64)
+        b""
+      }
+    }
+  }
+}
+
+///|
+pub impl @dyncomp.Guest for WasmGuest with fn restore(self, component, state) {
+  let handle = tcomp_restore(self.bundle, component, @base64.encode(state[:]))
+  if handle < 0 {
+    None
+  } else {
+    Some(handle)
+  }
+}
+
+///|
 pub impl @dyncomp.Guest for WasmGuest with fn drop_instance(self, handle) {
   tcomp_drop_instance(self.bundle, handle)
 }
@@ -653,6 +695,54 @@ pub fn make_instance(
   guard by_name.get(module_name) is Some(bid) else { return None }
   guard bundles.get(bid) is Some(bundle) else { return None }
   match bundle.make_instance(component, args~) {
+    Some(d) => Some(d.to_value())
+    None => None
+  }
+}
+
+///|
+/// Create an instance with a persist id the CALLER chose — the name a store
+/// keys it on. A page that knows where an instance lives (a slot in a saved
+/// document, a row in a list) has a better name for it than the one a bundle
+/// mints, and a name that survives a reload is the whole point.
+pub fn make_instance_at(
+  module_name : String,
+  component : String,
+  pid : String,
+  args? : Map[String, @tutuca.Value] = Map([]),
+) -> @tutuca.Value? {
+  guard by_name.get(module_name) is Some(bid) else { return None }
+  guard bundles.get(bid) is Some(bundle) else { return None }
+  match bundle.make_instance(component, args~, pid~) {
+    Some(d) => Some(d.to_value())
+    None => None
+  }
+}
+
+///|
+/// What this instance would be stored as, or None for a value no loaded bundle
+/// claims. The module is read off the instance's own schema, so a page holding
+/// a mixed bag of components does not have to remember which bundle each one
+/// came from.
+pub fn snapshot(v : @tutuca.Value) -> @persist.Snapshot? {
+  guard v is Obj(o) else { return None }
+  guard o.obj_schema() is Some(schema) else { return None }
+  for _, bundle in bundles {
+    if bundle.def_of(schema.name) is Some(_) {
+      return bundle.snapshot(v)
+    }
+  }
+  None
+}
+
+///|
+/// The inverse: a stored snapshot back into a live instance, through the
+/// bundle it names. None when that bundle is not loaded — which is the honest
+/// answer, and why a page that restores a session loads its bundles first.
+pub fn restore(snap : @persist.Snapshot) -> @tutuca.Value? {
+  guard by_name.get(snap.module_) is Some(bid) else { return None }
+  guard bundles.get(bid) is Some(bundle) else { return None }
+  match bundle.restore(snap) {
     Some(d) => Some(d.to_value())
     None => None
   }

@@ -1,7 +1,7 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.3.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.4.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
 
@@ -11,17 +11,18 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 
 - Host: [`host/`](host/) (backend-agnostic) + [`host/wasm/`](host/wasm/) (the
   `tcomp` bridge for wasm-gc), with memdom tests: `moon test dyncomp/host`.
-- Guests: [`../guests/counter/`](../guests/counter/README.md) and
-  [`../guests/todo/`](../guests/todo/README.md) (MoonBit),
-  [`../guests/rust-counter/`](../guests/rust-counter/) (Rust — the polyglot
+- Guests: [`../guests/counter/`](../guests/counter/README.md),
+  [`../guests/todo/`](../guests/todo/README.md) and `../guests/todomvc/`
+  (MoonBit),
+  [`../guests/rust-notepad/`](../guests/rust-notepad/) (Rust — the polyglot
   proof). One WIT, no copies: a guest cannot implement a different contract
   than the host expects.
 - Demo: `demo/universal_wasm` — the ONE page that hosts runtime-loaded
   bundles. `moon run --target native cmd/dev -- universal`, serve `dist/`,
   open `/universal/`. Drop a `.tutuca.tar.gz` on it, or load one by URL.
-- Contract harnesses: `node --test dyncomp/test/harness.test.mjs
-  dyncomp/test/rust-harness.test.mjs`; `test/browser-smoke.html` served from
-  the repo root.
+- Contract harnesses: `node --test dyncomp/test/*.test.mjs` (the MoonBit
+  counter, TodoMVC, and the Rust notepad); `test/browser-smoke.html` served
+  from the repo root.
 
 ## Four principles, in order of consequence
 
@@ -209,6 +210,17 @@ file's id or by URL.
 
 ## Still open
 
+- **A snapshot taken from OUTSIDE the component can lag its last keystroke.**
+  The universal demo saves on the transactor's drained cascade by reading the
+  placed instances out of the app root (`@ui.live_slots`), and the instance it
+  finds there is sometimes the predecessor of the one the renderer just drew —
+  visible as `no live instance N` from the bridge once the superseded sweep has
+  run. The declared half survives (it is saved again on the next cascade) and
+  `Bundle::snapshot` now refuses an instance that answers nothing rather than
+  storing a blank over a good one, but the guest's own bytes can miss the last
+  edit. What needs establishing is where a nested component's successor is
+  written back: the editor's own harvest during dispatch always sees the live
+  one, so the two paths disagree about what the root holds.
 - Host → guest encoding of an instance nested inside a compound value
   (`with-field` covers the write path that exists).
 - A render-generation sweep as an alternative to explicit `destroy` for

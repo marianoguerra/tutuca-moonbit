@@ -67,9 +67,9 @@ before(async () => {
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.2.0': values,
+    'tutuca:component/values@0.4.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.2.0': control,
+    'tutuca:component/control@0.4.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -77,7 +77,7 @@ before(async () => {
 
 test('manifest declares the component, its views and its state', () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 3);
+  assert.equal(m.apiVersion, 4);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
@@ -117,7 +117,7 @@ test('manifest declares the component, its views and its state', () => {
 test('the manifest carries what a catalog and a model read', () => {
   const m = guest.getManifest();
   assert.match(m.doc, /reference bundle/);
-  assert.equal(m.version, '0.3.0');
+  assert.equal(m.version, '0.4.0');
   // this bundle needs no clock, no randomness and no timer, so it asks for
   // nothing — which is what makes it trivially safe to mount from anywhere
   assert.deepEqual(m.capabilities, []);
@@ -285,4 +285,17 @@ test('guest reads host arena compounds mid-dispatch (re-entrancy)', () => {
   const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]);
   assert.deepEqual(summed.getField('count'), { tag: 'number', val: 42 });
   assert.equal(importCalls, 4); // 1 list-len + 3 list-get
+});
+
+test('a component that does not persist says so, and refuses bytes', () => {
+  const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 5 }]]);
+  // Empty is a DECISION: this counter's state is exactly its declared fields,
+  // so the host projects and rebuilds it without any guest code, and writing
+  // a `persist` here would be that list of fields written a second time.
+  assert.deepEqual(a.persist(), new Uint8Array(0));
+  // and with no format of its own it has nothing to read back
+  assert.equal(guest.Instance.restore('Counter', new Uint8Array(0)), undefined);
+  assert.equal(guest.Instance.restore('Counter', new TextEncoder().encode('{}')), undefined);
+  // an unknown component is refused rather than guessed at
+  assert.equal(guest.Instance.restore('Nope', new Uint8Array(0)), undefined);
 });

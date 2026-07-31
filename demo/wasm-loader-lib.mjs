@@ -136,6 +136,64 @@ export function createTdomImports(getExports) {
   };
 }
 
+// --- tkv: localStorage, as the four calls dyncomp/persist/wasm imports ---
+//
+// Every one of them swallows what the browser can throw: localStorage is
+// absent in a sandboxed frame, throws on write in private mode, and throws
+// again when the origin's quota is full. None of those are worth crashing a
+// render over — a store that cannot store answers "nothing is there", which is
+// the same shape as a first visit and is already a case every caller handles.
+function createTkvImports() {
+  const ls = () => {
+    try {
+      return globalThis.localStorage ?? null;
+    } catch {
+      return null;
+    }
+  };
+  return {
+    // "" for a missing key: wasm-gc strings are not nullable, and a stored
+    // empty string is not a snapshot either way.
+    get: (key) => {
+      try {
+        return ls()?.getItem(key) ?? '';
+      } catch {
+        return '';
+      }
+    },
+    set: (key, value) => {
+      try {
+        ls()?.setItem(key, value);
+      } catch {
+        /* full, blocked, or absent — the write simply did not happen */
+      }
+    },
+    remove: (key) => {
+      try {
+        ls()?.removeItem(key);
+      } catch {
+        /* nothing to remove if there is nowhere to remove it from */
+      }
+    },
+    // One call rather than length + key(i) across the FFI: each hop copies a
+    // string, and this is read once when a page starts.
+    keys: (prefix) => {
+      try {
+        const store = ls();
+        if (!store) return '[]';
+        const out = [];
+        for (let i = 0; i < store.length; i++) {
+          const k = store.key(i);
+          if (k !== null && k.startsWith(prefix)) out.push(k);
+        }
+        return JSON.stringify(out);
+      } catch {
+        return '[]';
+      }
+    },
+  };
+}
+
 // Fetch + instantiate a demo wasm-gc module. `makeExtra` (optional) receives
 // a getExports thunk and returns extra import namespaces (e.g. tcomp) that
 // need to call back into the instantiated module.
@@ -145,6 +203,7 @@ export async function instantiate(wasmUrl, makeExtra) {
   const imports = {
     jscore: createJsCoreImports(),
     tdom: createTdomImports(getExports),
+    tkv: createTkvImports(),
     // MoonBit's println lowers to a `console.log` import on wasm-gc.
     console: { log: (...a) => console.log(...a) },
     ...(makeExtra ? makeExtra(getExports) : {}),
@@ -191,6 +250,24 @@ function untar(bytes) {
 }
 
 // --- tcomp: the dynamic-component bridge ---
+
+// A guest's persisted bytes cross the wasm-gc FFI as base64 text, the same
+// encoding they travel in inside a snapshot and inside a KV store. btoa/atob
+// are byte-wise, which is why the Uint8Array is walked as latin-1 rather than
+// decoded as UTF-8: these are bytes, not text, and the host never reads them.
+function bytesToB64(bytes) {
+  let s = '';
+  for (const b of bytes) s += String.fromCharCode(b);
+  return btoa(s);
+}
+
+function b64ToBytes(b64) {
+  if (!b64) return new Uint8Array(0);
+  const s = atob(b64);
+  const out = new Uint8Array(s.length);
+  for (let i = 0; i < s.length; i++) out[i] = s.charCodeAt(i);
+  return out;
+}
 
 export function createTcompImports(getExports) {
   const bundles = new Map(); // id -> { guest, instances: Map<int, {inst, comp}>, next }
@@ -352,21 +429,33 @@ export function createTcompImports(getExports) {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
     // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.3.0": valuesImpl,
+    "tutuca:component/values@0.4.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.3.0": controlImpl,
+    "tutuca:component/control@0.4.0": controlImpl,
     "tutuca:component/env": envImpl,
-    "tutuca:component/env@0.3.0": envImpl,
+    "tutuca:component/env@0.4.0": envImpl,
   };
   // NOTE: guest constructors invoked from control.makeInstance re-enter the
   // guest while a tcomp call is active; the arena is shared and only cleared
   // at tcomp-call boundaries, so nested construction is safe.
 
+  // A handle this table does not have is a HOST bookkeeping slip — something
+  // is holding an instance of a bundle that was retired, or one the superseded
+  // sweep already collected. It says so and answers with nothing: the wrong
+  // answer to one call is recoverable, and an exception thrown mid-render is
+  // not.
   const instOf = (bundle, handle) => {
     currentBundle = bundle;
     freezeClock();
-    const b = bundles.get(bundle);
-    return b && b.instances.get(handle)?.inst;
+    const inst = bundles.get(bundle)?.instances.get(handle)?.inst;
+    if (!inst) {
+      const live = bundles.get(bundle);
+      console.warn(
+        `tutuca dyncomp: no live instance ${handle} in bundle ${bundle}`,
+        live ? [...live.instances.keys()] : 'no such bundle',
+      );
+    }
+    return inst;
   };
   const register = (bundle, inst, comp) => {
     const b = bundles.get(bundle);
@@ -459,14 +548,16 @@ export function createTcompImports(getExports) {
       return h;
     },
     get_field: (bundle, handle, name) => {
-      const v = instOf(bundle, handle).getField(name);
+      const inst = instOf(bundle, handle);
+      if (!inst) return '';
+      const v = inst.getField(name);
       drainChildren();
       const out = v === undefined ? "" : JSON.stringify(guestToJson(v));
       arena.clear();
       return out;
     },
     seq_entries: (bundle, handle) => {
-      const entries = instOf(bundle, handle).seqEntries();
+      const entries = instOf(bundle, handle)?.seqEntries();
       const out = entries === undefined
         ? ""
         : JSON.stringify(entries.map(([k, v]) => [k, guestToJson(v)]));
@@ -478,6 +569,7 @@ export function createTcompImports(getExports) {
       controlBuf = [];
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
+      if (!inst) return JSON.stringify({ next: null, msgs: [] });
       const comp = bundles.get(bundle).instances.get(handle).comp;
       const next = inst.handleEvent(bucket, name, args);
       drainChildren();
@@ -490,8 +582,10 @@ export function createTcompImports(getExports) {
       return out;
     },
     call_method: (bundle, handle, name, argsJson) => {
+      const inst = instOf(bundle, handle);
+      if (!inst) return '';
       const args = JSON.parse(argsJson).map(jsonToGuest);
-      const v = instOf(bundle, handle).callMethod(name, args);
+      const v = inst.callMethod(name, args);
       drainChildren();
       const out = JSON.stringify(guestToJson(v));
       arena.clear();
@@ -512,12 +606,34 @@ export function createTcompImports(getExports) {
     },
     with_field: (bundle, handle, name, valueJson) => {
       const inst = instOf(bundle, handle);
+      if (!inst) return -1;
       const comp = bundles.get(bundle).instances.get(handle).comp;
       const v = jsonToGuest(JSON.parse(valueJson));
       const next = inst.withField(name, v);
       drainChildren();
       arena.clear();
       return next === undefined ? -1 : register(bundle, next, comp);
+    },
+    // The guest's own bytes, base64 on the way across: the wasm-gc FFI here
+    // speaks strings, and base64 is already what a snapshot uses to sit in
+    // JSON and in a KV store. "" is the guest saying it does not persist.
+    persist: (bundle, handle) => {
+      const bytes = instOf(bundle, handle)?.persist();
+      arena.clear();
+      return bytes && bytes.length ? bytesToB64(bytes) : "";
+    },
+    // The inverse, and the one call that makes an instance out of nothing but
+    // stored bytes. -1 is the guest REFUSING them, which the host reads as
+    // "rebuild from the declared fields instead".
+    restore: (bundle, component, stateB64) => {
+      const b = bundles.get(bundle);
+      if (!b) return -1;
+      currentBundle = bundle;
+      freezeClock();
+      const inst = b.guest.Instance.restore(component, b64ToBytes(stateB64));
+      drainChildren();
+      arena.clear();
+      return inst === undefined ? -1 : register(bundle, inst, component);
     },
     drop_instance: (bundle, handle) => {
       const b = bundles.get(bundle);

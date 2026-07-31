@@ -168,6 +168,53 @@ fn items_of(h : UInt64) -> Array[TodoItem] {
 }
 
 ///|
+/// The whole state as UTF-8 JSON — the bytes the host stores and hands back.
+///
+/// This guest persists even though its fields would project fine, and the
+/// reason is `draft`: a task half-typed is state a person would be annoyed to
+/// lose, and it is exactly the kind of thing a guest knows to keep and a host
+/// cannot. The format is this guest's own business; the host never looks in.
+impl DynComponent for Todo with fn persist(self) {
+  let items : Array[Json] = self.items.map(it => {
+    ({ "text": Json::string(it.text), "done": Json::boolean(it.done) } : Json)
+  })
+  bytes_of(
+    ({ "v": Json::number(1), "draft": Json::string(self.draft), "items": Json::array(items) } : Json).stringify(),
+  )
+}
+
+///|
+/// The inverse. None refuses the bytes — a version this guest no longer reads,
+/// or text that is not the JSON it wrote — and the host then rebuilds from the
+/// declared fields instead, which loses the draft and nothing else.
+fn restore_todo(state : FixedArray[Byte]) -> &DynComponent? {
+  let text = text_of(state)
+  guard text != "" else { return None }
+  let parsed = @json.parse(text) catch {
+    _ => return None
+  }
+  guard parsed is Object(m) else { return None }
+  guard m.get("v") is Some(Number(1, ..)) else { return None }
+  let draft = match m.get("draft") {
+    Some(String(s)) => s
+    _ => ""
+  }
+  let items : Array[TodoItem] = []
+  if m.get("items") is Some(Array(entries)) {
+    for e in entries {
+      guard e is Object(im) else { continue }
+      let text = match im.get("text") {
+        Some(String(s)) => s
+        _ => ""
+      }
+      let done = im.get("done") is Some(True)
+      items.push({ text, done })
+    }
+  }
+  Some(({ items, draft } : Todo) as &DynComponent)
+}
+
+///|
 fn make_todo(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut draft = ""
   let mut items : Array[TodoItem] = []
@@ -258,9 +305,9 @@ fn todo_def() -> ComponentDef {
 fn dyn_module() -> DynModule {
   module_def(
     "todolib",
-    [{ def: todo_def(), make: make_todo }],
+    [dyn_comp(todo_def(), make_todo, restore=restore_todo)],
     // this bundle serves no requests of its own, and asks the host for nothing
     doc="A sample task list, for exercising list fields and item mutators.",
-    version="0.3.0",
+    version="0.4.0",
   )
 }

@@ -361,14 +361,15 @@ fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
 fn dyn_module() -> DynModule {
   module_def(
     "counterlib",
-    [
-      { def: counter_def(), make: make_counter },
-      { def: pair_def(), make: make_pair },
-    ],
+    // Neither component persists, which is the OTHER half of the persistence
+    // contract worth showing: their state is exactly the fields they declare,
+    // so the host projects and rebuilds them itself and a `persist` here would
+    // be that list written twice.
+    [dyn_comp(counter_def(), make_counter), dyn_comp(pair_def(), make_pair)],
     // the bundle's own request service (WIT handle-request)
     serve=serve_request,
     doc="Sample counters — the reference bundle for the tutuca:component contract.",
-    version="0.3.0",
+    version="0.4.0",
     // It asks for nothing: no clock, no randomness, no timer. That is what
     // most components need, and it is what makes this one trivially safe to
     // mount from anywhere.

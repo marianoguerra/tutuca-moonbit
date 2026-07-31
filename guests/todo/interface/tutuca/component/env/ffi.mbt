@@ -23,16 +23,16 @@ extern "wasm" fn mbt_ffi_ptr2str(ptr : Int, len : Int) -> String =
   #| local.get 0)
 
 ///|
-fn wasmImportLocale(p0 : Int) = "tutuca:component/env@0.3.0" "locale"
+fn wasmImportLocale(p0 : Int) = "tutuca:component/env@0.4.0" "locale"
 
 ///|
-fn wasmImportNewId(p0 : Int) = "tutuca:component/env@0.3.0" "new-id"
+fn wasmImportNewId(p0 : Int) = "tutuca:component/env@0.4.0" "new-id"
 
 ///|
-fn wasmImportNowMs() -> Int64 = "tutuca:component/env@0.3.0" "now-ms"
+fn wasmImportNowMs() -> Int64 = "tutuca:component/env@0.4.0" "now-ms"
 
 ///|
-fn wasmImportRandomU64() -> Int64 = "tutuca:component/env@0.3.0" "random-u64"
+fn wasmImportRandomU64() -> Int64 = "tutuca:component/env@0.4.0" "random-u64"
 
 ///|
-fn wasmImportTzOffsetMin() -> Int = "tutuca:component/env@0.3.0" "tz-offset-min"
+fn wasmImportTzOffsetMin() -> Int = "tutuca:component/env@0.4.0" "tz-offset-min"

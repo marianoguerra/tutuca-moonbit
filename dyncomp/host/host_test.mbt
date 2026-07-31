@@ -235,6 +235,40 @@ impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
 }
 
 ///|
+/// Bytes only this guest reads: "count|h1,h2,…", which is deliberately NOT
+/// JSON and not the declared-field shape — a host that could parse it would
+/// prove nothing about the opaque half of the contract.
+///
+/// A Pair persists nothing, so the two paths are both exercised: its children
+/// are instances, and the host rebuilds it from the fields instead.
+impl Guest for FakeGuest with fn persist(self, handle) {
+  guard self.pairs.get(handle) is None else { return b"" }
+  guard self.counters.get(handle) is Some(count) else { return b"" }
+  let history = self.histories
+    .get(handle)
+    .unwrap_or([])
+    .map(n => n.to_int().to_string())
+    .join(",")
+  @utf8.encode("\{count.to_int()}|\{history}")
+}
+
+///|
+impl Guest for FakeGuest with fn restore(self, component, state) {
+  guard component == "Counter" else { return None }
+  let text = @utf8.decode(state[:]) catch { _ => return None }
+  let parts = text.split("|").map(v => v.to_owned()).collect()
+  guard parts.length() == 2 else { return None }
+  let count = @string.parse_double(parts[0]) catch { _ => return None }
+  let history : Array[Double] = []
+  for p in parts[1].split(",") {
+    if p.length() > 0 {
+      history.push(@string.parse_double(p.to_owned()) catch { _ => 0.0 })
+    }
+  }
+  Some(self.alloc(count, history~))
+}
+
+///|
 impl Guest for FakeGuest with fn drop_instance(self, handle) {
   self.counters.remove(handle) |> ignore
   self.histories.remove(handle) |> ignore
@@ -279,7 +313,7 @@ fn counter_manifest() -> DynManifest {
     members: [],
   }
   {
-    api_version: 3,
+    api_version: 4,
     module_name: "counterlib",
     doc: "Sample counters, for exercising the contract.",
     version: "0.1.0",
@@ -577,6 +611,105 @@ test "migrate_instance rebuilds state from the JSON projection" {
 }
 
 ///|
+/// The guest's own bytes come back as the guest's own state — including the
+/// half the declared fields do not name. Here that is the history: the fake
+/// writes it into its bytes and the constructor ignores an unknown arg, so an
+/// instance whose history survives could only have come back through the
+/// guest.
+test "a snapshot restores through the guest's own bytes" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  let a = a.with_persist_id("notes/1")
+  // one update later: the successor keeps the id and gains a history entry
+  guard a.obj_with_field("count", Num(8)) is Some(bumped)
+  guard bundle.snapshot(bumped) is Some(snap)
+  assert_eq(snap.module_, "counterlib")
+  assert_eq(snap.component, "Counter")
+  assert_eq(snap.id, "notes/1")
+  assert_true(snap.has_state())
+  guard bundle.restore(snap) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 8.0)
+  // the history is the proof: it rode in the guest's bytes
+  @debug.assert_eq(fake.histories.get(back.handle()).unwrap(), [7.0])
+  // and it comes back under the same name, so saving it again lands on the
+  // same key rather than accumulating one instance per reload
+  assert_eq(back.obj_persist_id().unwrap(), "notes/1")
+}
+
+///|
+/// A component that persists NOTHING still survives, through the projection
+/// the host can make on its own. The Pair is the case: its state is two child
+/// instances, its `persist` is empty, and it comes back rebuilt by its
+/// constructor.
+test "a component that does not persist restores from its declared fields" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Pair") is Some(p)
+  guard bundle.snapshot(p.to_value()) is Some(snap)
+  assert_false(snap.has_state())
+  // minted rather than blank: every instance has a name, and it says what it
+  // is an instance of
+  assert_true(snap.id.has_prefix("counterlib/Pair#"))
+  guard bundle.restore(snap) is Some(back)
+  assert_true(back.handle() != p.handle())
+  assert_true(fake.pairs.get(back.handle()) is Some(_))
+}
+
+///|
+/// Bytes the guest refuses fall back to the same projection, which is what
+/// makes changing a persisted format survivable: the state the guest could no
+/// longer read is lost and the declared fields are not.
+test "a guest refusing its own bytes falls back to the fields" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
+  guard bundle.snapshot(a.to_value()) is Some(snap)
+  let stale = { ..snap, state: @utf8.encode("from a format ago") }
+  guard bundle.restore(stale) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 3.0)
+}
+
+///|
+/// The round trip a page actually makes: through a store, as text.
+test "a snapshot survives a store round trip" {
+  collect_superseded()
+  let fake = FakeGuest::new()
+  let (_h, bundle) = mount_with_bundle(fake)
+  let store = @persist.MemStore::new()
+  guard bundle.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
+  let a = a.with_persist_id("counter/main")
+  guard bundle.snapshot(a.to_value()) is Some(snap)
+  assert_true(@persist.save(store, snap))
+  @debug.assert_eq(@persist.saved_ids(store), ["counter/main"])
+  guard @persist.load(store, "counter/main") is Some(read_back)
+  assert_eq(read_back, snap)
+  guard bundle.restore(read_back) is Some(back)
+  assert_eq(fake.counters.get(back.handle()).unwrap(), 41.0)
+  @persist.forget(store, "counter/main")
+  assert_true(@persist.load(store, "counter/main") is None)
+}
+
+///|
+/// An instance nobody named is not stored, rather than stored somewhere it
+/// will never be looked for.
+test "an unnamed instance is not saved" {
+  let store = @persist.MemStore::new()
+  let anonymous : @persist.Snapshot = {
+    module_: "counterlib",
+    component: "Counter",
+    id: "",
+    state: b"",
+    fields: Json::object({}),
+  }
+  assert_false(@persist.save(store, anonymous))
+  assert_eq(store.size(), 0)
+}
+
+///|
 test "styles of synthesized components join the app's compiled styles" {
   let fake = FakeGuest::new()
   let (h, _) = mount_with_bundle(fake)
@@ -760,7 +893,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 3, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 4, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -885,9 +1018,9 @@ test "a guest view that sets markup directly is refused" {
 /// and `constraint` are the two facts neither the type table nor the views can
 /// supply, and they are what the catalog ranks on and the generated form
 /// validates with.
-test "v3 metadata parses: docs, constraints and capability requests" {
+test "catalog metadata parses: docs, constraints and capability requests" {
   let json =
-    #|{"apiVersion": 3, "moduleName": "formlib",
+    #|{"apiVersion": 4, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
     #|                  {"cap": "cap-teleport", "reason": "?"}],
@@ -949,9 +1082,9 @@ test "v3 metadata parses: docs, constraints and capability requests" {
 /// A guest that says nothing about itself still registers. Every v3 addition
 /// is optional in practice, because jco drops an empty `option` and a
 /// hand-written manifest should not have to spell out blanks.
-test "a manifest with no v3 metadata still parses" {
+test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 3, "moduleName": "bare", "components": [
+    #|{"apiVersion": 4, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
     #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
@@ -966,7 +1099,7 @@ test "a manifest with no v3 metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 3, "moduleName": "m", "components": [
+    #|{"apiVersion": 4, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1025,7 +1158,7 @@ impl @component.Fields for TestShellState with fn schema() {
 ///|
 test "a bundle's views are linted at load" {
   let bad : DynManifest = {
-    api_version: 3,
+    api_version: 4,
     module_name: "sloppylib",
     doc: "",
     version: "",

@@ -1061,6 +1061,26 @@ pub fn wasmExportMethodInstanceHandleEvent(
 
 ///|
 #doc(hidden)
+pub fn wasmExportMethodInstancePersist(p0 : Int) -> Int {
+  let result : FixedArray[Byte] = Instance::persist(Instance::Instance(p0))
+  let return_area = mbt_ffi_malloc(8)
+
+  let ptr = mbt_ffi_bytes2ptr(result)
+
+  mbt_ffi_store32(return_area + 4, result.length())
+  mbt_ffi_store32(return_area + 0, ptr)
+  let ret = return_area
+  return ret
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstancePersistPostReturn(p0 : Int) -> Unit {
+  mbt_ffi_free(mbt_ffi_load32(p0 + 0))
+}
+
+///|
+#doc(hidden)
 pub fn wasmExportMethodInstanceSeqEntries(p0 : Int) -> Int {
   let result : Array[(String, @values.Value)]? = Instance::seq_entries(
     Instance::Instance(p0),
@@ -1223,8 +1243,47 @@ pub fn wasmExportMethodInstanceWithField(
 }
 
 ///|
+#doc(hidden)
+pub fn wasmExportStaticInstanceRestore(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+) -> Int {
+  let result = mbt_ffi_ptr2str(p0, p1)
+
+  let result0 = mbt_ffi_ptr2bytes(p2, p3)
+
+  let result1 : Instance? = Instance::restore(result, result0)
+  let return_area = mbt_ffi_malloc(8)
+
+  match result1 {
+    None => {
+      mbt_ffi_store8(return_area + 0, 0)
+
+      ()
+    }
+    Some(payload2) => {
+      mbt_ffi_store8(return_area + 0, 1)
+
+      let Instance(handle) = payload2
+      mbt_ffi_store32(return_area + 4, handle)
+
+      ()
+    }
+  }
+  let ret = return_area
+  return ret
+}
+
+///|
 #owned(array)
 extern "wasm" fn mbt_ffi_uint_array2ptr(array : FixedArray[UInt]) -> Int =
+  #|(func (param i32) (result i32) local.get 0)
+
+///|
+#owned(bytes)
+extern "wasm" fn mbt_ffi_bytes2ptr(bytes : FixedArray[Byte]) -> Int =
   #|(func (param i32) (result i32) local.get 0)
 
 ///|
@@ -1258,6 +1317,13 @@ extern "wasm" fn mbt_ffi_malloc(size : Int) -> Int =
   #| local.get 0 i32.const 4 i32.add call $moonbit.gc.malloc
   #| local.tee 1 i32.const 0 call $moonbit.init_array8
   #| local.get 1)
+
+///|
+extern "wasm" fn mbt_ffi_ptr2bytes(ptr : Int, len : Int) -> FixedArray[Byte] =
+  #|(func (param i32) (param i32) (result i32)
+  #| local.get 0
+  #| local.get 1 call $moonbit.init_array8
+  #| local.get 0)
 
 ///|
 extern "wasm" fn mbt_ffi_ptr2str(ptr : Int, len : Int) -> String =

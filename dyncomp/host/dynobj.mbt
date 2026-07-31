@@ -22,6 +22,12 @@ pub struct DynObj {
     String,
     (@component.FieldBox, Array[@tutuca.Value]) -> @tutuca.Value,
   ]
+  /// What this instance is CALLED across sessions (`obj_persist_id`), or ""
+  /// for one nobody named. Assigned when the instance is created and carried
+  /// by every successor, because a successor is the same logical instance one
+  /// update later — persisting one under a new key per keystroke would fill a
+  /// store with the history of a thing instead of the thing.
+  pid : String
   /// The render cache's bucket (see `@tutuca.ObjId`), seeded from the
   /// component's schema fingerprint and the handle this instance started on.
   /// A guest's fields are lazy — reading them means crossing the bridge — so
@@ -43,6 +49,7 @@ pub fn DynObj::new(
   guest : &Guest,
   handle : Int,
   schema~ : @tutuca.SchemaInfo,
+  pid? : String = "",
 ) -> DynObj {
   {
     comp_id,
@@ -50,6 +57,7 @@ pub fn DynObj::new(
     guest,
     handle,
     schema,
+    pid,
     mutators: @component.schema_mutators(schema),
     id: @tutuca.ObjId::of(schema.fingerprint, {
       "handle": Num(handle.to_double()),
@@ -101,6 +109,20 @@ pub fn superseded_count() -> Int {
 ///|
 pub fn DynObj::handle(self : DynObj) -> Int {
   self.handle
+}
+
+///|
+/// The component this instance is an instance OF, as the manifest named it.
+pub fn DynObj::component_name(self : DynObj) -> String {
+  self.def.name
+}
+
+///|
+/// This instance under a persist id — what a caller uses when it has a better
+/// name for the thing than the one the bundle minted (a slot in a document, a
+/// row in a list). Same instance, same guest handle: a name is not state.
+pub fn DynObj::with_persist_id(self : DynObj, pid : String) -> DynObj {
+  { ..self, pid, }
 }
 
 ///|
@@ -280,4 +302,16 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
 /// one method, which is why the contract needs no `eq` and no `to-json`.
 pub impl @tutuca.Obj for DynObj with fn obj_schema(self) {
   Some(self.schema)
+}
+
+///|
+/// What a store keys this instance on. None when nothing named it, which the
+/// persistence layer reads as "do not store me" rather than inventing a key
+/// that would not be found again.
+pub impl @tutuca.Obj for DynObj with fn obj_persist_id(self) {
+  if self.pid == "" {
+    None
+  } else {
+    Some(self.pid)
+  }
 }

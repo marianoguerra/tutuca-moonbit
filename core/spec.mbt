@@ -207,6 +207,16 @@ pub(open) trait Obj {
   fn obj_identity(Self) -> ObjId? = _
   fn obj_eq(Self, other : &Obj) -> Bool = _ // structural over the schema; false when there is none
   fn obj_debug(Self) -> String = _
+  // What this instance is CALLED across sessions, if anything. `obj_identity`
+  // is the render cache's bucket and is deliberately not this: it is a handle
+  // and a revision, both of which are facts about this run of the program.
+  // A persist id is the other kind of name — the one a store keys on, so that
+  // the thing that comes back after a reload is the same thing.
+  //
+  // None is the honest answer for an instance nobody named, and it means "do
+  // not store me" rather than "store me somewhere arbitrary": a key invented
+  // at save time would not be found at load time.
+  fn obj_persist_id(Self) -> String? = _
 }
 
 ///|
@@ -264,6 +274,11 @@ impl Obj with fn obj_size(self) {
 
 ///|
 impl Obj with fn obj_identity(_self) {
+  None
+}
+
+///|
+impl Obj with fn obj_persist_id(_self) {
   None
 }
 

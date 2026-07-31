@@ -372,6 +372,7 @@ pub(open) trait Obj {
   fn obj_identity(Self) -> ObjId? = _
   fn obj_eq(Self, &Obj) -> Bool = _
   fn obj_debug(Self) -> String = _
+  fn obj_persist_id(Self) -> String? = _
 }
 
 pub(open) trait Stack {

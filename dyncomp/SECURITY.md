@@ -158,7 +158,7 @@ reachable by a guest**: `Component::for_type` defaults it to `""` and
 **What is true now.** Two things.
 
 No global CSS for guests, as an invariant of the contract:
-`tutuca:component@0.3.0` has no field that reaches `global_style`, and the WIT
+`tutuca:component@0.4.0` has no field that reaches `global_style`, and the WIT
 says so where the `style` field is defined. Unscoped CSS from a bundle would
 reach the page around it, and no amount of validation makes that safe.
 
@@ -226,7 +226,35 @@ generous by design: they catch a runaway, not an author. A per-bundle cap on
 LIVE INSTANCES is not there yet, because it has to be enforced at
 `make_instance` time rather than at registration.
 
-## 7. Provenance
+## 7. `persist` / `restore`: the host stores bytes it never reads
+
+`instance.persist` hands the host a `list<u8>` and `[static]instance.restore`
+takes it back. The host stores it and returns it; it does not parse it. That is
+the point — a guest keeps what its declared fields do not name — and it has
+three consequences worth stating.
+
+**The bytes are the guest's, and so is the risk.** A bundle that reads its own
+bytes badly can only hurt itself: `restore` returns `option<instance>`, so a
+refusal is a supported answer, and a guest that traps takes down nothing but
+its own call. The host has a second way in either way — `Snapshot.fields`, the
+declared-field projection it made itself — so a component whose format changed
+comes back rather than disappearing.
+
+**A store is untrusted input.** `Snapshot::from_json` treats everything in it
+that way: text that is not a snapshot reads as none, and base64 that will not
+decode reads as "no guest bytes" rather than as a failure. Anything else on the
+origin can write to `localStorage`, so what comes out of it is exactly as
+trustworthy as what comes off the network.
+
+**Storage is a channel, and it is the page's.** `dyncomp/persist` names no
+backend; the browser one (`dyncomp/persist/wasm`) is the page's own
+`localStorage` under a prefix the page chooses. A guest cannot reach it — there
+is no storage capability, and `persist` is a value the host asked for rather
+than a call the guest makes. Two bundles cannot read each other's snapshots
+through the contract; whoever hosts them decides what the store holds and what
+is handed back.
+
+## 8. Provenance
 
 A bundle's identity should be the **hash of the archive it arrived in**, not
 anything it says about itself. The manifest's `doc` / `version` / `homepage` /

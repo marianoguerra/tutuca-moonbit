@@ -21,6 +21,11 @@ pub struct Bundle {
   /// fields, its fingerprint, its mutators), and rebuilding it per
   /// `make_instance` would pay for a value that cannot change.
   comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)]
+  /// Where minted persist ids come from (see `make_instance`). A counter
+  /// rather than anything derived from the state, because two instances with
+  /// equal state are still two instances, and a store keyed on their contents
+  /// would silently keep one of them.
+  next_pid : Ref[Int]
 }
 
 ///|
@@ -177,7 +182,7 @@ pub fn register_bundle(
       None => ()
     }
   }
-  { guest, manifest, comps, diagnostics }
+  { guest, manifest, comps, diagnostics, next_pid: { val: 1 } }
 }
 
 ///|
@@ -281,14 +286,42 @@ pub fn Bundle::make_instance(
   self : Bundle,
   component : String,
   args? : Map[String, @tutuca.Value] = Map([]),
+  pid? : String = "",
 ) -> DynObj? {
   match self.comps.get(component) {
     Some((comp_id, schema, def)) => {
       let handle = self.guest.create(component, args)
-      Some(DynObj::new(comp_id, def, self.guest, handle, schema~))
+      Some(
+        DynObj::new(
+          comp_id,
+          def,
+          self.guest,
+          handle,
+          schema~,
+          pid=if pid == "" { self.mint_pid(component) } else { pid },
+        ),
+      )
     }
     None => None
   }
+}
+
+///|
+/// A name for an instance nobody named: the module, the component, and a
+/// number that counts within this session.
+///
+/// Minting one rather than leaving it blank is what makes "every instance has
+/// an identity" true, and the shape says how far to trust it: it is stable
+/// across the successors of one instance and NOT across a reload, so a host
+/// that wants a key it can find again after a refresh — a slot in a saved
+/// document, a row id — passes its own through `pid~` or `with_persist_id`.
+/// What the minted one buys is that a snapshot is never anonymous: it says
+/// which component of which bundle it came from, and a restore honours the id
+/// it was stored with rather than minting a second one.
+fn Bundle::mint_pid(self : Bundle, component : String) -> String {
+  let n = self.next_pid.val
+  self.next_pid.val = n + 1
+  "\{self.manifest.module_name}/\{component}#\{n}"
 }
 
 ///|
@@ -369,4 +402,75 @@ pub fn Bundle::migrate_instance(
 /// the caller seeded and unmounted explicitly).
 pub fn Bundle::drop_instance(self : Bundle, handle : Int) -> Unit {
   self.guest.drop_instance(handle)
+}
+
+// --- persistence (dyncomp/persist) ------------------------------------------
+
+///|
+/// What this instance would be stored as: the guest's own bytes AND the
+/// declared-field projection, so the restore can go either way.
+///
+/// Takes a `Value` rather than a `DynObj` because that is what a host holds —
+/// a field of a component, an entry in a map — and everything it needs is on
+/// the `Obj` seam: the component name from the schema, the guest handle from
+/// the protocol field, the identity from `obj_persist_id`. None for a value
+/// that is not an instance of THIS bundle.
+pub fn Bundle::snapshot(self : Bundle, v : @tutuca.Value) -> @persist.Snapshot? {
+  guard v is Obj(o) else { return None }
+  guard o.obj_schema() is Some(schema) else { return None }
+  guard self.comps.get(schema.name) is Some(_) else { return None }
+  let state = match o.obj_field(handle_field) {
+    Some(Num(h)) => self.guest.persist(h.to_int())
+    _ => b""
+  }
+  let fields = v.to_json()
+  // An instance that answers NOTHING is not an empty instance — it is a
+  // handle the bridge no longer has, which is a host bookkeeping slip
+  // somewhere upstream. Storing what it "said" would overwrite a good
+  // snapshot with a blank one, so this refuses instead and the caller keeps
+  // what it had.
+  if state.length() == 0 && !says_something(fields) {
+    return None
+  }
+  Some({
+    module_: self.manifest.module_name,
+    component: schema.name,
+    id: o.obj_persist_id().unwrap_or(""),
+    state,
+    fields,
+  })
+}
+
+///|
+/// Whether a field projection has anything in it. `{}` and `null` are what a
+/// dead handle projects to, and neither is worth storing.
+fn says_something(fields : Json) -> Bool {
+  match fields {
+    Object(m) => !m.is_empty()
+    Null => false
+    _ => true
+  }
+}
+
+///|
+/// The inverse: a stored snapshot, back into a live instance of this bundle.
+///
+/// The guest gets first refusal on its own bytes; if it declines them (a
+/// format it no longer reads) or never wrote any, the declared fields rebuild
+/// it instead. Either way the instance comes back under the id it was stored
+/// with, so saving it again lands on the same key.
+///
+/// None only when the component is unknown here — which is the honest answer
+/// for a snapshot from a bundle that is not this one.
+pub fn Bundle::restore(self : Bundle, snap : @persist.Snapshot) -> DynObj? {
+  guard self.comps.get(snap.component) is Some((comp_id, schema, def)) else {
+    return None
+  }
+  let pid = if snap.id == "" { self.mint_pid(snap.component) } else { snap.id }
+  if snap.has_state() {
+    if self.guest.restore(snap.component, snap.state) is Some(handle) {
+      return Some(DynObj::new(comp_id, def, self.guest, handle, schema~, pid~))
+    }
+  }
+  self.make_instance(snap.component, args=snap.field_args(), pid~)
 }

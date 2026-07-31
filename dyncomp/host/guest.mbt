@@ -48,5 +48,13 @@ pub(open) trait Guest {
     @tutuca.Value,
     @tutuca.Value,
   ]
+  /// This instance's state as bytes only the guest interprets (WIT
+  /// `instance.persist`). Empty means the guest does not persist — not a
+  /// failure, since the host can project the declared fields itself.
+  fn persist(Self, handle : Int) -> Bytes
+  /// Bytes from `persist`, back into a live instance (WIT
+  /// `[static]instance.restore`). None is the guest REFUSING them, and the
+  /// caller then rebuilds from the declared fields instead.
+  fn restore(Self, component : String, state : Bytes) -> Int?
   fn drop_instance(Self, handle : Int) -> Unit
 }

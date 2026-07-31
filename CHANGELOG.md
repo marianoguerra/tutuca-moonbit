@@ -8,6 +8,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A component can outlive the page it was on.** `tutuca:component` is
+  `0.4.0` (manifest `api-version: 4`): an instance answers `persist()` with
+  bytes ONLY IT reads, and `[static]instance.restore(component, bytes)` builds
+  one back. The host stores them and never looks inside, which is what lets a
+  guest keep what its declared fields do not name — which tab was open, a
+  sentence half-typed. Empty bytes mean "I do not persist" and are a decision
+  rather than a failure: the host can already project the declared fields and
+  construct from them, so a component whose state is exactly its fields should
+  say nothing and let the framework do it. A `restore` that refuses (a format
+  the guest no longer reads) falls back to the same projection.
+
+- **`dyncomp/persist`** — a `Snapshot` (what a stored component IS: the guest's
+  bytes, the declared-field projection, and what it is called) and a `Store`
+  (somewhere to put it). Text-shaped on purpose, with the bytes base64 inside
+  the JSON, because every store worth having on a page is string-shaped and
+  otherwise every implementation would invent the same encoding. Everything
+  read back out is treated as untrusted input — a store is shared with whoever
+  else writes to the origin. `MemStore` for a host with no browser storage;
+  **`dyncomp/persist/wasm`** is `localStorage`, four calls wide, swallowing
+  what a browser throws in private mode or at a full quota.
+
+- **`Obj::obj_persist_id`** — what an instance is CALLED across sessions, which
+  `obj_identity` deliberately is not (that one is a handle and a revision, both
+  facts about this run). None means "do not store me" rather than "store me
+  under something invented". `Bundle::make_instance` mints one when the caller
+  has no better name, and `with_persist_id` takes the better name when there is
+  one — a slot in a saved document, a row in a list.
+
+- **TodoMVC, as a guest bundle** (`guests/todomvc`): add, toggle, toggle-all,
+  edit in place, delete, the three filters, count-left and clear-completed.
+  It is here for the split it demonstrates — `items` and `filter` are DECLARED
+  (so the host owns `setFilter`, the projection, equality and migration) while
+  the draft, the row being edited and its text are the guest's own, invisible to
+  the host and kept anyway because `persist` writes them. Filtering is a
+  `@when` the guest answers, so a filtered row still carries its index in the
+  whole list and every per-row handler keeps working.
+
 - **A universal editor over whatever is loaded: `dyncomp/ui`.** Search the
   catalog, fill in a form generated from a component's declared arguments, and
   arrange what you placed — seven ordinary tutuca components, backend-agnostic
@@ -123,6 +160,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A comment inside a view costs more than a comment should.** One before a
+  template's root element makes the view a fragment; one INSIDE it sits where
+  the renderer's `§…§` boundary meta is expected and ends the chain dispatch
+  walks — which is how a click inside a component nested in that view stops
+  reaching it. The editor had both, and its placed components were inert
+  because of the second. The prose moved out of the template; the trap itself
+  is still there and is worth a linter rule.
+
+- **The editor held its placed instances twice**, and the copy went stale the
+  moment one of them was used: a successor lands in the rendered tree, so the
+  map beside it was one update behind and — once the superseded sweep ran — was
+  holding a guest handle the host had already collected. The tree is the only
+  holder now (`@ui.live_slots` reads them back out), and the bridge answers a
+  handle it does not have with a warning and an empty answer instead of
+  throwing mid-render.
+
 - **An `@if` branch that does not parse says so.** `@then="btn btn-primary"` is
   a class list that forgot its quotes; it used to leave the branch unset, which
   is indistinguishable from not writing one, so the element rendered with no
@@ -168,6 +221,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `RenderCache::new` / `clear` / `next_generation`.
 
 ### Changed
+
+- **The Rust guest is a tabbed notepad** (`guests/rust-notepad`, was
+  `rust-counter`). A counter never has to answer the questions the newer halves
+  of the contract exist for; notes do — which tab you were looking at is state
+  the declared fields do not name, and losing what you typed is a thing a
+  person notices. It persists as a length-prefixed byte string of its own,
+  which is a better demonstration of "the host never reads these" than JSON
+  would be.
+
+- **The universal demo keeps your session.** The layout, the bundles (by URL —
+  a dropped file is not something a page can fetch again) and every placed
+  component go into `localStorage` on each settled cascade and come back on the
+  next visit. A hot swap now carries placed instances across through the same
+  snapshot, so reloading a bundle over a running one is a save and a load with
+  no store in between.
 
 - **`register_bundle` refuses with the reason in it.** It raises one error type
   now, so a page that turns a bundle away shows "this host takes no CSS from a

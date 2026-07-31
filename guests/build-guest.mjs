@@ -26,7 +26,7 @@ const name = process.argv[2];
 if (!GUESTS.includes(name)) {
   console.error(
     `usage: node guests/build-guest.mjs <${GUESTS.join('|')}>\n` +
-      `  (the Rust guest has its own pipeline: guests/rust-counter/build.mjs)`,
+      `  (the Rust guest has its own pipeline: guests/rust-notepad/build.mjs)`,
   );
   process.exit(2);
 }

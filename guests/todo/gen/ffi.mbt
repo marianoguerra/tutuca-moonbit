@@ -86,6 +86,18 @@ pub fn wasmExportMethodInstanceHandleEvent(
 
 ///|
 #doc(hidden)
+pub fn wasmExportMethodInstancePersist(p0 : Int) -> Int {
+  @guest.wasmExportMethodInstancePersist(p0)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportMethodInstancePersistPostReturn(p0 : Int) -> Unit {
+  @guest.wasmExportMethodInstancePersistPostReturn(p0)
+}
+
+///|
+#doc(hidden)
 pub fn wasmExportMethodInstanceSeqEntries(p0 : Int) -> Int {
   @guest.wasmExportMethodInstanceSeqEntries(p0)
 }
@@ -107,6 +119,17 @@ pub fn wasmExportMethodInstanceWithField(
   p5 : Int,
 ) -> Int {
   @guest.wasmExportMethodInstanceWithField(p0, p1, p2, p3, p4, p5)
+}
+
+///|
+#doc(hidden)
+pub fn wasmExportStaticInstanceRestore(
+  p0 : Int,
+  p1 : Int,
+  p2 : Int,
+  p3 : Int,
+) -> Int {
+  @guest.wasmExportStaticInstanceRestore(p0, p1, p2, p3)
 }
 
 ///|

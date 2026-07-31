@@ -101,7 +101,8 @@ playground:
 guests:
     node guests/build-guest.mjs counter
     node guests/build-guest.mjs todo
-    node guests/rust-counter/build.mjs
+    node guests/build-guest.mjs todomvc
+    node guests/rust-notepad/build.mjs
 
 # regenerate the guests' MoonBit bindings from dyncomp/wit, then drift-check
 guest-bindings:

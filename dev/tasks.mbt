@@ -620,12 +620,17 @@ pub fn universal_steps() -> Array[Step] {
       prog: "node",
       args: ["guests/build-guest.mjs", "todo"],
     }),
+    Run({
+      label: "build · todomvc guest bundle (wit-bindgen output → component → ESM)",
+      prog: "node",
+      args: ["guests/build-guest.mjs", "todomvc"],
+    }),
     // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
     // cargo + the wasm32-unknown-unknown target)
     Run({
-      label: "build · rust-counter guest bundle (cargo → component → ESM)",
+      label: "build · rust-notepad guest bundle (cargo → component → ESM)",
       prog: "node",
-      args: ["guests/rust-counter/build.mjs"],
+      args: ["guests/rust-notepad/build.mjs"],
     }),
     Mkdir("\{DIST}/universal"),
     Mkdir("\{DIST}/universal/examples"),
@@ -659,10 +664,17 @@ pub fn universal_steps() -> Array[Step] {
       ],
     }),
     Run({
-      label: "pack · rust-counter bundle → examples/rust-counter.tutuca.tar.gz",
+      label: "pack · todomvc bundle → examples/todomvc.tutuca.tar.gz",
       prog: "node",
       args: [
-        "scripts/pack-bundle.mjs", "guests/rust-counter/dist/js", "dist/universal/examples/rust-counter.tutuca.tar.gz",
+        "scripts/pack-bundle.mjs", "guests/todomvc/dist/js", "dist/universal/examples/todomvc.tutuca.tar.gz",
+      ],
+    }),
+    Run({
+      label: "pack · rust-notepad bundle → examples/rust-notepad.tutuca.tar.gz",
+      prog: "node",
+      args: [
+        "scripts/pack-bundle.mjs", "guests/rust-notepad/dist/js", "dist/universal/examples/rust-notepad.tutuca.tar.gz",
       ],
     }),
   ]

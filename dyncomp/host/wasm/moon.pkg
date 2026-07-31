@@ -8,11 +8,15 @@ import {
   "marianoguerra/tutuca/dyncomp/host" @dyncomp,
   // the catalog this glue keeps in sync as bundles load and hot-swap
   "marianoguerra/tutuca/dyncomp/registry",
+  // snapshots of loaded instances, for a page that stores them
+  "marianoguerra/tutuca/dyncomp/persist",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",
   "moonbitlang/core/json",
+  // a guest's persisted bytes cross this bridge as base64 text
+  "moonbitlang/core/encoding/base64",
 }
 
 supported_targets = "wasm-gc"

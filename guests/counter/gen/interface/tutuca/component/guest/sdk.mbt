@@ -26,6 +26,15 @@ pub(open) trait DynComponent {
   fn handle(Self, bucket : Bucket, name : String, args : Array[@values.Value]) -> &DynComponent? = _
   fn call_method(Self, name : String, args : Array[@values.Value]) -> @values.Value = _
   fn with_field(Self, name : String, v : @values.Value) -> &DynComponent? = _
+  /// This instance's state as bytes ONLY THIS GUEST reads (WIT
+  /// `instance.persist`). The host stores them and hands them back to the
+  /// component's `restore`; it never looks inside.
+  ///
+  /// The default is empty, which the host reads as "I do not persist" and
+  /// answers by projecting the DECLARED fields itself — so a component whose
+  /// state is exactly its fields should leave this alone rather than write the
+  /// same list a second time.
+  fn persist(Self) -> FixedArray[Byte] = _
 }
 
 ///|
@@ -54,9 +63,62 @@ impl DynComponent with fn with_field(_self, _name, _v) {
 }
 
 ///|
+impl DynComponent with fn persist(_self) {
+  no_bytes()
+}
+
+///|
 pub(all) struct DynComponentDef {
   def : ComponentDef
   make : (Array[(String, @values.Value)]) -> &DynComponent
+  /// The inverse of `DynComponent::persist`: bytes this component wrote, back
+  /// into state. None REFUSES them — a format this guest no longer reads — and
+  /// the host falls back to constructing from the declared fields, which is
+  /// also what the default does.
+  restore : (FixedArray[Byte]) -> &DynComponent?
+}
+
+///|
+/// A component of this module: what it declares, how to build one, and (when
+/// it persists) how to read its bytes back.
+pub fn dyn_comp(
+  def : ComponentDef,
+  make : (Array[(String, @values.Value)]) -> &DynComponent,
+  restore? : (FixedArray[Byte]) -> &DynComponent? = no_restore,
+) -> DynComponentDef {
+  { def, make, restore }
+}
+
+///|
+/// `DynComponentDef::restore` for a component that does not persist.
+fn no_restore(_state : FixedArray[Byte]) -> &DynComponent? {
+  None
+}
+
+///|
+/// The empty answer to `persist` — "I do not persist", which is a decision
+/// rather than a failure (see the trait).
+pub fn no_bytes() -> FixedArray[Byte] {
+  FixedArray::make(0, b'\x00')
+}
+
+///|
+/// A guest that persists as TEXT (JSON, most often) writes it with this and
+/// reads it back with `text_of`. UTF-8 both ways, because bytes that cross a
+/// contract need an encoding named somewhere and this is the only place both
+/// sides can see it.
+pub fn bytes_of(text : String) -> FixedArray[Byte] {
+  let bs = @utf8.encode(text)
+  FixedArray::makei(bs.length(), i => bs[i])
+}
+
+///|
+/// The inverse of `bytes_of`. "" for bytes that are not UTF-8, which a
+/// `restore` reads as "refuse this".
+pub fn text_of(state : FixedArray[Byte]) -> String {
+  @utf8.decode(Bytes::from_fixedarray(state)) catch {
+    _ => ""
+  }
 }
 
 ///|
@@ -201,7 +263,7 @@ fn state_of(inst : Instance) -> &DynComponent {
 ///|
 pub fn get_manifest() -> Manifest {
   {
-    api_version: 3,
+    api_version: 4,
     module_name: module_.name,
     doc: module_.doc,
     version: module_.version,
@@ -290,4 +352,28 @@ pub fn Instance::with_field(
     Some(next) => Some(alloc(next))
     None => None
   }
+}
+
+///|
+pub fn Instance::persist(self : Instance) -> FixedArray[Byte] {
+  state_of(self).persist()
+}
+
+///|
+/// Static, because there is no instance yet: the host hands over the component
+/// name and the bytes it stored, and this bundle either rebuilds the instance
+/// or says no.
+pub fn Instance::restore(
+  component : String,
+  state : FixedArray[Byte],
+) -> Instance? {
+  for c in module_.components {
+    if c.def.name == component {
+      return match (c.restore)(state) {
+        Some(next) => Some(alloc(next))
+        None => None
+      }
+    }
+  }
+  None
 }

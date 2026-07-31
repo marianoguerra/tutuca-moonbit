@@ -274,7 +274,7 @@ pub fn Instance::new(rep : Int) -> Instance {
 }
 
 ///|
-fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.3.0" "[resource-new]instance"
+fn wasmExportResourceNewInstance(rep : Int) -> Int = "[export]tutuca:component/guest@0.4.0" "[resource-new]instance"
 
 ///|
 /// Drops a resource handle.
@@ -284,7 +284,7 @@ pub fn Instance::drop(self : Self) -> Unit {
 }
 
 ///|
-fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.3.0" "[resource-drop]instance"
+fn wasmExportResourceDropInstance(resource : Int) = "[export]tutuca:component/guest@0.4.0" "[resource-drop]instance"
 
 ///|
 /// Gets the `Int` representation of the resource pointed to the given handle.
@@ -294,7 +294,7 @@ pub fn Instance::rep(self : Self) -> Int {
 }
 
 ///|
-fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.3.0" "[resource-rep]instance"
+fn wasmExportResourceRepInstance(resource : Int) -> Int = "[export]tutuca:component/guest@0.4.0" "[resource-rep]instance"
 
 ///|
 /// Destructor of the resource.
@@ -319,6 +319,21 @@ declare pub fn Instance::instance(
   component : String,
   args : Array[(String, @values.Value)],
 ) -> Instance
+
+///|
+/// Rebuild an instance from bytes THIS bundle's `persist` wrote.
+///
+/// none means refuse — bytes from a version this guest no longer reads, or
+/// a component that does not persist — and the host then falls back to
+/// constructing from the declared fields, which it can do without the
+/// guest. Refusing is therefore cheap and always available, which is why
+/// there is no versioning scheme here: a guest that changed its format
+/// says no to the old one and the state it could not read is the only
+/// thing lost.
+declare pub fn Instance::restore(
+  component : String,
+  state : FixedArray[Byte],
+) -> Instance?
 
 ///|
 /// Lazy field read used while the host renders this instance's views
@@ -370,3 +385,16 @@ declare pub fn Instance::with_field(
   name : String,
   v : @values.Value,
 ) -> Instance?
+
+///|
+/// This instance's state as bytes only this guest interprets. The host
+/// STORES them and hands them back to `restore`; it never looks inside,
+/// which is what lets a guest persist state the declared fields do not
+/// name (a cursor, a cache, a parser's arena) without the contract
+/// growing a shape for it.
+///
+/// An empty list means "I do not persist". That is not a failure: the host
+/// can already project the declared fields to JSON and construct from
+/// them, so a guest that adds nothing beyond its fields should return
+/// empty and let the host do it.
+declare pub fn Instance::persist(self : Instance) -> FixedArray[Byte]

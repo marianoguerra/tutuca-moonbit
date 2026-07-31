@@ -94,7 +94,7 @@ pub(all) struct DynManifest {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 3
+pub let supported_api_version : Int = 4
 
 ///|
 suberror ManifestError {
