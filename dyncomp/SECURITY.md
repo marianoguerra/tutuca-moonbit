@@ -12,11 +12,16 @@ Where a claim is weaker than it sounds, it says so.
 
 | Channel | Reaches | State |
 |---|---|---|
-| wasm imports (`values`, `control`, `env`) | nothing ambient | **safe by construction** |
+| wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
+| `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
 | guest views (tutuca templates) | the host's DOM | **partly handled** — raw markup refused; a sanitizer is next |
-| guest CSS (`component-def.style`) | the host's stylesheet | **partly handled** — no global CSS; a validator is next |
+| guest CSS (`component-def.style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
+
+The decisions live in [`policy/`](policy/) and are enforced by
+`register_bundle` before it parses anything; `policy/policy_test.mbt` is the
+executable form of most of this document.
 
 ## 1. The wasm sandbox
 
@@ -79,7 +84,20 @@ them that way (`demo/wasm-loader-lib.mjs`):
 Each is gated by a capability the manifest requests (`cap-clock`, `cap-random`,
 `cap-timer`) and the host grants. An ungranted capability **refuses the bundle**
 rather than degrading it: a capability that is present but lies is worse than
-one that is absent.
+one that is absent — a guest reading a frozen zero from an ungranted clock
+cannot tell that from midnight.
+
+The default policy (`Policy::untrusted()`) grants **none** of them, and
+`register_bundle` enforces that before it parses anything. `Policy::granted()`
+— a person said yes to this bundle — adds the clock and ids but still not the
+timer: a bundle that wants to wake itself up is asking for something nobody can
+meaningfully consent to in one dialog.
+
+Two gaps remain on this path, both marked in the code: the browser bridge
+supplies `env` unconditionally rather than per grant (harmless while jco elides
+an import no guest calls), and `control.after` has no host implementation at
+all — the bridge warns rather than crashing, because an absent import makes jco
+throw something that says nothing about why.
 
 `control.request` is deliberately *not* a capability — see §5.
 
@@ -95,8 +113,10 @@ own page, so this was a way out of the wasm sandbox through a channel that never
 touches wasm.
 
 **What is true now.** A guest view containing `RawHtml` is **refused at
-registration** (`host/bundle.mbt`, `screen_view`; predicate
-`@anode.ANode::has_raw_html`).
+registration** — `Policy::check_view`, called from `host/bundle.mbt`'s
+`screen_view` over the predicate `@anode.ANode::has_raw_html`. Not
+tier-dependent: a `System` bundle is part of the app and writes its views the
+ordinary way, so nothing is losing anything.
 
 Two details matter about that refusal:
 
@@ -135,12 +155,25 @@ and applies globally.
 reachable by a guest**: `Component::for_type` defaults it to `""` and
 `register_bundle` never passes it.
 
-**What is true now.** No global CSS for guests, as an invariant of the contract:
+**What is true now.** Two things.
+
+No global CSS for guests, as an invariant of the contract:
 `tutuca:component@0.3.0` has no field that reaches `global_style`, and the WIT
 says so where the `style` field is defined. Unscoped CSS from a bundle would
 reach the page around it, and no amount of validation makes that safe.
 
-**What is next.** A validator for the scoped block, built on
+And an **untrusted bundle ships no CSS at all** — `Policy::check_style` refuses
+a non-empty `style` at the default tier, on the grounds that a bundle should
+style with the host's utility classes, which the host compiles and which
+therefore cannot break out of anything. All three sample guests already do
+exactly that, so the strict default costs nothing real.
+
+Above that tier the block is currently accepted **unvalidated**, and that is a
+known gap rather than a decision: `allow_custom_css` today means someone
+vouched for the bundle, not that anything checked it.
+
+**What is next**, and what would turn `allow_custom_css` into a real check. A
+validator for the scoped block, built on
 [`mizchi/css`](https://mooncakes.io/docs/mizchi/css) rather than hand-rolled:
 `mizchi/css/token` + `mizchi/css/parser` parse it as a declaration list and
 `mizchi/css/diagnostics` carries the errors. Parsing and **re-serializing**,
@@ -148,10 +181,8 @@ instead of concatenating the raw string, is what structurally kills the
 brace-breakout; the validator then also rejects `@import` and screens `url()`
 targets, which are the egress channel.
 
-Alongside it, a stricter tier: **utility classes only** — `style` must be empty
-and the guest styles with the host's margaui/tailwind classes. This is already
-what all three sample guests do (their harness asserts `style === ''`), so it is
-a good default, with validated custom CSS as the opt-in.
+The stricter tier that would have been the other half of this is already in
+place — see "what is true now" above.
 
 ## 5. `control.request`: a bundle's own handlers are fine, the host's are not
 
@@ -187,8 +218,13 @@ confidentiality or integrity one, and the fix — instantiating guests in a Web
 Worker so a hung call can be terminated — turns the whole `tcomp` bridge async.
 It is recorded, not built.
 
-Alongside it: quotas on manifest size, view count, style length and live
-instances per bundle, which bound the manifest-bomb surface cheaply.
+Quotas on manifest size, view count, style length and type-table size are in
+place (`Policy::check_quotas`), which bounds the manifest-bomb surface cheaply —
+the host parses every view and compiles every component before it renders
+anything, so a manifest with ten thousand views is a frozen tab. They are
+generous by design: they catch a runaway, not an author. A per-bundle cap on
+LIVE INSTANCES is not there yet, because it has to be enforced at
+`make_instance` time rather than at registration.
 
 ## 7. Provenance
 

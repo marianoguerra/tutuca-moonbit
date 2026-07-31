@@ -22,28 +22,6 @@ pub(all) struct DynTyDef {
 } derive(Debug, Eq)
 
 ///|
-/// The part of a field its TYPE cannot state: the range, the shape, the
-/// default. Both the generated form and the JSON Schema projection read it,
-/// and neither can infer it from `TyInfo`.
-///
-/// `enum_values` and `default` arrive as JSON text in the manifest (a manifest
-/// is data the host keeps, so an arena handle would be stale) and are decoded
-/// here, once, into the value world everything else already speaks.
-pub(all) struct DynConstraint {
-  min : Double?
-  max : Double?
-  min_len : Int?
-  max_len : Int?
-  /// "" = unconstrained.
-  pattern : String
-  /// A JSON Schema `format` (email, uri, date-time, color, …); "" = none.
-  format : String
-  /// None = not an enumeration, which is not the same as an empty one.
-  enum_values : Array[@tutuca.Value]?
-  default : @tutuca.Value?
-} derive(Debug, Eq)
-
-///|
 pub(all) struct DynFieldDef {
   name : String
   ty : Int
@@ -51,7 +29,7 @@ pub(all) struct DynFieldDef {
   /// can supply, and what a search index ranks on.
   doc : String
   required : Bool
-  constraint : DynConstraint?
+  constraint : @jsonschema.Constraint?
 } derive(Debug, Eq)
 
 ///|
@@ -61,30 +39,6 @@ pub(all) struct DynInitDef {
   name : String
   args : Map[String, @tutuca.Value]
   doc : String
-} derive(Debug, Eq)
-
-///|
-/// Something a component cannot do for itself. Requested by the manifest,
-/// granted by the host; an ungranted capability refuses the bundle rather than
-/// degrading it.
-///
-/// `control.request` is absent by design — whether a guest may reach a HOST
-/// request handler is a decision about the caller, made per call from the
-/// requester's path, not a claim read out of a manifest.
-pub(all) enum DynCapability {
-  CapClock
-  CapRandom
-  CapTimer
-  /// A name this host does not know. Kept rather than dropped so the refusal
-  /// can say which one, instead of silently granting nothing.
-  CapUnknown(String)
-} derive(Debug, Eq)
-
-///|
-pub(all) struct DynCapabilityReq {
-  cap : DynCapability
-  /// Why the bundle needs it, shown to whoever decides.
-  reason : String
 } derive(Debug, Eq)
 
 ///|
@@ -132,7 +86,7 @@ pub(all) struct DynManifest {
   version : String
   homepage : String
   authors : Array[String]
-  capabilities : Array[DynCapabilityReq]
+  capabilities : Array[@policy.CapabilityReq]
   components : Array[DynComponentDef]
 } derive(Debug, Eq)
 
@@ -148,7 +102,20 @@ suberror ManifestError {
 } derive(Debug)
 
 ///|
-fn str_field(m : Map[String, Json], name : String) -> String raise {
+/// Why the bundle was refused, as a sentence for whoever is looking at the
+/// page. The error stays abstract outside this package — a caller has nothing
+/// to do with its shape — but the reason is the entire point of raising it,
+/// so that much is public.
+pub fn ManifestError::message(self : ManifestError) -> String {
+  let ManifestError(msg) = self
+  msg
+}
+
+///|
+fn str_field(
+  m : Map[String, Json],
+  name : String,
+) -> String raise ManifestError {
   match m.get(name) {
     Some(String(s)) => s
     _ => raise ManifestError("manifest: missing string field \{name}")
@@ -156,7 +123,10 @@ fn str_field(m : Map[String, Json], name : String) -> String raise {
 }
 
 ///|
-fn str_array(m : Map[String, Json], name : String) -> Array[String] raise {
+fn str_array(
+  m : Map[String, Json],
+  name : String,
+) -> Array[String] raise ManifestError {
   match m.get(name) {
     Some(Array(items)) => {
       let out = []
@@ -174,7 +144,7 @@ fn str_array(m : Map[String, Json], name : String) -> Array[String] raise {
 }
 
 ///|
-fn int_field(m : Map[String, Json], name : String) -> Int raise {
+fn int_field(m : Map[String, Json], name : String) -> Int raise ManifestError {
   match m.get(name) {
     Some(Number(n, ..)) => n.to_int()
     _ => raise ManifestError("manifest: missing number field \{name}")
@@ -230,7 +200,7 @@ fn opt_json_value(m : Map[String, Json], name : String) -> @tutuca.Value? {
 }
 
 ///|
-fn parse_constraint(m : Map[String, Json]) -> DynConstraint? {
+fn parse_constraint(m : Map[String, Json]) -> @jsonschema.Constraint? {
   guard m.get("constraint") is Some(Object(c)) else { return None }
   let enum_values = match opt_json_value(c, "enumJson") {
     Some(List(items)) => Some(items)
@@ -269,24 +239,22 @@ fn parse_message_docs(c : Map[String, Json]) -> Map[String, String] {
 /// `CapUnknown` rather than dropped: the host refuses a bundle it cannot
 /// fully understand, and a dropped name would look like a bundle that asked
 /// for nothing.
-fn parse_capabilities(root : Map[String, Json]) -> Array[DynCapabilityReq] {
-  let out : Array[DynCapabilityReq] = []
+fn parse_capabilities(root : Map[String, Json]) -> Array[@policy.CapabilityReq] {
+  let out : Array[@policy.CapabilityReq] = []
   guard root.get("capabilities") is Some(Array(items)) else { return out }
   for item in items {
     guard item is Object(r) else { continue }
-    let cap = match opt_str(r, "cap") {
-      "cap-clock" => DynCapability::CapClock
-      "cap-random" => CapRandom
-      "cap-timer" => CapTimer
-      other => CapUnknown(other)
-    }
+    // An unknown name is KEPT (`CapUnknown`) rather than dropped: the host
+    // refuses a bundle it cannot fully understand, and a dropped name would
+    // look like a bundle that asked for nothing.
+    let cap = @policy.Capability::parse(opt_str(r, "cap"))
     out.push({ cap, reason: opt_str(r, "reason") })
   }
   out
 }
 
 ///|
-fn parse_types(c : Map[String, Json]) -> Array[DynTyDef] raise {
+fn parse_types(c : Map[String, Json]) -> Array[DynTyDef] raise ManifestError {
   let out : Array[DynTyDef] = []
   guard c.get("types") is Some(Array(items)) else { return out }
   for item in items {
@@ -379,7 +347,7 @@ pub fn DynComponentDef::field_infos(
 /// The named initial states of one component. An entry whose `argsJson` is not
 /// a JSON object is dropped: a fixture the host cannot read is a fixture it
 /// must not offer.
-fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise {
+fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise ManifestError {
   let out : Array[DynInitDef] = []
   guard c.get("inits") is Some(Array(items)) else { return out }
   for item in items {
@@ -403,8 +371,16 @@ fn parse_inits(c : Map[String, Json]) -> Array[DynInitDef] raise {
 ///|
 /// Parse the JSON projection of a guest manifest. The JS bridge produces it
 /// with JSON.stringify over the jco-lifted record (camelCase keys).
-pub fn DynManifest::from_json_string(s : String) -> DynManifest raise {
-  guard @json.parse(s) is Object(root) else {
+pub fn DynManifest::from_json_string(
+  s : String,
+) -> DynManifest raise ManifestError {
+  // The bridge's own JSON, so a parse failure here is a bridge bug rather than
+  // a guest one — but it is still a refusal a page has to be able to show, so
+  // it becomes the same error as everything else this function reports.
+  let parsed = @json.parse(s) catch {
+    e => raise ManifestError("manifest: not JSON (\{e})")
+  }
+  guard parsed is Object(root) else {
     raise ManifestError("manifest: not a JSON object")
   }
   let api_version = int_field(root, "apiVersion")

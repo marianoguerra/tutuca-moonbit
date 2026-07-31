@@ -216,12 +216,14 @@ file's id or by URL.
 - Playground emission of dyncomp bundles (needs in-browser componentize).
 - `@enrich-with` / `@loop-with` for guests: `@when` reaches `call-method`
   today, the other two render-time buckets do not.
-- The `env` grants are declared and parsed but not yet ENFORCED: the host
-  reads `manifest.capabilities` and does not refuse on them. The bridge
-  supplies `env` unconditionally, which is harmless while jco elides an import
-  no guest calls, and is the first thing `dyncomp/policy` fixes.
+- The BRIDGE still supplies `env` unconditionally rather than per grant.
+  `register_bundle` now refuses a bundle whose capabilities the policy does not
+  grant, so a guest cannot legitimately reach it — but the import is there, and
+  closing that is the bridge's half of the same job.
 - `control.after` is in the contract and has no host implementation; it needs a
   timer the transactor owns.
+- A per-bundle cap on LIVE INSTANCES, which unlike the other quotas has to be
+  enforced at `make_instance` time rather than at registration.
 - Caller-aware authorization of HOST request handlers, which needs `RequestFn`
   to carry the requester's `DispatchPath` (`SECURITY.md` §5).
 - Whether the `values` arena earns its keep now that compounds already cross

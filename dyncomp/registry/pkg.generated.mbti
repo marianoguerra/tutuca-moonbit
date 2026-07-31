@@ -1,0 +1,74 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/registry"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/host",
+  "marianoguerra/tutuca/dyncomp/jsonschema",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn describe(@host.Bundle, String) -> Descriptor?
+
+// Errors
+
+// Types and methods
+pub(all) struct ComponentRef {
+  module_ : String
+  name : String
+} derive(Eq, Hash, @debug.Debug)
+pub fn ComponentRef::to_id(Self) -> String
+
+pub(all) struct Descriptor {
+  ref_ : ComponentRef
+  doc : String
+  keywords : Array[String]
+  category : String
+  schema : @core.SchemaInfo
+  field_docs : Map[String, @jsonschema.FieldDoc]
+  messages : Array[MessageInfo]
+  inits : Array[InitInfo]
+  module_doc : String
+  module_version : String
+}
+pub fn Descriptor::args_schema(Self) -> Json
+pub fn Descriptor::coerce_args(Self, Json) -> Result[Map[String, @core.Value], Array[@jsonschema.SchemaError]]
+pub fn Descriptor::summary(Self) -> String
+pub fn Descriptor::to_json(Self) -> Json
+
+pub(all) struct Hit {
+  descriptor : Descriptor
+  score : Int
+  why : Array[String]
+}
+pub fn Hit::to_json(Self) -> Json
+
+pub(all) struct InitInfo {
+  name : String
+  doc : String
+  args : Map[String, @core.Value]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MessageInfo {
+  name : String
+  bucket : String
+  doc : String
+} derive(Eq, @debug.Debug)
+
+pub struct Registry {
+  by_module : Map[String, @host.Bundle]
+  order : Array[String]
+}
+pub fn Registry::all(Self) -> Array[Descriptor]
+pub fn Registry::describe(Self, ComponentRef) -> Descriptor?
+pub fn Registry::forget(Self, String) -> Unit
+pub fn Registry::modules(Self) -> Array[String]
+pub fn Registry::new() -> Self
+pub fn Registry::register(Self, @host.Bundle) -> Unit
+pub fn Registry::search(Self, String, limit? : Int) -> Array[Hit]
+
+// Type aliases
+
+// Traits
+

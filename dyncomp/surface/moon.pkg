@@ -1,0 +1,22 @@
+// The layout model, and the patch algebra both layers drive.
+//
+// A surface is a tree of containers holding component instances, plus a data
+// model addressed by JSON Pointer. It is ORDINARY DATA — no host, no bundle,
+// no wasm — which is the whole point: the universal UI edits it through a
+// human interface, an agent edits it through six tools, and neither has a way
+// to reach a shape the other cannot produce. Two editors over one algebra
+// rather than two algebras.
+//
+// The layout vocabulary is a deliberate SUBSET of flex and grid. Enough to
+// arrange a page, small enough that a language model can hold it and a person
+// can see the whole thing in one settings panel. The excluded parts are not
+// oversights; see `layout.mbt`.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/test",
+} for "test"

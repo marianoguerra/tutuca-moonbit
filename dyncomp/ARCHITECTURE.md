@@ -51,11 +51,16 @@ That declared shape is what makes both layers possible from one core.
 | package | status | responsibility |
 |---|---|---|
 | `dyncomp/wit` | v0.3.0 | the contract |
-| `dyncomp/host` | exists | registration, `DynObj`, lifecycle, GC |
-| `dyncomp/policy` | planned | trust tiers, capability grants, quotas, the view rule and the CSS validator |
-| `dyncomp/registry` | planned | the cross-bundle catalog and its search |
-| `dyncomp/jsonschema` | planned | the declared schema ⇄ JSON Schema, both directions |
-| `dyncomp/surface` | planned | the layout model and its patch algebra |
+| `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
+| `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
+| `dyncomp/registry` | built | the cross-bundle catalog and its search |
+| `dyncomp/jsonschema` | built | the declared schema ⇄ JSON Schema, both directions |
+| `dyncomp/surface` | built | the layout model and its patch algebra |
+
+The dependency direction is `host → policy`, `host → jsonschema`,
+`registry → host`, and `surface` alone: `policy` and `jsonschema` are leaves
+that `host` depends on, because a decision about a bundle and a description of
+one are both things you want to reason about without a bundle in hand.
 
 ### `dyncomp/registry` — the catalog
 
@@ -90,14 +95,52 @@ project to JSON Schema (draft 2020-12) with a `$defs` table:
 | `TyComp(c)` | `$ref` to a component-reference schema |
 | `TyAny` | `true` |
 
+`TyRecord` / `TyEnum` / `TyVariant` become a *titled but unconstrained* `$defs`
+entry, because the declared schema knows a record's name and not its fields —
+core says so outright, "enough to label it, not enough to open it". Claiming
+`type: object` there would be inventing a fact, since a declared `enum` is a
+string.
+
 The reverse direction validates and coerces incoming JSON into constructor args,
-returning errors as JSON Pointer paths — which is what both the form's inline
-errors and the agent's tool-call error result need. Reuse
-[`mizchi/jsonschema`](https://mooncakes.io/docs/mizchi/jsonschema) for the
-validator half rather than writing one.
+collecting **every** error rather than the first, each with a JSON Pointer. A
+caller that fixed one field per round trip would take as many round trips as it
+has mistakes, which is what makes a tool call unusable to a model and a form
+unpleasant to a person. `pattern` and `format` are carried into the emitted
+schema and deliberately *not* checked on the way in: there is no regex engine
+here, and a check that silently passed everything would be worse than an absent
+one. A caller that needs them enforced validates against the emitted schema with
+[`mizchi/jsonschema`](https://mooncakes.io/docs/mizchi/jsonschema).
 
 `inspector/schema.mbt` already *renders* a JSON Schema; this package *produces*
 one, and the two meet in the universal UI.
+
+### `dyncomp/policy` — the decisions
+
+The executable half of [`SECURITY.md`](SECURITY.md). `host` owns the mechanics
+of loading, this owns the decisions, and `register_bundle` takes a `Policy`
+(defaulting to `untrusted`) and enforces it before it parses anything.
+
+Three tiers, differing in *convenience* rather than in authority — a bundle has
+no ambient authority at any of them:
+
+| | `Untrusted` (default) | `Granted` | `System` |
+|---|---|---|---|
+| `cap-clock` / `cap-random` | no | yes | yes |
+| `cap-timer` | no | no | yes |
+| its own CSS | no | yes | yes |
+
+An ungranted capability **refuses the bundle** rather than degrading it: a guest
+reading a frozen zero from an ungranted clock cannot tell that from midnight.
+The untrusted tier is the one this design is *for*, and a bundle there can still
+declare components, ship views, hold state, handle events, nest children and
+serve its own requests — all three sample guests run under it unchanged.
+
+Also here: the `@dangerouslysetinnerhtml` refusal, and quotas on manifest size
+(an availability bound, not a security one — the host parses every view before
+it renders anything). Still to come, and marked as such in the code: the
+`mizchi/css` style validator (until it lands, `allow_custom_css` means someone
+vouched, not that anything checked), the Sanitizer-API config over the ANode
+tree, and content-addressed bundle ids.
 
 ### `dyncomp/surface` — layout as data
 
@@ -187,15 +230,22 @@ core rather than building beside it.
 
 ## Order of work
 
-1. `dyncomp/jsonschema` — nothing else is blocked on it, and both layers need it.
-2. `dyncomp/registry` — small, and it immediately improves the existing demo.
-3. `dyncomp/surface` — the biggest new piece; the demo's `ComponentList` is the
-   prototype to generalize.
-4. Layer 1 over those three.
-5. `dyncomp/policy` — the `mizchi/css` validator, the Sanitizer port, and
-   caller-aware request authorization (`SECURITY.md` §3–§5).
-6. Layer 2.
+The four core packages are **done**: `jsonschema`, `registry`, `surface` and
+`policy`, with `host` wired to the last two.
 
-Steps 1–3 are also the answer to "what would make the universal demo good",
-which is why they come first: the human layer is the cheapest way to find out
-whether the core is right before an agent depends on it.
+What is left, in order:
+
+1. **Layer 1**, over what now exists. It is next rather than the agent layer for
+   a reason: the human layer is the cheapest way to find out whether the core is
+   right before something automated depends on it. The pieces are a palette over
+   `registry.search`, a form generated from `Descriptor::args_schema`, an editor
+   over the patch algebra, and import/export of `Surface::to_json`.
+2. **The security work `policy` names but does not yet do**: the `mizchi/css`
+   validator, the Sanitizer-API port, and caller-aware request authorization,
+   which needs `RequestFn` to carry the requester's `DispatchPath`
+   (`SECURITY.md` §3–§5).
+3. **Two debts from the v0.3 bump**: `manifest.capabilities` is now enforced,
+   but `control.after` still has no host implementation (it needs a timer the
+   transactor owns), and the bridge supplies `env` unconditionally rather than
+   per grant.
+4. **Layer 2**.

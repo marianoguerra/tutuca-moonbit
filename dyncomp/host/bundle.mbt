@@ -57,6 +57,29 @@ pub fn Bundle::component_names(self : Bundle) -> Array[String] {
 }
 
 ///|
+/// What a component of this bundle DECLARED, as it arrived — the docs,
+/// keywords, category, per-field constraints and message-doc table that
+/// `schema_of` has no room for.
+///
+/// `SchemaInfo` is the shape the runtime needs and this is the description a
+/// catalog needs, and they are deliberately different: a host component has
+/// the first and not the second, and everything generic over a schema must
+/// keep working for it.
+pub fn Bundle::def_of(self : Bundle, component : String) -> DynComponentDef? {
+  match self.comps.get(component) {
+    Some((_, _, def)) => Some(def)
+    None => None
+  }
+}
+
+///|
+/// The bundle's own metadata: what it says it is, and what it asked the host
+/// for. Advisory — see the `DynManifest` doc.
+pub fn Bundle::manifest(self : Bundle) -> DynManifest {
+  self.manifest
+}
+
+///|
 /// Synthesize + register + compile the manifest's components into a child
 /// scope of `scope`. Safe after App::new: the shared registry is live, and
 /// compiling here means event_names()/styles reflect the new components.
@@ -65,12 +88,19 @@ pub fn register_bundle(
   scope : @component.ComponentStack,
   guest : &Guest,
   manifest : DynManifest,
-) -> Bundle raise {
+  policy? : @policy.Policy = @policy.Policy::untrusted(),
+) -> Bundle raise ManifestError {
+  // Everything the host decides about a bundle happens first and together, so
+  // a refusal costs no parsing and leaves nothing behind. `@policy` owns the
+  // decisions; this owns the mechanics — see dyncomp/SECURITY.md.
+  refuse_if_any(policy.check_quotas(facts_of(manifest)))
+  refuse_if_any(policy.check_capabilities(manifest.capabilities))
   let child = scope.enter()
   let comps : Map[String, (Int, @tutuca.SchemaInfo, DynComponentDef)] = Map([])
   let synthesized = []
   let diagnostics : Array[String] = []
   for def in manifest.components {
+    refuse_if_any(policy.check_style(def.name, def.style))
     // Guest view HTML arrives at runtime from the manifest, so it is parsed
     // (View::new), not compiled ahead of time — the manifest's `main` view
     // carries the component's scoped style.
@@ -78,7 +108,7 @@ pub fn register_bundle(
     for v in def.views {
       let style = if v.name == "main" { def.style } else { "" }
       cviews[v.name] = @anode.View::new(v.name, raw_view=v.html, style~)
-      screen_view(diagnostics, "\{def.name}/\{v.name}", v.html)
+      screen_view(policy, diagnostics, "\{def.name}/\{v.name}", v.html)
     }
     // The schema the guest DECLARED, which is the whole difference between a
     // guest component that is a name with handlers hanging off it and one the
@@ -128,7 +158,16 @@ pub fn register_bundle(
   }
   child.register_components(synthesized)
   for comp in synthesized {
-    comp.compile()
+    // A view that will not compile is a bundle that will not render, and the
+    // parser's message is the only thing that says WHY. Rewrapping it keeps
+    // this function's raise type to one error, so a caller can read the reason
+    // out instead of catching an abstract one and reporting "something failed".
+    comp.compile() catch {
+      e =>
+        raise ManifestError(
+          "bundle refused: \{comp.name} failed to compile: \{e}",
+        )
+    }
   }
   // compile() filled in the `@on` names the views raise; the instances read
   // their schema from `comps`, so it takes the completed one.
@@ -155,10 +194,11 @@ pub fn register_bundle(
 /// already in the shared registry — contributing event names and CSS classes —
 /// by the time the host said no.
 fn screen_view(
+  policy : @policy.Policy,
   into : Array[String],
   where_ : String,
   html : String,
-) -> Unit raise {
+) -> Unit raise ManifestError {
   let line = (f : @lint.Finding) => {
     let level = match f.level {
       Error => "error"
@@ -178,19 +218,58 @@ fn screen_view(
   for f in @lint.check_collected(collector) {
     line(f)
   }
-  // A guest view is text the host compiles and renders into its own page.
-  // Everything in one is DESCRIBED — a tag, an attribute, a handler name
-  // resolved at parse time — and so inspectable before it runs.
-  // `@dangerouslysetinnerhtml` is the exception: its value is an
-  // expression, so what it will hold is unknowable until render, and by then
-  // the markup is in the document. Refusing the construct is the only decision
-  // available ahead of time. A sanitizer over the markup it produces is what
-  // would let it back in, and is the next step rather than this one — see
-  // ../SECURITY.md.
-  if tree is Some(t) && t.has_raw_html() {
-    raise ManifestError(
-      "bundle refused: \{where_} sets markup directly (@dangerouslysetinnerhtml)",
-    )
+  // What the host will RENDER is the policy's decision, taken over this same
+  // throwaway tree.
+  if tree is Some(t) {
+    refuse_if_any(policy.check_view(where_, t))
+  }
+}
+
+///|
+/// Turn a policy's refusals into the error a load reports.
+///
+/// One raise per decision point rather than a collected list, because a
+/// refusal is terminal: there is no partially-registered bundle to report the
+/// rest of the problems against, and a guest author fixing the first thing
+/// will re-run and see the second.
+fn refuse_if_any(refusals : Array[@policy.Refusal]) -> Unit raise ManifestError {
+  if refusals.is_empty() {
+    return
+  }
+  let shown = refusals.map(r => r.to_string()).join("; ")
+  raise ManifestError("bundle refused: \{shown}")
+}
+
+///|
+/// The numbers a quota is about. The policy takes five integers rather than
+/// the manifest, so that it can stay a leaf this package depends on.
+fn facts_of(manifest : DynManifest) -> @policy.BundleFacts {
+  let mut max_views = 0
+  let mut max_view_bytes = 0
+  let mut max_style_bytes = 0
+  let mut max_types = 0
+  for def in manifest.components {
+    if def.views.length() > max_views {
+      max_views = def.views.length()
+    }
+    if def.types.length() > max_types {
+      max_types = def.types.length()
+    }
+    if def.style.length() > max_style_bytes {
+      max_style_bytes = def.style.length()
+    }
+    for v in def.views {
+      if v.html.length() > max_view_bytes {
+        max_view_bytes = v.html.length()
+      }
+    }
+  }
+  {
+    components: manifest.components.length(),
+    max_views,
+    max_view_bytes,
+    max_style_bytes,
+    max_types,
   }
 }
 

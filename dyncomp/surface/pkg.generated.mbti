@@ -1,0 +1,133 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/surface"
+
+import {
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn apply(Surface, Array[SurfaceOp]) -> Result[Surface, Array[OpError]]
+
+pub fn tracks_to_css(Array[Track]) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum Align {
+  AStart
+  ACenter
+  AEnd
+  AStretch
+  ABaseline
+} derive(Eq, @debug.Debug)
+pub fn Align::parse(String) -> Self?
+pub fn Align::to_css(Self) -> String
+
+pub(all) struct Binding {
+  module_ : String
+  name : String
+  init : String
+  args : Map[String, @core.Value]
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Direction {
+  Row
+  Column
+  RowReverse
+  ColumnReverse
+} derive(Eq, @debug.Debug)
+pub fn Direction::parse(String) -> Self?
+pub fn Direction::to_css(Self) -> String
+
+pub(all) enum Justify {
+  Start
+  Center
+  End
+  SpaceBetween
+  SpaceAround
+  SpaceEvenly
+} derive(Eq, @debug.Debug)
+pub fn Justify::parse(String) -> Self?
+pub fn Justify::to_css(Self) -> String
+
+pub(all) struct LayoutProps {
+  direction : Direction
+  wrap : Bool
+  justify : Justify
+  align : Align
+  gap : Int
+  padding : Int
+  columns : Array[Track]
+  rows : Array[Track]
+  col_span : Int
+  row_span : Int
+  col_start : Int
+  row_start : Int
+  background : String
+  border : String
+} derive(Eq, @debug.Debug)
+pub fn LayoutProps::default() -> Self
+
+pub(all) struct Node {
+  id : String
+  kind : NodeKind
+  props : LayoutProps
+  children : Array[String]
+  bound : Binding?
+} derive(Eq, @debug.Debug)
+pub fn Node::cell_style(Self) -> String
+pub fn Node::container_style(Self) -> String
+
+pub(all) enum NodeKind {
+  Stack
+  Grid
+  Box
+  Slot
+} derive(Eq, @debug.Debug)
+pub fn NodeKind::is_container(Self) -> Bool
+pub fn NodeKind::parse(String) -> Self?
+pub fn NodeKind::to_string(Self) -> String
+
+pub(all) struct OpError {
+  index : Int
+  pointer : String
+  message : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Surface {
+  id : String
+  root : String
+  nodes : Map[String, Node]
+  data : @core.Value
+  next_id : Int
+} derive(Eq, @debug.Debug)
+pub fn Surface::bindings(Self) -> Array[(String, Binding)]
+pub fn Surface::from_json(Json) -> Self?
+pub fn Surface::new(String) -> Self
+pub fn Surface::node(Self, String) -> Node?
+pub fn Surface::parent_of(Self, String) -> String?
+pub fn Surface::to_json(Self) -> Json
+pub fn Surface::walk(Self) -> Array[String]
+
+pub(all) enum SurfaceOp {
+  AddNode(parent~ : String, index~ : Int, kind~ : NodeKind, props~ : Map[String, @core.Value])
+  RemoveNode(id~ : String)
+  MoveNode(id~ : String, parent~ : String, index~ : Int)
+  SetProps(id~ : String, props~ : Map[String, @core.Value])
+  BindInstance(id~ : String, binding~ : Binding?)
+  SetData(pointer~ : String, value~ : @core.Value)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Track {
+  Fr(Int)
+  Px(Int)
+  Auto
+} derive(Eq, @debug.Debug)
+pub fn Track::parse(String) -> Self?
+pub fn Track::to_css(Self) -> String
+
+// Type aliases
+
+// Traits
+

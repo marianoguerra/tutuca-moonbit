@@ -511,10 +511,13 @@ pub fn on_loaded(
       manifest,
     )
   } catch {
-    _ => {
-      notify(load_id, "dyncompError", [
-        Str("bundle rejected: bad manifest or view"),
-      ])
+    // Registration has ONE failure mode from a page's point of view — the
+    // bundle was refused — and exactly one thing worth showing: why. The
+    // reasons are a person's to act on ("this host takes no CSS from a
+    // bundle", "no such component"), so they reach the page rather than
+    // collapsing into a generic sentence the way they used to.
+    e => {
+      notify(load_id, "dyncompError", [Str(e.message())])
       return
     }
   }

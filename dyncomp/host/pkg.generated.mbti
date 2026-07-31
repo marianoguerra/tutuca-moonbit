@@ -4,6 +4,8 @@ package "marianoguerra/tutuca/dyncomp/host"
 import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/jsonschema",
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/transactor",
   "moonbitlang/core/debug",
 }
@@ -15,7 +17,7 @@ pub let handle_field : String
 
 pub fn install_gc(@transactor.Transactor) -> Unit
 
-pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest) -> Bundle raise
+pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest, policy? : @policy.Policy) -> Bundle raise ManifestError
 
 pub fn superseded_count() -> Int
 
@@ -23,6 +25,7 @@ pub let supported_api_version : Int
 
 // Errors
 type ManifestError derive(@debug.Debug)
+pub fn ManifestError::message(Self) -> String
 
 // Types and methods
 pub struct Bundle {
@@ -32,11 +35,13 @@ pub struct Bundle {
   comps : Map[String, (Int, @core.SchemaInfo, DynComponentDef)]
 }
 pub fn Bundle::component_names(Self) -> Array[String]
+pub fn Bundle::def_of(Self, String) -> DynComponentDef?
 pub fn Bundle::diagnostics(Self) -> Array[String]
 pub fn Bundle::drop_instance(Self, Int) -> Unit
 pub fn Bundle::init_names(Self, String) -> Array[String]
 pub fn Bundle::make_init(Self, String, String) -> DynObj?
 pub fn Bundle::make_instance(Self, String, args? : Map[String, @core.Value]) -> DynObj?
+pub fn Bundle::manifest(Self) -> DynManifest
 pub fn Bundle::migrate_instance(Self, @core.Value, String) -> DynObj?
 pub fn Bundle::module_name(Self) -> String
 pub fn Bundle::schema_of(Self, String) -> @core.SchemaInfo?
@@ -54,18 +59,6 @@ pub(all) enum ControlMsg {
 pub(all) struct DispatchResult {
   next : Int?
   msgs : Array[ControlMsg]
-} derive(Eq, @debug.Debug)
-
-pub(all) enum DynCapability {
-  CapClock
-  CapRandom
-  CapTimer
-  CapUnknown(String)
-} derive(Eq, @debug.Debug)
-
-pub(all) struct DynCapabilityReq {
-  cap : DynCapability
-  reason : String
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynComponentDef {
@@ -89,23 +82,12 @@ pub(all) struct DynComponentDef {
 } derive(Eq, @debug.Debug)
 pub fn DynComponentDef::field_infos(Self) -> Array[@core.FieldInfo]
 
-pub(all) struct DynConstraint {
-  min : Double?
-  max : Double?
-  min_len : Int?
-  max_len : Int?
-  pattern : String
-  format : String
-  enum_values : Array[@core.Value]?
-  default : @core.Value?
-} derive(Eq, @debug.Debug)
-
 pub(all) struct DynFieldDef {
   name : String
   ty : Int
   doc : String
   required : Bool
-  constraint : DynConstraint?
+  constraint : @jsonschema.Constraint?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DynInitDef {
@@ -121,10 +103,10 @@ pub(all) struct DynManifest {
   version : String
   homepage : String
   authors : Array[String]
-  capabilities : Array[DynCapabilityReq]
+  capabilities : Array[@policy.CapabilityReq]
   components : Array[DynComponentDef]
 } derive(Eq, @debug.Debug)
-pub fn DynManifest::from_json_string(String) -> Self raise
+pub fn DynManifest::from_json_string(String) -> Self raise ManifestError
 
 pub struct DynObj {
   comp_id : Int

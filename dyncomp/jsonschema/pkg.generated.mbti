@@ -1,0 +1,46 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/jsonschema"
+
+import {
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn coerce(@core.SchemaInfo, Json, docs? : Map[String, FieldDoc]) -> Result[Map[String, @core.Value], Array[SchemaError]]
+
+pub let component_ref_def : String
+
+pub fn of_schema(@core.SchemaInfo, docs? : Map[String, FieldDoc], title? : String, description? : String) -> Json
+
+// Errors
+
+// Types and methods
+pub(all) struct Constraint {
+  min : Double?
+  max : Double?
+  min_len : Int?
+  max_len : Int?
+  pattern : String
+  format : String
+  enum_values : Array[@core.Value]?
+  default : @core.Value?
+} derive(Eq, @debug.Debug)
+pub fn Constraint::none() -> Self
+
+pub(all) struct FieldDoc {
+  doc : String
+  required : Bool
+  constraint : Constraint?
+} derive(Eq, @debug.Debug)
+pub fn FieldDoc::none() -> Self
+
+pub(all) struct SchemaError {
+  pointer : String
+  message : String
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits
+

@@ -250,6 +250,17 @@ fn plain_field(name : String, ty : Int) -> DynFieldDef {
 }
 
 ///|
+/// The policy these tests register under.
+///
+/// They are about the MECHANICS — dispatch, identity, migration, schemas — and
+/// the fixture ships a scoped stylesheet, which the default (untrusted) policy
+/// refuses. Saying so once here keeps that decision visible instead of making
+/// every test look like it needed a permission it did not.
+fn vouched() -> @policy.Policy {
+  @policy.Policy::granted()
+}
+
+///|
 fn counter_manifest() -> DynManifest {
   // `types` is the flat table a guest ships (WIT has no recursive types);
   // 0 = f64 for the counter's `count`, 1 = the Counter a Pair holds.
@@ -410,7 +421,12 @@ fn mount_with_bundle(fake : FakeGuest) -> (@harness.Harness, Bundle) raise {
   // what a host does after mounting: sweep superseded guest handles at the end
   // of every drained cascade (see install_gc)
   install_gc(h.app.transactor)
-  let bundle = register_bundle(h.app.scope, fake, counter_manifest())
+  let bundle = register_bundle(
+    h.app.scope,
+    fake,
+    counter_manifest(),
+    policy=vouched(),
+  )
   fake.bundle.val = Some(bundle)
   (h, bundle)
 }
@@ -572,7 +588,12 @@ test "event_names reflects a bundle registered after boot" {
   let h = @harness.mount(shell_module(), "Shell")
   // the shell itself has no DOM handlers; the guest's views add click
   assert_false(h.app.event_names().contains("click"))
-  let _ = register_bundle(h.app.scope, FakeGuest::new(), counter_manifest())
+  let _ = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    counter_manifest(),
+    policy=vouched(),
+  )
   assert_true(h.app.event_names().contains("click"))
 }
 
@@ -760,6 +781,47 @@ test "manifest parses from the bridge's JSON projection" {
 }
 
 ///|
+/// The default policy is the untrusted one, and `register_bundle` enforces it
+/// before it parses anything. Three refusals, end to end, from the same
+/// fixture the rest of the suite registers under a vouched policy.
+test "the default policy refuses CSS, capabilities and a bomb" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  let refused = (m : DynManifest) => {
+    let mut ok = true
+    // no `policy=`: this is what a page gets when it just drops a bundle on
+    try register_bundle(h.app.scope, FakeGuest::new(), m) |> ignore catch {
+      _ => ok = false
+    }
+    !ok
+  }
+  // the fixture ships a scoped stylesheet, and an untrusted bundle may not
+  assert_true(refused(base))
+  // ...the same bundle without it is fine, which is what every sample guest
+  // already does — the strict default costs nothing real
+  let styleless : DynManifest = {
+    ..base,
+    module_name: "styleless",
+    components: base.components.map(c => ({ ..c, style: "" } : DynComponentDef)),
+  }
+  assert_false(refused(styleless))
+  // a capability nobody granted
+  assert_true(
+    refused({
+      ..styleless,
+      module_name: "clocky",
+      capabilities: [{ cap: CapClock, reason: "stamps entries" }],
+    }),
+  )
+  // and a manifest too large to parse before rendering anything
+  let many : Array[DynComponentDef] = []
+  for i in 0..<200 {
+    many.push({ ..styleless.components[0], name: "C\{i}" })
+  }
+  assert_true(refused({ ..styleless, module_name: "huge", components: many }))
+}
+
+///|
 /// The one view construct a host cannot inspect before it runs, and therefore
 /// the one it refuses. Note WHERE the refusal lands: nothing of a refused
 /// bundle reaches the shared component registry, so its markup never
@@ -785,7 +847,10 @@ test "a guest view that sets markup directly is refused" {
   }
   let register = (man : DynManifest) => {
     let mut ok = true
-    try register_bundle(h.app.scope, FakeGuest::new(), man) |> ignore catch {
+    try
+      register_bundle(h.app.scope, FakeGuest::new(), man, policy=vouched())
+      |> ignore
+    catch {
       // `register_bundle` also propagates the compiler's MacroError, so its
       // raise type is the open one and the payload cannot be matched out here.
       // What the test is for is the DECISION, not its wording.
@@ -995,7 +1060,12 @@ test "a bundle's views are linted at load" {
     ],
   }
   let h = @harness.mount(shell_module(), "Shell")
-  let bundle = register_bundle(h.app.scope, FakeGuest::new(), bad)
+  let bundle = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    bad,
+    policy=vouched(),
+  )
   let lines = bundle.diagnostics()
   assert_true(lines.length() > 0)
   // every line names the component and view it is about

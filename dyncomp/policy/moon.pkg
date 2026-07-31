@@ -1,0 +1,18 @@
+// What a host will accept from a bundle, in one place.
+//
+// `dyncomp/host` owns the MECHANICS of loading; this owns the DECISIONS. The
+// split earns itself the moment someone asks "what can a dropped bundle
+// actually do to my page" — SECURITY.md answers it in prose and this answers
+// it in code, and neither has to be reconstructed from six call sites.
+//
+// A LEAF over anode and core: it inspects a compiled view and a manifest's
+// numbers, and holds no bundle, no guest and no instance. That direction is
+// what lets `host` depend on it rather than the reverse.
+import {
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/test",
+} for "test"

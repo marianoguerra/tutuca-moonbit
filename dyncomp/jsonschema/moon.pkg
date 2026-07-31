@@ -1,0 +1,21 @@
+// The declared schema, as JSON Schema and back.
+//
+// ONE projection with two consumers, which is the whole reason it is a package
+// rather than a function inside either of them: the universal UI generates a
+// form from it, and the agent runtime generates a tool's `parameters` from it.
+// Two implementations would drift, and they would drift in the direction of
+// the form accepting what the tool rejects.
+//
+// Pure and target-agnostic like statedef/ and viewgen/: a SchemaInfo in, a
+// Json out, and no host, no bundle, no wasm. That is what lets it describe a
+// HOST component as readily as a guest one — the declared shape is the same
+// shape, and only the docs a manifest carries are extra.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/json",
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/test",
+} for "test"
