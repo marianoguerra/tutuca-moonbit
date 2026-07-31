@@ -146,6 +146,27 @@ test "unknown directive reports an issue but keeps the element" {
 }
 
 ///|
+/// A branch that was written and did not parse is reported, where an unwritten
+/// one is not: `@then="btn btn-primary"` is a class list that forgot its
+/// quotes, and the silence it used to get was an element rendered with no class
+/// at all — the mistake a static `class` beside the `@if.class` hides best.
+test "an @if branch that does not parse says so" {
+  let issues : Array[@anode.ParseIssue] = []
+  let (root, _) = collecting_parse(
+    "<div @if.class=\".on\" @then=\"btn btn-primary\" @else=\"'btn'\"></div>", issues,
+  )
+  guard root is Some(Dom(d))
+  guard d.attrs is DynAttrs(items)
+  guard items[0] is If(ia)
+  assert_true(ia.then_val is None)
+  assert_true(ia.else_val is Some(_))
+  assert_eq(issues.length(), 1)
+  assert_true(
+    issues[0] is BadValue(role=Directive(name="then"), value="btn btn-primary"),
+  )
+}
+
+///|
 priv struct IssueCollector {
   issues : Array[@anode.ParseIssue]
 }

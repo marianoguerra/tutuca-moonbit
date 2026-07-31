@@ -25,11 +25,21 @@ fn surface_node_main_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [
-        @anode.attr("class", "tut-node relative"),
         @anode.dyn_attr("style", Field("style")),
-        @anode.if_attr("class", Field("selected")),
+        @anode.if_attr(
+          "class",
+          Field("selected"),
+          then_val=@anode.const_str(
+            "tut-node relative pt-5 outline outline-2 outline-primary",
+          ),
+          else_val=@anode.const_str("tut-node relative pt-5"),
+        ),
       ],
       [
+        @anode.comment(
+          " Every class this box wears is in the two branches, including the\n       structural ones: a static `class` and an `@if.class` cannot coexist,\n       and nothing reports the one that loses. `pt-5` is chrome rather than\n       layout — it reserves the band the badge sits in, so a child's badge\n       lands below its parent's instead of exactly on top of it, which is\n       where they all land when a container has no padding of its own.\n\n       The comment lives INSIDE the root element on purpose: one before it\n       would make this view a fragment, and a non-§ comment where the\n       renderer's boundary meta is expected ends the chain that dispatch\n       walks — the clicks below would resolve against the wrong instance. ",
+        ),
+        @anode.text(" "),
         @anode.comment(
           " A container renders its children; the click that selects it is on the\n       chrome badge rather than the box, so selecting a parent does not mean\n       missing every child. ",
         ),
@@ -37,10 +47,16 @@ fn surface_node_main_view_ir() -> @anode.View {
         @anode.h(
           "span",
           [
-            @anode.attr(
-              "class", "node-badge absolute -top-2 -left-1 z-10 badge badge-xs cursor-pointer",
+            @anode.if_attr(
+              "class",
+              Field("selected"),
+              then_val=@anode.const_str(
+                "node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-primary",
+              ),
+              else_val=@anode.const_str(
+                "node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-ghost",
+              ),
             ),
-            @anode.if_attr("class", Field("selected")),
             @anode.eid(0),
           ],
           [@anode.dyn_text(Field("label"))],

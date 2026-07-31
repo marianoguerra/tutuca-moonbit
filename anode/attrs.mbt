@@ -267,14 +267,36 @@ fn AttrParser::parse_if(
 fn AttrParser::parse_then(self : AttrParser, s : String) -> Unit {
   // Applies to the most recent @if.<name>; silently ignored without one (JS).
   if self.if_attr is Some(ia) {
-    ia.then_val = self.px.pval(s, @tutuca.parse_text)
+    ia.then_val = self.branch_val("then", s)
   }
 }
 
 ///|
 fn AttrParser::parse_else(self : AttrParser, s : String) -> Unit {
   if self.if_attr is Some(ia) {
-    ia.else_val = self.px.pval(s, @tutuca.parse_text)
+    ia.else_val = self.branch_val("else", s)
+  }
+}
+
+///|
+/// A branch value, or None with the reason said out loud.
+///
+/// An UNSET branch is legal and means "leave the attribute alone" — but a
+/// branch that was written and did not parse used to become the same None, so
+/// `@then="btn btn-primary"` (a class list, missing its quotes) rendered as an
+/// element with no class and nothing to read about why. The conditional itself
+/// already reports a value it cannot parse; this is the other half.
+fn AttrParser::branch_val(
+  self : AttrParser,
+  branch : String,
+  s : String,
+) -> @tutuca.Val? {
+  match self.px.pval(s, @tutuca.parse_text) {
+    Some(v) => Some(v)
+    None => {
+      self.px.issue(BadValue(role=Directive(name=branch), value=s))
+      None
+    }
   }
 }
 

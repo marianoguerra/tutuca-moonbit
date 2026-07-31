@@ -56,7 +56,7 @@ let ir_html : String =
   #|    <p @hide=".count">hidden</p>
   #|    <button id="inc" @on.click="add 1" @on.keydown+send="add -2.5">+1</button>
   #|    <input id="label" :value=".label" @on.input="setLabel value">
-  #|    <b @if.class=".count" @then.class="on" @else.class="off">flag</b>
+  #|    <b @if.class=".count" @then.class="'on'" @else.class="'off'">flag</b>
   #|    <ul id="history"><li @each=".history"><x text="@value"></x></li></ul>
   #|    <svg viewBox="0 0 1 1"><circle r="1"></circle></svg>
   #|  </div>

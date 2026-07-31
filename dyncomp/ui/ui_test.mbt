@@ -324,6 +324,32 @@ test "clicking a badge selects that node and nothing above it" {
 }
 
 ///|
+/// What is selected SAYS so, and the structural classes survive saying it.
+///
+/// Both are one assertion because they are one mistake: a static `class`
+/// beside an `@if.class` loses one of the two silently, and the version of
+/// this template that did that rendered `tut-node` with no outline and a badge
+/// that never lit up — invisible in a memdom, which has no styling to miss,
+/// and invisible in a browser, which is where selection is the whole feedback.
+test "the selected node is the one that looks selected" {
+  let (h, _) = mounted()
+  h.click(".add-slot")
+  let selected = h.attr(".node-badge", "class", nth=1).unwrap_or("")
+  let root = h.attr(".node-badge", "class", nth=0).unwrap_or("")
+  assert_true(selected.contains("badge-primary"))
+  assert_true(root.contains("badge-ghost"))
+  // the structural half is still there, in both branches
+  assert_true(selected.contains("node-badge") && root.contains("node-badge"))
+  let box = h.attr(".tut-node", "class", nth=1).unwrap_or("")
+  assert_true(box.contains("outline-primary") && box.contains("tut-node"))
+  // and the chrome that keeps a parent's badge reachable is on every node,
+  // which a memdom cannot see the effect of — only the class
+  assert_true(
+    h.attr(".tut-node", "class", nth=0).unwrap_or("").contains("pt-5"),
+  )
+}
+
+///|
 /// Removing takes the subtree, and the selection lands somewhere real rather
 /// than pointing at a node that is gone.
 test "removing a node takes its subtree and re-homes the selection" {

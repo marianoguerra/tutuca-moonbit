@@ -153,13 +153,27 @@
 </script>
 
 <template id="SurfaceNode">
-  <div class="tut-node relative" :style=".style"
-       @if.class=".selected" @then="outline outline-2 outline-primary" @else="">
+  <div :style=".style"
+       @if.class=".selected"
+       @then="'tut-node relative pt-5 outline outline-2 outline-primary'"
+       @else="'tut-node relative pt-5'">
+    <!-- Every class this box wears is in the two branches, including the
+         structural ones: a static `class` and an `@if.class` cannot coexist,
+         and nothing reports the one that loses. `pt-5` is chrome rather than
+         layout — it reserves the band the badge sits in, so a child's badge
+         lands below its parent's instead of exactly on top of it, which is
+         where they all land when a container has no padding of its own.
+
+         The comment lives INSIDE the root element on purpose: one before it
+         would make this view a fragment, and a non-§ comment where the
+         renderer's boundary meta is expected ends the chain that dispatch
+         walks — the clicks below would resolve against the wrong instance. -->
     <!-- A container renders its children; the click that selects it is on the
          chrome badge rather than the box, so selecting a parent does not mean
          missing every child. -->
-    <span class="node-badge absolute -top-2 -left-1 z-10 badge badge-xs cursor-pointer"
-          @if.class=".selected" @then="badge-primary" @else="badge-ghost"
+    <span @if.class=".selected"
+          @then="'node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-primary'"
+          @else="'node-badge absolute top-0.5 left-1 z-10 badge badge-xs cursor-pointer badge-ghost'"
           @on.click="pick" @text=".label"></span>
     <x render-each=".children"></x>
     <!-- A slot either holds a component or says it is waiting for one. -->

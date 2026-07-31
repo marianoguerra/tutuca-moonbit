@@ -733,6 +733,11 @@ in **[events.md](./events.md)**. Two things worth knowing before you get there:
 > element every `@then`/`@else` after the first **must** include the attr
 > name — otherwise the parser drops it before tutuca sees it.
 
+A branch is an **expression**, so a literal class list needs its quotes:
+`@then="'btn btn-primary'"`, never `@then="btn btn-primary"`. An unquoted one
+fails `gen-views` with `bad value '…' in directive 'then'`; it used to leave
+the branch unset and render the element with no class at all.
+
 Note: `@show` / `@hide` **omit the node from the output** when the
 condition says hide — they do not merely toggle CSS visibility.
 
