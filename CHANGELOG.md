@@ -8,6 +8,72 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A universal editor over whatever is loaded: `dyncomp/ui`.** Search the
+  catalog, fill in a form generated from a component's declared arguments, and
+  arrange what you placed — seven ordinary tutuca components, backend-agnostic
+  and driven by `moon test` on the in-memory DOM. The state it edits is the
+  surface DOCUMENT, and every change (add a stack, retarget a grid's tracks,
+  remove a subtree, place a component) is a `SurfaceOp` batch applied to it,
+  with the rendered tree rebuilt afterwards; that ordering is what makes a
+  button and a tool call the same operation rather than two that agree for now.
+  Instances live BESIDE the document — it holds references and the host builds
+  what they name — so a rebuild keeps their state, and an import gives the
+  layout back with its slots empty rather than showing someone else's.
+  `demo/universal_wasm` is the shell around it now: a drop target, a status
+  line, and the bridge that turns a `ComponentRef` into a live guest instance.
+
+- **`dyncomp/jsonschema`** — the declared schema to JSON Schema (draft 2020-12)
+  and back. ONE projection with two consumers, a generated form and a tool's
+  `parameters`, because two would drift in the direction of the form accepting
+  what the tool rejects. `TyRecord` / `TyEnum` / `TyVariant` become a titled but
+  UNCONSTRAINED `$defs` entry (the declared schema knows a record's name and not
+  its fields, and claiming `type: object` would be inventing a fact); a `TyComp`
+  slot becomes a component reference, since the host builds the child. Reading
+  back collects EVERY error with a JSON Pointer rather than the first.
+
+- **`dyncomp/registry`** — the catalog across loaded bundles, and search over
+  it. The weights live in one place so the ranking is arguable rather than
+  emergent, and every hit carries WHY it matched: a search a person cannot
+  explain is one they stop trusting. Describing the catalog never calls a guest.
+
+- **`dyncomp/surface`** — the layout model and the six-op patch algebra the
+  editor drives. A flat node table with children by id, so an edit is not a
+  rewrite of the path down to it; an ATOMIC batch, because a caller that got
+  half a layout cannot tell what it now has; a flex/grid subset that stops at
+  `Nfr` / `Npx` / `auto`, since `minmax` / `repeat` / `calc` are where a
+  generated layout silently collapses; and unknown prop names as errors rather
+  than silence. One document format for export, read-back and resuming.
+
+- **`dyncomp/policy`** — the executable half of `dyncomp/SECURITY.md`. `host`
+  owns the mechanics of loading and this owns the decisions, so "what can a
+  dropped bundle do to my page" has one answer instead of six call sites.
+
+- **A bundle says what it is.** `tutuca:component` is `0.3.0` (manifest
+  `api-version: 3`): `doc` / `keywords` / `category` / `message-docs` per
+  component, `doc` per field and per init fixture, and a `constraint` (min /
+  max / lengths / pattern / format / enum / default) — the half a TYPE cannot
+  state. `ty-def` says a field holds a string; the constraint says it holds an
+  email under 254 characters, and a form and a JSON Schema both need the second
+  half. The manifest also carries advisory catalog metadata (doc / version /
+  homepage / authors) and its capability requests.
+
+- **`env` and `control.after`, each behind a capability.** `now-ms` coarsened
+  to a second and FROZEN for one dispatch, `random-u64` from a seeded xorshift,
+  `new-id` monotonic per bundle, plus `locale` / `tz-offset-min` — deliberately
+  weaker than the platform, because the world imports no WASI, a real monotonic
+  clock is the primitive a timing side channel is built from, and an ambient
+  clock makes a dispatch unreplayable. `control.after` asks the host for a later
+  message; the host owns the timer, so there is no cancel. Both gaps are
+  recorded rather than hidden: the browser bridge still supplies `env`
+  unconditionally rather than per grant, and `control.after` has no host
+  implementation yet.
+
+- **`dyncomp/SECURITY.md`, `dyncomp/ARCHITECTURE.md` and
+  `docs/agent-runtime.md`** — what a bundle can and cannot do with the
+  file/line evidence for each claim, where this sits against AG-UI, A2UI and
+  MCP Apps, and six fixed tools over a declarative surface patch (rather than
+  one tool per component, which a runtime-mutable catalog cannot offer).
+
 - **A wasm guest DECLARES its state, and stops implementing what the
   declaration already says.** `tutuca:component` is `0.2.0` (manifest
   `api-version: 2`, and a manifest declaring anything else is refused rather
@@ -96,6 +162,17 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`register_bundle` refuses with the reason in it.** It raises one error type
+  now, so a page that turns a bundle away shows "this host takes no CSS from a
+  bundle" instead of the generic "bad manifest or view" every failure used to
+  collapse into.
+
+- **The catalog of loaded components is kept by the wasm glue**
+  (`@dhw.registry()`): registered on load, replaced in place on a hot swap so a
+  module keeps its position in the palette, and forgotten on drop. That is the
+  code that already knows about all three, and a second copy elsewhere would be
+  a second thing to keep in sync.
+
 - Render's package-only tests are white-box tests now, so their source-view
   resolvers and cache probes no longer inflate the published API. The render
   cache also stops maintaining hit/miss counters on every lookup; tests prove
@@ -112,13 +189,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   string-matched dispatches, and typed messages raised through the generated
   `bubble` helper.
 
-### Removed
+### Security
 
-- Test-only and internal `@render` exports: `ViewMap`, `ViewRegistry`,
-  `CompiledView`, `CacheEntry`, `render_view`, and the non-lifecycle
-  `RenderCache` methods (`get`, `set`, `stats`, `size`, `evict`). Production
-  integrations keep `render_root`, the resolver/boundary traits, and
-  `RenderCache::new` / `clear` / `next_generation`.
+- **A bundle is `Policy::untrusted()` by default**, enforced before the manifest
+  is parsed: no capabilities, no stylesheet of its own, quotas on manifest size.
+  An ungranted capability refuses the BUNDLE rather than degrading it — a guest
+  reading a frozen zero from an ungranted clock cannot tell that from midnight.
+  The tiers differ in convenience, not authority: at every one a bundle can
+  still declare components, ship views, hold state, handle events, nest children
+  and serve its own requests. `allow_custom_css` currently means someone vouched
+  for a bundle, not that anything checked it.
+
+- **`@dangerouslysetinnerhtml` in a guest view is refused**, over the shadow
+  parse the linter already does and before anything is registered. It cannot be
+  sanitized ahead of time — the directive's value is an expression, so what it
+  will hold is unknowable until render, and by then the markup is in the
+  document. Guest CSS, which is scoped by concatenation and would escape through
+  a `}`, is held instead as a contract invariant: no guest-declared field
+  reaches the host's unscoped `global_style`, and the WIT says so.
 
 ## [0.9.3] - 2026-07-30
 
