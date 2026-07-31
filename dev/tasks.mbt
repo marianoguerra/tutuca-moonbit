@@ -291,6 +291,7 @@ fn gen_views_commands() -> Array[Command] {
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
     ("demo/universal_wasm/universal_wasm.html", None),
+    ("dyncomp/ui/editor.html", Some("SurfaceEditor")),
     ("inspector/activity.html", None),
     ("inspector/json.html", None),
     ("inspector/component_inspector.html", None),

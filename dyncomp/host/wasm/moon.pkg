@@ -6,6 +6,8 @@
 import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/dyncomp/host" @dyncomp,
+  // the catalog this glue keeps in sync as bundles load and hot-swap
+  "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/vdom/wasm" @wdom,

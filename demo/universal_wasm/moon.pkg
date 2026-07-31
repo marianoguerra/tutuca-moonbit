@@ -13,6 +13,10 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  // Layer 1: the editor itself, backend-agnostic and tested on memdom. This
+  // page is the shell that gives it a bridge.
+  "marianoguerra/tutuca/dyncomp/ui",
+  "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "mizchi/js/core",

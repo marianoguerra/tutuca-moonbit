@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
+  "marianoguerra/tutuca/dyncomp/registry",
   "moonbitlang/core/ref",
 }
 
@@ -32,6 +33,8 @@ pub fn migrate_instance(String, String, @core.Value) -> @core.Value?
 pub fn on_load_error(Int, String) -> Unit
 
 pub fn on_loaded(Int, Int, String) -> Unit
+
+pub fn registry() -> @registry.Registry
 
 pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
 

@@ -1,143 +1,54 @@
 <script type="tutuca/state">
-  interface component-entry {
-    record state {
-      module: string,
-      name: string,
-      // the named initial state to build this row with, "" for a bare one
-      init: string,
-      label: string,
-    }
-    // Asked by the picker's `@when` filter, which holds entries and knows
-    // nothing of their fields. No view of ComponentEntry calls it, so this
-    // declaration is what puts it in ComponentEntryMethod.
-    contains-text: func(q: string) -> bool;
-  }
-  interface component-picker {
-    record state {
-      filter-text: string,
-      items: values,
-      // A component the picker does not know the type of — a builtin or a
-      // component out of a dropped wasm bundle — so `component` (the bare
-      // slot marker) is the most this can say. `null?` is what asks whether
-      // one has been picked: `truthy?` is the SIZED predicate, and a picked
-      // component whose own seq-entries are empty would read as falsy.
-      selected: component,
-    }
-    // one payload per case (WIT variants carry one type), so the row's
-    // module / name / init travels as a tuple
-    variant bubble { component-selected(tuple<string, string, string>) }
-    variant response { list-components(any), make-component(any) }
-    variant receive { migrate(string) }
-  }
-  interface component-list {
-    record state {
-      entries: values,
-      show-settings: bool,
-      dir: string,
-      justify: string,
-      align: string,
-      gap: s32,
-      wrap: bool,
-    }
-    // `refresh` re-reads the component list; `migrate` carries the module a
-    // hot swap just replaced, so each picker can rebuild what it holds
-    variant receive { refresh, migrate(string) }
-    variant response { component-picker(any) }
-  }
   interface universal-wasm {
+    /// The page around the editor: a drop target for bundles, a status line
+    /// for what loading said, and the editor itself.
+    ///
+    /// Deliberately thin. Everything about searching, placing and arranging
+    /// components lives in `dyncomp/ui`, which is backend-agnostic and driven
+    /// by `moon test`; what is left here is the one thing that is not — the
+    /// bridge that fetches a `.tutuca.tar.gz` and turns it into components.
+    ///
+    /// This shell used to hold the picker chain (ComponentList /
+    /// ComponentPicker / ComponentEntry). Those are gone: a palette that
+    /// searches a documented catalog and a form generated from a component's
+    /// declared arguments do what they did, and doing it in one place is what
+    /// lets an agent drive the same editor later.
     record state {
       status: string,
-      %list: component-list,
+      /// The editor. `component` rather than a named slot because the
+      /// generator resolves a sibling component only within one file, and
+      /// SurfaceEditor lives in dyncomp/ui — `slots~` names it at the seam.
+      editor: component,
     }
     variant receive { dyncomp-loaded(string), dyncomp-error(string) }
   }
 </script>
-
 
 <template id="UniversalWasm">
   <!-- The whole page is the drop target, and the drop is an ORDINARY tutuca
        event: `value` carries the dropped files (id + metadata), so loading a
        bundle is a handler like any other. This page used to install a
        document-level listener in JS to get at dataTransfer.files. -->
-  <div class="min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3" data-droptarget="tutuca-wasm-component" @on.drop="loadDropped value">
-    <div class="rounded-box border-2 border-dashed border-base-300 bg-base-100 p-4 text-center opacity-70 flex flex-col gap-2 items-center">
-      <span>Drop a <code class="font-mono">.tutuca.tar.gz</code> bundle to register its wasm components</span>
-      <!-- ...or fetch one: the same archive, named by URL instead of by drop.
+  <div class="min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3"
+       data-droptarget="tutuca-wasm-component" @on.drop="loadDropped value">
+    <header class="flex items-center gap-3 flex-wrap">
+      <h1 class="text-lg font-semibold">tutuca universal host</h1>
+      <!-- Drop a bundle, or fetch one: the same archive, named by URL instead.
            Loading a bundle that is already registered HOT-SWAPS it, and the
-           pickers migrate what they hold into the new one. -->
+           catalog answers with the new components immediately. -->
       <div class="join">
-        <button class="btn btn-xs join-item" @on.click="loadSample './examples/counter.tutuca.tar.gz'">load counter</button>
-        <button class="btn btn-xs join-item" @on.click="loadSample './examples/todo.tutuca.tar.gz'">load todo</button>
-        <button class="btn btn-xs join-item" @on.click="loadSample './examples/rust-counter.tutuca.tar.gz'">load rust-counter</button>
+        <button class="btn btn-xs join-item load-counter"
+                @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
+        <button class="btn btn-xs join-item load-todo"
+                @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
+        <button class="btn btn-xs join-item load-rust"
+                @on.click="loadSample './examples/rust-counter.tutuca.tar.gz'">rust counter</button>
       </div>
-    </div>
-    <p class="text-sm opacity-70" @text=".status"></p>
-    <x render=".list"></x>
+      <span class="text-sm opacity-70 grow status" @text=".status"></span>
+    </header>
+    <p class="text-xs opacity-50 italic">
+      Drop a <code class="font-mono">.tutuca.tar.gz</code> anywhere on this page to register its components.
+    </p>
+    <x render=".editor"></x>
   </div>
-</template>
-<template id="ComponentList">
-  <section class="indicator w-full">
-    <!-- The btn stays INSIDE the indicator-item, never on it: `.btn:active`
-         sets `translate: 0 0.5px`, which would override the indicator's own
-         `translate: 50% -50%` and jump the button ~16px out from under the
-         cursor on mousedown — mouseup then lands on an ancestor and no click
-         event ever reaches the button. -->
-    <span class="indicator-item indicator-top indicator-start">
-      <button class="btn btn-sm btn-ghost btn-circle" title="Layout settings" @on.click="toggleShowSettings">
-        <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round"><circle cx="12" cy="12" r="3"></circle><path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 1 1-2.83 2.83l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-4 0v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 1 1-2.83-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1 0-4h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 1 1 2.83-2.83l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1-1.51V3a2 2 0 0 1 4 0v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 1 1 2.83 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 0 4h-.09a1.65 1.65 0 0 0-1.51 1z"></path></svg>
-      </button>
-    </span>
-    <span class="indicator-item indicator-top indicator-end">
-      <button class="btn btn-sm btn-ghost btn-circle" title="Add component" @on.click="onAdd">
-        <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><line x1="12" y1="5" x2="12" y2="19"></line><line x1="5" y1="12" x2="19" y2="12"></line></svg>
-      </button>
-    </span>
-    <div class="w-full flex flex-col gap-3 pt-6 min-h-[5rem]">
-      <div class="card bg-base-100 border border-base-300 p-3" @show=".showSettings">
-        <div class="flex flex-wrap gap-3 items-end">
-          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">direction</span>
-            <select class="select select-bordered select-sm" :value=".dir" @on.input="setDir value">
-              <option value="row">row</option><option value="column">column</option><option value="row-reverse">row-reverse</option><option value="column-reverse">column-reverse</option>
-            </select></label>
-          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">justify</span>
-            <select class="select select-bordered select-sm" :value=".justify" @on.input="setJustify value">
-              <option value="flex-start">flex-start</option><option value="center">center</option><option value="flex-end">flex-end</option><option value="space-between">space-between</option><option value="space-around">space-around</option>
-            </select></label>
-          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">align</span>
-            <select class="select select-bordered select-sm" :value=".align" @on.input="setAlign value">
-              <option value="stretch">stretch</option><option value="flex-start">flex-start</option><option value="center">center</option><option value="flex-end">flex-end</option>
-            </select></label>
-          <label class="flex flex-col gap-1"><span class="text-xs opacity-70">gap (px)</span>
-            <input type="number" class="input input-bordered input-sm w-20" :value=".gap" @on.input="setGap valueAsInt"></label>
-          <label class="flex items-center gap-2 cursor-pointer"><span class="text-xs opacity-70">wrap</span>
-            <input type="checkbox" class="checkbox checkbox-sm" :checked=".wrap" @on.input="toggleWrap"></label>
-        </div>
-      </div>
-      <p class="text-sm italic opacity-60" @show="empty? .entries">Empty canvas — ⚙ to change the layout, ＋ to add a component.</p>
-      <div class="items-start" :style="$flexStyle"><x render-each=".entries"></x></div>
-    </div>
-  </section>
-</template>
-<template id="ComponentPicker">
-  <div class="w-full">
-    <!-- `null? .selected` and not `truthy? .selected`: the pick is a component
-         instance, and `truthy?` is the SIZED predicate — a guest whose
-         `seq_entries` answers with an empty list (an as-yet-empty custom
-         collection) is size 0, hence falsy, and the picker would sit there
-         showing its chrome over a component it had already selected. -->
-    <div class="card bg-base-100 border border-base-300 shadow-sm" @show="null? .selected">
-      <div class="card-body gap-2 p-3">
-        <input class="input input-bordered input-sm w-full" placeholder="Filter components…" :value=".filterText" @on.input="setFilterText value">
-        <p class="text-sm italic opacity-60" @show="empty? .items">No components yet — drop a <code class="font-mono">.tutuca.tar.gz</code> bundle.</p>
-        <ul class="menu menu-sm bg-base-100 rounded-box p-0" @hide="empty? .items"><x render-each=".items" @when="matchesFilter"></x></ul>
-      </div>
-    </div>
-    <div @hide="null? .selected"><x render=".selected"></x></div>
-  </div>
-</template>
-<template id="ComponentEntry">
-  <li class="cursor-pointer rounded-lg px-3 py-2 hover:bg-base-300 flex items-center gap-2" @on.click="onSelect">
-    <span class="badge badge-sm badge-ghost">wasm</span>
-    <span class="text-sm" @text=".label"></span>
-  </li>
 </template>

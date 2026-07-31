@@ -1,0 +1,30 @@
+// Layer 1: the universal UI, as ordinary tutuca components.
+//
+// A person searches the catalog, fills in a form generated from a component's
+// declared arguments, and arranges what they placed. Every one of those is the
+// core doing its job — `registry` ranks, `jsonschema` projects, `surface`
+// applies — and this package is the part a person touches.
+//
+// BACKEND-AGNOSTIC on purpose, which is what lets `moon test` drive the whole
+// editor on the in-memory DOM. `demo/universal_wasm` is the wasm-gc shell that
+// mounts it and supplies the one thing it cannot have: a bridge that builds
+// real guest instances.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/dyncomp/surface",
+  "marianoguerra/tutuca/dyncomp/registry",
+  "marianoguerra/tutuca/dyncomp/jsonschema",
+  "moonbitlang/core/json",
+  "moonbitlang/core/string",
+  // the generated *_view_gen.mbt modules derive @debug.Debug on their
+  // vocabulary enums
+  "moonbitlang/core/debug",
+}
+
+import {
+  "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/dyncomp/host" @dyncomp,
+  "moonbitlang/core/test",
+} for "test"

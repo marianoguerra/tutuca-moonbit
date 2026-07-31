@@ -1,0 +1,338 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/ui"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/registry",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let component_palette_common_style : String
+
+pub fn component_palette_component(name? : String, views? : Map[String, @anode.View], init? : ComponentPaletteState, common_style? : String, global_style? : String, update? : (ComponentPaletteState, @component.Dispatch, &@core.Ctx) -> ComponentPaletteState?, swap? : (ComponentPaletteInput) -> ((ComponentPaletteState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let component_palette_global_style : String
+
+pub fn component_palette_views() -> Map[String, @anode.View]
+
+pub fn editor_seed(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, @component.ModuleDef) -> Map[String, @core.Value]
+
+pub let node_settings_common_style : String
+
+pub fn node_settings_component(name? : String, views? : Map[String, @anode.View], init? : NodeSettingsState, common_style? : String, global_style? : String, update? : (NodeSettingsState, @component.Dispatch, &@core.Ctx) -> NodeSettingsState?, swap? : (NodeSettingsInput) -> ((NodeSettingsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let node_settings_global_style : String
+
+pub fn node_settings_views() -> Map[String, @anode.View]
+
+pub let palette_row_common_style : String
+
+pub fn palette_row_component(name? : String, views? : Map[String, @anode.View], init? : PaletteRowState, common_style? : String, global_style? : String, update? : (PaletteRowState, @component.Dispatch, &@core.Ctx) -> PaletteRowState?, swap? : (PaletteRowInput) -> ((PaletteRowState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let palette_row_global_style : String
+
+pub fn palette_row_views() -> Map[String, @anode.View]
+
+pub let schema_field_common_style : String
+
+pub fn schema_field_component(name? : String, views? : Map[String, @anode.View], init? : SchemaFieldState, common_style? : String, global_style? : String, update? : (SchemaFieldState, @component.Dispatch, &@core.Ctx) -> SchemaFieldState?, swap? : (SchemaFieldInput) -> ((SchemaFieldState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let schema_field_global_style : String
+
+pub fn schema_field_views() -> Map[String, @anode.View]
+
+pub let schema_form_common_style : String
+
+pub fn schema_form_component(name? : String, views? : Map[String, @anode.View], init? : SchemaFormState, common_style? : String, global_style? : String, update? : (SchemaFormState, @component.Dispatch, &@core.Ctx) -> SchemaFormState?, swap? : (SchemaFormInput) -> ((SchemaFormState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let schema_form_global_style : String
+
+pub fn schema_form_views() -> Map[String, @anode.View]
+
+pub fn seeded_editor(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?) -> (@component.ModuleDef, Map[String, @core.Value])
+
+pub let surface_editor_common_style : String
+
+pub fn surface_editor_component(name? : String, views? : Map[String, @anode.View], init? : SurfaceEditorState, common_style? : String, global_style? : String, update? : (SurfaceEditorState, @component.Dispatch, &@core.Ctx) -> SurfaceEditorState?, swap? : (SurfaceEditorInput) -> ((SurfaceEditorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let surface_editor_global_style : String
+
+pub fn surface_editor_views() -> Map[String, @anode.View]
+
+pub let surface_node_common_style : String
+
+pub fn surface_node_component(name? : String, views? : Map[String, @anode.View], init? : SurfaceNodeState, common_style? : String, global_style? : String, update? : (SurfaceNodeState, @component.Dispatch, &@core.Ctx) -> SurfaceNodeState?, swap? : (SurfaceNodeInput) -> ((SurfaceNodeState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let surface_node_global_style : String
+
+pub fn surface_node_views() -> Map[String, @anode.View]
+
+pub fn universal_module(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?) -> @component.ModuleDef
+
+// Errors
+
+// Types and methods
+pub(all) enum ComponentPaletteInput {
+  SetQuery
+} derive(Eq, @debug.Debug)
+pub fn ComponentPaletteInput::name(Self) -> String
+pub fn ComponentPaletteInput::parse(String) -> Self?
+
+pub(all) enum ComponentPaletteMsg {
+  SetQuery(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn ComponentPaletteMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct ComponentPaletteState {
+  query : String
+  hits : Array[@core.Value]
+  emptyMessage : String
+}
+pub fn ComponentPaletteState::zero() -> Self
+
+pub(all) enum NodeSettingsBubble {
+  PropChanged(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NodeSettingsBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn NodeSettingsBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn NodeSettingsBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum NodeSettingsInput {
+  SetAlign
+  SetColSpan
+  SetColumns
+  SetDirection
+  SetGap
+  SetJustify
+  SetPadding
+  SetRowSpan
+  SetWrap
+} derive(Eq, @debug.Debug)
+pub fn NodeSettingsInput::name(Self) -> String
+pub fn NodeSettingsInput::parse(String) -> Self?
+
+pub(all) enum NodeSettingsMsg {
+  SetAlign(String)
+  SetColSpan(String)
+  SetColumns(String)
+  SetDirection(String)
+  SetGap(String)
+  SetJustify(String)
+  SetPadding(String)
+  SetRowSpan(String)
+  SetWrap(Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn NodeSettingsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct NodeSettingsState {
+  nodeId : String
+  kind : String
+  direction : String
+  justify : String
+  align : String
+  gap : Int
+  padding : Int
+  wrap : Bool
+  columns : String
+  colSpan : Int
+  rowSpan : Int
+  isContainer : Bool
+  isGrid : Bool
+}
+pub fn NodeSettingsState::zero() -> Self
+
+pub(all) enum PaletteRowBubble {
+  ComponentPicked(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaletteRowBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn PaletteRowBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn PaletteRowBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum PaletteRowInput {
+  Pick
+} derive(Eq, @debug.Debug)
+pub fn PaletteRowInput::name(Self) -> String
+pub fn PaletteRowInput::parse(String) -> Self?
+
+pub(all) enum PaletteRowMsg {
+  Pick
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaletteRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct PaletteRowState {
+  module_ : String
+  name : String
+  summary : String
+  why : String
+  category : String
+}
+pub fn PaletteRowState::zero() -> Self
+
+pub(all) enum SchemaFieldBubble {
+  FieldEdited(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFieldBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn SchemaFieldBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaFieldBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum SchemaFieldInput {
+  Edit
+} derive(Eq, @debug.Debug)
+pub fn SchemaFieldInput::name(Self) -> String
+pub fn SchemaFieldInput::parse(String) -> Self?
+
+pub(all) enum SchemaFieldMsg {
+  Edit(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFieldMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SchemaFieldState {
+  name : String
+  kind : String
+  hint : String
+  doc : String
+  required : Bool
+  text : String
+  num : Double
+  flag : Bool
+  choices : Array[@core.Value]
+  error : String
+}
+pub fn SchemaFieldState::zero() -> Self
+
+pub(all) enum SchemaFormInput {
+  Cancel
+  Create
+  UseInit
+} derive(Eq, @debug.Debug)
+pub fn SchemaFormInput::name(Self) -> String
+pub fn SchemaFormInput::parse(String) -> Self?
+
+pub(all) enum SchemaFormMsg {
+  Cancel
+  Create
+  UseInit(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFormMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SchemaFormReceive {
+  ShowErrors(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SchemaFormReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SchemaFormReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SchemaFormReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct SchemaFormState {
+  module_ : String
+  name : String
+  title : String
+  doc : String
+  fields : Array[@core.Value]
+  inits : Array[@core.Value]
+  error : String
+}
+pub fn SchemaFormState::zero() -> Self
+
+pub(all) enum SurfaceEditorInput {
+  AddBox
+  AddGrid
+  AddSlot
+  AddStack
+  ExportDoc
+  ImportDoc
+  RemoveNode
+  SetTransfer
+} derive(Eq, @debug.Debug)
+pub fn SurfaceEditorInput::name(Self) -> String
+pub fn SurfaceEditorInput::parse(String) -> Self?
+
+pub(all) enum SurfaceEditorMsg {
+  AddBox
+  AddGrid
+  AddSlot
+  AddStack
+  ExportDoc
+  ImportDoc
+  RemoveNode
+  SetTransfer(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SurfaceEditorMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SurfaceEditorReceive {
+  CatalogChanged(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SurfaceEditorReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SurfaceEditorReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SurfaceEditorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct SurfaceEditorState {
+  doc : @core.Value
+  tree : @core.Value
+  slots : @core.Value
+  selected : String
+  palette : @core.Value
+  settings : @core.Value
+  form : @core.Value
+  status : String
+  transfer : String
+  showTransfer : Bool
+}
+pub fn SurfaceEditorState::zero() -> Self
+
+pub(all) enum SurfaceNodeBubble {
+  NodePicked(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn SurfaceNodeBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn SurfaceNodeBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn SurfaceNodeBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum SurfaceNodeInput {
+  Pick
+} derive(Eq, @debug.Debug)
+pub fn SurfaceNodeInput::name(Self) -> String
+pub fn SurfaceNodeInput::parse(String) -> Self?
+
+pub(all) enum SurfaceNodeMsg {
+  Pick
+  Unknown(String, Array[@core.Value])
+}
+pub fn SurfaceNodeMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct SurfaceNodeState {
+  nodeId : String
+  kind : String
+  style : String
+  label : String
+  children : Array[@core.Value]
+  slot : @core.Value
+  selected : Bool
+  empty : Bool
+}
+pub fn SurfaceNodeState::zero() -> Self
+
+pub struct UniversalUi {
+  registry : @registry.Registry
+  make : (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
+  comps : Map[String, @component.Component]
+}
+
+// Type aliases
+pub type MakeInstance = (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
+
+// Traits
+

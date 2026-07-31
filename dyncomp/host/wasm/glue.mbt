@@ -531,6 +531,10 @@ pub fn on_loaded(
   let old_bid = by_name.get(bundle.module_name())
   bundles[bundle_id] = bundle
   by_name[bundle.module_name()] = bundle_id
+  // The catalog is kept HERE rather than by whoever asks for it, because this
+  // is the code that already knows about a load, a hot swap and a drop. A
+  // second copy somewhere else would be a second thing to keep in sync.
+  catalog.register(bundle)
   // listeners for events only guest views use (loader dedups repeats),
   // styles re-injected under the same id (replaced, not appended)
   @wglue.install(app)
@@ -548,6 +552,20 @@ pub fn on_loaded(
       }
     None => ()
   }
+}
+
+///|
+/// Every component every loaded bundle declares, searchable.
+///
+/// A hot swap re-registers under the same module name, which is exactly what
+/// `Registry::register` means, so the catalog answers with the new components
+/// the moment the old bundle is retired.
+let catalog : @registry.Registry = @registry.Registry::new()
+
+///|
+/// The catalog, for a page that wants to search it — the universal UI does.
+pub fn registry() -> @registry.Registry {
+  catalog
 }
 
 ///|
@@ -652,6 +670,7 @@ pub fn app_root_value() -> @tutuca.Value? {
 /// instance handles; for now this only clears the tables and the JS side.
 pub fn drop_bundle(module_name : String) -> Unit {
   guard by_name.get(module_name) is Some(bid) else { return }
+  catalog.forget(module_name)
   by_name.remove(module_name) |> ignore
   bundles.remove(bid) |> ignore
   tcomp_drop_bundle(bid)
