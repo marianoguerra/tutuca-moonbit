@@ -672,7 +672,15 @@ pub fn universal_steps() -> Array[Step] {
 /// Regenerate the CLI's embedded skill assets from skill/tutuca/. Run after
 /// editing the skill docs, before building the native CLI.
 pub fn skill_embed_steps() -> Array[Step] {
-  [GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt")]
+  // The generator emits one tuple per file on one line and `moon fmt` reflows
+  // them, so without this the checked-in module is whatever `skill-embed` left
+  // and the next `gen-views` (which formats everything) rewrites it — a 140-line
+  // diff nobody asked for, on a file nobody edited. Same reason gen-views ends
+  // this way.
+  [
+    GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt"),
+    Run(moon("fmt", ["fmt"])),
+  ]
 }
 
 ///|
