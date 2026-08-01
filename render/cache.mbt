@@ -40,11 +40,21 @@
 /// from `data-eid` stamps and the meta comments (see events.mbt), never baked
 /// into the subtree. What IS baked in is the `§Comp§` meta, which carries
 /// `nid`/`cid`/`vid` — hence those three.
+///
+/// `trail` is the `@push-view` stack, and it is here for a reason that is easy
+/// to miss: a site reads the trail even when its OWN resolved view does not
+/// change, because its DESCENDANTS resolve against it. A component with only a
+/// `main` view sitting between a `@push-view` and something that does have the
+/// pushed view resolves identically under both — so without this it hits, and
+/// its whole subtree is frozen in whichever mode it was first rendered in.
+/// (Found as: an app in view mode still showing the editing chrome, but only
+/// below a `TabPage`.)
 priv struct CacheEntry {
   rev : Int
   node_id : Int?
   cid : Int
   vid : String
+  trail : Array[String]
   /// The validator. Physical identity, because the transactor swaps the root
   /// with structural sharing: a subtree the last transaction did not touch
   /// keeps the exact same Value object, and that is the signal.
@@ -82,6 +92,30 @@ fn dyn_binds_eq(a : @component.DynBinds?, b : @component.DynBinds?) -> Bool {
 }
 
 ///|
+/// Two `@push-view` trails that resolve the same way for everything below.
+///
+/// Physical identity first, which is the usual case and free: `RenderStack::enter`
+/// carries the same array object down a whole subtree, so every site under one
+/// `@push-view` compares in one pointer test. The element-wise fallback is for
+/// the pass boundary, where the directive is re-evaluated and builds a new
+/// array with the same contents — without it, nothing under a `@push-view`
+/// would ever hit.
+fn trail_eq(a : Array[String], b : Array[String]) -> Bool {
+  if physical_equal(a, b) {
+    return true
+  }
+  if a.length() != b.length() {
+    return false
+  }
+  for i, name in a {
+    if name != b[i] {
+      return false
+    }
+  }
+  true
+}
+
+///|
 /// Cheapest test first: the revision is one Int compare and rules out the
 /// common invalidation (this instance was updated) before anything else is
 /// looked at.
@@ -92,13 +126,15 @@ fn CacheEntry::valid(
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
+  trail : Array[String],
 ) -> Bool {
   self.rev == id.rev &&
   self.node_id == node_id &&
   self.cid == rv.cid &&
   self.vid == rv.vid &&
   physical_equal(self.value, value) &&
-  dyn_binds_eq(self.dyn_binds, dyn_binds)
+  dyn_binds_eq(self.dyn_binds, dyn_binds) &&
+  trail_eq(self.trail, trail)
 }
 
 ///|
@@ -112,12 +148,13 @@ fn RenderCache::get(
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
+  trail : Array[String],
 ) -> @vdom.Vdom? {
   match self.cur.get(id.origin) {
-    Some(e) if e.valid(id, node_id, rv, value, dyn_binds) => Some(e.vdom)
+    Some(e) if e.valid(id, node_id, rv, value, dyn_binds, trail) => Some(e.vdom)
     _ =>
       match self.prev.get(id.origin) {
-        Some(e) if e.valid(id, node_id, rv, value, dyn_binds) => {
+        Some(e) if e.valid(id, node_id, rv, value, dyn_binds, trail) => {
           self.cur[id.origin] = e
           Some(e.vdom)
         }
@@ -134,6 +171,7 @@ fn RenderCache::set(
   rv : ResolvedView,
   value : @tutuca.Value,
   dyn_binds : @component.DynBinds?,
+  trail : Array[String],
   vdom : @vdom.Vdom,
 ) -> Unit {
   self.cur[id.origin] = {
@@ -141,6 +179,7 @@ fn RenderCache::set(
     node_id,
     cid: rv.cid,
     vid: rv.vid,
+    trail,
     value,
     dyn_binds,
     vdom,

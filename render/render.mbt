@@ -132,7 +132,8 @@ fn render_site(
       // time on exactly that.)
       let slot = match (ctx.render_cache, value.identity()) {
         (Some(cache), Some(id)) =>
-          match cache.get(id, node_id, rv, value, stack.dyn_binds) {
+          match
+            cache.get(id, node_id, rv, value, stack.dyn_binds, stack.view_names) {
             Some(v) => return Some(v)
             None => Some((cache, id))
           }
@@ -146,7 +147,15 @@ fn render_site(
           ])
           // JS caches only a rendered (non-null) body.
           if slot is Some((cache, id)) {
-            cache.set(id, node_id, rv, value, stack.dyn_binds, frag)
+            cache.set(
+              id,
+              node_id,
+              rv,
+              value,
+              stack.dyn_binds,
+              stack.view_names,
+              frag,
+            )
           }
           Some(frag)
         }
