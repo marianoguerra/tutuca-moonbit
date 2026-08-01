@@ -15,7 +15,7 @@
 pub(all) struct ViewDef {
   name : String
   html : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// What a declared field HOLDS, as a flat table: WIT has no recursive types,
@@ -38,7 +38,7 @@ pub(all) enum TyKind {
   TY_SET
   TY_COMP
   TY_ANY
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn TyKind::ordinal(self : TyKind) -> Int {
@@ -90,7 +90,7 @@ pub(all) struct TyDef {
   items : FixedArray[UInt]
   name : String
   members : Array[String]
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// A sentence about a name the component already declares elsewhere —
@@ -100,7 +100,7 @@ pub(all) struct TyDef {
 pub(all) struct NamedDoc {
   name : String
   doc : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// The part of a field a TYPE cannot say. `ty-def` says a field holds a
@@ -122,7 +122,7 @@ pub(all) struct Constraint {
   format : String
   enum_json : String
   default_json : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub(all) struct FieldDef {
@@ -131,7 +131,7 @@ pub(all) struct FieldDef {
   doc : String
   required : Bool
   constraint : Constraint?
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// A named initial state — the guest's `<script type="tutuca/init">`. The
@@ -141,7 +141,7 @@ pub(all) struct InitDef {
   name : String
   args_json : String
   doc : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub(all) struct ComponentDef {
@@ -162,7 +162,7 @@ pub(all) struct ComponentDef {
   requests : Array[String]
   inits : Array[InitDef]
   style : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// Something a component cannot do for itself and the host can. Requested
@@ -178,7 +178,7 @@ pub(all) enum Capability {
   CAP_CLOCK
   CAP_RANDOM
   CAP_TIMER
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn Capability::ordinal(self : Capability) -> Int {
@@ -203,7 +203,7 @@ pub fn Capability::from(self : Int) -> Capability {
 pub(all) struct CapabilityReq {
   cap : Capability
   reason : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// What the views RAISE is not declared: the host compiles them, so it reads
@@ -219,7 +219,7 @@ pub(all) struct Manifest {
   authors : Array[String]
   capabilities : Array[CapabilityReq]
   components : Array[ComponentDef]
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// The answer to a request this bundle serves. Synchronous, because every
@@ -228,7 +228,7 @@ pub(all) struct Manifest {
 pub(all) enum RequestResult {
   Ok(@values.Value)
   Err(@values.Value)
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub(all) enum Bucket {
@@ -236,7 +236,7 @@ pub(all) enum Bucket {
   RECEIVE
   RESPONSE
   BUBBLE
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn Bucket::ordinal(self : Bucket) -> Int {
@@ -265,7 +265,7 @@ pub fn Bucket::from(self : Int) -> Bucket {
 /// "unchanged") and the host swaps its wrapper — new instance, new
 /// identity, which drives tutuca's change detection.
 /// The host drops superseded handles once a transaction settles.
-pub(all) struct Instance(Int) derive(Show, Eq)
+pub(all) struct Instance(Int) derive(Debug, Eq)
 
 ///|
 /// Creates a new resource with the given `rep` as its representation and returning the handle to this resource.

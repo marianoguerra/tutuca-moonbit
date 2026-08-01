@@ -6,7 +6,7 @@ pub(all) enum LogLevel {
   INFO
   WARN
   ERROR
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn LogLevel::ordinal(self : LogLevel) -> Int {
@@ -36,20 +36,20 @@ pub fn LogLevel::from(self : Int) -> LogLevel {
 pub(all) struct ItemStep {
   field : String
   key : String
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub(all) struct IndexStep {
   field : String
   index : UInt
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub(all) enum PathStep {
   Field(String)
   Item(ItemStep)
   At(IndexStep)
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// Response routing for a request (host `RequestOpts`). All three names are
@@ -62,7 +62,7 @@ pub(all) struct RequestOpts {
   on_error : String?
   on_res : String?
   live_path : Bool
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 pub fn log(level : LogLevel, msg : String) -> Unit {

@@ -116,7 +116,7 @@ pub fn bytes_of(text : String) -> FixedArray[Byte] {
 /// The inverse of `bytes_of`. "" for bytes that are not UTF-8, which a
 /// `restore` reads as "refuse this".
 pub fn text_of(state : FixedArray[Byte]) -> String {
-  @utf8.decode(Bytes::from_fixedarray(state)) catch {
+  @utf8.decode(Bytes::from_array(state)) catch {
     _ => ""
   }
 }
@@ -239,7 +239,7 @@ declare fn dyn_module() -> DynModule
 let module_ : DynModule = dyn_module()
 
 ///|
-let states : Map[Int, &DynComponent] = {}
+let states : Map[Int, &DynComponent] = Map([])
 
 ///|
 let next_rep : Ref[Int] = { val: 0 }

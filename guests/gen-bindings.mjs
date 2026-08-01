@@ -73,7 +73,12 @@ for (const name of targets) {
   console.log(`· wit-bindgen moonbit ${WIT_DIR} -> guests/${name}`);
   execFileSync(
     'wit-bindgen',
-    ['moonbit', WIT_DIR, '--out-dir', '.', '--derive-eq', '--derive-show'],
+    // `--derive-debug` rather than `--derive-show`: deriving Show is
+    // deprecated in MoonBit ("use derive(Debug), or implement Show by hand"),
+    // and it was the only reason a clean guest build printed 155 warnings.
+    // Nothing derives Show for DISPLAY here — these are wire types — so Debug
+    // is what was wanted all along.
+    ['moonbit', WIT_DIR, '--out-dir', '.', '--derive-eq', '--derive-debug'],
     { stdio: 'inherit', cwd: dir },
   );
 

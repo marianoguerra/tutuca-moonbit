@@ -9,7 +9,7 @@ pub(all) enum Value {
   List(UInt64)
   Map(UInt64)
   Instance(UInt64)
-} derive(Show, Eq)
+} derive(Debug, Eq)
 
 ///|
 /// reads (any handle)
