@@ -315,3 +315,70 @@ test "view mode reaches a universal nested under a filtered render-each" {
 fn std_page(std : Std, label : String, what : String) -> @tutuca.Value {
   std.build("TabPage", { "label": Str(label), "body": filled(std, what) })
 }
+
+///|
+/// Ctrl/cmd-clicking a tab renames it in place.
+///
+/// The modifier means "configure this" everywhere else in the app, and a tab's
+/// only configuration is its name — so it is the same gesture rather than a
+/// second one to learn.
+test "ctrl-clicking a tab renames it, and typing shows on the strip" {
+  let (h, _) = mount_std(s => s.tabs(count=2))
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1", "tab 2"])
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  // A plain click just selects.
+  h.click(".tab-label", nth=1)
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  // With the modifier it selects AND opens the box, on that tab only.
+  h.fire(".tab-label", @render.DomEvent::new(name="click", ctrl_or_cmd=true))
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 1)
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 2"])
+  @debug.assert_eq(h.value_of(".tab-rename"), "tab 1")
+  // Typing writes straight through, so the strip renames as you type rather
+  // than at the end.
+  h.type_into(".tab-rename", "notes")
+  @debug.assert_eq(h.value_of(".tab-rename"), "notes")
+  h.key_down(".tab-rename", "Enter")
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  @debug.assert_eq(h.texts(".tab-label"), ["notes", "tab 2"])
+}
+
+///|
+test "Escape puts the old tab name back" {
+  let (h, _) = mount_std(s => s.tabs(count=1))
+  h.fire(".tab-label", @render.DomEvent::new(name="click", ctrl_or_cmd=true))
+  h.type_into(".tab-rename", "half-typed")
+  h.key_down(".tab-rename", "Escape")
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1"])
+}
+
+///|
+test "renaming ends when the box loses focus, and when the tabs change" {
+  let (h, _) = mount_std(s => s.tabs(count=1))
+  h.fire(".tab-label", @render.DomEvent::new(name="click", ctrl_or_cmd=true))
+  h.type_into(".tab-rename", "kept")
+  h.fire(".tab-rename", @render.DomEvent::new(name="focusout"))
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  // Clicking away commits rather than reverts: what is on screen is what you
+  // typed, and throwing it away because you looked elsewhere would be a
+  // surprise.
+  @debug.assert_eq(h.texts(".tab-label"), ["kept"])
+  // Adding a tab while renaming closes the box too — the new tab is the one
+  // now open, so an editor still pointing at the old one has nothing to edit.
+  h.fire(".tab-label", @render.DomEvent::new(name="click", ctrl_or_cmd=true))
+  h.click(".tab-add")
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  @debug.assert_eq(h.texts(".tab-label"), ["kept", "tab 2"])
+}
+
+///|
+test "the view mode strip cannot be renamed at all" {
+  let (h, _) = mount_std(s => s.tabs(count=2))
+  h.send_at_root("setMode", args=[Str("main")])
+  // No box, and no modifier gesture to open one: renaming is an EDIT-mode
+  // affordance, and `main` is what the finished page looks like.
+  h.fire(".tab-label", @render.DomEvent::new(name="click", ctrl_or_cmd=true))
+  @debug.assert_eq(h.find_all(".tab-rename").length(), 0)
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1", "tab 2"])
+}

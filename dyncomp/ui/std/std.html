@@ -83,6 +83,12 @@
       label: string,
       body: component,
     }
+    variant bubble {
+      /// The name is settled — Enter, or the box lost focus.
+      done-rename,
+      /// Escape: put the old name back, which only the strip still knows.
+      cancel-rename,
+    }
   }
 
   interface tabs {
@@ -90,6 +96,16 @@
     record state {
       tabs: values,
       active: s32,
+      /// Whether the active tab's NAME is being edited, in place on the strip.
+      ///
+      /// Only the active one can be: ctrl/cmd-clicking a tab both selects it
+      /// and starts the edit, so "which tab is being renamed" is never a
+      /// second answer to "which tab is open".
+      renaming: bool,
+      /// The name it had when the edit started, so Escape can put it back.
+      /// Typing writes straight through to the tab, because a name you cannot
+      /// see change while you type it is a name you have to guess at.
+      original: string,
     }
   }
 
@@ -215,6 +231,13 @@
   <div class="tut-tabpage w-full"><x render=".body"></x></div>
 </template>
 
+<template id="TabPage:tabname">
+  <input class="tab-rename input input-xs w-28" autofocus :value=".label"
+         @on.input="setLabel value"
+         @on.keydown+send="doneRename" @on.keydown+cancel="cancelRename"
+         @on.focusout="doneRename">
+</template>
+
 <template id="Tabs">
   <div class="tut-tabs w-full flex flex-col gap-2">
     <div role="tablist" class="tab-strip tabs tabs-box">
@@ -229,9 +252,12 @@
 <template id="Tabs:edit">
   <div class="tut-tabs w-full flex flex-col gap-2">
     <div role="tablist" class="tab-strip tabs tabs-box">
-      <button role="tab" @each=".tabs" @enrich-with="markActive"
-              @if.class="@active" @then="'tab-label tab tab-active'" @else="'tab-label tab'"
-              @on.click="activate @key" @text="@value.label"></button>
+      <span class="contents" @each=".tabs" @enrich-with="markActive">
+        <button role="tab" @hide="@editing"
+                @if.class="@active" @then="'tab-label tab tab-active'" @else="'tab-label tab'"
+                @on.click="activate @key isCtrl" @text="@value.label"></button>
+        <x render-it as="tabname" @show="@editing"></x>
+      </span>
       <button class="tab-add tab" @on.click="addTab">+</button>
       <button class="tab-close tab" @hide="empty? .tabs" @on.click="closeActive">×</button>
     </div>

@@ -26,5 +26,6 @@ import {
 
 import {
   "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/render",
   "moonbitlang/core/test",
 } for "test"

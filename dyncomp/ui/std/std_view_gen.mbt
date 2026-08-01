@@ -681,12 +681,124 @@ impl @component.Fields for TabPageState with fn decode(f) {
 }
 
 ///|
+/// The Bubble arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant bubble` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum TabPageBubble {
+  DoneRename
+  CancelRename
+  /// A bubble the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Bubble dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn TabPageBubble::from_dispatch(d : @component.Dispatch) -> TabPageBubble? {
+  guard d is Bubble(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("doneRename", []) => DoneRename
+      ("cancelRename", []) => CancelRename
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn TabPageBubble::to_dispatch(
+  self : TabPageBubble,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    DoneRename => ("doneRename", [])
+    CancelRename => ("cancelRename", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Bubble this message to the parent component.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn TabPageBubble::bubble(self : TabPageBubble, ctx : &@tutuca.Ctx) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.bubble(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let tab_page_common_style : String = ""
 
 ///|
 /// The `data-global` style — pass as `global_style~`.
 pub let tab_page_global_style : String = ""
+
+///|
+/// Every bare `@on` handler name the views reference.
+pub(all) enum TabPageInput {
+  CancelRename
+  DoneRename
+  SetLabel
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn TabPageInput::name(self : TabPageInput) -> String {
+  match self {
+    CancelRename => "cancelRename"
+    DoneRename => "doneRename"
+    SetLabel => "setLabel"
+  }
+}
+
+///|
+pub fn TabPageInput::parse(s : String) -> TabPageInput? {
+  match s {
+    "cancelRename" => Some(CancelRename)
+    "doneRename" => Some(DoneRename)
+    "setLabel" => Some(SetLabel)
+    _ => None
+  }
+}
+
+///|
+/// The Input arm of @component.Dispatch, decoded. Payload types are
+/// inferred from the argument shapes written at the call sites, so a
+/// handler added to std.html breaks every `match` over this type
+/// until it is handled.
+pub(all) enum TabPageMsg {
+  /// `@on.keydown="cancelRename …"`
+  CancelRename
+  /// `@on.keydown, @on.focusout="doneRename …"`
+  DoneRename
+  /// `@on.input="setLabel …"`
+  SetLabel(String)
+  /// An Input dispatch the views do not declare, or a declared name
+  /// whose runtime arguments did not match the inferred shape.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// None for Receive / Bubble / Response — those names are raised by
+/// component code, never written in a view, so the views cannot type them.
+pub fn TabPageMsg::from_dispatch(d : @component.Dispatch) -> TabPageMsg? {
+  guard d is Input(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("cancelRename", []) => CancelRename
+      ("doneRename", []) => DoneRename
+      ("setLabel", [Str(a0)]) => SetLabel(a0)
+      _ => Unknown(name, args)
+    },
+  )
+}
 
 ///|
 /// What this component's schema declares, for `schema~`.
@@ -698,12 +810,14 @@ pub let tab_page_global_style : String = ""
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
     name="TabPage",
-    fingerprint="a5993dde56a2092c",
+    fingerprint="4a456c4434488f32",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),
     ],
-    view_names=["main"],
+    inputs=["cancelRename", "doneRename", "setLabel"],
+    bubbles=["doneRename", "cancelRename"],
+    view_names=["main", "tabname"],
   )
 }
 
@@ -716,6 +830,8 @@ impl @component.Fields for TabPageState with fn schema() {
 pub(all) struct TabsState {
   tabs : Array[@tutuca.Value]
   active : Int
+  renaming : Bool
+  original : String
 }
 
 ///|
@@ -726,7 +842,7 @@ pub(all) struct TabsState {
 ///
 ///   init={ ..TabsState::zero(), label: "Counter" }
 pub fn TabsState::zero() -> TabsState {
-  { tabs: [], active: 0 }
+  { tabs: [], active: 0, renaming: false, original: "" }
 }
 
 ///|
@@ -740,6 +856,8 @@ impl @component.Fields for TabsState with fn encode(s) {
   {
     "tabs": (List(s.tabs.map(x => x)) : @tutuca.Value),
     "active": Num(s.active.to_double()),
+    "renaming": Bool(s.renaming),
+    "original": Str(s.original),
   }
 }
 
@@ -756,7 +874,14 @@ impl @component.Fields for TabsState with fn decode(f) {
   }
   guard f.get("active") is Some(Num(t1_active)) else { return None }
   let v_active = t1_active.to_int()
-  Some({ tabs: v_tabs, active: v_active })
+  guard f.get("renaming") is Some(Bool(v_renaming)) else { return None }
+  guard f.get("original") is Some(Str(v_original)) else { return None }
+  Some({
+    tabs: v_tabs,
+    active: v_active,
+    renaming: v_renaming,
+    original: v_original,
+  })
 }
 
 ///|
@@ -801,7 +926,7 @@ pub fn TabsInput::parse(s : String) -> TabsInput? {
 /// until it is handled.
 pub(all) enum TabsMsg {
   /// `@on.click="activate …"`
-  Activate(@tutuca.Value)
+  Activate(Array[@tutuca.Value])
   /// `@on.click="addTab …"`
   AddTab
   /// `@on.click="closeActive …"`
@@ -818,7 +943,7 @@ pub fn TabsMsg::from_dispatch(d : @component.Dispatch) -> TabsMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("activate", [a0]) => Activate(a0)
+      ("activate", _) => Activate(args)
       ("addTab", []) => AddTab
       ("closeActive", []) => CloseActive
       _ => Unknown(name, args)
@@ -862,10 +987,12 @@ pub fn TabsEnrich::name(self : TabsEnrich) -> String {
 impl @component.Fields for TabsState with fn schema() {
   @component.SchemaInfo::new(
     name="Tabs",
-    fingerprint="891182c4f064d8bb",
+    fingerprint="54762437e2e0f07a",
     fields=[
       @component.FieldInfo::new("tabs", TyList(TyAny)),
       @component.FieldInfo::new("active", TyInt),
+      @component.FieldInfo::new("renaming", TyBool),
+      @component.FieldInfo::new("original", TyText),
     ],
     inputs=["activate", "addTab", "closeActive"],
     view_names=["main", "edit"],

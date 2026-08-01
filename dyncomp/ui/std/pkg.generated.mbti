@@ -33,7 +33,7 @@ pub fn std_module() -> @component.ModuleDef
 
 pub let tab_page_common_style : String
 
-pub fn tab_page_component(name? : String, views? : Map[String, @anode.View], init? : TabPageState, common_style? : String, global_style? : String, update? : (TabPageState, @component.Dispatch, &@core.Ctx) -> TabPageState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn tab_page_component(name? : String, views? : Map[String, @anode.View], init? : TabPageState, common_style? : String, global_style? : String, update? : (TabPageState, @component.Dispatch, &@core.Ctx) -> TabPageState?, swap? : (TabPageInput) -> ((TabPageState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let tab_page_global_style : String
 
@@ -147,6 +147,31 @@ pub fn Std::resize_grid(Self, GridState, cols~ : Int, rows~ : Int) -> GridState
 pub fn Std::tab_page(Self, label? : String) -> @core.Value
 pub fn Std::tabs(Self, count? : Int) -> @core.Value
 
+pub(all) enum TabPageBubble {
+  DoneRename
+  CancelRename
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabPageBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn TabPageBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn TabPageBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum TabPageInput {
+  CancelRename
+  DoneRename
+  SetLabel
+} derive(Eq, @debug.Debug)
+pub fn TabPageInput::name(Self) -> String
+pub fn TabPageInput::parse(String) -> Self?
+
+pub(all) enum TabPageMsg {
+  CancelRename
+  DoneRename
+  SetLabel(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabPageMsg::from_dispatch(@component.Dispatch) -> Self?
+
 pub(all) struct TabPageState {
   label : String
   body : @core.Value
@@ -167,7 +192,7 @@ pub fn TabsInput::name(Self) -> String
 pub fn TabsInput::parse(String) -> Self?
 
 pub(all) enum TabsMsg {
-  Activate(@core.Value)
+  Activate(Array[@core.Value])
   AddTab
   CloseActive
   Unknown(String, Array[@core.Value])
@@ -177,6 +202,8 @@ pub fn TabsMsg::from_dispatch(@component.Dispatch) -> Self?
 pub(all) struct TabsState {
   tabs : Array[@core.Value]
   active : Int
+  renaming : Bool
+  original : String
 }
 pub fn TabsState::zero() -> Self
 

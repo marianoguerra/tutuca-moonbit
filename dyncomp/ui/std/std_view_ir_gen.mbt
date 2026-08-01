@@ -519,10 +519,42 @@ fn tab_page_main_view_ir() -> @anode.View {
 }
 
 ///|
+/// The compiled `tabname` view.
+fn tab_page_tabname_view_ir() -> @anode.View {
+  @anode.View::from_ir(
+    "tabname",
+    @anode.h(
+      "input",
+      [
+        @anode.attr("class", "tab-rename input input-xs w-28"),
+        @anode.attr_bool("autofocus", true),
+        @anode.dyn_attr("value", Field("label")),
+        @anode.eid(0),
+      ],
+      [],
+    ),
+    [
+      [
+        @anode.on("input", HandlerName(name="setLabel", ns=Input), args=[
+          Name("value"),
+        ]),
+        @anode.on("keydown", HandlerName(name="doneRename", ns=Input), modifiers=[
+          "send",
+        ]),
+        @anode.on("keydown", HandlerName(name="cancelRename", ns=Input), modifiers=[
+          "cancel",
+        ]),
+        @anode.on("focusout", HandlerName(name="doneRename", ns=Input)),
+      ],
+    ],
+  )
+}
+
+///|
 /// The component's views, already compiled — pass as `views~` to
 /// @component.component.
 pub fn tab_page_views() -> Map[String, @anode.View] {
-  { "main": tab_page_main_view_ir() }
+  { "main": tab_page_main_view_ir(), "tabname": tab_page_tabname_view_ir() }
 }
 
 ///|
@@ -542,6 +574,7 @@ pub fn tab_page_component(
   common_style? : String = tab_page_common_style,
   global_style? : String = tab_page_global_style,
   update? : (TabPageState, @component.Dispatch, &@tutuca.Ctx) -> TabPageState?,
+  swap? : (TabPageInput) -> ((TabPageState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -554,6 +587,15 @@ pub fn tab_page_component(
     common_style~,
     global_style~,
     update?,
+    swap=match swap {
+      Some(f) =>
+        @component.build_bucket(
+          ([CancelRename, DoneRename, SetLabel] : Array[TabPageInput]),
+          TabPageInput::name,
+          f,
+        )
+      None => Map([])
+    },
     slots~,
     slot_args~,
     provide~,
@@ -635,22 +677,33 @@ fn tabs_edit_view_ir() -> @anode.View {
           ],
           [
             @anode.each(
-              0,
+              2,
               Field("tabs"),
-              @anode.h(
-                "button",
-                [
-                  @anode.attr("role", "tab"),
-                  @anode.if_attr(
-                    "class",
-                    Bind("active"),
-                    then_val=@anode.const_str("tab-label tab tab-active"),
-                    else_val=@anode.const_str("tab-label tab"),
+              @anode.h("span", [@anode.attr("class", "contents")], [
+                @anode.hide(
+                  Bind("editing"),
+                  @anode.h(
+                    "button",
+                    [
+                      @anode.attr("role", "tab"),
+                      @anode.if_attr(
+                        "class",
+                        Bind("active"),
+                        then_val=@anode.const_str("tab-label tab tab-active"),
+                        else_val=@anode.const_str("tab-label tab"),
+                      ),
+                      @anode.eid(0),
+                    ],
+                    [@anode.dyn_text(BindMember(name="value", prop="label"))],
                   ),
-                  @anode.eid(0),
-                ],
-                [@anode.dyn_text(BindMember(name="value", prop="label"))],
-              ),
+                ),
+                @anode.text(" "),
+                @anode.show(
+                  Bind("editing"),
+                  @anode.render_it(0, view=@anode.const_str("tabname")),
+                  id=1,
+                ),
+              ]),
               enrich_with_val=HandlerName(name="markActive", ns=Alter),
             ),
             @anode.text(" "),
@@ -672,9 +725,9 @@ fn tabs_edit_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.each(
-          2,
+          4,
           Field("tabs"),
-          @anode.render_it(1),
+          @anode.render_it(3),
           when_val=HandlerName(name="isActivePage", ns=Alter),
           from_render_each=true,
         ),
@@ -684,6 +737,7 @@ fn tabs_edit_view_ir() -> @anode.View {
       [
         @anode.on("click", HandlerName(name="activate", ns=Input), args=[
           Bind("key"),
+          Name("isCtrl"),
         ]),
       ],
       [@anode.on("click", HandlerName(name="addTab", ns=Input))],

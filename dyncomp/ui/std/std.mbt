@@ -448,8 +448,38 @@ pub fn Std::tabs(self : Std, count? : Int = 1) -> @tutuca.Value {
 }
 
 ///|
+/// A tab page, which also draws its own NAME on the strip (the `tabname` view).
+///
+/// The name box lives here rather than in the strip's `@each` for a reason the
+/// framework forces: inside a loop, a bare `value` handler argument resolves to
+/// the loop's `@value` bind — the item — and never to the DOM event's value.
+/// That shadowing is deliberate (`render/stack.mbt`), and `@enrich-with` cannot
+/// undo it, because the loop restores `key` and `value` after the enricher
+/// runs. A component boundary is a bind frame, so rendering the box as THIS
+/// component's own view is what lets `value` mean what it says.
+///
+/// Typing writes the label on every keystroke, so the strip renames as you
+/// type. What Enter and Escape MEAN is the strip's business — it is the thing
+/// holding the old name — so they leave as bubbles.
 fn tab_page_comp() -> @component.Component {
-  tab_page_component(init={ ..TabPageState::zero(), label: "untitled" })
+  tab_page_component(init={ ..TabPageState::zero(), label: "untitled" }, update=(
+    s,
+    msg,
+    ctx,
+  ) => {
+    match TabPageMsg::from_dispatch(msg) {
+      Some(SetLabel(label)) => Some({ ..s, label, })
+      Some(DoneRename) => {
+        TabPageBubble::DoneRename.bubble(ctx)
+        None
+      }
+      Some(CancelRename) => {
+        TabPageBubble::CancelRename.bubble(ctx)
+        None
+      }
+      Some(Unknown(_, _)) | None => None
+    }
+  })
 }
 
 ///|
@@ -481,23 +511,57 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
           Some((s, key, _value, _iter) => key.num().to_int() == active_of(s))
       }
     },
-    // The strip needs "is this the active one" per row, which a `compute`
-    // cannot answer: it is pure over the STATE and never sees the loop's key.
+    // The strip needs two per-row facts a `compute` cannot answer: it is pure
+    // over the STATE and never sees the loop's key. `editing` is derived from
+    // the other two rather than stored per row, so a row cannot be being
+    // renamed while some other row is the one open.
     enrich=e => {
       match e {
         MarkActive =>
           Some((s, binds, key, _value, _iter) => {
-            binds["active"] = Bool(key.num().to_int() == active_of(s))
+            let here = key.num().to_int() == active_of(s)
+            binds["active"] = Bool(here)
+            binds["editing"] = Bool(here && s.renaming)
           })
       }
     },
     update=(s, msg, _ctx) => {
       match TabsMsg::from_dispatch(msg) {
-        Some(Activate(i)) => Some({ ..s, active: i.num().to_int() })
+        // Two call sites with different arities (the `main` strip cannot
+        // rename, so it passes no modifier), which the generator joins into
+        // one variadic case.
+        Some(Activate(args)) => {
+          let at = match args {
+            [i, ..] => i.num().to_int()
+            _ => return None
+          }
+          guard at >= 0 && at < s.tabs.length() else { return None }
+          let configure = match args {
+            [_, c, ..] => c.is_truthy()
+            _ => false
+          }
+          // ctrl/cmd is "configure this" everywhere else in the app, and a
+          // tab's only configuration is its name.
+          return if configure {
+            Some({
+              ..s,
+              active: at,
+              renaming: true,
+              original: s.tabs[at].field("label").str(),
+            })
+          } else {
+            Some({ ..s, active: at, renaming: false, original: "" })
+          }
+        }
         Some(AddTab) => {
           let tabs = s.tabs.copy()
           tabs.push(self.tab_page(label="tab \{tabs.length() + 1}"))
-          Some({ tabs, active: tabs.length() - 1 })
+          return Some({
+            tabs,
+            active: tabs.length() - 1,
+            renaming: false,
+            original: "",
+          })
         }
         // Closing keeps the neighbour on the left, which is where the eye
         // already is; closing the last one leaves no tabs and no page, and the
@@ -509,9 +573,40 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
           }
           let tabs = s.tabs.copy()
           tabs.remove(at) |> ignore
-          Some({ tabs, active: if at > 0 { at - 1 } else { 0 } })
+          return Some({
+            tabs,
+            active: if at > 0 {
+              at - 1
+            } else {
+              0
+            },
+            renaming: false,
+            original: "",
+          })
         }
-        Some(Unknown(_, _)) | None => None
+        Some(Unknown(_, _)) | None => ()
+      }
+      match msg {
+        Bubble("doneRename", _) =>
+          if s.renaming {
+            Some({ ..s, renaming: false, original: "" })
+          } else {
+            None
+          }
+        // Escape puts the old name back. It is kept rather than recomputed,
+        // because typing already overwrote it — that is what renaming live
+        // costs, and this is what pays it.
+        Bubble("cancelRename", _) => {
+          guard s.renaming else { return None }
+          let at = active_of(s)
+          guard at >= 0 else {
+            return Some({ ..s, renaming: false, original: "" })
+          }
+          let tabs = s.tabs.copy()
+          tabs[at] = tabs[at].call_field("setLabel", [Str(s.original)])
+          Some({ ..s, tabs, renaming: false, original: "" })
+        }
+        _ => None
       }
     },
   )
