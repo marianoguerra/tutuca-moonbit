@@ -22,9 +22,11 @@
 fn universal_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [@anode.attr("class", "tut-universal")], [
-      @anode.render(0, Field("child")),
-    ]),
+    @anode.h(
+      "div",
+      [@anode.attr("class", "tut-universal flex items-center justify-center")],
+      [@anode.render(0, Field("child"))],
+    ),
     [],
   )
 }
@@ -38,7 +40,7 @@ fn universal_edit_view_ir() -> @anode.View {
       "div",
       [
         @anode.attr(
-          "class", "tut-universal relative min-w-8 min-h-8 pt-4 outline-1 outline-dashed outline-base-300",
+          "class", "tut-universal relative min-w-8 min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300",
         ),
         @anode.attr("data-droptarget", "config-pill"),
         @anode.eid(3),
@@ -50,7 +52,7 @@ fn universal_edit_view_ir() -> @anode.View {
             "button",
             [
               @anode.attr(
-                "class", "universal-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100",
+                "class", "universal-add btn btn-ghost btn-block min-h-20 text-3xl font-thin opacity-30 hover:opacity-100",
               ),
               @anode.eid(0),
             ],
@@ -64,7 +66,7 @@ fn universal_edit_view_ir() -> @anode.View {
             "span",
             [
               @anode.attr(
-                "class", "universal-badge absolute top-0 left-0 z-10 badge badge-xs badge-ghost cursor-pointer",
+                "class", "universal-badge absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer",
               ),
               @anode.eid(1),
             ],
@@ -78,7 +80,7 @@ fn universal_edit_view_ir() -> @anode.View {
             "button",
             [
               @anode.attr(
-                "class", "universal-remove absolute top-0 right-0 z-10 btn btn-xs btn-circle btn-ghost opacity-0 hover:opacity-100",
+                "class", "universal-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-0 hover:opacity-100",
               ),
               @anode.eid(2),
             ],
@@ -181,7 +183,7 @@ fn stack_main_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [
-        @anode.attr("class", "tut-stack"),
+        @anode.attr("class", "tut-stack w-full"),
         @anode.dyn_attr("style", Method("style")),
       ],
       [
@@ -205,7 +207,7 @@ fn stack_edit_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [
-        @anode.attr("class", "tut-stack"),
+        @anode.attr("class", "tut-stack w-full"),
         @anode.dyn_attr("style", Method("style")),
       ],
       [
@@ -338,7 +340,7 @@ fn grid_main_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [
-        @anode.attr("class", "tut-grid"),
+        @anode.attr("class", "tut-grid w-full"),
         @anode.dyn_attr("style", Method("style")),
       ],
       [
@@ -362,7 +364,7 @@ fn grid_edit_view_ir() -> @anode.View {
     @anode.h(
       "div",
       [
-        @anode.attr("class", "tut-grid relative"),
+        @anode.attr("class", "tut-grid w-full relative"),
         @anode.dyn_attr("style", Method("style")),
       ],
       [
@@ -509,7 +511,7 @@ pub fn grid_component(
 fn tab_page_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [@anode.attr("class", "tut-tabpage")], [
+    @anode.h("div", [@anode.attr("class", "tut-tabpage w-full")], [
       @anode.render(0, Field("body")),
     ]),
     [],
@@ -564,48 +566,48 @@ pub fn tab_page_component(
 fn tabs_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
-    @anode.h("div", [@anode.attr("class", "tut-tabs flex flex-col gap-2")], [
-      @anode.h(
-        "div",
-        [
-          @anode.attr(
-            "class", "tab-strip flex gap-1 items-end border-b border-base-300",
-          ),
-        ],
-        [
-          @anode.each(
-            0,
-            Field("tabs"),
-            @anode.h(
-              "button",
-              [
-                @anode.if_attr(
-                  "class",
-                  Bind("active"),
-                  then_val=@anode.const_str(
-                    "tab-label tab-active px-3 py-1 rounded-t text-sm bg-base-100 border border-b-0 border-base-300 font-semibold",
+    @anode.h(
+      "div",
+      [@anode.attr("class", "tut-tabs w-full flex flex-col gap-2")],
+      [
+        @anode.h(
+          "div",
+          [
+            @anode.attr("role", "tablist"),
+            @anode.attr("class", "tab-strip tabs tabs-box"),
+          ],
+          [
+            @anode.each(
+              0,
+              Field("tabs"),
+              @anode.h(
+                "button",
+                [
+                  @anode.attr("role", "tab"),
+                  @anode.if_attr(
+                    "class",
+                    Bind("active"),
+                    then_val=@anode.const_str("tab-label tab tab-active"),
+                    else_val=@anode.const_str("tab-label tab"),
                   ),
-                  else_val=@anode.const_str(
-                    "tab-label px-3 py-1 rounded-t text-sm opacity-60 hover:opacity-100",
-                  ),
-                ),
-                @anode.eid(0),
-              ],
-              [@anode.dyn_text(BindMember(name="value", prop="label"))],
+                  @anode.eid(0),
+                ],
+                [@anode.dyn_text(BindMember(name="value", prop="label"))],
+              ),
+              enrich_with_val=HandlerName(name="markActive", ns=Alter),
             ),
-            enrich_with_val=HandlerName(name="markActive", ns=Alter),
-          ),
-        ],
-      ),
-      @anode.text(" "),
-      @anode.each(
-        2,
-        Field("tabs"),
-        @anode.render_it(1),
-        when_val=HandlerName(name="isActivePage", ns=Alter),
-        from_render_each=true,
-      ),
-    ]),
+          ],
+        ),
+        @anode.text(" "),
+        @anode.each(
+          2,
+          Field("tabs"),
+          @anode.render_it(1),
+          when_val=HandlerName(name="isActivePage", ns=Alter),
+          from_render_each=true,
+        ),
+      ],
+    ),
     [
       [
         @anode.on("click", HandlerName(name="activate", ns=Input), args=[
@@ -621,73 +623,63 @@ fn tabs_main_view_ir() -> @anode.View {
 fn tabs_edit_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "edit",
-    @anode.h("div", [@anode.attr("class", "tut-tabs flex flex-col gap-2")], [
-      @anode.h(
-        "div",
-        [
-          @anode.attr(
-            "class", "tab-strip flex gap-1 items-end border-b border-base-300",
-          ),
-        ],
-        [
-          @anode.each(
-            0,
-            Field("tabs"),
-            @anode.h(
-              "button",
-              [
-                @anode.if_attr(
-                  "class",
-                  Bind("active"),
-                  then_val=@anode.const_str(
-                    "tab-label tab-active px-3 py-1 rounded-t text-sm bg-base-100 border border-b-0 border-base-300 font-semibold",
+    @anode.h(
+      "div",
+      [@anode.attr("class", "tut-tabs w-full flex flex-col gap-2")],
+      [
+        @anode.h(
+          "div",
+          [
+            @anode.attr("role", "tablist"),
+            @anode.attr("class", "tab-strip tabs tabs-box"),
+          ],
+          [
+            @anode.each(
+              0,
+              Field("tabs"),
+              @anode.h(
+                "button",
+                [
+                  @anode.attr("role", "tab"),
+                  @anode.if_attr(
+                    "class",
+                    Bind("active"),
+                    then_val=@anode.const_str("tab-label tab tab-active"),
+                    else_val=@anode.const_str("tab-label tab"),
                   ),
-                  else_val=@anode.const_str(
-                    "tab-label px-3 py-1 rounded-t text-sm opacity-60 hover:opacity-100",
-                  ),
-                ),
-                @anode.eid(0),
-              ],
-              [@anode.dyn_text(BindMember(name="value", prop="label"))],
-            ),
-            enrich_with_val=HandlerName(name="markActive", ns=Alter),
-          ),
-          @anode.text(" "),
-          @anode.h(
-            "button",
-            [
-              @anode.attr(
-                "class", "tab-add px-2 py-1 text-sm opacity-40 hover:opacity-100",
+                  @anode.eid(0),
+                ],
+                [@anode.dyn_text(BindMember(name="value", prop="label"))],
               ),
-              @anode.eid(1),
-            ],
-            [@anode.text("+")],
-          ),
-          @anode.text(" "),
-          @anode.hide(
-            Predicate(pred=IsEmpty, args=[Field("tabs")]),
+              enrich_with_val=HandlerName(name="markActive", ns=Alter),
+            ),
+            @anode.text(" "),
             @anode.h(
               "button",
-              [
-                @anode.attr(
-                  "class", "tab-close px-2 py-1 text-sm opacity-40 hover:opacity-100",
-                ),
-                @anode.eid(2),
-              ],
-              [@anode.text("×")],
+              [@anode.attr("class", "tab-add tab"), @anode.eid(1)],
+              [@anode.text("+")],
             ),
-          ),
-        ],
-      ),
-      @anode.text(" "),
-      @anode.each(
-        2,
-        Field("tabs"),
-        @anode.render_it(1),
-        when_val=HandlerName(name="isActivePage", ns=Alter),
-        from_render_each=true,
-      ),
-    ]),
+            @anode.text(" "),
+            @anode.hide(
+              Predicate(pred=IsEmpty, args=[Field("tabs")]),
+              @anode.h(
+                "button",
+                [@anode.attr("class", "tab-close tab"), @anode.eid(2)],
+                [@anode.text("×")],
+              ),
+            ),
+          ],
+        ),
+        @anode.text(" "),
+        @anode.each(
+          2,
+          Field("tabs"),
+          @anode.render_it(1),
+          when_val=HandlerName(name="isActivePage", ns=Alter),
+          from_render_each=true,
+        ),
+      ],
+    ),
     [
       [
         @anode.on("click", HandlerName(name="activate", ns=Input), args=[

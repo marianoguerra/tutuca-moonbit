@@ -104,31 +104,28 @@ impl Guest for Component {
                     // because the box being typed in has to show those
                     // characters while the other two show the number. One field
                     // could only ever do one of those.
-                    html: r#"<div class="card bg-base-100 border border-base-300 shadow-sm w-80 tempconv">
-  <div class="card-body gap-2 p-4">
+                    html: r#"<div class="card card-border bg-base-100 border-base-300 shadow-sm w-72 tempconv">
+  <div class="card-body gap-3 p-4">
     <div class="flex items-center gap-2">
       <span class="badge badge-sm badge-warning">rust</span>
-      <span class="text-xs opacity-70 grow note" @text="$note"></span>
+      <span class="badge badge-sm badge-soft note" @text="$note"></span>
     </div>
-    <label class="flex items-center gap-2">
-      <span class="w-6 text-sm opacity-70">&#176;C</span>
-      <input class="input input-bordered input-sm w-full box-c" inputmode="decimal"
-             :value="$cText" @on.input="editC value" />
+    <label class="input w-full">
+      <span class="label">&#176;C</span>
+      <input class="box-c grow tabular-nums" inputmode="decimal" :value="$cText" @on.input="editC value" />
     </label>
-    <label class="flex items-center gap-2">
-      <span class="w-6 text-sm opacity-70">&#176;F</span>
-      <input class="input input-bordered input-sm w-full box-f" inputmode="decimal"
-             :value="$fText" @on.input="editF value" />
+    <label class="input w-full">
+      <span class="label">&#176;F</span>
+      <input class="box-f grow tabular-nums" inputmode="decimal" :value="$fText" @on.input="editF value" />
     </label>
-    <label class="flex items-center gap-2">
-      <span class="w-6 text-sm opacity-70">K</span>
-      <input class="input input-bordered input-sm w-full box-k" inputmode="decimal"
-             :value="$kText" @on.input="editK value" />
+    <label class="input w-full">
+      <span class="label">K</span>
+      <input class="box-k grow tabular-nums" inputmode="decimal" :value="$kText" @on.input="editK value" />
     </label>
-    <div class="join">
-      <button class="btn btn-xs join-item preset-freeze" @on.click="preset 0">freezing</button>
-      <button class="btn btn-xs join-item preset-body" @on.click="preset 37">body</button>
-      <button class="btn btn-xs join-item preset-boil" @on.click="preset 100">boiling</button>
+    <div class="join justify-center">
+      <button class="btn btn-xs btn-soft join-item preset-freeze" @on.click="preset 0">freezing</button>
+      <button class="btn btn-xs btn-soft join-item preset-body" @on.click="preset 37">body</button>
+      <button class="btn btn-xs btn-soft join-item preset-boil" @on.click="preset 100">boiling</button>
     </div>
   </div>
 </div>"#

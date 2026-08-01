@@ -138,17 +138,17 @@
      chain dispatch walks — which is how a click inside a held component stops
      reaching that component. -->
 <template id="Universal">
-  <div class="tut-universal"><x render=".child"></x></div>
+  <div class="tut-universal flex items-center justify-center"><x render=".child"></x></div>
 </template>
 
 <template id="Universal:edit">
-  <div class="tut-universal relative min-w-8 min-h-8 pt-4 outline-1 outline-dashed outline-base-300"
+  <div class="tut-universal relative min-w-8 min-h-8 pt-5 px-1 pb-1 flex items-center justify-center rounded outline-1 outline-dashed outline-base-300"
        data-droptarget="config-pill" @on.drop="dropped dragInfo">
-    <button class="universal-add btn btn-ghost btn-block min-h-16 text-3xl font-thin opacity-30 hover:opacity-100"
+    <button class="universal-add btn btn-ghost btn-block min-h-20 text-3xl font-thin opacity-30 hover:opacity-100"
             @show="null? .child" @on.click="add isCtrl">+</button>
-    <span class="universal-badge absolute top-0 left-0 z-10 badge badge-xs badge-ghost cursor-pointer"
+    <span class="universal-badge absolute top-0.5 left-1 z-10 badge badge-xs badge-ghost cursor-pointer"
           @hide="null? .child" @on.click="pick" @text="$label"></span>
-    <button class="universal-remove absolute top-0 right-0 z-10 btn btn-xs btn-circle btn-ghost opacity-0 hover:opacity-100"
+    <button class="universal-remove absolute top-0.5 right-1 z-10 btn btn-xs btn-circle btn-ghost opacity-0 hover:opacity-100"
             @hide="null? .child" @on.click="remove">×</button>
     <x render=".child"></x>
   </div>
@@ -164,11 +164,11 @@
      the cell, because a group would light up a nested stack's strips whenever
      any ancestor is hovered. An 8px transparent strip is still hit-testable. -->
 <template id="Stack">
-  <div class="tut-stack" :style="$style"><x render-each=".children"></x></div>
+  <div class="tut-stack w-full" :style="$style"><x render-each=".children"></x></div>
 </template>
 
 <template id="Stack:edit">
-  <div class="tut-stack" :style="$style">
+  <div class="tut-stack w-full" :style="$style">
     <div class="tut-cell relative" @each=".children">
       <button class="cell-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60"
               @if.style="$isRow"
@@ -190,11 +190,11 @@
      place to add one at each end, not one per cell. Inserting somewhere in the
      middle is what the settings panel's cols/rows are for. -->
 <template id="Grid">
-  <div class="tut-grid" :style="$style"><x render-each=".children"></x></div>
+  <div class="tut-grid w-full" :style="$style"><x render-each=".children"></x></div>
 </template>
 
 <template id="Grid:edit">
-  <div class="tut-grid relative" :style="$style">
+  <div class="tut-grid w-full relative" :style="$style">
     <x render-each=".children"></x>
     <button class="col-before absolute z-20 rounded bg-primary opacity-0 hover:opacity-60"
             style="inset-block:0;inset-inline-start:-6px;inline-size:8px"
@@ -212,16 +212,14 @@
 </template>
 
 <template id="TabPage">
-  <div class="tut-tabpage"><x render=".body"></x></div>
+  <div class="tut-tabpage w-full"><x render=".body"></x></div>
 </template>
 
 <template id="Tabs">
-  <div class="tut-tabs flex flex-col gap-2">
-    <div class="tab-strip flex gap-1 items-end border-b border-base-300">
-      <button @each=".tabs" @enrich-with="markActive"
-              @if.class="@active"
-              @then="'tab-label tab-active px-3 py-1 rounded-t text-sm bg-base-100 border border-b-0 border-base-300 font-semibold'"
-              @else="'tab-label px-3 py-1 rounded-t text-sm opacity-60 hover:opacity-100'"
+  <div class="tut-tabs w-full flex flex-col gap-2">
+    <div role="tablist" class="tab-strip tabs tabs-box">
+      <button role="tab" @each=".tabs" @enrich-with="markActive"
+              @if.class="@active" @then="'tab-label tab tab-active'" @else="'tab-label tab'"
               @on.click="activate @key" @text="@value.label"></button>
     </div>
     <x render-each=".tabs" @when="isActivePage"></x>
@@ -229,17 +227,13 @@
 </template>
 
 <template id="Tabs:edit">
-  <div class="tut-tabs flex flex-col gap-2">
-    <div class="tab-strip flex gap-1 items-end border-b border-base-300">
-      <button @each=".tabs" @enrich-with="markActive"
-              @if.class="@active"
-              @then="'tab-label tab-active px-3 py-1 rounded-t text-sm bg-base-100 border border-b-0 border-base-300 font-semibold'"
-              @else="'tab-label px-3 py-1 rounded-t text-sm opacity-60 hover:opacity-100'"
+  <div class="tut-tabs w-full flex flex-col gap-2">
+    <div role="tablist" class="tab-strip tabs tabs-box">
+      <button role="tab" @each=".tabs" @enrich-with="markActive"
+              @if.class="@active" @then="'tab-label tab tab-active'" @else="'tab-label tab'"
               @on.click="activate @key" @text="@value.label"></button>
-      <button class="tab-add px-2 py-1 text-sm opacity-40 hover:opacity-100"
-              @on.click="addTab">+</button>
-      <button class="tab-close px-2 py-1 text-sm opacity-40 hover:opacity-100"
-              @hide="empty? .tabs" @on.click="closeActive">×</button>
+      <button class="tab-add tab" @on.click="addTab">+</button>
+      <button class="tab-close tab" @hide="empty? .tabs" @on.click="closeActive">×</button>
     </div>
     <x render-each=".tabs" @when="isActivePage"></x>
   </div>

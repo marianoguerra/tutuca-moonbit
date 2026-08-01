@@ -301,8 +301,8 @@ fn make_calc(args : Array[(String, @values.Value)]) -> &DynComponent {
 ///|
 /// One key of the pad. Written once, because twenty buttons differing only in
 /// a label and a handler is twenty chances to mistype one.
-fn key(label : String, handler : String, cls? : String = "btn-ghost") -> String {
-  "<button class=\"btn btn-sm \{cls} k\" @on.click=\"\{handler}\">\{label}</button>"
+fn key(label : String, handler : String, cls~ : String = "btn-soft") -> String {
+  "<button class=\"btn \{cls} k\" @on.click=\"\{handler}\">\{label}</button>"
 }
 
 ///|
@@ -312,38 +312,34 @@ fn key(label : String, handler : String, cls? : String = "btn-ghost") -> String 
 ///   7  8  9  *
 ///   4  5  6  -
 ///   1  2  3  +
-///   0  .     =
+///   0     .  =
+///
+/// `0` spans two columns rather than leaving a hole beside it: a gap in a
+/// keypad reads as a key that failed to render.
 fn calc_view() -> String {
   let rows = [
     [
-      key("C", "clear"),
-      key("±", "negate"),
-      key("←", "back"),
-      key("/", "operate '/'", cls="btn-secondary"),
+      key("C", "clear", cls="btn-error btn-soft"), key("±", "negate"),
+      key("←", "back"), key("/", "operate '/'", cls="btn-primary"),
     ],
     [
-      key("7", "digit '7'", cls=""),
-      key("8", "digit '8'", cls=""),
+      key("7", "digit '7'", cls=""), key("8", "digit '8'", cls=""),
       key("9", "digit '9'", cls=""),
-      key("*", "operate '*'", cls="btn-secondary"),
+      key("*", "operate '*'", cls="btn-primary"),
     ],
     [
-      key("4", "digit '4'", cls=""),
-      key("5", "digit '5'", cls=""),
+      key("4", "digit '4'", cls=""), key("5", "digit '5'", cls=""),
       key("6", "digit '6'", cls=""),
-      key("-", "operate '-'", cls="btn-secondary"),
+      key("-", "operate '-'", cls="btn-primary"),
     ],
     [
-      key("1", "digit '1'", cls=""),
-      key("2", "digit '2'", cls=""),
+      key("1", "digit '1'", cls=""), key("2", "digit '2'", cls=""),
       key("3", "digit '3'", cls=""),
-      key("+", "operate '+'", cls="btn-secondary"),
+      key("+", "operate '+'", cls="btn-primary"),
     ],
     [
-      key("0", "digit '0'", cls=""),
-      key(".", "point", cls=""),
-      "<span></span>",
-      key("=", "equals", cls="btn-primary"),
+      key("0", "digit '0'", cls="col-span-2"), key(".", "point", cls=""),
+      key("=", "equals", cls="btn-secondary"),
     ],
   ]
   let pad = StringBuilder::new()
@@ -354,16 +350,23 @@ fn calc_view() -> String {
   }
   let sb = StringBuilder::new()
   sb.write_string(
-    "<div class=\"card bg-base-100 border border-base-300 shadow-sm w-64 calculator\">",
+    "<div class=\"card card-border bg-base-100 border-base-300 shadow-sm w-64 calculator\">",
   )
-  sb.write_string("<div class=\"card-body gap-2 p-3\">")
+  sb.write_string("<div class=\"card-body gap-3 p-4\">")
+  // The screen: one block, right-aligned, with the pending sum above it in
+  // small type. `tabular-nums` so a digit changing does not move the ones
+  // beside it, which is what makes a calculator display feel steady.
   sb.write_string(
-    "<div class=\"text-right text-xs opacity-50 h-4 pending\" @text=\"$pendingLabel\"></div>",
+    "<div class=\"rounded-box bg-base-200 px-3 py-2 text-right\">",
   )
   sb.write_string(
-    "<div class=\"text-right text-2xl font-mono truncate display\" @text=\".display\"></div>",
+    "<div class=\"h-4 text-xs opacity-50 font-mono tabular-nums pending\" @text=\"$pendingLabel\"></div>",
   )
-  sb.write_string("<div class=\"grid grid-cols-4 gap-1 pad\">")
+  sb.write_string(
+    "<div class=\"text-3xl font-mono tabular-nums truncate display\" @text=\".display\"></div>",
+  )
+  sb.write_string("</div>")
+  sb.write_string("<div class=\"grid grid-cols-4 gap-1.5 pad\">")
   sb.write_string(pad.to_string())
   sb.write_string("</div></div></div>")
   sb.to_string()

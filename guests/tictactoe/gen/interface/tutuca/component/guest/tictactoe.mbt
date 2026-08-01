@@ -234,19 +234,26 @@ fn make_game(args : Array[(String, @values.Value)]) -> &DynComponent {
 /// `@value.win` rather than asked for per square: a `$method` takes no
 /// arguments in a conditional slot, and one that did would silently render
 /// nothing at all.
+///
+/// The status sits UNDER the board, beside the reset. The card is given a
+/// width because the row below the board is `justify-between`: without one the
+/// card shrinks to the board, and two items that do not fit get pulled apart
+/// until the text wraps one letter per line.
 fn game_view() -> String {
   (
-    #|<div class="card bg-base-100 border border-base-300 shadow-sm w-56 tictactoe">
-    #|  <div class="card-body gap-2 p-3 items-center">
-    #|    <span class="text-sm opacity-70 status" @text="$status"></span>
-    #|    <div class="grid grid-cols-3 gap-1 board">
+    #|<div class="card card-border bg-base-100 border-base-300 shadow-sm w-64 tictactoe">
+    #|  <div class="card-body gap-3 p-4 items-center">
+    #|    <div class="grid grid-cols-3 gap-1.5 board">
     #|      <button @each=".squares" @on.click="play @key"
     #|              @if.class="@value.win"
-    #|              @then="'btn btn-lg btn-square btn-success square'"
-    #|              @else="'btn btn-lg btn-square btn-ghost border border-base-300 square'"
+    #|              @then="'btn btn-success size-16 text-3xl font-bold square'"
+    #|              @else="'btn btn-soft size-16 text-3xl font-bold square'"
     #|              @text="@value.mark"></button>
     #|    </div>
-    #|    <button class="btn btn-xs btn-ghost reset" @on.click="reset">new game</button>
+    #|    <div class="flex items-center justify-between gap-3 w-full">
+    #|      <span class="text-sm font-medium opacity-70 whitespace-nowrap status" @text="$status"></span>
+    #|      <button class="btn btn-xs btn-ghost reset" @on.click="reset">new game</button>
+    #|    </div>
     #|  </div>
     #|</div>
   )
