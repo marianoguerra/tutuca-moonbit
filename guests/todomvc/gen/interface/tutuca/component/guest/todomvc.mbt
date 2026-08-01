@@ -102,7 +102,8 @@ fn TodoMvc::changed(
       draft: draft.unwrap_or(self.draft),
       editing: editing.unwrap_or(self.editing),
       edit_text: edit_text.unwrap_or(self.edit_text),
-    } : TodoMvc) as &DynComponent
+    } : TodoMvc)
+  as &DynComponent
 }
 
 ///|
@@ -138,7 +139,8 @@ impl DynComponent for TodoMvc with fn get_field(self, name) {
 /// twice, and would win over the mutator besides.
 impl DynComponent for TodoMvc with fn with_field(self, name, v) {
   match (name, v) {
-    ("items", @values.Value::List(h)) => Some(self.changed(items=Some(items_of(h))))
+    ("items", @values.Value::List(h)) =>
+      Some(self.changed(items=Some(items_of(h))))
     ("filter", @values.Value::Text(f)) =>
       if f == "all" || f == "active" || f == "completed" {
         Some(self.changed(filter=Some(f)))
@@ -182,7 +184,9 @@ impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
     "toggleAll" => {
       let all_done = self.items.length() > 0 &&
         self.items.filter(it => !it.done).length() == 0
-      let items = self.items.map(it => ({ text: it.text, done: !all_done } : MvcItem))
+      let items = self.items.map(it => {
+        ({ text: it.text, done: !all_done } : MvcItem)
+      })
       Some(self.changed(items=Some(items)))
     }
     "clearCompleted" =>
@@ -194,7 +198,9 @@ impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
       match key_index(args) {
         Some(i) =>
           if i >= 0 && i < self.items.length() {
-            Some(self.changed(editing=Some(i), edit_text=Some(self.items[i].text)))
+            Some(
+              self.changed(editing=Some(i), edit_text=Some(self.items[i].text)),
+            )
           } else {
             None
           }
@@ -330,14 +336,15 @@ impl DynComponent for TodoMvc with fn persist(self) {
     ({ "text": Json::string(it.text), "done": Json::boolean(it.done) } : Json)
   })
   bytes_of(
-    ({
-      "v": Json::number(1),
-      "items": Json::array(items),
-      "filter": Json::string(self.filter),
-      "draft": Json::string(self.draft),
-      "editing": Json::number(self.editing.to_double()),
-      "editText": Json::string(self.edit_text),
-    } : Json).stringify(),
+    (
+      {
+        "v": Json::number(1),
+        "items": Json::array(items),
+        "filter": Json::string(self.filter),
+        "draft": Json::string(self.draft),
+        "editing": Json::number(self.editing.to_double()),
+        "editText": Json::string(self.edit_text),
+      } : Json).stringify(),
   )
 }
 
@@ -348,14 +355,14 @@ impl DynComponent for TodoMvc with fn persist(self) {
 fn restore_todomvc(state : FixedArray[Byte]) -> &DynComponent? {
   let text = text_of(state)
   guard text != "" else { return None }
-  let parsed = @json.parse(text) catch {
-    _ => return None
-  }
+  let parsed = @json.parse(text) catch { _ => return None }
   guard parsed is Object(m) else { return None }
   guard m.get("v") is Some(Number(1, ..)) else { return None }
-  let str_at = (key : String) => match m.get(key) {
-    Some(String(s)) => s
-    _ => ""
+  let str_at = (key : String) => {
+    match m.get(key) {
+      Some(String(s)) => s
+      _ => ""
+    }
   }
   let items : Array[MvcItem] = []
   if m.get("items") is Some(Array(entries)) {
@@ -383,9 +390,14 @@ fn restore_todomvc(state : FixedArray[Byte]) -> &DynComponent? {
         items,
         filter,
         draft: str_at("draft"),
-        editing: if editing >= 0 && editing < items.length() { editing } else { -1 },
+        editing: if editing >= 0 && editing < items.length() {
+          editing
+        } else {
+          -1
+        },
         edit_text: str_at("editText"),
-      } : TodoMvc) as &DynComponent,
+      } : TodoMvc)
+    as &DynComponent,
   )
 }
 
@@ -420,7 +432,10 @@ fn todomvc_def() -> ComponentDef {
     message_docs=[
       { name: "add", doc: "Add the drafted task." },
       { name: "addOnEnter", doc: "Add the draft when the key was Enter." },
-      { name: "typeDraft", doc: "Hold what is being typed into the new-task box." },
+      {
+        name: "typeDraft",
+        doc: "Hold what is being typed into the new-task box.",
+      },
       { name: "toggleAt", doc: "Tick or untick the task at an index." },
       { name: "removeAt", doc: "Delete the task at an index." },
       { name: "toggleAll", doc: "Tick everything, or untick it if it all is." },
@@ -430,7 +445,10 @@ fn todomvc_def() -> ComponentDef {
       { name: "commitEdit", doc: "Keep the edit; an emptied row is deleted." },
       { name: "cancelEdit", doc: "Abandon the edit and keep what was there." },
       { name: "countLeft", doc: "How many tasks are not done, as a sentence." },
-      { name: "matchesFilter", doc: "Whether the current filter lets a row through." },
+      {
+        name: "matchesFilter",
+        doc: "Whether the current filter lets a row through.",
+      },
     ],
     views=[
       {
@@ -490,8 +508,8 @@ fn todomvc_def() -> ComponentDef {
     // `setFilter` is absent on purpose: the `filter` field implies it, and the
     // host answers it through `with_field`.
     handlers=[
-      "add", "addOnEnter", "typeDraft", "toggleAt", "removeAt", "toggleAll",
-      "clearCompleted", "startEdit", "typeEdit", "commitEdit", "cancelEdit",
+      "add", "addOnEnter", "typeDraft", "toggleAt", "removeAt", "toggleAll", "clearCompleted",
+      "startEdit", "typeEdit", "commitEdit", "cancelEdit",
     ],
     methods=["draft", "editText", "countLeft", "done"],
     whens=["matchesFilter"],

@@ -99,10 +99,7 @@ playground:
 
 # build the wasm-component guest bundles (dyncomp demos)
 guests:
-    node guests/build-guest.mjs counter
-    node guests/build-guest.mjs todo
-    node guests/build-guest.mjs todomvc
-    node guests/rust-notepad/build.mjs
+    {{dev}} guests
 
 # regenerate the guests' MoonBit bindings from dyncomp/wit, then drift-check
 guest-bindings:

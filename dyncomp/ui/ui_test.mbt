@@ -1,20 +1,20 @@
-///| The editor, driven on the in-memory DOM.
+///| The app, driven on the in-memory DOM.
 ///
 /// Backend-agnostic components are what make this possible, and it is the
-/// reason the package is split from the wasm shell: clicking "+ grid", typing
-/// in the palette, filling a form and reading the rendered styles back are all
-/// things `moon test` can do, and none of them need a browser.
+/// reason the package is split from the wasm shell: clicking a `+`, typing in
+/// the command bar, filling a form and reading the result back are all things
+/// `moon test` can do, and none of them need a browser.
 ///
-/// The invariant every test here leans on: the DOCUMENT is the truth. What is
-/// on screen is a projection of it, so asserting against the rendered styles
-/// is asserting that the projection is faithful.
+/// The invariant every test here leans on: the TREE is the truth. There is no
+/// document beside it, so asserting against what is on screen is asserting
+/// against the state itself.
 
 ///|
 /// A guest with just enough state to be USED: one number per instance, a
 /// handler that raises it, and successors that are new handles.
 ///
 /// Most tests here only need it to answer the manifest, but a placed component
-/// nobody can click proves nothing about what the editor is holding after
+/// nobody can click proves nothing about what the app is holding after
 /// somebody clicks one.
 priv struct StubGuest {
   counts : Map[Int, Double]
@@ -57,6 +57,8 @@ impl @dyncomp.Guest for StubGuest with fn get_field(self, handle, name) {
   match name {
     "count" => Some(Num(self.counts.get(handle).unwrap_or(0.0)))
     "note" => Some(Str(self.notes.get(handle).unwrap_or("")))
+    // A compound the form has no control for, so it draws a JSON box.
+    "history" => Some(List([Num(self.counts.get(handle).unwrap_or(0.0))]))
     _ => None
   }
 }
@@ -174,7 +176,11 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             html: "<div class=\"the-counter\"><span class=\"guest-count\" @text=\".count\"></span><button class=\"guest-inc\" @on.click=\"inc\">+</button><input class=\"guest-note\" :value=\".note\" @on.input=\"jot value\" /></div>",
           },
         ],
-        types: [ty("ty-float"), ty("ty-text")],
+        types: [
+          ty("ty-float"),
+          ty("ty-text"),
+          { kind: "ty-list", elem: Some(0), items: [], name: "", members: [] },
+        ],
         fields: [
           {
             name: "count",
@@ -192,6 +198,17 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             ty: 1,
             doc: "What to call it.",
             required: true,
+            constraint: None,
+          },
+          // A COMPOUND, so the generated form has a JSON control. It is here
+          // for the reconfigure path: a `json` field pre-filled with anything
+          // other than JSON is refused the moment somebody presses Apply on a
+          // field they never touched.
+          {
+            name: "history",
+            ty: 2,
+            doc: "Every value it has held.",
+            required: false,
             constraint: None,
           },
         ],
@@ -242,788 +259,436 @@ fn catalog() -> @registry.Registry raise {
   catalog_of(StubGuest::new()).0
 }
 
-///|
-/// The state of the stand-in below. Hand-written rather than generated because
-/// one component in one test does not earn a `.html` of its own.
-priv struct PlacedState {
-  label : String
-}
+// --- mounting the app -------------------------------------------------------
 
 ///|
-impl @component.Fields for PlacedState with fn encode(s) {
-  { "label": Str(s.label) }
-}
-
-///|
-impl @component.Fields for PlacedState with fn decode(f) {
-  guard f.get("label") is Some(Str(label)) else { return None }
-  Some({ label, })
-}
-
-///|
-impl @component.Fields for PlacedState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="placed", fields=[
-    @component.FieldInfo::new("label", TyText),
-  ])
-}
-
-///|
-/// A stand-in for the dyncomp bridge. The editor cannot build a real guest
-/// instance here, and does not need to: what it needs is something that
-/// renders, so that "was it placed" is answerable from the DOM.
+/// The app, mounted with a catalog: the standard components always, and the
+/// stub bundle when `guest` is given.
 ///
-/// TYPED, and that is not incidental. `Component::for_type` — the constructor
-/// the dyncomp host uses for a guest's components — leaves `make_fn` returning
-/// `Null`, because a guest instance is built through the bridge and never
-/// through `make`. A stand-in that has to answer `make` therefore needs a
-/// state type.
-fn stub_make() -> (MakeInstance, @component.Component, Ref[Array[String]]) {
-  let calls : Ref[Array[String]] = { val: [] }
-  let placeholder = @component.component(
-    name="Placed",
-    views={
-      "main": @anode.View::new(
-        "main",
-        // A button, so a test can USE what it placed — which is the one thing
-        // a stand-in that only renders could never check.
-        raw_view=(
-          #|<div class="placed" @text=".label" @on.click="shout"></div>
-        ),
-      ),
-    },
-    init=({ label: "" } : PlacedState),
-    update=(s : PlacedState, msg, _ctx) => {
-      match msg {
-        Input("shout", _) => Some({ label: s.label + "!" })
-        _ => None
-      }
-    },
-  )
-  let make = fn(
-    ref_ : @registry.ComponentRef,
-    init : String,
-    args : Map[String, @tutuca.Value],
-  ) -> @tutuca.Value? {
-    let shown = args.get("label").unwrap_or(Str("")).str()
-    calls.val.push("\{ref_.to_id()} init=\{init} label=\{shown}")
-    Some(placeholder.make({ "label": Str("\{ref_.name}:\{shown}") }))
+/// `make` is the one thing the app cannot do for itself — building a LOADED
+/// component — and here it goes through the bundle registered into the app's
+/// own scope, which is what the wasm bridge does with a real one.
+fn mount_app(guest? : StubGuest) -> @harness.Harness raise {
+  let g = match guest {
+    Some(x) => x
+    None => StubGuest::new()
   }
-  (make, placeholder, calls)
-}
-
-///|
-fn mounted() -> (@harness.Harness, Ref[Array[String]]) raise {
-  let (make, placeholder, calls) = stub_make()
-  let (module_, seed) = seeded_editor(catalog(), make)
-  // The stand-in has to be IN the module. A component the app scope never
-  // registered has no id the renderer can resolve, so `<x render>` would draw
-  // nothing — which in the real shell is the dyncomp host's job, since it
-  // registers a bundle's components as it loads them.
-  let with_stub = @component.ModuleDef::new(
-    name=module_.name,
-    components=module_.components + [placeholder],
-  )
-  (@harness.mount(with_stub, "SurfaceEditor", args=seed), calls)
-}
-
-///|
-/// `Harness::attr` answers `None` for an element with no such attribute, and
-/// "" reads better than `Some("")` in every assertion here.
-fn style_of(h : @harness.Harness, sel : String, nth~ : Int) -> String raise {
-  h.attr(sel, "style", nth~).unwrap_or("")
-}
-
-///|
-/// The document, read back out of the live editor. Every assertion about "what
-/// did that click actually do" goes through here rather than through the DOM,
-/// because the DOM is the projection and this is the thing.
-fn doc_json(h : @harness.Harness) -> Json {
-  h.drive_value().field("doc").to_json()
-}
-
-///|
-fn node_kinds(h : @harness.Harness) -> Array[String] {
-  match doc_json(h) {
-    Object(m) =>
-      match m.get("nodes") {
-        Some(Array(ns)) =>
-          ns.map(n => {
-            match n {
-              Object(nm) =>
-                "\{nm.get("id").unwrap_or(Json::string("?")).stringify()}:\{nm.get("kind").unwrap_or(Json::string("?")).stringify()}"
-              _ => "?"
-            }
-          })
-        _ => []
-      }
-    _ => []
+  let live : Ref[@dyncomp.Bundle?] = { val: None }
+  let reg = @registry.Registry::new()
+  let module_ = universal_module(reg, (ref_, init, args) => {
+    guard live.val is Some(bundle) else { return None }
+    let made = if init == "" {
+      bundle.make_instance(ref_.name, args~)
+    } else {
+      bundle.make_init(ref_.name, init)
+    }
+    match made {
+      Some(obj) => Some(obj.to_value())
+      None => None
+    }
+  })
+  let h = @harness.mount(module_, "UniversalApp")
+  if guest is Some(_) {
+    let bundle = @dyncomp.register_bundle(h.app.scope, g, stub_manifest())
+    live.val = Some(bundle)
+    reg.register(bundle)
   }
-}
-
-// --- the canvas -------------------------------------------------------------
-
-///|
-test "an empty editor is one stack, and the badge names it" {
-  let (h, _) = mounted()
-  inspect(h.find_all(".tut-node").length(), content="1")
-  inspect(h.text(".node-badge"), content="stack n0")
-  inspect(h.text(".settings-kind"), content="stack")
-  inspect(h.text(".editor-status"), content="pick a component to place")
+  h
 }
 
 ///|
-/// Every button is a `SurfaceOp` against the document — so the assertion is on
-/// the document, and the canvas is checked to agree with it.
-test "adding a node edits the document, and the canvas follows" {
-  let (h, _) = mounted()
-  h.click(".add-grid")
-  debug_inspect(
-    node_kinds(h),
-    content="[\"\\\"n0\\\":\\\"stack\\\"\", \"\\\"n1\\\":\\\"grid\\\"\"]",
-  )
-  inspect(h.find_all(".tut-node").length(), content="2")
-  // and the new node is SELECTED, which is the difference between "add a grid,
-  // now click it, now set its columns" and "add a grid, set its columns"
-  inspect(h.text(".settings-id"), content="n1")
-  inspect(h.text(".editor-status"), content="added grid n1")
+/// Open the bar and pick the row whose name is `name`.
+fn pick(h : @harness.Harness, name : String) -> Unit raise {
+  h.type_into(".command-input", name)
+  let names = h.texts(".row-name")
+  let mut at = 0
+  for i, n in names {
+    if n == name {
+      at = i
+      break
+    }
+  }
+  h.click(".palette-row", nth=at)
+}
+
+// --- the empty page ---------------------------------------------------------
+
+///|
+test "a new page is one empty cell, and the bar opens onto the catalog" {
+  let h = mount_app()
+  // The root IS a universal, so the first thing there is to do is choose what
+  // the page is.
+  @debug.assert_eq(h.find_all(".universal-add").length(), 1)
+  @debug.assert_eq(h.find_all(".command-overlay").length(), 0)
+  h.click(".universal-add")
+  @debug.assert_eq(h.find_all(".command-overlay").length(), 1)
+  // Everything the catalog holds, with nothing loaded: an empty query is what
+  // a command bar opens with.
+  let names = h.texts(".row-name")
+  assert_true(names.contains("Universal"))
+  assert_true(names.contains("Stack"))
+  assert_true(names.contains("Textarea"))
 }
 
 ///|
-/// A container takes the child; anything else passes it to its parent. The
-/// alternative — refusing while a slot is selected — is infuriating, because
-/// "selected" after placing a component is always the slot you just filled.
-test "a new node goes inside a container and beside a leaf" {
-  let (h, _) = mounted()
-  h.click(".add-grid") // n1 inside the root, and selected
-  h.click(".add-slot") // n2 inside n1, since a grid holds children
-  inspect(h.text(".settings-id"), content="n2")
-  h.click(".add-stack") // n3 BESIDE n2, since a slot holds none
-  debug_inspect(
-    node_kinds(h),
-    content=(
-      #|[
-      #|  "\"n0\":\"stack\"",
-      #|  "\"n1\":\"grid\"",
-      #|  "\"n2\":\"slot\"",
-      #|  "\"n3\":\"stack\"",
-      #|]
-    ),
-  )
-  // n3 is a sibling of n2 under n1, not a child of n2
-  guard doc_json(h) is Object(m)
-  guard m.get("nodes") is Some(Array(nodes))
-  inspect(
-    nodes[1].stringify(),
-    content=(
-      #|{"id":"n1","kind":"grid","children":["n2","n3"]}
-    ),
-  )
+test "picking a component places it in the cell that asked" {
+  let h = mount_app()
+  h.click(".universal-add")
+  pick(h, "Text")
+  // The bar closed, the cell filled, and the badge names what landed.
+  @debug.assert_eq(h.find_all(".command-overlay").length(), 0)
+  @debug.assert_eq(h.find_all(".tut-text").length(), 1)
+  @debug.assert_eq(h.text(".universal-badge"), "Text")
 }
 
 ///|
-test "clicking a badge selects that node and nothing above it" {
-  let (h, _) = mounted()
-  h.click(".add-grid")
-  h.click(".add-slot")
-  inspect(h.text(".settings-id"), content="n2")
-  // the root's badge is the first in document order
-  h.click(".node-badge")
-  inspect(h.text(".settings-id"), content="n0")
-  inspect(h.text(".settings-kind"), content="stack")
+test "the bar filters as you type, and Escape leaves nothing behind" {
+  let h = mount_app()
+  h.click(".universal-add")
+  h.type_into(".command-input", "grid")
+  @debug.assert_eq(h.texts(".row-name"), ["Grid"])
+  h.key_down(".command-input", "Escape")
+  @debug.assert_eq(h.find_all(".command-overlay").length(), 0)
+  @debug.assert_eq(h.find_all(".universal-add").length(), 1)
 }
 
 ///|
-/// What is selected SAYS so, and the structural classes survive saying it.
-///
-/// Both are one assertion because they are one mistake: a static `class`
-/// beside an `@if.class` loses one of the two silently, and the version of
-/// this template that did that rendered `tut-node` with no outline and a badge
-/// that never lit up — invisible in a memdom, which has no styling to miss,
-/// and invisible in a browser, which is where selection is the whole feedback.
-test "the selected node is the one that looks selected" {
-  let (h, _) = mounted()
-  h.click(".add-slot")
-  let selected = h.attr(".node-badge", "class", nth=1).unwrap_or("")
-  let root = h.attr(".node-badge", "class", nth=0).unwrap_or("")
-  assert_true(selected.contains("badge-primary"))
-  assert_true(root.contains("badge-ghost"))
-  // the structural half is still there, in both branches
-  assert_true(selected.contains("node-badge") && root.contains("node-badge"))
-  let box = h.attr(".tut-node", "class", nth=1).unwrap_or("")
-  assert_true(box.contains("outline-primary") && box.contains("tut-node"))
-  // and the chrome that keeps a parent's badge reachable is on every node,
-  // which a memdom cannot see the effect of — only the class
-  assert_true(
-    h.attr(".tut-node", "class", nth=0).unwrap_or("").contains("pt-5"),
-  )
+test "the bar is keyboard navigable, and Enter places what the cursor is on" {
+  let h = mount_app()
+  h.click(".universal-add")
+  h.type_into(".command-input", "stack")
+  // The first hit starts selected, so Enter alone is the common case.
+  @debug.assert_eq(h.find_all(".row-selected").length(), 1)
+  h.key_down(".command-input", "Enter")
+  @debug.assert_eq(h.find_all(".tut-stack").length(), 1)
 }
 
 ///|
-/// Removing takes the subtree, and the selection lands somewhere real rather
-/// than pointing at a node that is gone.
-test "removing a node takes its subtree and re-homes the selection" {
-  let (h, _) = mounted()
-  h.click(".add-grid")
-  h.click(".add-slot")
-  h.click(".add-slot")
-  inspect(h.find_all(".tut-node").length(), content="4")
-  // select the grid, then remove it
-  h.click(".node-badge")
-  inspect(h.text(".settings-id"), content="n0")
-  h.click(".add-stack")
-  h.click(".remove-node")
-  debug_inspect(
-    node_kinds(h),
-    content=(
-      #|[
-      #|  "\"n0\":\"stack\"",
-      #|  "\"n1\":\"grid\"",
-      #|  "\"n2\":\"slot\"",
-      #|  "\"n3\":\"slot\"",
-      #|]
-    ),
-  )
-  inspect(h.text(".editor-status"), content="removed n4")
+test "the cursor moves without disturbing what was typed" {
+  let h = mount_app()
+  h.click(".universal-add")
+  h.type_into(".command-input", "t")
+  let before = h.texts(".row-name")
+  assert_true(before.length() > 1)
+  h.key_down(".command-input", "ArrowDown")
+  // The second row is selected now, and the query is untouched — moving the
+  // cursor tells two rows about it rather than rebuilding the list, which is
+  // what keeps the focused `<input>` the same element.
+  @debug.assert_eq(h.value_of(".command-input"), "t")
+  @debug.assert_eq(h.texts(".row-name"), before)
+  guard h.attr(".palette-row", "class", nth=1) is Some(cls)
+  assert_true(cls.contains("row-selected"))
+  // ...and it stops at the top rather than wrapping.
+  h.key_down(".command-input", "ArrowUp")
+  h.key_down(".command-input", "ArrowUp")
+  guard h.attr(".palette-row", "class") is Some(first)
+  assert_true(first.contains("row-selected"))
 }
 
-///|
-test "the root cannot be removed, and the refusal is shown rather than swallowed" {
-  let (h, _) = mounted()
-  h.click(".remove-node")
-  inspect(
-    h.text(".editor-status"),
-    content="/nodes/n0: the root cannot be removed; empty it instead",
-  )
-  inspect(h.find_all(".tut-node").length(), content="1")
-}
-
-// --- the settings panel -----------------------------------------------------
+// --- placing with arguments -------------------------------------------------
 
 ///|
-/// A control edits the DOCUMENT and the canvas re-renders from it. Reading the
-/// style attribute back is how "the projection is faithful" is checked.
-test "a settings control changes the layout through the document" {
-  let (h, _) = mounted()
-  inspect(
-    style_of(h, ".tut-node", nth=0),
-    content="display:flex;flex-direction:column;flex-wrap:nowrap;justify-content:flex-start;align-items:stretch",
+test "ctrl-clicking the plus opens the form instead of placing" {
+  let h = mount_app()
+  h.fire(
+    ".universal-add",
+    @render.DomEvent::new(name="click", ctrl_or_cmd=true),
   )
-  h.type_into(".set-direction", "row")
-  h.type_into(".set-gap", "12")
-  inspect(
-    style_of(h, ".tut-node", nth=0),
-    content="display:flex;flex-direction:row;flex-wrap:nowrap;justify-content:flex-start;align-items:stretch;gap:12px",
-  )
-  // ...and the document says the same thing
-  guard doc_json(h) is Object(m)
-  guard m.get("nodes") is Some(Array(nodes))
-  inspect(
-    nodes[0].stringify(),
-    content=(
-      #|{"id":"n0","kind":"stack","props":{"direction":"row","gap":12}}
-    ),
-  )
-}
-
-///|
-/// A track list is three shapes and no CSS lengths, so what can be typed is
-/// what can be rendered — and what cannot is refused where a person can see it.
-test "a grid's track list is typed, validated, and rendered" {
-  let (h, _) = mounted()
-  h.click(".add-grid")
-  h.type_into(".set-columns", "1fr 240px auto")
-  inspect(
-    style_of(h, ".tut-node", nth=1),
-    content="display:grid;grid-template-columns:1fr 240px auto;justify-items:flex-start;align-items:stretch",
-  )
-  h.type_into(".set-columns", "1fr minmax(10px,1fr)")
-  inspect(
-    h.text(".editor-status"),
-    content="/nodes/n1/props/columns/1: expected a track: <n>fr | <n>px | auto, got minmax(10px,1fr)",
-  )
-  // the refused batch changed nothing
-  inspect(
-    style_of(h, ".tut-node", nth=1),
-    content="display:grid;grid-template-columns:1fr 240px auto;justify-items:flex-start;align-items:stretch",
-  )
-}
-
-///|
-test "cell placement is written only when it says something" {
-  let (h, _) = mounted()
-  h.click(".add-slot")
-  inspect(style_of(h, ".tut-node", nth=1), content="")
-  h.type_into(".set-colspan", "2")
-  inspect(style_of(h, ".tut-node", nth=1), content="grid-column-end:span 2")
-}
-
-// --- the palette ------------------------------------------------------------
-
-///|
-/// A slot says whether it is waiting for something; a container never does,
-/// because an empty container is its own visible outline.
-///
-/// This is ONE computed field rather than two wrappers on the element
-/// (`@show=".isSlot"` plus `@hide="null? .slot"`), because two wrappers read
-/// as independent conditions and the placeholder needs their conjunction —
-/// which is exactly the bug this test exists to hold down. It was found in a
-/// browser, not here, so here is where it goes.
-test "only an empty slot draws a placeholder" {
-  let (h, _) = mounted()
-  inspect(h.find_all(".node-empty").length(), content="0")
-  h.click(".add-slot")
-  inspect(h.find_all(".node-empty").length(), content="1")
-  h.click(".palette-row")
-  h.type_into(".field-string", "x")
+  @debug.assert_eq(h.find_all(".command-hint").length(), 1)
+  pick(h, "Text")
+  // The form, generated from the component's declared arguments and opened on
+  // their defaults.
+  @debug.assert_eq(h.find_all(".command-overlay").length(), 0)
+  @debug.assert_eq(h.text(".form-title"), "std/Text")
+  assert_true(h.texts(".field-name").contains("text"))
+  h.type_into(".field-string", "hello")
   h.click(".form-create")
-  // filled: the placeholder is gone and the component is there
-  inspect(h.find_all(".node-empty").length(), content="0")
-  inspect(h.text(".placed"), content="Counter:x")
-  // a container never draws one, however empty
-  h.click(".add-stack")
-  inspect(h.find_all(".node-empty").length(), content="0")
+  @debug.assert_eq(h.text(".tut-text"), "hello")
 }
 
 ///|
-test "the palette shows the catalog and ranks a search" {
-  let (h, _) = mounted()
-  inspect(h.find_all(".palette-row").length(), content="1")
-  inspect(h.text(".row-name"), content="Counter")
-  inspect(
-    h.text(".row-summary"),
-    content="A number with buttons that raise and lower it.",
-  )
-  // the ranking's reasons travel with the hit: a search a person cannot
-  // explain is one they stop trusting
-  inspect(
-    h.text(".row-why"),
-    content=(
-      #|
-    ),
-  )
-  h.type_into(".palette-search", "wombat")
-  inspect(h.find_all(".palette-row").length(), content="0")
-  inspect(h.text(".palette-empty"), content="nothing matches \"wombat\"")
-}
-
-// --- the generated form -----------------------------------------------------
-
-///|
-/// No per-component code: the form is drawn from the same JSON Schema
-/// projection an agent's tool reads.
-test "picking a component generates a form from its declared arguments" {
-  let (h, _) = mounted()
-  h.click(".palette-row")
-  inspect(h.text(".form-title"), content="counterlib/Counter")
-  inspect(
-    h.text(".form-doc"),
-    content="A number with buttons that raise and lower it.",
-  )
-  debug_inspect(h.texts(".field-name"), content="[\"count\", \"label\"]")
-  // the constraint is shown BEFORE submitting rather than in an error
-  // afterwards, which is the half a type cannot state
-  debug_inspect(h.texts(".field-hint"), content="[\"0…10\", \"\"]")
-  debug_inspect(
-    h.texts(".field-doc"),
-    content="[\"The current value.\", \"What to call it.\"]",
-  )
-  // `label` is required and `count` is not
-  inspect(
-    h.find_all(".field-required").length(),
-    content=(
-      #|1
-    ),
-  )
-  // a named fixture is offered beside the blank form, with the guest's own
-  // reason for preferring it
-  inspect(h.text(".form-init"), content="at-three — Starts at three.")
-}
-
-///|
-test "a filled form places the component into a slot" {
-  let (h, calls) = mounted()
-  h.click(".palette-row")
-  h.type_into(".field-string", "hits")
-  h.type_into(".field-number", "4")
+test "a component that needs an argument asks instead of failing" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  // `Counter.label` is required and has no default, so there is nothing to
+  // place it WITH. Opening the form is the answer: the person asked for this
+  // component, and the form is how they get it.
+  pick(h, "Counter")
+  @debug.assert_eq(h.text(".form-title"), "counterlib/Counter")
+  @debug.assert_eq(h.find_all(".the-counter").length(), 0)
+  h.type_into(".field-string", "tally")
   h.click(".form-create")
-  debug_inspect(calls.val, content="[\"counterlib/Counter init= label=hits\"]")
-  // it rendered
-  inspect(h.text(".placed"), content="Counter:hits")
-  // ...and the DOCUMENT records the binding, which is what an export carries
-  // and what an agent would read back
-  guard doc_json(h) is Object(m)
-  guard m.get("nodes") is Some(Array(nodes))
-  inspect(
-    nodes[1].stringify(),
-    content=(
-      #|{"id":"n1","kind":"slot","bound":{"module":"counterlib","name":"Counter","args":{"count":4,"label":"hits"}}}
-    ),
-  )
-  inspect(h.text(".editor-status"), content="placed counterlib/Counter")
-  // the form closed
-  inspect(h.find_all(".schema-form").length(), content="0")
+  @debug.assert_eq(h.find_all(".the-counter").length(), 1)
 }
 
 ///|
-/// The schema is what refuses, and the refusal lands on the FIELD — which is
-/// the whole reason `coerce` returns JSON Pointers instead of a sentence.
-test "the schema refuses bad arguments, per field" {
-  let (h, calls) = mounted()
-  h.click(".palette-row")
-  h.type_into(".field-number", "42")
+test "the schema refuses bad arguments, per field, without placing anything" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  h.type_into(".field-string", "tally")
+  // `count` is constrained to 0..10.
+  h.type_into(".field-number", "99")
   h.click(".form-create")
-  debug_inspect(calls.val, content="[]")
-  inspect(h.text(".editor-status"), content="check the highlighted fields")
-  debug_inspect(
-    h.texts(".field-error"),
-    content=(
-      #|["must be at most 10, got 42"]
-    ),
-  )
-  // fixing it clears the error and places it
-  h.type_into(".field-number", "4")
-  h.type_into(".field-string", "ok")
-  h.click(".form-create")
-  debug_inspect(calls.val, content="[\"counterlib/Counter init= label=ok\"]")
+  @debug.assert_eq(h.find_all(".the-counter").length(), 0)
+  assert_true(h.text(".field-error").length() > 0)
 }
 
 ///|
-/// A named fixture is the guest's own answer to "what arguments", so it wins
-/// over the blank form it was offered beside — including over a required field
-/// the form has not been given.
 test "a named fixture places without the form being filled in" {
-  let (h, calls) = mounted()
-  h.click(".palette-row")
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  // The guest said when to prefer it, so the form offers it beside the bare
+  // constructor.
+  @debug.assert_eq(h.texts(".form-init"), ["at-three — Starts at three."])
   h.click(".form-init")
-  debug_inspect(
-    calls.val,
-    content="[\"counterlib/Counter init=at-three label=\"]",
-  )
-  inspect(h.text(".placed"), content="Counter:")
+  @debug.assert_eq(h.text(".guest-count"), "3")
 }
 
 ///|
-test "cancelling closes the form and places nothing" {
-  let (h, calls) = mounted()
-  h.click(".palette-row")
-  inspect(h.find_all(".schema-form").length(), content="1")
+test "cancelling the form places nothing and leaves the cell empty" {
+  let h = mount_app()
+  h.fire(
+    ".universal-add",
+    @render.DomEvent::new(name="click", ctrl_or_cmd=true),
+  )
+  pick(h, "Text")
   h.click(".form-cancel")
-  inspect(h.find_all(".schema-form").length(), content="0")
-  debug_inspect(calls.val, content="[]")
-  inspect(h.text(".editor-status"), content="cancelled")
+  @debug.assert_eq(h.find_all(".schema-form").length(), 0)
+  @debug.assert_eq(h.find_all(".universal-add").length(), 1)
 }
 
-// --- transfer ---------------------------------------------------------------
+// --- a loaded component is not a special case -------------------------------
 
 ///|
-/// One document for three jobs: what a person exports, what an agent reads
-/// back, and what a session resumes from. The round trip is what makes that
-/// one document rather than three.
-test "a layout exports and imports as the same document" {
-  let (h, _) = mounted()
-  h.click(".add-grid")
-  h.type_into(".set-columns", "1fr 2fr")
-  h.click(".add-slot")
-  h.click(".do-export")
-  let exported = h.value_of(".editor-transfer")
-  inspect(
-    exported,
-    content=(
-      #|{"id":"main","root":"n0","nodes":[{"id":"n0","kind":"stack","children":["n1"]},{"id":"n1","kind":"grid","props":{"columns":["1fr","2fr"]},"children":["n2"]},{"id":"n2","kind":"slot"}],"data":{}}
-    ),
-  )
-  // a fresh editor, given that document, is the same layout
-  let (h2, _) = mounted()
-  h2.type_into(".editor-transfer", exported)
-  h2.click(".do-import")
-  inspect(h2.find_all(".tut-node").length(), content="3")
-  inspect(
-    style_of(h2, ".tut-node", nth=1),
-    content="display:grid;grid-template-columns:1fr 2fr;justify-items:flex-start;align-items:stretch",
-  )
-  inspect(
-    h2.text(".editor-status"),
-    content="imported 3 nodes; slots are empty until they are filled again",
-  )
-}
-
-///|
-test "a document that will not read back is refused, and says which way" {
-  let (h, _) = mounted()
-  h.type_into(".editor-transfer", "{not json")
-  h.click(".do-import")
-  inspect(h.text(".editor-status"), content="import: not JSON")
-  h.type_into(".editor-transfer", "{\"root\": \"n9\", \"nodes\": []}")
-  h.click(".do-import")
-  inspect(
-    h.text(".editor-status"),
-    content="import: not a surface (no root, or a child that does not exist)",
-  )
-  // and the editor still has the layout it had
-  inspect(h.find_all(".tut-node").length(), content="1")
-}
-
-///|
-/// The instances do not survive a round trip, because a document holds
-/// references and the host builds what they name. Saying so is the honest
-/// answer; the alternative is silently showing someone else's state.
-test "an imported layout keeps its slots and not their contents" {
-  let (h, _) = mounted()
-  h.click(".palette-row")
-  h.type_into(".field-string", "before")
-  h.click(".form-create")
-  inspect(h.text(".placed"), content="Counter:before")
-  h.click(".do-export")
-  let exported = h.value_of(".editor-transfer")
-  h.type_into(".editor-transfer", exported)
-  h.click(".do-import")
-  // the slot is back, and empty — and says so
-  inspect(h.find_all(".placed").length(), content="0")
-  inspect(h.find_all(".node-empty").length(), content="1")
-  // ...but the document still names what belongs there
-  assert_true(exported.contains("\"name\":\"Counter\""))
-}
-
-///|
-/// What the editor holds after a placed component is USED, read the way a
-/// shell reads it: off the app's root value.
-///
-/// This is the seam the universal page's session save sits on, and the one
-/// that was wrong — a successor lands in the rendered tree, so anything that
-/// looks somewhere else finds the instance one update behind, which after the
-/// superseded sweep is a guest handle nobody can answer for.
-test "a shell reading the app root sees what was just used" {
-  let (h, _) = mounted()
-  h.click(".add-slot")
-  h.click(".palette-row")
-  h.type_into(".field-string", "x")
-  h.click(".form-create")
-  inspect(h.text(".placed"), content="Counter:x")
-  // use it
-  h.click(".placed")
-  inspect(h.text(".placed"), content="Counter:x!")
-  // and now the reading a shell does
-  let slots = live_slots(h.drive_value())
-  inspect(slots.length(), content="1")
-  let placed = slots.values().to_array()[0]
-  inspect(placed.field("label").str(), content="Counter:x!")
-}
-
-///|
-/// The shell state the test below mounts: one component-typed field, exactly
-/// like the universal page's.
-priv struct ShellState {
-  editor : @tutuca.Value
-}
-
-///|
-impl @component.Fields for ShellState with fn encode(s) {
-  { "editor": s.editor }
-}
-
-///|
-impl @component.Fields for ShellState with fn decode(f) {
-  Some({ editor: f.get("editor").unwrap_or(Null) })
-}
-
-///|
-impl @component.Fields for ShellState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="shell", fields=[
-    @component.FieldInfo::new("editor", TyComp(Some("SurfaceEditor"))),
-  ])
-}
-
-///|
-/// The same reading, one level down: the editor as a SLOT of a page shell,
-/// which is how the universal demo mounts it.
-///
-/// The hop through the shell's field is the part that was untested, and it is
-/// where a shell looking for what it placed would find the wrong copy.
-test "a shell one level up sees it too" {
-  let (make, placeholder, _) = stub_make()
-  let (editor_module, seed) = seeded_editor(catalog(), make)
-  let shell = @component.component(
-    name="Shell",
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="shell"><x render=".editor"></x></div>
-        ),
-      ),
-    },
-    init=({ editor: Null } : ShellState),
-    slots={ "editor": "SurfaceEditor" },
-    slot_args={ "editor": seed },
-  )
-  let module_ = @component.ModuleDef::new(
-    name="shellmod",
-    components=[shell, placeholder] + editor_module.components,
-  )
-  let h = @harness.mount(module_, "Shell")
-  h.click(".add-slot")
-  h.click(".palette-row")
-  h.type_into(".field-string", "y")
-  h.click(".form-create")
-  h.click(".placed")
-  inspect(h.text(".placed"), content="Counter:y!")
-  // what the shell would store
-  let slots = live_slots(h.drive_value().field("editor"))
-  inspect(slots.length(), content="1")
-  inspect(
-    slots.values().to_array()[0].field("label").str(),
-    content="Counter:y!",
-  )
-}
-
-///|
-/// The browser case, headless: a real GUEST instance in a slot, used, and then
-/// read back the way the universal page's session save reads it.
-///
-/// A guest is the case that matters because its successor is a new opaque
-/// handle rather than a new state struct: whatever the editor is holding
-/// afterwards has to be the successor, or the shell stores an instance the
-/// host has already collected.
-test "a guest instance is current wherever it is read from" {
+test "a loaded component is placed, rendered and used like a standard one" {
   let guest = StubGuest::new()
-  let (registry, _) = catalog_of(guest)
-  // Filled after the mount: a guest's components have to be registered into
-  // the APP's scope for `<x render=".slot">` to resolve them, and the app does
-  // not exist until the module that names its make-function is built.
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
-  let placed : Ref[Array[String]] = { val: [] }
-  let make = fn(
-    ref_ : @registry.ComponentRef,
-    _init : String,
-    args : Map[String, @tutuca.Value],
-  ) -> @tutuca.Value? {
-    placed.val.push(ref_.to_id())
-    guard live.val is Some(bundle) else { return None }
-    match bundle.make_instance(ref_.name, args~) {
-      Some(d) => Some(d.to_value())
-      None => None
-    }
-  }
-  let (editor_module, seed) = seeded_editor(registry, make)
-  let shell = @component.component(
-    name="Shell",
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="shell"><x render=".editor"></x></div>
-        ),
-      ),
-    },
-    init=({ editor: Null } : ShellState),
-    slots={ "editor": "SurfaceEditor" },
-    slot_args={ "editor": seed },
-  )
-  let h = @harness.mount(
-    @component.ModuleDef::new(
-      name="shellmod",
-      components=[shell] + editor_module.components,
-    ),
-    "Shell",
-  )
-  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
-  h.click(".add-slot")
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  // It ranks in the same search as the standard components...
+  h.type_into(".command-input", "counter")
+  @debug.assert_eq(h.texts(".row-name"), ["Counter"])
   h.click(".palette-row")
-  h.type_into(".field-number", "2")
+  h.type_into(".field-string", "tally")
   h.click(".form-create")
-  @debug.assert_eq(placed.val, ["counterlib/Counter"])
-  inspect(h.text(".guest-count"), content="2")
-  // use it: the guest hands back a NEW handle
+  // ...renders its own view inside the same universal...
+  @debug.assert_eq(h.text(".guest-count"), "0")
+  @debug.assert_eq(h.text(".universal-badge"), "Counter")
+  // ...and is USED there: a click reaches the guest and the successor lands
+  // back in the cell that holds it.
   h.click(".guest-inc")
-  inspect(h.text(".guest-count"), content="3")
-  // and the shell, reading the app root, finds that one
-  let slots = live_slots(h.drive_value().field("editor"))
-  inspect(slots.length(), content="1")
-  inspect(
-    slots.values().to_array()[0].field("count").to_display_string(),
-    content="3",
-  )
-  // The same, through a form control rather than a button: an `input` on a
-  // text box is the shape that was losing its successor in the browser, and
-  // it goes through the same dispatch as everything else.
-  h.type_into(".guest-note", "written")
-  let after = live_slots(h.drive_value().field("editor"))
-  inspect(after.values().to_array()[0].field("note").str(), content="written")
-}
-
-///|
-/// The same, with the text edit FIRST: no click before it, so nothing has
-/// replaced the instance the DOM was rendered from.
-test "a guest's first edit is applied too" {
-  let guest = StubGuest::new()
-  let (registry, _) = catalog_of(guest)
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
-  let make = fn(
-    ref_ : @registry.ComponentRef,
-    _init : String,
-    args : Map[String, @tutuca.Value],
-  ) -> @tutuca.Value? {
-    guard live.val is Some(bundle) else { return None }
-    match bundle.make_instance(ref_.name, args~) {
-      Some(d) => Some(d.to_value())
-      None => None
-    }
-  }
-  let (editor_module, seed) = seeded_editor(registry, make)
-  let h = @harness.mount(editor_module, "SurfaceEditor", args=seed)
-  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
-  h.click(".add-slot")
-  h.click(".palette-row")
-  h.type_into(".field-number", "0")
-  h.click(".form-create")
-  h.type_into(".guest-note", "first")
-  let slots = live_slots(h.drive_value())
-  inspect(slots.values().to_array()[0].field("note").str(), content="first")
-}
-
-///|
-/// The same guest, the same text edit, with NO editor in the picture: a shell
-/// whose one field holds the instance.
-///
-/// This is the control for the two tests above — it says whether a guest's
-/// `@on.input` successor survives at all, or only survives outside the editor.
-test "a guest's text edit survives in a plain shell" {
-  let guest = StubGuest::new()
-  let live : Ref[@dyncomp.Bundle?] = { val: None }
-  let shell = @component.component(
-    name="PlainShell",
-    views={
-      "main": @anode.View::new(
-        "main",
-        raw_view=(
-          #|<div class="shell"><x render=".editor"></x></div>
-        ),
-      ),
-    },
-    init=({ editor: Null } : ShellState),
-  )
-  let h = @harness.mount(
-    @component.ModuleDef::new(name="plain", components=[shell]),
-    "PlainShell",
-  )
-  live.val = Some(@dyncomp.register_bundle(h.app.scope, guest, stub_manifest()))
-  guard live.val is Some(bundle)
-  guard bundle.make_instance("Counter") is Some(inst)
-  // seed it into the shell's field the way a host does
-  h.app.transactor.push_input(@tutuca.DispatchPath::new(), "setEditor", [
-    inst.to_value(),
-  ])
-  |> ignore
-  h.app.transactor.settle() |> ignore
-  inspect(h.find_all(".the-counter").length(), content="1")
-  // a click changes a DECLARED field, so the successor was never in doubt
   h.click(".guest-inc")
-  inspect(
-    h.drive_value().field("editor").field("count").to_display_string(),
-    content="1",
+  @debug.assert_eq(h.text(".guest-count"), "2")
+}
+
+// --- the config sidebar -----------------------------------------------------
+
+///|
+test "the badge opens the sidebar on what the cell holds" {
+  let h = mount_app()
+  h.click(".universal-add")
+  pick(h, "Text")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+  h.click(".universal-badge")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 1)
+  @debug.assert_eq(h.text(".config-title"), "std/Text")
+  h.click(".config-close")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+}
+
+///|
+test "the sidebar opens on what is already there, and applying keeps the rest" {
+  let h = mount_app()
+  h.fire(
+    ".universal-add",
+    @render.DomEvent::new(name="click", ctrl_or_cmd=true),
   )
-  // and a text edit changes only what the schema does NOT name — the case a
-  // structural compare called "no change" and threw away
-  h.type_into(".guest-note", "plain")
-  inspect(h.drive_value().field("editor").field("note").str(), content="plain")
+  pick(h, "Text")
+  h.type_into(".field-string", "hello")
+  h.click(".form-create")
+  h.click(".universal-badge")
+  // Opened on what the instance HOLDS, not on the defaults: changing one
+  // property must not mean retyping the rest.
+  @debug.assert_eq(h.value_of(".field-string"), "hello")
+  @debug.assert_eq(h.text(".form-create"), "Apply")
+  h.type_into(".field-string", "goodbye")
+  h.click(".form-create")
+  @debug.assert_eq(h.text(".tut-text"), "goodbye")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+}
+
+///|
+test "dropping the config pill on a cell opens the sidebar for that cell" {
+  let h = mount_app()
+  h.click(".universal-add")
+  pick(h, "Stack")
+  // Two cells in the stack; fill the second so the two are told apart.
+  h.click(".cell-append")
+  h.click(".universal-add")
+  pick(h, "Text")
+  // Drag the pill onto the stack's own universal — the outer one.
+  h.fire(".config-pill", @render.DomEvent::new(name="dragstart"))
+  h.fire(".tut-universal", @render.DomEvent::new(name="dragover"))
+  h.fire(".tut-universal", @render.DomEvent::new(name="drop"))
+  h.fire(".config-pill", @render.DomEvent::new(name="dragend"))
+  @debug.assert_eq(h.find_all(".config-panel").length(), 1)
+  @debug.assert_eq(h.text(".config-title"), "std/Stack")
+}
+
+// --- edit mode --------------------------------------------------------------
+
+///|
+test "view mode hides every affordance and keeps the page" {
+  let h = mount_app()
+  h.click(".universal-add")
+  pick(h, "Stack")
+  h.click(".cell-append")
+  assert_true(h.find_all(".cell-before").length() > 0)
+  h.click(".toggle-mode")
+  @debug.assert_eq(h.text(".toggle-mode"), "viewing")
+  // The layout is still there; nothing to click is.
+  @debug.assert_eq(h.find_all(".tut-stack").length(), 1)
+  @debug.assert_eq(h.find_all(".cell-before").length(), 0)
+  @debug.assert_eq(h.find_all(".universal-add").length(), 0)
+  @debug.assert_eq(h.find_all(".universal-badge").length(), 0)
+  h.click(".toggle-mode")
+  assert_true(h.find_all(".cell-before").length() > 0)
+}
+
+// --- the acceptance test ----------------------------------------------------
+
+///|
+/// The notepad, by composition.
+///
+/// This is the claim the whole change is for. `guests/rust-notepad` used to be
+/// a bespoke guest whose whole job was this; it is gone, because this is the
+/// same thing built out of a tabbed container and a text area by somebody
+/// clicking. Nothing here was written for notepads.
+test "a notepad is a tabbed container holding text areas" {
+  let h = mount_app()
+  // Choose what the page is.
+  h.click(".universal-add")
+  pick(h, "Tabs")
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1"])
+  // A fresh tab opens on a `+`, so the next step is the same gesture again.
+  h.click(".universal-add")
+  pick(h, "Textarea")
+  h.type_into(".tut-textarea", "buy milk")
+  @debug.assert_eq(h.value_of(".tut-textarea"), "buy milk")
+  // A second tab, with its own text area.
+  h.click(".tab-add")
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1", "tab 2"])
+  @debug.assert_eq(h.find_all(".tut-textarea").length(), 0)
+  h.click(".universal-add")
+  pick(h, "Textarea")
+  h.type_into(".tut-textarea", "call mum")
+  // Switching back: the first tab kept what was typed in it, which is the one
+  // thing a tabbed notepad has to get right.
+  h.click(".tab-label")
+  @debug.assert_eq(h.value_of(".tut-textarea"), "buy milk")
+  h.click(".tab-label", nth=1)
+  @debug.assert_eq(h.value_of(".tut-textarea"), "call mum")
+  // And in view mode it is a notepad rather than an editor.
+  h.click(".toggle-mode")
+  @debug.assert_eq(h.find_all(".tab-add").length(), 0)
+  @debug.assert_eq(h.value_of(".tut-textarea"), "call mum")
+}
+
+///|
+/// Applying to a LOADED component has to write through the same way it does
+/// for a standard one: the sidebar is generated from the declared schema
+/// either way, and a guest that could be configured only by being rebuilt
+/// would lose everything it keeps privately.
+test "applying the sidebar's form writes through a loaded component" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  h.type_into(".field-string", "tally")
+  h.click(".form-create")
+  @debug.assert_eq(h.text(".guest-count"), "0")
+  h.click(".universal-badge")
+  @debug.assert_eq(h.text(".config-title"), "counterlib/Counter")
+  // Opened on what the instance holds.
+  @debug.assert_eq(h.value_of(".field-number"), "0")
+  h.type_into(".field-number", "7")
+  h.click(".form-create")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+  @debug.assert_eq(h.text(".guest-count"), "7")
+}
+
+///|
+/// The same, several containers deep and behind a filtered `render-each`.
+///
+/// The sidebar addresses the cell it is configuring by the path the bubble
+/// carried, so every kind of render between the app and that cell is a chance
+/// for the path to be wrong. A tab is the hardest of them: only the active
+/// page is rendered, so the path has to name the cell in the WHOLE list.
+test "applying reaches a component nested inside tabs" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Tabs")
+  // A second and a third tab, so the one being configured is not the first.
+  h.click(".tab-add")
+  h.click(".tab-add")
+  @debug.assert_eq(h.texts(".tab-label"), ["tab 1", "tab 2", "tab 3"])
+  h.click(".universal-add")
+  pick(h, "Counter")
+  h.type_into(".field-string", "tally")
+  h.click(".form-create")
+  @debug.assert_eq(h.text(".guest-count"), "0")
+  // The second badge is the counter's; the first is the tabs' own cell.
+  h.click(".universal-badge", nth=1)
+  @debug.assert_eq(h.text(".config-title"), "counterlib/Counter")
+  h.type_into(".field-number", "7")
+  h.click(".form-create")
+  @debug.assert_eq(h.text(".guest-count"), "7")
+}
+
+///|
+/// Reconfiguring must not be refused for a field nobody touched.
+///
+/// A compound has no control of its own, so the form draws a JSON box — and a
+/// box pre-filled with anything other than JSON parses as the wrong thing the
+/// moment Apply reads it back. The failure is invisible from the outside: the
+/// form was filled from the instance, so every value in it looks like one that
+/// was already accepted, and pressing Apply silently changes nothing.
+///
+/// Found in a browser, not here, because the stub had no compound field.
+test "a compound field round-trips through the form untouched" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  h.type_into(".field-string", "tally")
+  h.click(".form-create")
+  h.click(".universal-badge")
+  // Pre-filled as JSON, which is what the box is read back as.
+  @debug.assert_eq(h.value_of(".field-json"), "[0]")
+  // Change something ELSE and apply: the untouched compound must not be what
+  // stops it.
+  h.type_into(".field-number", "5")
+  h.click(".form-create")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+  @debug.assert_eq(h.text(".guest-count"), "5")
+}
+
+///|
+test "an absent optional stays absent rather than becoming an empty string" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  // `history` has no value and no default, so its box is EMPTY — not `""`,
+  // which is what a blank string would encode to and what would then be
+  // refused as not-an-array.
+  @debug.assert_eq(h.value_of(".field-json"), "")
+  h.type_into(".field-string", "tally")
+  h.click(".form-create")
+  @debug.assert_eq(h.find_all(".the-counter").length(), 1)
 }

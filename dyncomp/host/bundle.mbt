@@ -26,6 +26,13 @@ pub struct Bundle {
   /// equal state are still two instances, and a store keyed on their contents
   /// would silently keep one of them.
   next_pid : Ref[Int]
+  /// The child scope this bundle registered into, kept so `make_instance` can
+  /// resolve a declared PLACEHOLDER (see `DynObj.owned`). `lookup_component`
+  /// walks to the parent, so a guest naming a component the HOST registered
+  /// finds it — which is the whole point, and also the only cross-module reach
+  /// a bundle gets: it names a component, the host builds it, and the guest
+  /// never holds the result.
+  scope : @component.ComponentStack
 }
 
 ///|
@@ -182,7 +189,7 @@ pub fn register_bundle(
       None => ()
     }
   }
-  { guest, manifest, comps, diagnostics, next_pid: { val: 1 } }
+  { guest, manifest, comps, diagnostics, next_pid: { val: 1 }, scope: child }
 }
 
 ///|
@@ -299,11 +306,51 @@ pub fn Bundle::make_instance(
           handle,
           schema~,
           pid=if pid == "" { self.mint_pid(component) } else { pid },
+          owned=self.fill_placeholders(schema, args),
         ),
       )
     }
     None => None
   }
+}
+
+///|
+/// Build what this component's declared PLACEHOLDERS hold (see `DynObj.owned`).
+///
+/// FOREIGN ones only. A `ty-comp` field naming one of this bundle's OWN
+/// components is a nested child the guest makes and owns (`control.make-instance`
+/// is same-bundle by contract), and filling it here would shadow the guest's
+/// value with a host-built one — which is what `Pair { left: Counter }` is, and
+/// what would silently break if this did not check.
+///
+/// So the discriminator is the boundary itself: same-bundle means the guest's,
+/// foreign means a hole only the host can fill.
+///
+/// A caller that passed one in `args` wins — that is how a restore puts back
+/// what was in the hole. A name nothing answers to leaves the field empty
+/// rather than refusing the instance: a guest whose placeholder cannot be
+/// filled is still a guest that works, minus the hole.
+fn Bundle::fill_placeholders(
+  self : Bundle,
+  schema : @tutuca.SchemaInfo,
+  args : Map[String, @tutuca.Value],
+) -> Map[String, @tutuca.Value] {
+  let owned : Map[String, @tutuca.Value] = Map([])
+  for pair in placeholder_fields(schema) {
+    let (field, comp) = pair
+    if self.comps.contains(comp) {
+      continue
+    }
+    owned[field] = match args.get(field) {
+      Some(given) if given is Obj(_) => given
+      _ =>
+        match self.scope.lookup_component(comp) {
+          Some(c) => c.make(Map([]))
+          None => Null
+        }
+    }
+  }
+  owned
 }
 
 ///|
@@ -354,6 +401,15 @@ pub fn Bundle::init_names(self : Bundle, component : String) -> Array[String] {
 ///|
 /// Wrap an EXISTING guest instance handle (e.g. a nested-child token the
 /// guest produced) as a tree value. None for an unknown component name.
+///
+/// Deliberately fills NO placeholders (see `DynObj.owned`). This runs on every
+/// read of a field holding a nested child, so filling here would build a fresh
+/// placeholder per read and throw away whatever was put in the last one — the
+/// guest's own state survives because it lives behind the handle, and
+/// host-owned state would not. A nested same-bundle child therefore has no
+/// placeholders; the top-level instances a person places do, which is the case
+/// this exists for. Giving nested children real ones needs a host-side table
+/// keyed by guest token, which is a bigger change than it looks.
 pub fn Bundle::wrap_instance(
   self : Bundle,
   component : String,

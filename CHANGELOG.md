@@ -45,19 +45,90 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `@when` the guest answers, so a filtered row still carries its index in the
   whole list and every per-row handler keeps working.
 
-- **A universal editor over whatever is loaded: `dyncomp/ui`.** Search the
-  catalog, fill in a form generated from a component's declared arguments, and
-  arrange what you placed — seven ordinary tutuca components, backend-agnostic
-  and driven by `moon test` on the in-memory DOM. The state it edits is the
-  surface DOCUMENT, and every change (add a stack, retarget a grid's tracks,
-  remove a subtree, place a component) is a `SurfaceOp` batch applied to it,
-  with the rendered tree rebuilt afterwards; that ordering is what makes a
-  button and a tool call the same operation rather than two that agree for now.
-  Instances live BESIDE the document — it holds references and the host builds
-  what they name — so a rebuild keeps their state, and an import gives the
-  layout back with its slots empty rather than showing someone else's.
-  `demo/universal_wasm` is the shell around it now: a drop target, a status
-  line, and the bridge that turns a `ComponentRef` into a live guest instance.
+- **The whole viewport is the app, and the app is a component tree:
+  `dyncomp/ui` + `dyncomp/ui/std`.** The root holds ONE component and it starts
+  as a `Universal` — an empty cell with a `+` in it — so the first thing a
+  person does is choose what the page is, and everything after that is the same
+  gesture one level in. Clicking a `+` opens a command bar over the page,
+  searching a catalog that holds the standard components and everything any
+  loaded bundle declares; ctrl/cmd opens the generated form instead, which also
+  opens by itself when a component has a required argument nothing has answered.
+  Dropping the bar's `config` pill on a cell — or clicking its badge — opens a
+  sidebar: a component that declares a `config` view of its own gets it rendered
+  live, and everything else gets the same generated form, pre-filled from what
+  the instance already holds. Containers grow hover-only insert buttons: before
+  each child and after the last on a `Stack`, one per edge on a `Grid`.
+
+  **`Universal` is a HOLDER, not a placeholder that gets replaced**, and that
+  one decision is what the rest rests on. Everything a person places sits inside
+  one, so the editing chrome has a single host-owned home that nothing has to
+  opt into — a guest component is decorated exactly like a standard one, because
+  neither is asked to participate. Every container's children are universals, so
+  "insert a cell" needs no kind and no binding. And emptying a cell gives the
+  `+` back instead of deleting it.
+
+  Edit mode is a VIEW rather than a field: the app pushes `edit` with
+  `@push-view`, every component that declares one shows its affordances, and one
+  that does not — every guest — is simply itself in both. A boolean threaded
+  through the tree would be the same fact stored once per node, and a guest,
+  which cannot grow the field, could never join in.
+
+  The standard set is `Universal`, `Stack`, `Grid` (uniform m×n), `Tabs` /
+  `TabPage`, `Text` and `Textarea` — ordinary tutuca components in a package
+  that knows nothing about bundles, so `moon test` drives all of it on the
+  in-memory DOM. Only `Universal` has to exist; the rest are convenience, and a
+  bundle shipping a better stack would be no different in kind. `guests/rust-notepad`
+  reproduced by composition — tabs, a tab holding a universal, pick a textarea —
+  is a test rather than a claim.
+
+- **A component from anywhere is in the same catalog as the host's own.**
+  `Registry` holds `builtins` beside its loaded modules, and `dyncomp/ui/builtins.mbt`
+  builds each one's `Descriptor` from the component's own declared schema, so
+  nothing can describe a standard component differently from how it behaves. The
+  same search ranks them, the same projection generates their form, the same
+  validator refuses their bad arguments with the same JSON Pointers. The ONE
+  place they differ is construction: one is compiled in, the other arrived in an
+  archive.
+
+- **A guest can offer a hole for a person to fill.** A component declaring a
+  field whose type names a component from ANOTHER module (`resource universal;
+  body: universal`) gets it built and answered by the HOST, and never sees it —
+  `DynObj` holds it, `obj_field` answers it without crossing the bridge, and a
+  successor carries it. No contract change: `ty-comp` already carried the name.
+  It has to work this way round because the boundary allows nothing else — a WIT
+  `value` has no case that can carry a host component. A same-bundle `ty-comp`
+  is left alone, because that is the guest's own nested child.
+
+- **REMOVED: `dyncomp/surface`.** The layout document and its six-op patch
+  algebra were built, shipped in this same unreleased cycle, and are gone. The
+  component tree is the layout now, and what replaced the algebra is the runtime
+  `core/` already had: a `+` bubbles, `ctx.target_path()` is the fixed path of
+  whoever raised it, the app keeps that path across dispatches and sends the
+  answer back to exactly that component. The trade, plainly: what was lost is a
+  serializable document with one atomic apply and a wire format an agent could
+  diff; what was gained is one class of thing instead of two, and a seam that
+  reaches INSIDE a guest's own placeholder — which a document describing only
+  the host's layout never could. `docs/agent-runtime.md` was specified against
+  that document and now carries a banner saying it needs redesigning;
+  `dyncomp/ARCHITECTURE.md` records both the new shape and the known gaps.
+
+- **Two more MoonBit guests: a calculator and tic-tac-toe.** They exist to
+  cover the halves of the contract the counter does not. `calclib/Calculator`
+  declares `display` — the answer, which a host can project, form and hand
+  back — and keeps the pending operand and its operator to itself, because
+  they mean nothing outside the component and a host that could write them
+  could not reason about what it wrote; so it `persist`s, as its own JSON.
+  `gameslib/TicTacToe` declares the board as a list and stores nothing else:
+  whose turn it is, who won and which line they won on are all functions of
+  it, and state that can be computed is state that can be wrong. It has no
+  `persist` for the same reason the counter has none — the board IS the
+  declared field.
+
+  Both are sample bundles on the universal demo. The tic-tac-toe board also
+  re-learns a lesson the Rust notepad had already recorded: a `$method` takes
+  no arguments in a conditional slot, so "is this square part of the winning
+  line" rides ON each square rather than being asked per square. Written the
+  other way it renders no class at all, silently.
 
 - **`dyncomp/jsonschema`** — the declared schema to JSON Schema (draft 2020-12)
   and back. ONE projection with two consumers, a generated form and a tool's
@@ -234,13 +305,21 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
-- **The Rust guest is a tabbed notepad** (`guests/rust-notepad`, was
-  `rust-counter`). A counter never has to answer the questions the newer halves
-  of the contract exist for; notes do — which tab you were looking at is state
-  the declared fields do not name, and losing what you typed is a thing a
-  person notices. It persists as a length-prefixed byte string of its own,
-  which is a better demonstration of "the host never reads these" than JSON
-  would be.
+- **The Rust guest is a temperature converter** (`guests/rust-tempconv`, was
+  `rust-notepad`, before that `rust-counter`). A counter never has to answer
+  the questions the newer halves of the contract exist for; this does. It
+  declares ONE number and shows it three ways, and the half its declared field
+  cannot hold is the DRAFT: somebody heading for `-40` is at `-` on the way,
+  and reformatting their box while they type is the difference between a
+  control that works and one that fights. `-` is not a number and no declared
+  field can hold it, so it goes in `persist` — a length-prefixed byte string of
+  the guest's own, which demonstrates "the host never reads these" better than
+  JSON would.
+
+  The notepad it replaces is now buildable out of primitives (a `Tabs` holding
+  a `Textarea`), and a component that primitives compose into is not one worth
+  shipping as a bundle. That composition is the acceptance test in
+  `dyncomp/ui/ui_test.mbt`.
 
 - **The universal demo keeps your session.** The layout, the bundles (by URL —
   a dropped file is not something a page can fetch again) and every placed

@@ -5,9 +5,9 @@
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
-///  The MoonBit guests. The Rust guest (guests/rust-notepad) implements the
+///  The MoonBit guests. The Rust guest (guests/rust-tempconv) implements the
 ///  same WIT but builds through cargo, so it keeps its own script.
-export const GUESTS = ['counter', 'todo', 'todomvc'];
+export const GUESTS = ['counter', 'todo', 'todomvc', 'calculator', 'tictactoe'];
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 

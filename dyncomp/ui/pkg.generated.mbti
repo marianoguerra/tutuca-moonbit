@@ -6,29 +6,33 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/registry",
+  "marianoguerra/tutuca/dyncomp/ui/std",
   "moonbitlang/core/debug",
+  "moonbitlang/core/ref",
 }
 
 // Values
-pub let component_palette_common_style : String
+pub fn builtin_descriptors(Array[@component.Component]) -> Array[@registry.Descriptor]
 
-pub fn component_palette_component(name? : String, views? : Map[String, @anode.View], init? : ComponentPaletteState, common_style? : String, global_style? : String, update? : (ComponentPaletteState, @component.Dispatch, &@core.Ctx) -> ComponentPaletteState?, swap? : (ComponentPaletteInput) -> ((ComponentPaletteState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub let builtin_module : String
 
-pub let component_palette_global_style : String
+pub let command_bar_common_style : String
 
-pub fn component_palette_views() -> Map[String, @anode.View]
+pub fn command_bar_component(name? : String, views? : Map[String, @anode.View], init? : CommandBarState, common_style? : String, global_style? : String, update? : (CommandBarState, @component.Dispatch, &@core.Ctx) -> CommandBarState?, swap? : (CommandBarInput) -> ((CommandBarState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub fn editor_seed(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, @component.ModuleDef) -> Map[String, @core.Value]
+pub let command_bar_global_style : String
 
-pub fn live_slots(@core.Value) -> Map[String, @core.Value]
+pub fn command_bar_views() -> Map[String, @anode.View]
 
-pub let node_settings_common_style : String
+pub let config_panel_common_style : String
 
-pub fn node_settings_component(name? : String, views? : Map[String, @anode.View], init? : NodeSettingsState, common_style? : String, global_style? : String, update? : (NodeSettingsState, @component.Dispatch, &@core.Ctx) -> NodeSettingsState?, swap? : (NodeSettingsInput) -> ((NodeSettingsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn config_panel_component(name? : String, views? : Map[String, @anode.View], init? : ConfigPanelState, common_style? : String, global_style? : String, update? : (ConfigPanelState, @component.Dispatch, &@core.Ctx) -> ConfigPanelState?, swap? : (ConfigPanelInput) -> ((ConfigPanelState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let node_settings_global_style : String
+pub let config_panel_global_style : String
 
-pub fn node_settings_views() -> Map[String, @anode.View]
+pub fn config_panel_views() -> Map[String, @anode.View]
+
+pub fn is_builtin(@registry.ComponentRef) -> Bool
 
 pub let palette_row_common_style : String
 
@@ -54,103 +58,84 @@ pub let schema_form_global_style : String
 
 pub fn schema_form_views() -> Map[String, @anode.View]
 
-pub fn seeded_editor(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?) -> (@component.ModuleDef, Map[String, @core.Value])
+pub fn seeded_app(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, dev_tools? : String) -> (@component.ModuleDef, UniversalUi)
 
-pub let surface_editor_common_style : String
+pub let universal_app_common_style : String
 
-pub fn surface_editor_component(name? : String, views? : Map[String, @anode.View], init? : SurfaceEditorState, common_style? : String, global_style? : String, update? : (SurfaceEditorState, @component.Dispatch, &@core.Ctx) -> SurfaceEditorState?, swap? : (SurfaceEditorInput) -> ((SurfaceEditorState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn universal_app_component(name? : String, views? : Map[String, @anode.View], init? : UniversalAppState, common_style? : String, global_style? : String, update? : (UniversalAppState, @component.Dispatch, &@core.Ctx) -> UniversalAppState?, compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@core.Value]) -> @core.Value)?, swap? : (UniversalAppInput) -> ((UniversalAppState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
-pub let surface_editor_global_style : String
+pub let universal_app_global_style : String
 
-pub fn surface_editor_views() -> Map[String, @anode.View]
+pub fn universal_app_views() -> Map[String, @anode.View]
 
-pub let surface_node_common_style : String
-
-pub fn surface_node_component(name? : String, views? : Map[String, @anode.View], init? : SurfaceNodeState, common_style? : String, global_style? : String, update? : (SurfaceNodeState, @component.Dispatch, &@core.Ctx) -> SurfaceNodeState?, swap? : (SurfaceNodeInput) -> ((SurfaceNodeState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let surface_node_global_style : String
-
-pub fn surface_node_views() -> Map[String, @anode.View]
-
-pub fn universal_module(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?) -> @component.ModuleDef
+pub fn universal_module(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, dev_tools? : String) -> @component.ModuleDef
 
 // Errors
 
 // Types and methods
-pub(all) enum ComponentPaletteInput {
+pub(all) enum CommandBarInput {
+  Close
+  Nav
   SetQuery
 } derive(Eq, @debug.Debug)
-pub fn ComponentPaletteInput::name(Self) -> String
-pub fn ComponentPaletteInput::parse(String) -> Self?
+pub fn CommandBarInput::name(Self) -> String
+pub fn CommandBarInput::parse(String) -> Self?
 
-pub(all) enum ComponentPaletteMsg {
+pub(all) enum CommandBarMsg {
+  Close
+  Nav(String)
   SetQuery(String)
   Unknown(String, Array[@core.Value])
 }
-pub fn ComponentPaletteMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn CommandBarMsg::from_dispatch(@component.Dispatch) -> Self?
 
-pub(all) struct ComponentPaletteState {
+pub(all) enum CommandBarReceive {
+  SetCursor(Int)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CommandBarReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CommandBarReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CommandBarReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct CommandBarState {
   query : String
   hits : Array[@core.Value]
+  cursor : Int
+  configure : Bool
   emptyMessage : String
 }
-pub fn ComponentPaletteState::zero() -> Self
+pub fn CommandBarState::zero() -> Self
 
-pub(all) enum NodeSettingsBubble {
-  PropChanged(String, String)
+pub(all) enum ConfigPanelBubble {
+  CloseConfig
   Unknown(String, Array[@core.Value])
 }
-pub fn NodeSettingsBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn NodeSettingsBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn NodeSettingsBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn ConfigPanelBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn ConfigPanelBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn ConfigPanelBubble::to_dispatch(Self) -> (String, Array[@core.Value])
 
-pub(all) enum NodeSettingsInput {
-  SetAlign
-  SetColSpan
-  SetColumns
-  SetDirection
-  SetGap
-  SetJustify
-  SetPadding
-  SetRowSpan
-  SetWrap
+pub(all) enum ConfigPanelInput {
+  Close
 } derive(Eq, @debug.Debug)
-pub fn NodeSettingsInput::name(Self) -> String
-pub fn NodeSettingsInput::parse(String) -> Self?
+pub fn ConfigPanelInput::name(Self) -> String
+pub fn ConfigPanelInput::parse(String) -> Self?
 
-pub(all) enum NodeSettingsMsg {
-  SetAlign(String)
-  SetColSpan(String)
-  SetColumns(String)
-  SetDirection(String)
-  SetGap(String)
-  SetJustify(String)
-  SetPadding(String)
-  SetRowSpan(String)
-  SetWrap(Bool)
+pub(all) enum ConfigPanelMsg {
+  Close
   Unknown(String, Array[@core.Value])
 }
-pub fn NodeSettingsMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn ConfigPanelMsg::from_dispatch(@component.Dispatch) -> Self?
 
-pub(all) struct NodeSettingsState {
-  nodeId : String
-  kind : String
-  direction : String
-  justify : String
-  align : String
-  gap : Int
-  padding : Int
-  wrap : Bool
-  columns : String
-  colSpan : Int
-  rowSpan : Int
-  isContainer : Bool
-  isGrid : Bool
+pub(all) struct ConfigPanelState {
+  title : String
+  mode : String
+  target : @core.Value
+  form : @core.Value
 }
-pub fn NodeSettingsState::zero() -> Self
+pub fn ConfigPanelState::zero() -> Self
 
 pub(all) enum PaletteRowBubble {
-  ComponentPicked(String, String)
+  ComponentPicked(String, String, Bool)
   Unknown(String, Array[@core.Value])
 }
 pub fn PaletteRowBubble::bubble(Self, &@core.Ctx) -> Unit
@@ -164,10 +149,18 @@ pub fn PaletteRowInput::name(Self) -> String
 pub fn PaletteRowInput::parse(String) -> Self?
 
 pub(all) enum PaletteRowMsg {
-  Pick
+  Pick(Bool)
   Unknown(String, Array[@core.Value])
 }
 pub fn PaletteRowMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum PaletteRowReceive {
+  SetSelected(Bool)
+  Unknown(String, Array[@core.Value])
+}
+pub fn PaletteRowReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn PaletteRowReceive::send(Self, &@core.Ctx) -> Unit
+pub fn PaletteRowReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct PaletteRowState {
   module_ : String
@@ -175,6 +168,7 @@ pub(all) struct PaletteRowState {
   summary : String
   why : String
   category : String
+  selected : Bool
 }
 pub fn PaletteRowState::zero() -> Self
 
@@ -244,94 +238,59 @@ pub(all) struct SchemaFormState {
   fields : Array[@core.Value]
   inits : Array[@core.Value]
   error : String
+  submitLabel : String
 }
 pub fn SchemaFormState::zero() -> Self
 
-pub(all) enum SurfaceEditorInput {
-  AddBox
-  AddGrid
-  AddSlot
-  AddStack
-  ExportDoc
-  ImportDoc
-  RemoveNode
-  SetTransfer
+pub(all) enum UniversalAppInput {
+  FilesDropped
+  OpenCommand
+  ToggleMode
 } derive(Eq, @debug.Debug)
-pub fn SurfaceEditorInput::name(Self) -> String
-pub fn SurfaceEditorInput::parse(String) -> Self?
+pub fn UniversalAppInput::name(Self) -> String
+pub fn UniversalAppInput::parse(String) -> Self?
 
-pub(all) enum SurfaceEditorMsg {
-  AddBox
-  AddGrid
-  AddSlot
-  AddStack
-  ExportDoc
-  ImportDoc
-  RemoveNode
-  SetTransfer(String)
+pub(all) enum UniversalAppMethod {
+  ModeLabel
+} derive(Eq, @debug.Debug)
+pub fn UniversalAppMethod::name(Self) -> String
+
+pub(all) enum UniversalAppMsg {
+  FilesDropped(String)
+  OpenCommand
+  ToggleMode
   Unknown(String, Array[@core.Value])
 }
-pub fn SurfaceEditorMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalAppMsg::from_dispatch(@component.Dispatch) -> Self?
 
-pub(all) enum SurfaceEditorReceive {
+pub(all) enum UniversalAppReceive {
   CatalogChanged(String)
-  RestoreSession(@core.Value)
+  RestoreTree(@core.Value)
   Unknown(String, Array[@core.Value])
 }
-pub fn SurfaceEditorReceive::from_dispatch(@component.Dispatch) -> Self?
-pub fn SurfaceEditorReceive::send(Self, &@core.Ctx) -> Unit
-pub fn SurfaceEditorReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+pub fn UniversalAppReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalAppReceive::send(Self, &@core.Ctx) -> Unit
+pub fn UniversalAppReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
-pub(all) struct SurfaceEditorState {
-  doc : @core.Value
-  tree : @core.Value
-  selected : String
-  palette : @core.Value
-  settings : @core.Value
-  form : @core.Value
+pub(all) struct UniversalAppState {
+  root : @core.Value
+  mode : String
+  commandBar : @core.Value
+  configPanel : @core.Value
   status : String
-  transfer : String
-  showTransfer : Bool
+  devTools : @core.Value
 }
-pub fn SurfaceEditorState::zero() -> Self
-
-pub(all) enum SurfaceNodeBubble {
-  NodePicked(String)
-  Unknown(String, Array[@core.Value])
-}
-pub fn SurfaceNodeBubble::bubble(Self, &@core.Ctx) -> Unit
-pub fn SurfaceNodeBubble::from_dispatch(@component.Dispatch) -> Self?
-pub fn SurfaceNodeBubble::to_dispatch(Self) -> (String, Array[@core.Value])
-
-pub(all) enum SurfaceNodeInput {
-  Pick
-} derive(Eq, @debug.Debug)
-pub fn SurfaceNodeInput::name(Self) -> String
-pub fn SurfaceNodeInput::parse(String) -> Self?
-
-pub(all) enum SurfaceNodeMsg {
-  Pick
-  Unknown(String, Array[@core.Value])
-}
-pub fn SurfaceNodeMsg::from_dispatch(@component.Dispatch) -> Self?
-
-pub(all) struct SurfaceNodeState {
-  nodeId : String
-  kind : String
-  style : String
-  label : String
-  children : Array[@core.Value]
-  slot : @core.Value
-  selected : Bool
-  empty : Bool
-}
-pub fn SurfaceNodeState::zero() -> Self
+pub fn UniversalAppState::zero() -> Self
 
 pub struct UniversalUi {
   registry : @registry.Registry
   make : (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
+  std : @std.Std
   comps : Map[String, @component.Component]
+  asked : @ref.Ref[@core.DispatchPath?]
+  configuring : @ref.Ref[@core.DispatchPath?]
 }
+pub fn UniversalUi::build_standard(Self, String, Map[String, @core.Value]) -> @core.Value
 
 // Type aliases
 pub type MakeInstance = (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?

@@ -12,6 +12,14 @@ pub fn dyncomp_on_load_error(Int, String) -> Unit
 
 pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
 
+pub let host_tools_common_style : String
+
+pub fn host_tools_component(name? : String, views? : Map[String, @anode.View], init? : HostToolsState, common_style? : String, global_style? : String, update? : (HostToolsState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> HostToolsState?, swap? : (HostToolsInput) -> ((HostToolsState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let host_tools_global_style : String
+
+pub fn host_tools_views() -> Map[String, @anode.View]
+
 pub fn mount() -> Unit
 
 pub fn on_event(@mizchi/js/core.Any) -> Unit
@@ -20,45 +28,44 @@ pub fn refresh_margaui() -> Unit
 
 pub fn state_json() -> String
 
-pub let universal_wasm_common_style : String
-
-pub fn universal_wasm_component(name? : String, views? : Map[String, @anode.View], init? : UniversalWasmState, common_style? : String, global_style? : String, update? : (UniversalWasmState, @component.Dispatch, &@marianoguerra/tutuca/core.Ctx) -> UniversalWasmState?, swap? : (UniversalWasmInput) -> ((UniversalWasmState, Array[@marianoguerra/tutuca/core.Value], &@marianoguerra/tutuca/core.Ctx) -> @marianoguerra/tutuca/core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @marianoguerra/tutuca/core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
-
-pub let universal_wasm_global_style : String
-
-pub fn universal_wasm_views() -> Map[String, @anode.View]
-
 // Errors
 
 // Types and methods
-pub(all) enum UniversalWasmInput {
-  LoadDropped
+pub(all) enum HostToolsBubble {
+  CatalogChanged(String)
+  Unknown(String, Array[@marianoguerra/tutuca/core.Value])
+}
+pub fn HostToolsBubble::bubble(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn HostToolsBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn HostToolsBubble::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+
+pub(all) enum HostToolsInput {
   LoadSample
 } derive(Eq, @debug.Debug)
-pub fn UniversalWasmInput::name(Self) -> String
-pub fn UniversalWasmInput::parse(String) -> Self?
+pub fn HostToolsInput::name(Self) -> String
+pub fn HostToolsInput::parse(String) -> Self?
 
-pub(all) enum UniversalWasmMsg {
-  LoadDropped(String)
+pub(all) enum HostToolsMsg {
   LoadSample(String)
   Unknown(String, Array[@marianoguerra/tutuca/core.Value])
 }
-pub fn UniversalWasmMsg::from_dispatch(@component.Dispatch) -> Self?
+pub fn HostToolsMsg::from_dispatch(@component.Dispatch) -> Self?
 
-pub(all) enum UniversalWasmReceive {
+pub(all) enum HostToolsReceive {
+  FilesDropped(@marianoguerra/tutuca/core.Value)
   DyncompLoaded(String)
   DyncompError(String)
   Unknown(String, Array[@marianoguerra/tutuca/core.Value])
 }
-pub fn UniversalWasmReceive::from_dispatch(@component.Dispatch) -> Self?
-pub fn UniversalWasmReceive::send(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
-pub fn UniversalWasmReceive::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
+pub fn HostToolsReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn HostToolsReceive::send(Self, &@marianoguerra/tutuca/core.Ctx) -> Unit
+pub fn HostToolsReceive::to_dispatch(Self) -> (String, Array[@marianoguerra/tutuca/core.Value])
 
-pub(all) struct UniversalWasmState {
+pub(all) struct HostToolsState {
   status : String
-  editor : @marianoguerra/tutuca/core.Value
+  samples : Bool
 }
-pub fn UniversalWasmState::zero() -> Self
+pub fn HostToolsState::zero() -> Self
 
 // Type aliases
 

@@ -1,8 +1,10 @@
 <!doctype html>
-<!-- Universal wasm-component demo (dyncomp/DESIGN.md). The shell app is
-     wasm-gc; drop a single `.tutuca.tar.gz` bundle (a gzipped tar of a guest's
-     jco-transpiled `tutuca:component` output) anywhere on the page and every
-     component its manifest declares is mounted live. No server round-trip: the
+<!-- Universal wasm-component demo (dyncomp/DESIGN.md). The whole viewport is
+     the app: it starts as one empty cell, and clicking the + opens a command
+     bar over the catalog — the standard components, plus everything any loaded
+     bundle declares. Drop a single `.tutuca.tar.gz` bundle (a gzipped tar of a
+     guest's jco-transpiled `tutuca:component` output) anywhere on the page and
+     every component its manifest declares joins that catalog. No server round-trip: the
      archive is gunzipped (native DecompressionStream) and untarred in-browser.
      Build + assemble: moon run - -target native cmd/dev - - universal
      then serve dist/ and open /universal/. A sample bundle is copied to

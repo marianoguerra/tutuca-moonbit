@@ -1,0 +1,268 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/ui/std"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let grid_common_style : String
+
+pub fn grid_component(name? : String, views? : Map[String, @anode.View], init? : GridState, common_style? : String, global_style? : String, update? : (GridState, @component.Dispatch, &@core.Ctx) -> GridState?, compute? : (GridMethod) -> ((GridState, Array[@core.Value]) -> @core.Value)?, swap? : (GridInput) -> ((GridState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let grid_global_style : String
+
+pub fn grid_views() -> Map[String, @anode.View]
+
+pub let module_name : String
+
+pub let stack_common_style : String
+
+pub fn stack_component(name? : String, views? : Map[String, @anode.View], init? : StackState, common_style? : String, global_style? : String, update? : (StackState, @component.Dispatch, &@core.Ctx) -> StackState?, compute? : (StackMethod) -> ((StackState, Array[@core.Value]) -> @core.Value)?, swap? : (StackInput) -> ((StackState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let stack_global_style : String
+
+pub fn stack_views() -> Map[String, @anode.View]
+
+pub fn std_components() -> (Array[@component.Component], Std)
+
+pub fn std_module() -> @component.ModuleDef
+
+pub let tab_page_common_style : String
+
+pub fn tab_page_component(name? : String, views? : Map[String, @anode.View], init? : TabPageState, common_style? : String, global_style? : String, update? : (TabPageState, @component.Dispatch, &@core.Ctx) -> TabPageState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let tab_page_global_style : String
+
+pub fn tab_page_views() -> Map[String, @anode.View]
+
+pub let tabs_common_style : String
+
+pub fn tabs_component(name? : String, views? : Map[String, @anode.View], init? : TabsState, common_style? : String, global_style? : String, update? : (TabsState, @component.Dispatch, &@core.Ctx) -> TabsState?, swap? : (TabsInput) -> ((TabsState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (TabsWhen) -> ((TabsState, @core.Value, @core.Value, @core.Value) -> Bool)?, enrich? : (TabsEnrich) -> ((TabsState, Map[String, @core.Value], @core.Value, @core.Value, @core.Value) -> Unit)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let tabs_global_style : String
+
+pub fn tabs_views() -> Map[String, @anode.View]
+
+pub let text_common_style : String
+
+pub fn text_component(name? : String, views? : Map[String, @anode.View], init? : TextState, common_style? : String, global_style? : String, update? : (TextState, @component.Dispatch, &@core.Ctx) -> TextState?, compute? : (TextMethod) -> ((TextState, Array[@core.Value]) -> @core.Value)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let text_global_style : String
+
+pub fn text_views() -> Map[String, @anode.View]
+
+pub let textarea_common_style : String
+
+pub fn textarea_component(name? : String, views? : Map[String, @anode.View], init? : TextareaState, common_style? : String, global_style? : String, update? : (TextareaState, @component.Dispatch, &@core.Ctx) -> TextareaState?, swap? : (TextareaInput) -> ((TextareaState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let textarea_global_style : String
+
+pub fn textarea_views() -> Map[String, @anode.View]
+
+pub let universal_common_style : String
+
+pub fn universal_component(name? : String, views? : Map[String, @anode.View], init? : UniversalState, common_style? : String, global_style? : String, update? : (UniversalState, @component.Dispatch, &@core.Ctx) -> UniversalState?, compute? : (UniversalMethod) -> ((UniversalState, Array[@core.Value]) -> @core.Value)?, swap? : (UniversalInput) -> ((UniversalState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let universal_global_style : String
+
+pub fn universal_views() -> Map[String, @anode.View]
+
+// Errors
+
+// Types and methods
+pub(all) enum GridInput {
+  AddColAfter
+  AddColBefore
+  AddRowAfter
+  AddRowBefore
+} derive(Eq, @debug.Debug)
+pub fn GridInput::name(Self) -> String
+pub fn GridInput::parse(String) -> Self?
+
+pub(all) enum GridMethod {
+  Style
+} derive(Eq, @debug.Debug)
+pub fn GridMethod::name(Self) -> String
+
+pub(all) enum GridMsg {
+  AddColAfter
+  AddColBefore
+  AddRowAfter
+  AddRowBefore
+  Unknown(String, Array[@core.Value])
+}
+pub fn GridMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct GridState {
+  children : Array[@core.Value]
+  cols : Int
+  rows : Int
+  gap : Int
+  padding : Int
+}
+pub fn GridState::zero() -> Self
+
+pub(all) enum StackInput {
+  AppendCell
+  InsertAt
+} derive(Eq, @debug.Debug)
+pub fn StackInput::name(Self) -> String
+pub fn StackInput::parse(String) -> Self?
+
+pub(all) enum StackMethod {
+  IsRow
+  Style
+} derive(Eq, @debug.Debug)
+pub fn StackMethod::name(Self) -> String
+
+pub(all) enum StackMsg {
+  AppendCell
+  InsertAt(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StackMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct StackState {
+  children : Array[@core.Value]
+  direction : String
+  justify : String
+  align : String
+  gap : Int
+  padding : Int
+  wrap : Bool
+}
+pub fn StackState::zero() -> Self
+
+pub struct Std {
+  comps : Map[String, @component.Component]
+}
+pub fn Std::build(Self, String, Map[String, @core.Value]) -> @core.Value
+pub fn Std::cell(Self) -> @core.Value
+pub fn Std::grid(Self, cols? : Int, rows? : Int) -> @core.Value
+pub fn Std::resize_grid(Self, GridState, cols~ : Int, rows~ : Int) -> GridState
+pub fn Std::tab_page(Self, label? : String) -> @core.Value
+pub fn Std::tabs(Self, count? : Int) -> @core.Value
+
+pub(all) struct TabPageState {
+  label : String
+  body : @core.Value
+}
+pub fn TabPageState::zero() -> Self
+
+pub(all) enum TabsEnrich {
+  MarkActive
+} derive(Eq, @debug.Debug)
+pub fn TabsEnrich::name(Self) -> String
+
+pub(all) enum TabsInput {
+  Activate
+  AddTab
+  CloseActive
+} derive(Eq, @debug.Debug)
+pub fn TabsInput::name(Self) -> String
+pub fn TabsInput::parse(String) -> Self?
+
+pub(all) enum TabsMsg {
+  Activate(@core.Value)
+  AddTab
+  CloseActive
+  Unknown(String, Array[@core.Value])
+}
+pub fn TabsMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct TabsState {
+  tabs : Array[@core.Value]
+  active : Int
+}
+pub fn TabsState::zero() -> Self
+
+pub(all) enum TabsWhen {
+  IsActivePage
+} derive(Eq, @debug.Debug)
+pub fn TabsWhen::name(Self) -> String
+
+pub(all) enum TextMethod {
+  Style
+} derive(Eq, @debug.Debug)
+pub fn TextMethod::name(Self) -> String
+
+pub(all) struct TextState {
+  text : String
+  size : String
+}
+pub fn TextState::zero() -> Self
+
+pub(all) enum TextareaInput {
+  SetText
+} derive(Eq, @debug.Debug)
+pub fn TextareaInput::name(Self) -> String
+pub fn TextareaInput::parse(String) -> Self?
+
+pub(all) enum TextareaMsg {
+  SetText(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn TextareaMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct TextareaState {
+  text : String
+  rows : Int
+  placeholder : String
+}
+pub fn TextareaState::zero() -> Self
+
+pub(all) enum UniversalBubble {
+  AddRequested(Bool)
+  ConfigRequested(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn UniversalBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn UniversalBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum UniversalInput {
+  Add
+  Dropped
+  Pick
+  Remove
+} derive(Eq, @debug.Debug)
+pub fn UniversalInput::name(Self) -> String
+pub fn UniversalInput::parse(String) -> Self?
+
+pub(all) enum UniversalMethod {
+  Label
+} derive(Eq, @debug.Debug)
+pub fn UniversalMethod::name(Self) -> String
+
+pub(all) enum UniversalMsg {
+  Add(Bool)
+  Dropped(@core.Value)
+  Pick
+  Remove
+  Unknown(String, Array[@core.Value])
+}
+pub fn UniversalMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum UniversalReceive {
+  Hold(@core.Value)
+  Empty
+  ApplyConfig(@core.Value)
+  Unknown(String, Array[@core.Value])
+}
+pub fn UniversalReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn UniversalReceive::send(Self, &@core.Ctx) -> Unit
+pub fn UniversalReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct UniversalState {
+  child : @core.Value
+}
+pub fn UniversalState::zero() -> Self
+
+// Type aliases
+
+// Traits
+

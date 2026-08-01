@@ -34,6 +34,21 @@ pub struct DynObj {
   /// the handle is the only thing about the instance the host can hash without
   /// paying for a round trip, and it is enough: a bucket only has to spread.
   id : @tutuca.ObjId
+  /// The PLACEHOLDERS this instance declared: fields whose type names a
+  /// component from another module (`resource universal; body: universal`),
+  /// held by the host and never shown to the guest.
+  ///
+  /// This is how a guest with internal layout offers a hole for a person to
+  /// fill. It has to be the host's because the boundary allows nothing else: a
+  /// WIT `value` has no case that can carry a host component (`instance(u64)`
+  /// is guest-token space, and `to-json` writes instances as null), so an
+  /// instance built here cannot be handed over. The guest names the field and
+  /// renders it with `<x render=".body">`; everything else is ours.
+  ///
+  /// The guest is never asked about these names and can never write them,
+  /// which is the containment worth having: a placeholder is a hole in the
+  /// guest's layout, not a handle it can reach through.
+  owned : Map[String, @tutuca.Value]
 }
 
 ///|
@@ -50,6 +65,7 @@ pub fn DynObj::new(
   handle : Int,
   schema~ : @tutuca.SchemaInfo,
   pid? : String = "",
+  owned? : Map[String, @tutuca.Value] = Map([]),
 ) -> DynObj {
   {
     comp_id,
@@ -58,11 +74,30 @@ pub fn DynObj::new(
     handle,
     schema,
     pid,
+    owned,
     mutators: @component.schema_mutators(schema),
     id: @tutuca.ObjId::of(schema.fingerprint, {
       "handle": Num(handle.to_double()),
     }),
   }
+}
+
+///|
+/// The fields this component declared as holding a component from another
+/// module — the placeholders the host fills. `TyComp(None)` (the bare
+/// `component` marker) is NOT one of them: it says "some component" and names
+/// nothing to build, so the host has nothing to put there and says so by
+/// leaving it out.
+pub fn placeholder_fields(
+  schema : @tutuca.SchemaInfo,
+) -> Array[(String, String)] {
+  let out : Array[(String, String)] = []
+  for f in schema.fields {
+    if f.ty is TyComp(Some(comp)) {
+      out.push((f.name, comp))
+    }
+  }
+  out
 }
 
 ///|
@@ -178,6 +213,10 @@ pub impl @tutuca.Obj for DynObj with fn obj_identity(self) {
 pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
   if name == handle_field {
     Some(Num(self.handle.to_double()))
+  } else if self.owned.get(name) is Some(v) {
+    // A placeholder, answered without crossing the bridge — the guest was
+    // never given this value and has nothing to say about it.
+    Some(v)
   } else if self.def.methods.contains(name) {
     Some(self.method_fn(name))
   } else {
@@ -197,6 +236,19 @@ pub impl @tutuca.Obj for DynObj with fn obj_field(self, name) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
+  // A write to a placeholder never reaches the guest, so it mints no successor
+  // handle and supersedes nothing: the guest's state did not change. The map
+  // is rebuilt rather than mutated, because two successors of one instance
+  // sharing a map would make a write to either visible in both — which is
+  // exactly what COW exists to prevent.
+  if self.owned.contains(name) {
+    let owned : Map[String, @tutuca.Value] = Map([])
+    for k, prev in self.owned {
+      owned[k] = prev
+    }
+    owned[name] = v
+    return Some(Obj({ ..self, owned, id: self.id.next() }))
+  }
   match self.guest.with_field(self.handle, name, v) {
     Some(h) => {
       superseded.push((self.guest, self.handle))

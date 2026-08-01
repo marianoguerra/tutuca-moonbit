@@ -12,16 +12,20 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - Host: [`host/`](host/) (backend-agnostic) + [`host/wasm/`](host/wasm/) (the
   `tcomp` bridge for wasm-gc), with memdom tests: `moon test dyncomp/host`.
 - Guests: [`../guests/counter/`](../guests/counter/README.md),
-  [`../guests/todo/`](../guests/todo/README.md) and `../guests/todomvc/`
-  (MoonBit),
-  [`../guests/rust-notepad/`](../guests/rust-notepad/) (Rust — the polyglot
+  [`../guests/todo/`](../guests/todo/README.md), `../guests/todomvc/`,
+  [`../guests/calculator/`](../guests/calculator/README.md) and
+  [`../guests/tictactoe/`](../guests/tictactoe/README.md) (MoonBit),
+  [`../guests/rust-tempconv/`](../guests/rust-tempconv/) (Rust — the polyglot
   proof). One WIT, no copies: a guest cannot implement a different contract
-  than the host expects.
+  than the host expects. Between them they cover each half of the contract
+  that is easy to get wrong: a scalar (counter), a collection the host
+  iterates (todo, tictactoe), state the declared fields do NOT name
+  (calculator, tempconv), and both answers to `persist` — bytes, and silence.
 - Demo: `demo/universal_wasm` — the ONE page that hosts runtime-loaded
   bundles. `moon run --target native cmd/dev -- universal`, serve `dist/`,
   open `/universal/`. Drop a `.tutuca.tar.gz` on it, or load one by URL.
 - Contract harnesses: `node --test dyncomp/test/*.test.mjs` (the MoonBit
-  counter, TodoMVC, and the Rust notepad); `test/browser-smoke.html` served
+  counter, TodoMVC, and the Rust converter); `test/browser-smoke.html` served
   from the repo root.
 
 ## Four principles, in order of consequence

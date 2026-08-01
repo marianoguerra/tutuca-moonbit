@@ -55,12 +55,15 @@ That declared shape is what makes both layers possible from one core.
 | `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |
 | `dyncomp/jsonschema` | built | the declared schema ⇄ JSON Schema, both directions |
-| `dyncomp/surface` | built | the layout model and its patch algebra |
+| `dyncomp/ui/std` | built | the standard components: the layout, and the `+` |
 
 The dependency direction is `host → policy`, `host → jsonschema`,
-`registry → host`, and `surface` alone: `policy` and `jsonschema` are leaves
+`registry → host`, and `ui/std` alone: `policy` and `jsonschema` are leaves
 that `host` depends on, because a decision about a bundle and a description of
-one are both things you want to reason about without a bundle in hand.
+one are both things you want to reason about without a bundle in hand. `ui/std`
+depends on nothing in `dyncomp/` at all — it is ordinary components, and
+knowing what a bundle is would be the wrong shape for the one thing every page
+is made of.
 
 ### `dyncomp/registry` — the catalog
 
@@ -142,72 +145,119 @@ it renders anything). Still to come, and marked as such in the code: the
 vouched, not that anything checked), the Sanitizer-API config over the ANode
 tree, and content-addressed bundle ids.
 
-### `dyncomp/surface` — layout as data
+### `dyncomp/ui/std` — layout as components
 
-The layout tree is ordinary tutuca state, so both layers edit the same thing.
-Host components, authored the normal way (a `surface.html` with a
+There is no layout document. The component tree IS the layout, and every piece
+of it is an ordinary tutuca component authored the normal way (`std.html` with a
 `tutuca/state` block and templates, through `gen-views`):
 
+- **`Universal`** — holds one thing, or draws a `+`. The only one that MUST
+  exist.
 - **`Stack`** — the flex subset: `direction | wrap | justify | align | gap | padding`
-- **`Grid`** — the grid subset: `columns` / `rows` as lists of `Nfr | Npx | auto`,
-  `gap`, `autoFlow`; per-cell `colSpan` / `rowSpan` / `colStart` / `rowStart`
-- **`Box`** — `padding | border | background | overflow`
-- **`Slot`** — holds one component instance
-- **`Surface`** — the root, plus the data model
+- **`Grid`** — uniform `cols × rows`, every cell the same size, children in
+  row-major order
+- **`Tabs`** / **`TabPage`** — several pages, one at a time
+- **`Text`** / **`Textarea`** — leaves
 
-Both containers hold `children: values` — a list of arbitrary component values,
-which is exactly what `ComponentList.entries` in `demo/universal_wasm` already
-is. So recursive nesting needs no framework change, and the existing demo is the
-proof. Styling follows the `FlexStyle` precedent there: a `compute` returning an
-inline CSS string, which also keeps layout CSS host-generated and therefore
-outside the guest-CSS validator entirely.
+Containers hold `children: values`, so recursive nesting needs no framework
+change. Styling is a `compute` returning an inline CSS string, which keeps
+layout CSS host-generated and therefore outside the guest-CSS validator
+entirely.
 
-The patch algebra is the seam both layers drive:
+The design turns on one decision: **`Universal` is a holder, not a placeholder
+that gets replaced.** Everything a person places sits inside one, which gives
+the editing chrome — the badge, the `×`, the config-pill drop target — a single
+host-owned home that nothing has to opt into. A guest component is decorated
+exactly like a standard one, because neither of them is asked to participate.
+It also makes every container's children uniform, so "insert a cell here" is
+always "insert an empty universal at index i", with no kind to decide and no
+binding to invent.
 
-```
-SurfaceOp =
-  | AddNode(parent, index, kind, props)
-  | RemoveNode(nodeId)
-  | MoveNode(nodeId, parent, index)
-  | SetProps(nodeId, props)
-  | BindInstance(nodeId, ComponentRef, argsJson)
-  | SetData(pointer, valueJson)        // RFC 6901 pointer into the data model
-```
+Edit mode is a VIEW, not a field. The app pushes `edit` with `@push-view` and
+every component that declares one shows its affordances; a component that does
+not — every guest, and every leaf here — is simply itself in both modes. A
+boolean threaded through the tree would be the same fact stored once per node,
+and a guest, which cannot grow the field, could never join in.
 
-`apply(surface, ops) -> Result[Surface, Array[OpError]]`, atomic per batch, with
-errors carrying the failing op index and a JSON Pointer.
+Standard components are in the catalog beside loaded ones (`dyncomp/ui/builtins.mbt`
+builds a `Descriptor` from each one's own declared schema). The same search
+ranks them, the same generated form configures them, and the same validator
+refuses their bad arguments. The ONE place they are told apart is construction:
+one is compiled in, the other arrived in an archive.
+
+### What replaced the patch algebra
+
+An earlier version of this document specified a `Surface` document with a
+six-op patch algebra (`AddNode`/`RemoveNode`/`MoveNode`/`SetProps`/`BindInstance`/
+`SetData`), applied atomically, as "the seam both layers drive". It was built,
+and it is gone.
+
+What replaced it is the runtime `core/` already had. A `+` bubbles to the app;
+`ctx.target_path()` is the FIXED path of the component that raised it, however
+many components the bubble passed on the way up; the app holds that path across
+dispatches and `send_at_path`s the answer back to exactly that component. Asking
+and answering are two separate dispatches — a bar opens over the whole page, the
+choice comes later — and the path is the whole mechanism.
+
+The trade is real and worth stating plainly. What was lost: a serializable
+document with one atomic apply, and a wire format an agent could diff. What was
+gained: one class of thing instead of two, and a seam that reaches INSIDE a
+guest's own placeholder — which a document describing only the host's layout
+never could.
 
 ## Layer 1 — the universal UI
 
-`demo/universal_wasm` grows into this. Four pieces, all over the core:
+Built. `dyncomp/ui` is the app and `demo/universal_wasm` is the page around it;
+the whole viewport is the app, and the bar keeps only what a host has to supply
+(loading a bundle) plus the config pill and the mode toggle.
 
-- **Palette and search** over `dyncomp/registry`, replacing `ComponentPicker`'s
-  substring filter.
-- **An instantiate form** generated from `dyncomp/jsonschema`. This generalizes
-  `inspector/state_editor.mbt`, which today picks a control per `FieldKind` and
-  falls back to read-only for `FList | FMap | FAny | FComp | FSet | FOMap`. It
-  needs repeatable rows for lists, key/value rows for maps, a picker for
-  `TyComp`, and the v3 `constraint` for validation.
-- **A layout editor** over `dyncomp/surface`: add and remove cells, reorder,
-  switch a container between Stack and Grid, edit its settings.
-- **An inspector pane** reusing `inspector/` over `Obj::obj_schema`.
+- **The root is one component, and it starts as a `Universal`.** The first thing
+  a person does is choose what the page is; everything after that is the same
+  gesture one level in.
+- **A command bar** over `dyncomp/registry.search`, opened by a `+` and aimed at
+  the cell that raised it. Keyboard-navigable; the cursor moves by telling two
+  rows about it rather than by rebuilding the list, because rebuilding would
+  replace the `<input>` being typed in.
+- **A generated form** from `dyncomp/jsonschema`, opened by ctrl/cmd — or
+  automatically, when a component has a required argument with no default. The
+  same projection an agent's tool reads is the one it draws.
+- **A config sidebar**, opened by clicking a badge or dropping the pill on a
+  cell. A component that declares a `config` view of its own gets it rendered
+  live; everything else gets the form, pre-filled from what the instance
+  already holds. Applying writes through the instance's own COW rather than
+  rebuilding it, so what the schema does not name survives.
+- **Hover-only insert buttons** on the containers: before each child and after
+  the last on a `Stack`, one per edge on a `Grid`.
 
-Plus import/export of the surface as JSON — which is also the agent's wire
-format, and the cheapest possible proof that the two layers share a core.
+What is still missing: an inspector pane reusing `inspector/` over
+`Obj::obj_schema`, and richer form controls (repeatable rows for lists,
+key/value rows for maps, a picker for `TyComp`).
+
+The proof it holds together is the notepad reproduced by composition — tabs, a
+tab holding a universal, pick a textarea — with no bespoke guest and nothing
+written for notepads. It is a test in `dyncomp/ui/ui_test.mbt`, and it is why
+`guests/rust-notepad` no longer exists: a component that primitives can be
+composed into is not one worth shipping. The Rust guest is now a temperature
+converter (`guests/rust-tempconv`), which primitives cannot express — it holds a
+number three ways at once, and a half-typed one that is not a number at all.
 
 ## Layer 2 — the agent runtime
 
 A new `agent/` tree driving the *same* core. See
 [`../docs/agent-runtime.md`](../docs/agent-runtime.md) for the tool surface and
-the protocol mapping. In outline:
+the protocol mapping — but read it knowing that its `ui_apply` was specified in
+terms of `SurfaceOp`s that no longer exist, so the tool surface **needs
+redesigning** before any of it is built. In outline:
 
-- `agent/tools` — six stable tools whose `parameters` schemas come from
-  `dyncomp/jsonschema`.
-- `agent/session` — a session over `registry` + `surface`. A user interaction
-  that bubbles to the surface root becomes an agent event in A2UI's `action`
-  shape.
-- `agent/agui` — the AG-UI event encoding, including `STATE_DELTA` as RFC 6902
-  patches computed over the surface and data model.
+- `agent/tools` — stable tools whose `parameters` schemas come from
+  `dyncomp/jsonschema`, which is unchanged and still the right seam.
+- `agent/session` — a session over `registry` plus the component tree. The
+  operations are the ones the human layer already uses: address a component by
+  path, send it a message, read its declared fields back. A user interaction
+  that bubbles to the app becomes an agent event in A2UI's `action` shape.
+- `agent/agui` — the AG-UI event encoding. `STATE_DELTA` is the open question:
+  a diff over the component tree's schema projection rather than over a
+  document, and nothing has been written for it yet.
 
 ## How the pieces line up
 
@@ -215,13 +265,13 @@ the protocol mapping. In outline:
 |---|---|
 | catalog | `dyncomp/registry` over registered bundles |
 | catalog negotiation by id | `api-version` plus the content-addressed bundle id |
-| surface | `dyncomp/surface` |
-| `updateComponents` | the patch algebra's node ops |
+| surface | the component tree itself (`dyncomp/ui/std`) |
+| `updateComponents` | messages to a component at a path |
 | data model, JSON Pointer binding | tutuca's own path/dispatch runtime in `core/` |
-| `action` / event to the agent | `control.emit` bubbling to the surface root |
+| `action` / event to the agent | `control.emit` bubbling to the app root |
 | `functionCall` (local) | host request handlers, via `lookup_request` |
 | validation error feedback | `Bundle::diagnostics()` plus JSON Schema errors |
-| `STATE_DELTA` | a `Value` diff over the schema projection |
+| `STATE_DELTA` | a `Value` diff over the schema projection (unbuilt) |
 | tool `parameters` | `dyncomp/jsonschema` over the declared schema |
 
 The right-hand column is almost entirely things that already exist. That is the
@@ -230,16 +280,16 @@ core rather than building beside it.
 
 ## Order of work
 
-The four core packages are **done**: `jsonschema`, `registry`, `surface` and
-`policy`, with `host` wired to the last two.
+The core packages are **done**: `jsonschema`, `registry` and `policy`, with
+`host` wired to the last two. **Layer 1 is built** (see above).
 
 What is left, in order:
 
-1. **Layer 1**, over what now exists. It is next rather than the agent layer for
-   a reason: the human layer is the cheapest way to find out whether the core is
-   right before something automated depends on it. The pieces are a palette over
-   `registry.search`, a form generated from `Descriptor::args_schema`, an editor
-   over the patch algebra, and import/export of `Surface::to_json`.
+1. **The rest of Layer 1**: an inspector pane over `Obj::obj_schema`, richer
+   form controls (lists, maps, a picker for `TyComp`), a settings panel for a
+   container's own properties beyond what the generated form gives, and
+   import/export of a page as JSON — the shell already writes that shape to
+   `localStorage`, so this is mostly exposing it.
 2. **The security work `policy` names but does not yet do**: the `mizchi/css`
    validator, the Sanitizer-API port, and caller-aware request authorization,
    which needs `RequestFn` to carry the requester's `DispatchPath`
@@ -248,4 +298,26 @@ What is left, in order:
    but `control.after` still has no host implementation (it needs a timer the
    transactor owns), and the bridge supplies `env` unconditionally rather than
    per grant.
-4. **Layer 2**.
+4. **Redesign the agent tool surface**, since `docs/agent-runtime.md` is
+   specified against a document that no longer exists. Then Layer 2.
+
+## Known gaps in what is built
+
+Stated here rather than left to be discovered:
+
+- **A guest's placeholder does not survive a reload.** `Bundle::make_instance`
+  fills a declared foreign `ty-comp` field, and a restore rebuilds the guest
+  from its snapshot — which fills the placeholder fresh. What a person put in
+  it is lost. Carrying it needs the placeholder's contents in the snapshot,
+  which the host can do and does not yet.
+- **A nested same-bundle child gets no placeholders at all.**
+  `Bundle::wrap_instance` runs on every read of such a field, so filling there
+  would rebuild the placeholder per read; the fix is a host-side table keyed by
+  guest token.
+- **A live `config` view costs the cell it came from.** An instance rendered in
+  two places has one of them holding a handle the host has already collected,
+  so the sidebar MOVES it and the canvas shows a placeholder until the panel
+  closes. The generated-form path — the common one — leaves it where it is.
+- **`describe_instance` matches by declared name.** Two modules declaring the
+  same component name make the config sidebar ambiguous; the first match wins,
+  and the catalog puts the standard components first.

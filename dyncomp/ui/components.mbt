@@ -1,85 +1,113 @@
-///| The seven components, and the editor that owns the document.
+///| The app's chrome, and the app that owns it.
 ///
-/// Every leaf here is stateless in the sense that matters: a node renders what
-/// it was given and raises what was clicked, a settings control edits nothing
-/// and bubbles the property, a palette row knows only its own text. The
-/// document is the editor's, and so is every decision about it.
+/// Every leaf here is stateless in the sense that matters: a row knows only
+/// its own text, a field edits one control, a form hands back what was filled
+/// in. What goes WHERE, and what a choice means, is the app's — because the
+/// app is the only thing that can see both the catalog and the tree.
 
-///|
-fn surface_node_comp() -> @component.Component {
-  surface_node_component(update=(s, msg, ctx) => {
-    match SurfaceNodeMsg::from_dispatch(msg) {
-      // The badge is what selects, not the box: clicking a container to select
-      // it would mean never being able to click through to a child.
-      Some(Pick) => {
-        SurfaceNodeBubble::NodePicked(s.nodeId).bubble(ctx)
-        Some(s)
-      }
-      Some(Unknown(_, _)) | None => None
-    }
-  })
-}
-
-///|
-fn node_settings_comp() -> @component.Component {
-  node_settings_component(update=(_s, msg, ctx) => {
-    // One bubble for fourteen controls. The editor decodes the pair against
-    // the layout vocabulary, which is the only place that knows it — a panel
-    // that parsed `1fr 2fr` itself would be a second answer to a question
-    // `dyncomp/surface` has already answered.
-    let changed = (prop : String, v : String) => {
-      NodeSettingsBubble::PropChanged(prop, v).bubble(ctx)
-      (None : NodeSettingsState?)
-    }
-    match NodeSettingsMsg::from_dispatch(msg) {
-      Some(SetDirection(v)) => changed("direction", v)
-      Some(SetJustify(v)) => changed("justify", v)
-      Some(SetAlign(v)) => changed("align", v)
-      Some(SetColumns(v)) => changed("columns", v)
-      Some(SetGap(v)) => changed("gap", v)
-      Some(SetPadding(v)) => changed("padding", v)
-      Some(SetColSpan(v)) => changed("colSpan", v)
-      Some(SetRowSpan(v)) => changed("rowSpan", v)
-      Some(SetWrap(b)) => changed("wrap", if b { "true" } else { "false" })
-      Some(Unknown(_, _)) | None => None
-    }
-  })
-}
+// --- the command bar --------------------------------------------------------
 
 ///|
 fn palette_row_comp() -> @component.Component {
   palette_row_component(update=(s, msg, ctx) => {
     match PaletteRowMsg::from_dispatch(msg) {
-      Some(Pick) => {
-        PaletteRowBubble::ComponentPicked(s.module_, s.name).bubble(ctx)
+      Some(Pick(configure)) => {
+        PaletteRowBubble::ComponentPicked(s.module_, s.name, configure).bubble(
+          ctx,
+        )
         Some(s)
+      }
+      Some(Unknown(_, _)) | None =>
+        match PaletteRowReceive::from_dispatch(msg) {
+          Some(SetSelected(selected)) => Some({ ..s, selected, })
+          Some(Unknown(_, _)) | None => None
+        }
+    }
+  })
+}
+
+///|
+/// The cursor, moved by `by` and clamped into what exists.
+///
+/// Clamping rather than wrapping: a list you can fall off the end of is one
+/// you have to look at to use, and the whole point of the cursor is not
+/// having to.
+fn moved(cursor : Int, by : Int, len : Int) -> Int {
+  if len == 0 {
+    return 0
+  }
+  let next = cursor + by
+  if next < 0 {
+    0
+  } else if next >= len {
+    len - 1
+  } else {
+    next
+  }
+}
+
+///|
+fn command_bar_comp() -> @component.Component {
+  command_bar_component(update=(s, msg, ctx) => {
+    // The cursor moves by telling two rows about it rather than by rebuilding
+    // the list. That is not a micro-optimisation: rebuilding would replace the
+    // `<input>` the person is typing in, and an arrow key that costs you the
+    // focus is an arrow key nobody presses twice.
+    let with_cursor = (cursor : Int) => {
+      let hits = s.hits.mapi((i, r) => {
+        r.call_field("setSelected", [Bool(i == cursor)])
+      })
+      (Some({ ..s, hits, cursor }) : CommandBarState?)
+    }
+    match CommandBarMsg::from_dispatch(msg) {
+      // The bar does not search — it cannot, since the catalog is the app's.
+      // It reports what was typed and gets new rows back.
+      Some(SetQuery(q)) => {
+        ctx.bubble("queryChanged", [Str(q)])
+        Some({ ..s, query: q })
+      }
+      Some(Nav(key)) =>
+        match key {
+          "ArrowDown" => with_cursor(moved(s.cursor, 1, s.hits.length()))
+          "ArrowUp" => with_cursor(moved(s.cursor, -1, s.hits.length()))
+          "Escape" => {
+            ctx.bubble("commandClose", [])
+            None
+          }
+          "Enter" => {
+            guard s.cursor >= 0 && s.cursor < s.hits.length() else {
+              return None
+            }
+            let row = s.hits[s.cursor]
+            ctx.bubble("componentPicked", [
+              row.field("module"),
+              row.field("name"),
+              Bool(s.configure),
+            ])
+            None
+          }
+          _ => None
+        }
+      // A click on the backdrop. It reaches here rather than being swallowed
+      // by the panel because the panel is inside it, and a click inside the
+      // panel stops at whatever it hit.
+      Some(Close) => {
+        ctx.bubble("commandClose", [])
+        None
       }
       Some(Unknown(_, _)) | None => None
     }
   })
 }
 
-///|
-fn component_palette_comp() -> @component.Component {
-  component_palette_component(update=(s, msg, ctx) => {
-    match ComponentPaletteMsg::from_dispatch(msg) {
-      // The palette does not search — it cannot, since the catalog is the
-      // editor's. It reports what was typed and gets new rows back.
-      Some(SetQuery(q)) => {
-        ctx.bubble("queryChanged", [Str(q)])
-        Some({ ..s, query: q })
-      }
-      Some(Unknown(_, _)) | None => None
-    }
-  })
-}
+// --- the generated form -----------------------------------------------------
 
 ///|
 /// A field writes its own control's value and says so.
 ///
 /// Writing locally is what makes the control feel like a control (no round
-/// trip through the editor per keystroke); the bubble is so the form can clear
-/// a stale error the moment the thing it complained about changes.
+/// trip through the app per keystroke); the bubble is so the form can clear a
+/// stale error the moment the thing it complained about changes.
 fn schema_field_comp() -> @component.Component {
   schema_field_component(update=(s, msg, ctx) => {
     match SchemaFieldMsg::from_dispatch(msg) {
@@ -108,9 +136,8 @@ fn schema_form_comp() -> @component.Component {
   schema_form_component(update=(s, msg, ctx) => {
     match SchemaFormMsg::from_dispatch(msg) {
       Some(Create) => {
-        // The form does not build anything: it hands the editor what was
-        // filled in, and the editor validates it against the schema and asks
-        // the host for the instance.
+        // The form does not build anything: it hands the app what was filled
+        // in, and the app validates it against the schema and builds.
         ctx.bubble("submitForm", [
           Str(s.module_),
           Str(s.name),
@@ -154,6 +181,21 @@ fn schema_form_comp() -> @component.Component {
     match msg {
       Bubble("fieldEdited", _) => Some({ ..s, error: "" })
       _ => None
+    }
+  })
+}
+
+// --- the sidebar ------------------------------------------------------------
+
+///|
+fn config_panel_comp() -> @component.Component {
+  config_panel_component(update=(_s, msg, ctx) => {
+    match ConfigPanelMsg::from_dispatch(msg) {
+      Some(Close) => {
+        ConfigPanelBubble::CloseConfig.bubble(ctx)
+        None
+      }
+      Some(Unknown(_, _)) | None => None
     }
   })
 }

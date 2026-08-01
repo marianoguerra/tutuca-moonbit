@@ -12,11 +12,35 @@ pub struct Registry {
   /// rather than the way a hash landed. A re-registered module keeps its
   /// place: a hot swap should not make a palette jump.
   order : Array[String]
+  /// Components that are ALWAYS here, whatever is loaded — the host's own.
+  ///
+  /// They are `Descriptor`s and nothing more, which is the point: a descriptor
+  /// holds no bundle and no guest (see `descriptor.mbt`), so a component the
+  /// host compiled in describes itself through the same record a loaded one
+  /// does, ranks in the same search, and generates a form through the same
+  /// projection. To a person choosing, and to a model reading the catalog,
+  /// there is no difference — and there should not be, because the only thing
+  /// that differs is where the code came from.
+  ///
+  /// Held here rather than built here so this package keeps its dependencies:
+  /// the descriptors are made from real `@component.Component`s one layer up,
+  /// where those exist.
+  mut builtins : Array[Descriptor]
 }
 
 ///|
 pub fn Registry::new() -> Registry {
-  { by_module: Map([]), order: [] }
+  { by_module: Map([]), order: [], builtins: [] }
+}
+
+///|
+/// Install the always-available components. Called once, at startup, before
+/// anything searches.
+pub fn Registry::set_builtins(
+  self : Registry,
+  builtins : Array[Descriptor],
+) -> Unit {
+  self.builtins = builtins
 }
 
 ///|
@@ -44,9 +68,17 @@ pub fn Registry::modules(self : Registry) -> Array[String] {
 }
 
 ///|
-/// Every component of every module, in load order and then declaration order.
+/// The whole catalog: the always-available components first, then every
+/// component of every loaded module in load order and then declaration order.
+///
+/// Builtins lead because an empty query is what a command bar opens with, and
+/// because a catalog with no bundles loaded is still a catalog you can build a
+/// page out of.
 pub fn Registry::all(self : Registry) -> Array[Descriptor] {
   let out : Array[Descriptor] = []
+  for d in self.builtins {
+    out.push(d)
+  }
   for module_ in self.order {
     guard self.by_module.get(module_) is Some(bundle) else { continue }
     for name in bundle.component_names() {
@@ -59,8 +91,16 @@ pub fn Registry::all(self : Registry) -> Array[Descriptor] {
 }
 
 ///|
-/// One component, or None if no loaded module declares it.
+/// One component, or None if nothing in the catalog declares it.
 pub fn Registry::describe(self : Registry, ref_ : ComponentRef) -> Descriptor? {
+  // Builtins first, and by their own module name: a loaded bundle that called
+  // itself the same thing does not get to shadow them, because a page that
+  // could lose its `+` to a dropped file is a page that can be taken away.
+  for d in self.builtins {
+    if d.ref_ == ref_ {
+      return Some(d)
+    }
+  }
   guard self.by_module.get(ref_.module_) is Some(bundle) else { return None }
   describe(bundle, ref_.name)
 }

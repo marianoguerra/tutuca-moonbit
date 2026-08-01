@@ -12,6 +12,9 @@ priv struct FakeGuest {
   /// `@when` filter the GUEST answers
   histories : Map[Int, Array[Double]]
   pairs : Map[Int, (Int, Int)]
+  /// `Framed` instances, by handle. Its OTHER field — the placeholder — is not
+  /// here and cannot be: the guest never sees what fills it.
+  titles : Map[Int, String]
   next : Ref[Int]
   bundle : Ref[Bundle?]
   /// requests the bundle served, in order (the guest-served request test)
@@ -24,6 +27,7 @@ fn FakeGuest::new() -> FakeGuest {
     counters: Map([]),
     histories: Map([]),
     pairs: Map([]),
+    titles: Map([]),
     next: { val: 0 },
     bundle: { val: None },
     served: [],
@@ -82,6 +86,15 @@ fn child_handle(v : @tutuca.Value) -> Int? {
 impl Guest for FakeGuest with fn create(self, component, args) {
   match component {
     "Pair" => self.alloc_pair(self.alloc(1.0), self.alloc(100.0))
+    "Framed" => {
+      let h = self.next.val
+      self.next.val = h + 1
+      self.titles[h] = match args.get("title") {
+        Some(Str(t)) => t
+        _ => "untitled"
+      }
+      h
+    }
     _ => {
       let count = match args.get("count") {
         Some(Num(n)) => n
@@ -94,6 +107,11 @@ impl Guest for FakeGuest with fn create(self, component, args) {
 
 ///|
 impl Guest for FakeGuest with fn get_field(self, handle, name) {
+  // A Framed answers its title and nothing else. Asked for `body` it says
+  // None — which it never is, because the host answers that one itself.
+  if self.titles.get(handle) is Some(title) {
+    return if name == "title" { Some(Str(title)) } else { None }
+  }
   match self.pairs.get(handle) {
     Some((l, r)) =>
       match name {
@@ -120,8 +138,8 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 
 ///|
 impl Guest for FakeGuest with fn seq_entries(self, handle) {
-  // counters iterate as a single ("h0", count) entry; pairs don't iterate
-  if self.pairs.contains(handle) {
+  // counters iterate as a single ("h0", count) entry; pairs and frames don't
+  if self.pairs.contains(handle) || self.titles.contains(handle) {
     None
   } else {
     Some([("h0", Num(self.counters.get(handle).unwrap()))])
@@ -218,6 +236,17 @@ impl Guest for FakeGuest with fn call_method(self, handle, name, args) {
 
 ///|
 impl Guest for FakeGuest with fn with_field(self, handle, name, v) {
+  if self.titles.get(handle) is Some(_) {
+    return match (name, v) {
+      ("title", Str(t)) => {
+        let h = self.next.val
+        self.next.val = h + 1
+        self.titles[h] = t
+        Some(h)
+      }
+      _ => None
+    }
+  }
   match self.pairs.get(handle) {
     Some((l, r)) =>
       // nested-child write-through: the new child arrives as a DynObj value
@@ -393,6 +422,10 @@ fn counter_manifest() -> DynManifest {
         ],
         types: [counter_ty],
         fields: [plain_field("left", 0), plain_field("right", 0)],
+        // NOTE for the placeholder tests below: `left`/`right` name `Counter`,
+        // which is a component of THIS bundle, so they are the guest's own
+        // nested children and the host must not fill them. `Framed` is the
+        // other case.
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
         handlers: ["resetLeft"],
@@ -403,6 +436,49 @@ fn counter_manifest() -> DynManifest {
         whens: [],
         // the bundle serves this one itself; the host never sees the name
         requests: ["triple"],
+        inits: [],
+        style: "",
+      },
+      // A guest with a HOLE in its own layout: `body` names `Filler`, which is
+      // a component of the HOST's module and not of this bundle, so the guest
+      // can neither build it nor hold it — it declares the field, renders it,
+      // and the host fills it.
+      {
+        name: "Framed",
+        doc: "A frame around something the host provides.",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div class="framed">
+              #|  <span class="frame-title" @text=".title"></span>
+              #|  <button class="retitle" @on.click="setTitle 'renamed'">rename</button>
+              #|  <div class="frame-body"><x render=".body"></div>
+              #|</div>
+            ),
+          },
+        ],
+        types: [
+          { kind: "ty-text", elem: None, items: [], name: "", members: [] },
+          {
+            kind: "ty-comp",
+            elem: None,
+            items: [],
+            name: "Filler",
+            members: [],
+          },
+        ],
+        fields: [plain_field("title", 0), plain_field("body", 1)],
+        handlers: [],
+        receives: [],
+        bubbles: [],
+        responses: [],
+        methods: [],
+        whens: [],
+        requests: [],
         inits: [],
         style: "",
       },
@@ -440,13 +516,68 @@ fn shell_module() -> @component.ModuleDef {
       }
     },
   )
-  @component.ModuleDef::new(name="shelltest", components=[shell])
+  @component.ModuleDef::new(name="shelltest", components=[shell, filler_comp()])
 }
 
 ///|
 priv struct TestShellState {
   slot : @tutuca.Value
   note : String
+}
+
+///|
+/// A HOST component a guest can name but never build: it belongs to the host's
+/// module, so `control.make-instance` (same-bundle by contract) cannot reach
+/// it and no WIT `value` can carry it back. It stands in for the universal
+/// component a guest asks for when it wants a hole in its own layout.
+///
+/// It holds state so the tests can prove the interesting half: that what a
+/// person does inside a placeholder survives the guest around it changing.
+priv struct FillerState {
+  note : String
+}
+
+///|
+impl @component.Fields for FillerState with fn schema() {
+  @component.SchemaInfo::new(
+    name="Filler",
+    fingerprint="filler-1",
+    fields=[@component.FieldInfo::new("note", TyText)],
+    inputs=["bump"],
+  )
+}
+
+///|
+impl @component.Fields for FillerState with fn encode(s) {
+  { "note": Str(s.note) }
+}
+
+///|
+impl @component.Fields for FillerState with fn decode(f) {
+  guard f.get("note") is Some(Str(note)) else { return None }
+  Some({ note, })
+}
+
+///|
+fn filler_comp() -> @component.Component {
+  @component.component(
+    name="Filler",
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view=(
+          #|<div class="filler"><span class="filler-note" @text=".note"></span><button class="filler-bump" @on.click="bump">bump</button></div>
+        ),
+      ),
+    },
+    init=FillerState::{ note: "fresh" },
+    update=(s, msg, _ctx) => {
+      match msg {
+        Input("bump", _) => Some({ note: s.note + "!" })
+        _ => None
+      }
+    },
+  )
 }
 
 ///|
@@ -719,15 +850,17 @@ test "styles of synthesized components join the app's compiled styles" {
 ///|
 test "event_names reflects a bundle registered after boot" {
   let h = @harness.mount(shell_module(), "Shell")
-  // the shell itself has no DOM handlers; the guest's views add click
-  assert_false(h.app.event_names().contains("click"))
+  // The host module has no keydown handler; the guest's counter view adds one
+  // (`@on.keydown+cancel="reset"`). Not `click` — the host's own `Filler`, the
+  // component a guest's placeholder names, has a button.
+  assert_false(h.app.event_names().contains("keydown"))
   let _ = register_bundle(
     h.app.scope,
     FakeGuest::new(),
     counter_manifest(),
     policy=vouched(),
   )
-  assert_true(h.app.event_names().contains("click"))
+  assert_true(h.app.event_names().contains("keydown"))
 }
 
 ///|
@@ -887,7 +1020,10 @@ test "a guest answers a view's @when filter" {
 ///|
 test "component_names lists the manifest's components in order" {
   let (_, bundle) = mount_with_bundle(FakeGuest::new())
-  debug_inspect(bundle.component_names(), content="[\"Counter\", \"Pair\"]")
+  debug_inspect(
+    bundle.component_names(),
+    content="[\"Counter\", \"Pair\", \"Framed\"]",
+  )
 }
 
 ///|
@@ -1223,4 +1359,66 @@ test "a component's named initial states are offered by name" {
   debug_inspect(schema.init_names, content="[\"with-history\"]")
   // an unknown fixture is not a bare instance: the caller decides
   assert_true(bundle.make_init("Counter", "nope") is None)
+}
+
+///|
+/// The placeholder half of the contract: a guest declaring a field whose type
+/// names a component from ANOTHER module gets it filled by the host, and never
+/// touches it.
+///
+/// This is the whole mechanism behind "a component with internal layout can
+/// offer a hole for a person to fill". It has to work this way round because
+/// the boundary allows nothing else: a WIT `value` has no case that can carry
+/// a host component, so the guest cannot be handed one. It names the field,
+/// renders it, and the host does the rest.
+test "a foreign placeholder is filled by the host and never reaches the guest" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Framed", args={ "title": Str("panel") })
+    is Some(framed)
+  h.send_at_root("setSlot", args=[framed.to_value()])
+  // The guest's own field, answered by the guest.
+  assert_eq(h.text(".frame-title"), "panel")
+  // The hole, filled with the component the field NAMED and rendered by the
+  // guest's own view through `<x render=".body">`.
+  assert_eq(h.text(".filler-note"), "fresh")
+  // The guest was never told about it: asked for `body` it answers nothing,
+  // and the host answered anyway.
+  assert_true(Guest::get_field(fake, framed.handle(), "body") is None)
+}
+
+///|
+test "what a person puts in a placeholder survives the guest around it changing" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  guard bundle.make_instance("Framed", args={ "title": Str("panel") })
+    is Some(framed)
+  h.send_at_root("setSlot", args=[framed.to_value()])
+  // Use what is in the hole.
+  h.click(".filler-bump")
+  h.click(".filler-bump")
+  assert_eq(h.text(".filler-note"), "fresh!!")
+  // Now change the GUEST, which mints a successor handle. A successor is the
+  // same logical instance one update later, so what the host is holding for it
+  // has to come across — otherwise every keystroke in the guest would reset
+  // whatever a person built inside it.
+  h.click(".retitle")
+  assert_eq(h.text(".frame-title"), "renamed")
+  assert_eq(h.text(".filler-note"), "fresh!!")
+}
+
+///|
+test "a same-bundle child is the guest's own, and the host does not fill it" {
+  let fake = FakeGuest::new()
+  let (h, bundle) = mount_with_bundle(fake)
+  // `Pair { left: Counter, right: Counter }` names components of its OWN
+  // bundle. Those are nested children the guest made and owns — filling them
+  // here would shadow the guest's values with host-built ones, and the two
+  // cases are told apart by exactly that: same-bundle is the guest's, foreign
+  // is a hole.
+  guard bundle.make_instance("Pair") is Some(pair)
+  h.send_at_root("setSlot", args=[pair.to_value()])
+  // The guest's own children, with the guest's own values.
+  assert_eq(h.texts(".count"), ["1", "100"])
+  assert_true(Guest::get_field(fake, pair.handle(), "left") is Some(_))
 }

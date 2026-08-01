@@ -6,8 +6,20 @@ is the design for how it addresses them.
 
 It sits on the core described in [`../dyncomp/ARCHITECTURE.md`](../dyncomp/ARCHITECTURE.md);
 what a loaded component may do is in [`../dyncomp/SECURITY.md`](../dyncomp/SECURITY.md).
-Nothing here is built yet — the `tutuca:component@0.3.0` contract is, and it is
-the half that makes the rest possible.
+Nothing here is built yet — the `tutuca:component` contract is, and it is the
+half that makes the rest possible.
+
+> **This document is out of date and needs redesigning before anything in it is
+> built.** Its `ui_read` / `ui_apply` pair is specified over the `Surface`
+> document and its six-op patch algebra, which were built and have since been
+> **removed**: the component tree is the layout now, and it is addressed by path
+> and message rather than by node id and op (see
+> [`../dyncomp/ARCHITECTURE.md`](../dyncomp/ARCHITECTURE.md), "What replaced the
+> patch algebra"). What survives unchanged is the half this document argues
+> hardest for — a catalog searched at runtime, and tool `parameters` projected
+> from a component's declared schema. What needs rethinking is how a model
+> *edits*: what an atomic batch means without a document to apply it to, and
+> what `STATE_DELTA` diffs over. Read the rest as motivation, not as a spec.
 
 ## Why this is a different problem from the usual generative UI
 

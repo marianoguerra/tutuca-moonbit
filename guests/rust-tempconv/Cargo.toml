@@ -1,0 +1,20 @@
+# Rust guest for tutuca:component — the polyglot proof (dyncomp/DESIGN.md):
+# the same WIT, no tutuca code at all. A temperature converter, which is what
+# makes `persist` / `restore` worth having: the half-typed number in the box
+# you were using is state no declared field can hold. Build with build.mjs
+# (cargo build --target wasm32-unknown-unknown -> wasm-tools component new
+# -> jco).
+[package]
+name = "rust-tempconv"
+version = "0.1.0"
+edition = "2021"
+
+[lib]
+crate-type = ["cdylib"]
+
+[dependencies]
+wit-bindgen = "0.59"
+
+[profile.release]
+opt-level = "s"
+lto = true

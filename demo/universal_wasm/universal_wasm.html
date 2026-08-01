@@ -1,57 +1,63 @@
 <script type="tutuca/state">
-  interface universal-wasm {
-    /// The page around the editor: a drop target for bundles, a status line
-    /// for what loading said, and the editor itself.
+  interface host-tools {
+    /// The bar's development conveniences: fetch a sample bundle, or drop one
+    /// on the page.
     ///
-    /// Deliberately thin. Everything about searching, placing and arranging
-    /// components lives in `dyncomp/ui`, which is backend-agnostic and driven
-    /// by `moon test`; what is left here is the one thing that is not — the
-    /// bridge that fetches a `.tutuca.tar.gz` and turns it into components.
-    ///
-    /// This shell used to hold the picker chain (ComponentList /
-    /// ComponentPicker / ComponentEntry). Those are gone: a palette that
-    /// searches a documented catalog and a form generated from a component's
-    /// declared arguments do what they did, and doing it in one place is what
-    /// lets an agent drive the same editor later.
+    /// It sits INSIDE the app's bar rather than around the app, because the
+    /// whole viewport is the app now. `dyncomp/ui` is backend-agnostic and
+    /// cannot fetch an archive or read a dropped file; this is the component
+    /// it renders in the one place it left for a host to stand.
     record state {
       status: string,
-      /// The editor. `component` rather than a named slot because the
-      /// generator resolves a sibling component only within one file, and
-      /// SurfaceEditor lives in dyncomp/ui — `slots~` names it at the seam.
-      editor: component,
+      /// Whether to draw the sample-loading buttons.
+      ///
+      /// They are a convenience for working ON this page rather than a feature
+      /// OF it, and a first-time visitor should meet an empty page and a `+`
+      /// rather than four buttons naming archives they have never heard of.
+      /// `?test` in the query string is what asks for them.
+      samples: bool,
     }
-    variant receive { dyncomp-loaded(string), dyncomp-error(string) }
+    variant receive {
+      /// Files the app forwarded — dropped anywhere on the page, or on a cell
+      /// that handed back what was not its.
+      files-dropped(any),
+      /// The bridge's own answers, routed here because this is the path that
+      /// asked for the load.
+      dyncomp-loaded(string),
+      dyncomp-error(string),
+    }
+    variant bubble {
+      /// The catalog changed. The app re-runs whatever the command bar is
+      /// showing rather than telling a person to retype it.
+      catalog-changed(string),
+    }
   }
 </script>
 
-<template id="UniversalWasm">
-  <!-- The whole page is the drop target, and the drop is an ORDINARY tutuca
-       event: `value` carries the dropped files (id + metadata), so loading a
-       bundle is a handler like any other. This page used to install a
-       document-level listener in JS to get at dataTransfer.files. -->
-  <div class="min-h-screen bg-base-200 text-base-content p-4 flex flex-col gap-3"
-       data-droptarget="tutuca-wasm-component" @on.drop="loadDropped value">
-    <header class="flex items-center gap-3 flex-wrap">
-      <h1 class="text-lg font-semibold">tutuca universal host</h1>
-      <!-- Drop a bundle, or fetch one: the same archive, named by URL instead.
-           Loading a bundle that is already registered HOT-SWAPS it, and the
-           catalog answers with the new components immediately. -->
-      <div class="join">
-        <button class="btn btn-xs join-item load-counter"
-                @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
-        <button class="btn btn-xs join-item load-todo"
-                @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
-        <button class="btn btn-xs join-item load-todomvc"
-                @on.click="loadSample './examples/todomvc.tutuca.tar.gz'">todomvc</button>
-        <button class="btn btn-xs join-item load-rust"
-                @on.click="loadSample './examples/rust-notepad.tutuca.tar.gz'">rust notepad</button>
-      </div>
-      <span class="text-sm opacity-70 grow status" @text=".status"></span>
-    </header>
-    <p class="text-xs opacity-50 italic">
-      Drop a <code class="font-mono">.tutuca.tar.gz</code> anywhere on this page to register its components.
-      What you place is kept in this browser and restored on the next visit — the samples by URL, a dropped bundle only if you drop it again.
-    </p>
-    <x render=".editor"></x>
-  </div>
+<!-- The samples are here for convenience during development: the same archive
+     a drop would carry, named by URL instead. Loading one that is already
+     registered HOT-SWAPS it, and the catalog answers with the new components
+     immediately.
+
+     Behind `?test`, because they are for working on this page rather than for
+     using it. Dropping a bundle is NOT behind it: that is what the page is
+     for, and the whole viewport stays a drop target either way. -->
+<template id="HostTools">
+  <span class="host-tools flex items-center gap-2">
+    <div class="join" @show=".samples">
+      <button class="btn btn-xs join-item load-counter"
+              @on.click="loadSample './examples/counter.tutuca.tar.gz'">counter</button>
+      <button class="btn btn-xs join-item load-todo"
+              @on.click="loadSample './examples/todo.tutuca.tar.gz'">todo</button>
+      <button class="btn btn-xs join-item load-todomvc"
+              @on.click="loadSample './examples/todomvc.tutuca.tar.gz'">todomvc</button>
+      <button class="btn btn-xs join-item load-calc"
+              @on.click="loadSample './examples/calculator.tutuca.tar.gz'">calculator</button>
+      <button class="btn btn-xs join-item load-ttt"
+              @on.click="loadSample './examples/tictactoe.tutuca.tar.gz'">tic-tac-toe</button>
+      <button class="btn btn-xs join-item load-rust"
+              @on.click="loadSample './examples/rust-tempconv.tutuca.tar.gz'">rust temp</button>
+    </div>
+    <span class="text-xs opacity-60 host-status" @text=".status"></span>
+  </span>
 </template>

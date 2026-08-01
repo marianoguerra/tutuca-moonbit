@@ -290,8 +290,9 @@ fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
-    ("demo/universal_wasm/universal_wasm.html", None),
-    ("dyncomp/ui/editor.html", Some("SurfaceEditor")),
+    ("demo/universal_wasm/universal_wasm.html", Some("HostTools")),
+    ("dyncomp/ui/app.html", Some("UniversalApp")),
+    ("dyncomp/ui/std/std.html", None),
     ("inspector/activity.html", None),
     ("inspector/json.html", None),
     ("inspector/component_inspector.html", None),
@@ -589,7 +590,75 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "universal" {
     return Some(universal_steps())
   }
+  if name == "guests" {
+    return Some(guest_build_steps())
+  }
   None
+}
+
+///|
+/// Every guest bundle, in one list.
+///
+/// ONE list, because there used to be three — this file, the justfile's
+/// `guests` recipe, and `guests/guests.mjs` — and adding a guest to two of
+/// them left `just guests` building a bundle that no longer existed. The
+/// justfile is a thin wrapper over the `guests` task below, and
+/// `guests/guests.mjs` still owns which names `build-guest.mjs` accepts,
+/// because that is a fact about the script rather than about the build.
+///
+/// The Rust one is separate: same WIT, but it builds through cargo rather than
+/// moon, so it keeps its own script.
+fn moonbit_guests() -> Array[String] {
+  ["counter", "todo", "todomvc", "calculator", "tictactoe"]
+}
+
+///|
+const RUST_GUEST = "rust-tempconv"
+
+///|
+/// Build every guest bundle: wit-bindgen output → component → ESM.
+pub fn guest_build_steps() -> Array[Step] {
+  let out : Array[Step] = []
+  for name in moonbit_guests() {
+    out.push(
+      Run({
+        label: "build · \{name} guest bundle (wit-bindgen output → component → ESM)",
+        prog: "node",
+        args: ["guests/build-guest.mjs", name],
+      }),
+    )
+  }
+  // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
+  // cargo + the wasm32-unknown-unknown target)
+  out.push(
+    Run({
+      label: "build · \{RUST_GUEST} guest bundle (cargo → component → ESM)",
+      prog: "node",
+      args: ["guests/\{RUST_GUEST}/build.mjs"],
+    }),
+  )
+  out
+}
+
+///|
+/// Pack each guest's jco output into one droppable `.tutuca.tar.gz`, into the
+/// universal demo's examples/.
+pub fn guest_pack_steps() -> Array[Step] {
+  let out : Array[Step] = []
+  for name in [..moonbit_guests(), RUST_GUEST] {
+    out.push(
+      Run({
+        label: "pack · \{name} bundle → examples/\{name}.tutuca.tar.gz",
+        prog: "node",
+        args: [
+          "scripts/pack-bundle.mjs",
+          "guests/\{name}/dist/js",
+          "\{DIST}/universal/examples/\{name}.tutuca.tar.gz",
+        ],
+      }),
+    )
+  }
+  out
 }
 
 ///|
@@ -610,28 +679,7 @@ pub fn universal_steps() -> Array[Step] {
         "build", "--target", "wasm-gc", "--release", "demo/universal_wasm",
       ]),
     ),
-    Run({
-      label: "build · counter guest bundle (wit-bindgen output → component → ESM)",
-      prog: "node",
-      args: ["guests/build-guest.mjs", "counter"],
-    }),
-    Run({
-      label: "build · todo guest bundle (wit-bindgen output → component → ESM)",
-      prog: "node",
-      args: ["guests/build-guest.mjs", "todo"],
-    }),
-    Run({
-      label: "build · todomvc guest bundle (wit-bindgen output → component → ESM)",
-      prog: "node",
-      args: ["guests/build-guest.mjs", "todomvc"],
-    }),
-    // the Rust guest — a polyglot sample, same WIT, authored in Rust (needs
-    // cargo + the wasm32-unknown-unknown target)
-    Run({
-      label: "build · rust-notepad guest bundle (cargo → component → ESM)",
-      prog: "node",
-      args: ["guests/rust-notepad/build.mjs"],
-    }),
+    ..guest_build_steps(),
     Mkdir("\{DIST}/universal"),
     Mkdir("\{DIST}/universal/examples"),
     Copy(from=UNIVERSAL_WASM, to="\{DIST}/universal/universal_wasm.wasm"),
@@ -649,34 +697,7 @@ pub fn universal_steps() -> Array[Step] {
       to="\{DIST}/universal/index.html",
     ),
     // pack each guest's jco output into one droppable .tutuca.tar.gz
-    Run({
-      label: "pack · counter bundle → examples/counter.tutuca.tar.gz",
-      prog: "node",
-      args: [
-        "scripts/pack-bundle.mjs", "guests/counter/dist/js", "dist/universal/examples/counter.tutuca.tar.gz",
-      ],
-    }),
-    Run({
-      label: "pack · todo bundle → examples/todo.tutuca.tar.gz",
-      prog: "node",
-      args: [
-        "scripts/pack-bundle.mjs", "guests/todo/dist/js", "dist/universal/examples/todo.tutuca.tar.gz",
-      ],
-    }),
-    Run({
-      label: "pack · todomvc bundle → examples/todomvc.tutuca.tar.gz",
-      prog: "node",
-      args: [
-        "scripts/pack-bundle.mjs", "guests/todomvc/dist/js", "dist/universal/examples/todomvc.tutuca.tar.gz",
-      ],
-    }),
-    Run({
-      label: "pack · rust-notepad bundle → examples/rust-notepad.tutuca.tar.gz",
-      prog: "node",
-      args: [
-        "scripts/pack-bundle.mjs", "guests/rust-notepad/dist/js", "dist/universal/examples/rust-notepad.tutuca.tar.gz",
-      ],
-    }),
+    ..guest_pack_steps(),
   ]
 }
 

@@ -59,6 +59,7 @@ pub(all) struct MessageInfo {
 pub struct Registry {
   by_module : Map[String, @host.Bundle]
   order : Array[String]
+  mut builtins : Array[Descriptor]
 }
 pub fn Registry::all(Self) -> Array[Descriptor]
 pub fn Registry::describe(Self, ComponentRef) -> Descriptor?
@@ -67,6 +68,7 @@ pub fn Registry::modules(Self) -> Array[String]
 pub fn Registry::new() -> Self
 pub fn Registry::register(Self, @host.Bundle) -> Unit
 pub fn Registry::search(Self, String, limit? : Int) -> Array[Hit]
+pub fn Registry::set_builtins(Self, Array[Descriptor]) -> Unit
 
 // Type aliases
 

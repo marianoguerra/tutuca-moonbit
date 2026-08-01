@@ -179,7 +179,12 @@ impl DynComponent for Todo with fn persist(self) {
     ({ "text": Json::string(it.text), "done": Json::boolean(it.done) } : Json)
   })
   bytes_of(
-    ({ "v": Json::number(1), "draft": Json::string(self.draft), "items": Json::array(items) } : Json).stringify(),
+    (
+      {
+        "v": Json::number(1),
+        "draft": Json::string(self.draft),
+        "items": Json::array(items),
+      } : Json).stringify(),
   )
 }
 
@@ -190,9 +195,7 @@ impl DynComponent for Todo with fn persist(self) {
 fn restore_todo(state : FixedArray[Byte]) -> &DynComponent? {
   let text = text_of(state)
   guard text != "" else { return None }
-  let parsed = @json.parse(text) catch {
-    _ => return None
-  }
+  let parsed = @json.parse(text) catch { _ => return None }
   guard parsed is Object(m) else { return None }
   guard m.get("v") is Some(Number(1, ..)) else { return None }
   let draft = match m.get("draft") {

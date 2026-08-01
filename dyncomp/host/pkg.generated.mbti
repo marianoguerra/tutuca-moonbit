@@ -19,6 +19,8 @@ pub let handle_field : String
 
 pub fn install_gc(@transactor.Transactor) -> Unit
 
+pub fn placeholder_fields(@core.SchemaInfo) -> Array[(String, String)]
+
 pub fn register_bundle(@component.ComponentStack, &Guest, DynManifest, policy? : @policy.Policy) -> Bundle raise ManifestError
 
 pub fn superseded_count() -> Int
@@ -36,6 +38,7 @@ pub struct Bundle {
   diagnostics : Array[String]
   comps : Map[String, (Int, @core.SchemaInfo, DynComponentDef)]
   next_pid : @ref.Ref[Int]
+  scope : @component.ComponentStack
 }
 pub fn Bundle::component_names(Self) -> Array[String]
 pub fn Bundle::def_of(Self, String) -> DynComponentDef?
@@ -122,10 +125,11 @@ pub struct DynObj {
   mutators : Map[String, (@component.FieldBox, Array[@core.Value]) -> @core.Value]
   pid : String
   id : @core.ObjId
+  owned : Map[String, @core.Value]
 }
 pub fn DynObj::component_name(Self) -> String
 pub fn DynObj::handle(Self) -> Int
-pub fn DynObj::new(Int, DynComponentDef, &Guest, Int, schema~ : @core.SchemaInfo, pid? : String) -> Self
+pub fn DynObj::new(Int, DynComponentDef, &Guest, Int, schema~ : @core.SchemaInfo, pid? : String, owned? : Map[String, @core.Value]) -> Self
 pub fn DynObj::to_value(Self) -> @core.Value
 pub fn DynObj::with_persist_id(Self, String) -> Self
 pub impl @core.Obj for DynObj

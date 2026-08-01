@@ -13,8 +13,8 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/anode",
-  "marianoguerra/tutuca/dyncomp/surface",
   "marianoguerra/tutuca/dyncomp/registry",
+  "marianoguerra/tutuca/dyncomp/ui/std",
   "marianoguerra/tutuca/dyncomp/jsonschema",
   "moonbitlang/core/json",
   "moonbitlang/core/string",
@@ -25,6 +25,7 @@ import {
 
 import {
   "marianoguerra/tutuca/testing/harness",
+  "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/dyncomp/host" @dyncomp,
   "moonbitlang/core/test",
 } for "test"
