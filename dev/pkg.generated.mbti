@@ -8,6 +8,10 @@ import {
 // Values
 pub fn css_bundle_steps() -> Array[Step]
 
+pub fn guest_build_steps() -> Array[Step]
+
+pub fn guest_pack_steps() -> Array[Step]
+
 pub fn help_text() -> String
 
 pub fn plan(String) -> Array[Step]?
