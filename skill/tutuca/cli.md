@@ -13,7 +13,7 @@ questions a run-time CLI would answer are answered earlier, and more strictly:
 | You want to know | Where it is answered |
 | ---------------- | -------------------- |
 | does this view reference a field that exists? | `gen-views` — the `<script type="tutuca/state">` schema declares the fields, and an unknown `.field` fails generation, inside a loop as well as at the root — including a loop over CHILD components, whose fields are checked against that child's schema |
-| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss renders blank at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
+| does the component this view renders have the view `as=` names? | `gen-views` over the whole project (`tutuca gen-views src/`) — a miss silently falls back to that component's `main` view at run time, and only a run that can see both components can say so. Reported as a hint, because a slot declared as the bare `component` marker takes its component from `component()`'s `slots~` — MoonBit the generator cannot see |
 | does this `@show` decide anything? | `gen-views` — a list or a record is always truthy, so `@show=".items"` never hides; it fails generation and names `empty? .items` as the fix |
 | is this `id=` unique? | `gen-views` — an `id` inside an `@each` is stamped on every item, which only the compiled tree can see |
 | is every `@on` handler handled? | `gen-views` + `moon check` — `update` matches a generated `CounterMsg`, so an unhandled handler is a **build error** |
@@ -56,7 +56,8 @@ tutuca gen-views src/            # the whole project, in one invocation
 component's schema, and they see exactly the paths you passed:
 
 - `<x render=".slot" as="edit">` where the child has no `edit` view. At run time
-  `resolve_view` returns None and the site renders **nothing**. Reported as a
+  the name falls back to the child's `main` view, so the site renders the
+  **wrong view** and says nothing about it. Reported as a
   hint rather than an error, because a slot declared as the bare `component`
   marker takes its component from `component()`'s `slots~` — MoonBit the
   generator cannot see.

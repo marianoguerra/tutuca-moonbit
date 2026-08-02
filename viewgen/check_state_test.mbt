@@ -408,8 +408,8 @@ test "a read inside a loop over CHILD components is checked against that child" 
 
 ///|
 test "an `as=` naming a view the child does not have is reported" {
-  // At run time `resolve_view` returns None and the site renders NOTHING.
-  // Only a table spanning both components can see it.
+  // At run time the miss falls back to the child's `main` view, so the site
+  // renders the wrong one. Only a table spanning both components can see it.
   let hints = gen_hints(
     page_and_row(
       "<x render=\".sel\" as=\"edit\"></x>",

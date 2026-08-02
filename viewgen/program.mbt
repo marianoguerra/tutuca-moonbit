@@ -2,11 +2,11 @@
 //
 // Everything else in viewgen answers a question about ONE component: its
 // fields, its handlers, its views. Two questions need more than that, and both
-// of them used to be answered by rendering nothing and saying nothing:
+// of them used to be answered at run time, silently:
 //
 //   - `<x render=".slot" as="edit">` — does the component in that slot have an
-//     `edit` view? A miss makes `resolve_view` return None at run time and the
-//     site renders blank.
+//     `edit` view? A miss falls back to that component's `main` view at run
+//     time, so the site renders the wrong view rather than reporting anything.
 //   - `.field` inside a loop over `list<todo>` — the element type NAMES the Todo
 //     component, and its schema is what the read has to be checked against.
 //

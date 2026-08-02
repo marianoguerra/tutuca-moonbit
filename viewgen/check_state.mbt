@@ -238,9 +238,9 @@ fn Checker::members_of(self : Checker, t : @statedef.StateTy) -> Array[String] {
 /// by that name?
 ///
 /// The one check that genuinely needs more than one component's schema. When
-/// it fails at run time `resolve_view` returns None and the site renders
-/// NOTHING — the same silent-blank failure that `.field` used to have before
-/// the schema could answer it.
+/// it fails at run time `best_name` falls through to `main` (render/resolve.mbt)
+/// and the site renders the DEFAULT view instead of the one asked for — silent,
+/// and wrong in a way that looks like it worked.
 ///
 /// Everything about it is conditional on being sure: the view name must be a
 /// constant (a `*dyn` or a field read chooses at run time), the target must be
