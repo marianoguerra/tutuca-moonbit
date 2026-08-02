@@ -9,8 +9,9 @@ import { mkdirSync } from 'node:fs';
 import { dirname, join } from 'node:path';
 import { fileURLToPath } from 'node:url';
 
+import { jcoBin } from '../guests.mjs';
+
 const here = dirname(fileURLToPath(import.meta.url));
-const repoRoot = join(here, '..', '..');
 const dist = join(here, 'dist');
 const run = (cmd, args) => execFileSync(cmd, args, { stdio: 'inherit', cwd: here });
 
@@ -23,7 +24,7 @@ run('wasm-tools', [
   '-o', join(dist, 'rust-tempconv.component.wasm'),
 ]);
 run(process.execPath, [
-  join(repoRoot, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
+  jcoBin(),
   'transpile', join(dist, 'rust-tempconv.component.wasm'),
   '--instantiation', 'async',
   '-o', join(dist, 'js'),

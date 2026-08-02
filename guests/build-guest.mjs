@@ -14,13 +14,14 @@
 //
 // Prereqs (version-coupled; regenerate bindings with gen-bindings.mjs when
 // bumping any of them): moon v0.10.x, wit-bindgen-cli 0.59.0,
-// wasm-tools 1.244.x, @bytecodealliance/jco (repo devDependency; bare "jco"
-// on npm is a dependency-confusion placeholder — never install it).
+// wasm-tools 1.244.x, @bytecodealliance/jco (repo devDependency, resolved
+// through guests.mjs's `jcoBin()`; bare "jco" on npm is a
+// dependency-confusion placeholder — never install it).
 import { execFileSync } from 'node:child_process';
 import { mkdirSync } from 'node:fs';
 import { join } from 'node:path';
 
-import { GUESTS, WIT_DIR, guestDir, repoRoot } from './guests.mjs';
+import { GUESTS, WIT_DIR, guestDir, jcoBin } from './guests.mjs';
 
 const name = process.argv[2];
 if (!GUESTS.includes(name)) {
@@ -50,7 +51,7 @@ run('wasm-tools', [
   '-o', join(dist, `${name}.component.wasm`),
 ]);
 run(process.execPath, [
-  join(repoRoot, 'node_modules', '@bytecodealliance', 'jco', 'src', 'jco.js'),
+  jcoBin(),
   'transpile', join(dist, `${name}.component.wasm`),
   '--instantiation', 'async',
   '-o', join(dist, 'js'),

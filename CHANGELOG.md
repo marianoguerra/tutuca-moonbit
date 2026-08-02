@@ -352,6 +352,14 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   the one place that cannot disagree with the layout. Found by
   `examples/dyncomp-dice`, which is what it is for.
 
+  The repository's own guest builders had the same hard-coded path and were
+  merely hidden by its pin: `guests/build-guest.mjs` and
+  `guests/rust-tempconv/build.mjs` broke the moment the devDependency moved to
+  1.26, taking `just guests` with them. They ask the manifest now too, through
+  a shared `jcoBin()` in `guests/guests.mjs` — resolved from this repository's
+  `node_modules` and never from `PATH`, where the bare `jco` name is a
+  dependency-confusion placeholder.
+
 - **An update that changed only what a schema does not name was thrown away.**
   `reuse_equal` — the check that keeps a rebuilt-but-equal field from
   propagating a new object to the root — compared two INSTANCES structurally,
