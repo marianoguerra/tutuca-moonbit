@@ -81,6 +81,18 @@ let overview_body : String =
   #|        --dry-run     print the files that would be written
   #|        --force, -f   overwrite existing files
   #|
+  #|  new-guest <name> [--dir <path>] [--dry-run] [--force]
+  #|      Scaffold a tutuca:component guest — a WebAssembly component that a
+  #|      RUNNING tutuca app can load, from anywhere, without trusting it. The
+  #|      whole tree is compiled into this binary: the WIT contract, the
+  #|      generated bindings, the SDK, a working component, and the build
+  #|      scripts. You need moon, wasm-tools and node — not wit-bindgen.
+  #|        <name>        kebab-case; becomes the directory, the bundle name
+  #|                      and the one source file you edit
+  #|        --dir <path>  write somewhere other than ./<name>/
+  #|        --dry-run     print the files that would be written
+  #|        --force, -f   overwrite existing files
+  #|
   #|  feedback [message]
   #|      Append a feedback record (one JSON object per line) to
   #|      ~/.tutuca/feedback.jsonl. Use it for bugs, confusing messages, or

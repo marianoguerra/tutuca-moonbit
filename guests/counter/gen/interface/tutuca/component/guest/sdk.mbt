@@ -1,10 +1,14 @@
-///| MoonBit guest SDK for `tutuca:component` (template file — copy into any
-/// guest's generated guest package alongside the wit-bindgen output).
+///| MoonBit guest SDK for `tutuca:component`, alongside the wit-bindgen output.
+///
+/// CANONICAL COPY: `guests/sdk.mbt`. `gen-bindings.mjs` copies it verbatim into
+/// every guest's generated guest package, and `tutuca new-guest` emits it — so
+/// edit the canonical, never a copy. A copy edited by hand is overwritten on the
+/// next regeneration, and the drift check fails the commit that did it.
 ///
 /// It implements every `declare` from top.mbt generically over a
 /// `DynComponent` trait, so authoring a guest is: one struct per component
 /// implementing `DynComponent`, plus one `dyn_module()` returning the
-/// module's `ComponentDef`s and factories (see counter.mbt).
+/// module's `ComponentDef`s and factories (see the sibling component source).
 ///
 /// Canonical-ABI asymmetry this SDK hides: `Instance` values RETURNED to the
 /// host (constructor, handler successors) must be handles made with
@@ -232,7 +236,8 @@ pub fn component_def(
 }
 
 ///|
-/// Implemented by the component author in this package (counter.mbt here).
+/// Implemented by the component author in this package — the sibling component
+/// source, and the one file a guest author writes.
 declare fn dyn_module() -> DynModule
 
 ///|

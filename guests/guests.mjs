@@ -18,3 +18,14 @@ export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 export const WIT_DIR = join(repoRoot, 'dyncomp', 'wit');
 
 export const guestDir = (name) => join(repoRoot, 'guests', name);
+
+/// The ONE SDK source, for the same reason there is one WIT: it used to be five
+/// byte-identical copies, and five copies of a contract is five chances to
+/// answer "what does a guest implement" differently. gen-bindings.mjs copies it
+/// into every guest tree, and `tutuca new-guest` emits it into a new one.
+export const SDK_SRC = join(repoRoot, 'guests', 'sdk.mbt');
+
+/// Where a guest's copy of the SDK lives: beside the wit-bindgen output it
+/// implements, because a `declare` can only be implemented in its own package.
+export const sdkDest = (name) =>
+  join(guestDir(name), 'gen', 'interface', 'tutuca', 'component', 'guest', 'sdk.mbt');

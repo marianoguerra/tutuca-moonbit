@@ -157,17 +157,31 @@ No changes to `render/` or `vdom/` are needed.
 
 ### Guest SDK (MoonBit)
 
-Guests are separate moon modules under `guests/` with the wit-bindgen layout. A
-template `sdk.mbt` (no tutuca dependency) implements every generated `declare`
-over a `DynComponent` trait, so authoring a guest is: one struct per component
-implementing that trait, plus a `dyn_module()` listing the `ComponentDef`s,
-their factories, and the bundle's `serve` (its own request handlers).
+Guests are separate moon modules under `guests/` with the wit-bindgen layout.
+[`../guests/sdk.mbt`](../guests/sdk.mbt) (no tutuca dependency) implements every
+generated `declare` over a `DynComponent` trait, so authoring a guest is: one
+struct per component implementing that trait, plus a `dyn_module()` listing the
+`ComponentDef`s, their factories, and the bundle's `serve` (its own request
+handlers).
+
+It is COPIED into each guest rather than depended on, and that is forced rather
+than chosen: a `declare` must be implemented in the package that declares it,
+and a method must be defined in the package that defines its type — `Instance`
+and the ten `declare`s both live in the guest's own generated `top.mbt`. So the
+SDK cannot be a mooncakes package, and one canonical file copied under a drift
+check is the closest available thing.
 Non-MoonBit guests implement the WIT directly — the Rust counter is a plain
 `struct Counter { count: f64 }` with zero tutuca code.
 
-### JS bridge (`demo/wasm-loader-lib.mjs`)
+### JS bridge ([`host/wasm/loader.mjs`](host/wasm/loader.mjs))
 
-A `tcomp` import namespace beside the existing `jscore` / `tdom` ones: the
+A `tcomp` import namespace beside the `jscore` / `tdom` ones that every wasm-gc
+tutuca page has ([`app/wasm/loader.mjs`](../app/wasm/loader.mjs)), linked in
+through that file's `makeExtra` hook so a page which never loads a bundle
+carries none of this. It ships beside `glue.mbt`, whose conventions it
+implements — the two are one contract in two languages — and it carries `tkv`
+too, since `dyncomp/persist/wasm` is the only package that declares it. Inside:
+the
 bundle table (dynamic `import()` + `instantiate`), an integer-handle instance
 table, the `values` arena (answered entirely in JS — compounds cross the
 JS↔host-wasm boundary as JSON), and the `control` buffer drained through the

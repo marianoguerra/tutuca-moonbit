@@ -59,9 +59,12 @@ You can browse and install extra skills here:
   emits its FFI shims in HASH order, which differs between two runs on the
   same input. `guests/gen-bindings.mjs` sorts them (MoonBit `///|` blocks are
   order-irrelevant) and drops the `moon.pkg.json` twins of the hand-maintained
-  package files, which is what makes the drift check honest. The handwritten
-  files in those trees (`sdk.mbt`, `counter.mbt`, `todo.mbt`) have names
-  wit-bindgen never emits, so regeneration leaves their contents alone.
+  package files, which is what makes the drift check honest. It also copies
+  `guests/sdk.mbt` — the ONE guest SDK, for the same reason there is one WIT —
+  into every guest tree, and writes one formatted copy back, since the canonical
+  is in no moon module and `moon fmt` would never reach it. The one handwritten
+  file left in those trees is the component source (`counter.mbt`, `todo.mbt`,
+  …); its name is one wit-bindgen never emits, so regeneration leaves it alone.
 
 ## Tooling
 
@@ -83,11 +86,13 @@ moon run --target native cmd/dev -- <task>
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `gen-views` drift check, then `check` then `test`                |
+| `ci`       | `gen-views` drift check, then `check`, the example/skill/guest-template checks, `test` and `build` |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
-| `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (`guests/counter`, `guests/todo`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), then drift-check them |
+| `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+| `guest-template-embed` | regenerate `cli/guest_template_gen.mbt` — the guest tree `tutuca new-guest` writes out — from `guests/counter` (bindings + SDK) + `dyncomp/wit` (the contract) + `guests/template` (the overlay that carries the `{{name}}` placeholders); `dist` runs it beside `skill-embed` |
+| `check-guest-template` | scaffold a guest with that embed and `moon check --deny-warn` it; part of `ci`, and the only coverage `new-guest` has (CI never builds a real guest — `guests` needs wasm-tools and jco) |
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
@@ -146,7 +151,10 @@ about the user's code (`playground/vendor/README.md`).
 `dist` produces `dist/index.html` (a landing page with run instructions),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`
 repointed to sit beside the page), `dist/counter-wasm/` + `dist/universal/`
-(the **wasm-gc** demos — each a `.wasm` plus a shared loader and host page),
+(the **wasm-gc** demos — each a `.wasm`, a host page, and `app/wasm/loader.mjs`
+copied beside it as `app-loader.mjs`; `dist/universal/` additionally gets
+`dyncomp/host/wasm/loader.mjs` as `dyncomp-loader.mjs`, with its import of the
+first repointed, since it is the only page that loads bundles),
 `dist/storybook/` (the storybook
 gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
 `dist/playground/` + `dist/site/`, and
@@ -164,7 +172,10 @@ each DOM event instead of receiving a closure. `demo/counter_wasm`,
 `demo/universal_wasm`, and `demo/storybook_wasm` are the wasm-gc hosts
 (`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
 mounts the `storybook/ui` gallery over the whole example registry, and
-`universal_wasm` hosts the dyncomp guest bundles). margaui styling is compiled
+`universal_wasm` hosts the dyncomp guest bundles — though almost nothing is left
+in it, since the host itself is the published `dyncomp/ui/wasm` and the page is
+the ~90 lines that call `mount` and re-export the entry points, an export list
+being per-package `link` config that cannot come from a dependency). margaui styling is compiled
 in MoonBit: the host's `mount()` hands `collect_classes()` to `css`'s
 `compile_margaui` (the `marianoguerra/tailwindcss` port + embedded stylesheet
 bundles) and injects the resulting `<style id="margaui-css">`, re-running it from

@@ -168,6 +168,52 @@ async fn run_install_skill(
 }
 
 ///|
+/// Write the scaffolded guest tree (the shell half of `new-guest`). Simpler
+/// than `install-skill`'s: there is no home-vs-cwd scope to resolve, the base
+/// is always the cwd, and the core has already substituted every placeholder in
+/// every path and every byte. This creates directories, refuses to clobber, and
+/// writes.
+async fn run_new_guest(
+  opts : @cli.GlobalOpts,
+  plan : @cli.GuestScaffoldPlan,
+) -> Unit noraise {
+  let target = plan.dir
+  try {
+    if !plan.force && @fs.exists(target) {
+      for pair in plan.files {
+        if @fs.exists("\{target}/\{pair.0}") {
+          emit_and_exit(@cli.new_guest_target_exists(opts, target))
+        }
+      }
+    }
+    for pair in plan.files {
+      let (rel, contents) = pair
+      let dir = match parent_dir(rel) {
+        "" => target
+        d => "\{target}/\{d}"
+      }
+      if !@fs.exists(dir) {
+        @fs.mkdir(dir, recursive=true)
+      }
+      @fs.write_file("\{target}/\{rel}", contents, create_mode=CreateOrTruncate)
+    }
+  } catch {
+    e =>
+      emit_and_exit(
+        @cli.error_emit(
+          opts,
+          @cli.err(@cli.CODE_INTERNAL, "failed to scaffold guest: \{e}"),
+        ),
+      )
+  }
+  emit_and_exit({
+    out: @cli.new_guest_success(plan.name, target),
+    err: "",
+    exit_code: 0,
+  })
+}
+
+///|
 /// The shell half of `gen-views`: read the input .html, hand it to the pure
 /// generator, write (or under --dry-run print) what it plans. Unlike
 /// install-skill this DOES overwrite without asking — regenerating a
@@ -718,6 +764,7 @@ async fn main {
     Done(emit) => emit_and_exit(emit)
     Feedback(opts, message~) => run_feedback(opts, message)
     InstallSkill(opts, plan~) => run_install_skill(opts, plan)
+    NewGuest(opts, plan~) => run_new_guest(opts, plan)
     ServeStorybook(opts, dir~, port~, out~) =>
       run_serve_storybook(opts, dir, port, out)
     GenViews(opts, roots~, out~, name~, dry_run~, ir~) =>

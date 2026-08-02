@@ -1,140 +1,29 @@
-// Shared browser-side loader library for the wasm-gc demos.
+// Browser-side bridge for dynamic wasm components: the two import namespaces
+// this package and `dyncomp/persist/wasm` declare, and the unpacker that turns
+// a dropped `.tutuca.tar.gz` into the modules behind them.
 //
-// Every wasm demo page ships a thin ./loader.mjs beside it that imports this
-// file (also copied beside the page by the dist tasks — see dev/tasks.mbt).
-// It provides:
-//  - `jscore`: the import namespace mizchi/js core needs on wasm-gc
-//  - `tdom`: typed DOM reads @core can't do on wasm-gc plus the event bridge
-//    (deduped delegated listeners that call the exported `on_event`, since a
-//    MoonBit closure can't cross into JS on wasm-gc)
-//  - `tcomp`: the dynamic-component bridge for jco-transpiled
-//    `tutuca:component` guests (URL loads and dropped .tutuca.tar.gz
-//    archives; see dyncomp/host/wasm/glue.mbt for the conventions)
-//  - `instantiate`: fetch + instantiate a wasm-gc module with those imports
+//  - `tcomp`: the `tutuca:component` bridge — bundle registry, the JS-side
+//             arena for compound guest values, the control buffer, and the
+//             pending-children protocol. It implements the conventions in
+//             ./glue.mbt; the two are one contract in two languages.
+//  - `tkv`:   localStorage, as the four calls `dyncomp/persist/wasm` imports.
 //
-// margaui styling is compiled in MoonBit (the host's mount() / refresh_margaui),
-// not here — the page only pre-places an empty <style id="margaui-css">.
-
-export function createJsCoreImports() {
-  return {
-    get: (o, k) => o[k],
-    get_by_index: (o, i) => o[i],
-    set: (o, k, v) => { o[k] = v; },
-    set_by_index: (o, i, v) => { o[i] = v; },
-    call0: (o, n) => o[n](),
-    call1: (o, n, a) => o[n](a),
-    call2: (o, n, a, b) => o[n](a, b),
-    call3: (o, n, a, b, c) => o[n](a, b, c),
-    call4: (o, n, a, b, c, d) => o[n](a, b, c, d),
-    invoke0: (f) => f(),
-    invoke1: (f, a) => f(a),
-    invoke2: (f, a, b) => f(a, b),
-    invoke3: (f, a, b, c) => f(a, b, c),
-    invoke4: (f, a, b, c, d) => f(a, b, c, d),
-    new0: (c) => new c(),
-    new1: (c, a) => new c(a),
-    new2: (c, a, b) => new c(a, b),
-    new3: (c, a, b, cc) => new c(a, b, cc),
-    new4: (c, a, b, cc, d) => new c(a, b, cc, d),
-    typeof: (v) => typeof v,
-    is_nullish: (v) => v == null,
-    is_null: (v) => v === null,
-    is_undefined: (v) => v === undefined,
-    is_array: (v) => Array.isArray(v),
-    is_object: (v) => typeof v === "object" && v !== null,
-    instanceof: (v, c) => v instanceof c,
-    equal: (a, b) => a === b,
-    global_this: () => globalThis,
-    undefined: () => undefined,
-    null: () => null,
-    new_object: () => ({}),
-    new_array: () => [],
-    object_keys: (o) => Object.keys(o),
-    object_values: (o) => Object.values(o),
-    object_assign: (t, s) => Object.assign(t, s),
-    object_has_own: (o, k) => Object.hasOwn(o, k),
-    array_from: (v) => Array.from(v),
-    array_length: (a) => a.length,
-    json_stringify: (v) => JSON.stringify(v),
-    json_stringify_pretty: (v, s) => JSON.stringify(v, null, s),
-    json_parse: (t) => JSON.parse(t),
-    to_string: (v) => (v == null ? String(v) : v.toString()),
-    log: (m) => console.log(m),
-    throw: (v) => { throw v; },
-    from_int: (v) => v,
-    from_uint: (v) => v,
-    from_int64: (v) => v,
-    from_uint64: (v) => v,
-    from_float: (v) => v,
-    from_double: (v) => v,
-    from_string: (v) => v,
-    from_bool: (v) => v,
-  };
-}
-
-// The files of the LAST drop, by id. A drop event's `value` carries these
-// descriptors, and a handler acts on them by id (see `dropped_file` and
-// tcomp's `load_dropped`) — the File object itself cannot cross into wasm-gc.
-// Cleared on every drop, because a handler acts on the drop it just received.
-const droppedFiles = new Map();
-let nextDroppedId = 1;
-
-export function takeDroppedFile(id) {
-  return droppedFiles.get(id);
-}
-
-// The `value` of a drop event: [{id, name, size, type, lastModified}, ...],
-// or "" when the drop carried no files (an in-app drag).
-export function registerDroppedFiles(ev) {
-  const files = ev?.dataTransfer?.files;
-  if (!files || !files.length) return "";
-  droppedFiles.clear();
-  const out = [];
-  for (const f of files) {
-    const id = nextDroppedId++;
-    droppedFiles.set(id, f);
-    out.push({ id, name: f.name, size: f.size, type: f.type, lastModified: f.lastModified });
-  }
-  return JSON.stringify(out);
-}
-
-export function createTdomImports(getExports) {
-  const installed = new WeakMap(); // node -> Set<event name>
-  return {
-    node_type: (n) => n.nodeType | 0,
-    has_prop: (o, k) => k in o,
-    try_set_prop: (o, k, v) => { try { o[k] = v; return true; } catch { return false; } },
-    json_parse: (s) => JSON.parse(s),
-    json_stringify: (v) => { try { return JSON.stringify(v) ?? ""; } catch { return ""; } },
-    dropped_files: (ev) => registerDroppedFiles(ev),
-    file_meta: (t) => {
-      const f = t.files && t.files[0];
-      return f
-        ? JSON.stringify({ name: f.name, size: f.size, type: f.type, lastModified: f.lastModified })
-        : "";
-    },
-    get_int: (o, k) => o[k] | 0,
-    get_bool: (o, k) => !!o[k],
-    get_num: (o, k) => +(o[k] ?? 0),
-    // delegated listener calling the wasm export; deduped so install() can
-    // be re-run after a bundle load without double-dispatching
-    add_listener: (node, name) => {
-      let names = installed.get(node);
-      if (!names) { names = new Set(); installed.set(node, names); }
-      if (names.has(name)) return;
-      names.add(name);
-      node.addEventListener(name, (ev) => {
-        const ex = getExports();
-        if (ex && ex.on_event) ex.on_event(ev);
-      });
-    },
-    inject_css: (doc, id, css) => {
-      let el = doc.getElementById(id);
-      if (!el) { el = doc.createElement("style"); el.id = id; doc.head.appendChild(el); }
-      el.textContent = css;
-    },
-  };
-}
+// Both are linked through `instantiate`'s `makeExtra` hook rather than being
+// built into it (`app/wasm/loader.mjs`), so a page that never loads a bundle
+// carries none of this — which is most pages.
+//
+// Usage from a host page's loader:
+//
+//   import { instantiate } from "./app-loader.mjs";
+//   import { createTcompImports, createTkvImports } from "./dyncomp-loader.mjs";
+//
+//   export async function loadWasm(wasmUrl) {
+//     return await instantiate(wasmUrl, (getExports) => ({
+//       tcomp: createTcompImports(getExports),
+//       tkv: createTkvImports(),
+//     }));
+//   }
+import { takeDroppedFile } from "../../../app/wasm/loader.mjs";
 
 // --- tkv: localStorage, as the four calls dyncomp/persist/wasm imports ---
 //
@@ -143,7 +32,7 @@ export function createTdomImports(getExports) {
 // again when the origin's quota is full. None of those are worth crashing a
 // render over — a store that cannot store answers "nothing is there", which is
 // the same shape as a first visit and is already a case every caller handles.
-function createTkvImports() {
+export function createTkvImports() {
   const ls = () => {
     try {
       return globalThis.localStorage ?? null;
@@ -193,33 +82,6 @@ function createTkvImports() {
     },
   };
 }
-
-// Fetch + instantiate a demo wasm-gc module. `makeExtra` (optional) receives
-// a getExports thunk and returns extra import namespaces (e.g. tcomp) that
-// need to call back into the instantiated module.
-export async function instantiate(wasmUrl, makeExtra) {
-  let exports = null;
-  const getExports = () => exports;
-  const imports = {
-    jscore: createJsCoreImports(),
-    tdom: createTdomImports(getExports),
-    tkv: createTkvImports(),
-    // MoonBit's println lowers to a `console.log` import on wasm-gc.
-    console: { log: (...a) => console.log(...a) },
-    ...(makeExtra ? makeExtra(getExports) : {}),
-  };
-  const opts = { builtins: ["js-string"], importedStringConstants: "_" };
-  const source = fetch(wasmUrl);
-  const { instance } = await WebAssembly.instantiateStreaming(source, imports, opts);
-  exports = instance.exports;
-  if (exports._start) exports._start();
-  return exports;
-}
-
-// margaui compilation now happens in MoonBit: the host's mount() compiles the
-// collected class set to CSS (marianoguerra/tailwindcss) and injects
-// <style id="margaui-css">, and refresh_margaui() recompiles after a bundle
-// loads. No page-side compile / CDN import remains.
 
 // --- single-file bundle unpacking (native, dependency-free) ---
 

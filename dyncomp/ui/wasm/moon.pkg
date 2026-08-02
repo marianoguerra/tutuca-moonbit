@@ -1,0 +1,38 @@
+// The wasm-gc half of the universal UI: a mountable host.
+//
+// `dyncomp/ui` is the editor and is backend-agnostic on purpose, which is what
+// lets `moon test` drive the whole thing on the in-memory DOM. It says so in
+// its own header, and it names what it therefore cannot do: fetch an archive,
+// read a dropped file, or reach localStorage. This package is that half — the
+// bridge that turns an archive into registered components and a `ComponentRef`
+// into a live guest instance, the store that keeps what a person built, and the
+// bar tools they load bundles with.
+//
+// It is a LIBRARY, not a page. A host writes an executable that calls `mount`
+// and re-exports the five wasm-gc entry points, because a wasm-gc export list
+// is per-package link configuration and cannot come from a dependency;
+// `demo/universal_wasm` is that executable in ~90 lines, and is what a consumer
+// copies. Check: moon check --target wasm-gc dyncomp/ui/wasm
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/css",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  "marianoguerra/tutuca/dyncomp/persist",
+  // the one Store a browser has; a host that wants another passes its own
+  "marianoguerra/tutuca/dyncomp/persist/wasm" @pwasm,
+  "marianoguerra/tutuca/dyncomp/registry",
+  "marianoguerra/tutuca/dyncomp/ui",
+  "moonbitlang/core/json",
+  // @core.Any: the DOM event the exported on_event receives from JS
+  "mizchi/js/core",
+  // the generated *_view_gen.mbt modules derive @debug.Debug on their
+  // vocabulary enums
+  "moonbitlang/core/debug",
+}
+
+supported_targets = "wasm-gc"

@@ -6,6 +6,8 @@ is the design for how it addresses them.
 
 It sits on the core described in [`../dyncomp/ARCHITECTURE.md`](../dyncomp/ARCHITECTURE.md);
 what a loaded component may do is in [`../dyncomp/SECURITY.md`](../dyncomp/SECURITY.md).
+For the human-facing half — hosting a bundle, and writing one — see
+[`dynamic-components.md`](dynamic-components.md).
 Nothing here is built yet — the `tutuca:component` contract is, and it is the
 half that makes the rest possible.
 

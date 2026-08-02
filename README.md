@@ -44,6 +44,10 @@ counter_component(update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) 
   counter up, also executable.
 - **[docs/first_principles.mbt.md](docs/first_principles.mbt.md)** — the same
   framework rebuilt layer by layer, if you want to know *why* it works.
+- **[docs/dynamic-components.md](docs/dynamic-components.md)** — the part that
+  is *not* decided before the program runs: a WebAssembly component fetched at
+  runtime, from someone you have no reason to trust, mounted into a page that
+  is already running. How to host them, and `tutuca new-guest` to write one.
 - **[AGENTS.md](AGENTS.md)** — repo layout, tooling and testing conventions.
 - **[CONTRIBUTING.md](CONTRIBUTING.md)** — how to propose a change.
 

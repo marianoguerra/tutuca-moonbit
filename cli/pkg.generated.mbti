@@ -7,6 +7,12 @@ import {
 }
 
 // Values
+pub const CODE_GUEST_NAME_INVALID : String = "ERR_GUEST_NAME_INVALID"
+
+pub const CODE_GUEST_TARGET_EXISTS : String = "ERR_GUEST_TARGET_EXISTS"
+
+pub const CODE_GUEST_TEMPLATE_MISSING : String = "ERR_GUEST_TEMPLATE_MISSING"
+
 pub const CODE_INTERNAL : String = "ERR_INTERNAL"
 
 pub const CODE_SKILL_ASSETS_MISSING : String = "ERR_SKILL_ASSETS_MISSING"
@@ -67,6 +73,10 @@ pub fn gen_views_target(String, out? : String, name? : String) -> (String, Strin
 
 pub let global_flag_names : Array[String]
 
+pub fn guest_name_check(String) -> String?
+
+pub let guest_template_files : Array[(String, String)]
+
 pub fn install_skill_success(String) -> String
 
 pub fn install_skill_target_exists(GlobalOpts, String) -> Emit
@@ -77,11 +87,21 @@ pub fn iso8601_utc(UInt64) -> String
 
 pub fn lex_compare(String, String) -> Int
 
+pub fn new_guest_success(String, String) -> String
+
+pub fn new_guest_target_exists(GlobalOpts, String) -> Emit
+
 pub fn overview() -> String
+
+pub fn pascal_case(String) -> String
 
 pub fn plan(Array[String]) -> Outcome
 
 pub let skill_files : Array[(String, String)]
+
+pub fn snake_case(String) -> String
+
+pub fn substitute_guest_name(String, String) -> String
 
 pub fn watch_banner(Array[String], Array[String]) -> String
 
@@ -157,10 +177,18 @@ pub(all) struct GlobalOpts {
   help : Bool
 } derive(Eq, @debug.Debug)
 
+pub(all) struct GuestScaffoldPlan {
+  dir : String
+  name : String
+  force : Bool
+  files : Array[(String, String)]
+} derive(Eq, @debug.Debug)
+
 pub(all) enum Outcome {
   Done(Emit)
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
+  NewGuest(GlobalOpts, plan~ : GuestScaffoldPlan)
   ServeStorybook(GlobalOpts, dir~ : String, port~ : Int, out~ : String?)
   GenViews(GlobalOpts, roots~ : Array[String], out~ : String?, name~ : String?, dry_run~ : Bool, ir~ : Bool)
   Watch(GlobalOpts, plan~ : WatchPlan)

@@ -4,15 +4,22 @@ The reference guest for the dynamic-wasm-component design
 ([`../../dyncomp/DESIGN.md`](../../dyncomp/DESIGN.md)): a counter with
 opaque native state and tutuca view strings, compiled to a WebAssembly
 component any `tutuca:component` host can load. This README is the shared
-reference for both MoonBit guests — [`../todo`](../todo/README.md) has the
-same shape and differs only in what it computes.
+reference for every MoonBit guest — [`../todo`](../todo/README.md),
+[`../todomvc`](../todomvc/), [`../calculator`](../calculator/README.md) and
+[`../tictactoe`](../tictactoe/README.md) have the same shape and differ only in
+what they compute.
 
 ## Layout
 
 - `moon.mod`, `gen/`, `interface/`, `world/` — `wit-bindgen moonbit`
   output (committed; regenerate with the task below)
-- `gen/interface/tutuca/component/guest/sdk.mbt` — the guest SDK template:
-  implements every generated `declare` over the `DynComponent` trait
+- `gen/interface/tutuca/component/guest/sdk.mbt` — a copy of
+  [`../sdk.mbt`](../sdk.mbt), the canonical guest SDK: it implements every
+  generated `declare` over the `DynComponent` trait. **Edit the canonical, not
+  this copy** — `gen-bindings.mjs` overwrites it and the drift check fails the
+  commit. It is a copy rather than a dependency because a `declare` must be
+  implemented in its own package and `Instance`'s methods must be defined where
+  `Instance` is, and both of those are here.
 - `gen/interface/tutuca/component/guest/counter.mbt` — **the only file a
   component author writes**: a `Counter` struct implementing
   `DynComponent`, its `ComponentDef` (views, the declared state schema, the

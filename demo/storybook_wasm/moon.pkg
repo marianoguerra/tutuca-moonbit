@@ -24,11 +24,13 @@ options(
   link: {
     "wasm-gc": {
       "exports": [
+        // No dyncomp_on_* here: the gallery used to carry a second, smaller
+        // shell for runtime bundle loading and no longer does — the universal
+        // demo is the one page that hosts them. Its loader.mjs links no `tcomp`
+        // either, which is what the loader split made possible.
         "mount",
         "on_event",
         "on_popstate",
-        "dyncomp_on_loaded",
-        "dyncomp_on_load_error",
         "refresh_margaui",
       ],
       "use-js-builtin-string": true,

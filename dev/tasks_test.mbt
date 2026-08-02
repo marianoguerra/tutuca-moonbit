@@ -42,6 +42,7 @@ test "plan expands the ci composite into its member tasks' steps" {
     @dev.plan("check").unwrap_or([]) +
     @dev.plan("check-examples").unwrap_or([]) +
     @dev.plan("check-skill").unwrap_or([]) +
+    @dev.plan("check-guest-template").unwrap_or([]) +
     @dev.plan("test").unwrap_or([]) +
     @dev.plan("build").unwrap_or([])
   assert_true(ci == expected)
@@ -71,10 +72,12 @@ test "plan returns None for an unknown task" {
 ///|
 test "dist plan builds all targets then assembles dist/" {
   let steps = @dev.plan("dist").unwrap_or([])
-  // the skill-embed codegen precedes the target builds
+  // both asset-embed codegens precede the target builds: each writes a module
+  // that the native binary compiles in, and each ends in its own `moon fmt`
   assert_true(steps[0] is GenSkillAssets(_))
-  let builds = steps.iter().take(4).filter(fn(s) { s is Run(_) }).count()
-  assert_eq(builds, 3)
+  assert_true(steps.iter().any(fn(s) { s is GenGuestTemplate(_) }))
+  let builds = steps.iter().take(6).filter(fn(s) { s is Run(_) }).count()
+  assert_eq(builds, 4)
   // and it emits copies + the mkdirs
   assert_true(steps.iter().any(fn(s) { s is Mkdir(_) }))
   assert_true(steps.iter().any(fn(s) { s is Copy(_) }))

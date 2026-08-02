@@ -35,6 +35,7 @@ inspect a component, the answer is a `moon test` block.
 | `watch [path...]`        | Regenerate view modules on every save. Paths are `.html` files or directories (which contribute the `.html` files that already have a generated sibling). Flags: `--name`, `--out`, `--no-ir`, and `--tailwind-css`/`--margaui-css` (+ `--css-entry`, `--css-classes`) to keep a stylesheet current too |
 | `storybook [dir]`        | Serve (or copy with `--out <dir>`) the pre-built storybook gallery bundle over HTTP. Flags: `--port <n>` (default 4321, falling back to a free port), `--out <dir>`. A static file server: the gallery is a wasm host built by `cmd/dev -- dist` |
 | `install-skill`          | Copy this skill into `.claude/skills/` — the assets are compiled into the binary by the dev `skill-embed` task. Flags: `--user`/`--project`, `--dot-agents`, `--dry-run`, `--force` |
+| `new-guest <name>`       | Scaffold a `tutuca:component` guest — a wasm component a running app can load. The whole tree (WIT, generated bindings, SDK, a working component, build scripts) is compiled into the binary by the dev `guest-template-embed` task. Flags: `--dir <path>`, `--dry-run`, `--force`. Needs moon + wasm-tools + node, not wit-bindgen |
 | `feedback [message]`     | Append a feedback note (positional or stdin) to `~/.tutuca/feedback.jsonl`                                             |
 | `agent-context`          | Print a versioned JSON schema of every command, flag, exit code and error code |
 | `help [cmd]`             | Show usage; `help <command>` for per-command detail                                                                    |
@@ -337,6 +338,9 @@ Stable error codes (`@cli.error_codes` / the `CODE_*` constants):
 | `ERR_VIEW_GEN_FAILED`         | gen-views could not compile the view file     |
 | `ERR_SKILL_ASSETS_MISSING`    | bundled skill assets not found                |
 | `ERR_SKILL_TARGET_EXISTS`     | install-skill target exists; use `--force`    |
+| `ERR_GUEST_NAME_INVALID`      | new-guest name is not kebab-case, or ends in `-test` (which would make the source a MoonBit test file) |
+| `ERR_GUEST_TEMPLATE_MISSING`  | no guest template embedded in this binary     |
+| `ERR_GUEST_TARGET_EXISTS`     | new-guest target exists; use `--force`        |
 | `ERR_INTERNAL`                | a command crashed                             |
 
 ## Examples

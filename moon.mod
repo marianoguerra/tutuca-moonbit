@@ -39,6 +39,20 @@ import {
 // than borrowing an example. The storybook packages stay in the repo as
 // demos and as the corpus the lint/view sweeps run over. Check with
 // `moon package --list`.
+//
+// `dyncomp/` SHIPS. It is the universal core — the `tutuca:component` contract,
+// the host that loads a bundle from anywhere, the policy that decides what one
+// may do, the catalog, the JSON Schema projection, and the universal UI over
+// all of it — and a consumer who cannot reach it cannot host a dynamic
+// component at all. It imports nothing that was not already published, and
+// `docs/`, which ships, has always linked into it.
+//
+// The one part that stays behind is `dyncomp/test`: its `*.test.mjs` drive real
+// guest bundles out of `guests/*/dist/js`, a path that exists in this repo and
+// in no tarball. The wasm-gc JS import shims are the reverse case — they moved
+// OUT of `demo/` (`app/wasm/loader.mjs`, `dyncomp/host/wasm/loader.mjs`)
+// precisely so that a consumer gets them, since they are the import contract of
+// packages that were already shipping without them.
 
 options(
   exclude: [
@@ -46,7 +60,7 @@ options(
     "guests",
     "playground",
     "demo",
-    "dyncomp",
+    "dyncomp/test",
     "skill",
     "scripts",
     "dev",

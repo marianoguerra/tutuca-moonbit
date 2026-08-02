@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 // Regenerate the checked-in MoonBit guest bindings from the canonical WIT.
 //
-//   node guests/gen-bindings.mjs            # both guests
+//   node guests/gen-bindings.mjs            # every MoonBit guest
 //   node guests/gen-bindings.mjs counter    # just one
 //
 // Run it after any change to dyncomp/wit/tutuca-component.wit or a toolchain
@@ -9,7 +9,7 @@
 // `cmd/dev -- gen-guest-bindings` wraps this and follows it with the drift
 // check, the same shape as the `gen-views` task.
 //
-// Three things have to happen for "regenerate, then diff" to mean anything:
+// Four things have to happen for "regenerate, then diff" to mean anything:
 //
 //   1. wit-bindgen writes `moon.mod.json` / `moon.pkg.json`; this repo keeps
 //      the extensionless `moon.mod` / `moon.pkg` (hand-maintained: they carry
@@ -23,15 +23,33 @@
 //      `///|` blocks are order-irrelevant, so we sort them — that is what
 //      makes the output reproducible and the drift check honest. A second
 //      `moon fmt` then confirms reordering left the file in normal form.
+//   4. `sdk.mbt` is COPIED from `guests/sdk.mbt` into every guest, because it
+//      used to be five byte-identical copies of the guest contract and five
+//      copies is five chances to disagree. It cannot live in a shared module —
+//      it implements `top.mbt`'s `declare`s and defines methods on `Instance`,
+//      and MoonBit puts both in the type's own package — so one canonical file
+//      plus a copy is the closest thing to a dependency available. The copy
+//      lands BEFORE the first `moon fmt`, and one copy is written back to the
+//      canonical AFTER the last one: `guests/sdk.mbt` is in no moon module, so
+//      nothing else would keep it in normal form, and a canonical that is not
+//      formatted turns the next run's copy into a five-file diff that looks
+//      like drift and is only layout.
 //
-// The handwritten files in the generated tree (`sdk.mbt`, `<name>.mbt`) have
-// names wit-bindgen never emits, so it leaves them alone; `moon fmt` formats
-// them like anything else.
+// The one handwritten file left in the generated tree is `<name>.mbt`; its name
+// is one wit-bindgen never emits, so it leaves it alone, and `moon fmt` formats
+// it like anything else.
 import { execFileSync } from 'node:child_process';
-import { readFileSync, readdirSync, rmSync, statSync, writeFileSync } from 'node:fs';
+import {
+  copyFileSync,
+  readFileSync,
+  readdirSync,
+  rmSync,
+  statSync,
+  writeFileSync,
+} from 'node:fs';
 import { join } from 'node:path';
 
-import { GUESTS, WIT_DIR, guestDir } from './guests.mjs';
+import { GUESTS, SDK_SRC, WIT_DIR, guestDir, sdkDest } from './guests.mjs';
 
 const wanted = process.argv.slice(2);
 const targets = wanted.length ? wanted : GUESTS;
@@ -95,6 +113,9 @@ for (const name of targets) {
     }
   }
 
+  // (4) the canonical SDK, before fmt so it is formatted with everything else
+  copyFileSync(SDK_SRC, sdkDest(name));
+
   // (2)
   execFileSync('moon', ['fmt'], { stdio: 'inherit', cwd: dir });
 
@@ -109,3 +130,9 @@ for (const name of targets) {
   execFileSync('moon', ['fmt'], { stdio: 'inherit', cwd: dir });
   console.log(`· regenerated guests/${name}`);
 }
+
+// (4, second half) `moon fmt` runs per guest MODULE and `guests/sdk.mbt` is in
+// none, so the formatted copy is written back. Any guest would do; the first
+// target is the one at hand.
+copyFileSync(sdkDest(targets[0]), SDK_SRC);
+console.log('· wrote back guests/sdk.mbt');

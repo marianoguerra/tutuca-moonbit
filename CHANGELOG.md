@@ -8,6 +8,89 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`dyncomp/` ships.** It was excluded from the published package, so
+  `moon add marianoguerra/tutuca` delivered the framework and the CLI and
+  nothing of the dynamic-component story: no contract, no host, no policy, no
+  catalog, no universal UI, and no way to write a guest. All nine packages are
+  in the tarball now, with `dyncomp/wit/tutuca-component.wit` and the three
+  design documents beside them. It imports nothing that was not already
+  published, and `docs/`, which always shipped, has always linked into it —
+  those links worked in the repository and not in the tarball. This is a MINOR
+  bump: additive, with no existing package changed.
+
+  The one part still excluded is `dyncomp/test`, whose `*.test.mjs` drive real
+  guest bundles out of `guests/*/dist/js` — a path that exists in the repo and
+  in no tarball.
+
+- **`tutuca new-guest <name>`** — scaffold a `tutuca:component` guest. The
+  whole tree is compiled into the binary: the WIT contract, the checked-in
+  wit-bindgen bindings, the SDK, a working component to edit, and the
+  build/pack scripts. Needs `moon`, `wasm-tools` and `node` — **not**
+  `wit-bindgen`, since the bindings ship generated and the WIT is a contract to
+  implement rather than a source to regenerate against.
+
+  It is a scaffolder rather than a package to depend on, and that is forced
+  rather than chosen: `sdk.mbt` implements the `declare`s in the generated
+  `top.mbt` and defines methods on `Instance`, which `top.mbt` declares, and
+  MoonBit puts both in the package that declares them. No import edge can carry
+  them. `agent-context`'s `schemaVersion` is now 7, with three new error codes.
+
+- **`dyncomp/ui/wasm`** — the universal UI as a mountable host. `dyncomp/ui` is
+  backend-agnostic on purpose, and says in its own header what it therefore
+  cannot do: fetch an archive, read a dropped file, reach localStorage. That
+  half was 535 lines inside `demo/universal_wasm`, where nothing published
+  could reach it. It is now a package, and the demo is the ~90-line executable
+  around it: which bundles to offer, whether to remember a session, one service
+  to lend, and the export list. A host is `@uiw.mount(session~, samples~,
+  requests~)`.
+
+  Two shapes changed on the way out. The mutable page state — the store, the
+  in-flight count, the loaded URLs, the app and the UI — is a `UniversalHost`
+  rather than five module-level refs. And the bar's sample buttons are DATA: a
+  `list<sample>` the host passes in, rather than six URLs hardcoded in a view,
+  since a published component cannot know any bundle's name. Persistence is one
+  `Session?` rather than a boolean threaded through four functions, because it
+  has to be gated at both ends: a page that restores but does not save, or the
+  reverse, writes an empty tree over the thing it exists to keep.
+
+- **[`docs/dynamic-components.md`](docs/dynamic-components.md)** — hosting a
+  bundle and writing one, in the published docs, which is where someone who has
+  only the package can find it.
+
+### Changed
+
+- **The wasm-gc JS import shims moved out of `demo/`.** `app/wasm` and
+  `vdom/wasm` were shipping with their JS import contract living only in an
+  excluded directory, so a consumer could build a wasm-gc page and have nothing
+  to instantiate it with. `demo/wasm-loader-lib.mjs` is now two files, split
+  along the seam it already had:
+
+  - `app/wasm/loader.mjs` — `jscore`, `tdom` and `instantiate`; every wasm-gc
+    tutuca page needs it
+  - `dyncomp/host/wasm/loader.mjs` — `tcomp` and `tkv` plus the bundle
+    unpacker, linked through `instantiate`'s `makeExtra` hook
+
+  A page that never loads a bundle now carries none of the second, which the
+  counter and storybook demos did before. **Breaking for anyone who copied
+  `demo/wasm-loader-lib.mjs`**: import the two published files instead. In
+  `dist/` they land beside each page as `app-loader.mjs` and
+  `dyncomp-loader.mjs`.
+
+- **One guest SDK, not five.** `sdk.mbt` was copy-pasted into all five MoonBit
+  guest trees, byte-identical but for two comment lines — five copies of the
+  guest contract are five chances to disagree. The canonical file is
+  `guests/sdk.mbt`, and `gen-bindings.mjs` copies it into each guest, so the
+  existing `git diff --exit-code -- guests` drift check now covers it too.
+
+- **`ci` gained `check-guest-template`**, which scaffolds a guest with the
+  embedded template and compiles it with `--deny-warn`. Nothing else covers
+  that tree: CI never builds a guest, and the template is assembled from three
+  sources with placeholders substituted at write time, so all three can be fine
+  and the result still not compile. It caught one immediately — a guest named
+  `*-test` produces `*_test.mbt`, which MoonBit reads as a test file, so the
+  author's `dyn_module` lands in test scope and the bundle declares nothing.
+  That was a *warning*, not an error. `new-guest` now rejects the name.
+
 - **A component can outlive the page it was on.** `tutuca:component` is
   `0.4.0` (manifest `api-version: 4`): an instance answers `persist()` with
   bytes ONLY IT reads, and `[static]instance.restore(component, bytes)` builds

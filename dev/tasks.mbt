@@ -29,6 +29,11 @@ pub enum Step {
   // walk `src_dir`, read every file, and write the generated
   // skill_assets_source(...) MoonBit module to `to` (skill-embed codegen).
   GenSkillAssets(src_dir~ : String, to~ : String)
+  // assemble a `tutuca:component` guest tree from its three sources and write
+  // the generated guest_template_source(...) MoonBit module to `to`. Not a
+  // GenSkillAssets with a different src_dir: the sources are three, and two of
+  // them are remapped on the way in (see cmd/dev's gen_guest_template).
+  GenGuestTemplate(to~ : String)
 } derive(Eq, Debug)
 
 ///|
@@ -210,6 +215,27 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "check-guest-template",
+      about: "scaffold a guest with the embedded template and compile it (the only coverage `tutuca new-guest` has)",
+      commands: [
+        // The template is what someone writing their first tutuca:component
+        // guest reads, and nothing else compiles it: `ci` never builds a guest
+        // (`guests` needs wasm-tools and jco), and the tree is assembled from
+        // three sources with placeholders substituted at write time, so all
+        // three can be fine and the result still not compile. Both steps are
+        // needed because the template lives in the binary: regenerate the
+        // embed, rebuild, then run what a stranger would get.
+        moon("build · native CLI (with the guest template embedded)", [
+          "build", "--target", "native", "cmd/main",
+        ]),
+        {
+          label: "check · scaffolded guest compiles",
+          prog: "node",
+          args: ["scripts/check-guest-template.mjs"],
+        },
+      ],
+    },
+    {
       name: "fetch-moonc",
       about: "fetch the gitignored in-browser MoonBit compiler (playground/vendor/moonc-web.cjs) from npm; see playground/vendor/README.md",
       commands: [
@@ -290,7 +316,7 @@ fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
-    ("demo/universal_wasm/universal_wasm.html", Some("HostTools")),
+    ("dyncomp/ui/wasm/host_tools.html", Some("HostTools")),
     ("dyncomp/ui/app.html", Some("UniversalApp")),
     ("dyncomp/ui/std/std.html", None),
     ("inspector/activity.html", None),
@@ -383,7 +409,7 @@ fn gen_views_commands() -> Array[Command] {
 fn gen_guest_bindings_commands() -> Array[Command] {
   [
     {
-      label: "wit-bindgen · guests/{counter,todo} from dyncomp/wit",
+      label: "wit-bindgen · every MoonBit guest, from dyncomp/wit + guests/sdk.mbt",
       prog: "node",
       args: ["guests/gen-bindings.mjs"],
     },
@@ -433,8 +459,11 @@ fn composites() -> Array[(String, String, Array[String])] {
     // runs against modules that provably match their sources.
     (
       "ci",
-      "gen-views drift + check + check-examples + check-skill + test + build (build-smokes every backend & demo)",
-      ["gen-views", "check", "check-examples", "check-skill", "test", "build"],
+      "gen-views drift + check + check-examples + check-skill + check-guest-template + test + build (build-smokes every backend & demo)",
+      [
+        "gen-views", "check", "check-examples", "check-skill", "check-guest-template",
+        "test", "build",
+      ],
     ),
   ]
 }
@@ -445,8 +474,12 @@ fn composites() -> Array[(String, String, Array[String])] {
 /// native CLI binary) that runs from any static file server.
 fn dist_steps() -> Array[Step] {
   let steps : Array[Step] = []
-  // refresh the CLI's embedded skill assets before the native build
+  // refresh the CLI's embedded assets before the native build — both of them,
+  // since both are written out by a command in the binary being built
   for step in skill_embed_steps() {
+    steps.push(step)
+  }
+  for step in guest_template_embed_steps() {
     steps.push(step)
   }
   for cmd in build_commands() {
@@ -481,10 +514,7 @@ fn dist_steps() -> Array[Step] {
     ),
   )
   steps.push(
-    Copy(
-      from="demo/wasm-loader-lib.mjs",
-      to="\{DIST}/counter-wasm/wasm-loader-lib.mjs",
-    ),
+    Copy(from="app/wasm/loader.mjs", to="\{DIST}/counter-wasm/app-loader.mjs"),
   )
   steps.push(
     Copy(
@@ -509,10 +539,7 @@ fn dist_steps() -> Array[Step] {
     ),
   )
   steps.push(
-    Copy(
-      from="demo/wasm-loader-lib.mjs",
-      to="\{DIST}/storybook/wasm-loader-lib.mjs",
-    ),
+    Copy(from="app/wasm/loader.mjs", to="\{DIST}/storybook/app-loader.mjs"),
   )
   steps.push(
     Copy(
@@ -583,6 +610,9 @@ pub fn plan(name : String) -> Array[Step]? {
   }
   if name == "skill-embed" {
     return Some(skill_embed_steps())
+  }
+  if name == "guest-template-embed" {
+    return Some(guest_template_embed_steps())
   }
   if name == "css-bundle" {
     return Some(css_bundle_steps())
@@ -688,9 +718,16 @@ pub fn universal_steps() -> Array[Step] {
       from="demo/universal_wasm/loader.mjs",
       to="\{DIST}/universal/loader.mjs",
     ),
-    Copy(
-      from="demo/wasm-loader-lib.mjs",
-      to="\{DIST}/universal/wasm-loader-lib.mjs",
+    Copy(from="app/wasm/loader.mjs", to="\{DIST}/universal/app-loader.mjs"),
+    // The dyncomp bridge imports the app one. In the repo (and in the published
+    // tarball, where both sit under marianoguerra/tutuca) that relative path
+    // resolves; in dist the two land flat beside the page, so repoint it — the
+    // same repointing the demo pages' <script src> gets.
+    WriteRewritten(
+      from="dyncomp/host/wasm/loader.mjs",
+      to="\{DIST}/universal/dyncomp-loader.mjs",
+      old_src="../../../app/wasm/loader.mjs",
+      new_src="./app-loader.mjs",
     ),
     Copy(
       from="demo/universal_wasm/index.html",
@@ -714,6 +751,19 @@ pub fn skill_embed_steps() -> Array[Step] {
     GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt"),
     Run(moon("fmt", ["fmt"])),
   ]
+}
+
+///|
+/// Regenerate the CLI's embedded guest template — the tree `tutuca new-guest`
+/// writes out. Run after editing `guests/template/`, the WIT, or anything under
+/// `guests/counter` that the template borrows; `dist` runs it, and
+/// `check-guest-template` is what proves the result still compiles.
+///
+/// Ends in `moon fmt` for the same reason `skill-embed` does: the generator
+/// writes one tuple per file on one line, and the next task that formats
+/// everything would otherwise rewrite a file nobody edited.
+pub fn guest_template_embed_steps() -> Array[Step] {
+  [GenGuestTemplate(to="cli/guest_template_gen.mbt"), Run(moon("fmt", ["fmt"]))]
 }
 
 ///|
@@ -829,6 +879,9 @@ pub fn help_text() -> String {
   }
   line("dist", "build all + assemble a runnable dist/ folder")
   line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
+  line(
+    "guest-template-embed", "regenerate cli/guest_template_gen.mbt (the tree `tutuca new-guest` writes) from guests/counter + dyncomp/wit + guests/template",
+  )
   line(
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
   )

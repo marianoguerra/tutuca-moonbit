@@ -82,6 +82,11 @@ pub(all) enum Outcome {
   Done(Emit)
   Feedback(GlobalOpts, message~ : String?)
   InstallSkill(GlobalOpts, plan~ : SkillInstallPlan)
+  /// Write out a scaffolded `tutuca:component` guest (new_guest.mbt). Same
+  /// split as `InstallSkill`: the core decides the whole tree — every path,
+  /// every byte, every placeholder already substituted — and the shell creates
+  /// directories, refuses to clobber without `--force`, and writes.
+  NewGuest(GlobalOpts, plan~ : GuestScaffoldPlan)
   /// Serve the pre-built storybook gallery bundle (storybook.mbt). The core
   /// decides the flags; the shell (cmd/main) resolves the bundle directory,
   /// starts the static HTTP server, or copies the bundle for `--out`.

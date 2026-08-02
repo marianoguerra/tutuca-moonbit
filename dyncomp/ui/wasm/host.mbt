@@ -1,0 +1,549 @@
+///| A mounted universal UI, and everything it needs to keep running.
+///
+/// The page IS the app. Everything about searching, placing, arranging and
+/// configuring is `dyncomp/ui`, backend-agnostic and driven by `moon test`;
+/// what is here is the part that cannot be — the bridge that turns an archive
+/// into registered components and a `ComponentRef` into a live guest instance,
+/// and the store that keeps what was built.
+///
+///   drop / load a URL -> @dhw.load_* -> the JS bridge instantiates the guest
+///     -> dyncompLoaded -> @dhw.registry() answers with the new components
+///     -> the app re-runs whatever the command bar is showing
+///
+///   click a + -> the app opens the bar -> pick -> `make_instance` through the
+///     bridge -> the instance is sent to the cell that asked
+///
+/// A host holds this and re-exports the five wasm-gc entry points; it cannot
+/// be a dependency's job, because an export list is per-package link
+/// configuration. See `demo/universal_wasm` for the ~90 lines that does it.
+
+// One bundle a host offers to load by URL is a `HostToolsSample`
+// (`{ label, url }`), generated from the record `host_tools.html` declares.
+// There is deliberately no friendlier alias for it: a public struct beside the
+// view-facing one is two definitions that can disagree, and the alias syntax
+// that would rename it in place is deprecated in favour of an attribute on the
+// declaration — which is generated, and not ours to annotate.
+//
+// A published host knows no bundle's name. A page that ships with its own
+// components, or a demo, passes them in; that is why they are a value rather
+// than a compiled-in list.
+
+///|
+/// Where a session goes, and whether it goes anywhere.
+///
+/// `None` is a page that starts empty every time, which is the right default:
+/// persistence has to be gated at BOTH ends, and a page that restores but does
+/// not save — or the reverse — writes an empty tree over the thing it exists to
+/// keep. One option makes that impossible to get half-right.
+pub(all) struct Session {
+  store : &@persist.Store
+}
+
+///|
+/// A mounted host. Everything mutable about a running universal page lives
+/// here rather than at module scope, so a page can hold one and a test can
+/// hold another.
+pub struct UniversalHost {
+  app : @app.App[@wdom.WasmNode]
+  ui : @ui.UniversalUi
+  /// Where the session goes, or `None` for a page that starts empty.
+  session : Session?
+  /// Loads still in flight. Saving while a session is being restored would
+  /// write the empty page over the thing being restored INTO it, which is the
+  /// one way this feature could destroy what it exists to keep.
+  pending : Ref[Int]
+  /// The URLs to load again next time. Only URLs: a dropped file has no name
+  /// the page can fetch, so its components come back only if the same bundle
+  /// is dropped again.
+  loaded_urls : Array[String]
+}
+
+///|
+/// The app's `UniversalUi`, so a restore can build standard components by
+/// name. Module-scoped because `host_tools_comp` and the restore path run from
+/// inside the component tree, where no `UniversalHost` is in hand — one live
+/// app per wasm instance is the premise the exports already rest on.
+let live : Ref[UniversalHost?] = { val: None }
+
+///|
+/// The browser's localStorage under `prefix`, as a `Session`. The prefix is
+/// the caller's because two universal pages on one origin should not read each
+/// other's tree.
+pub fn session_in_local_storage(prefix~ : String) -> Session {
+  { store: @pwasm.LocalStore::new(prefix~) }
+}
+
+// --- the session: what survives the page ----------------------------------
+//
+// Two things. The TREE is the app's root component, written out as the shape
+// `tree_json` describes: what each component is called, what its declared
+// fields hold, and what its children are. And each GUEST instance in it also
+// goes in as a `Snapshot` — the guest's own bytes when it has any, the
+// declared fields when it does not — keyed by WHERE IT SITS in that tree,
+// which is a name that still means something after a reload.
+//
+// The BUNDLES have to be named too, because an instance cannot come back
+// before the code that answers for it: by URL, since a dropped file is a thing
+// the page cannot fetch again and saying so is better than pretending.
+
+///|
+/// Whether a value is a component INSTANCE rather than data that happens to be
+/// an object. Only an instance answers a schema.
+fn is_instance(v : @tutuca.Value) -> Bool {
+  v is Obj(_) && v.schema() is Some(_)
+}
+
+///|
+/// The tree as a document, and every guest in it as a snapshot.
+///
+/// The shape is `{c, m, f, k, l}` — what it is Called, which Module it came
+/// from, its scalar Fields, its component-valued fields (Kids), and its Lists
+/// of components. Split that way because they come back differently: scalars
+/// are constructor arguments, and the other two have to be rebuilt first.
+///
+/// A GUEST is written as its name and module and nothing else. Its fields are
+/// its own, its children are its own, and what it kept privately is in the
+/// snapshot beside it — walking into it here would be the host claiming to
+/// know a shape the contract says it does not.
+pub fn tree_json(
+  v : @tutuca.Value,
+  path : String,
+  snaps : Map[String, @persist.Snapshot],
+) -> Json {
+  guard is_instance(v) else { return Json::null() }
+  guard v.schema() is Some(sc) else { return Json::null() }
+  match @dhw.snapshot(v) {
+    Some(snap) => {
+      snaps[path] = snap
+      return Json::object({
+        "c": Json::string(snap.component),
+        "m": Json::string(snap.module_),
+      })
+    }
+    None => ()
+  }
+  let f : Map[String, Json] = Map([])
+  let k : Map[String, Json] = Map([])
+  let l : Map[String, Json] = Map([])
+  for field in sc.fields {
+    let fv = v.field(field.name)
+    if is_instance(fv) {
+      k[field.name] = tree_json(fv, "\{path}/\{field.name}", snaps)
+    } else if fv is List(items) {
+      let mut any_inst = false
+      for item in items {
+        if is_instance(item) {
+          any_inst = true
+          break
+        }
+      }
+      if any_inst {
+        let out : Array[Json] = []
+        for i, item in items {
+          out.push(tree_json(item, "\{path}/\{field.name}/\{i}", snaps))
+        }
+        l[field.name] = Json::array(out)
+      } else {
+        f[field.name] = fv.to_json()
+      }
+    } else if fv is (Obj(_) | Fn(_)) {
+      // A callable, or an object nothing can name. Skipping it is what keeps
+      // the document to things that can come back.
+      continue
+    } else {
+      f[field.name] = fv.to_json()
+    }
+  }
+  Json::object({
+    "c": Json::string(sc.name),
+    "m": Json::string(@ui.builtin_module),
+    "f": Json::object(f),
+    "k": Json::object(k),
+    "l": Json::object(l),
+  })
+}
+
+///|
+fn json_at(j : Json, key : String) -> Json? {
+  if j is Object(m) {
+    m.get(key)
+  } else {
+    None
+  }
+}
+
+///|
+/// A tree back out of its document, with every guest restored from the
+/// snapshot stored beside it.
+///
+/// A guest whose bundle is missing comes back as nothing, which the cell
+/// holding it draws as an empty `+`. The rest of the page still returns, and
+/// dropping that bundle later and reloading fills it in: refusing the whole
+/// session because one component is unavailable would be the wrong trade for
+/// a page whose bundles arrive by hand.
+pub fn tree_of_json(
+  ui : @ui.UniversalUi,
+  j : Json,
+  path : String,
+  snaps : Map[String, @persist.Snapshot],
+) -> @tutuca.Value {
+  guard json_at(j, "c") is Some(String(name)) else { return Null }
+  let module_ = match json_at(j, "m") {
+    Some(String(m)) => m
+    _ => @ui.builtin_module
+  }
+  if module_ != @ui.builtin_module {
+    return match snaps.get(path) {
+      Some(snap) => @dhw.restore(snap).unwrap_or(Null)
+      None => @dhw.make_instance(module_, name).unwrap_or(Null)
+    }
+  }
+  let args : Map[String, @tutuca.Value] = Map([])
+  if json_at(j, "f") is Some(Object(f)) {
+    for key, val in f {
+      args[key] = @tutuca.Value::from_json(val)
+    }
+  }
+  if json_at(j, "k") is Some(Object(k)) {
+    for key, val in k {
+      args[key] = tree_of_json(ui, val, "\{path}/\{key}", snaps)
+    }
+  }
+  if json_at(j, "l") is Some(Object(l)) {
+    for key, val in l {
+      guard val is Array(items) else { continue }
+      let out : Array[@tutuca.Value] = []
+      for i, item in items {
+        out.push(tree_of_json(ui, item, "\{path}/\{key}/\{i}", snaps))
+      }
+      args[key] = List(out)
+    }
+  }
+  ui.build_standard(name, args)
+}
+
+///|
+/// Write the whole session. Runs on the transactor's drained cascade, so it
+/// sees settled state and never a half-applied edit.
+fn save_session() -> Unit {
+  guard live.val is Some(host) else { return }
+  guard host.session is Some(session) else { return }
+  if host.pending.val > 0 {
+    return
+  }
+  let store = session.store
+  guard @dhw.app_root_value() is Some(app) else { return }
+  let root = app.field("root")
+  guard is_instance(root) else { return }
+  let snaps : Map[String, @persist.Snapshot] = Map([])
+  store.set("tree", tree_json(root, "", snaps).stringify())
+  store.set(
+    "urls",
+    Json::array(host.loaded_urls.map(u => Json::string(u))).stringify(),
+  )
+  // Snapshots are keyed by where the instance sits, which is what makes a
+  // restore able to put each one back. Whatever was saved under a place that
+  // no longer exists is forgotten, so the store follows the page rather than
+  // accumulating everything ever placed.
+  let saved : Array[String] = []
+  for at, snap in snaps {
+    let key = "at/\{at}"
+    if @persist.save(store, { ..snap, id: key }) {
+      saved.push(key)
+    }
+  }
+  for id in @persist.saved_ids(store) {
+    if id.has_prefix("at/") && !saved.contains(id) {
+      @persist.forget(store, id)
+    }
+  }
+}
+
+///|
+/// Load the bundles the last session used. Called once at mount; each one
+/// finishing pushes a `dyncompLoaded`, and the last of them triggers the
+/// restore below.
+fn resume_session(host : UniversalHost, at : @tutuca.DispatchPath) -> Unit {
+  guard host.session is Some(session) else { return }
+  guard session.store.get("urls") is Some(text) else { return }
+  let parsed = @json.parse(text) catch { _ => return }
+  guard parsed is Array(items) else { return }
+  for item in items {
+    if item is String(url) {
+      host.pending.val = host.pending.val + 1
+      host.loaded_urls.push(url)
+      @dhw.load_url(at, url) |> ignore
+    }
+  }
+}
+
+///|
+/// The saved page, rebuilt. None when there is nothing stored.
+fn restored_tree() -> @tutuca.Value? {
+  guard live.val is Some(host) else { return None }
+  guard host.session is Some(session) else { return None }
+  guard session.store.get("tree") is Some(text) else { return None }
+  let doc = @json.parse(text) catch { _ => return None }
+  let snaps : Map[String, @persist.Snapshot] = Map([])
+  for id in @persist.saved_ids(session.store) {
+    guard id.has_prefix("at/") else { continue }
+    guard @persist.load(session.store, id) is Some(snap) else { continue }
+    snaps[id[3:].to_owned()] = snap
+  }
+  match tree_of_json(host.ui, doc, "", snaps) {
+    Null => None
+    v => Some(v)
+  }
+}
+
+// --- the bridge -------------------------------------------------------------
+
+///|
+/// Build a guest instance for the app to place.
+///
+/// The one thing `dyncomp/ui` cannot do for itself: a named fixture goes
+/// through `make_init`, everything else through the bare constructor with the
+/// arguments the form validated. Standard components never reach here — they
+/// are compiled in, and the app builds them directly.
+pub fn make_instance(
+  ref_ : @registry.ComponentRef,
+  init : String,
+  args : Map[String, @tutuca.Value],
+) -> @tutuca.Value? {
+  if init == "" {
+    @dhw.make_instance(ref_.module_, ref_.name, args~)
+  } else {
+    @dhw.make_init(ref_.module_, ref_.name, init)
+  }
+}
+
+///|
+/// The bar tools: fetch a bundle by URL, or take a dropped file.
+///
+/// The bridge answers at the path that ASKED for a load, which is this
+/// component's — so it hears its own results and tells the app the catalog
+/// changed. Nothing above it has to know what a bundle is.
+fn host_tools_comp(samples : Array[HostToolsSample]) -> @component.Component {
+  host_tools_component(
+    init={
+      status: if samples.is_empty() {
+        "drop a .tutuca.tar.gz to add its components"
+      } else {
+        "drop a .tutuca.tar.gz, or load a sample"
+      },
+      samples,
+    },
+    update=(s, msg, ctx) => {
+      match HostToolsMsg::from_dispatch(msg) {
+        // The payload is a `Value` rather than a `String` because the button
+        // reads `@value.url` out of the loop rather than naming a literal —
+        // the generator types a loop-sourced argument as `any`, which is the
+        // honest answer for something the schema cannot see through.
+        Some(LoadSample(Str(url))) => {
+          match live.val {
+            Some(host) =>
+              if !host.loaded_urls.contains(url) {
+                host.loaded_urls.push(url)
+              }
+            None => ()
+          }
+          @dhw.load_url(ctx.path(), url) |> ignore
+          return Some({ ..s, status: "loading \{url}…" })
+        }
+        Some(LoadSample(_)) => return None
+        Some(Unknown(_, _)) | None => ()
+      }
+      match HostToolsReceive::from_dispatch(msg) {
+        // A dropped file: the payload is the list of descriptors the drop
+        // event carried, and the id names the file the browser still holds. No
+        // page-level JS is involved — this is an ordinary handler.
+        Some(FilesDropped(files)) => {
+          guard files is List(items) else { return None }
+          for f in items {
+            match f.field("id") {
+              Num(id) => @dhw.load_dropped(ctx.path(), id.to_int()) |> ignore
+              _ => ()
+            }
+          }
+          Some({ ..s, status: "loading…" })
+        }
+        Some(DyncompLoaded(module_name)) => {
+          HostToolsBubble::CatalogChanged(module_name).bubble(ctx)
+          // The last of the resumed loads is what makes a restore possible:
+          // every bundle the saved page names is now here.
+          match live.val {
+            Some(host) =>
+              if host.pending.val > 0 {
+                host.pending.val = host.pending.val - 1
+                if host.pending.val == 0 {
+                  match restored_tree() {
+                    Some(root) => ctx.bubble("restoreTree", [root])
+                    None => ()
+                  }
+                }
+              }
+            None => ()
+          }
+          Some({ ..s, status: "loaded \{module_name}" })
+        }
+        // The refusal's own words: "this host takes no CSS from a bundle",
+        // "no such component". A generic sentence here would throw away the
+        // one thing a person can act on.
+        Some(DyncompError(why)) => {
+          match live.val {
+            Some(host) =>
+              if host.pending.val > 0 {
+                host.pending.val = host.pending.val - 1
+              }
+            None => ()
+          }
+          Some({ ..s, status: why })
+        }
+        Some(Unknown(_, _)) | None => None
+      }
+    },
+  )
+}
+
+///|
+/// The module: the app, its chrome, the standard components, and the bar tools.
+///
+/// One ModuleDef because one app mounts one module — and because the guest
+/// components a bundle registers land in the same scope, which is what lets a
+/// universal's `<x render=".child">` resolve one. `requests` are the services
+/// this HOST offers to whatever it hosts; a bundle that serves a request of the
+/// same name answers its own components first.
+pub fn universal_module(
+  samples? : Array[HostToolsSample] = [],
+  requests? : Map[String, @component.RequestFn] = {},
+) -> (@component.ModuleDef, @ui.UniversalUi) {
+  let (module_, ui) = @ui.seeded_app(
+    @dhw.registry(),
+    make_instance,
+    dev_tools="HostTools",
+  )
+  (
+    @component.ModuleDef::new(
+      name="universalwasm",
+      components=[..module_.components, host_tools_comp(samples)],
+      requests~,
+    ),
+    ui,
+  )
+}
+
+// --- margaui class publishing -------------------------------------------
+
+///|
+/// Compile the app's utility-class set to CSS in MoonBit (via the
+/// marianoguerra/tailwindcss port) and inject it as <style id="margaui-css">.
+/// Called at mount and again after a bundle loads, so guest-view classes get
+/// compiled too. The page should pre-place an empty <style id="margaui-css">
+/// early in <head> so the upsert keeps it ahead of any lazily-loaded palette
+/// <link>.
+pub fn UniversalHost::apply_margaui(self : UniversalHost) -> Unit {
+  let css = @css.compile_margaui(self.app.scope.comps.collect_classes()) catch {
+    err => {
+      @tutuca.warn("margaui compile failed: \{err}")
+      return
+    }
+  }
+  @wglue.inject_style(@wglue.document(), "margaui-css", css)
+}
+
+///|
+/// Recompile + reinject margaui CSS after a guest bundle registers new views
+/// (and thus new utility classes). A host exports this for its loader to call
+/// post-load.
+pub fn refresh_margaui() -> Unit {
+  match live.val {
+    Some(host) => host.apply_margaui()
+    None => ()
+  }
+}
+
+// --- lifecycle ------------------------------------------------------------
+
+///|
+/// Mount the universal UI over the whole page.
+///
+/// `session` decides persistence at BOTH ends at once — a page that restores
+/// but does not save, or the reverse, writes an empty tree over the thing it
+/// exists to keep, so one option rather than two flags is the point.
+/// `samples` are bundles to offer as buttons; empty draws none. `requests` are
+/// services this host offers to what it hosts.
+///
+/// Returns `None` if the app could not mount, which on wasm-gc means the page
+/// had no `#app` to mount into.
+pub fn mount(
+  session? : Session? = None,
+  samples? : Array[HostToolsSample] = [],
+  requests? : Map[String, @component.RequestFn] = {},
+) -> UniversalHost? {
+  let (module_, ui) = universal_module(samples~, requests~)
+  guard @wglue.mount_in(module_, "UniversalApp") is Some(app) else {
+    return None
+  }
+  let host : UniversalHost = {
+    app,
+    ui,
+    session,
+    pending: { val: 0 },
+    loaded_urls: [],
+  }
+  live.val = Some(host)
+  // BEFORE `set_app`, which installs the superseded-handle sweep: drained
+  // subscribers run in subscription order, so saving first means every handle
+  // this walks is still alive. After the sweep, a component that was just used
+  // can be a handle the host has already collected — and a snapshot taken
+  // through one is not a snapshot at all.
+  app.transactor.on_drained(save_session)
+  @dhw.set_app(app, @wglue.document())
+  host.apply_margaui()
+  // The bar tools are where a load's answers arrive, so that is the path a
+  // resume asks from.
+  resume_session(host, @tutuca.DispatchPath::of_steps([FieldStep("devTools")]))
+  // A page built entirely out of standard components names no bundles, so
+  // nothing is in flight and no load will ever arrive to trigger the restore
+  // below. Doing it here is the whole of that case — and it has to be HERE
+  // rather than inside `resume_session`, because a page that DOES name bundles
+  // must wait for the last of them.
+  if host.pending.val == 0 {
+    match restored_tree() {
+      Some(root) => app.send_at_root("restoreTree", args=[root]) |> ignore
+      None => ()
+    }
+  }
+  Some(host)
+}
+
+///|
+/// Forward a DOM event into the app. A host exports this; JS calls it on every
+/// event, since a MoonBit closure cannot cross into JS on wasm-gc.
+pub fn on_event(ev : @core.Any) -> Unit {
+  @wglue.on_event(ev)
+}
+
+///|
+/// The JS bridge calls this once a dropped/fetched bundle is instantiated.
+pub fn dyncomp_on_loaded(
+  load_id : Int,
+  bundle_id : Int,
+  manifest_json : String,
+) -> Unit {
+  @dhw.on_loaded(load_id, bundle_id, manifest_json)
+}
+
+///|
+pub fn dyncomp_on_load_error(load_id : Int, msg : String) -> Unit {
+  @dhw.on_load_error(load_id, msg)
+}
+
+///|
+/// The app's whole state as text, for poking at the page from the console.
+pub fn state_json() -> String {
+  match @dhw.app_root_value() {
+    Some(v) => v.to_display_string()
+    None => "null"
+  }
+}

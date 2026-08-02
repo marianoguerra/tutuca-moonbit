@@ -6,11 +6,17 @@ import {
 }
 
 // Values
+pub fn assets_source(Array[(String, String)], var_~ : String, banner~ : String) -> String
+
 pub fn css_bundle_steps() -> Array[Step]
 
 pub fn guest_build_steps() -> Array[Step]
 
 pub fn guest_pack_steps() -> Array[Step]
+
+pub fn guest_template_embed_steps() -> Array[Step]
+
+pub fn guest_template_source(Array[(String, String)]) -> String
 
 pub fn help_text() -> String
 
@@ -41,6 +47,7 @@ pub enum Step {
   Copy(from~ : String, to~ : String)
   WriteRewritten(from~ : String, to~ : String, old_src~ : String, new_src~ : String)
   GenSkillAssets(src_dir~ : String, to~ : String)
+  GenGuestTemplate(to~ : String)
 } derive(Eq, @debug.Debug)
 
 pub struct Task {

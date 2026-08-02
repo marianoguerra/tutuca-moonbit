@@ -8,6 +8,10 @@
 // and by `moon test`. `note` says so, so an agent doesn't go looking.
 
 ///|
+/// 7: `new-guest` joins the command set, with three error codes of its own.
+/// An agent that cached version 6 would not know the CLI can scaffold a
+/// `tutuca:component` guest at all, which is exactly what a version is for.
+///
 /// 6: `gen-views` takes `[path...]` rather than one `file`, matching the CSS
 /// commands and `watch`. The batch is what the cross-component checks can see,
 /// so the positional's arity is part of the contract, not a convenience —
@@ -16,7 +20,7 @@
 /// 5: one command set. The `mode` field of 4 is gone with the embedded-module
 /// story, along with `lintCodes` (there is no runtime linter), `formats`, and
 /// the per-command `needsModule` / `needsEnv` / `defaultFormat`.
-const SCHEMA_VERSION : Int = 6
+const SCHEMA_VERSION : Int = 7
 
 ///|
 fn global_flags_schema() -> Array[FlagSpec] {

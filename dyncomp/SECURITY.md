@@ -66,7 +66,7 @@ weight:
    principle of this design — *the host is the framework*.
 
 So `env` gives deliberately weaker answers, and the browser bridge implements
-them that way (`demo/wasm-loader-lib.mjs`):
+them that way (`dyncomp/host/wasm/loader.mjs`):
 
 - `now-ms` is **coarsened to a second and frozen for the duration of one call**.
   Every read inside one handler agrees, which is what lets a dispatch replay and

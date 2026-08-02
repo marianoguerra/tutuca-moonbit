@@ -46,7 +46,11 @@ before opening a PR.
 - Make sure `... -- ci` passes.
 - Some files are generated and committed on purpose — regenerate them rather
   than hand-editing: `cli/skill_assets_gen.mbt` (`... -- skill-embed`, from
-  `skill/tutuca/`) and the `pkg.generated.mbti` interfaces (`moon info`).
+  `skill/tutuca/`), `cli/guest_template_gen.mbt` (`... -- guest-template-embed`,
+  from `guests/counter` + `dyncomp/wit` + `guests/template`), the guest trees
+  under `guests/*` (`... -- gen-guest-bindings`, from `dyncomp/wit` +
+  `guests/sdk.mbt` — the canonical SDK, never a copy), and the
+  `pkg.generated.mbti` interfaces (`moon info`).
 
 ## Releasing to mooncakes.io
 
@@ -70,9 +74,9 @@ PATCH = fixes).
 ### What ships
 
 `options(exclude: ...)` in `moon.mod` keeps the tarball to the library
-packages, the CLI and `docs/`. The storybook, demo, playground, `dyncomp`
-and wasm-component guest hosts, the `dev`/`cmd/dev` task runner, `scripts/`,
-`skill/` and `package.json` are repo-only. `storybook/` is excluded because
+packages, `dyncomp/`, the CLI and `docs/`. The storybook, demo, playground and
+guest trees, the `dev`/`cmd/dev` task runner, `scripts/`, `skill/` and
+`package.json` are repo-only. `storybook/` is excluded because
 nothing published depends on it: `tutuca storybook` serves a pre-built bundle
 and needs no story registry, and `testing/harness`'s demo test defines its own
 module. It stays in the repo as a demo and as the corpus the lint and
@@ -80,6 +84,23 @@ view-generation sweeps run over. If you add a package that a shipped
 package imports, make sure it is not under an excluded directory — verify by
 unpacking `_build/publish/*.zip` into an empty directory and running
 `moon check` / `moon test` there, which is what a consumer sees.
+
+`dyncomp/` ships: it is the universal core, and without it a consumer can host
+no dynamic component at all — no contract, no loader, no catalog, no universal
+UI. Two consequences worth knowing when you edit around it:
+
+- **`dyncomp/test` is the one part excluded.** Its `*.test.mjs` drive real
+  guest bundles out of `guests/*/dist/js`, which no tarball has. Run them from
+  the repo (`node --test dyncomp/test/`).
+- **The wasm-gc JS shims live beside their packages, not beside a page.**
+  `app/wasm/loader.mjs` is the `jscore` + `tdom` import contract that
+  `app/wasm` and `vdom/wasm` declare; `dyncomp/host/wasm/loader.mjs` is the
+  `tcomp` + `tkv` half, linked through the first one's `makeExtra` hook. They
+  are not `.mbt`, but they are the only way a consumer's wasm-gc page can
+  instantiate anything, so they ship — and a page that loads no bundles links
+  only the first. `dev/tasks.mbt` copies them beside each demo page in `dist/`
+  as `app-loader.mjs` / `dyncomp-loader.mjs`, repointing the cross-import;
+  in the repo and in the tarball the relative path resolves as written.
 
 ## Releasing the playground to npm
 

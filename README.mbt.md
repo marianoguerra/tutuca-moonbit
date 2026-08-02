@@ -11,9 +11,9 @@ target-agnostic logic and the browser demos), **js** (the real-DOM adapter, via
 Live demos, playground and storybook:
 <https://marianoguerra.github.io/tutuca-moonbit/> — source:
 <https://github.com/marianoguerra/tutuca-moonbit>. The published mooncakes
-package carries the library packages and the CLI; the storybook, demo,
-playground and wasm-component guest hosts live in the repo only (see
-`exclude` in `moon.mod`).
+package carries the library packages, the universal core (`dyncomp/`) and the
+CLI; the storybook, the demo and playground hosts and the sample guests live in
+the repo only (see `exclude` in `moon.mod`).
 
 ## What's in it
 
@@ -29,7 +29,9 @@ and formal `spec.mbt`. From the bottom up:
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
 | **Tooling** | `lint/`, `inspector/`, `statedef/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the WIT-subset state schema, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
-| **Demos & docs** | `demo/`, `playground/`, `storybook/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, and a compiled storybook gallery. |
+| **Universal core** | `dyncomp/` — `wit/` (the `tutuca:component` contract), `host/` (+ `host/wasm`), `policy/`, `registry/`, `jsonschema/`, `persist/` (+ `persist/wasm`) | Loading a WebAssembly component from anywhere into a *running* app: the contract it implements, the host that wraps it as an ordinary `&Obj`, what a bundle from a stranger is allowed to do, the searchable catalog of everything loaded, and the schema ⇄ JSON Schema projection both a form and an agent's tool read. See [`dyncomp/DESIGN.md`](dyncomp/DESIGN.md). |
+| **Universal UI** | `dyncomp/ui/` (+ `dyncomp/ui/std`, `dyncomp/ui/wasm`) | The page a person arranges out of that catalog. The component tree IS the layout — `Universal`, `Stack`, `Grid`, `Tabs` are ordinary tutuca components, and a loaded guest is decorated exactly like a standard one. The editor is backend-agnostic, so `moon test` drives the whole thing on the in-memory DOM; `ui/wasm` is the half that cannot be — the bundle bridge, the session store, and `mount()`. See [`docs/dynamic-components.md`](docs/dynamic-components.md). |
+| **Demos & docs** | `demo/`, `playground/`, `storybook/`, `guests/` | 51 ported examples (`storybook/examples/`), browser/CLI/wasm demo hosts, an in-browser playground, a compiled storybook gallery, and six sample `tutuca:component` guests (five MoonBit, one Rust). |
 
 The `tutuca` CLI does the work that happens outside the compiler:
 `gen-views`, `watch`, `storybook`, `install-skill`, `feedback`,
