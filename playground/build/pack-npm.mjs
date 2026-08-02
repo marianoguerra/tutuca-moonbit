@@ -66,6 +66,8 @@ if (manifest.toolchain !== TOOLCHAIN.moonc || manifest.mooncWorker !== TOOLCHAIN
 // two packages' business (see the header).
 const SHELL = [
   "runtime.js",
+  // the wasm-gc jscore/tdom import contract runtime.js imports (app/wasm/loader.mjs)
+  "app-loader.mjs",
   "compiler.worker.js",
   "viewgen-client.js",
   "driver.js",

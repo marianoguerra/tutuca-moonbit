@@ -444,6 +444,10 @@ class MbPlayground extends HTMLElement {
         this._wasmFailed = true;
         this.targetEl.value = "js";
         fallback = true;
+        // Silent on the page — a reader can't act on it — but never silent
+        // altogether: this same fallback hid a LinkError from a stale import
+        // object for a whole release, on every element of every page.
+        console.warn("mb-playground: wasm-gc mount failed, falling back to js —", mountErr);
       } else {
         throw mountErr;
       }

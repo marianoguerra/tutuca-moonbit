@@ -130,6 +130,13 @@ mkdirSync(OUT, { recursive: true });
 cpSync(WORKER, join(OUT, "moonc-web.cjs"));
 for (const f of readdirSync(WEB)) cpSync(join(WEB, f), join(OUT, f));
 
+// The wasm-gc import contract, from the package that DECLARES it. runtime.js
+// imports `./app-loader.mjs` for the jscore/tdom namespaces rather than keeping
+// a second copy — the copy went stale once already (`tdom.dropped_files`) and
+// every wasm-gc preview LinkError'd. Same name and same source as the copies
+// `dev/tasks.mbt` puts beside the counter-wasm and storybook pages.
+cpSync(join(REPO, "app/wasm/loader.mjs"), join(OUT, "app-loader.mjs"));
+
 // The view generator, compiled to js: the View tab needs it in the BROWSER
 // (it turns view HTML into MoonBit source, which then feeds the in-browser
 // compiler). moonc's js output is a plain IIFE, so it ships as an ordinary

@@ -346,6 +346,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **Every wasm-gc preview in the playground failed to link, and said the
+  browser was at fault.** `playground/web/runtime.js` carried its own copy of
+  the `jscore` and `tdom` import namespaces that `app/wasm/loader.mjs` defines.
+  `tdom` grew `dropped_files`; the copy did not follow; from then on every
+  wasm-gc mount — the DEFAULT target, in the standalone playground and in every
+  `<mb-playground>` on the landing page — died with `LinkError: Import #8
+  "tdom" "dropped_files": function import requires a callable`. The js fallback
+  caught it, so the page kept working and reported `wasm-gc not supported
+  here`, which is why it survived a release: the one message a reader cannot
+  act on and an author reads as somebody else's problem.
+
+  runtime.js now imports the loader (`./app-loader.mjs`, copied into
+  `dist/playground/` by `assemble.mjs` and packed into the npm shell) and
+  substitutes only `global_this`, which must be the preview iframe's window
+  rather than the page's. There is no second copy of the contract left to drift.
+
+  Two guards, because a wasm-gc mount is only exercised by a browser:
+  `check-viewgen-tab.mjs` now instantiates its import object FROM that loader
+  and fails the build when a linked module names something the loader does not
+  supply (it catches this exact bug — verified by removing `dropped_files` and
+  watching it fire), and the fallback now reports the real error instead of
+  blaming the engine, in the standalone shell's status and diagnostics and as a
+  `console.warn` from the embeddable element.
+
 - **A browser host could not choose what it accepts.** `dyncomp/policy` has
   three tiers and `register_bundle` takes one, but `dyncomp/host/wasm` called it
   without an argument — so every bundle a page loaded was registered as

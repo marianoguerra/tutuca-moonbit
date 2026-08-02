@@ -30,6 +30,19 @@ import { readFileSync, existsSync, readdirSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { createRequire } from "node:module";
 import { fileURLToPath } from "node:url";
+import { createJsCoreImports, createTdomImports } from "../../app/wasm/loader.mjs";
+
+// The import object the PAGE instantiates with — runtime.js builds it from this
+// same loader (it substitutes `global_this` for the iframe's window, which no
+// linked module can tell apart). Building it here turns "the browser will fail
+// to link this" into a build error: a `tdom` name the module needs and the
+// loader lacks shipped once, and every wasm-gc preview died on a LinkError that
+// the js fallback reported as "wasm-gc not supported here".
+const HOST_IMPORTS = {
+  jscore: createJsCoreImports(),
+  tdom: createTdomImports(() => null),
+  console: { log: () => {} },
+};
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const OUT = join(REPO, "dist/playground");
@@ -155,13 +168,22 @@ function checkArtifact(target, bytes) {
   const missing = WASM_EXPORTS.filter((n) => !exports.has(n));
   if (missing.length) throw new Error("linked module is missing exports: " + missing.join(", "));
   // Under the js-string builtins the string ops are engine-provided, so what is
-  // left must be exactly the surface runtime.js supplies. Anything else would
-  // fail at instantiate in the browser, which this check cannot reach.
-  const imports = [...new Set(WebAssembly.Module.imports(mod).map((i) => i.module))].sort();
-  const expected = ["console", "jscore", "tdom"];
-  const unexpected = imports.filter((i) => !expected.includes(i));
+  // left must be exactly the surface the loader supplies — namespace AND name.
+  const needed = WebAssembly.Module.imports(mod);
+  const imports = [...new Set(needed.map((i) => i.module))].sort();
+  const unexpected = imports.filter((i) => !(i in HOST_IMPORTS));
   if (unexpected.length) {
     throw new Error("linked module imports an unknown namespace: " + unexpected.join(", "));
+  }
+  const unsatisfied = needed
+    .filter((i) => typeof HOST_IMPORTS[i.module][i.name] !== "function")
+    .map((i) => `${i.module}.${i.name}`);
+  if (unsatisfied.length) {
+    throw new Error(
+      "app/wasm/loader.mjs supplies no function for: " +
+        [...new Set(unsatisfied)].join(", ") +
+        " — the module would LinkError in the browser",
+    );
   }
   return `${bytes.length} B wasm, imports ${imports.join("/")}`;
 }

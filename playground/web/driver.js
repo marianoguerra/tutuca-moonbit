@@ -282,9 +282,13 @@ function tryPretty(s) {
 
 // --- compile + run ---
 let compiling = false;
-// set once if a wasm-gc mount throws — the engine has no JS-String-Builtins, so
-// don't offer that backend again this session (see the fallback below)
+// set once if a wasm-gc mount throws — usually an engine with no
+// JS-String-Builtins, so don't try that backend again this session (see the
+// fallback below). "Usually" is why the reason is kept and shown: a LinkError
+// from a stale import object looks identical from here, and reporting it as an
+// engine limitation is how one went unnoticed through a release.
 let wasmFellBack = false;
+let fellBackBecause = "";
 async function run() {
   if (compiling) return;
   compiling = true;
@@ -345,6 +349,7 @@ async function run() {
       setStatus(`ok — compiled + linked (${target}) in ${r.ms} ms`, "ok");
     } else if (target === "wasm-gc" && !wasmFellBack) {
       wasmFellBack = true;
+      fellBackBecause = String(mountErr?.message || mountErr);
       targetSel.value = "js";
       rememberTarget("js");
       fallback = true;
@@ -364,7 +369,8 @@ async function run() {
   }
   if (fallback) {
     await run();
-    setStatus(`${status.textContent} — wasm-gc not supported here, fell back to js`, "ok");
+    setStatus(`${status.textContent} — wasm-gc mount failed, fell back to js`, "ok");
+    diags.textContent = `wasm-gc mount failed, fell back to js:\n${fellBackBecause}`;
   }
 }
 

@@ -2,6 +2,13 @@
 // mounter. Used by both the standalone playground driver (driver.js) and the
 // embeddable <mb-playground> element (../site/embed.js).
 //
+// The wasm-gc mount's import object comes from ./app-loader.mjs — the SAME
+// `app/wasm/loader.mjs` every other wasm-gc page in this repo instantiates
+// with, copied in by assemble.mjs. It used to be a second, hand-kept copy of
+// those two namespaces here, which is exactly as durable as it sounds: `tdom`
+// grew `dropped_files`, the copy did not, and every wasm-gc preview died on a
+// LinkError that the fallback reported as "wasm-gc not supported here".
+//
 // Every URL the worker needs is resolved HERE, absolutely, and handed over in
 // the init message; the worker resolves nothing against its own location. That
 // is what lets the three movable parts move independently — this shell's own
@@ -24,6 +31,8 @@
 // ES imports (runtime.js, editor.bundle.js, viewgen.js, margaui.wasm) are NOT
 // covered by this: they are code, resolved by whoever imports them. This is for
 // what has to be fetched by URL.
+import { createJsCoreImports, createTdomImports } from "./app-loader.mjs";
+
 export function playgroundConfig(defaultBase) {
   const cfg = globalThis.MB_PLAYGROUND ?? {};
   // a base must end in "/" or the last segment is a sibling, not a folder
@@ -217,62 +226,15 @@ export function mount(container, jsText, { onState, margaui = true } = {}) {
 // exported `on_event`, and the inspector is read back through the exported
 // `state_json`/`classes_json` rather than closures published on the page.
 
-// The jscore namespace mizchi/js/core's @core.Any lowers to on wasm-gc.
-// `realm` is the window every `global_this()` resolves against: the wasm host
-// reaches the DOM as `global_this()._get("document")` (app/wasm/glue.mbt), so
-// pointing it at the preview iframe's window is what makes the app mount THERE
-// instead of hunting for #app in the shell page and warning that it is missing.
+// The jscore namespace, as `app/wasm/loader.mjs` defines it, with ONE
+// substitution: `realm`, the window every `global_this()` resolves against. The
+// wasm host reaches the DOM as `global_this()._get("document")`
+// (app/wasm/glue.mbt), so pointing it at the preview iframe's window is what
+// makes the app mount THERE instead of hunting for #app in the shell page and
+// warning that it is missing. Everything else is the shipped contract — this
+// file has no business restating it.
 function jsCoreImports(realm) {
-  return {
-    get: (o, k) => o[k], get_by_index: (o, i) => o[i],
-    set: (o, k, v) => { o[k] = v; }, set_by_index: (o, i, v) => { o[i] = v; },
-    call0: (o, n) => o[n](), call1: (o, n, a) => o[n](a), call2: (o, n, a, b) => o[n](a, b),
-    call3: (o, n, a, b, c) => o[n](a, b, c), call4: (o, n, a, b, c, d) => o[n](a, b, c, d),
-    invoke0: (f) => f(), invoke1: (f, a) => f(a), invoke2: (f, a, b) => f(a, b),
-    invoke3: (f, a, b, c) => f(a, b, c), invoke4: (f, a, b, c, d) => f(a, b, c, d),
-    new0: (c) => new c(), new1: (c, a) => new c(a), new2: (c, a, b) => new c(a, b),
-    new3: (c, a, b, cc) => new c(a, b, cc), new4: (c, a, b, cc, d) => new c(a, b, cc, d),
-    typeof: (v) => typeof v, is_nullish: (v) => v == null, is_null: (v) => v === null,
-    is_undefined: (v) => v === undefined, is_array: (v) => Array.isArray(v),
-    is_object: (v) => typeof v === "object" && v !== null, instanceof: (v, c) => v instanceof c,
-    equal: (a, b) => a === b, global_this: () => realm, undefined: () => undefined,
-    null: () => null, new_object: () => ({}), new_array: () => [],
-    object_keys: (o) => Object.keys(o), object_values: (o) => Object.values(o),
-    object_assign: (t, s) => Object.assign(t, s), object_has_own: (o, k) => Object.hasOwn(o, k),
-    array_from: (v) => Array.from(v), array_length: (a) => a.length,
-    json_stringify: (v) => JSON.stringify(v), json_stringify_pretty: (v, s) => JSON.stringify(v, null, s),
-    json_parse: (t) => JSON.parse(t), to_string: (v) => (v == null ? String(v) : v.toString()),
-    log: (m) => console.log(m), throw: (v) => { throw v; },
-    from_int: (v) => v, from_uint: (v) => v, from_int64: (v) => v, from_uint64: (v) => v,
-    from_float: (v) => v, from_double: (v) => v, from_string: (v) => v, from_bool: (v) => v,
-  };
-}
-
-// The tdom namespace: typed reads @core can't do on wasm-gc plus the event
-// bridge (a delegated listener that calls the wasm export back) and CSS inject.
-function tdomImports(getExports, doc) {
-  return {
-    node_type: (n) => n.nodeType | 0, has_prop: (o, k) => k in o,
-    try_set_prop: (o, k, v) => { try { o[k] = v; return true; } catch { return false; } },
-    json_parse: (s) => JSON.parse(s),
-    json_stringify: (v) => { try { return JSON.stringify(v) ?? ""; } catch { return ""; } },
-    file_meta: (t) => {
-      const f = t.files && t.files[0];
-      return f ? JSON.stringify({ name: f.name, size: f.size, type: f.type, lastModified: f.lastModified }) : "";
-    },
-    get_int: (o, k) => o[k] | 0, get_bool: (o, k) => !!o[k], get_num: (o, k) => +(o[k] ?? 0),
-    add_listener: (node, name) => {
-      node.addEventListener(name, (ev) => {
-        const ex = getExports();
-        if (ex && ex.on_event) ex.on_event(ev);
-      });
-    },
-    inject_css: (d, id, css) => {
-      let el = d.getElementById(id);
-      if (!el) { el = d.createElement("style"); el.id = id; d.head.appendChild(el); }
-      el.textContent = css;
-    },
-  };
+  return { ...createJsCoreImports(), global_this: () => realm };
 }
 
 // Mount a wasm-gc-linked module (the bytes `linkCore` returned) in a fresh
@@ -298,7 +260,7 @@ export async function mountWasm(container, wasmBytes, { onState, margaui = true 
   let exports = null;
   const imports = {
     jscore: jsCoreImports(iframe.contentWindow),
-    tdom: tdomImports(() => exports, doc),
+    tdom: createTdomImports(() => exports),
     console: { log: (...a) => console.log(...a) },
   };
   // The JS-String-Builtins proposal: moon emits imported string constants under
