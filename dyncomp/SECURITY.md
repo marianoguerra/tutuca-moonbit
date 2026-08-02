@@ -93,6 +93,14 @@ The default policy (`Policy::untrusted()`) grants **none** of them, and
 timer: a bundle that wants to wake itself up is asking for something nobody can
 meaningfully consent to in one dialog.
 
+A browser host chooses its tier through `@uiw.mount(policy=…)`, or
+`@dhw.set_app(…, policy~)` for a page that does its own mounting; `set_policy`
+changes it afterwards, for a host that asks a person first. It applies at LOAD,
+so narrowing it does not retract a bundle already registered — revoking is
+dropping the bundle. Until 0.9.6 there was no such argument and the browser host
+registered everything as untrusted no matter what the page wanted, which made
+the two upper tiers reachable only from a test.
+
 Two gaps remain on this path, both marked in the code: the browser bridge
 supplies `env` unconditionally rather than per grant (harmless while jco elides
 an import no guest calls), and `control.after` has no host implementation at

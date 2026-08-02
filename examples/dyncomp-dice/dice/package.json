@@ -1,0 +1,14 @@
+{
+  "name": "dice",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "A tutuca:component guest — a WebAssembly component a running tutuca app can load.",
+  "scripts": {
+    "build": "node build.mjs",
+    "pack": "node pack.mjs"
+  },
+  "devDependencies": {
+    "@bytecodealliance/jco": "^1.25.2"
+  }
+}

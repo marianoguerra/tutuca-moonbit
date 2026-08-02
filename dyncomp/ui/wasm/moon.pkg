@@ -25,6 +25,8 @@ import {
   "marianoguerra/tutuca/dyncomp/persist",
   // the one Store a browser has; a host that wants another passes its own
   "marianoguerra/tutuca/dyncomp/persist/wasm" @pwasm,
+  // `mount`'s `policy` argument: what this page accepts from a bundle
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/dyncomp/ui",
   "moonbitlang/core/json",

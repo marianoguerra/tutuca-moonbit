@@ -6,6 +6,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/persist",
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/dyncomp/ui",
   "moonbitlang/core/debug",
@@ -27,7 +28,7 @@ pub fn host_tools_views() -> Map[String, @anode.View]
 
 pub fn make_instance(@registry.ComponentRef, String, Map[String, @marianoguerra/tutuca/core.Value]) -> @marianoguerra/tutuca/core.Value?
 
-pub fn mount(session? : Session?, samples? : Array[HostToolsSample], requests? : Map[String, @component.RequestFn]) -> UniversalHost?
+pub fn mount(session? : Session?, samples? : Array[HostToolsSample], requests? : Map[String, @component.RequestFn], policy? : @policy.Policy) -> UniversalHost?
 
 pub fn on_event(@mizchi/js/core.Any) -> Unit
 

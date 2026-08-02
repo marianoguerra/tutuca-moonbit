@@ -6,6 +6,7 @@ import {
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/dyncomp/host",
   "marianoguerra/tutuca/dyncomp/persist",
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/registry",
   "moonbitlang/core/ref",
 }
@@ -16,6 +17,8 @@ pub fn app_root_value() -> @core.Value?
 pub fn bundle_component_names(String) -> Array[String]
 
 pub fn component_inits(String, String) -> Array[String]
+
+pub fn current_policy() -> @policy.Policy
 
 pub fn drop_bundle(String) -> Unit
 
@@ -41,7 +44,9 @@ pub fn registry() -> @registry.Registry
 
 pub fn restore(@persist.Snapshot) -> @core.Value?
 
-pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode) -> Unit
+pub fn set_app(@app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode], @marianoguerra/tutuca/vdom/wasm.WasmNode, policy? : @policy.Policy) -> Unit
+
+pub fn set_policy(@policy.Policy) -> Unit
 
 pub fn snapshot(@core.Value) -> @persist.Snapshot?
 

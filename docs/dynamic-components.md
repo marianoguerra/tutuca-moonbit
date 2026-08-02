@@ -140,6 +140,11 @@ pub fn mount() -> Unit {
     samples=[{ label: "clock", url: "./clock.tutuca.tar.gz" }],
     // services this host lends to what it hosts
     requests=my_requests(),
+    // what you will ACCEPT from a bundle. Defaults to `untrusted`: no
+    // capabilities, no bundle CSS. A bundle that asks for something you do
+    // not grant is refused rather than degraded, so raising this is a
+    // decision to make deliberately — `granted()` is "a person said yes".
+    policy=@policy.Policy::untrusted(),
   )
   |> ignore
 }

@@ -1,0 +1,36 @@
+// The universal host page: a drag-and-drop loader for dynamic wasm tutuca
+// components, assembled entirely out of the published `marianoguerra/tutuca`.
+//
+// The host itself is `dyncomp/ui/wasm`, which is a LIBRARY. This package is the
+// executable around it, and it exists for exactly one reason: a wasm-gc export
+// list is per-package `link` configuration and cannot come from a dependency.
+// So the six entry points the JS loader calls are re-exported here as one-line
+// forwards, and everything else in main.mbt is this page's own policy — which
+// bundle it offers and which service it lends.
+//
+// Build: moon build --target wasm-gc --release page   (or ../build.mjs)
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/dyncomp/ui/wasm" @uiw,
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"
+
+pkgtype(kind: "executable")
+
+options(
+  link: {
+    "wasm-gc": {
+      "exports": [
+        "mount",
+        "on_event",
+        "dyncomp_on_loaded",
+        "dyncomp_on_load_error",
+        "refresh_margaui",
+        "state_json",
+      ],
+      "use-js-builtin-string": true,
+    },
+  },
+)

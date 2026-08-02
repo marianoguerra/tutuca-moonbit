@@ -54,9 +54,17 @@ import {
 // precisely so that a consumer gets them, since they are the import contract of
 // packages that were already shipping without them.
 
+// `examples/` is the reverse of everything else in this list: not a part of the
+// project that does not belong in the tarball, but CONSUMERS of the tarball
+// that happen to live here. Each is its own module depending on the published
+// `marianoguerra/tutuca`, and shipping one inside the thing it depends on would
+// be a loop. They exist to prove that a release is complete — see
+// `examples/README.md`.
+
 options(
   exclude: [
     "benchmarks",
+    "examples",
     "guests",
     "playground",
     "demo",

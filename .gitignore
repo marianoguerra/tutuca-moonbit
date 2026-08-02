@@ -28,3 +28,8 @@ playground/_examples_check/
 # `gen-views` no longer emits any: nothing consumed the documents it wrote.
 *.wit
 !dyncomp/wit/*.wit
+# ...and the copy `tutuca new-guest` writes into a scaffolded guest, which is a
+# source file there rather than generated output: without this, a guest under
+# examples/ builds here and nowhere else, because a fresh clone would have no
+# contract to embed.
+!examples/**/wit/*.wit

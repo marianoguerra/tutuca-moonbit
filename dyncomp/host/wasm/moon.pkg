@@ -10,6 +10,9 @@ import {
   "marianoguerra/tutuca/dyncomp/registry",
   // snapshots of loaded instances, for a page that stores them
   "marianoguerra/tutuca/dyncomp/persist",
+  // what this page will accept from a bundle; the page chooses it, and until
+  // it does every bundle is registered as untrusted
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/vdom/wasm" @wdom,

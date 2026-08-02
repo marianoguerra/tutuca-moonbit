@@ -468,13 +468,49 @@ let by_name : Map[String, Int] = Map([])
 let next_load : Ref[Int] = { val: 1 }
 
 ///|
+/// What this page will accept from a bundle. Every load is screened against it,
+/// and a bundle that asks for something it does not grant is REFUSED — the
+/// error reaches the page as `dyncompError` with the reasons.
+///
+/// Untrusted until a page says otherwise, which is the only safe default for a
+/// loader whose whole purpose is to accept an archive from somewhere: a page
+/// that has not thought about the question has not granted anything.
+let policy : Ref[@policy.Policy] = { val: @policy.Policy::untrusted() }
+
+///|
 /// Hand the live app to the glue after mounting (mirrors @wglue.install), and
 /// subscribe the superseded-handle sweep to the app's drained cascades — after
 /// the App's own re-render, since that is what still reads the successors.
-pub fn set_app(app : @app.App[@wdom.WasmNode], doc : @wdom.WasmNode) -> Unit {
+///
+/// `policy` is the page's answer to "what may a bundle I have never seen do
+/// here". It belongs on this call rather than on each load because it is a
+/// property of the HOST, not of an archive: a page that screened one bundle
+/// more strictly than the next would be deciding by provenance, which is
+/// exactly the thing a sandbox exists to avoid needing.
+pub fn set_app(
+  app : @app.App[@wdom.WasmNode],
+  doc : @wdom.WasmNode,
+  policy? : @policy.Policy = @policy.Policy::untrusted(),
+) -> Unit {
   current.val = Some(app)
   current_doc.val = Some(doc)
+  set_policy(policy)
   @dyncomp.install_gc(app.transactor)
+}
+
+///|
+/// Change what this page accepts, for a host that decides after mounting (a
+/// person granting a capability, say). It applies to LOADS, so a bundle already
+/// registered under the old answer stays registered: revoking is dropping the
+/// bundle, not narrowing the policy.
+pub fn set_policy(next : @policy.Policy) -> Unit {
+  policy.val = next
+}
+
+///|
+/// What this page currently accepts.
+pub fn current_policy() -> @policy.Policy {
+  policy.val
 }
 
 ///|
@@ -551,6 +587,7 @@ pub fn on_loaded(
       app.scope,
       WasmGuest::{ bundle: bundle_id, registered },
       manifest,
+      policy=policy.val,
     )
   } catch {
     // Registration has ONE failure mode from a page's point of view — the

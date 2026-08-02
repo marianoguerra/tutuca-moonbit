@@ -1,0 +1,33 @@
+<!doctype html>
+<!-- A universal host for dynamic wasm tutuca components, built entirely from
+     the published `marianoguerra/tutuca`. The whole viewport is the app: it
+     starts as one empty cell, and clicking the + opens a command bar over the
+     catalog — the standard components, plus everything any loaded bundle
+     declares.
+
+     Drop a `.tutuca.tar.gz` (a gzipped tar of a guest's jco-transpiled
+     `tutuca:component` output) anywhere on the page and every component its
+     manifest declares joins that catalog. No server round-trip: the archive is
+     gunzipped with the native DecompressionStream and untarred in-browser.
+
+     Build and serve:  node build.mjs  &&  python3 -m http.server 8099 -d dist
+     Needs the JS String Builtins proposal (Chrome/Edge). -->
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <title>tutuca universal host — built from published packages</title>
+  <!-- margaui CSS (utilities + light/dark theme vars) is compiled in MoonBit and
+       injected here by mount(); pre-placed early so lazily-loaded palette <link>s
+       win the cascade over the light block. -->
+  <style id="margaui-css"></style>
+</head>
+<body>
+  <div id="app"></div>
+  <script type="module">
+    import { loadWasm } from "./loader.mjs";
+    const exports = await loadWasm("./page.wasm");
+    exports.mount();               // compiles + injects <style id="margaui-css">
+    globalThis.__tutuca_state = () => exports.state_json();
+  </script>
+</body>
+</html>

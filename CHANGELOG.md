@@ -8,6 +8,20 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`examples/` — consumers of the published package, inside the repository.**
+  Each is its own module depending on `marianoguerra/tutuca` from mooncakes
+  with no path dependency and no `../`. Nothing else here can catch what they
+  catch: `moon check` never leaves the module, so it cannot tell whether the
+  two wasm-gc JS loaders survived `moon publish`, whether the relative import
+  between them is repointable once they land beside a page, or whether `tutuca
+  new-guest` emits a tree that builds. Excluded from publish; each has its own
+  `build.mjs` and needs nothing from this repo. Run them after a release.
+
+  The first is `examples/dyncomp-dice`: the universal dynamic-component host
+  plus one guest of its own — a die, which asks the page for its number because
+  a `tutuca:component` world imports no entropy. It found the jco breakage
+  below on its first run.
+
 - **`dyncomp/` ships.** It was excluded from the published package, so
   `moon add marianoguerra/tutuca` delivered the framework and the CLI and
   nothing of the dynamic-component story: no contract, no host, no policy, no
@@ -313,6 +327,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   its author gets.
 
 ### Fixed
+
+- **A browser host could not choose what it accepts.** `dyncomp/policy` has
+  three tiers and `register_bundle` takes one, but `dyncomp/host/wasm` called it
+  without an argument — so every bundle a page loaded was registered as
+  `untrusted` and there was no way to say otherwise. A host that wanted to grant
+  a capability could not, which made `Granted` and `System` reachable only from
+  a test: any bundle declaring `cap-clock` or `cap-random` was refused by every
+  page that could actually run one, and shipping its own CSS was likewise
+  impossible. `@uiw.mount` now takes `policy` (still defaulting to `untrusted`,
+  which is the only safe default for a loader whose purpose is to accept an
+  archive from somewhere), `@dhw.set_app` takes it for a page that mounts
+  itself, and `@dhw.set_policy` changes it afterwards for a host that asks a
+  person first. It applies at LOAD, so narrowing it does not retract a bundle
+  already registered — revoking is dropping the bundle.
+
+- **A scaffolded guest could not be built.** `tutuca new-guest` writes a
+  `build.mjs` that ran jco from a hard-coded `node_modules/@bytecodealliance/
+  jco/src/jco.js`, and it declares that dependency as `^1.25.2`. jco 1.26 moved
+  its entry point to `dist/jco.js`, so a scaffold created after that release
+  npm-installed cleanly and then failed on the transpile step with "jco is not
+  installed" — the one error message that could not be acted on, because it was
+  installed. The path now comes from jco's own manifest (`bin.jco`), which is
+  the one place that cannot disagree with the layout. Found by
+  `examples/dyncomp-dice`, which is what it is for.
 
 - **An update that changed only what a schema does not name was thrown away.**
   `reuse_equal` — the check that keeps a rebuilt-but-equal field from

@@ -66,6 +66,26 @@ You can browse and install extra skills here:
   file left in those trees is the component source (`counter.mbt`, `todo.mbt`,
   …); its name is one wit-bindgen never emits, so regeneration leaves it alone.
 
+- `examples/*` are not packages of this module and not demos. Each is a
+  CONSUMER: its own `moon.mod` depending on the PUBLISHED `marianoguerra/tutuca`
+  fetched from mooncakes like anyone else's. They are excluded from publish,
+  `moon check` / `moon fmt` / `cmd/dev -- ci` never reach them (a nested
+  `moon.mod` stops discovery, the same way `guests/*` do), and each has its own
+  `build.mjs` that is the only way to build it. **An example must never gain a
+  path dependency, a `../` out of its own directory, or a step that runs
+  anything from this repo** — the one thing they prove is that a release is
+  complete on its own, and any of those would quietly stop proving it. That is
+  also why the directory is `examples/` rather than `example/`: no one of them
+  is "the" example, and a new one should be able to cover a different seam
+  without renaming anything.
+
+  `examples/dyncomp-dice` is the first: the universal dynamic-component host
+  plus one locally-authored guest. It exercises precisely what `moon check`
+  cannot — that the two wasm-gc JS loaders survive `moon publish`, that the
+  relative import between them is repointable once they land beside a page, and
+  that `tutuca new-guest` emits a tree that actually builds. Run the examples
+  after a release, before announcing one.
+
 ## Tooling
 
 ### Task runner (`cmd/dev`)

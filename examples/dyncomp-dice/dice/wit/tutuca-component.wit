@@ -1,0 +1,494 @@
+/// tutuca:component — dynamic WebAssembly tutuca components.
+///
+/// A guest implementing the `dynamic-component` world is a *logic module*: it
+/// declares its components (views as tutuca HTML template strings, the state
+/// schema, message buckets, styles) in a manifest, and implements the handlers
+/// on an opaque-state `instance` resource. The HOST is the framework: it
+/// compiles the views with anode (`Component::for_type`), renders them,
+/// delegates events at the root, and drives the whole lifecycle. Guest state
+/// never crosses the boundary — the host reads fields lazily (`get-field`)
+/// while rendering and swaps in the NEW instance a handler returns (self in,
+/// self out), which is exactly tutuca's COW model.
+///
+/// Opaque state and a DECLARED schema are not in tension: the schema says what
+/// fields exist and what they hold, the state itself stays inside the guest.
+/// That is the same split a host component has, and it is what lets everything
+/// generic over a schema — equality, the JSON projection, the inspector, the
+/// per-field mutators — work on a guest without the guest implementing any of
+/// it.
+///
+/// The world imports no WASI — only the interfaces below — so bundles run in
+/// the browser via `jco transpile --instantiation async` with host-supplied
+/// imports. That is not an accident of packaging: it is the sandbox. A guest
+/// has no filesystem, no network, no sockets, no environment, no subprocess,
+/// no clock and no entropy except what `env` grants it, and it never touches
+/// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
+/// that does and does not cover.
+package tutuca:component@0.4.0;
+
+/// Dynamic values crossing the boundary. WIT has no recursive types, so
+/// scalars travel inline and compounds are u64 handles into a host-side
+/// arena, read/built through this interface. Handles are only valid for the
+/// duration of the current host->guest call: read handles go stale when the
+/// call returns, and freshly built handles must be handed back to the host
+/// (in a return value or an import argument) within the same call.
+/// `instance` payloads are guest-instance handles (see `guest.instance`),
+/// used for nested same-bundle child components.
+interface values {
+  variant value {
+    nil,
+    boolean(bool),
+    number(f64),
+    text(string),
+    %list(u64),
+    %map(u64),
+    %instance(u64),
+  }
+
+  // reads (any handle)
+  list-len: func(h: u64) -> u32;
+  list-get: func(h: u64, index: u32) -> value;
+  map-len: func(h: u64) -> u32;
+  map-keys: func(h: u64) -> list<string>;
+  map-get: func(h: u64, key: string) -> option<value>;
+
+  // construction (fresh handles)
+  list-new: func() -> u64;
+  list-push: func(h: u64, v: value);
+  map-new: func() -> u64;
+  map-set: func(h: u64, key: string, v: value);
+
+  // escape hatch for JSON-native guests; `instance` values serialize as null
+  to-json: func(v: value) -> string;
+  from-json: func(json: string) -> value;
+}
+
+/// The three ambient facts a component cannot compute for itself: what time it
+/// is, an unpredictable number, and a fresh name. Each one is a CAPABILITY the
+/// manifest requests and the host grants (`capability-req`); an ungranted call
+/// traps rather than returning a plausible lie.
+///
+/// Deliberately NOT `wasi:clocks` + `wasi:random`. Three reasons, in order:
+/// the world imports no WASI and adding it drags preview2 shims into the
+/// browser; a real monotonic clock is the primitive a timing side channel is
+/// built from, and the coarsened one below is not; and an ambient clock makes
+/// a dispatch unreplayable, which contradicts "the host is the framework".
+interface env {
+  /// Milliseconds since the Unix epoch, coarsened by the host and FROZEN for
+  /// the duration of one dispatch: every call inside one `handle-event`
+  /// returns the same instant. That is what lets a session replay, and what
+  /// denies a guest the fine-grained timer a side channel needs. Requires
+  /// `cap-clock`.
+  now-ms: func() -> u64;
+
+  /// Minutes to add to UTC for the user's local time, and the host's locale.
+  /// The host-context a widget would otherwise read off the DOM, handed over
+  /// as data. Requires `cap-clock`.
+  tz-offset-min: func() -> s32;
+  locale: func() -> string;
+
+  /// From a PRNG the HOST seeds per instance and records, so a session
+  /// replays. NOT cryptographic: a guest that needs unpredictability an
+  /// attacker cannot reproduce asks the host through `control.request`.
+  /// Requires `cap-random`.
+  random-u64: func() -> u64;
+
+  /// A fresh identifier, unique within this bundle for this session.
+  /// Monotonic, not a UUID — it is for keying a list, not for naming a thing
+  /// outside the page. Requires `cap-random`.
+  new-id: func() -> string;
+}
+
+/// Framework services available to a running handler. Calls are buffered by
+/// the host and applied through the dispatching handler's context when
+/// `handle-event` returns (tutuca ctx.bubble / ctx.send / ctx.request).
+/// `log` is immediate and always legal.
+interface control {
+  use values.{value};
+
+  enum log-level { debug, info, warn, error }
+
+  log: func(level: log-level, msg: string);
+
+  /// One hop of a path RELATIVE to the dispatching instance — the guest's
+  /// half of `ctx.at`. Absolute paths are deliberately absent: a component
+  /// addresses its own subtree, never the tree it happens to be mounted in.
+  record item-step { field: string, key: string }
+  record index-step { field: string, index: u32 }
+  variant path-step {
+    /// `.name`
+    field(string),
+    /// `.name[key]` — a keyed element of a map / ordered-map field
+    item(item-step),
+    /// `.name[i]` — an element of a list field
+    at(index-step),
+  }
+
+  /// Response routing for a request (host `RequestOpts`). All three names are
+  /// optional: with none of them the response arrives as
+  /// handle-event(response, <request name>, [result, error]); with `on-ok` /
+  /// `on-error` it arrives at those names carrying just the value; `on-res`
+  /// renames the combined form.
+  record request-opts {
+    on-ok: option<string>,
+    on-error: option<string>,
+    on-res: option<string>,
+    /// Resolve the responding component by its path as it is WHEN THE RESPONSE
+    /// ARRIVES rather than pinning the keys at request time (host `live_path`).
+    live-path: bool,
+  }
+
+  /// Bubble a message to the parent component in the host tree.
+  emit: func(name: string, args: list<value>);
+
+  /// Send a message to self: arrives as a later handle-event(receive, name, ...).
+  send: func(name: string, args: list<value>);
+
+  /// Send to a component in this one's own subtree (`ctx.send-at-path`): the
+  /// message arrives as handle-event(receive, ...) at `path`, e.g.
+  /// `[field("left")]` for the child a `left` field holds.
+  send-at: func(path: list<path-step>, name: string, args: list<value>);
+
+  /// Raise a bubble AT a descendant, which then travels up through it — the
+  /// targeted twin of `emit`.
+  bubble-at: func(path: list<path-step>, name: string, args: list<value>);
+
+  /// Stop the message being handled from travelling any further up the tree
+  /// (host `ctx.stop-propagation`). Only meaningful while handling a bubble.
+  stop-propagation: func();
+
+  /// Fire a request handler — one this bundle serves (see
+  /// `component-def.requests`) or, failing that, one the HOST registered. The
+  /// response arrives as a later handle-event(response, ...), routed by `opts`.
+  ///
+  /// A bundle's OWN handlers run inside the guest, so they inherit the guest's
+  /// (absent) authority and need no policy. Reaching a HOST handler is the one
+  /// place a guest asks for something it cannot do itself, so the host decides
+  /// — by the requester's path, at the moment of the call, not by anything the
+  /// manifest claimed. A refusal arrives as an error response.
+  request: func(name: string, args: list<value>, opts: request-opts);
+
+  /// Ask the host to send `name` back to THIS instance after `delay-ms`, as a
+  /// later handle-event(receive, ...). Buffered like the rest; the host owns
+  /// the timer and may coalesce, delay or drop it. There is no cancel and no
+  /// handle: a guest cannot cancel what it does not own, and a component that
+  /// wants to stop a tick stops acting on it. Requires `cap-timer`.
+  after: func(delay-ms: u32, name: string, args: list<value>);
+
+  /// Create a same-bundle child instance and return its HOST-ASSIGNED token
+  /// (the only instance-token space; `value.instance` payloads use it).
+  /// Callable from constructors and handlers; the child becomes a field of
+  /// the parent (return it from get-field as instance(token), accept it in
+  /// with-field) and the host renders it with `<x render=".field">`.
+  make-instance: func(component: string, args: list<tuple<string, value>>) -> u64;
+
+  /// Release a child token that will no longer be returned from get-field.
+  drop-instance: func(token: u64);
+}
+
+interface guest {
+  use values.{value};
+
+  /// A named view in tutuca template syntax. The HOST parses it (anode):
+  /// event bindings are attributes resolved at view parse time, so the handler
+  /// names the markup references dispatch back into `instance.handle-event`.
+  /// Every component needs a "main" view.
+  ///
+  /// This is the widest channel a bundle has, because it is text the host
+  /// compiles and renders into its own page. `@dangerouslysetinnerhtml` is
+  /// REFUSED in a guest view: its content is a runtime expression, so no
+  /// registration-time pass can see what it will hold, and the host will not
+  /// render markup it never got to look at. (A sanitizer over the compiled
+  /// tree is the next step, and is what would let it back in.)
+  record view-def {
+    name: string,
+    html: string,
+  }
+
+  /// What a declared field HOLDS, as a flat table: WIT has no recursive types,
+  /// so a compound points at its parts by index into `component-def.types`.
+  /// The kinds are the host's `TyInfo` — a guest declares the same shapes a
+  /// host component declares in `<script type="tutuca/state">`.
+  enum ty-kind {
+    ty-bool, ty-int, ty-float, ty-text,
+    ty-list, ty-tuple, ty-option, ty-omap,
+    ty-record, ty-enum, ty-variant, ty-flags, ty-set,
+    /// A child component slot; `name` is the component it holds, empty for
+    /// "some component" (the bare `component` marker).
+    ty-comp,
+    ty-any,
+  }
+
+  record ty-def {
+    kind: ty-kind,
+    /// The element of a list / option / omap: an index into `types`.
+    elem: option<u32>,
+    /// A tuple's members: indices into `types`.
+    items: list<u32>,
+    /// The declared name of a record / enum / variant / flags, or the
+    /// component a `ty-comp` holds. Empty when the kind has no name.
+    name: string,
+    /// A closed set's (`flags`) members.
+    members: list<string>,
+  }
+
+  /// A sentence about a name the component already declares elsewhere —
+  /// a handler, a receive, a bubble, a response, a method, a request. One flat
+  /// table rather than a doc field on six lists, because the lists stay plain
+  /// `list<string>` and the host merges by name.
+  record named-doc {
+    name: string,
+    doc: string,
+  }
+
+  /// The part of a field a TYPE cannot say. `ty-def` says a field holds a
+  /// string; this says it holds an email between 3 and 254 characters with a
+  /// default of "". Both a generated form and a JSON Schema need the second
+  /// half, and neither can infer it.
+  ///
+  /// Every member is optional by having an empty spelling: "" for the strings,
+  /// `none` for the options. `enum-json` and `default-json` are JSON text for
+  /// the same reason `init-def.args-json` is — a manifest is DATA the host
+  /// keeps, and an arena handle would be stale the moment `get-manifest`
+  /// returned.
+  record constraint {
+    min: option<f64>,
+    max: option<f64>,
+    min-len: option<u32>,
+    max-len: option<u32>,
+    /// A regular expression the value must match. "" = unconstrained.
+    pattern: string,
+    /// A JSON Schema `format`: email, uri, date-time, color, … "" = none.
+    format: string,
+    /// A JSON array of the allowed values. "" = not an enumeration.
+    enum-json: string,
+    /// The value a form pre-fills and a schema advertises. "" = none, which is
+    /// NOT the same as the type's zero: the host already knows that one.
+    default-json: string,
+  }
+
+  record field-def {
+    name: string,
+    /// Index into `component-def.types`.
+    ty: u32,
+    /// What this field is FOR, in a sentence. This is the one thing neither
+    /// the type table nor the views can supply, and it is what a search index
+    /// ranks on and a language model reads before choosing.
+    doc: string,
+    /// Whether a constructor must be given this field. A field the type's zero
+    /// covers is not required.
+    required: bool,
+    constraint: option<constraint>,
+  }
+
+  /// A named initial state — the guest's `<script type="tutuca/init">`. The
+  /// args are JSON rather than `value`s because a manifest is DATA the host
+  /// keeps: an arena handle would be stale the moment `get-manifest` returned.
+  record init-def {
+    name: string,
+    args-json: string,
+    /// When to pick this fixture over the bare constructor.
+    doc: string,
+  }
+
+  record component-def {
+    name: string,
+    /// What this component IS, in a sentence or two. A catalog with nothing
+    /// but names is a catalog nobody — person or model — can choose from.
+    doc: string,
+    /// Search terms beyond the name and the doc: synonyms, the domain, the
+    /// shape ("table", "chart", "picker").
+    keywords: list<string>,
+    /// A grouping for a palette. Free text; "" = ungrouped.
+    category: string,
+    /// Sentences for the names in `handlers` / `receives` / `bubbles` /
+    /// `responses` / `methods` / `requests`, merged by name. Entries naming
+    /// nothing are ignored.
+    message-docs: list<named-doc>,
+    views: list<view-def>,
+    /// This component's DECLARED state, which is what makes a guest instance
+    /// describable: the host builds a real schema from it, and with it comes
+    /// structural equality, the JSON projection, the inspector's form and the
+    /// generated per-field mutators (`setCount`, `toggleDone`, `pushInItems`,
+    /// …) — none of which the guest implements.
+    types: list<ty-def>,
+    fields: list<field-def>,
+    /// The `@on` handler names this component ANSWERS ITSELF. A name the
+    /// views raise that is NOT here is handled by the host: it is a mutator
+    /// the declared fields imply (`setDraft`, `pushInItems`, `resetLeft`, …),
+    /// which is how a guest gets those for free — and why a component that
+    /// wants such a name for logic of its own has to say so here.
+    handlers: list<string>,
+    /// Messages a parent or sibling `send`s (including "init").
+    receives: list<string>,
+    /// Messages a child raises through `control.emit`.
+    bubbles: list<string>,
+    /// Responses to `control.request` calls.
+    responses: list<string>,
+    /// Names callable from view expressions via call-method (may be empty).
+    methods: list<string>,
+    /// Names a view's `@when` calls to filter an iteration. They reach
+    /// `call-method` too — with (key, item, iter-data) as args — and their
+    /// answer is read as a boolean; this list is what tells the host to look
+    /// for them in the render-time (alter) namespace rather than the value one.
+    whens: list<string>,
+    /// Requests this bundle SERVES (`handle-request`). They resolve for the
+    /// bundle's own components first, so a bundle can provide a service to its
+    /// components without the host knowing about it; anything not served here
+    /// falls through to the host's own request handlers.
+    requests: list<string>,
+    /// Named initial states a host can offer instead of the bare constructor
+    /// (a picker listing "Counter (with-history)"), the guest's twin of a host
+    /// component's `tutuca/init` fixtures.
+    inits: list<init-def>,
+    /// CSS for this component, which the host injects SCOPED to this
+    /// component's generated container selector. There is deliberately no
+    /// companion for the host's `global_style`: unscoped CSS from a bundle
+    /// would reach the page around it, and no amount of validation makes that
+    /// safe. A bundle that wants to affect the page asks the host.
+    ///
+    /// The host may refuse the block, and under its strictest tier requires it
+    /// to be empty — a guest styles with the host's utility classes, which is
+    /// already what the sample guests do.
+    style: string,
+  }
+
+  /// Something a component cannot do for itself and the host can. Requested
+  /// here, granted (or not) by the host; there is no negotiation and no
+  /// partial grant, because a capability that is present but lies is worse
+  /// than one that is absent.
+  ///
+  /// `control.request` is deliberately NOT in this list. Whether a guest may
+  /// reach a HOST request handler is a decision about the caller, not about
+  /// the bundle, so the host makes it per call from the requester's path
+  /// rather than reading a claim out of the manifest.
+  enum capability {
+    /// env.now-ms, env.tz-offset-min, env.locale
+    cap-clock,
+    /// env.random-u64, env.new-id
+    cap-random,
+    /// control.after
+    cap-timer,
+  }
+
+  record capability-req {
+    cap: capability,
+    /// Why this bundle needs it, shown to whoever decides. A request with no
+    /// reason is a request a person cannot judge.
+    reason: string,
+  }
+
+  // What the views RAISE is not declared: the host compiles them, so it reads
+  // those names off the compiled tree (Component::view_handler_names) and puts
+  // them in the component's descriptor. `handlers` above is the other
+  // question — which of them the guest answers rather than the host.
+
+  record manifest {
+    /// Contract version; this document describes version 4.
+    api-version: u32,
+    module-name: string,
+    /// What this bundle is, for a catalog entry. All four are advisory: the
+    /// host shows them, nothing resolves against them, and a bundle's IDENTITY
+    /// is the hash of the archive it arrived in, not anything it says here.
+    doc: string,
+    version: string,
+    homepage: string,
+    authors: list<string>,
+    /// What this bundle asks the host for. An ungranted capability is a
+    /// refused bundle, not a degraded one.
+    capabilities: list<capability-req>,
+    components: list<component-def>,
+  }
+
+  get-manifest: func() -> manifest;
+
+  /// The answer to a request this bundle serves. Synchronous, because every
+  /// call across this boundary is: a guest that needs to wait asks the host
+  /// instead (`control.request`).
+  variant request-result {
+    ok(value),
+    err(value),
+  }
+
+  /// Serve one of the `requests` a component-def declares. Module-scoped like
+  /// the manifest: a request is a service the BUNDLE provides, not state an
+  /// instance holds.
+  handle-request: func(name: string, args: list<value>) -> request-result;
+
+  enum bucket { input, receive, response, bubble }
+
+  /// One guest component instance with OPAQUE state. Instances are
+  /// immutable by convention: handlers return a NEW instance (or none for
+  /// "unchanged") and the host swaps its wrapper — new instance, new
+  /// identity, which drives tutuca's change detection.
+  /// The host drops superseded handles once a transaction settles.
+  resource instance {
+    /// `component` is a component-def name from the manifest; `args` are
+    /// construction fields (host mount arguments).
+    constructor(component: string, args: list<tuple<string, value>>);
+
+    /// Rebuild an instance from bytes THIS bundle's `persist` wrote.
+    ///
+    /// none means refuse — bytes from a version this guest no longer reads, or
+    /// a component that does not persist — and the host then falls back to
+    /// constructing from the declared fields, which it can do without the
+    /// guest. Refusing is therefore cheap and always available, which is why
+    /// there is no versioning scheme here: a guest that changed its format
+    /// says no to the old one and the state it could not read is the only
+    /// thing lost.
+    restore: static func(component: string, state: list<u8>) -> option<instance>;
+
+    /// Lazy field read used while the host renders this instance's views
+    /// (and for path lookups). none = no such field.
+    get-field: func(name: string) -> option<value>;
+
+    /// Ordered entries so host `@each` can iterate the instance as a
+    /// sequence; none = not a sequence.
+    seq-entries: func() -> option<list<tuple<string, value>>>;
+
+    /// Self in, self out: return the successor instance, or none if the
+    /// event caused no state change. The `bubble` bucket is how a guest
+    /// component hears from a guest child of its own (`control.emit` one level
+    /// down); the host walks it up exactly as it does between host components.
+    ///
+    /// There is no event object: what a handler needs from the DOM event is
+    /// named in the view (`@on.input="setName value"`) and arrives evaluated
+    /// in `args`, which is also how a host component receives it — `event`,
+    /// `target` and `ctx` are not handler arguments in tutuca.
+    handle-event: func(b: bucket, name: string,
+                       args: list<value>) -> option<instance>;
+
+    /// Pure render-time method call (view expressions). Must not mutate.
+    call-method: func(name: string, args: list<value>) -> value;
+
+    /// COW write-through: successor with one field replaced. It is what host
+    /// paths write through to reach a nested child, AND what the generated
+    /// mutators write through, so a component that declares fields wants it
+    /// even with no children of its own.
+    with-field: func(name: string, v: value) -> option<instance>;
+
+    /// This instance's state as bytes only this guest interprets. The host
+    /// STORES them and hands them back to `restore`; it never looks inside,
+    /// which is what lets a guest persist state the declared fields do not
+    /// name (a cursor, a cache, a parser's arena) without the contract
+    /// growing a shape for it.
+    ///
+    /// An empty list means "I do not persist". That is not a failure: the host
+    /// can already project the declared fields to JSON and construct from
+    /// them, so a guest that adds nothing beyond its fields should return
+    /// empty and let the host do it.
+    persist: func() -> list<u8>;
+  }
+
+  // There is no `to-json` and no `eq`: both are answers the DECLARED schema
+  // already gives the host. It projects the state by reading the fields the
+  // manifest names (Value::to-json over obj-schema) and compares two instances
+  // the same way (Obj::obj-eq), so a guest cannot get either one subtly wrong.
+}
+
+world dynamic-component {
+  import values;
+  import control;
+  import env;
+  export guest;
+}

@@ -473,12 +473,21 @@ pub fn refresh_margaui() -> Unit {
 /// `samples` are bundles to offer as buttons; empty draws none. `requests` are
 /// services this host offers to what it hosts.
 ///
+/// `policy` is what this page will accept from a bundle, and it defaults to
+/// `untrusted`: no capabilities, no bundle CSS, stock quotas. A page that wants
+/// a bundle to be able to read a clock or draw a random number has to say so —
+/// `@policy.Policy::granted()` is a person having said yes — and a bundle that
+/// asks for something ungranted is refused rather than handed a plausible lie,
+/// which is why this is the page's decision and not a default anyone can drift
+/// into. See `dyncomp/SECURITY.md`.
+///
 /// Returns `None` if the app could not mount, which on wasm-gc means the page
 /// had no `#app` to mount into.
 pub fn mount(
   session? : Session? = None,
   samples? : Array[HostToolsSample] = [],
   requests? : Map[String, @component.RequestFn] = {},
+  policy? : @policy.Policy = @policy.Policy::untrusted(),
 ) -> UniversalHost? {
   let (module_, ui) = universal_module(samples~, requests~)
   guard @wglue.mount_in(module_, "UniversalApp") is Some(app) else {
@@ -498,7 +507,7 @@ pub fn mount(
   // can be a handle the host has already collected — and a snapshot taken
   // through one is not a snapshot at all.
   app.transactor.on_drained(save_session)
-  @dhw.set_app(app, @wglue.document())
+  @dhw.set_app(app, @wglue.document(), policy~)
   host.apply_margaui()
   // The bar tools are where a load's answers arrive, so that is the path a
   // resume asks from.
