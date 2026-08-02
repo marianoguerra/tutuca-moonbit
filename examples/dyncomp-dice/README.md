@@ -32,9 +32,9 @@ These three are version-coupled. Bumping one without the others can produce a
 component the host refuses.
 
 Network is needed the first time, to fetch the dependencies. If resolution picks
-something older than 0.9.5, run `moon update` — `dyncomp/` was excluded from the
-package until that release, so an older one resolves to a tutuca with none of
-this in it.
+something older than the version `moon.mod` pins, run `moon update` — `dyncomp/`
+was excluded from the package until 0.9.5, so anything before that resolves to a
+tutuca with none of this in it.
 
 ## Build and run
 

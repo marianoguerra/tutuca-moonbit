@@ -92,7 +92,7 @@ if (!tutuca) {
   console.error(
     "build: could not find marianoguerra/tutuca in .mooncakes.\n" +
       "  The dynamic-component host and its two JS loaders only exist from\n" +
-      "  version 0.9.5 onward, and a stale local index resolves 0.9.4, which\n" +
+      "  version 0.9.5 onward, and a stale local index may resolve older,\n" +
       "  has none of it. Run:\n\n" +
       "    moon update && node build.mjs\n",
   );
