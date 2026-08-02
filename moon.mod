@@ -22,12 +22,12 @@ import {
   "moonbitlang/quickcheck@0.14.0",
   "mizchi/js@0.12.1",
   "mizchi/js_browser@0.12.1",
-  "moonbitlang/async@0.20.2",
+  "moonbitlang/async@0.20.3",
   "moonbit-community/html@0.1.2",
   "mizchi/fswatch@0.2.1",
   "mizchi/wit@0.3.1",
   "marianoguerra/tailwindcss@0.2.0",
-  "moonbitlang/x@0.4.46",
+  "moonbitlang/x@0.4.47",
 }
 
 // What `moon publish` ships. Consumers get the library packages, the CLI
