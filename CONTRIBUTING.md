@@ -91,7 +91,8 @@ UI. Two consequences worth knowing when you edit around it:
 
 - **`dyncomp/test` is the one part excluded.** Its `*.test.mjs` drive real
   guest bundles out of `guests/*/dist/js`, which no tarball has. Run them from
-  the repo (`node --test dyncomp/test/`).
+  the repo (`node --test 'dyncomp/test/*.test.mjs'` — the glob, quoted so node
+  expands it; `--test` stopped accepting a bare directory).
 - **The wasm-gc JS shims live beside their packages, not beside a page.**
   `app/wasm/loader.mjs` is the `jscore` + `tdom` import contract that
   `app/wasm` and `vdom/wasm` declare; `dyncomp/host/wasm/loader.mjs` is the

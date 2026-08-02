@@ -24,7 +24,7 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - Demo: `demo/universal_wasm` — the ONE page that hosts runtime-loaded
   bundles. `moon run --target native cmd/dev -- universal`, serve `dist/`,
   open `/universal/`. Drop a `.tutuca.tar.gz` on it, or load one by URL.
-- Contract harnesses: `node --test dyncomp/test/*.test.mjs` (the MoonBit
+- Contract harnesses: `node --test 'dyncomp/test/*.test.mjs'` (the MoonBit
   counter, TodoMVC, and the Rust converter); `test/browser-smoke.html` served
   from the repo root.
 

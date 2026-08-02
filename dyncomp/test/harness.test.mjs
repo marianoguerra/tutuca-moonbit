@@ -2,7 +2,7 @@
 // counter guest (guests/counter). Build it first:
 //   node guests/counter/build.mjs
 // then:
-//   node --test dyncomp/test/
+//   node --test 'dyncomp/test/*.test.mjs'
 //
 // The fake `values` arena here plays the role dyncomp/host will play in
 // wasm-gc: compounds are u64 handles into a host-side table, scalars inline.
