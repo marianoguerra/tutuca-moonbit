@@ -114,9 +114,28 @@ fn host_requests() -> Map[String, @component.RequestFn] {
 // --- lifecycle exports ---------------------------------------------------
 
 ///|
+/// `policy` is passed even though `untrusted` is what it already defaults to.
+///
+/// Partly because it is the decision a host page most owes an answer to, and a
+/// stated one reads as a choice rather than an oversight — this page accepts a
+/// bundle from anywhere, so it grants nothing to it: no clock, no entropy, no
+/// stylesheet of its own. `@policy.Policy::granted()` is the line to change,
+/// and it means a person said yes.
+///
+/// Partly because an argument nobody passes is an argument nobody notices is
+/// missing. Until 0.9.6 there was no `policy` here to pass: `dyncomp/ui/wasm`
+/// registered every bundle as untrusted and gave a page no say, so the two
+/// upper tiers were reachable only from a test. This example is what found
+/// that, and writing the argument out is what makes the next such gap a build
+/// error here rather than something somebody has to go looking for.
 pub fn mount() -> Unit {
   seed_from_clock()
-  @uiw.mount(samples=samples(), requests=host_requests()) |> ignore
+  @uiw.mount(
+    samples=samples(),
+    requests=host_requests(),
+    policy=@policy.Policy::untrusted(),
+  )
+  |> ignore
 }
 
 ///|

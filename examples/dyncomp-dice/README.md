@@ -90,7 +90,7 @@ mutator nobody declared, which the host synthesized from the declared field.
 | --- | --- |
 | `moon.mod` | two published dependencies, no path dependency. Everything below is reachable from a tarball. |
 | `page/moon.pkg` | the wasm-gc export list — the ONE thing that cannot come from a dependency, and therefore the only reason the page is a package rather than a function call |
-| `page/main.mbt` | the whole host in ~70 lines: `@uiw.mount`, six one-line forwards, and the `roll` service |
+| `page/main.mbt` | the whole host in ~70 lines: `@uiw.mount`, six one-line forwards, the `roll` service, and the `policy` this page grants a bundle (nothing) |
 | `page/loader.mjs` | the browser side: three import namespaces, all from the published loaders |
 | `dice/gen/interface/tutuca/component/guest/dice.mbt` | the ONE file a component author writes. Everything else under `dice/` came from `tutuca new-guest dice`. |
 | `build.mjs` | the assembly, including the loader rewrite below |
