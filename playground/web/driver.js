@@ -16,6 +16,13 @@
 // EXTRA FILES OF THE USER'S PACKAGE. Same package means the component tab can
 // name CounterMsg / counter_views with no import — that is what
 // "auto-imported" amounts to here.
+//
+// A fourth tab, Inspect, holds the state snapshot and the activity log. They
+// used to sit UNDER the preview, which cost the thing being looked at half its
+// pane; as a tab of THIS pane they are beside the preview instead — visible at
+// the same time, and free when not asked for. The right pane is now nothing
+// but the preview, which grows again whenever this one is narrowed or
+// collapsed (Ctrl/⌘+B).
 
 import { errorDiagnostics, makeCompiler, mount, mountWasm, playgroundConfig } from "./runtime.js";
 import { createEditor } from "./editor.bundle.js";
@@ -46,11 +53,17 @@ const preview = $("#preview");
 const targetSel = $("#target");
 
 // --- tabs ------------------------------------------------------------------
+// The inspector is a tab of this pane too, so state and activity sit BESIDE the
+// running component rather than under it — both readable at once, and the
+// preview keeps its pane whole.
 const TABS = [
   ["#tab-component", "#editor"],
   ["#tab-view", "#view-editor"],
   ["#tab-generated", "#gen-editor"],
+  ["#tab-inspect", "#inspect"],
 ];
+const inspectTab = $("#tab-inspect");
+const inspectOpen = () => inspectTab.getAttribute("aria-selected") === "true";
 function selectTab(btnSel) {
   for (const [b, panel] of TABS) {
     const on = b === btnSel;
@@ -61,8 +74,95 @@ function selectTab(btnSel) {
   if (btnSel === "#tab-view") viewEditor.view.requestMeasure();
   if (btnSel === "#tab-generated") genEditor.view.requestMeasure();
   if (btnSel === "#tab-component") editor.view.requestMeasure();
+  if (inspectOpen()) inspectTab.classList.remove("has-news");
 }
 for (const [b] of TABS) $(b).addEventListener("click", () => selectTab(b));
+
+// --- code panel: collapse + resize ------------------------------------------
+// Collapsing hands the code pane's width to the preview; the width itself is a
+// CSS custom property the splitter drags. Both survive a reload, because the
+// layout someone settles on is part of how they read the page.
+const workbench = $("#workbench");
+const LAYOUT_KEY = "mb-playground.layout";
+const readLayout = () => {
+  try { return JSON.parse(localStorage.getItem(LAYOUT_KEY)) || {}; } catch { return {}; }
+};
+const writeLayout = (patch) => {
+  try { localStorage.setItem(LAYOUT_KEY, JSON.stringify({ ...readLayout(), ...patch })); } catch {}
+};
+
+// The editors are position:absolute inside a pane whose width just changed;
+// CodeMirror only re-measures when asked.
+function remeasureEditors() {
+  for (const e of [editor, viewEditor, genEditor]) e.view.requestMeasure();
+}
+
+const codeCollapsed = () => workbench.classList.contains("code-collapsed");
+function setCodeCollapsed(on, { remember = true } = {}) {
+  workbench.classList.toggle("code-collapsed", on);
+  $("#collapse-code").setAttribute("aria-expanded", String(!on));
+  $("#expand-code").setAttribute("aria-expanded", String(!on));
+  if (remember) writeLayout({ collapsed: on });
+  if (!on) remeasureEditors();
+}
+$("#collapse-code").addEventListener("click", () => setCodeCollapsed(true));
+$("#expand-code").addEventListener("click", () => {
+  setCodeCollapsed(false);
+  editor.view.focus();
+});
+// Ctrl/⌘+B toggles, the same key every editor uses for its sidebar. Neither
+// CodeMirror keymap claims it, so it works with the cursor in the editor too.
+addEventListener("keydown", (e) => {
+  if ((e.metaKey || e.ctrlKey) && !e.altKey && !e.shiftKey && e.key.toLowerCase() === "b") {
+    e.preventDefault();
+    setCodeCollapsed(!codeCollapsed());
+  }
+});
+
+// Splitter: drag sets --code-w on main. Clamped so neither pane can be dragged
+// out of existence — collapsing is the button's job, not an accident of aim.
+// The floor is in px, not per cent: a percentage that leaves room for the tab
+// strip on a wide monitor leaves none on a laptop.
+const MIN_CODE_PX = 220;
+const splitter = $("#splitter");
+function setCodeWidth(px, { remember = true } = {}) {
+  const total = workbench.clientWidth;
+  const pct = (Math.min(total * 0.8, Math.max(MIN_CODE_PX, px)) / total) * 100;
+  workbench.style.setProperty("--code-w", `${pct.toFixed(2)}%`);
+  if (remember) writeLayout({ codeWidth: pct });
+  remeasureEditors();
+}
+splitter.addEventListener("pointerdown", (e) => {
+  if (codeCollapsed()) return;
+  splitter.focus(); // preventDefault below would otherwise cost it the click focus
+  splitter.setPointerCapture(e.pointerId);
+  splitter.classList.add("dragging");
+  const move = (ev) => setCodeWidth(ev.clientX - workbench.getBoundingClientRect().left, { remember: false });
+  const up = () => {
+    splitter.classList.remove("dragging");
+    splitter.removeEventListener("pointermove", move);
+    splitter.removeEventListener("pointerup", up);
+    writeLayout({ codeWidth: parseFloat(workbench.style.getPropertyValue("--code-w")) });
+  };
+  splitter.addEventListener("pointermove", move);
+  splitter.addEventListener("pointerup", up);
+  e.preventDefault();
+});
+// Keyboard equivalent, so the divider is not mouse-only.
+splitter.addEventListener("keydown", (e) => {
+  const step = e.key === "ArrowLeft" ? -32 : e.key === "ArrowRight" ? 32 : 0;
+  if (!step) return;
+  e.preventDefault();
+  setCodeWidth($(".pane.code").getBoundingClientRect().width + step);
+});
+
+(function restoreLayout() {
+  const saved = readLayout();
+  if (typeof saved.codeWidth === "number") {
+    workbench.style.setProperty("--code-w", `${saved.codeWidth}%`);
+  }
+  if (saved.collapsed) setCodeCollapsed(true, { remember: false });
+})();
 
 // --- view -> generated module ----------------------------------------------
 let generated = { module: "", ir: "" };
@@ -151,6 +251,8 @@ function activityLine(e) {
 function inspectorOnState() {
   return (s, a) => {
     stateOut.textContent = tryPretty(s);
+    // The inspector is behind a tab now: flag it when it changes out of sight.
+    if (!inspectOpen()) inspectTab.classList.add("has-news");
     if (a == null) return;
     let entries = [];
     try { entries = JSON.parse(a); } catch { return; }
@@ -165,6 +267,13 @@ function mountPreview(jsText) {
 // wasm-gc: `result` is a wasm binary, not JS text — instantiate + drive from wasm.
 async function mountPreviewWasm(wasmBytes) {
   await mountWasm(preview, wasmBytes, { onState: inspectorOnState() });
+}
+
+// The diagnostics panel lives in the code pane, so a failure while that pane is
+// collapsed would be a red status line and nothing else. Bring it back — the
+// reader has to see the message to act on it.
+function revealDiagnostics() {
+  if (codeCollapsed()) setCodeCollapsed(false);
 }
 
 function tryPretty(s) {
@@ -194,6 +303,7 @@ async function run() {
     // for the generated module, and a debounce may still be pending.
     if (!generate()) {
       setStatus("view error", "error");
+      revealDiagnostics();
       return;
     }
     const r = await compiler.compile(
@@ -211,6 +321,7 @@ async function run() {
       // which is exactly what a regenerated view produces when the component
       // has not caught up. Don't report that as "0 errors".
       setStatus(errs.length ? `compile errors (${errs.length})` : "compile failed", "error");
+      revealDiagnostics();
       return;
     }
     let mountErr = null;
@@ -247,6 +358,7 @@ async function run() {
     );
     diags.textContent = String(e.stack || e.message || e);
     editor.setDiagnostics([]);
+    revealDiagnostics();
   } finally {
     compiling = false;
   }

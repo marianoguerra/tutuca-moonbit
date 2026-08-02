@@ -95,22 +95,106 @@
       #status.busy { color: var(--busy); }
       #status.ok { color: var(--ok); }
       #status.error { color: var(--error); }
+      /* code pane | splitter | collapsed rail | preview. The rail's `auto`
+         track is 0 wide while the rail is display:none, so one template covers
+         both states and only the first two tracks change. --code-w is written
+         by the splitter drag and restored from localStorage; the default leans
+         on the preview's side, which is the pane people watch. */
       main {
         display: grid;
-        grid-template-columns: 1fr 1fr;
+        grid-template-columns: minmax(0, var(--code-w, 38%)) 5px auto minmax(0, 1fr);
         min-height: 0;
       }
-      .pane { display: flex; flex-direction: column; min-height: 0; border-right: 1px solid var(--border); }
+      main.code-collapsed { grid-template-columns: 0 0 auto minmax(0, 1fr); }
+      main.code-collapsed > .code, main.code-collapsed > #splitter { display: none; }
+      /* Every child names its track: a display:none item is not placed at all,
+         and auto-placement would then slide the preview one track left. */
+      .pane.code { grid-column: 1; }
+      #splitter { grid-column: 2; }
+      .rail { grid-column: 3; }
+      .pane.preview { grid-column: 4; }
+      /* overflow: a dragged-narrow pane must clip its own chrome rather than
+         paint it over the preview */
+      .pane { display: flex; flex-direction: column; min-height: 0; overflow: hidden; }
+      /* A 5px grab strip that only draws 1px, so the divider stays a hairline
+         while still being easy to hit. */
+      #splitter {
+        border-left: 1px solid var(--border);
+        cursor: col-resize;
+        background: none;
+      }
+      #splitter:hover, #splitter.dragging { border-left-color: var(--accent); box-shadow: inset 1px 0 0 var(--accent); }
+      /* The collapsed code pane's only survivor: a vertical strip that brings
+         it back. Hidden (and so zero-width) while the pane is open. */
+      .rail {
+        display: none;
+        appearance: none;
+        border: 0;
+        border-right: 1px solid var(--border);
+        background: var(--header-bg);
+        color: var(--muted);
+        font: inherit;
+        font-size: 0.72rem;
+        letter-spacing: 0.08em;
+        text-transform: uppercase;
+        padding: 0.6rem 0;
+        width: 1.9rem;
+        cursor: pointer;
+        align-items: center;
+        gap: 0.5rem;
+        flex-direction: column;
+      }
+      main.code-collapsed > .rail { display: flex; }
+      .rail:hover { color: inherit; }
+      .rail .label { writing-mode: vertical-rl; }
       /* Tabs over the left pane: the component the user writes, the view HTML
-         it is generated from, and the read-only generated module. */
-      .tabs { display: flex; gap: 0; border-bottom: 1px solid var(--border); flex: 0 0 auto; }
+         it is generated from, the read-only generated module, and the
+         state/activity inspector — which lives here so it can be read WITH the
+         preview rather than instead of it. */
+      /* Four tabs don't fit a narrow pane, so the strip scrolls sideways —
+         without a scrollbar of its own, which at this height reads as noise. */
+      .tabs {
+        display: flex; gap: 0; border-bottom: 1px solid var(--border); flex: 0 0 auto;
+        overflow-x: auto; overflow-y: hidden; scrollbar-width: none;
+      }
+      .tabs::-webkit-scrollbar { height: 0; }
       .tabs button {
         appearance: none; background: none; border: 0; border-bottom: 2px solid transparent;
         padding: 0.4rem 0.8rem; font: inherit; font-size: 0.8rem; cursor: pointer; opacity: 0.65;
+        flex: 0 0 auto;
       }
       .tabs button[aria-selected="true"] { opacity: 1; border-bottom-color: currentColor; font-weight: 600; }
       .tabs .spacer { flex: 1; }
-      .tabs .note { align-self: center; font-size: 0.7rem; opacity: 0.55; padding-right: 0.75rem; }
+      /* The note yields first when the pane is narrow — the collapse button
+         must stay reachable at any width. */
+      .tabs .note {
+        align-self: center; font-size: 0.7rem; opacity: 0.55; padding-right: 0.75rem;
+        min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;
+      }
+      /* An unselected tab whose panel changed underneath gets a dot — the
+         inspector is behind a tab now, so a state update it can't show has to
+         announce itself somehow. */
+      .tabs button.has-news::after {
+        content: "";
+        display: inline-block;
+        width: 5px; height: 5px;
+        margin-left: 0.35rem;
+        border-radius: 50%;
+        background: var(--accent);
+        vertical-align: middle;
+      }
+      /* pinned to the strip's right edge, so scrolling the tabs never scrolls
+         away the way out */
+      .tabs .icon {
+        appearance: none; background: Canvas; border: 0; color: var(--muted);
+        font: inherit; font-size: 0.9rem; line-height: 1;
+        padding: 0 0.6rem; cursor: pointer; align-self: stretch;
+        position: sticky; right: 0;
+        /* it sits ON TOP of whatever the strip has scrolled under it, so it
+           needs its own ground and an edge that says so */
+        box-shadow: -8px 0 8px -8px rgb(0 0 0 / 0.35);
+      }
+      .tabs .icon:hover { color: inherit; }
       .editors { flex: 1; min-height: 0; position: relative; }
       .editors > div { position: absolute; inset: 0; overflow: hidden; }
       .editors > div[hidden] { display: none; }
@@ -125,11 +209,21 @@
         white-space: pre-wrap;
         color: var(--error);
       }
-      .right { display: grid; grid-template-rows: 1fr auto; min-height: 0; }
-      #preview { overflow: auto; }
-      #preview iframe { width: 100%; height: 100%; border: 0; }
-      .inspector { border-top: 1px solid var(--border); max-height: 45%; overflow: auto; display: grid; grid-template-columns: 1fr 1fr; }
-      .inspector section { padding: 0.5rem 0.75rem; border-right: 1px solid var(--border-soft); }
+      /* nothing to report — give the rows back to the editor */
+      #diagnostics:empty { display: none; }
+      /* The preview now owns its pane outright: nothing stacked under it. */
+      #preview { flex: 1; min-height: 0; overflow: auto; }
+      /* block, or the inline baseline gap gives the pane a scrollbar it has no
+         content for */
+      #preview iframe { display: block; width: 100%; height: 100%; border: 0; }
+      /* Inspect is a tab of the LEFT pane, next to the editors — so the state
+         and the running component are on screen together. Stacked rather than
+         side by side, because this pane is the narrow one; half the pane each
+         and both scrolling internally, so neither gets to squeeze the other. */
+      .inspector { display: grid; grid-template-rows: 1fr 1fr; }
+      .inspector[hidden] { display: none; }
+      .inspector section { padding: 0.5rem 0.75rem; overflow: auto; min-height: 0; border-top: 1px solid var(--border-soft); }
+      .inspector section:first-child { border-top: 0; }
       .inspector h2 { font-size: 0.7rem; text-transform: uppercase; opacity: 0.6; margin: 0 0 0.35rem; }
       .inspector pre { margin: 0; font-family: ui-monospace, monospace; font-size: 12px; white-space: pre-wrap; }
       /* dark mode: the UA handles bg/text/controls; swap the tokens above so
@@ -167,28 +261,34 @@
       </label>
       <span id="status"></span>
     </header>
-    <main>
-      <div class="pane">
+    <main id="workbench">
+      <div class="pane code">
         <div class="tabs" role="tablist">
           <button id="tab-component" role="tab" aria-selected="true" aria-controls="editor">Component</button>
           <button id="tab-view" role="tab" aria-selected="false" aria-controls="view-editor">View</button>
           <button id="tab-generated" role="tab" aria-selected="false" aria-controls="gen-editor">Generated</button>
+          <button id="tab-inspect" role="tab" aria-selected="false" aria-controls="inspect">Inspect</button>
           <span class="spacer"></span>
           <span class="note" id="gen-note"></span>
+          <button class="icon" id="collapse-code" title="Hide code (Ctrl/⌘+B)" aria-label="Hide code panel" aria-expanded="true" aria-controls="workbench">«</button>
         </div>
         <div class="editors">
           <div id="editor" role="tabpanel"></div>
           <div id="view-editor" role="tabpanel" hidden></div>
           <div id="gen-editor" role="tabpanel" hidden></div>
+          <div class="inspector" id="inspect" role="tabpanel" hidden>
+            <section><h2>State</h2><pre id="state"></pre></section>
+            <section><h2>Activity</h2><pre id="activity"></pre></section>
+          </div>
         </div>
         <div id="diagnostics"></div>
       </div>
-      <div class="pane right" style="border-right: 0">
+      <div id="splitter" role="separator" aria-orientation="vertical" aria-label="Resize code panel" tabindex="0"></div>
+      <button class="rail" id="expand-code" title="Show code (Ctrl/⌘+B)" aria-label="Show code panel" aria-expanded="false" aria-controls="workbench">
+        <span aria-hidden="true">»</span><span class="label">Code</span>
+      </button>
+      <div class="pane preview">
         <div id="preview"></div>
-        <div class="inspector">
-          <section><h2>State</h2><pre id="state"></pre></section>
-          <section style="border-right: 0"><h2>Activity</h2><pre id="activity"></pre></section>
-        </div>
       </div>
     </main>
     <!-- starter modules — authored in MoonBit, compiled in your browser -->

@@ -73,6 +73,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The playground gives its space to the preview.** The state and activity
+  panels used to sit UNDER the preview, so the running component — the thing
+  the page exists to show — got about half of half the window, and the other
+  half was a code editor whether or not anyone was reading it. Three changes,
+  one goal:
+
+  - **State and Activity are a fourth tab of the LEFT pane**, beside Component,
+    View and Generated. Putting them there rather than over the preview is what
+    lets both be read at once: the inspector is next to the component it
+    describes, not covering it. The tab carries a dot when state changes while
+    another tab is showing.
+  - **The code pane collapses** — the ⟨ button in its tab strip, the `Code`
+    rail it leaves behind, or Ctrl/⌘+B — and the preview takes the whole
+    window. A compile error re-opens it, because the diagnostics panel lives
+    there and a red status line is not a message.
+  - **The divider drags.** Width and collapsed state persist in
+    `localStorage`, so the layout someone settles on survives a reload.
+
 - **The wasm-gc JS import shims moved out of `demo/`.** `app/wasm` and
   `vdom/wasm` were shipping with their JS import contract living only in an
   excluded directory, so a consumer could build a wasm-gc page and have nothing
