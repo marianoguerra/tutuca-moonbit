@@ -615,12 +615,134 @@ The generation-only drop is much larger than both the confidence intervals
 Output stayed byte-identical: the compatibility test compares both emitted
 modules, their pinned benchmark checksums pass, and `gen-views` is drift-clean.
 
+# The runtime, revisited
+
+## 11. The sanitizing filter runs at element construction — updates −15% to −38%
+
+Context: the render-time sanitizer (`vdom/filter`, `docs/sanitizer.md`) became
+installed BY DEFAULT on every `App`, so what had been an opt-in cost became
+everyone's. It was applied to the FINISHED tree in `App::render_now`, and that
+is the wrong complexity next to #9: the render-site cache hands back the same
+`Vdom` object for an unchanged site and morph short-circuits it by physical
+identity, so the filter did O(whole tree) work on every render while the rest of
+the pipeline did O(changed). On a 1000-row list, morph touches one row and the
+filter touched a thousand.
+
+`RenderCtx` carries the filter now, and `render` applies it in the one place it
+constructs an element (the `Dom(d)` arm). Exactly-once by construction, no
+traversal, and a subtree the cache returns was never rebuilt so is never
+filtered again.
+
+The intermediate design — walk each rebuilt body, stopping at nested `§Comp§`
+boundaries — does NOT work and is worth recording so nobody tries it twice:
+`@vdom.fragment` flattens nested fragments (`normalize_childs`), so a nested
+component's `[meta, body]` is spliced inline into its parent's child list and
+there is no boundary left to stop at. A test counting filtered elements caught
+it (9 where 6 was expected).
+
+Two consequences: `App::set_filter` clears the render cache, since a cached
+subtree carries the verdict of whichever filter built it; and a filter that
+replaces children owns checking what it built, because nothing runs after it on
+nodes it created.
+
+Medians of 3 interleaved runs per side (stash-free: two worktrees, alternating
+in one loop), `patch_bench_test.mbt`, release. "spread" is the worse of the two
+sides' own max-min across its 3 runs:
+
+| Workload                     | wasm-gc  | native   | spread |
+|------------------------------|----------|----------|--------|
+| `patch move json 8x4`        | **−34.8%** | **−37.9%** | 6%   |
+| `patch toggle todo 1000`     | **−28.6%** | **−20.4%** | 11%  |
+| `patch add+remove todo 1000` | **−24.7%** | **−17.4%** | 11%  |
+| `patch toggle todo 100`      | **−22.9%** | **−24.2%** | 12%  |
+| `patch toggle todo 10`       | **−15.6%** | **−16.5%** | 7%   |
+| `patch noop todo 1000`       | −7.0%    | −1.1%    | 5%    |
+| `patch add+remove todo 10`   | −3.4%    | −4.4%    | 7%    |
+| `patch add+remove todo 100`  | −2.4%    | −3.5%    | 6%    |
+| `patch page people 1000`     | −3.4%    | −0.7%    | 9%    |
+| `patch refilter people 1000` | −2.0%    |  0.0%    | 5%    |
+| `patch switch view`          | +3.6%    | −2.4%    | 5%    |
+
+Native absolutes for the movers: `move json 8x4` 281.4 → 174.8 µs,
+`toggle todo 1000` 16.62 → 13.23 ms, `add+remove todo 1000` 20.53 → 16.95 ms,
+`toggle todo 100` 960.9 → 728.2 µs.
+
+The pattern is the claim: **the win scales with how much a render REUSES.**
+`toggle` changes one row of many and gains the most; `add+remove todo 10/100`
+rebuilds nearly everything it renders, so there is little reuse to exploit and
+it moves inside its own spread. The two `find` benchmarks disagree in sign
+between targets (−5.8% / +11.1%) and neither re-renders, so both are drift.
+
+Output unchanged: full suite green (1127).
+
+### What the filter still costs
+
+Worth stating, because it is not zero and cannot be. Interleaved 3× on wasm-gc,
+HEAD against HEAD with `set_filter(None)`:
+
+| Workload                     | filter on | off      | cost   |
+|------------------------------|-----------|----------|--------|
+| `patch add+remove todo 100`  |  1.27 ms  | 957.6 µs | +32.6% |
+| `patch add+remove todo 10`   | 135.6 µs  | 109.9 µs | +23.4% |
+| `patch toggle todo 100`      | 637.5 µs  | 549.8 µs | +15.9% |
+| `patch switch view`          |  66.3 µs  |  57.9 µs | +14.5% |
+| `patch toggle todo 10`       |  97.2 µs  |  85.1 µs | +14.1% |
+| `patch add+remove todo 1000` | 17.38 ms  | 16.46 ms |  +5.6% |
+| `patch toggle todo 1000`     | 14.15 ms  | 13.60 ms |  +4.0% |
+| `patch noop todo 1000`       |  13.7 µs  |  14.0 µs |  −2.3% |
+
+Inspecting every attribute of every element that is BUILT is the irreducible
+part — the ones that rebuild most pay most, and `patch noop` pays nothing
+because it rebuilds nothing. Anything further has to come from not inspecting,
+which is the skip set in "Not yet tried" below.
+
+## 12. The filter's no-op path stops allocating — updates −2% to −3.5%
+
+Small, kept because it moved consistently and in one direction on exactly the
+benchmarks that construct the most elements.
+
+`url_attrs.contains(name.to_lower())` ran for every attribute of every element,
+allocating a String before discovering the name is not a URL attribute at all —
+which is what almost every name is. `is_url_attr` probes the set with the name
+as it stands and only falls back to `to_lower` for a name that actually contains
+an uppercase letter; anode lowercases every attribute name it reads, so mixed
+case only arrives from a hand-built vnode or vdom's IDL spellings, none of which
+are URL attributes. Both filters also allocated a `doomed` array per element to
+hold names they almost never collect; allocated lazily now.
+
+Medians of 3 interleaved runs, wasm-gc, `e07d702` against `56ae747` (both with
+the filter over the finished tree, so this isolates the allocations):
+
+| Workload                     | before    | after     |        |
+|------------------------------|-----------|-----------|--------|
+| `patch move json 8x4`        | 256.02 µs | 247.17 µs | −3.5%  |
+| `patch toggle todo 10`       | 104.01 µs | 100.79 µs | −3.1%  |
+| `patch add+remove todo 100`  |   1.15 ms |   1.12 ms | −2.6%  |
+| `patch add+remove todo 10`   | 123.77 µs | 120.79 µs | −2.4%  |
+| `patch toggle todo 100`      | 736.80 µs | 727.44 µs | −1.3%  |
+
+Everything else moved under 1.2% either way, inside a 1–4% per-benchmark spread.
+Four of the five above exceed their own spread, all five are negative, and no
+benchmark got measurably worse — which is the whole case for keeping a change
+this size. Not measured on native: the effect is smaller than that machine's
+drift on several of these, and the wasm-gc direction is consistent enough to
+decide on.
+
 ## Not yet tried
 
 Ranked by what the profiles say is left.
 
 In the update path (the biggest numbers on the board):
 
+- **The sanitizer's skip set** (#11 measured the cost that is left: +4% to +33%
+  on what rebuilds). Pass 1 already visits every attribute of every node at
+  registration and already distinguishes a `Const` from a `Val` expression. A
+  view whose URL-set attributes are ALL constant, and which has no raw markup,
+  has nothing left for the filter to decide — the static pass settled it. That
+  is a per-view bit computed once, and the filter skips those elements by
+  `data-vid`. The views needing runtime work are the minority, which was the
+  argument for having a static pass at all. This is the only remaining lever on
+  the filter that does not weaken it.
 - **Attribute-map equality** (`Map::contains_kv` 6.2% + much of `Eq::equal`
   9.6%). Comparing two attribute maps hashes every key; a diff does it per node
   per pass. #7 took the CONSTANT half of this, and #8 gave it back — EVERY

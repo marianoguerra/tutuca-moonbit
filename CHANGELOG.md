@@ -772,8 +772,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `VdomFilter`'s primitive is `filter_elem` accordingly; `filter_tree` remains
   as a defaulted convenience for a caller holding a tree.
 
-  Not yet measured on a quiet machine — the interleaved A/B `OPTIMIZATIONS.md`
-  asks for is still owed, and no entry has been added to that log.
+  Measured: `OPTIMIZATIONS.md` #11. Interleaved 3× per side on both targets —
+  `patch move json 8x4` −34.8% / −37.9%, `toggle todo 1000` −28.6% / −20.4%,
+  `add+remove todo 1000` −24.7% / −17.4%. The win scales with how much a render
+  reuses, so the rebuild-everything workloads move inside their own spread.
+
+  What the filter still costs, with that fixed, is +4% to +33% on what actually
+  rebuilds — measured against `set_filter(None)` and recorded in #11. Inspecting
+  every attribute of every element BUILT is the irreducible part; the only
+  remaining lever that does not weaken the rule is the skip set.
+
+- **The filter's no-op path stops allocating** (`OPTIMIZATIONS.md` #12).
+  `url_attrs.contains(name.to_lower())` allocated a String for every attribute
+  of every element before discovering the name is not a URL attribute at all —
+  which is what almost every name is. `is_url_attr` probes the set with the name
+  as it stands and falls back to `to_lower` only for a name that contains an
+  uppercase letter. Both filters also allocated a `doomed` array per element for
+  names they almost never collect; lazy now. −2% to −3.5% on the workloads that
+  construct the most elements, consistent in direction, nothing worse.
 
 - **An SVG `<script>` was not refused.** `<svg><script>alert(1)</script></svg>`
   in a guest view passed `Policy::check_view` with **no violation at all** — so
