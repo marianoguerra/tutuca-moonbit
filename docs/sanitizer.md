@@ -523,6 +523,11 @@ correct one, which an event handler's is not.
    `vdom/memdom/event_attr_test.mbt` (5 tests), and the memdom `has_property`
    fix those depend on. This is the half of the name rule a plain app can
    reach, since Pass 1 never runs for one.
+7. ~~The filter installed by default, and a `Policy` that carries its own
+   sanitizer.~~ **Done** — `App::new` installs `@filter.Baseline`,
+   `take_reports` moved onto the trait so the default is drainable, and
+   `Policy::with_sanitizer` + `@markup.filter_for` make raw markup a permission
+   a host can actually grant.
 
 What is left, in rough order of who it helps:
 
@@ -555,15 +560,32 @@ What is left, in rough order of who it helps:
     when the seam defaulted to absent; that is now redundant with the one every
     `App` carries, and two would have meant reports split across two logs.
     `take_filter_reports()` there drains the app's.
-- **Let a `Policy` carry a `SanitizerConfig`**, so a dyncomp host could allow a
-  guest raw markup. Deliberately NOT done as part of step 5: `Policy::check_view`
-  has no way to know whether the markup filter is installed, so a policy that
-  said `raw_markup: true` next to an app mounted without the filter would send
-  the payload straight to `set_inner_html` unchecked. Guests are still refused
-  the construct outright, and loosening that should be one explicit decision
-  rather than a side effect of the capability existing. `dyncomp` therefore
-  installs the URL filter only — the markup filter would never fire there today,
-  and would cost a walk per render for nothing.
+- ~~**Let a `Policy` carry a `SanitizerConfig`**, so a dyncomp host could allow
+  a guest raw markup.~~ **Done** — `Policy` holds a `Sanitizer`, and
+  `Policy::with_sanitizer(config)` replaces it, raising on an invalid one. Both
+  directions work: tighten with an allow-list, or loosen with
+  `raw_markup: true`.
+
+  The precondition that held this back — `Policy::check_view` has no way to know
+  whether the markup filter is installed, so `raw_markup: true` beside an app
+  mounted without it would send the payload straight to `set_inner_html`
+  unchecked — is answered by `@markup.filter_for`, which takes the sanitizer and
+  returns the filter it needs: the markup filter in front of `Baseline` when raw
+  markup is permitted, `Baseline` alone when it is not. `set_app` calls it, so
+  the permission and the filter are set from the same value and cannot come
+  apart.
+
+  It has to be a function rather than a type-level proof because of the
+  dependency direction: `dyncomp/policy` is a leaf over `anode` and has no
+  business importing `vdom`, so the permission cannot carry evidence about a
+  filter. What is available is to make one function the only place the two are
+  named together, and to test it from both sides — which is what
+  `vdom/filter/markup/install_test.mbt` does.
+
+  Order inside the chain is load-bearing: the markup filter REPLACES a subtree,
+  so the attribute rules must run after the nodes they inspect exist. Built the
+  other way round, a payload's own `javascript:` URL would survive. There is a
+  test.
 - **The skip set and cache-miss placement**, measured rather than assumed.
 - **A guest-level end-to-end test.** `app/filter_test.mbt` proves the filter sees
   what the render loop builds, and a guest's subtree is part of that same tree by

@@ -66,6 +66,19 @@ pub(all) struct Policy {
   /// therefore cannot break out of anything. That is already what all three
   /// sample guests do, so the strict tier costs nothing real.
   allow_custom_css : Bool
+  /// What a guest view is checked against at registration.
+  ///
+  /// The BASELINE for every tier by default — the unsafe elements, the event
+  /// handlers, and no raw markup — rather than the spec's default allow-list,
+  /// which is not transcribed (`@sanitize.SanitizerConfig::default`). A host
+  /// that wants an allow-list, or that wants to permit raw markup, builds one
+  /// with `with_sanitizer`.
+  ///
+  /// Stored built rather than as a `SanitizerConfig` so that validity is
+  /// settled once, where a host can be told about it, instead of at every
+  /// `check_view` where the only options would be raising or silently falling
+  /// back.
+  sanitizer : @sanitize.Sanitizer
 }
 
 ///|
@@ -79,6 +92,7 @@ pub fn Policy::untrusted() -> Policy {
     quotas: Quotas::default(),
     grants: [],
     allow_custom_css: false,
+    sanitizer: @sanitize.Sanitizer::default(),
   }
 }
 
@@ -92,6 +106,7 @@ pub fn Policy::granted() -> Policy {
     quotas: Quotas::default(),
     grants: [CapClock, CapRandom],
     allow_custom_css: true,
+    sanitizer: @sanitize.Sanitizer::default(),
   }
 }
 
@@ -103,6 +118,7 @@ pub fn Policy::system() -> Policy {
     quotas: Quotas::default(),
     grants: [CapClock, CapRandom, CapTimer],
     allow_custom_css: true,
+    sanitizer: @sanitize.Sanitizer::default(),
   }
 }
 
@@ -256,22 +272,49 @@ pub fn Policy::check_view(
   where_ : String,
   tree : @anode.ANode,
 ) -> Array[Refusal] {
-  ignore(self)
-  self
-  .sanitizer()
+  self.sanitizer
   .check(tree)
   .map(v => refusal(where_, @sanitize.Violation::to_string(v)))
 }
 
 ///|
-/// The sanitizer a view is checked against.
+/// The same policy, checking views against a different sanitizer.
 ///
-/// The baseline and nothing more, today: the unsafe elements, the event
-/// handlers, comments and raw markup. Deliberately NOT an allowlist — see
-/// `@sanitize.SanitizerConfig::default` for why one is not transcribed yet, and
-/// note that a host wanting a stricter one supplies a `SanitizerConfig` and
-/// gets `validate()` to keep it honest.
-pub fn Policy::sanitizer(self : Policy) -> @sanitize.Sanitizer {
-  ignore(self)
-  @sanitize.Sanitizer::default()
+/// Raises on an invalid config rather than degrading, because an invalid config
+/// is a programming error in the HOST — the one party here who can read an
+/// error message and fix it — and a sanitizer that quietly did something else
+/// is the failure mode this whole area exists to avoid.
+///
+/// Two things a host reaches for this to do, and they pull in opposite
+/// directions:
+///
+/// - **tighten**, with an allow-list of elements and per-element attributes.
+///   The spec's default allow-list is not transcribed
+///   (`@sanitize.SanitizerConfig::default`), so a host that wants one writes it
+///   and gets `validate()` to keep it honest. If you do this, remember the four
+///   names a config may not eat — `data-eid`, `data-cid`, `data-vid`,
+///   `data-nid` — which `@sanitize` carves out ahead of any config precisely
+///   because an allow-list that forgot them renders a component that then
+///   responds to nothing.
+/// - **loosen**, most usefully with `raw_markup: true`. That one is only safe
+///   when the render-time markup filter is installed; see
+///   `@markup.filter_for`, which is what pairs the two so a host cannot
+///   have the permission without the filter.
+pub fn Policy::with_sanitizer(
+  self : Policy,
+  config : @sanitize.SanitizerConfig,
+) -> Policy raise @sanitize.InvalidConfig {
+  { ..self, sanitizer: @sanitize.Sanitizer::new(config) }
+}
+
+///|
+/// Whether a guest view may use `@dangerouslysetinnerhtml`.
+///
+/// False everywhere by default. A host that flips it MUST also install the
+/// markup filter — the payload is a `Val` at registration, so nothing decided
+/// here can see what it will hold, and without the filter it goes to
+/// `set_inner_html` unchecked. `@markup.filter_for` reads this and builds the
+/// matching filter, which is how the two stay in step.
+pub fn Policy::allows_raw_markup(self : Policy) -> Bool {
+  self.sanitizer.raw_markup
 }

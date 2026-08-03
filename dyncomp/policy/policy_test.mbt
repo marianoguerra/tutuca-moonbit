@@ -109,6 +109,83 @@ test "a view that sets markup directly is refused at every tier" {
 }
 
 ///|
+/// A host can hand a policy its own sanitizer. The tier constructors are the
+/// baseline, and stay that way.
+test "a policy carries a sanitizer a host can replace" {
+  let raw = parsed("<div @dangerouslysetinnerhtml=\".payload\"></div>")
+  let strict = Policy::untrusted()
+  assert_false(strict.allows_raw_markup())
+  assert_true(strict.check_view("Sneaky/main", raw).length() == 1)
+
+  // Loosened: the construct passes registration. Only safe because
+  // `@markup.filter_for` gives this policy the markup filter — see the test
+  // for that pairing in vdom/filter/markup.
+  let loose = strict.with_sanitizer({
+    ..@sanitize.SanitizerConfig::empty(),
+    raw_markup: Some(true),
+  })
+  assert_true(loose.allows_raw_markup())
+  debug_inspect(loose.check_view("Ok/main", raw), content="[]")
+
+  // Everything else about the policy is untouched — it is the same policy with
+  // a different sanitizer, not a different tier.
+  debug_inspect(loose.tier, content="Untrusted")
+  assert_false(loose.allow_custom_css)
+  // ...and the baseline still holds inside it: permitting raw markup is not
+  // permitting a script.
+  debug_inspect(
+    shown(loose.check_view("Sneaky/main", parsed("<div><script></script></div>"))),
+    content=(
+      #|["Sneaky/main: <script> is not allowed (at div>script)"]
+    ),
+  )
+}
+
+///|
+/// Tightening is the other direction, and the one a host reaching for an
+/// allow-list wants.
+test "a policy can be tightened with an allow-list" {
+  let p = Policy::untrusted().with_sanitizer({
+    ..@sanitize.SanitizerConfig::empty(),
+    elements: Some([
+      @sanitize.ElementRule::of(@sanitize.html("div")),
+      @sanitize.ElementRule::of(@sanitize.html("span")),
+    ]),
+  })
+  debug_inspect(p.check_view("Ok/main", parsed("<div><span></span></div>")), content="[]")
+  debug_inspect(
+    shown(p.check_view("No/main", parsed("<div><p></p></div>"))),
+    content=(
+      #|["No/main: <p> is not allowed (at div>p)"]
+    ),
+  )
+}
+
+///|
+/// An invalid config is a programming error in the HOST — the one party who can
+/// read the message and fix it — so it raises rather than degrading.
+test "an invalid sanitizer config is refused loudly" {
+  let bad : @sanitize.SanitizerConfig = {
+    ..@sanitize.SanitizerConfig::empty(),
+    // the spec's own validity relation: allow xor remove
+    elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
+    remove_elements: Some([@sanitize.html("span")]),
+  }
+  try Policy::untrusted().with_sanitizer(bad) catch {
+    e =>
+      inspect(
+        @sanitize.InvalidConfig::to_string(e),
+        content=(
+          #|config sets both elements and remove_elements; the spec allows one or the other
+
+        ),
+      )
+  } noraise {
+    _ => fail("an invalid config must not build a policy")
+  }
+}
+
+///|
 /// What the sanitizer catches that the `has_raw_html` predicate before it did
 /// not: an unsafe element, an event-handler attribute, and — the one that was a
 /// live gap — either of those inside a macro call's slot, which

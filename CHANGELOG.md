@@ -711,6 +711,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Making it the default is a behaviour change for every existing app and is
   tracked separately in `docs/sanitizer.md`.
 
+- **A `Policy` carries its own sanitizer**, so a host can tighten what a guest
+  view may name or loosen it. `Policy::with_sanitizer(config)` returns the same
+  policy checking against a different `@sanitize.Sanitizer`, raising on an
+  invalid config rather than degrading — an invalid config is a programming
+  error in the host, the one party here who can read the message and fix it.
+  Tightening means an allow-list (the spec's own is still not transcribed, so a
+  host that wants one writes it and gets `validate()` to keep it honest);
+  loosening means `raw_markup: true`.
+
+  That last one was held back before, because `Policy::check_view` had no way to
+  know whether the render-time markup filter was installed, and the permission
+  without the filter sends a payload straight to `set_inner_html` unchecked. The
+  answer is `@markup.filter_for`, which derives the filter from the SAME
+  sanitizer the policy checks against: the markup filter in front of `Baseline`
+  when raw markup is permitted, `Baseline` alone when it is not. `set_app` calls
+  it, so the two cannot come apart.
+
+  A function rather than a type-level proof because `dyncomp/policy` is a leaf
+  over `anode` and must not import `vdom`; the permission cannot carry evidence
+  about a filter without inverting that direction. What is available is to make
+  one function the only place the two are named together, and to test it from
+  both sides.
+
+  Order inside the chain is load-bearing: the markup filter REPLACES a subtree,
+  so the attribute rules run after it or they inspect nodes that do not exist
+  yet. Built the other way round, a payload's own `javascript:` URL survives.
+
+  Defaults are unchanged — every tier still refuses raw markup, so a guest that
+  was registered before is registered now. `Policy` is `pub(all)` and gained a
+  field, so code building one as a literal has to add `sanitizer:` (or go
+  through `untrusted()` / `granted()` / `system()`, which is the intended way);
+  the `Policy::sanitizer()` method is now that field.
+
 - **`SECURITY.md` §3 is rewritten**, including a claim it got wrong about URL
   schemes. Design, and the work still open, in `docs/sanitizer.md`.
 

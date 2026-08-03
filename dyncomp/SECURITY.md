@@ -220,19 +220,31 @@ one line inside the wasm glue, which `moon test` never runs, so it was verified
 by inspection like the rest of the `tcomp` bridge. It is now in `App::new`,
 which the suite exercises directly (`app/filter_test.mbt`).
 
-**Raw markup could now be re-admitted, and deliberately is not.**
+**Raw markup is refused by default, and a host can now grant it.**
 `vdom/filter/markup` sanitizes a payload against the same `SanitizerConfig` and
 hands back described NODES — never a string, because a sanitized string that the
 browser parses a second time is the mutation-XSS vector that has bitten every
-sanitizer which shipped that shape. So the mechanism exists and is tested. What
-does not exist is a way for `Policy::check_view` to know that a host installed
-it: a policy saying `raw_markup: true` beside an app mounted without the filter
-would send the payload straight to `set_inner_html` unchecked. Guests are
-therefore still refused the construct outright, and `set_app` installs
-`Baseline` — the URL and handler rules — without the markup filter, which would
-never fire there today and would cost a walk per render for nothing. Loosening
-this should be one explicit decision — a `Policy` that carries a config —
-rather than a side effect of the capability existing.
+sanitizer which shipped that shape.
+
+What used to be missing was a way for `Policy::check_view` to know that a host
+had installed that filter: a policy saying `raw_markup: true` beside an app
+mounted without it would send the payload straight to `set_inner_html`
+unchecked. So the permission and the filter are now derived from the SAME value.
+`Policy` carries a `Sanitizer`; `Policy::with_sanitizer(config)` replaces it;
+and `@markup.filter_for(policy.sanitizer)` returns the filter that sanitizer
+requires — the markup filter in front of `Baseline` when raw markup is
+permitted, `Baseline` alone when it is not. `set_app` calls it, so a host cannot
+hold the permission without the filter.
+
+It is a function rather than a type-level proof because `dyncomp/policy` is a
+leaf over `anode` and must not import `vdom` — the permission cannot carry
+evidence about a filter without inverting that. What is available is to make one
+function the only place the two are named together, and to test it from both
+sides (`vdom/filter/markup/install_test.mbt`).
+
+The default is unchanged: every tier's sanitizer refuses raw markup, so a guest
+that has not been explicitly granted it is refused at registration exactly as
+before. Granting it is one call a host makes deliberately, which was the point.
 
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 

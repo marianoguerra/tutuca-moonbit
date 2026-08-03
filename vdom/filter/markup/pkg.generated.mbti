@@ -10,6 +10,8 @@ import {
 // Values
 pub const RAW_ATTR : String = "dangerouslySetInnerHTML"
 
+pub fn filter_for(@sanitize.Sanitizer) -> &@filter.VdomFilter
+
 // Errors
 
 // Types and methods
