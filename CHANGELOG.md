@@ -744,6 +744,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   through `untrusted()` / `granted()` / `system()`, which is the intended way);
   the `Policy::sanitizer()` method is now that field.
 
+- **The filter runs where an element is CONSTRUCTED**, not over the finished
+  tree. `RenderCtx` carries it and `render` applies it in the one place it
+  builds an element, so every element is filtered exactly once and a subtree the
+  render cache hands back — never rebuilt — is never filtered again.
+
+  Applied to the finished tree it had the wrong complexity, which defaulting it
+  on made everyone's problem: the cache returns the same `Vdom` object for an
+  unchanged site and morph then short-circuits it by physical identity, so the
+  filter did O(whole tree) work beside a pipeline that is otherwise O(changed).
+  On a thousand-row list, morph touches one row and the filter touched a
+  thousand.
+
+  The obvious fix — walk each rebuilt body, stopping at nested `§Comp§`
+  boundaries — does NOT work, and the reason is worth knowing: `@vdom.fragment`
+  flattens nested fragments (`normalize_childs`), so a nested component's
+  `[meta, body]` is spliced inline into its parent's child list and there is no
+  boundary left to stop at. A test counting filtered elements caught it at once.
+  Hooking construction sidesteps the question entirely and costs no walk at all.
+
+  Two consequences. `App::set_filter` now **clears the render cache**, because a
+  cached subtree carries the verdict of whichever filter built it and a newly
+  installed one would otherwise never see most of the tree. And a filter that
+  replaces children owns checking what it built — nothing runs after it on nodes
+  it created — which `MarkupFilter` already did by design and now depends on.
+
+  `VdomFilter`'s primitive is `filter_elem` accordingly; `filter_tree` remains
+  as a defaulted convenience for a caller holding a tree.
+
+  Not yet measured on a quiet machine — the interleaved A/B `OPTIMIZATIONS.md`
+  asks for is still owed, and no entry has been added to that log.
+
 - **`SECURITY.md` §3 is rewritten**, including a claim it got wrong about URL
   schemes. Design, and the work still open, in `docs/sanitizer.md`.
 

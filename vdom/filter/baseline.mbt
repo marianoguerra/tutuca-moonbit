@@ -44,9 +44,7 @@ pub impl VdomFilter for Baseline with fn take_reports(self) {
 }
 
 ///|
-pub impl VdomFilter for Baseline with fn filter_tree(self, tree) {
-  walk_elems(tree, el => {
-    self.url.filter_elem(el)
-    self.handlers.filter_elem(el)
-  })
+pub impl VdomFilter for Baseline with fn filter_elem(self, el) {
+  self.url.filter_elem(el)
+  self.handlers.filter_elem(el)
 }

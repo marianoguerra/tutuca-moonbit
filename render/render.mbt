@@ -33,14 +33,27 @@ pub fn render(
         Some(MathML) => Some(MathMl)
         None => None
       }
-      Some(
-        @vdom.h(
-          d.tag,
-          attrs=eval_attrs(d.attrs, stack),
-          childs=render_childs(d.childs, stack, ctx),
-          ns?,
-        ),
+      let built = @vdom.h(
+        d.tag,
+        attrs=eval_attrs(d.attrs, stack),
+        childs=render_childs(d.childs, stack, ctx),
+        ns?,
       )
+      // Sanitize the element HERE, where it is built, rather than by walking
+      // the finished tree. This is the only place `render` constructs one, so
+      // every element is filtered exactly once — and a subtree the render cache
+      // hands back was never rebuilt, so it is not filtered again. Over the
+      // finished tree the filter re-walked every cached subtree on every
+      // render: O(whole tree) beside a pipeline that is otherwise O(changed).
+      //
+      // Children are already built (the argument above), so a filter that
+      // replaces them — raw markup becoming described nodes — is replacing
+      // finished nodes, and is responsible for what it builds. `MarkupFilter`
+      // sanitizes its own output for exactly this reason.
+      if ctx.filter is Some(f) && built is Node(el) {
+        f.filter_elem(el)
+      }
+      Some(built)
     }
     Fragment(d) => Some(@vdom.fragment(render_childs(d.childs, stack, ctx)))
     // JS RenderTextNode returns the raw evaluated value into the child list;

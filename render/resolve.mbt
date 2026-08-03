@@ -34,6 +34,7 @@ fn best_name(names : Array[String], has : (String) -> Bool) -> String? {
 pub fn RenderCtx::new(
   view_resolver? : &ViewResolver,
   render_cache? : RenderCache,
+  filter? : &@filter.VdomFilter,
 ) -> RenderCtx {
   {
     view_resolver: match view_resolver {
@@ -41,5 +42,6 @@ pub fn RenderCtx::new(
       None => NullViewResolver::{  }
     },
     render_cache,
+    filter,
   }
 }

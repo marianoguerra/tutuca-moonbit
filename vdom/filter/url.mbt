@@ -214,8 +214,8 @@ fn is_url_attr(name : String) -> Bool {
 }
 
 ///|
-/// The rule for one element, so `Baseline` can apply it in a shared walk.
-fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
+/// The rule for one element; the caller owns the walk.
+pub impl VdomFilter for UrlFilter with fn filter_elem(self, el) {
   // Collected first — removing from the map while iterating it is not a thing
   // to rely on — but allocated only if there is something to collect, since
   // dropping anything is the rare case and this runs per element per render.
@@ -248,9 +248,4 @@ fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
       el.attrs.remove(name)
     }
   }
-}
-
-///|
-pub impl VdomFilter for UrlFilter with fn filter_tree(self, tree) {
-  walk_elems(tree, el => self.filter_elem(el))
 }

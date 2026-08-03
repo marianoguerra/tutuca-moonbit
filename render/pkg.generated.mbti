@@ -6,6 +6,7 @@ import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
   "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
   "moonbitlang/core/debug",
 }
 
@@ -59,8 +60,9 @@ pub fn RenderCache::next_generation(Self) -> Unit
 pub(all) struct RenderCtx {
   view_resolver : &ViewResolver
   render_cache : RenderCache?
+  filter : &@filter.VdomFilter?
 }
-pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_cache? : RenderCache) -> Self
+pub fn RenderCtx::new(view_resolver? : &ViewResolver, render_cache? : RenderCache, filter? : &@filter.VdomFilter) -> Self
 
 pub(all) struct RenderStack {
   it : @core.Value

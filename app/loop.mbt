@@ -187,17 +187,16 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   // Roll the cache to a fresh generation: subtrees reused this pass are
   // promoted, anything untouched falls out after the next one.
   self.render_cache.next_generation()
+  // The filter goes IN rather than being applied to what comes out: render
+  // sanitizes each component subtree as it builds it, so a site the cache
+  // returns unchanged is not walked again. See `RenderCtx.filter`.
   let ctx = @render.RenderCtx::new(
     view_resolver=self.scope.comps,
     render_cache=self.render_cache,
+    filter?=self.filter,
   )
   match @render.render_root(root_val, stack, ctx) {
     Some(vdom) => {
-      // Between evaluating anode and diffing: the tree is concrete and the DOM
-      // is untouched, which is true at no other point in a render.
-      if self.filter is Some(f) {
-        f.filter_tree(vdom)
-      }
       let prev = self.prev
       self.prev = Some(@vdom.render(vdom, self.root_node, self.opts, prev?))
     }
@@ -219,9 +218,17 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 /// reason a policy applies at load: retracting what is already on the page is
 /// dropping it, not filtering it.
 ///
+/// **Clears the render cache**, which is not an optimization detail leaking
+/// out. Filtering happens where a subtree is BUILT, so a cached subtree carries
+/// the verdict of whichever filter was installed when it was built. Keeping
+/// those would mean a newly installed filter silently never saw most of the
+/// tree — the next render would be hits all the way down. Dropping them costs
+/// one full rebuild, on a call a host makes about once.
+///
 /// A filter MUTATES the tree it is given.
 pub fn[N] App::set_filter(self : App[N], filter : &@filter.VdomFilter?) -> Unit {
   self.filter = filter
+  self.render_cache.clear()
 }
 
 ///|

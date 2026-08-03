@@ -91,38 +91,30 @@ fn vdom_ns(ns : @html5.Namespace) -> @vdom.Ns? {
 }
 
 ///|
-pub impl @filter.VdomFilter for MarkupFilter with fn filter_tree(self, tree) {
-  match tree {
-    Node(el) => {
-      match el.attrs.get(RAW_ATTR) {
-        Some(Html(payload)) => {
-          el.attrs.remove(RAW_ATTR)
-          let built = self.build_payload(el.tag, payload)
-          // `set_inner_html` replaces everything, so children the element also
-          // declared were never going to survive; clearing keeps that.
-          el.childs.clear()
-          for node in built {
-            el.childs.push(node)
-          }
-          // The built subtree is already sanitized — including its attribute
-          // VALUES, which nothing else would check, since no other filter runs
-          // after this one on nodes it created.
-          return
-        }
-        // A non-`Html` value under that name is what `set_prop` treats as the
-        // empty payload; drop the attribute rather than reasoning about it.
-        Some(_) => el.attrs.remove(RAW_ATTR)
-        None => ()
-      }
-      for child in el.childs {
-        self.filter_tree(child)
+/// The rule for one element; the caller decides when to call it.
+///
+/// The nodes this builds are sanitized by `build_payload` itself, attribute
+/// VALUES included, and that is load-bearing rather than belt-and-braces:
+/// `render` calls this as it CONSTRUCTS each element, so nothing runs after it
+/// on a subtree it created. (Under `filter_tree`'s `walk_elems`, the walk does
+/// descend into them afterwards — but a filter cannot assume the caller walks
+/// at all, and the one that matters does not.)
+pub impl @filter.VdomFilter for MarkupFilter with fn filter_elem(self, el) {
+  match el.attrs.get(RAW_ATTR) {
+    Some(Html(payload)) => {
+      el.attrs.remove(RAW_ATTR)
+      let built = self.build_payload(el.tag, payload)
+      // `set_inner_html` replaces everything, so children the element also
+      // declared were never going to survive; clearing keeps that.
+      el.childs.clear()
+      for node in built {
+        el.childs.push(node)
       }
     }
-    Fragment(childs) =>
-      for child in childs {
-        self.filter_tree(child)
-      }
-    Text(_) | Comment(_) => ()
+    // A non-`Html` value under that name is what `set_prop` treats as the
+    // empty payload; drop the attribute rather than reasoning about it.
+    Some(_) => el.attrs.remove(RAW_ATTR)
+    None => ()
   }
 }
 

@@ -174,3 +174,151 @@ test "a filter installed after mount applies from the next render" {
   assert_false(container.to_html().contains("javascript:"))
   debug_inspect(f.take_reports().length(), content="1")
 }
+
+// ---------------------------------------------------------------------------
+// Doing the work once.
+//
+// The filter used to run over the FINISHED tree, which meant it re-walked every
+// subtree the render cache had handed back unchanged — O(whole tree) beside a
+// pipeline that is otherwise O(changed). It now runs where a component subtree
+// is BUILT, and stops at nested §Comp§ boundaries because those were filtered
+// at their own sites. These two tests are that claim, counted.
+
+///|
+/// Counts elements it is shown, so a test can say how much of the tree the
+/// filter actually walked.
+priv struct CountingFilter {
+  mut elems : Int
+}
+
+///|
+impl @filter.VdomFilter for CountingFilter with fn filter_elem(self, _el) {
+  self.elems = self.elems + 1
+}
+
+///|
+priv struct ChildState {
+  label : String
+}
+
+///|
+impl @component.Fields for ChildState with fn encode(s) {
+  { "label": Str(s.label) }
+}
+
+///|
+impl @component.Fields for ChildState with fn decode(f) {
+  guard f.get("label") is Some(Str(v)) else { return None }
+  Some({ label: v })
+}
+
+///|
+impl @component.Fields for ChildState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="f_child_state", fields=[
+    @component.FieldInfo::new("label", TyText),
+  ])
+}
+
+///|
+fn child_comp() -> @component.Component {
+  @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<li><span><x text=\".label\"></x></span><em>x</em></li>",
+      ),
+    },
+    name="FChild",
+    init=ChildState::{ label: "a" },
+  )
+}
+
+///|
+priv struct ParentState {
+  title : String
+}
+
+///|
+impl @component.Fields for ParentState with fn encode(s) {
+  { "title": Str(s.title) }
+}
+
+///|
+impl @component.Fields for ParentState with fn decode(f) {
+  guard f.get("title") is Some(Str(v)) else { return None }
+  Some({ title: v })
+}
+
+///|
+impl @component.Fields for ParentState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="f_parent_state", fields=[
+    @component.FieldInfo::new("title", TyText),
+    @component.FieldInfo::new("kid", TyComp(Some("FChild"))),
+  ])
+}
+
+///|
+fn parent_comp() -> @component.Component {
+  @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><h1><x text=\".title\"></x></h1><button @on.click=\"setTitle 'z'\">b</button><x render=\".kid\"></x></div>",
+      ),
+    },
+    name="FParent",
+    init=ParentState::{ title: "t" },
+  )
+}
+
+///|
+fn mk_counted() -> (
+  @app.App[@memdom.MemNode],
+  @memdom.MemNode,
+  CountingFilter,
+) raise {
+  let scope = @component.ComponentStack::new()
+  scope.register_components([child_comp(), parent_comp()])
+  guard scope.lookup_component("FParent") is Some(p) else { fail("no FParent") }
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let f = CountingFilter::{ elems: 0 }
+  let a = @app.App::new(
+    scope,
+    p.make({ "title": Str("t") }),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  a.set_filter(Some(f))
+  a.start()
+  (a, container, f)
+}
+
+///|
+/// Everything is built on the first render, so everything is filtered — the
+/// parent's own `div`/`h1`/`button` at its site, and the child's
+/// `li`/`span`/`em` at ITS site. Six elements, each seen exactly once. If the
+/// parent also descended into the nested boundary they would be seen nine
+/// times.
+test "the first render filters every element exactly once" {
+  let (_a, container, f) = mk_counted()
+  assert_true(container.to_html().contains("<em>"))
+  inspect(f.elems, content="6")
+}
+
+///|
+/// The point of filtering where a subtree is BUILT. Changing the parent's
+/// title rebuilds the parent and nothing else; the child is a cache hit, and
+/// the filter never sees it. Over the finished tree this would be 6 again, on
+/// this render and on every render after it.
+test "a rebuild filters only what was rebuilt" {
+  let (a, container, f) = mk_counted()
+  f.elems = 0
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  // The parent really did re-render.
+  assert_true(container.to_html().contains("z"))
+  // ...and the child is still there, unfiltered this time because unchanged.
+  assert_true(container.to_html().contains("<em>"))
+  inspect(f.elems, content="3")
+}

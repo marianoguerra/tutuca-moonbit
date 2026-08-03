@@ -141,12 +141,32 @@ pub(all) struct RenderCtx {
   /// Component render-site cache (JS _rValComp DomCache). None = uncached (the
   /// JS NullDomCache); the App supplies one persisted across passes.
   render_cache : RenderCache?
+  /// The sanitizing filter, applied to each element as it is CONSTRUCTED.
+  ///
+  /// It lives here rather than being applied to the finished tree because of
+  /// the cache above: a cached site hands back the same `Vdom` object, and
+  /// `@vdom`'s morph then short-circuits it by physical identity. A filter over
+  /// the finished tree re-walks every one of those on every render for no
+  /// result — O(whole tree) work beside a pipeline that is otherwise
+  /// O(changed).
+  ///
+  /// Hooked to construction rather than to a traversal of what was rebuilt,
+  /// because there is no subtree to traverse: `@vdom.fragment` flattens nested
+  /// fragments (`normalize_childs`), so a nested component's `§Comp§` boundary
+  /// is spliced inline into its parent's children and there is nothing left to
+  /// stop at. `render` builds an element in exactly one place, so filtering
+  /// there is both exactly-once and free of any walk at all.
+  ///
+  /// The App owns installing it. `None` renders exactly as it did before the
+  /// filter existed.
+  filter : &@filter.VdomFilter?
 }
 
 ///|
 declare pub fn RenderCtx::new(
   view_resolver? : &ViewResolver,
   render_cache? : RenderCache,
+  filter? : &@filter.VdomFilter,
 ) -> RenderCtx
 
 ///|

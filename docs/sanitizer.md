@@ -422,8 +422,45 @@ Three consequences worth stating:
 
 ### Doing the work once
 
-Neither of these is implemented — the filter today is a full walk over the
-finished tree, which is correct and is the thing to measure against.
+**The filter runs where an element is CONSTRUCTED.** `render` builds an element
+in exactly one place (`render/render.mbt`, the `Dom(d)` arm), and `RenderCtx`
+carries the filter so it can be applied there. That is exactly-once by
+construction, costs no traversal at all, and means a subtree the render cache
+hands back was never rebuilt and so is never re-filtered.
+
+Two attempts preceded it, and the first was what shipped:
+
+- **Over the finished tree**, in `App::render_now`. Correct, and the wrong
+  complexity: the render cache returns the same `Vdom` object for an unchanged
+  site and morph then short-circuits it by physical identity, so the filter did
+  O(whole tree) work beside a pipeline that is otherwise O(changed). On a
+  1000-row list, morph touches one row and the filter touched all thousand.
+- **A walk that stops at nested `§Comp§` boundaries**, applied to each body at
+  the cache miss. This does not work, and the reason is worth writing down:
+  `@vdom.fragment` FLATTENS nested fragments (`normalize_childs` in `vdom/h.mbt`),
+  so a nested component's `[§Comp§ meta, body]` is spliced inline into its
+  parent's child list. There is no nested fragment left to stop at, and no
+  marker for where the child's content ends. A test that counted filtered
+  elements caught this immediately — 9 where 6 was expected, the child's three
+  counted twice.
+
+`app/filter_test.mbt` pins the result: six elements across a parent and a nested
+child are filtered six times on the first render, and a change to the parent
+alone re-filters three.
+
+Two consequences of hooking construction rather than a walk:
+
+- **`set_filter` clears the render cache.** A cached subtree carries the verdict
+  of whichever filter was installed when it was built, so keeping them would
+  mean a newly installed filter never saw most of the tree. One full rebuild, on
+  a call a host makes about once.
+- **A filter that replaces children owns what it builds.** Children are already
+  built when `filter_elem` is called, and nothing runs after it on nodes it
+  created — so `MarkupFilter` sanitizes its own output, attribute values
+  included. That was already true by design; it is now load-bearing rather than
+  belt-and-braces.
+
+The remaining idea from this section is not implemented:
 
 **The static pass can hand the filter a skip set.** Pass 1 already visits every
 attribute of every node and already distinguishes `Const` from a `Val`
@@ -432,22 +469,6 @@ expression. A view whose URL-set attributes are all constant, and which has no
 is a per-view bit computed once at registration, and the filter skips those
 subtrees by `data-vid`. The views that need runtime work are the minority, which
 is the whole argument for having a static pass at all.
-
-**The filter should run at cache-miss, not over the finished tree.** The render
-cache (`render/cache.mbt`) stores the rendered `Vdom` of a render site and hands
-it back when the instance, site and binds are unchanged — `@vdom`'s morph then
-short-circuits it by physical identity. A filter applied to the finished tree
-re-walks those reused subtrees on every render for no result, and worse, a
-sanitized subtree that gets cached and re-filtered pays twice forever. Filtering
-where a site is *built* means each subtree is sanitized once per actual rebuild,
-and a cached subtree is already clean by construction.
-
-That argues for the filter being reachable from `render` rather than applied
-after it, even though the seam it conceptually occupies is the one in
-`App::render_now`. Cheapest honest version: `RenderCtx` carries the
-`&VdomFilter?`, the cache-miss path applies it, and `App` owns installing it.
-Worth measuring before committing — `benchmarks/OPTIMIZATIONS.md` #8 is the
-precedent for a cache whose bookkeeping cost more than it saved.
 
 ### What the trusted case gave up, and why the default flipped
 
@@ -586,7 +607,12 @@ What is left, in rough order of who it helps:
   so the attribute rules must run after the nodes they inspect exist. Built the
   other way round, a payload's own `javascript:` URL would survive. There is a
   test.
-- **The skip set and cache-miss placement**, measured rather than assumed.
+- ~~**The skip set and cache-miss placement**, measured rather than assumed.~~
+  The placement half is **done** — the filter hooks element CONSTRUCTION in
+  `render`, so it is exactly-once and a cached subtree is never re-filtered; see
+  "Doing the work once" for why the cache-miss walk this bullet originally
+  proposed does not work. The **skip set is still open**, and is now the only
+  remaining idea there.
 - **A guest-level end-to-end test.** `app/filter_test.mbt` proves the filter sees
   what the render loop builds, and a guest's subtree is part of that same tree by
   construction — so this would add little, and the scaffolding is a whole

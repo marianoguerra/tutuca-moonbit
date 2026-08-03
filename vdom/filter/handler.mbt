@@ -66,8 +66,8 @@ fn HandlerFilter::record(self : HandlerFilter, d : Dropped) -> Unit {
 }
 
 ///|
-/// The rule for one element, so `Baseline` can apply it in a shared walk.
-fn HandlerFilter::filter_elem(self : HandlerFilter, el : @vdom.VElem) -> Unit {
+/// The rule for one element; the caller owns the walk.
+pub impl VdomFilter for HandlerFilter with fn filter_elem(self, el) {
   // Allocated only when there is something to drop. A view that sets an `on*`
   // attribute is the rare case and this runs per element per render, so the
   // no-op path must not allocate — `is_event_handler_attr` is a prefix test
@@ -92,9 +92,4 @@ fn HandlerFilter::filter_elem(self : HandlerFilter, el : @vdom.VElem) -> Unit {
       el.attrs.remove(name)
     }
   }
-}
-
-///|
-pub impl VdomFilter for HandlerFilter with fn filter_tree(self, tree) {
-  walk_elems(tree, el => self.filter_elem(el))
 }

@@ -62,6 +62,7 @@ pub impl VdomFilter for UrlFilter
 
 // Traits
 pub(open) trait VdomFilter {
-  fn filter_tree(Self, @vdom.Vdom) -> Unit
+  fn filter_elem(Self, @vdom.VElem) -> Unit
+  fn filter_tree(Self, @vdom.Vdom) -> Unit = _
   fn take_reports(Self) -> Array[Dropped] = _
 }

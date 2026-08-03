@@ -9,8 +9,29 @@
 /// inputs have not changed), so a filter that rebuilt nodes would silently
 /// turn every render into a full diff.
 pub(open) trait VdomFilter {
-  /// Called once per render, on the whole tree.
-  fn filter_tree(Self, @vdom.Vdom) -> Unit
+  /// Apply this filter's rules to ONE element. The primitive, because the
+  /// caller decides when an element is ready to be filtered.
+  ///
+  /// It is the caller's rather than the filter's because `render` does not
+  /// traverse at all: it filters each element where it CONSTRUCTS it, which is
+  /// exactly-once by construction and costs no walk. A filter that owned its
+  /// traversal would have to be handed the finished tree, and would then
+  /// re-walk every subtree the render cache returned unchanged, on every render
+  /// — which is what this used to do, and it made the filter O(whole tree)
+  /// where the rest of the pipeline is O(changed).
+  ///
+  /// Children are already built when this is called. A filter that REPLACES
+  /// them (raw markup becoming described nodes) is therefore replacing finished
+  /// nodes, and owns checking what it built — nothing runs after it on nodes it
+  /// created. `MarkupFilter` does exactly that, which is why
+  /// `attr_value_allowed` is public.
+  fn filter_elem(Self, @vdom.VElem) -> Unit
+
+  /// Apply this filter to a whole tree.
+  ///
+  /// The convenience entry point, for a caller holding a tree and no opinion
+  /// about traversal. `render` does not use it.
+  fn filter_tree(Self, @vdom.Vdom) -> Unit = _
 
   /// Everything dropped since the last call, oldest first, clearing the log.
   ///
@@ -22,6 +43,11 @@ pub(open) trait VdomFilter {
   ///
   /// Defaults to none, for a filter that only rewrites.
   fn take_reports(Self) -> Array[Dropped] = _
+}
+
+///|
+impl VdomFilter with fn filter_tree(self, tree) {
+  walk_elems(tree, el => self.filter_elem(el))
 }
 
 ///|
@@ -93,9 +119,14 @@ pub fn Chain::new(filters : Array[&VdomFilter]) -> Chain {
 }
 
 ///|
-pub impl VdomFilter for Chain with fn filter_tree(self, tree) {
+/// Each member's rules on the element, in order.
+///
+/// One traversal for the whole chain rather than one per member, and the order
+/// that mattered still holds: a member that replaces children runs before the
+/// members after it, and the walk descends into what it built.
+pub impl VdomFilter for Chain with fn filter_elem(self, el) {
   for f in self.filters {
-    f.filter_tree(tree)
+    f.filter_elem(el)
   }
 }
 
