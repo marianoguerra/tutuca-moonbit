@@ -14,7 +14,7 @@ import {
   "marianoguerra/tailwindcss/loader/fs" @twfs,
   "moonbitlang/async",
   "moonbitlang/x/fs",
-  "moonbitlang/x/sys",
+  "moonbitlang/core/env",
   "moonbitlang/core/string",
 }
 

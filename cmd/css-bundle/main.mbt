@@ -22,8 +22,21 @@
 ///
 /// The bundle step is exactly `tailwindcss bundle` — `@tw.collect_imports` walks
 /// the `@import` graph and returns entry-relative keys usable with `base = ""`.
+
+///|
+/// `moonbitlang/x/sys` used to supply this, and `get_cli_args` alongside it.
+/// That package's `get_cli_args` binds the intrinsic `$moonbit.get_cli_args`,
+/// which the runtime renamed to `moonbit_rt_get_cli_args` (with a different
+/// signature) — so linking any native binary that imports `x/sys` fails until
+/// a new `x` is published. `@env.args()` is core's own answer to the same
+/// question and is what `cmd/main` and `cmd/dev` already use; `exit` is one
+/// line of libc, so it is declared here rather than kept as a reason to depend
+/// on a package this tool needed nothing else from.
+extern "C" fn exit(code : Int) = "exit"
+
+///|
 async fn main {
-  let args = @sys.get_cli_args()
+  let args = @env.args()
   let mut input = "css/assets/margaui.entry.css"
   let mut base = "_build/margaui"
   let mut output = "css/assets/margaui.bundle.json"
@@ -37,7 +50,7 @@ async fn main {
       index += 1
       guard index < args.length() else {
         println("error: \{name} requires a value")
-        @sys.exit(2)
+        exit(2)
         ""
       }
       args[index]
@@ -58,7 +71,7 @@ async fn main {
       }
       _ => {
         println("error: unknown argument: \{arg}")
-        @sys.exit(2)
+        exit(2)
       }
     }
     index += 1
@@ -66,7 +79,7 @@ async fn main {
   let entry = @fs.read_file_to_string(input) catch {
     _ => {
       println("error: cannot read entry: \{input}")
-      @sys.exit(1)
+      exit(1)
       ""
     }
   }
@@ -74,7 +87,7 @@ async fn main {
   let imports = @tw.collect_imports(entry, loader, base~) catch {
     err => {
       println("error: \{err}")
-      @sys.exit(1)
+      exit(1)
       Map([])
     }
   }
