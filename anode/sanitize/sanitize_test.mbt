@@ -339,6 +339,47 @@ test "the spec's default configuration is valid and usable" {
 }
 
 ///|
+/// The camelCase SVG attributes survive the transcription.
+///
+/// They are the one part of the spec's list that a case-sensitive lookup
+/// cannot match: `attribute_allowed` folds the name it is asked about, so an
+/// allow-list entry left as `viewBox` would be unreachable and EVERY camelCase
+/// SVG attribute would be refused — `<svg viewBox="0 0 10 10">` among them.
+/// Nothing else in the suite notices, because the rest of the list is already
+/// lowercase and matches either way.
+test "the spec's default keeps the camelCase SVG attributes" {
+  let s = Sanitizer::new(SanitizerConfig::spec_default())
+  for name in ["viewBox", "preserveAspectRatio"] {
+    assert_true(s.attribute_allowed("svg", Some(Svg), name))
+  }
+  assert_true(s.attribute_allowed("circle", Some(Svg), "pathLength"))
+  assert_true(s.attribute_allowed("marker", Some(Svg), "markerHeight"))
+  assert_true(s.attribute_allowed("marker", Some(Svg), "refX"))
+  assert_true(s.attribute_allowed("text", Some(Svg), "lengthAdjust"))
+  assert_true(s.attribute_allowed("textPath", Some(Svg), "startOffset"))
+  // Folded on both sides, so the spelling a guest wrote does not matter — an
+  // HTML parser lowercases the name and then readjusts it anyway.
+  assert_true(s.attribute_allowed("svg", Some(Svg), "viewbox"))
+  assert_true(s.attribute_allowed("svg", Some(Svg), "VIEWBOX"))
+  // Still an allow-list: a name it does not carry is still refused.
+  assert_false(s.attribute_allowed("svg", Some(Svg), "onload"))
+  assert_false(s.attribute_allowed("circle", Some(Svg), "viewBox"))
+}
+
+///|
+/// Folding is what keeps a *remove* list from having a case bypass: a config
+/// that removes `viewBox` removes it however a guest spells it.
+test "attribute removal is case-folded too" {
+  let s = Sanitizer::new({
+    ..SanitizerConfig::empty(),
+    elements: Some([ElementRule::of(svg("svg"))]),
+    remove_attributes: Some(["viewBox"]),
+  })
+  assert_false(s.attribute_allowed("svg", Some(Svg), "viewBox"))
+  assert_false(s.attribute_allowed("svg", Some(Svg), "viewbox"))
+}
+
+///|
 /// The reason it is offered and not imposed: the spec's default is for pasting
 /// DOCUMENT content, and a tutuca view describes an INTERACTIVE component. A
 /// guest with a button is not an unusual guest.

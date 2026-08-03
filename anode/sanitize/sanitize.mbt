@@ -45,6 +45,30 @@ pub let reserved_data_attrs : @set.Set[String] = @set.Set::from_array([
 ])
 
 ///|
+/// An attribute allow/remove list, folded to the case `attribute_allowed`
+/// looks names up in.
+///
+/// A config names attributes in the casing the spec writes them, and for
+/// foreign content that casing is camel: `viewBox`, `pathLength`,
+/// `preserveAspectRatio`. Folding here rather than preserving case — which is
+/// what `normalize_tag` does for ELEMENT names — is deliberate, for two
+/// reasons.
+///
+/// The platform does not distinguish them. An HTML parser ASCII-lowercases
+/// every attribute name while tokenizing, and only then maps it back through
+/// the fixed "adjust SVG attributes" table; `viewBox`, `viewbox` and `VIEWBOX`
+/// in source all reach the DOM as `viewBox`. Case-sensitive matching would
+/// refuse a guest whose spelling the browser accepts.
+///
+/// And unlike elements, no two attributes anywhere in HTML, SVG or MathML
+/// differ only by case, so folding cannot merge two distinct names — which
+/// means it cannot widen a *remove* list into a case bypass. Preserving case
+/// could: a config removing `viewbox` would silently keep `viewBox`.
+fn attr_set(names : Array[String]) -> @set.Set[String] {
+  @set.Set::from_array(names.map(fn(n) { n.to_lower() }))
+}
+
+///|
 /// Compile a config, or report every way it contradicts itself.
 pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
   let errors = cfg.validate()
@@ -59,11 +83,11 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
         m[r.elem.key()] = {
           allow: match r.attributes {
             None => None
-            Some(names) => Some(@set.Set::from_array(names))
+            Some(names) => Some(attr_set(names))
           },
           remove: match r.remove_attributes {
-            None => @set.Set::from_array([])
-            Some(names) => @set.Set::from_array(names)
+            None => attr_set([])
+            Some(names) => attr_set(names)
           },
         }
       }
@@ -85,9 +109,9 @@ pub fn Sanitizer::new(cfg : SanitizerConfig) -> Sanitizer raise InvalidConfig {
     replace_with_children: elem_set(cfg.replace_with_children_elements),
     allow_attributes: match cfg.attributes {
       None => None
-      Some(names) => Some(@set.Set::from_array(names))
+      Some(names) => Some(attr_set(names))
     },
-    remove_attributes: @set.Set::from_array(cfg.remove_attributes.unwrap_or([])),
+    remove_attributes: attr_set(cfg.remove_attributes.unwrap_or([])),
     // Absent means KEPT. Dropping comments is something the spec's default
     // CONFIGURATION does, not something its unsafe baseline does — "calling
     // removeUnsafe(), or passing a custom sanitizer to the safe method, only
