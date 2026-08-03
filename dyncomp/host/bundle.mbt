@@ -11,10 +11,15 @@ pub struct Bundle {
   /// `CODE (level) Comp/view: message` lines (the shape `gen-views` prints).
   ///
   /// A guest's views are the one part of a component that arrives as SOURCE at
-  /// runtime, so they are the one part no build step ever checked. The rules
-  /// are pure functions over that source, so running them at load costs a
+  /// runtime, so they are the one part no build step ever checked. The lint
+  /// rules are pure functions over that source, so running them at load costs a
   /// parse the host was going to do anyway — and it is the only feedback a
   /// guest author gets.
+  ///
+  /// `screen_method_names` adds one line that is NOT a function of the source
+  /// alone: it needs the manifest beside the view to say that a `$name` the
+  /// view calls is a name nothing will answer. Load is the first moment both
+  /// halves exist, which is why it lands here rather than in `@lint`.
   diagnostics : Array[String]
   /// name -> (synthesized component id, its declared schema, manifest def).
   /// The schema is built ONCE here and carried: every instance reads it (its
@@ -182,14 +187,97 @@ pub fn register_bundle(
     }
   }
   // compile() filled in the `@on` names the views raise; the instances read
-  // their schema from `comps`, so it takes the completed one.
+  // their schema from `comps`, so it takes the completed one. The compiled
+  // views are also the first point where what a view CALLS can be compared
+  // against what the manifest declared — see `screen_method_names`.
   for comp in synthesized {
     match comps.get(comp.name) {
-      Some((id, _, def)) => comps[comp.name] = (id, comp.schema, def)
+      Some((id, _, def)) => {
+        comps[comp.name] = (id, comp.schema, def)
+        screen_method_names(diagnostics, comp, def)
+      }
       None => ()
     }
   }
   { guest, manifest, comps, diagnostics, next_pid: { val: 1 }, scope: child }
+}
+
+///|
+/// One finding as a printable line, in the `CODE (level) where: message` shape
+/// `gen-views` uses. Shared by every screening pass so a bundle's diagnostics
+/// read as one list rather than as one list per rule that produced it.
+fn diagnostic_line(
+  into : Array[String],
+  where_ : String,
+  f : @lint.Finding,
+) -> Unit {
+  let level = match f.level {
+    Error => "error"
+    Warn => "warning"
+    Hint => "hint"
+  }
+  into.push(
+    "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}",
+  )
+}
+
+///|
+/// What a component's views CALL with `$name`, against what its manifest says
+/// it answers.
+///
+/// `$name` resolves through `DynObj::obj_field`, which mints a callable for a
+/// name the manifest listed in `methods` — or for one of the mutators the
+/// declared fields imply — and for nothing else. Any other name falls through
+/// to `get-field`, comes back `Null`, and `Null` in an attribute means "omit
+/// the attribute". So a name missing from `methods` fails NOWHERE: the element
+/// renders without its class, `call-method` is never reached, and the guest has
+/// no way to learn it was asked. The silence is the bug; this is what breaks it.
+///
+/// Advisory, like the other passes — the view is legal and the bundle renders.
+/// What it cannot do is the thing it was written to do.
+///
+/// Runs on COMPILED views, which is what makes it see through a macro call and
+/// see `@on` handlers at all (those live on the parse context, not in the tree).
+fn screen_method_names(
+  into : Array[String],
+  comp : @component.Component,
+  def : DynComponentDef,
+) -> Unit {
+  let answered : Set[String] = Set::from_array(def.methods)
+  // The generated mutators (`setCount`, `pushInItems`, …) are answered by the
+  // host off the declared fields, so a view calling one is right to expect it
+  // even though the manifest never lists it (see `DynObj::obj_field`).
+  for name, _ in @component.schema_mutators(comp.schema) {
+    answered.add(name)
+  }
+  let candidates = answered.to_array()
+  candidates.sort()
+  for vname, view in comp.views {
+    let called : Set[String] = Set([])
+    view.collect_method_names(called)
+    let missing = called.to_array().filter(name => !answered.contains(name))
+    // A set's order is not one to print: these lines are read by people and
+    // asserted by tests, and both need the same list twice.
+    missing.sort()
+    for name in missing {
+      let info : Array[(String, String)] = [("name", name)]
+      let suggestion : @lint.Suggestion? = match
+        @lint.closest_name(name, candidates) {
+        Some(closest) => {
+          info.push(("closest", closest))
+          Some(ReplaceName(from="$\{name}", to="$\{closest}"))
+        }
+        None => None
+      }
+      diagnostic_line(into, "\{def.name}/\{vname}", {
+        code: UndeclaredMethod,
+        level: Warn,
+        info,
+        location: None,
+        suggestion,
+      })
+    }
+  }
 }
 
 ///|
@@ -211,16 +299,7 @@ fn screen_view(
   where_ : String,
   html : String,
 ) -> Unit raise ManifestError {
-  let line = (f : @lint.Finding) => {
-    let level = match f.level {
-      Error => "error"
-      Warn => "warning"
-      Hint => "hint"
-    }
-    into.push(
-      "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}",
-    )
-  }
+  let line = (f : @lint.Finding) => diagnostic_line(into, where_, f)
   for f in @lint.lint_html(html) {
     line(f)
   }

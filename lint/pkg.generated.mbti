@@ -45,6 +45,7 @@ pub(all) enum LintCode {
   DeprecatedBareXDirective
   MaybeAddAtPrefix
   MaybeDropAtPrefix
+  UndeclaredMethod
   HtmlTagNameHasUppercase
   HtmlSvgTagWillLowercase
   HtmlSvgAttrWillLowercase

@@ -3,8 +3,11 @@
 // (tools/core/htmllinter.js). READONLY by convention: concrete public data
 // types plus `declare` stubs; implementations live in separate files.
 //
-// Scope: NO component-model rules (field/method/provide checks need the
-// component layer). Findings are plain data; formatting is the caller's job.
+// Scope: this package RUNS no component-model rules (field/method/provide
+// checks need the component layer). It still owns their vocabulary —
+// `UndeclaredMethod` is raised by the dyncomp host, which has the manifest in
+// hand, and named/worded here so one finding does not print in a second
+// format. Findings are plain data; formatting is the caller's job.
 
 ///|
 pub(all) enum LintLevel {
@@ -27,6 +30,7 @@ pub(all) enum LintCode {
   DeprecatedBareXDirective // TEMPORARY, tied to the bare-x-directive nudge
   MaybeAddAtPrefix
   MaybeDropAtPrefix
+  UndeclaredMethod
   HtmlTagNameHasUppercase
   HtmlSvgTagWillLowercase
   HtmlSvgAttrWillLowercase

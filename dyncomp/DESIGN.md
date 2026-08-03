@@ -136,6 +136,12 @@ No changes to `render/` or `vdom/` are needed.
   which is also where the `@on` names the views raise are read off the compiled
   tree and folded into the schema's `inputs`. Guest view parse errors surface
   as the compile error; lint findings surface as `Bundle::diagnostics()`.
+  The compiled tree is also where every `$name` a view CALLS is collected
+  (`View::collect_method_names`) and checked against the component's declared
+  `methods` plus the mutators its fields imply — an `UNDECLARED_METHOD` warning
+  in the same list. Nothing else catches that one: an undeclared `$name` never
+  reaches `call-method`, evaluates to `Null`, and a `Null` attribute is simply
+  omitted, so the whole failure is an element quietly missing its `class`.
 - **`DynObj`** implements `&Obj`: `component_id` → the synthesized component
   (stock view resolution); `obj_field` → `get-field` (arena-decoded; `instance`
   payloads wrap as nested `DynObj`s), falling back to the schema's mutators;

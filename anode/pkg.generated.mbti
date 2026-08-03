@@ -92,6 +92,7 @@ pub(all) enum ANode {
   MacroCall(MacroData)
 } derive(@debug.Debug)
 pub fn ANode::collect_classes(Self, @set.Set[String]) -> Unit
+pub fn ANode::collect_method_names(Self, @set.Set[String]) -> Unit
 pub fn ANode::has_newline(Self) -> Bool
 pub fn ANode::has_raw_html(Self) -> Bool
 pub fn ANode::is_whitespace(Self) -> Bool
@@ -253,6 +254,7 @@ pub(all) struct View {
   mut ctx : ParseContext?
   parse : ((View, ParseContext, &MacroScope, @core.Lit?) -> Unit raise MacroError)?
 }
+pub fn View::collect_method_names(Self, @set.Set[String]) -> Unit
 pub fn View::compile(Self, ParseContext, &MacroScope, cid? : @core.Lit) -> Unit raise MacroError
 pub fn View::from_ir(String, ANode, Array[Array[NodeEvent]], style? : String) -> Self
 pub fn View::new(String, raw_view? : String, style? : String) -> Self

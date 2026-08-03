@@ -23,6 +23,7 @@ pub fn lint_code_name(code : LintCode) -> String {
     DeprecatedBareXDirective => "DEPRECATED_BARE_X_DIRECTIVE"
     MaybeAddAtPrefix => "MAYBE_ADD_AT_PREFIX"
     MaybeDropAtPrefix => "MAYBE_DROP_AT_PREFIX"
+    UndeclaredMethod => "UNDECLARED_METHOD"
     HtmlTagNameHasUppercase => "HTML_TAG_NAME_HAS_UPPERCASE"
     HtmlSvgTagWillLowercase => "HTML_SVG_TAG_WILL_LOWERCASE"
     HtmlSvgAttrWillLowercase => "HTML_SVG_ATTR_WILL_LOWERCASE"
@@ -183,6 +184,16 @@ pub fn finding_message(f : Finding) -> String {
     }
     DeprecatedBareXDirective =>
       "'\{name}' on <x \{op}> is deprecated — write '@\{name}' instead" + tags
+    UndeclaredMethod => {
+      let closest = info_or(info, "closest", "")
+      let hint = if closest == "" {
+        ""
+      } else {
+        " — did you mean '$\{closest}'?"
+      }
+      "'$\{name}' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods" +
+      hint
+    }
     BadValue => bad_value_message(info) + tags
     UnsupportedExprSyntax => unsupported_expr_message(info) + tags
     BindingMemberTooDeep =>

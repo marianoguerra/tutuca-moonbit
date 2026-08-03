@@ -344,6 +344,34 @@ declare pub fn ANode::collect_classes(self : ANode, into : Set[String]) -> Unit
 declare pub fn ANode::has_raw_html(self : ANode) -> Bool
 
 ///|
+/// Collect every `$name` this tree calls — in attributes (plain, `@if`
+/// branches, `@dangerouslysetinnerhtml`), in `@text` / `<x render>` values, in
+/// the Show/Hide/PushView/Scope wrappers, and in an `@each`'s
+/// `@when`/`@loop-with`/`@enrich-with` — plus the ones nested inside a `$'…'`
+/// template or a predicate's arguments.
+///
+/// Purely syntactic: it says what the template NAMES, not what answers. A layer
+/// that knows which names a component declares (the dyncomp host does, from its
+/// manifest) is what turns that into a diagnostic. Call on COMPILED views, so a
+/// macro's body is walked as its expansion.
+///
+/// `@on` handlers are NOT here — attribute parsing registers those on the
+/// ParseContext rather than in the tree. Use `View::collect_method_names` to
+/// get both halves.
+declare pub fn ANode::collect_method_names(
+  self : ANode,
+  into : Set[String],
+) -> Unit
+
+///|
+/// `ANode::collect_method_names` over this view's compiled tree AND the `@on`
+/// handlers its parse registered — the whole of what one view calls.
+declare pub fn View::collect_method_names(
+  self : View,
+  into : Set[String],
+) -> Unit
+
+///|
 /// A single child stays bare; several become a Fragment (JS maybeFragment).
 declare fn maybe_fragment(childs : Array[ANode]) -> ANode
 

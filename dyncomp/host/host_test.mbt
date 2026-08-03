@@ -1347,6 +1347,79 @@ test "a bundle's views are linted at load" {
 }
 
 ///|
+/// The failure this catches renders as NOTHING: a `$name` the manifest forgot
+/// to declare never reaches `call-method`, evaluates to Null, and an attribute
+/// bound to Null is omitted — so the guest author sees an element quietly
+/// missing its class and the guest itself is never told it was asked.
+test "a `$method` the manifest never declared is reported at load" {
+  let float_ty : DynTyDef = {
+    kind: "ty-float",
+    elem: None,
+    items: [],
+    name: "",
+    members: [],
+  }
+  let sloppy : DynManifest = {
+    api_version: 4,
+    module_name: "statlib",
+    doc: "",
+    version: "",
+    homepage: "",
+    authors: [],
+    capabilities: [],
+    components: [
+      {
+        name: "Stat",
+        doc: "",
+        keywords: [],
+        category: "",
+        message_docs: Map([]),
+        views: [
+          {
+            name: "main",
+            html: (
+              #|<div :style="$boxStyle" :class="$valueClass">
+              #|  <button @on.click="$setCount 0">zero</button>
+              #|  <button @on.click="$bumpIt">bump</button>
+              #|  <span @text="$'{.count} / {$boxStyl}'"></span>
+              #|</div>
+            ),
+          },
+        ],
+        types: [float_ty],
+        fields: [plain_field("count", 0)],
+        handlers: [],
+        receives: [],
+        bubbles: [],
+        responses: [],
+        // `$setCount` is absent on purpose: it is the mutator the `count` field
+        // implies, so the host answers it and it must NOT be reported
+        methods: ["boxStyle"],
+        whens: [],
+        requests: [],
+        inits: [],
+        style: "",
+      },
+    ],
+  }
+  let h = @harness.mount(shell_module(), "Shell")
+  let bundle = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    sloppy,
+    policy=vouched(),
+  )
+  inspect(
+    bundle.diagnostics().join("\n"),
+    content=(
+      #|UNDECLARED_METHOD (warning) Stat/main: '$bumpIt' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
+      #|UNDECLARED_METHOD (warning) Stat/main: '$boxStyl' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods — did you mean '$boxStyle'?
+      #|UNDECLARED_METHOD (warning) Stat/main: '$valueClass' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods
+    ),
+  )
+}
+
+///|
 test "a component's named initial states are offered by name" {
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
