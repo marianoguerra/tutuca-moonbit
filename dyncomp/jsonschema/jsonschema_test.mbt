@@ -452,3 +452,168 @@ test "a non-object document fails at the root" {
     ),
   )
 }
+
+///|
+test "a table field projects to a described $defs, not a titled stub" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let js = of_schema(s)
+  inspect(
+    compact(at(js, "properties").unwrap()),
+    content=(
+      #|{"data":{"$ref":"#/$defs/table"}}
+    ),
+  )
+  // The point of the whole exercise: a record gets `{"title": "card"}` and
+  // nothing else, while a table gets its actual shape.
+  let defs = at(js, "$defs").unwrap()
+  inspect(
+    compact(at(at(defs, "colType").unwrap(), "enum").unwrap()),
+    content=(
+      #|["i32","f64","str","bool"]
+    ),
+  )
+  inspect(
+    compact(at(at(defs, "table").unwrap(), "required").unwrap()),
+    content=(
+      #|["columns"]
+    ),
+  )
+  inspect(
+    compact(at(at(defs, "column").unwrap(), "required").unwrap()),
+    content=(
+      #|["id","label","type","values"]
+    ),
+  )
+  // The discriminated branches are what let a generator get typed values right.
+  inspect(
+    compact(at(at(defs, "column").unwrap(), "oneOf").unwrap()),
+    content=(
+      #|[{"properties":{"type":{"const":"i32"},"values":{"type":"array","items":{"type":["integer","null"],"minimum":-2147483648,"maximum":2147483647}}}},{"properties":{"type":{"const":"f64"},"values":{"type":"array","items":{"type":["number","null"]}}}},{"properties":{"type":{"const":"str"},"values":{"type":"array","items":{"type":["string","null"]}}}},{"properties":{"type":{"const":"bool"},"values":{"type":"array","items":{"type":["boolean","null"]}}}}]
+    ),
+  )
+}
+
+///|
+test "two table fields share one set of $defs" {
+  let s = schema_of([
+    @tutuca.FieldInfo::new("left", TyTable),
+    @tutuca.FieldInfo::new("right", TyTable),
+  ])
+  let defs = at(of_schema(s), "$defs").unwrap()
+  guard defs is Object(m)
+  inspect(m.keys().to_array().length(), content="3")
+}
+
+///|
+test "a well-formed table coerces, and rowCount is derived" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let j = @json.parse(
+    (
+      #|{"data": {"columns": [
+      #|  {"id": "city", "label": "City", "type": "str", "values": ["Berlin", "Athens", "Lima"]},
+      #|  {"id": "pop", "label": "Population", "type": "i32", "values": [3664000, 664000, null]},
+      #|  {"id": "lat", "label": "Latitude", "type": "f64", "values": [52.52, 37.98, -12.05]},
+      #|  {"id": "capital", "label": "Capital", "type": "bool", "values": [true, true, true]}]}}
+    ),
+  )
+  guard coerce(s, j) is Ok(args)
+  inspect(
+    args.get("data").unwrap().to_json().stringify(),
+    content=(
+      #|{"columns":[{"id":"city","label":"City","type":"str","values":["Berlin","Athens","Lima"]},{"id":"pop","label":"Population","type":"i32","values":[3664000,664000,null]},{"id":"lat","label":"Latitude","type":"f64","values":[52.52,37.98,-12.05]},{"id":"capital","label":"Capital","type":"bool","values":[true,true,true]}],"rowCount":3}
+    ),
+  )
+}
+
+///|
+test "columns of unequal width are rejected — the check no JSON Schema can make" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let j = @json.parse(
+    (
+      #|{"data": {"columns": [
+      #|  {"id": "city", "label": "City", "type": "str", "values": ["Berlin", "Athens", "Lima"]},
+      #|  {"id": "pop", "label": "Population", "type": "i32", "values": [3664000, 664000]}]}}
+    ),
+  )
+  guard coerce(s, j) is Err(errors)
+  debug_inspect(
+    errors.map(e => "\{e.pointer}: \{e.message}"),
+    content=(
+      #|["/data/columns/1/values: 2 values, but column city has 3 — every column in a table must have the same number"]
+    ),
+  )
+}
+
+///|
+test "a table with columns and no rows is valid" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let j = @json.parse(
+    (
+      #|{"data": {"columns": [{"id": "a", "label": "A", "type": "str", "values": []}]}}
+    ),
+  )
+  guard coerce(s, j) is Ok(args)
+  inspect(
+    args.get("data").unwrap().to_json().stringify(),
+    content=(
+      #|{"columns":[{"id":"a","label":"A","type":"str","values":[]}],"rowCount":0}
+    ),
+  )
+}
+
+///|
+test "cell types, i32 range, duplicate ids and unknown keys are all reported" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let j = @json.parse(
+    (
+      #|{"data": {"columns": [
+      #|  {"id": "n", "label": "N", "type": "i32", "values": [1, 2.5, 9007199254740993, "x"]},
+      #|  {"id": "n", "label": "Again", "type": "nope", "values": [1, 2, 3, 4]},
+      #|  {"id": "ok", "label": "Ok", "type": "bool", "values": [true, false, null, true], "width": 4}]}}
+    ),
+  )
+  guard coerce(s, j) is Err(errors)
+  debug_inspect(
+    errors.map(e => "\{e.pointer}: \{e.message}"),
+    content=(
+      #|[
+      #|  "/data/columns/0/values/1: an i32 column holds whole numbers, got 2.5",
+      #|  "/data/columns/0/values/2: not a finite number — a value too large to survive JSON belongs in a str column",
+      #|  "/data/columns/0/values/3: expected i32 or null, got string",
+      #|  "/data/columns/1/id: duplicate column id n, already used by column 0",
+      #|  "/data/columns/1/type: expected one of i32, f64, str, bool, got nope",
+      #|  "/data/columns/2/width: no such column field (expected one of id, label, type, values)",
+      #|]
+    ),
+  )
+}
+
+///|
+test "a stated rowCount that disagrees with the data is caught" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  let j = @json.parse(
+    (
+      #|{"data": {"rowCount": 9, "columns": [
+      #|  {"id": "a", "label": "A", "type": "str", "values": ["x", "y"]}]}}
+    ),
+  )
+  guard coerce(s, j) is Err(errors)
+  debug_inspect(
+    errors.map(e => "\{e.pointer}: \{e.message}"),
+    content=(
+      #|["/data/rowCount: says 9, but the columns hold 2; leave it out and it is counted for you"]
+    ),
+  )
+}
+
+///|
+test "a table that is not an object fails at the table, not inside it" {
+  let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
+  guard coerce(s, @json.parse("{\"data\": [1, 2]}")) is Err(errors)
+  debug_inspect(
+    errors.map(e => "\{e.pointer}: \{e.message}"),
+    content=(
+      #|["/data: expected a table object with a \"columns\" array, got array"]
+    ),
+  )
+}

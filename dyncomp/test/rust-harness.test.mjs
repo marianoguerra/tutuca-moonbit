@@ -48,9 +48,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.4.0': values,
+    'tutuca:component/values@0.5.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.4.0': control,
+    'tutuca:component/control@0.5.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -61,7 +61,7 @@ const said = (inst, name) => inst.callMethod(name, []).val;
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 4);
+  assert.equal(m.apiVersion, 5);
   assert.equal(m.moduleName, 'rusttemplib');
   assert.match(m.components[0].views[0].html, /@on\.input="editC value"/);
 

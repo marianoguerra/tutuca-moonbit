@@ -301,7 +301,7 @@ fn make_calc(args : Array[(String, @values.Value)]) -> &DynComponent {
 ///|
 /// One key of the pad. Written once, because twenty buttons differing only in
 /// a label and a handler is twenty chances to mistype one.
-fn key(label : String, handler : String, cls~ : String = "btn-soft") -> String {
+fn key(label : String, handler : String, cls? : String = "btn-soft") -> String {
   "<button class=\"btn \{cls} k\" @on.click=\"\{handler}\">\{label}</button>"
 }
 
@@ -319,26 +319,32 @@ fn key(label : String, handler : String, cls~ : String = "btn-soft") -> String {
 fn calc_view() -> String {
   let rows = [
     [
-      key("C", "clear", cls="btn-error btn-soft"), key("±", "negate"),
-      key("←", "back"), key("/", "operate '/'", cls="btn-primary"),
+      key("C", "clear", cls="btn-error btn-soft"),
+      key("±", "negate"),
+      key("←", "back"),
+      key("/", "operate '/'", cls="btn-primary"),
     ],
     [
-      key("7", "digit '7'", cls=""), key("8", "digit '8'", cls=""),
+      key("7", "digit '7'", cls=""),
+      key("8", "digit '8'", cls=""),
       key("9", "digit '9'", cls=""),
       key("*", "operate '*'", cls="btn-primary"),
     ],
     [
-      key("4", "digit '4'", cls=""), key("5", "digit '5'", cls=""),
+      key("4", "digit '4'", cls=""),
+      key("5", "digit '5'", cls=""),
       key("6", "digit '6'", cls=""),
       key("-", "operate '-'", cls="btn-primary"),
     ],
     [
-      key("1", "digit '1'", cls=""), key("2", "digit '2'", cls=""),
+      key("1", "digit '1'", cls=""),
+      key("2", "digit '2'", cls=""),
       key("3", "digit '3'", cls=""),
       key("+", "operate '+'", cls="btn-primary"),
     ],
     [
-      key("0", "digit '0'", cls="col-span-2"), key(".", "point", cls=""),
+      key("0", "digit '0'", cls="col-span-2"),
+      key(".", "point", cls=""),
       key("=", "equals", cls="btn-secondary"),
     ],
   ]

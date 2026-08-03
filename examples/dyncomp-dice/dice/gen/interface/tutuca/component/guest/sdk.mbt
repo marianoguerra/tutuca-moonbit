@@ -268,7 +268,7 @@ fn state_of(inst : Instance) -> &DynComponent {
 ///|
 pub fn get_manifest() -> Manifest {
   {
-    api_version: 4,
+    api_version: 5,
     module_name: module_.name,
     doc: module_.doc,
     version: module_.version,

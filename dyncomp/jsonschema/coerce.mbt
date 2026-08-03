@@ -141,6 +141,10 @@ fn coerce_ty(
     // knows the fields, and it will reject what this cannot.
     (TyRecord(_), _) | (TyEnum(_), _) | (TyVariant(_), _) =>
       @tutuca.Value::from_json(j)
+    // A table is the exception to the paragraph above: it is a standard shape,
+    // so this layer knows its fields and checks them — including the equal-width
+    // rule, which no JSON Schema can state. See coerce_table.mbt.
+    (TyTable, _) => coerce_table(j, pointer, errors)
     // A component slot is not filled from JSON. The reference is carried
     // through so the caller can resolve it (make-instance) and write the
     // instance in; refusing it here would make an object schema that advertises

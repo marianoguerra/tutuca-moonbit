@@ -156,7 +156,7 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 /// the generated form worth generating.
 fn stub_manifest() -> @dyncomp.DynManifest {
   {
-    api_version: 4,
+    api_version: 5,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",

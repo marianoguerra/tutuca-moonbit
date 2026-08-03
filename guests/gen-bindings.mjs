@@ -49,7 +49,15 @@ import {
 } from 'node:fs';
 import { join } from 'node:path';
 
-import { GUESTS, SDK_SRC, WIT_DIR, guestDir, sdkDest } from './guests.mjs';
+import {
+  GUESTS,
+  SDK_SRC,
+  TABLES_SRC,
+  WIT_DIR,
+  guestDir,
+  sdkDest,
+  tablesDest,
+} from './guests.mjs';
 
 const wanted = process.argv.slice(2);
 const targets = wanted.length ? wanted : GUESTS;
@@ -113,8 +121,10 @@ for (const name of targets) {
     }
   }
 
-  // (4) the canonical SDK, before fmt so it is formatted with everything else
+  // (4) the canonical SDK and table codec, before fmt so they are formatted
+  // with everything else
   copyFileSync(SDK_SRC, sdkDest(name));
+  copyFileSync(TABLES_SRC, tablesDest(name));
 
   // (2)
   execFileSync('moon', ['fmt'], { stdio: 'inherit', cwd: dir });
@@ -131,8 +141,9 @@ for (const name of targets) {
   console.log(`· regenerated guests/${name}`);
 }
 
-// (4, second half) `moon fmt` runs per guest MODULE and `guests/sdk.mbt` is in
-// none, so the formatted copy is written back. Any guest would do; the first
-// target is the one at hand.
+// (4, second half) `moon fmt` runs per guest MODULE and the canonical copies
+// are in none, so the formatted copies are written back. Any guest would do;
+// the first target is the one at hand.
 copyFileSync(sdkDest(targets[0]), SDK_SRC);
-console.log('· wrote back guests/sdk.mbt');
+copyFileSync(tablesDest(targets[0]), TABLES_SRC);
+console.log('· wrote back guests/sdk.mbt and guests/tables.mbt');

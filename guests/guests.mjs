@@ -8,7 +8,7 @@ import { fileURLToPath } from 'node:url';
 
 ///  The MoonBit guests. The Rust guest (guests/rust-tempconv) implements the
 ///  same WIT but builds through cargo, so it keeps its own script.
-export const GUESTS = ['counter', 'todo', 'todomvc', 'calculator', 'tictactoe'];
+export const GUESTS = ['counter', 'table', 'todo', 'todomvc', 'calculator', 'tictactoe'];
 
 export const repoRoot = join(dirname(fileURLToPath(import.meta.url)), '..');
 
@@ -25,6 +25,16 @@ export const guestDir = (name) => join(repoRoot, 'guests', name);
 /// answer "what does a guest implement" differently. gen-bindings.mjs copies it
 /// into every guest tree, and `tutuca new-guest` emits it into a new one.
 export const SDK_SRC = join(repoRoot, 'guests', 'sdk.mbt');
+
+/// The ONE table codec, copied the same way and for the same reason.
+///
+/// It is separate from the SDK because it answers a different question: the SDK
+/// implements the guest's side of the ABI, this converts between the arena
+/// `values.value` a table arrives as and the `tables.*` types the contract
+/// declares. A guest that never touches a table still compiles with it — it is
+/// plain functions, no `declare` — so there is no cost to shipping it always,
+/// and a guest that DOES want a table should not have to write the conversion.
+export const TABLES_SRC = join(repoRoot, 'guests', 'tables.mbt');
 
 /// jco's entry point, from the repo's own node_modules — never from PATH, where
 /// the bare "jco" name is a dependency-confusion placeholder. Ask jco's manifest
@@ -52,3 +62,8 @@ export const jcoBin = () => {
 /// implements, because a `declare` can only be implemented in its own package.
 export const sdkDest = (name) =>
   join(guestDir(name), 'gen', 'interface', 'tutuca', 'component', 'guest', 'sdk.mbt');
+
+/// The table codec's copy, beside the SDK: it reaches for both `@values` and
+/// `@tables`, and this package is where the guest already imports the first.
+export const tablesDest = (name) =>
+  join(guestDir(name), 'gen', 'interface', 'tutuca', 'component', 'guest', 'tables.mbt');

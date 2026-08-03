@@ -94,7 +94,7 @@ pub(all) struct DynManifest {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 4
+pub let supported_api_version : Int = 5
 
 ///|
 suberror ManifestError {
@@ -329,6 +329,10 @@ fn ty_info_at(
     // not name, which `slots~` names for a host component and nothing names
     // here — so it stays unnamed rather than becoming a wrong name.
     "ty-comp" => TyComp(if t.name == "" { None } else { Some(t.name) })
+    // A `tables.table`. Unlike `ty-record`, this one carries no name because
+    // there is nothing to name — the shape is the contract's, so the host can
+    // describe and check it without asking the guest anything.
+    "ty-table" => TyTable
     _ => TyAny
   }
 }

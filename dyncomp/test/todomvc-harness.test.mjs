@@ -72,9 +72,9 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.4.0': values,
+    'tutuca:component/values@0.5.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.4.0': control,
+    'tutuca:component/control@0.5.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -82,7 +82,7 @@ before(async () => {
 
 test('the manifest declares two fields and eleven handlers', { skip: !built }, () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 4);
+  assert.equal(m.apiVersion, 5);
   assert.equal(m.moduleName, 'todomvclib');
   const [c] = m.components;
   assert.equal(c.name, 'TodoMvc');

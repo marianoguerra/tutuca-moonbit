@@ -251,6 +251,7 @@ pub(all) enum TyInfo {
   TySet
   TyOMap(TyInfo)
   TyComp(String?)
+  TyTable
   TyAny
 } derive(Eq, @debug.Debug)
 pub fn TyInfo::elem(Self) -> Self?
@@ -383,4 +384,3 @@ pub(open) trait Stack {
   fn lookup_method(Self, String) -> Value = _
   fn get_handler_for(Self, String, HandlerNamespace) -> Value = _
 }
-

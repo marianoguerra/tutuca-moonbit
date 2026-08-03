@@ -24,7 +24,7 @@
 /// no clock and no entropy except what `env` grants it, and it never touches
 /// the DOM — its views are DATA the host compiles. See ../SECURITY.md for what
 /// that does and does not cover.
-package tutuca:component@0.4.0;
+package tutuca:component@0.5.0;
 
 /// Dynamic values crossing the boundary. WIT has no recursive types, so
 /// scalars travel inline and compounds are u64 handles into a host-side
@@ -61,6 +61,176 @@ interface values {
   // escape hatch for JSON-native guests; `instance` values serialize as null
   to-json: func(v: value) -> string;
   from-json: func(json: string) -> value;
+}
+
+/// Tabular data as a set of typed COLUMNS of equal width. Columns rather than
+/// rows because every operation a table is actually asked for — sort, filter,
+/// aggregate, retype, add a column — touches one column across every row, and
+/// because a column is the only place a type can be stated once instead of
+/// once per cell.
+///
+/// This interface declares NO functions, which is the whole of its cost: it
+/// exists so every guest is generated the SAME table types rather than
+/// inventing its own. Values still travel as `values.value` trees; these types
+/// are what both ends encode to and decode from, and the host's JSON Schema
+/// projection of `ty-table` is what an agent generates against.
+interface tables {
+  /// What a column holds — the four things JSON has, and no more. There is no
+  /// date, no decimal and no nested value, because each of those is a
+  /// representation argument this contract cannot settle on its callers'
+  /// behalf; each is a `str` with a documented spelling until it earns an arm.
+  ///
+  /// `i32` and not `i64`: a table is JSON at every hop between here and the
+  /// page — `values.value` carries `number(f64)`, and the host's own runtime
+  /// value has one number type — so past 2^53 an integer stops being itself.
+  /// A 64-bit id is a `str`.
+  enum col-type { i32, %f64, str, %bool }
+
+  /// A column's values, all of one type. The ARM is the type: a column cannot
+  /// claim `i32` and hold strings, so the invariant is unrepresentable rather
+  /// than merely checked. The JSON spelling splits the two back apart into
+  /// `"type"` beside `"values"`, because that is the form a generator writes
+  /// and a schema can discriminate on — this is the form that cannot be wrong.
+  variant col-values {
+    i32s(list<s32>),
+    f64s(list<f64>),
+    strs(list<string>),
+    bools(list<bool>),
+  }
+
+  record column {
+    /// Unique within the table and STABLE. Every command addresses a column by
+    /// id, never by position, so a reorder does not invalidate a command
+    /// already in flight.
+    id: string,
+    /// What a header shows. Free text, not unique, not an identifier.
+    label: string,
+    values: col-values,
+    /// The row indices whose value is MISSING — ascending, no duplicates.
+    /// Empty is the common case and costs nothing, which is why this is a
+    /// sparse index list rather than a validity mask: a mask would cost
+    /// row-count entries per column on every crossing even when nothing is
+    /// missing.
+    ///
+    /// The entry in `values` at a listed index is present but MEANINGLESS, so
+    /// a reader consults this list first. In JSON this is spelled inline as
+    /// `null` instead — what a generator writes without being told, and the
+    /// one asymmetry between the two encodings.
+    nulls: list<u32>,
+  }
+
+  /// Columns of EQUAL width — the invariant this record exists to carry.
+  record table {
+    columns: list<column>,
+    /// The width every column has. Redundant with the payload lengths and so
+    /// CHECKED rather than trusted: it is what distinguishes "three columns,
+    /// no rows yet" from a table whose columns disagree. Absent from the JSON
+    /// spelling, where it is derived — a generator would get it wrong, and a
+    /// count that disagrees with the data is worse than no count.
+    row-count: u32,
+  }
+
+  /// A column's identity WITHOUT its data — the header half of a row.
+  record field-ref { id: string, label: string, ty: col-type }
+
+  /// One value. `blank` is how a lone cell says what a column says with
+  /// `nulls`: there is no column here to carry a list.
+  variant cell { i32(s32), %f64(f64), str(string), %bool(bool), blank }
+
+  /// One row, self-describing: `fields` and `cells` are parallel and the same
+  /// length. `index` is the row's position in the table it came from.
+  record row { fields: list<field-ref>, cells: list<cell>, index: u32 }
+
+  /// Many rows sharing one header, for when repeating `fields` per row would
+  /// be the larger half of the payload.
+  record row-set { fields: list<field-ref>, rows: list<list<cell>>, offset: u32 }
+
+  // ── Commands: intents that CHANGE the table. A command answers with no
+  //    data, and that is the whole of the split — it is what lets a query be
+  //    served from a snapshot, and what makes a command replayable.
+
+  record set-cell { column: string, row: u32, value: cell }
+  record insert-rows { at: u32, rows: list<list<cell>> }
+  record add-column { at: u32, column: column }
+  record rename-column { column: string, label: string }
+  record move-column { column: string, to: u32 }
+  /// Values that do not convert become missing rather than wrong.
+  record retype-column { column: string, ty: col-type }
+  record sort-by { column: string, descending: bool }
+
+  variant command {
+    /// Replace the table wholesale.
+    load(table),
+    /// Every column kept, every row dropped: row-count becomes 0.
+    clear,
+    set-cell(set-cell),
+    /// Each inner list is one row in COLUMN ORDER, as long as `columns`.
+    append-rows(list<list<cell>>),
+    insert-rows(insert-rows),
+    /// Ascending, no duplicates, and as of BEFORE the command — so a caller
+    /// composing one does not have to re-derive indices as it goes.
+    delete-rows(list<u32>),
+    add-column(add-column),
+    drop-column(string),
+    rename-column(rename-column),
+    move-column(move-column),
+    retype-column(retype-column),
+    sort-by(sort-by),
+  }
+
+  // ── Queries: OBSERVATIONS. A query never changes the table.
+
+  record cell-ref { column: string, row: u32 }
+  /// `columns` empty means every column.
+  record page { offset: u32, limit: u32, columns: list<string> }
+  enum agg-op { count, sum, min, max, mean, distinct-count }
+  record aggregate { column: string, op: agg-op }
+
+  /// Dimensions and headers with no values — what a renderer needs before it
+  /// decides whether to ask for any data at all.
+  record shape { row-count: u32, fields: list<field-ref> }
+
+  variant query {
+    shape,
+    cell(cell-ref),
+    row(u32),
+    column(string),
+    page(page),
+    aggregate(aggregate),
+    distinct(string),
+  }
+
+  variant query-result {
+    shape(shape),
+    cell(cell),
+    row(row),
+    column(column),
+    page(row-set),
+    number(f64),
+    values(col-values),
+  }
+
+  // ── Failure. A variant rather than a `result`, matching `request-result`
+  //    below: an outcome this contract NAMES is one both ends can match on,
+  //    and one an agent can be told how to correct.
+
+  record type-mismatch { column: string, expected: col-type, got: col-type }
+  record width-mismatch { expected: u32, got: u32 }
+
+  variant table-error {
+    no-such-column(string),
+    duplicate-column-id(string),
+    row-out-of-range(u32),
+    type-mismatch(type-mismatch),
+    width-mismatch(width-mismatch),
+    /// A sort or an aggregate asked of a column whose type has no order.
+    not-comparable(string),
+    /// The JSON did not decode. Carries what was wrong with it, because the
+    /// thing that wrote it may be able to write it again.
+    malformed(string),
+  }
+
+  variant command-result { ok(table), err(table-error) }
 }
 
 /// The three ambient facts a component cannot compute for itself: what time it
@@ -216,6 +386,12 @@ interface guest {
     /// A child component slot; `name` is the component it holds, empty for
     /// "some component" (the bare `component` marker).
     ty-comp,
+    /// A `tables.table`. Unlike `ty-record`, which names a shape the host has
+    /// no description of and can only project as an empty stub, this one names
+    /// a shape the host KNOWS — so it projects to a real JSON Schema, and the
+    /// host validates a table it is handed instead of passing it through.
+    /// That is the entire reason a standard type is worth having.
+    ty-table,
     ty-any,
   }
 
@@ -384,7 +560,7 @@ interface guest {
   // question — which of them the guest answers rather than the host.
 
   record manifest {
-    /// Contract version; this document describes version 4.
+    /// Contract version; this document describes version 5.
     api-version: u32,
     module-name: string,
     /// What this bundle is, for a catalog entry. All four are advisory: the
@@ -490,5 +666,8 @@ world dynamic-component {
   import values;
   import control;
   import env;
+  /// Types only — `tables` declares no functions, so this import costs a
+  /// guest nothing at runtime and buys it the shared table vocabulary.
+  import tables;
   export guest;
 }

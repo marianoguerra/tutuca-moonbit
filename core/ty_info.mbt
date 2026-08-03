@@ -47,6 +47,14 @@ pub(all) enum TyInfo {
   TyOMap(TyInfo)
   /// A child-component slot; None when the schema said only `component`.
   TyComp(String?)
+  /// Tabular data: typed columns of equal width (`tables.table`).
+  ///
+  /// The one named shape whose contents the schema DOES know. `TyRecord` keeps
+  /// a name and nothing else because a record's fields are the instance's to
+  /// answer; a table is standard, so the projection can describe it fully, a
+  /// validator can check it, and an agent can be told how to write one. That
+  /// is the whole reason it is a case here rather than `TyRecord("table")`.
+  TyTable
   TyAny
 } derive(Eq, Debug)
 
@@ -67,6 +75,7 @@ pub fn TyInfo::show_wit(self : TyInfo) -> String {
     TyOMap(v) => "an ordered map of " + v.show_wit()
     TyComp(Some(c)) => "the " + c + " component"
     TyComp(None) => "component"
+    TyTable => "table"
     TyAny => "any"
   }
 }
@@ -125,7 +134,10 @@ pub fn TyInfo::kind(self : TyInfo) -> FieldKind {
     // An enum is payload-free, so it travels as its case name.
     TyText | TyEnum(_) => FText
     TyList(_) | TyTuple(_) => FList
-    TyRecord(_) => FMap
+    // A table travels as `{"columns": [...]}` — a Map, like a record. What
+    // makes it different is what the SCHEMA can say about it, not how the
+    // value is carried.
+    TyRecord(_) | TyTable => FMap
     // A variant travels as EITHER a bare case name or a case name followed by
     // its payload — `Str("Ping")` or `List(["SetTo", 7])`. No single narrow
     // kind covers both, and the old table said `FMap`, which covers neither: a
@@ -162,6 +174,10 @@ pub fn TyInfo::zero(self : TyInfo) -> Value {
     TyText | TyEnum(_) => Str("")
     TyList(_) | TyTuple(_) => List([])
     TyRecord(_) | TyOMap(_) => Map(Map([]))
+    // No columns and therefore no rows. Spelled out rather than left as an
+    // empty Map because `{"columns": []}` is a VALID table and `{}` is not:
+    // the zero of a table should decode, not fail the first check made of it.
+    TyTable => Map({ "columns": List([]) })
     // A closed set starts as its declared membership — the one thing about a
     // set that only the schema knows, since the encoded value is just a Map.
     TyFlags(_, ms) => {

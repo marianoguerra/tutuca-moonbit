@@ -39,7 +39,7 @@ impl Guest for Component {
 
     fn get_manifest() -> Manifest {
         Manifest {
-            api_version: 4,
+            api_version: 5,
             module_name: "rusttemplib".into(),
             doc: "The polyglot proof: the same contract, in Rust, with no tutuca code.".into(),
             version: "0.4.0".into(),

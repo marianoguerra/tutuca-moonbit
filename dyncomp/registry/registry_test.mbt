@@ -83,7 +83,7 @@ fn plain(name : String, ty_ : Int, doc? : String = "") -> @dyncomp.DynFieldDef {
 /// A counter bundle, documented the way v3 lets a guest document itself.
 fn counter_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 4,
+    api_version: 5,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",
@@ -133,7 +133,7 @@ fn counter_bundle() -> @dyncomp.DynManifest {
 /// component proves nothing.
 fn todo_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 4,
+    api_version: 5,
     module_name: "todolib",
     doc: "A sample task list.",
     version: "0.3.0",

@@ -4,8 +4,9 @@ The reference guest for the dynamic-wasm-component design
 ([`../../dyncomp/DESIGN.md`](../../dyncomp/DESIGN.md)): a counter with
 opaque native state and tutuca view strings, compiled to a WebAssembly
 component any `tutuca:component` host can load. This README is the shared
-reference for every MoonBit guest — [`../todo`](../todo/README.md),
-[`../todomvc`](../todomvc/), [`../calculator`](../calculator/README.md) and
+reference for every MoonBit guest — [`../table`](../table/README.md),
+[`../todo`](../todo/README.md), [`../todomvc`](../todomvc/),
+[`../calculator`](../calculator/README.md) and
 [`../tictactoe`](../tictactoe/README.md) have the same shape and differ only in
 what they compute.
 

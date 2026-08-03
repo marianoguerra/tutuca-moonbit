@@ -291,12 +291,16 @@ export function createTcompImports(getExports) {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
     // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
-    "tutuca:component/values@0.4.0": valuesImpl,
+    "tutuca:component/values@0.5.0": valuesImpl,
     "tutuca:component/control": controlImpl,
-    "tutuca:component/control@0.4.0": controlImpl,
+    "tutuca:component/control@0.5.0": controlImpl,
     "tutuca:component/env": envImpl,
-    "tutuca:component/env@0.4.0": envImpl,
+    "tutuca:component/env@0.5.0": envImpl,
   };
+  // `tutuca:component/tables` is deliberately absent: it declares types and no
+  // functions, so there is nothing for a host to implement and jco asks for
+  // nothing. That is the whole reason the shared table vocabulary costs a guest
+  // no runtime surface — it is a contract about SHAPES, not about calls.
   // NOTE: guest constructors invoked from control.makeInstance re-enter the
   // guest while a tcomp call is active; the arena is shared and only cleared
   // at tcomp-call boundaries, so nested construction is safe.

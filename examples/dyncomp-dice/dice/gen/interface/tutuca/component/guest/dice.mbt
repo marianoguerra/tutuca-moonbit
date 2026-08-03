@@ -1,7 +1,7 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.4.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.5.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
 /// component and one `dyn_module()` saying what the bundle holds.
 ///

@@ -155,6 +155,9 @@ fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
       ])
     TyRecord(n) | TyEnum(n) | TyVariant(n) => defs.named(n)
     TyComp(c) => defs.component_ref(c)
+    // The one named shape this projection describes rather than merely labels
+    // — see table_defs.mbt for why that asymmetry is the point.
+    TyTable => defs.table()
     // JSON Schema's `true` is "anything", which is exactly what `any` declares.
     TyAny => Json::boolean(true)
   }

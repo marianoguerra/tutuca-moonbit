@@ -67,9 +67,9 @@ before(async () => {
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.4.0': values,
+    'tutuca:component/values@0.5.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.4.0': control,
+    'tutuca:component/control@0.5.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
@@ -77,7 +77,7 @@ before(async () => {
 
 test('manifest declares the component, its views and its state', () => {
   const m = guest.getManifest();
-  assert.equal(m.apiVersion, 4);
+  assert.equal(m.apiVersion, 5);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;

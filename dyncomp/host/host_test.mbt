@@ -342,7 +342,7 @@ fn counter_manifest() -> DynManifest {
     members: [],
   }
   {
-    api_version: 4,
+    api_version: 5,
     module_name: "counterlib",
     doc: "Sample counters, for exercising the contract.",
     version: "0.1.0",
@@ -1029,7 +1029,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 4, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 5, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -1156,7 +1156,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs, constraints and capability requests" {
   let json =
-    #|{"apiVersion": 4, "moduleName": "formlib",
+    #|{"apiVersion": 5, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
     #|                  {"cap": "cap-teleport", "reason": "?"}],
@@ -1220,7 +1220,7 @@ test "catalog metadata parses: docs, constraints and capability requests" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 4, "moduleName": "bare", "components": [
+    #|{"apiVersion": 5, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
     #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
@@ -1235,7 +1235,7 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 4, "moduleName": "m", "components": [
+    #|{"apiVersion": 5, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1294,7 +1294,7 @@ impl @component.Fields for TestShellState with fn schema() {
 ///|
 test "a bundle's views are linted at load" {
   let bad : DynManifest = {
-    api_version: 4,
+    api_version: 5,
     module_name: "sloppylib",
     doc: "",
     version: "",
@@ -1360,7 +1360,7 @@ test "a `$method` the manifest never declared is reported at load" {
     members: [],
   }
   let sloppy : DynManifest = {
-    api_version: 4,
+    api_version: 5,
     module_name: "statlib",
     doc: "",
     version: "",

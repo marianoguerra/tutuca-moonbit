@@ -13,6 +13,8 @@ pub let component_ref_def : String
 
 pub fn of_schema(@core.SchemaInfo, docs? : Map[String, FieldDoc], title? : String, description? : String) -> Json
 
+pub let table_def : String
+
 // Errors
 
 // Types and methods
@@ -43,4 +45,3 @@ pub(all) struct SchemaError {
 // Type aliases
 
 // Traits
-
