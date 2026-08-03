@@ -202,3 +202,27 @@ test "reports are bounded" {
   f.filter_tree(el("A", { "href": Str("javascript:alert(1)") }))
   debug_inspect(f.take_reports().length(), content="1")
 }
+
+///|
+/// The name lookup skips `to_lower` unless the name actually has an uppercase
+/// letter, because it runs for every attribute of every element on every render
+/// and allocating there is the whole cost. Mixed case still has to match: a
+/// hand-built vnode can spell an attribute however it likes.
+test "a URL attribute is recognized whatever its case" {
+  for name in ["href", "HREF", "Href", "hReF"] {
+    let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
+      (name, @vdom.AttrValue::Str("javascript:alert(1)")),
+    ])
+    let (tree, reports) = filtered(el("A", attrs))
+    guard tree is Node(e) else { fail("expected an element") }
+    debug_inspect(e.attrs.contains(name), content="false")
+    debug_inspect(reports.length(), content="1")
+  }
+  // ...and a name that merely contains uppercase is not dragged into the set.
+  let (kept, none_) = filtered(
+    el("DIV", { "className": Str("x"), "dataFoo": Str("javascript:no") }),
+  )
+  guard kept is Node(e) else { fail("expected an element") }
+  debug_inspect(e.attrs.length(), content="2")
+  debug_inspect(none_.length(), content="0")
+}

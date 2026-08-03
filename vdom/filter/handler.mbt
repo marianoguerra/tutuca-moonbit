@@ -68,10 +68,17 @@ fn HandlerFilter::record(self : HandlerFilter, d : Dropped) -> Unit {
 ///|
 /// The rule for one element, so `Baseline` can apply it in a shared walk.
 fn HandlerFilter::filter_elem(self : HandlerFilter, el : @vdom.VElem) -> Unit {
-  let doomed : Array[String] = []
+  // Allocated only when there is something to drop. A view that sets an `on*`
+  // attribute is the rare case and this runs per element per render, so the
+  // no-op path must not allocate — `is_event_handler_attr` is a prefix test
+  // over the name and touches nothing else.
+  let mut doomed : Array[String]? = None
   for name, value in el.attrs {
     if is_event_handler_attr(name) {
-      doomed.push(name)
+      match doomed {
+        Some(names) => names.push(name)
+        None => doomed = Some([name])
+      }
       self.record({
         tag: el.tag,
         attr: name,
@@ -80,8 +87,10 @@ fn HandlerFilter::filter_elem(self : HandlerFilter, el : @vdom.VElem) -> Unit {
       })
     }
   }
-  for name in doomed {
-    el.attrs.remove(name)
+  if doomed is Some(names) {
+    for name in names {
+      el.attrs.remove(name)
+    }
   }
 }
 

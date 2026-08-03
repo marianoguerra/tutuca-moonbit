@@ -188,13 +188,40 @@ fn UrlFilter::record(self : UrlFilter, d : Dropped) -> Unit {
 }
 
 ///|
+/// Whether an attribute name is in the URL set, without allocating to find out.
+///
+/// `url_attrs.contains(name.to_lower())` is the obvious spelling and it
+/// allocates a String for EVERY attribute of EVERY element on EVERY render,
+/// before discovering that the name is not a URL attribute at all — which is
+/// what almost every name is. The filter runs on every render, so the no-op
+/// path is the path that matters.
+///
+/// Anode lowercases every attribute name it reads (`AttrParser::parse`), so a
+/// name arriving here in mixed case came from a hand-built vnode or from vdom's
+/// own IDL spellings (`className`, `htmlFor`, `tabIndex`) — none of which are in
+/// the URL set. The scan for an uppercase letter costs no allocation, and the
+/// `to_lower` happens only for a name that has one.
+fn is_url_attr(name : String) -> Bool {
+  if url_attrs.contains(name) {
+    return true
+  }
+  for c in name {
+    if c is ('A'..='Z') {
+      return url_attrs.contains(name.to_lower())
+    }
+  }
+  false
+}
+
+///|
 /// The rule for one element, so `Baseline` can apply it in a shared walk.
 fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
-  // Collected first: removing from the map while iterating it is not a
-  // thing to rely on.
-  let doomed : Array[String] = []
+  // Collected first — removing from the map while iterating it is not a thing
+  // to rely on — but allocated only if there is something to collect, since
+  // dropping anything is the rare case and this runs per element per render.
+  let mut doomed : Array[String]? = None
   for name, value in el.attrs {
-    if !url_attrs.contains(name.to_lower()) {
+    if !is_url_attr(name) {
       continue
     }
     // A structured value is not a URL string; `Html` is raw markup and is
@@ -204,7 +231,10 @@ fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
     }
     let raw = value.to_attr_string()
     if !attr_value_allowed(name, raw) {
-      doomed.push(name)
+      match doomed {
+        Some(names) => names.push(name)
+        None => doomed = Some([name])
+      }
       self.record({
         tag: el.tag,
         attr: name,
@@ -213,8 +243,10 @@ fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
       })
     }
   }
-  for name in doomed {
-    el.attrs.remove(name)
+  if doomed is Some(names) {
+    for name in names {
+      el.attrs.remove(name)
+    }
   }
 }
 
