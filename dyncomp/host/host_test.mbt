@@ -602,7 +602,7 @@ test "bundle mounts into a live app and dispatches through stock machinery" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
   inspect(h.find_all(".counter").length(), content="0")
-  guard bundle.make_instance("Counter", args={ "count": Num(10) })
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) })
     is Some(inst0)
 
   // seeding the instance is a plain state change
@@ -640,18 +640,18 @@ test "a guest successor keeps its origin and moves its revision" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
-  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(b)
   // Two live guest instances of one component are two handles, so they spread
   // across buckets even though their state is identical.
-  guard a.to_value().identity() is Some(id_a)
-  guard b.to_value().identity() is Some(id_b)
+  guard! a.to_value().identity() is Some(id_a)
+  guard! b.to_value().identity() is Some(id_b)
   assert_not_eq(id_a.to_hex(), id_b.to_hex())
   assert_eq(id_a.rev, 0)
   h.send_at_root("setSlot", args=[a.to_value()])
   h.click(".inc")
   inspect(h.text(".count"), content="11")
-  guard h.app.root_value().field("slot").identity() is Some(after)
+  guard! h.app.root_value().field("slot").identity() is Some(after)
   assert_eq(after.to_hex(), id_a.to_hex())
   assert_eq(after.rev, 1)
   collect_superseded()
@@ -670,7 +670,7 @@ test "guest request round-trips through a host RequestFn" {
       }
     }),
   })
-  guard bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="21")
   // input "double" fires ctx.request; the response dispatches the guest's
@@ -684,7 +684,7 @@ test "nested guest children render and dispatch through two DynObj levels" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Pair") is Some(pair)
+  guard! bundle.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
 
   // both children render with their own counts
@@ -705,7 +705,7 @@ test "event modifiers in guest views dispatch through stock parsing" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="5")
   // @on.keydown+cancel="reset" — the modifier gates on Escape (host-side
@@ -721,7 +721,7 @@ test "host @each iterates a guest instance via seq-entries" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   debug_inspect(h.texts("li.s"), content="[\"10\"]")
   h.click(".inc")
@@ -733,8 +733,8 @@ test "migrate_instance rebuilds state from the JSON projection" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
-  guard bundle.migrate_instance(a.to_value(), "Counter") is Some(b)
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(a)
+  guard! bundle.migrate_instance(a.to_value(), "Counter") is Some(b)
   assert_true(a.handle() != b.handle())
   assert_true(fake.counters.get(b.handle()) is Some(10.0))
   // non-guest values don't migrate
@@ -751,16 +751,16 @@ test "a snapshot restores through the guest's own bytes" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  guard! bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
   let a = a.with_persist_id("notes/1")
   // one update later: the successor keeps the id and gains a history entry
-  guard a.obj_with_field("count", Num(8)) is Some(bumped)
-  guard bundle.snapshot(bumped) is Some(snap)
+  guard! a.obj_with_field("count", Num(8)) is Some(bumped)
+  guard! bundle.snapshot(bumped) is Some(snap)
   assert_eq(snap.module_, "counterlib")
   assert_eq(snap.component, "Counter")
   assert_eq(snap.id, "notes/1")
   assert_true(snap.has_state())
-  guard bundle.restore(snap) is Some(back)
+  guard! bundle.restore(snap) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 8.0)
   // the history is the proof: it rode in the guest's bytes
   @debug.assert_eq(fake.histories.get(back.handle()).unwrap(), [7.0])
@@ -778,13 +778,13 @@ test "a component that does not persist restores from its declared fields" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Pair") is Some(p)
-  guard bundle.snapshot(p.to_value()) is Some(snap)
+  guard! bundle.make_instance("Pair") is Some(p)
+  guard! bundle.snapshot(p.to_value()) is Some(snap)
   assert_false(snap.has_state())
   // minted rather than blank: every instance has a name, and it says what it
   // is an instance of
   assert_true(snap.id.has_prefix("counterlib/Pair#"))
-  guard bundle.restore(snap) is Some(back)
+  guard! bundle.restore(snap) is Some(back)
   assert_true(back.handle() != p.handle())
   assert_true(fake.pairs.get(back.handle()) is Some(_))
 }
@@ -797,10 +797,10 @@ test "a guest refusing its own bytes falls back to the fields" {
   collect_superseded()
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
-  guard bundle.snapshot(a.to_value()) is Some(snap)
+  guard! bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(a)
+  guard! bundle.snapshot(a.to_value()) is Some(snap)
   let stale = { ..snap, state: @utf8.encode("from a format ago") }
-  guard bundle.restore(stale) is Some(back)
+  guard! bundle.restore(stale) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 3.0)
 }
 
@@ -811,14 +811,14 @@ test "a snapshot survives a store round trip" {
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
   let store = @persist.MemStore::new()
-  guard bundle.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
+  guard! bundle.make_instance("Counter", args={ "count": Num(41) }) is Some(a)
   let a = a.with_persist_id("counter/main")
-  guard bundle.snapshot(a.to_value()) is Some(snap)
+  guard! bundle.snapshot(a.to_value()) is Some(snap)
   assert_true(@persist.save(store, snap))
   @debug.assert_eq(@persist.saved_ids(store), ["counter/main"])
-  guard @persist.load(store, "counter/main") is Some(read_back)
+  guard! @persist.load(store, "counter/main") is Some(read_back)
   assert_eq(read_back, snap)
-  guard bundle.restore(read_back) is Some(back)
+  guard! bundle.restore(read_back) is Some(back)
   assert_eq(fake.counters.get(back.handle()).unwrap(), 41.0)
   @persist.forget(store, "counter/main")
   assert_true(@persist.load(store, "counter/main") is None)
@@ -867,12 +867,12 @@ test "event_names reflects a bundle registered after boot" {
 test "a guest's declared schema describes, compares and projects it" {
   let fake = FakeGuest::new()
   let (_h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
-  guard bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
-  guard bundle.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
-  guard a.to_value() is Obj(oa)
-  guard b.to_value() is Obj(ob)
-  guard c.to_value() is Obj(oc)
+  guard! bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(a)
+  guard! bundle.make_instance("Counter", args={ "count": Num(7) }) is Some(b)
+  guard! bundle.make_instance("Counter", args={ "count": Num(8) }) is Some(c)
+  guard! a.to_value() is Obj(oa)
+  guard! b.to_value() is Obj(ob)
+  guard! c.to_value() is Obj(oc)
   // structural equality over the DECLARED fields — the guest implements none
   assert_true(oa.obj_eq(ob))
   assert_false(oa.obj_eq(oc))
@@ -889,7 +889,7 @@ test "a guest's declared schema describes, compares and projects it" {
 test "a guest gets the generated mutators its schema implies" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   inspect(h.text(".count"), content="10")
   // `@on.click="setCount 0"` in the GUEST's view: no such handler crosses to
@@ -901,7 +901,7 @@ test "a guest gets the generated mutators its schema implies" {
 ///|
 test "inputs are read off the compiled views, not declared" {
   let (_h, bundle) = mount_with_bundle(FakeGuest::new())
-  guard bundle.schema_of("Counter") is Some(schema)
+  guard! bundle.schema_of("Counter") is Some(schema)
   // every @on handler the view names, and nothing else: `setCount` is a
   // mutator the schema implies, not a name the guest answers
   debug_inspect(
@@ -926,7 +926,7 @@ test "inputs are read off the compiled views, not declared" {
 test "a guest child's bubble reaches a guest PARENT, which can stop it" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Pair") is Some(pair)
+  guard! bundle.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
   // the left child emits "counted"; the Pair declares that bubble and hears it
@@ -941,7 +941,7 @@ test "a guest child's bubble reaches a guest PARENT, which can stop it" {
 test "a bubble no guest stops still reaches the host" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(3) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // no Pair in between: the same emit walks all the way up to the shell
   h.click(".announce")
@@ -952,7 +952,7 @@ test "a bubble no guest stops still reaches the host" {
 test "a guest addresses its own subtree by relative path" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Pair") is Some(pair)
+  guard! bundle.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   debug_inspect(h.texts(".count"), content="[\"1\", \"100\"]")
   // `send-at [field("left")] "setTo" [0]`: the left CHILD's receive handler runs
@@ -972,7 +972,7 @@ test "request opts route the response to the name the guest asked for" {
       }
     }),
   })
-  guard bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(21) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // the guest requested with on_ok_name="doubled", so the response dispatches
   // "doubled" with just the value — not "double" with [result, error]
@@ -993,7 +993,7 @@ test "a bundle serves its own requests, ahead of the host's" {
       }
     }),
   })
-  guard bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(5) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   h.click(".triple")
   // 5 * 3 (the bundle's own handler), not 5 * 100 (the host's)
@@ -1005,7 +1005,7 @@ test "a bundle serves its own requests, ahead of the host's" {
 test "a guest answers a view's @when filter" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
+  guard! bundle.make_instance("Counter", args={ "count": Num(0) }) is Some(c)
   h.send_at_root("setSlot", args=[c.to_value()])
   // history is empty
   debug_inspect(h.texts("li.h"), content="[]")
@@ -1199,7 +1199,7 @@ test "catalog metadata parses: docs, constraints and capability requests" {
   let f = c.fields[0]
   inspect(f.doc, content="Where to write.")
   assert_true(f.required)
-  guard f.constraint is Some(k)
+  guard! f.constraint is Some(k)
   debug_inspect(k.max_len, content="Some(254)")
   inspect(k.format, content="email")
   // "" is the contract's spelling for "not stated", so an empty enumeration is
@@ -1425,10 +1425,10 @@ test "a component's named initial states are offered by name" {
   let (_h, bundle) = mount_with_bundle(fake)
   debug_inspect(bundle.init_names("Counter"), content="[\"with-history\"]")
   debug_inspect(bundle.init_names("Pair"), content="[]")
-  guard bundle.make_init("Counter", "with-history") is Some(c)
+  guard! bundle.make_init("Counter", "with-history") is Some(c)
   assert_true(fake.counters.get(c.handle()) is Some(3.0))
   // the schema carries them too, so a descriptor reader sees them
-  guard bundle.schema_of("Counter") is Some(schema)
+  guard! bundle.schema_of("Counter") is Some(schema)
   debug_inspect(schema.init_names, content="[\"with-history\"]")
   // an unknown fixture is not a bare instance: the caller decides
   assert_true(bundle.make_init("Counter", "nope") is None)
@@ -1447,7 +1447,7 @@ test "a component's named initial states are offered by name" {
 test "a foreign placeholder is filled by the host and never reaches the guest" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Framed", args={ "title": Str("panel") })
+  guard! bundle.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
   h.send_at_root("setSlot", args=[framed.to_value()])
   // The guest's own field, answered by the guest.
@@ -1464,7 +1464,7 @@ test "a foreign placeholder is filled by the host and never reaches the guest" {
 test "what a person puts in a placeholder survives the guest around it changing" {
   let fake = FakeGuest::new()
   let (h, bundle) = mount_with_bundle(fake)
-  guard bundle.make_instance("Framed", args={ "title": Str("panel") })
+  guard! bundle.make_instance("Framed", args={ "title": Str("panel") })
     is Some(framed)
   h.send_at_root("setSlot", args=[framed.to_value()])
   // Use what is in the hole.
@@ -1489,7 +1489,7 @@ test "a same-bundle child is the guest's own, and the host does not fill it" {
   // here would shadow the guest's values with host-built ones, and the two
   // cases are told apart by exactly that: same-bundle is the guest's, foreign
   // is a hole.
-  guard bundle.make_instance("Pair") is Some(pair)
+  guard! bundle.make_instance("Pair") is Some(pair)
   h.send_at_root("setSlot", args=[pair.to_value()])
   // The guest's own children, with the guest's own values.
   assert_eq(h.texts(".count"), ["1", "100"])

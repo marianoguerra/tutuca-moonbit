@@ -35,7 +35,7 @@ test "bare options and col survive" {
 test "plain text and adjacent text runs merge" {
   let (doc, roots) = @anode.parse_fragment("hello")
   assert_eq(roots.length(), 1)
-  guard doc.get_node(roots[0]) is Some(TextNode(s))
+  guard! doc.get_node(roots[0]) is Some(TextNode(s))
   assert_eq(s, "hello")
   // text-comment-text: three roots, text runs kept whole
   let (doc3, roots3) = @anode.parse_fragment("a<!--c-->b")
@@ -73,7 +73,7 @@ test "html tag names are lowercased, attrs keep order" {
   let (doc, roots) = @anode.parse_fragment("<DIV b=\"2\" a=\"1\">x</DIV>")
   assert_eq(roots.length(), 1)
   assert_eq(tag_of(doc, roots[0]), "div")
-  guard doc.get_element(roots[0]) is Some(el)
+  guard! doc.get_element(roots[0]) is Some(el)
   assert_true(el.attributes == [("b", "2"), ("a", "1")])
 }
 
@@ -107,7 +107,7 @@ test "empty input yields no roots" {
 test "leading whitespace before root element is preserved as a text node" {
   let (doc, roots) = @anode.parse_fragment("\n  <div>x</div>")
   assert_eq(roots.length(), 2)
-  guard doc.get_node(roots[0]) is Some(TextNode(ws))
+  guard! doc.get_node(roots[0]) is Some(TextNode(ws))
   assert_eq(ws, "\n  ")
   assert_eq(tag_of(doc, roots[1]), "div")
 }

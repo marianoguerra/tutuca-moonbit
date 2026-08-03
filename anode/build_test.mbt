@@ -88,17 +88,17 @@ test "wrappers, loops and conditional attributes build the same way" {
 test "the attribute list decides the representation, exactly as the parser" {
   // Nothing dynamic — including a `:attr` whose value parsed to a constant —
   // collapses to the evaluated map.
-  guard @anode.h(
+  guard! @anode.h(
       "div",
       [@anode.attr("class", "a"), @anode.dyn_attr("id", @anode.const_str("b"))],
       [],
     )
     is Dom(d)
-  guard d.attrs is ConstAttrs(m)
+  guard! d.attrs is ConstAttrs(m)
   assert_true(m.get("class") is Some(LStr("a")))
   assert_true(m.get("id") is Some(LStr("b")))
   // One dynamic value keeps the whole list.
-  guard @anode.h(
+  guard! @anode.h(
       "div",
       [@anode.attr("class", "a"), @anode.dyn_attr("id", Field("id"))],
       [],
@@ -106,6 +106,6 @@ test "the attribute list decides the representation, exactly as the parser" {
     is Dom(d2)
   assert_true(d2.attrs is DynAttrs(_))
   // So does an @if, whose branches are not attribute values at all.
-  guard @anode.h("div", [@anode.if_attr("class", Field("on"))], []) is Dom(d3)
+  guard! @anode.h("div", [@anode.if_attr("class", Field("on"))], []) is Dom(d3)
   assert_true(d3.attrs is DynAttrs(_))
 }

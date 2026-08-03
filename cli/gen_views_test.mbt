@@ -131,7 +131,7 @@ test "the compiled tree is a second file, unless --no-ir" {
     target="views/counter_view_gen.mbt",
     ir=true,
   )
-  guard r is Ok(plan)
+  guard! r is Ok(plan)
   assert_eq(plan.files.map(f => f.0), [
     "views/counter_view_gen.mbt", "views/counter_view_ir_gen.mbt",
   ])
@@ -157,7 +157,7 @@ test "a macro must be declared in the view file" {
     target="views/counter_view_gen.mbt",
     ir=true,
   )
-  guard r is Err(shape)
+  guard! r is Err(shape)
   inspect(
     shape.message,
     content=(
@@ -180,7 +180,7 @@ test "a declared macro is expanded into the compiled tree" {
     target="views/cards_view_gen.mbt",
     ir=true,
   )
-  guard r is Ok(plan)
+  guard! r is Ok(plan)
   assert_eq(plan.files.length(), 2)
   let ir = plan.files[1].1
   // Expanded in place: the macro's <section> is in the tree and no macro
@@ -198,7 +198,7 @@ test "generation failures come back as a coded CLI error" {
     target="views/counter_view_gen.mbt",
     ir=false,
   )
-  guard r is Err(shape)
+  guard! r is Err(shape)
   inspect(shape.code, content="ERR_VIEW_GEN_FAILED")
   inspect(
     shape.message,
@@ -217,7 +217,7 @@ test "a successful plan carries one file" {
     target="views/counter_view_gen.mbt",
     ir=false,
   )
-  guard r is Ok(plan)
+  guard! r is Ok(plan)
   assert_eq(plan.files.length(), 1)
   assert_eq(plan.files[0].0, "views/counter_view_gen.mbt")
   assert_true(plan.files[0].1.contains("pub(all) enum CounterInput {\n  Go\n}"))
@@ -255,7 +255,7 @@ test "view-only lint rules report at generation time" {
     target="views/lintme_view_gen.mbt",
     ir=false,
   )
-  guard r is Ok(plan)
+  guard! r is Ok(plan)
   inspect(
     plan.diagnostics.join("\n"),
     content=(
@@ -277,6 +277,6 @@ test "a clean view produces no diagnostics" {
     target="views/clean_view_gen.mbt",
     ir=false,
   )
-  guard r is Ok(plan)
+  guard! r is Ok(plan)
   assert_eq(plan.diagnostics, [])
 }

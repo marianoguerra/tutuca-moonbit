@@ -166,7 +166,7 @@ test "records, enums and variants become named MoonBit types" {
   assert_eq(item.name, "EditorItem")
   // A variant payload of `tuple<a, b>` is a two-argument message, because
   // dispatch arguments are a list.
-  guard d.user_ty("sel").unwrap().kind is UVariant(cases)
+  guard! d.user_ty("sel").unwrap().kind is UVariant(cases)
   assert_eq(cases.map(c => c.payload.length()), [0, 1, 2])
 }
 

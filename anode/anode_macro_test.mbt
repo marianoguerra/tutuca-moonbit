@@ -37,8 +37,8 @@ test "expand simple macro" {
   let n = m.expand(
     px.enter_macro("m", { "value": ".text", "oninput": "$setText" }, Map([])),
   )
-  guard n is Dom(d)
-  guard d.attrs is DynAttrs(items)
+  guard! n is Dom(d)
+  guard! d.attrs is DynAttrs(items)
   assert_true(items[0] is Plain(name="value", val=Field("text")))
   assert_eq(px.events.length(), 1)
   assert_true(px.events[0].handlers[0].handler.handler is Method("setText"))
@@ -47,8 +47,8 @@ test "expand simple macro" {
   let n2 = m.expand(
     px2.enter_macro("m", { "value": ".foo", "oninput": "$setFoo" }, Map([])),
   )
-  guard n2 is Dom(d2)
-  guard d2.attrs is DynAttrs(items2)
+  guard! n2 is Dom(d2)
+  guard! d2.attrs is DynAttrs(items2)
   assert_true(items2[0] is Plain(name="value", val=Field("foo")))
   assert_true(px2.events[0].handlers[0].handler.handler is Method("setFoo"))
 }
@@ -67,16 +67,16 @@ test "expand nested macro" {
     "input": input_macro,
     "outer": outer_macro,
   })
-  guard px.macro_nodes[0] is MacroCall(m)
-  guard m.node is Some(Dom(outer_div))
-  guard outer_div.attrs is DynAttrs(outer_attrs)
+  guard! px.macro_nodes[0] is MacroCall(m)
+  guard! m.node is Some(Dom(outer_div))
+  guard! outer_div.attrs is DynAttrs(outer_attrs)
   assert_true(outer_attrs[0] is Plain(name="title", val=Field("bar")))
-  guard outer_div.childs[1] is Dom(p)
-  guard p.attrs is DynAttrs(p_attrs)
+  guard! outer_div.childs[1] is Dom(p)
+  guard! p.attrs is DynAttrs(p_attrs)
   assert_true(p_attrs[0] is Plain(name="title", val=Field("bar")))
-  guard outer_div.childs[0] is MacroCall(inner)
-  guard inner.node is Some(Dom(input_el))
-  guard input_el.attrs is DynAttrs(input_attrs)
+  guard! outer_div.childs[0] is MacroCall(inner)
+  guard! inner.node is Some(Dom(input_el))
+  guard! input_el.attrs is DynAttrs(input_attrs)
   assert_true(input_attrs[0] is Plain(name="value", val=Field("foo")))
   assert_true(px.events[0].handlers[0].handler.handler is Method("setFoo"))
 }
@@ -146,15 +146,15 @@ test "reject indirectly recursive macro" {
 ///|
 test "unknown macro compiles to a bad-macro comment" {
   let (_, px) = compile_view("<div><x:nope></x:nope></div>", Map([]))
-  guard px.macro_nodes[0] is MacroCall(m)
-  guard m.node is Some(Comment(c))
+  guard! px.macro_nodes[0] is MacroCall(m)
+  guard! m.node is Some(Comment(c))
   assert_eq(c.val, "bad macro: nope")
 }
 
 ///|
 test "parse macro slots" {
   let px = @anode.ParseContext::new()
-  guard @anode.ANode::parse(
+  guard! @anode.ANode::parse(
       "<x:m>\n  <span @text=\"'hi'\"></span>\n  <x slot=\"a\">\n    <p>hello</p>\n    <em>bye</em>\n  </x>\n  <x slot=\"b\"><footer>Footer</footer></x>\n</x:m>",
       px,
     )
@@ -171,30 +171,30 @@ test "expand macro slot: default and override" {
   )
   // Default content
   let (_, px) = compile_view("<div><x:post></x:post></div>", { "post": post })
-  guard px.macro_nodes[0] is MacroCall(m)
+  guard! px.macro_nodes[0] is MacroCall(m)
   assert_eq(m.name, "post")
-  guard m.node is Some(Dom(article))
-  guard article.childs[0] is Dom(h1)
+  guard! m.node is Some(Dom(article))
+  guard! article.childs[0] is Dom(h1)
   assert_eq(h1.tag, "h1")
-  guard h1.childs[0] is Text(t)
+  guard! h1.childs[0] is Text(t)
   assert_eq(t.val, "My Post")
   // Slot override
   let (_, px2) = compile_view(
     "<div><x:post><x slot=\"title\"><h2>Hello</h2></x></x:post></div>",
     { "post": post },
   )
-  guard px2.macro_nodes[0] is MacroCall(m2)
-  guard m2.node is Some(Dom(article2))
-  guard article2.childs[0] is Dom(h2)
+  guard! px2.macro_nodes[0] is MacroCall(m2)
+  guard! m2.node is Some(Dom(article2))
+  guard! article2.childs[0] is Dom(h2)
   assert_eq(h2.tag, "h2")
-  guard h2.childs[0] is Text(t2)
+  guard! h2.childs[0] is Text(t2)
   assert_eq(t2.val, "Hello")
 }
 
 ///|
 test "parse mixed macro attrs round-trip to source strings" {
   let px = @anode.ParseContext::new()
-  guard @anode.ANode::parse(
+  guard! @anode.ANode::parse(
       "<x:m class=\"foo\" :name=\"foo\" :type=\"Foo\" :bool=\"false\" :num=\"42\" :str=\"'hi'\" :field=\".bar\" :bind=\"@key\" :seq=\".a[.b]\" :dyn=\"*dynamic\"></x:m>",
       px,
     )
@@ -216,11 +216,11 @@ test "parse mixed macro attrs round-trip to source strings" {
 ///|
 test "wrapper macro attrs wrap the macro call" {
   let px = @anode.ParseContext::new()
-  guard @anode.ANode::parse(
+  guard! @anode.ANode::parse(
       "<x:m class=\"foo\" :name=\"foo\" @show=\".loading\"></x:m>", px,
     )
     is Some(Show(w))
   assert_true(w.val is Field("loading"))
-  guard w.node is MacroCall(m)
+  guard! w.node is MacroCall(m)
   @debug.assert_eq(m.attrs, { "class": "'foo'", "name": "foo" })
 }

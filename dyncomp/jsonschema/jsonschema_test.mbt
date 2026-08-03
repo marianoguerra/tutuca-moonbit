@@ -254,7 +254,7 @@ test "well-typed JSON becomes constructor arguments" {
       #|{"name": "a", "count": 3, "tags": ["x", "y"], "flag": true}
     ),
   )
-  guard coerce(s, j) is Ok(args)
+  guard! coerce(s, j) is Ok(args)
   debug_inspect(
     args,
     content=(
@@ -284,7 +284,7 @@ test "errors are collected, and each points at where it happened" {
       #|{"name": 1, "count": 1.5, "tags": ["ok", 2], "extra": true}
     ),
   )
-  guard coerce(s, j) is Err(errors)
+  guard! coerce(s, j) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -310,7 +310,7 @@ test "a required field that is missing is named" {
   let docs : Map[String, FieldDoc] = {
     "email": { doc: "", required: true, constraint: None },
   }
-  guard coerce(s, @json.parse("{}"), docs~) is Err(errors)
+  guard! coerce(s, @json.parse("{}"), docs~) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -319,7 +319,7 @@ test "a required field that is missing is named" {
   )
   // and the un-required one is simply ABSENT rather than filled with its zero:
   // what an unsupplied field means is the constructor's decision
-  guard coerce(s, @json.parse("{\"email\": \"a\"}"), docs~) is Ok(args)
+  guard! coerce(s, @json.parse("{\"email\": \"a\"}"), docs~) is Ok(args)
   debug_inspect(args.keys().collect(), content="[\"email\"]")
 }
 
@@ -355,7 +355,7 @@ test "a constraint is checked on the way in, not only advertised" {
       #|{"count": 42, "name": "x", "mode": "maybe"}
     ),
   )
-  guard coerce(s, j, docs~) is Err(errors)
+  guard! coerce(s, j, docs~) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -383,7 +383,10 @@ test "a closed set rejects a non-member; an open one takes anything" {
     @tutuca.FieldInfo::new("size", TyFlags("size", ["s", "m"])),
     @tutuca.FieldInfo::new("free", TySet),
   ])
-  guard coerce(s, @json.parse("{\"size\": [\"s\", \"xl\"], \"free\": [\"q\"]}"))
+  guard! coerce(
+      s,
+      @json.parse("{\"size\": [\"s\", \"xl\"], \"free\": [\"q\"]}"),
+    )
     is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
@@ -392,7 +395,7 @@ test "a closed set rejects a non-member; an open one takes anything" {
     ),
   )
   // and a set is HELD as a map, which is the refinement TySet names
-  guard coerce(s, @json.parse("{\"size\": [\"s\"], \"free\": [\"q\"]}"))
+  guard! coerce(s, @json.parse("{\"size\": [\"s\"], \"free\": [\"q\"]}"))
     is Ok(args)
   debug_inspect(
     args,
@@ -423,7 +426,7 @@ test "what the emitted schema advertises is what coerce accepts" {
   inspect(compact(at(js, "required").unwrap()), content="[\"email\"]")
   // ...and so does coerce
   assert_true(coerce(s, @json.parse("{\"email\": \"a\"}"), docs~) is Ok(_))
-  guard coerce(s, @json.parse("{\"note\": \"n\"}"), docs~) is Err(errors)
+  guard! coerce(s, @json.parse("{\"note\": \"n\"}"), docs~) is Err(errors)
   debug_inspect(errors.map(e => e.pointer), content="[\"/email\"]")
   // and an explicit null satisfies the optional
   assert_true(
@@ -437,14 +440,14 @@ test "what the emitted schema advertises is what coerce accepts" {
 /// point somewhere else.
 test "pointers escape per RFC 6901" {
   let s = schema_of([@tutuca.FieldInfo::new("a/b~c", TyText)])
-  guard coerce(s, @json.parse("{\"a/b~c\": 1}")) is Err(errors)
+  guard! coerce(s, @json.parse("{\"a/b~c\": 1}")) is Err(errors)
   debug_inspect(errors.map(e => e.pointer), content="[\"/a~1b~0c\"]")
 }
 
 ///|
 test "a non-object document fails at the root" {
   let s = schema_of([@tutuca.FieldInfo::new("a", TyText)])
-  guard coerce(s, @json.parse("[1, 2]")) is Err(errors)
+  guard! coerce(s, @json.parse("[1, 2]")) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -500,7 +503,7 @@ test "two table fields share one set of $defs" {
     @tutuca.FieldInfo::new("right", TyTable),
   ])
   let defs = at(of_schema(s), "$defs").unwrap()
-  guard defs is Object(m)
+  guard! defs is Object(m)
   inspect(m.keys().to_array().length(), content="3")
 }
 
@@ -516,7 +519,7 @@ test "a well-formed table coerces, and rowCount is derived" {
       #|  {"id": "capital", "label": "Capital", "type": "bool", "values": [true, true, true]}]}}
     ),
   )
-  guard coerce(s, j) is Ok(args)
+  guard! coerce(s, j) is Ok(args)
   inspect(
     args.get("data").unwrap().to_json().stringify(),
     content=(
@@ -535,7 +538,7 @@ test "columns of unequal width are rejected — the check no JSON Schema can mak
       #|  {"id": "pop", "label": "Population", "type": "i32", "values": [3664000, 664000]}]}}
     ),
   )
-  guard coerce(s, j) is Err(errors)
+  guard! coerce(s, j) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -552,7 +555,7 @@ test "a table with columns and no rows is valid" {
       #|{"data": {"columns": [{"id": "a", "label": "A", "type": "str", "values": []}]}}
     ),
   )
-  guard coerce(s, j) is Ok(args)
+  guard! coerce(s, j) is Ok(args)
   inspect(
     args.get("data").unwrap().to_json().stringify(),
     content=(
@@ -572,7 +575,7 @@ test "cell types, i32 range, duplicate ids and unknown keys are all reported" {
       #|  {"id": "ok", "label": "Ok", "type": "bool", "values": [true, false, null, true], "width": 4}]}}
     ),
   )
-  guard coerce(s, j) is Err(errors)
+  guard! coerce(s, j) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -597,7 +600,7 @@ test "a stated rowCount that disagrees with the data is caught" {
       #|  {"id": "a", "label": "A", "type": "str", "values": ["x", "y"]}]}}
     ),
   )
-  guard coerce(s, j) is Err(errors)
+  guard! coerce(s, j) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
@@ -609,7 +612,7 @@ test "a stated rowCount that disagrees with the data is caught" {
 ///|
 test "a table that is not an object fails at the table, not inside it" {
   let s = schema_of([@tutuca.FieldInfo::new("data", TyTable)])
-  guard coerce(s, @json.parse("{\"data\": [1, 2]}")) is Err(errors)
+  guard! coerce(s, @json.parse("{\"data\": [1, 2]}")) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(

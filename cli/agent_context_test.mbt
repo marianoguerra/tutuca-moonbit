@@ -10,11 +10,11 @@ fn schema() -> Json raise {
 
 ///|
 fn names_of(top : Map[String, Json]) -> Array[String] {
-  guard top.get("commands") is Some(Array(cmds))
+  guard! top.get("commands") is Some(Array(cmds))
   let out : Array[String] = []
   for c in cmds {
-    guard c is Object(o)
-    guard o.get("name") is Some(String(n))
+    guard! c is Object(o)
+    guard! o.get("name") is Some(String(n))
     out.push(n)
   }
   out
@@ -22,26 +22,26 @@ fn names_of(top : Map[String, Json]) -> Array[String] {
 
 ///|
 test "schema top-level shape" {
-  guard schema() is Object(top)
+  guard! schema() is Object(top)
   @debug.assert_eq(top.keys().to_array(), [
     "schemaVersion", "cli", "version", "invocation", "globalFlags", "exitCodes",
     "errorCodes", "commands",
   ])
-  guard top.get("schemaVersion") is Some(Number(v, ..))
+  guard! top.get("schemaVersion") is Some(Number(v, ..))
   assert_eq(v, 7)
   @debug.assert_eq(top.get("cli"), Some(Json::string("tutuca")))
   @debug.assert_eq(top.get("version"), Some(Json::string(@cli.VERSION)))
-  guard top.get("errorCodes") is Some(Array(codes))
+  guard! top.get("errorCodes") is Some(Array(codes))
   assert_eq(codes.length(), 12)
-  guard top.get("globalFlags") is Some(Array(flags))
+  guard! top.get("globalFlags") is Some(Array(flags))
   assert_eq(flags.length(), 2)
-  guard top.get("exitCodes") is Some(Array(exits))
+  guard! top.get("exitCodes") is Some(Array(exits))
   assert_eq(exits.length(), 2)
 }
 
 ///|
 test "the command list is exactly the commands that exist" {
-  guard schema() is Object(top)
+  guard! schema() is Object(top)
   @debug.assert_eq(names_of(top), [
     "help", "feedback", "install-skill", "new-guest", "storybook", "gen-views", "gen-tailwind-css",
     "gen-margaui-css", "watch", "agent-context",
@@ -60,30 +60,30 @@ test "nothing in the schema describes a module surface" {
     ] {
     assert_false(text.contains(word))
   }
-  guard schema() is Object(top)
-  guard top.get("commands") is Some(Array(cmds))
+  guard! schema() is Object(top)
+  guard! top.get("commands") is Some(Array(cmds))
   for c in cmds {
-    guard c is Object(o)
-    guard o.get("name") is Some(String(n))
+    guard! c is Object(o)
+    guard! o.get("name") is Some(String(n))
     for gone in ["get", "list", "examples", "show", "lint", "render"] {
       assert_not_eq(n, gone)
     }
   }
   // and the note says where those checks went instead
-  guard top.get("invocation") is Some(Object(inv))
-  guard inv.get("note") is Some(String(note))
+  guard! top.get("invocation") is Some(Object(inv))
+  guard! inv.get("note") is Some(String(note))
   assert_true(note.contains("gen-views"))
   assert_true(note.contains("moon test"))
 }
 
 ///|
 test "global flags are just --json and --help" {
-  guard schema() is Object(top)
-  guard top.get("globalFlags") is Some(Array(flags))
+  guard! schema() is Object(top)
+  guard! top.get("globalFlags") is Some(Array(flags))
   let names : Array[String] = []
   for f in flags {
-    guard f is Object(o)
-    guard o.get("name") is Some(String(n))
+    guard! f is Object(o)
+    guard! o.get("name") is Some(String(n))
     names.push(n)
   }
   @debug.assert_eq(names, ["json", "help"])

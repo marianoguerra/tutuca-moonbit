@@ -477,8 +477,8 @@ test "a described component surfaces what reflection cannot" {
   assert_eq(d.get("fingerprint"), Some(Str("deadbeefcafe0001")))
   // A field carries the WIT spelling and its element type, where the
   // reflected form could only say "list".
-  guard d.get("fields") is Some(List(fields))
-  guard fields[2] is Map(tags)
+  guard! d.get("fields") is Some(List(fields))
+  guard! fields[2] is Map(tags)
   assert_eq(tags.get("name"), Some(Str("tags")))
   assert_eq(tags.get("type"), Some(Str("list<string>")))
   assert_eq(tags.get("elem"), Some(Str("string")))
@@ -535,19 +535,19 @@ test "a generated component fills every summary row its schema can" {
   assert_eq(d.get("response"), Some(List([Str("onData")])))
   assert_eq(d.get("methods"), Some(List([Str("double"), Str("label")])))
   // A fingerprint is computed, not merely present: 64 bits of hex.
-  guard d.get("fingerprint") is Some(Str(fp))
+  guard! d.get("fingerprint") is Some(Str(fp))
   assert_eq(fp.length(), 16)
   // Each field row carries the name and the WIT spelling the author wrote —
   // what the state editor labels a control with and picks a control from.
-  guard d.get("fields") is Some(List(fields))
+  guard! d.get("fields") is Some(List(fields))
   assert_eq(fields.length(), 4)
   for f in fields {
-    guard f is Map(row)
+    guard! f is Map(row)
     assert_true(row.get("name") is Some(Str(_)))
     assert_true(row.get("type") is Some(Str(_)))
   }
   // The views the component can be rendered under are reachable too.
-  guard d.get("views") is Some(List(views))
+  guard! d.get("views") is Some(List(views))
   assert_eq(views.length(), 2)
 }
 
@@ -706,13 +706,13 @@ test "state editor: the form wraps the target it edits" {
 /// They agree because there is one function, not two spellings of a convention.
 test "the editor's setter name is the one the component generated" {
   let card = sample_comp().make({ "title": Str("Hello") })
-  guard card is Obj(o)
+  guard! card is Obj(o)
   // The name the convention produces...
   let setter = @tutuca.mutator_name("set", "title")
   assert_eq(setter, "setTitle")
   // ...is a mutator the instance actually answers to.
-  guard o.obj_field(setter) is Some(Fn(set))
-  guard set([Null, Str("Bye")]) is Obj(o2)
+  guard! o.obj_field(setter) is Some(Fn(set))
+  guard! set([Null, Str("Bye")]) is Obj(o2)
   assert_eq(o2.obj_field("title"), Some(Str("Bye")))
   // An empty field name has no mutator to build, and must not produce a bare
   // verb that collides with something else.

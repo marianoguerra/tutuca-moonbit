@@ -31,7 +31,7 @@ test "unknown directive gets a did-you-mean" {
 ///|
 test "unknown x op gets a did-you-mean" {
   let findings = lint_parse("<x rendr=\".v\"></x>")
-  guard findings[0] is { code: UnknownXOp, level: Error, suggestion, .. }
+  guard! findings[0] is { code: UnknownXOp, level: Error, suggestion, .. }
   assert_true(suggestion is Some(ReplaceName(from="rendr", to="render")))
 }
 
@@ -39,20 +39,20 @@ test "unknown x op gets a did-you-mean" {
 test "at-prefixed x op typo suggests dropping the prefix plus a hint" {
   let findings = lint_parse("<x @render-it></x>")
   assert_eq(findings.length(), 2)
-  guard findings[0]
+  guard! findings[0]
     is {
       code: UnknownXOp,
       level: Error,
       suggestion: Some(DropPrefix(from="@render-it", to="render-it")),
       ..,
     }
-  guard findings[1] is { code: MaybeDropAtPrefix, level: Hint, .. }
+  guard! findings[1] is { code: MaybeDropAtPrefix, level: Hint, .. }
 }
 
 ///|
 test "unknown x attr on render-it" {
   let findings = lint_parse("<x render-it nope=\"1\"></x>")
-  guard findings[0] is { code: UnknownXAttr, level: Error, info, .. }
+  guard! findings[0] is { code: UnknownXAttr, level: Error, info, .. }
   assert_true(info.contains(("op", "render-it")))
   assert_true(info.contains(("name", "nope")))
 }
@@ -60,7 +60,8 @@ test "unknown x attr on render-it" {
 ///|
 test "x op ignoring children warns with a remove suggestion" {
   let findings = lint_parse("<x render-it><p>meaningful</p></x>")
-  guard findings[0] is { code: XOpIgnoresChildren, level: Warn, suggestion, .. }
+  guard! findings[0]
+    is { code: XOpIgnoresChildren, level: Warn, suggestion, .. }
   assert_true(suggestion is Some(Remove(what="the ignored children")))
 }
 
@@ -73,7 +74,7 @@ test "comments and whitespace children do not trigger ignores-children" {
 ///|
 test "bare host directive name hints at the @ prefix" {
   let findings = lint_parse("<div when=\"x\">hi</div>")
-  guard findings[0]
+  guard! findings[0]
     is {
       code: MaybeAddAtPrefix,
       level: Hint,
@@ -87,7 +88,7 @@ test "bare host directive name hints at the @ prefix" {
 ///|
 test "plain bad value stays BAD_VALUE" {
   let findings = synthetic(BadValue(role=Attr(name="class"), value="%a"))
-  guard findings[0] is { code: BadValue, level: Error, suggestion: None, .. }
+  guard! findings[0] is { code: BadValue, level: Error, suggestion: None, .. }
 }
 
 ///|
@@ -102,7 +103,8 @@ test "ternary/comparison/logical/call/field-path classify as unsupported expr" {
     ] {
     let (value, expected) = pair
     let findings = synthetic(BadValue(role=Attr(name="class"), value~))
-    guard findings[0] is { code: UnsupportedExprSyntax, level: Error, info, .. }
+    guard! findings[0]
+      is { code: UnsupportedExprSyntax, level: Error, info, .. }
     assert_true(info.contains(("detected", expected)))
   }
 }
@@ -112,13 +114,13 @@ test "binding member too deep gets its own code" {
   let findings = synthetic(
     BadValue(role=Attr(name="title"), value="@item.user.name"),
   )
-  guard findings[0]
+  guard! findings[0]
     is { code: BindingMemberTooDeep, level: Error, suggestion, .. }
   assert_true(suggestion is Some(Rephrase(..)))
   // One level stays a plain bad value (it should not even fail to parse,
   // but the classifier must not fire on it).
   let one = synthetic(BadValue(role=Attr(name="title"), value="@item.user"))
-  guard one[0] is { code: BadValue, .. }
+  guard! one[0] is { code: BadValue, .. }
 }
 
 ///|
@@ -128,7 +130,7 @@ test "deprecated bare x directive warns with add-prefix" {
     (BareXDirective(op="render-each", name="when"), Some("x")),
   )
   let findings = @lint.check_collected(collector)
-  guard findings[0]
+  guard! findings[0]
     is {
       code: DeprecatedBareXDirective,
       level: Warn,

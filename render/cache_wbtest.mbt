@@ -136,8 +136,8 @@ test "an unchanged instance is reused, as the very same Vdom" {
   let second = pass(node, root, scope, cache)
   assert_eq(texts(second), ["one"])
   // the rendered site inside the wrapper is the reused object
-  guard first is Node(f)
-  guard second is Node(s)
+  guard! first is Node(f)
+  guard! second is Node(s)
   assert_true(physical_equal(f.childs[0], s.childs[0]))
 }
 
@@ -166,8 +166,8 @@ test "two instances sharing a bucket are correct, and thrash" {
   let cache = RenderCache::new()
   let a = card.make({ "title": Str("same") })
   let b = card.make({ "title": Str("same") })
-  guard a.identity() is Some(id_a)
-  guard b.identity() is Some(id_b)
+  guard! a.identity() is Some(id_a)
+  guard! b.identity() is Some(id_b)
   assert_eq(id_a.to_hex(), id_b.to_hex())
   let first_a = pass(node, Map({ "a": a }), scope, cache)
   assert_eq(texts(first_a), ["same"])
@@ -204,8 +204,8 @@ test "a value with no bucket is declined, not missed" {
   let v : @tutuca.Value = Map({ "a": Num(1) })
   let ctx = RenderCtx::new(view_resolver=resolver, render_cache=cache)
   let stack = RenderStack::new(v)
-  guard render_root(v, stack, ctx) is Some(first)
-  guard render_root(v, stack, ctx) is Some(second)
+  guard! render_root(v, stack, ctx) is Some(first)
+  guard! render_root(v, stack, ctx) is Some(second)
   assert_eq(cache.size(), (0, 0))
   assert_false(physical_equal(first, second))
   assert_true(first.is_equal_to(second))

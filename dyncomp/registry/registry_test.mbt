@@ -198,7 +198,7 @@ test "the catalog lists every component of every loaded module" {
 /// every one of these fields was empty and a chooser had only a name.
 test "a descriptor carries what a chooser needs" {
   let reg = loaded()
-  guard reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
   inspect(d.doc, content="A number with buttons that raise and lower it.")
   inspect(d.category, content="input")
   debug_inspect(d.keywords, content="[\"tally\", \"increment\"]")
@@ -225,7 +225,7 @@ test "a descriptor carries what a chooser needs" {
 /// blank would be worse than one that reads "count: f64".
 test "summary falls back through doc, keywords, then the shape" {
   let reg = loaded()
-  guard reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
   inspect(d.summary(), content="A number with buttons that raise and lower it.")
   let bare : Descriptor = { ..d, doc: "", keywords: [] }
   inspect(bare.summary(), content="count: f64")
@@ -238,7 +238,7 @@ test "summary falls back through doc, keywords, then the shape" {
 /// to, which is what keeps the form and the tool describing the same thing.
 test "a descriptor projects its own args schema, and coerces against it" {
   let reg = loaded()
-  guard reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
+  guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
   let props = d.args_schema()
   inspect(
     (if props is Object(m) { m.get("properties") } else { None })
@@ -248,7 +248,7 @@ test "a descriptor projects its own args schema, and coerces against it" {
       #|{"count":{"type":"number","description":"The current value."}}
     ),
   )
-  guard d.coerce_args(@json.parse("{\"count\": 4}")) is Ok(args)
+  guard! d.coerce_args(@json.parse("{\"count\": 4}")) is Ok(args)
   debug_inspect(
     args,
     content=(
@@ -256,7 +256,7 @@ test "a descriptor projects its own args schema, and coerces against it" {
     ),
   )
   // and the same descriptor rejects what its schema forbids
-  guard d.coerce_args(@json.parse("{\"count\": \"x\"}")) is Err(errors)
+  guard! d.coerce_args(@json.parse("{\"count\": \"x\"}")) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content="[\"/count: expected f64, got string\"]",
@@ -425,9 +425,9 @@ test "a hit and a descriptor each have one JSON projection" {
       #|{"module":"counterlib","name":"Counter","summary":"A number with buttons that raise and lower it.","category":"input","score":30,"why":["keyword \"tally\""]}
     ),
   )
-  guard reg.describe({ module_: "todolib", name: "Todo" }) is Some(d)
+  guard! reg.describe({ module_: "todolib", name: "Todo" }) is Some(d)
   let doc = d.to_json()
-  guard doc is Object(m)
+  guard! doc is Object(m)
   debug_inspect(
     m.keys().collect(),
     content=(

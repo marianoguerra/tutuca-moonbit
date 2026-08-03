@@ -418,11 +418,18 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
     if saw_named && saw_unnamed {
       raise MixedViewIds
     }
-    if !by_comp.contains(comp) {
-      order.push(comp)
-      by_comp[comp] = []
+    // One lookup, not a `contains` followed by a `get` that had to be guarded
+    // against the None the `contains` already ruled out. `order` is appended to
+    // in the same breath as the map, which is the pairing the loop below reads.
+    let views = match by_comp.get(comp) {
+      Some(vs) => vs
+      None => {
+        let vs : Array[RawView] = []
+        order.push(comp)
+        by_comp[comp] = vs
+        vs
+      }
     }
-    guard by_comp.get(comp) is Some(views)
     for v in views {
       if v.name == vname {
         raise DuplicateView(if comp == "" { vname } else { comp + ":" + vname })
@@ -432,7 +439,11 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   }
   let components : Array[ViewSet] = []
   for i, comp in order {
-    guard by_comp.get(comp) is Some(views)
+    // `order` exists only to give the map a stable iteration order, and a name
+    // lands in it in the same statement that creates its bucket above — so a
+    // miss here would mean the two had drifted apart, which is a bug rather
+    // than a case to handle.
+    guard! by_comp.get(comp) is Some(views)
     // `main` first: it is the view component() adopts by default, and the
     // emitter names it specially.
     let mut main : RawView? = None

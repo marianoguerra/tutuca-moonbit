@@ -49,7 +49,7 @@ test "is_equal_to: fragments" {
 test "fragment flattens nested fragment children" {
   let inner = @vdom.fragment([@vdom.text("a"), @vdom.text("b")])
   let outer = @vdom.fragment([@vdom.text("x"), inner, @vdom.text("y")])
-  guard outer is Fragment(childs)
+  guard! outer is Fragment(childs)
   inspect(childs.length(), content="4")
   assert_true(childs[0] is Text("x"))
   assert_true(childs[1] is Text("a"))
@@ -61,7 +61,7 @@ test "fragment flattens nested fragment children" {
 test "h flattens fragment children" {
   let frag = @vdom.fragment([@vdom.text("a"), @vdom.text("b")])
   let node = @vdom.h("div", childs=[@vdom.text("x"), frag, @vdom.text("y")])
-  guard node is Node(el)
+  guard! node is Node(el)
   inspect(el.childs.length(), content="4")
   assert_true(el.childs[1] is Text("a"))
   assert_true(el.childs[3] is Text("y"))
@@ -146,44 +146,44 @@ test "is_equal_to: deeply nested trees" {
 
 ///|
 test "h: tag case normalization" {
-  guard @vdom.h("span") is Node(span)
+  guard! @vdom.h("span") is Node(span)
   inspect(span.tag, content="SPAN")
   // mixed-case tags are preserved
-  guard @vdom.h("linearGradient", ns=Svg) is Node(grad)
+  guard! @vdom.h("linearGradient", ns=Svg) is Node(grad)
   inspect(grad.tag, content="linearGradient")
   // under a namespace, lowercase tags are preserved
-  guard @vdom.h("rect", ns=Svg) is Node(rect)
+  guard! @vdom.h("rect", ns=Svg) is Node(rect)
   inspect(rect.tag, content="rect")
 }
 
 ///|
 test "h: svg and math auto-namespace" {
-  guard @vdom.h("svg") is Node(svg)
+  guard! @vdom.h("svg") is Node(svg)
   assert_true(svg.ns is Some(Svg))
   inspect(svg.tag, content="svg")
-  guard @vdom.h("SVG") is Node(svg2)
+  guard! @vdom.h("SVG") is Node(svg2)
   assert_true(svg2.ns is Some(Svg))
   inspect(svg2.tag, content="svg")
-  guard @vdom.h("math") is Node(math)
+  guard! @vdom.h("math") is Node(math)
   assert_true(math.ns is Some(MathMl))
   inspect(math.tag, content="math")
-  guard @vdom.h("div") is Node(div)
+  guard! @vdom.h("div") is Node(div)
   assert_true(div.ns is None)
 }
 
 ///|
 test "h: class and for pass through verbatim" {
-  guard @vdom.h("div", attrs={ "class": Str("foo") }) is Node(el)
+  guard! @vdom.h("div", attrs={ "class": Str("foo") }) is Node(el)
   assert_true(el.attrs.get("class") is Some(Str("foo")))
   assert_true(el.attrs.get("className") is None)
-  guard @vdom.h("label", attrs={ "for": Str("input-id") }) is Node(lbl)
+  guard! @vdom.h("label", attrs={ "for": Str("input-id") }) is Node(lbl)
   assert_true(lbl.attrs.get("for") is Some(Str("input-id")))
   assert_true(lbl.attrs.get("htmlFor") is None)
 }
 
 ///|
 test "h: data-* and aria-* kept without coercion" {
-  guard @vdom.h("div", attrs={
+  guard! @vdom.h("div", attrs={
       "data-foo": Str("bar"),
       "data-user-id": AttrValue::int(123),
       "aria-hidden": Bool(true),
@@ -198,19 +198,19 @@ test "h: data-* and aria-* kept without coercion" {
 
 ///|
 test "h: key and namespace extracted from attrs map" {
-  guard @vdom.h("div", attrs={ "key": Str("k1"), "id": Str("x") }) is Node(el)
+  guard! @vdom.h("div", attrs={ "key": Str("k1"), "id": Str("x") }) is Node(el)
   assert_true(el.key is Some("k1"))
   assert_true(el.attrs.get("key") is None)
   assert_true(el.attrs.get("id") is Some(Str("x")))
   // labeled argument wins over the attrs entry
-  guard @vdom.h("div", attrs={ "key": Str("from-attrs") }, key="labeled")
+  guard! @vdom.h("div", attrs={ "key": Str("from-attrs") }, key="labeled")
     is Node(el2)
   assert_true(el2.key is Some("labeled"))
   // numeric keys are coerced like JS String(key)
-  guard @vdom.h("div", attrs={ "key": AttrValue::int(7) }) is Node(el3)
+  guard! @vdom.h("div", attrs={ "key": AttrValue::int(7) }) is Node(el3)
   assert_true(el3.key is Some("7"))
   // namespace attr entry
-  guard @vdom.h("circle", attrs={
+  guard! @vdom.h("circle", attrs={
       "namespace": Str("http://www.w3.org/2000/svg"),
     })
     is Node(el4)
@@ -221,7 +221,7 @@ test "h: key and namespace extracted from attrs map" {
 
 ///|
 test "h: empty attrs and childs" {
-  guard @vdom.h("div") is Node(el)
+  guard! @vdom.h("div") is Node(el)
   inspect(el.childs.length(), content="0")
   inspect(el.attrs.length(), content="0")
   assert_true(el.key is None)

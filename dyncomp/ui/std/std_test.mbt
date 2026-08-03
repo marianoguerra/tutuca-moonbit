@@ -93,7 +93,7 @@ test "a stack's phantom buttons are transparent until hovered" {
   // Asserting the mechanism rather than the appearance: `opacity-0` with a
   // `hover:` counterpart is what keeps them from obstructing the layout, and a
   // strip that lost it would obstruct it silently.
-  guard h.attr(".cell-before", "class") is Some(cls)
+  guard! h.attr(".cell-before", "class") is Some(cls)
   assert_true(cls.contains("opacity-0"))
   assert_true(cls.contains("hover:opacity-60"))
 }
@@ -227,12 +227,12 @@ test "tabs show one page at a time and remember what is on the others" {
 ///|
 test "the active tab is the one that looks active" {
   let (h, _) = mount_std(s => s.tabs(count=2))
-  guard h.attr(".tab-label", "class") is Some(first)
-  guard h.attr(".tab-label", "class", nth=1) is Some(second)
+  guard! h.attr(".tab-label", "class") is Some(first)
+  guard! h.attr(".tab-label", "class", nth=1) is Some(second)
   assert_true(first.contains("tab-active"))
   assert_false(second.contains("tab-active"))
   h.click(".tab-label", nth=1)
-  guard h.attr(".tab-label", "class", nth=1) is Some(second_now)
+  guard! h.attr(".tab-label", "class", nth=1) is Some(second_now)
   assert_true(second_now.contains("tab-active"))
 }
 
@@ -243,7 +243,7 @@ test "adding a tab opens it, and closing one falls back to its neighbour" {
   @debug.assert_eq(h.texts(".tab-label"), ["tab 1", "tab 2"])
   // The new one is the one you are looking at — adding a tab you then have to
   // click is a step nobody wanted.
-  guard h.attr(".tab-label", "class", nth=1) is Some(cls)
+  guard! h.attr(".tab-label", "class", nth=1) is Some(cls)
   assert_true(cls.contains("tab-active"))
   h.click(".tab-close")
   @debug.assert_eq(h.texts(".tab-label"), ["tab 1"])

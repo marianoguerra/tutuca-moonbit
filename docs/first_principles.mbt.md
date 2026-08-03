@@ -75,7 +75,7 @@ render identically:
 ///|
 test "Value: JSON in, JS truthiness and display out" {
   let v = @tutuca.Value::from_json({ "title": "notes", "count": 3.0 })
-  guard v is Map(m)
+  guard! v is Map(m)
   // Value's Debug output is an R-prefixed parallel shape (RNum, RStr, …):
   // the Fn variant holds a function and cannot derive Debug, so it renders
   // as an opaque RFn (see core/value_debug.mbt)
@@ -202,14 +202,14 @@ impl @tutuca.Stack for FieldMap with fn lookup_field_raw(self, name) {
 test "eval: a Val reads state through the Stack trait" {
   let px = @tutuca.ParseCtx::new()
   let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") } }
-  guard @tutuca.parse_token(".count", px) is Some(count)
+  guard! @tutuca.parse_token(".count", px) is Some(count)
   debug_inspect(
     count.eval(stack),
     content=(
       #|RNum(3)
     ),
   )
-  guard @tutuca.parse_text("$'hi {.name}!'", px) is Some(tpl)
+  guard! @tutuca.parse_text("$'hi {.name}!'", px) is Some(tpl)
   debug_inspect(
     tpl.eval(stack),
     content=(
@@ -217,7 +217,7 @@ test "eval: a Val reads state through the Stack trait" {
     ),
   )
   // a lookup the stack does not implement falls back to Null
-  guard @tutuca.parse_token("@missing", px) is Some(bind)
+  guard! @tutuca.parse_token("@missing", px) is Some(bind)
   debug_inspect(
     bind.eval(stack),
     content=(
@@ -326,7 +326,7 @@ attributes:
 ///|
 test "templates: directives become structure, events are hoisted out" {
   let px = @anode.ParseContext::new()
-  guard @anode.ANode::parse(
+  guard! @anode.ANode::parse(
       (
         #|<p class="msg" @show=".visible" @on.click="hello">hi</p>
       ),
@@ -334,14 +334,14 @@ test "templates: directives become structure, events are hoisted out" {
     )
     is Some(node)
   // @show wrapped the <p> in a Show node with the parsed Val
-  guard node is Show(wrap)
+  guard! node is Show(wrap)
   debug_inspect(
     wrap.val,
     content=(
       #|Field("visible")
     ),
   )
-  guard wrap.node is Dom(dom)
+  guard! wrap.node is Dom(dom)
   inspect(dom.tag, content="p")
   // @on.click did NOT stay on the node as a listener: it was collected into
   // the ParseContext's event table, keyed by node id — the routing layer
@@ -375,7 +375,7 @@ state, which shows the layering honestly:
 ///|
 test "render: template + value → vdom → HTML" {
   let px = @anode.ParseContext::new()
-  guard @anode.ANode::parse(
+  guard! @anode.ANode::parse(
       (
         #|<p>Hello <x text=".name"></x>!</p>
       ),
@@ -383,7 +383,7 @@ test "render: template + value → vdom → HTML" {
     )
     is Some(node)
   let stack = @render.RenderStack::new(Map({ "name": Str("world") }))
-  guard @render.render(node, stack, @render.RenderCtx::new()) is Some(vdom)
+  guard! @render.render(node, stack, @render.RenderCtx::new()) is Some(vdom)
   // realize it on the in-memory DOM
   let doc = @memdom.document()
   let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
@@ -423,8 +423,8 @@ test "instances are copy-on-write values, visible through Obj" {
   let a = greeting.make(Map([]))
   // writes go through the Obj trait (or generated mutators from views):
   // they return a NEW instance value
-  guard a is Obj(ao)
-  guard ao.obj_with_field("name", Str("reader")) is Some(b)
+  guard! a is Obj(ao)
+  guard! ao.obj_with_field("name", Str("reader")) is Some(b)
   debug_inspect(
     a.field("name"),
     content=(
@@ -438,7 +438,7 @@ test "instances are copy-on-write values, visible through Obj" {
     ),
   )
   // an instance IS a node in the value tree: Value::Obj(&Obj)
-  guard b is Obj(o)
+  guard! b is Obj(o)
   inspect(o.component_id() is Some(_), content="true")
 }
 ```
@@ -501,7 +501,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
   let path = @tutuca.Path::new(steps=[FieldStep("note")])
   let new_root = path.update(root, Receive, "write", [Str("dear reader")])
   // the new tree has the new text…
-  guard new_root.field("note") is Obj(o)
+  guard! new_root.field("note") is Obj(o)
   debug_inspect(
     o.obj_field("text"),
     content=(
@@ -509,7 +509,7 @@ test "Path::update: run a handler at a path, rebuild only the spine" {
     ),
   )
   // …and the original tree is untouched (copy-on-write, not mutation)
-  guard root.field("note") is Obj(old)
+  guard! root.field("note") is Obj(old)
   debug_inspect(
     old.obj_field("text"),
     content=(
@@ -566,7 +566,7 @@ test "transactor: messages queue, settle produces one new root" {
   let settled = txr.settle()
   assert_false(settled.pending)
   inspect(changes, content="1")
-  guard txr.root.field("note") is Obj(o)
+  guard! txr.root.field("note") is Obj(o)
   debug_inspect(
     o.obj_field("text"),
     content=(

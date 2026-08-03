@@ -376,12 +376,12 @@ test "the cursor moves without disturbing what was typed" {
   // what keeps the focused `<input>` the same element.
   @debug.assert_eq(h.value_of(".command-input"), "t")
   @debug.assert_eq(h.texts(".row-name"), before)
-  guard h.attr(".palette-row", "class", nth=1) is Some(cls)
+  guard! h.attr(".palette-row", "class", nth=1) is Some(cls)
   assert_true(cls.contains("row-selected"))
   // ...and it stops at the top rather than wrapping.
   h.key_down(".command-input", "ArrowUp")
   h.key_down(".command-input", "ArrowUp")
-  guard h.attr(".palette-row", "class") is Some(first)
+  guard! h.attr(".palette-row", "class") is Some(first)
   assert_true(first.contains("row-selected"))
 }
 

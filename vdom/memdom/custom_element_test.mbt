@@ -19,7 +19,7 @@ test "array prop is assigned as a property on initial render" {
     "class": Str("w"),
   })
   let _ = @vdom.render(tree, container, opts)
-  guard container.first_child() is Some(el)
+  guard! container.first_child() is Some(el)
   assert_true(el.props.get("items") == Some(Data([1, 2, 3])))
   // never serialized to an attribute
   assert_false(el.attrs.contains("items"))
@@ -40,7 +40,7 @@ test "array prop update re-assigns the new array on morph" {
     opts,
     prev~,
   )
-  guard container.first_child() is Some(el)
+  guard! container.first_child() is Some(el)
   assert_true(el.props.get("items") == Some(Data([9, 8, 7])))
 }
 
@@ -53,7 +53,7 @@ test "object prop carries nested structure" {
     container,
     opts,
   )
-  guard container.first_child() is Some(el)
+  guard! container.first_child() is Some(el)
   assert_true(el.props.get("config") == Some(Data(cfg)))
   assert_false(el.attrs.contains("config"))
 }
@@ -72,7 +72,7 @@ test "object prop update replaces the whole value; removal clears it" {
     opts,
     prev~,
   )
-  guard container.first_child() is Some(el)
+  guard! container.first_child() is Some(el)
   assert_true(el.props.get("config") == Some(Data({ "b": 2 })))
   // dropping the prop on the next morph clears the property state
   let _ = @vdom.render(@vdom.h("x-object-update"), container, opts, prev=prev2)
@@ -87,6 +87,6 @@ test "equal-content Data does not dirty the diff (value semantics)" {
   let b : Map[String, @vdom.AttrValue] = { "items": Data([1, 2, 3]) }
   assert_true(@vdom.diff_props(a, b) is None)
   let c : Map[String, @vdom.AttrValue] = { "items": Data([4]) }
-  guard @vdom.diff_props(a, c) is Some(patch)
+  guard! @vdom.diff_props(a, c) is Some(patch)
   assert_true(patch.get("items") == Some(Some(Data([4]))))
 }

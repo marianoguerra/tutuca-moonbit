@@ -20,7 +20,7 @@ test "diff_props: changed, removed and added keys" {
     "change": Str("new"),
     "add": Num(3),
   }
-  guard @vdom.diff_props(a, b) is Some(diff)
+  guard! @vdom.diff_props(a, b) is Some(diff)
   inspect(diff.length(), content="3")
   assert_true(diff.get("change") is Some(Some(Str("new"))))
   assert_true(diff.get("drop") is Some(None))
@@ -36,7 +36,7 @@ test "diff_props: application order is a-keys then b-only keys" {
     "y": Str("2b"),
     "x": Str("1"),
   }
-  guard @vdom.diff_props(a, b) is Some(diff)
+  guard! @vdom.diff_props(a, b) is Some(diff)
   let keys : Array[String] = []
   for k, _v in diff {
     keys.push(k)
@@ -49,8 +49,8 @@ test "diff_props: application order is a-keys then b-only keys" {
 test "diff_props: empty maps" {
   let empty : Map[String, @vdom.AttrValue] = Map([])
   assert_true(@vdom.diff_props(empty, Map([])) is None)
-  guard @vdom.diff_props(empty, { "a": Str("1") }) is Some(added)
+  guard! @vdom.diff_props(empty, { "a": Str("1") }) is Some(added)
   assert_true(added.get("a") is Some(Some(Str("1"))))
-  guard @vdom.diff_props({ "a": Str("1") }, empty) is Some(removed)
+  guard! @vdom.diff_props({ "a": Str("1") }, empty) is Some(removed)
   assert_true(removed.get("a") is Some(None))
 }

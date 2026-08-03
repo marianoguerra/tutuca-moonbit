@@ -14,7 +14,7 @@ fn classes_of(raw_view : String) -> Array[String] raise {
   let v = @anode.View::new("main", raw_view~)
   v.compile(@anode.ParseContext::new(), NoMacros::{  }, cid=LNum(0))
   let set : Set[String] = Set([])
-  guard v.anode is Some(node)
+  guard! v.anode is Some(node)
   node.collect_classes(set)
   let out = set.to_array()
   out.sort()
@@ -87,7 +87,7 @@ test "macro-expanded classes are collected from compiled views" {
   let scope = MacroMap::{ macros, }
   v.compile(@anode.ParseContext::new(), scope, cid=LNum(0))
   let set : Set[String] = Set([])
-  guard v.anode is Some(node)
+  guard! v.anode is Some(node)
   node.collect_classes(set)
   let out = set.to_array()
   out.sort()

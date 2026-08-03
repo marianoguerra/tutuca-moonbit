@@ -53,8 +53,8 @@ test "a second render pass reuses nothing, and renders the same thing" {
   let node = parse_node("<p class=\"x\">hi</p>")
   let ctx = RenderCtx::new()
   let stack = RenderStack::new(Map(Map([])))
-  guard render(node, stack, ctx) is Some(first)
-  guard render(node, stack, ctx) is Some(second)
+  guard! render(node, stack, ctx) is Some(first)
+  guard! render(node, stack, ctx) is Some(second)
   assert_false(physical_equal(first, second))
   assert_true(first.is_equal_to(second))
   assert_eq(to_html(second), "<p class=\"x\">hi</p>")
@@ -71,8 +71,8 @@ test "a component render site rebuilds every pass, and tracks its value" {
   let ctx = RenderCtx::new(view_resolver=resolver)
   let v1 : @tutuca.Value = Map({ "a": Num(1) })
   let stack = RenderStack::new(v1)
-  guard render_root(v1, stack, ctx) is Some(first)
-  guard render_root(v1, stack, ctx) is Some(second)
+  guard! render_root(v1, stack, ctx) is Some(first)
+  guard! render_root(v1, stack, ctx) is Some(second)
   // An unchanged value no longer buys a reused subtree — a fresh tree that
   // compares equal is what the differ now has to work from.
   assert_false(physical_equal(first, second))
@@ -81,8 +81,8 @@ test "a component render site rebuilds every pass, and tracks its value" {
   // Different values still render distinct trees, as they always did.
   let a : @tutuca.Value = Map({ "n": Num(1) })
   let b : @tutuca.Value = Map({ "n": Num(2) })
-  guard render_root(a, RenderStack::new(a), ctx) is Some(ra)
-  guard render_root(b, RenderStack::new(b), ctx) is Some(rb)
+  guard! render_root(a, RenderStack::new(a), ctx) is Some(ra)
+  guard! render_root(b, RenderStack::new(b), ctx) is Some(rb)
   assert_false(physical_equal(ra, rb))
 }
 
@@ -131,8 +131,8 @@ test "elements and fragments both drop suppressed children" {
 test "svg subtree keeps its namespace" {
   let node = parse_node("<svg viewBox=\"0 0 1 1\"><circle/></svg>")
   let stack = RenderStack::new(Map(Map([])))
-  guard render(node, stack, RenderCtx::new()) is Some(v)
-  guard v is Node(el)
+  guard! render(node, stack, RenderCtx::new()) is Some(v)
+  guard! v is Node(el)
   assert_true(el.ns is Some(Svg))
   assert_true(el.attrs.get("viewBox") is Some(Str("0 0 1 1")))
 }

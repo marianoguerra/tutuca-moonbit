@@ -20,7 +20,7 @@ test "a snapshot survives text, bytes and all" {
   let store = @persist.MemStore::new()
   let snap = sample()
   assert_true(@persist.save(store, snap))
-  guard @persist.load(store, "slot/n3") is Some(back)
+  guard! @persist.load(store, "slot/n3") is Some(back)
   assert_eq(back, snap)
   // the bytes went through base64 to get here, which is what lets a text-only
   // store hold a guest's binary state
@@ -78,7 +78,7 @@ test "unreadable state degrades to the declared fields" {
   store.set(
     "tutuca:bad", "{\"module\": \"notelib\", \"component\": \"Notepad\", \"id\": \"bad\", \"state\": \"!!!not base64!!!\", \"fields\": {\"title\": \"kept\"}}",
   )
-  guard @persist.load(store, "bad") is Some(snap)
+  guard! @persist.load(store, "bad") is Some(snap)
   assert_false(snap.has_state())
   @debug.assert_eq(snap.field_args().get("title").unwrap(), Str("kept"))
 }

@@ -199,13 +199,13 @@ test "a method call fills the this slot the callee ignores" {
 test "an instance names its own fields, with no registry in hand" {
   let r = row("hi", tags=[Str("a")])
   assert_eq(r.field_names(), ["title", "tags"])
-  guard r.field_info("tags") is Some(fi)
+  guard! r.field_info("tags") is Some(fi)
   assert_eq(fi.ty, TyList(TyText))
   assert_eq(fi.ty.show_wit(), "list<string>")
   assert_eq(fi.ty.elem(), Some(TyText))
   assert_true(fi.kind() is FList)
   assert_true(r.field_info("nope") is None)
-  guard r.schema() is Some(s)
+  guard! r.schema() is Some(s)
   assert_eq(s.name, "Row")
   // the snapshot every consumer was faking with an out-of-band name list
   assert_eq(r.snapshot().get("title"), Some(Str("hi")))
@@ -299,14 +299,14 @@ test "seq-access resolves through a custom collection, not only List and Map" {
       "name": Str("k"),
     },
   }
-  guard @core.parse_field(".rows[.idx]", @core.ParseCtx::new()) is Some(v)
+  guard! @core.parse_field(".rows[.idx]", @core.ParseCtx::new()) is Some(v)
   assert_eq(v.eval(stack), Str("one"))
   // ...and the two shapes that always worked still do
-  guard @core.parse_field(".plainList[.idx]", @core.ParseCtx::new()) is Some(l)
+  guard! @core.parse_field(".plainList[.idx]", @core.ParseCtx::new()) is Some(l)
   assert_eq(l.eval(stack), Str("b"))
-  guard @core.parse_field(".plainMap[.name]", @core.ParseCtx::new()) is Some(m)
+  guard! @core.parse_field(".plainMap[.name]", @core.ParseCtx::new()) is Some(m)
   assert_eq(m.eval(stack), Str("v"))
   // a key that is neither an index nor a name resolves to nothing
-  guard @core.parse_field(".rows[.missing]", @core.ParseCtx::new()) is Some(x)
+  guard! @core.parse_field(".rows[.missing]", @core.ParseCtx::new()) is Some(x)
   assert_eq(x.eval(stack), Null)
 }

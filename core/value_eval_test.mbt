@@ -41,15 +41,15 @@ impl @core.Stack for BindStack with fn lookup_bind(self, _name) {
 test "predicate eval applies the function" {
   let ctx = @core.ParseCtx::new()
   let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") } }
-  guard @core.parse_bool("empty? .items", ctx) is Some(v1)
+  guard! @core.parse_bool("empty? .items", ctx) is Some(v1)
   assert_true(v1.eval(stack) is Bool(true))
-  guard @core.parse_bool("empty? .name", ctx) is Some(v2)
+  guard! @core.parse_bool("empty? .name", ctx) is Some(v2)
   assert_true(v2.eval(stack) is Bool(false))
-  guard @core.parse_bool("truthy? .name", ctx) is Some(v3)
+  guard! @core.parse_bool("truthy? .name", ctx) is Some(v3)
   assert_true(v3.eval(stack) is Bool(true))
-  guard @core.parse_bool("falsy? .items", ctx) is Some(v4)
+  guard! @core.parse_bool("falsy? .items", ctx) is Some(v4)
   assert_true(v4.eval(stack) is Bool(true))
-  guard @core.parse_bool("null? .items", ctx) is Some(v5)
+  guard! @core.parse_bool("null? .items", ctx) is Some(v5)
   assert_true(v5.eval(stack) is Bool(false))
 }
 
@@ -59,11 +59,11 @@ test "FieldVal.eval reads the raw field without invoking" {
   let stack : FieldStack = {
     fields: { "count": Num(7), "m": Fn(_args => Str("called")) },
   }
-  guard @core.parse_text(".count", ctx) is Some(count)
+  guard! @core.parse_text(".count", ctx) is Some(count)
   assert_true(count.eval(stack) is Num(7))
   // the function comes back raw, not invoked
-  guard @core.parse_text(".m", ctx) is Some(m)
-  guard m.eval(stack) is Fn(f)
+  guard! @core.parse_text(".m", ctx) is Some(m)
+  guard! m.eval(stack) is Fn(f)
   assert_true(f([]) is Str("called"))
 }
 
@@ -71,7 +71,7 @@ test "FieldVal.eval reads the raw field without invoking" {
 test "MethodVal.eval invokes the method" {
   let ctx = @core.ParseCtx::new()
   let stack : MethodStack = { methods: { "fullName": Str("Ada L") } }
-  guard @core.parse_text("$fullName", ctx) is Some(v)
+  guard! @core.parse_text("$fullName", ctx) is Some(v)
   assert_true(v.eval(stack) is Str("Ada L"))
 }
 
@@ -79,8 +79,8 @@ test "MethodVal.eval invokes the method" {
 test "MethodVal.eval_as_handler hands back the raw function" {
   let ctx = @core.ParseCtx::new()
   let stack : FieldStack = { fields: { "inc": Fn(_args => Str("inc-marker")) } }
-  guard @core.parse_text("$inc", ctx) is Some(v)
-  guard v.eval_as_handler(stack) is Fn(f)
+  guard! @core.parse_text("$inc", ctx) is Some(v)
+  guard! v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))
 }
 
@@ -88,9 +88,9 @@ test "MethodVal.eval_as_handler hands back the raw function" {
 test "equals? eval compares the field value against the literal" {
   let ctx = @core.ParseCtx::new()
   let stack : FieldStack = { fields: { "view": Str("detail") } }
-  guard @core.parse_bool("equals? .view 'detail'", ctx) is Some(v1)
+  guard! @core.parse_bool("equals? .view 'detail'", ctx) is Some(v1)
   assert_true(v1.eval(stack) is Bool(true))
-  guard @core.parse_bool("equals? .view 'list'", ctx) is Some(v2)
+  guard! @core.parse_bool("equals? .view 'list'", ctx) is Some(v2)
   assert_true(v2.eval(stack) is Bool(false))
 }
 

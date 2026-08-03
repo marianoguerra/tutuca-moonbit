@@ -67,8 +67,8 @@ test "an instance presents the SAME Value every time it is asked" {
   // look different every time it crossed the value seam — and every cache
   // entry keyed on it would miss.
   let v = seeded()
-  guard v is Obj(o)
-  guard o.obj_field("title") is Some(_)
+  guard! v is Obj(o)
+  guard! o.obj_field("title") is Some(_)
   // reading a field back out of the tree yields the same object
   let again = send(v, "nothing-matches-this", [])
   assert_true(physical_equal(again, v))
@@ -84,12 +84,12 @@ test "a write that changes nothing returns the ORIGINAL instance" {
 ///|
 test "a field set to the value it already holds returns the same instance" {
   let v = seeded()
-  guard v is Obj(o)
+  guard! v is Obj(o)
   // $setTitle with the current title — the shape a re-fired `input` event takes
-  guard o.obj_with_field("title", Str("hello")) is Some(same)
+  guard! o.obj_with_field("title", Str("hello")) is Some(same)
   assert_true(physical_equal(same, v))
   // …and via the generated mutator the views actually call
-  guard o.obj_field("setTitle") is Some(Fn(set_title))
+  guard! o.obj_field("setTitle") is Some(Fn(set_title))
   assert_true(physical_equal(set_title([Null, Str("hello")]), v))
 }
 
@@ -100,16 +100,16 @@ test "an untouched field keeps its exact Value object across a change" {
   // reuse-if-equal comparison — and that is what stops a rewrite of `title`
   // from propagating a brand-new root and scheduling a re-render.
   let v = seeded()
-  guard v is Obj(before)
-  guard before.obj_field("items") is Some(items_before)
-  guard before.obj_field("tags") is Some(tags_before)
-  guard before.obj_field("count") is Some(count_before)
+  guard! v is Obj(before)
+  guard! before.obj_field("items") is Some(items_before)
+  guard! before.obj_field("tags") is Some(tags_before)
+  guard! before.obj_field("count") is Some(count_before)
   let after = send(v, "rename", [Str("goodbye")])
   assert_false(physical_equal(after, v)) // it really did change
-  guard after is Obj(o)
-  guard o.obj_field("items") is Some(items_after)
-  guard o.obj_field("tags") is Some(tags_after)
-  guard o.obj_field("count") is Some(count_after)
+  guard! after is Obj(o)
+  guard! o.obj_field("items") is Some(items_after)
+  guard! o.obj_field("tags") is Some(tags_after)
+  guard! o.obj_field("count") is Some(count_after)
   assert_true(physical_equal(items_before, items_after))
   assert_true(physical_equal(tags_before, tags_after))
   assert_true(physical_equal(count_before, count_after))
@@ -118,12 +118,12 @@ test "an untouched field keeps its exact Value object across a change" {
 ///|
 test "the changed field is correct, and is a new object" {
   let v = seeded()
-  guard v is Obj(before)
-  guard before.obj_field("title") is Some(title_before)
+  guard! v is Obj(before)
+  guard! before.obj_field("title") is Some(title_before)
   let after = send(v, "rename", [Str("goodbye")])
-  guard after is Obj(o)
+  guard! after is Obj(o)
   @debug.assert_eq(o.obj_field("title"), Some(Str("goodbye")))
-  guard o.obj_field("title") is Some(title_after)
+  guard! o.obj_field("title") is Some(title_after)
   assert_false(physical_equal(title_before, title_after))
   // the original is untouched — state is immutable, not mutated in place
   @debug.assert_eq(before.obj_field("title"), Some(Str("hello")))
@@ -145,20 +145,20 @@ test "identity is preserved through a nested list, not just at the top" {
     child.make({ "title": Str("three") }),
   ]
   let v = parent.make({ "items": List(kids) })
-  guard v is Obj(o)
+  guard! v is Obj(o)
   // rewrite the middle child through the parent's list mutator
-  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.obj_field("setInItemsAt") is Some(Fn(set_at))
   let renamed = send(kids[1], "rename", [Str("TWO")])
   let after = set_at([Null, Num(1), renamed])
-  guard after is Obj(o2)
-  guard o2.obj_field("items") is Some(List(items))
+  guard! after is Obj(o2)
+  guard! o2.obj_field("items") is Some(List(items))
   assert_eq(items.length(), 3)
   // the untouched siblings are the very same objects
   assert_true(physical_equal(items[0], kids[0]))
   assert_true(physical_equal(items[2], kids[2]))
   // and the rewritten one took
   assert_true(physical_equal(items[1], renamed))
-  guard items[1] is Obj(mid)
+  guard! items[1] is Obj(mid)
   @debug.assert_eq(mid.obj_field("title"), Some(Str("TWO")))
 }
 
@@ -172,8 +172,8 @@ test "writing a list back unchanged leaves the parent instance alone" {
   )
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
-  guard v is Obj(o)
-  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  guard! v is Obj(o)
+  guard! o.obj_field("setInItemsAt") is Some(Fn(set_at))
   // Core's COW item write recognizes the same object before copying the list,
   // and the unchanged container keeps the parent instance unchanged too.
   assert_true(physical_equal(set_at([Null, Num(0), kids[0]]), v))
@@ -224,13 +224,13 @@ test "a no-op update moves nothing, revision included" {
 test "a field set to the value it already holds moves nothing" {
   let v = seeded()
   let before = id_of(v)
-  guard v is Obj(o)
-  guard o.obj_with_field("title", Str("hello")) is Some(same)
+  guard! v is Obj(o)
+  guard! o.obj_with_field("title", Str("hello")) is Some(same)
   assert_eq(id_of(same).to_hex(), before.to_hex())
   assert_eq(id_of(same).rev, before.rev)
   // a write that DOES change something moves the revision, through the same
   // path — `set` and the update handler are not two different rules
-  guard o.obj_with_field("title", Str("other")) is Some(changed)
+  guard! o.obj_with_field("title", Str("other")) is Some(changed)
   assert_eq(id_of(changed).to_hex(), before.to_hex())
   assert_eq(id_of(changed).rev, before.rev + 1)
 }
@@ -282,8 +282,8 @@ test "a parent's own bucket moves when a child is written through it" {
   let kids = [child.make({ "title": Str("one") })]
   let v = parent.make({ "items": List(kids) })
   let before = id_of(v)
-  guard v is Obj(o)
-  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  guard! v is Obj(o)
+  guard! o.obj_field("setInItemsAt") is Some(Fn(set_at))
   let renamed = send(kids[0], "rename", [Str("ONE")])
   let after = id_of(set_at([Null, Num(0), renamed]))
   assert_eq(after.to_hex(), before.to_hex())
@@ -339,18 +339,18 @@ test "a child instance is replaced by a successor that looks identical" {
   )
   let first = Opaque::new("one")
   let v = parent.make({ "items": List([first.to_value()]) })
-  guard v is Obj(o)
+  guard! v is Obj(o)
   // The successor changed something its SCHEMA DOES NOT NAME, so the two
   // compare equal and only their identities differ — which is the shape every
   // opaque instance produces when it keeps more than it declares.
   let next = first.successor("a draft nobody declared")
   assert_true(@tutuca.Obj::obj_eq(next, first))
-  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  guard! o.obj_field("setInItemsAt") is Some(Fn(set_at))
   let after = set_at([Null, Num(0), next.to_value()])
-  guard after is Obj(o2)
-  guard o2.obj_field("items") is Some(List(items))
+  guard! after is Obj(o2)
+  guard! o2.obj_field("items") is Some(List(items))
   // the parent holds the successor, not the thing it resembles
-  guard items[0] is Obj(held)
+  guard! items[0] is Obj(held)
   @debug.assert_eq(
     held.obj_field("hidden"),
     Some(Str("a draft nobody declared")),
@@ -367,8 +367,8 @@ test "writing the same child back leaves the parent alone" {
   )
   let kid = child.make({ "title": Str("one") })
   let v = parent.make({ "items": List([kid]) })
-  guard v is Obj(o)
-  guard o.obj_field("setInItemsAt") is Some(Fn(set_at))
+  guard! v is Obj(o)
+  guard! o.obj_field("setInItemsAt") is Some(Fn(set_at))
   // the SAME instance back: nothing changed, so nothing is rebuilt and a
   // no-op interaction stays free
   let after = set_at([Null, Num(0), kid])

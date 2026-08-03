@@ -62,8 +62,8 @@ test "a macro view compiles to a tree, with no macro node left in it" {
 test "the compiled macro view renders" {
   let vs = @viewgen.split_file(macro_html)
   let views = @viewgen.build_views(only(vs), macros=vs.macros)
-  guard views.get("main") is Some(v) && v.anode is Some(_)
-  guard v.ctx is Some(_)
+  guard! views.get("main") is Some(v) && v.anode is Some(_)
+  guard! v.ctx is Some(_)
   // The macro body's own event registrations land in the view's context, so
   // the renderer can still resolve them by data-eid.
   assert_eq(v.name, "main")

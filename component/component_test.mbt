@@ -151,38 +151,38 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   // coerce a List arg (with a duplicate) into a deduped set
   let t2 = comp.make({ "sel": List([Str("x"), Str("x"), Str("y")]) })
   assert_true(t2.field("sel") == Map({ "x": Bool(true), "y": Bool(true) }))
-  guard t is Obj(o)
+  guard! t is Obj(o)
   // hasIn
-  guard o.obj_field("hasInSel") is Some(Fn(has))
+  guard! o.obj_field("hasInSel") is Some(Fn(has))
   assert_true(has([Null, Str("a")]) == Bool(true))
   assert_true(has([Null, Str("z")]) == Bool(false))
   // addIn
-  guard o.obj_field("addInSel") is Some(Fn(add))
+  guard! o.obj_field("addInSel") is Some(Fn(add))
   // Adding an existing member is a no-op all the way through core's COW map.
   assert_true(physical_equal(add([Null, Str("a")]), t))
-  guard add([Null, Str("c")]) is Obj(o2)
+  guard! add([Null, Str("c")]) is Obj(o2)
   assert_true(o2.obj_field("hasInSel").unwrap() is Fn(_))
   assert_true(
     o2.obj_field("sel").unwrap() ==
     Map({ "a": Bool(true), "b": Bool(true), "c": Bool(true) }),
   )
   // toggleIn removes an existing member, adds a missing one
-  guard o.obj_field("toggleInSel") is Some(Fn(toggle))
-  guard toggle([Null, Str("a")]) is Obj(o3)
+  guard! o.obj_field("toggleInSel") is Some(Fn(toggle))
+  guard! toggle([Null, Str("a")]) is Obj(o3)
   assert_true(o3.obj_field("sel").unwrap() == Map({ "b": Bool(true) }))
-  guard toggle([Null, Str("q")]) is Obj(o4)
+  guard! toggle([Null, Str("q")]) is Obj(o4)
   assert_true(
     o4.obj_field("sel").unwrap() ==
     Map({ "a": Bool(true), "b": Bool(true), "q": Bool(true) }),
   )
   // deleteIn / removeIn alias
-  guard o.obj_field("deleteInSel") is Some(Fn(del))
+  guard! o.obj_field("deleteInSel") is Some(Fn(del))
   assert_true(physical_equal(del([Null, Str("missing")]), t))
-  guard del([Null, Str("b")]) is Obj(o5)
+  guard! del([Null, Str("b")]) is Obj(o5)
   assert_true(o5.obj_field("sel").unwrap() == Map({ "a": Bool(true) }))
   assert_true(o.obj_field("removeInSel").unwrap() is Fn(_))
   // len is the generic sized mutator
-  guard o.obj_field("selLen") is Some(Fn(len))
+  guard! o.obj_field("selLen") is Some(Fn(len))
   assert_true(len([Null]) == Num(2))
 }
 
@@ -200,10 +200,10 @@ test "a declared set keeps the typed default and gets set mutators" {
   )
   let t = comp.make(Map([]))
   assert_true(t.field("sel") == Map({ "a": Bool(true) }))
-  guard t is Obj(o)
+  guard! t is Obj(o)
   // set-kind mutators exist because the SCHEMA declares `sel` a set
-  guard o.obj_field("addInSel") is Some(Fn(add))
-  guard add([Null, Str("b")]) is Obj(o2)
+  guard! o.obj_field("addInSel") is Some(Fn(add))
+  guard! add([Null, Str("b")]) is Obj(o2)
   assert_true(
     o2.obj_field("sel").unwrap() == Map({ "a": Bool(true), "b": Bool(true) }),
   )
@@ -222,22 +222,22 @@ test "omap slot field: keyed mutators over an ordered Map" {
   assert_true(t.field("m") == Map({ "x": Num(1) }))
   // wrong-shape arg falls back to default
   assert_true(comp.make({ "m": Str("no") }).field("m") == Map({ "x": Num(1) }))
-  guard t is Obj(o)
-  guard o.obj_field("setInMAt") is Some(Fn(set_at))
-  guard set_at([Null, Str("y"), Num(2)]) is Obj(o2)
+  guard! t is Obj(o)
+  guard! o.obj_field("setInMAt") is Some(Fn(set_at))
+  guard! set_at([Null, Str("y"), Num(2)]) is Obj(o2)
   assert_true(o2.obj_field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
-  guard o.obj_field("updateInMAt") is Some(Fn(update_at))
+  guard! o.obj_field("updateInMAt") is Some(Fn(update_at))
   let double : @tutuca.Value = Fn(args => {
     match args {
       [Num(n)] => Num(n * 2)
       _ => Null
     }
   })
-  guard update_at([Null, Str("x"), double]) is Obj(o2u)
+  guard! update_at([Null, Str("x"), double]) is Obj(o2u)
   assert_true(o2u.obj_field("m").unwrap() == Map({ "x": Num(2) }))
   assert_true(physical_equal(update_at([Null, Str("missing"), double]), t))
-  guard o.obj_field("deleteInMAt") is Some(Fn(del))
-  guard del([Null, Str("x")]) is Obj(o3)
+  guard! o.obj_field("deleteInMAt") is Some(Fn(del))
+  guard! del([Null, Str("x")]) is Obj(o3)
   assert_true(o3.obj_field("m").unwrap() == Map(Map([])))
 }
 
@@ -313,11 +313,11 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
     compute={ "label": (s : CountOnly, _args) => Str("n=\{s.count}") },
   )
   let t = comp.make(Map([]))
-  guard t is Obj(o)
+  guard! t is Obj(o)
   // A `compute` entry is reachable in a VALUE position — that is what the
   // bucket is for, and why an update arm cannot replace it: there is no
   // event and no ctx there.
-  guard o.obj_field("label") is Some(Fn(label))
+  guard! o.obj_field("label") is Some(Fn(label))
   assert_true(label([Null]) == Str("n=1"))
   // An `update` arm is NOT: it answers a dispatch, not a field read.
   assert_true(o.obj_field("inc") is None)
@@ -404,9 +404,9 @@ test "compile parses provide/lookup and stamps view ids" {
   // producer-key memoization (JS LookupInfo._sym): Pending until first resolve,
   // then Done with the producer's provide key — Workspace.active resolves to
   // its own provide "active".
-  guard ws.lookup.get("active") is Some(lk2)
+  guard! ws.lookup.get("active") is Some(lk2)
   assert_true(lk2.producer_key is Pending)
-  guard ws.provide.get("active") is Some(prov)
+  guard! ws.provide.get("active") is Some(prov)
   let resolved = lk2.resolve_producer_key(ws.scope)
   assert_true(resolved == Some(prov.key))
   assert_true(lk2.producer_key is Done(Some(_)))
@@ -704,13 +704,13 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
     },
   )
   let t = comp.make(Map([]))
-  guard t is Obj(o)
+  guard! t is Obj(o)
   // @when: Fn-convention [this, key, value, iterData] -> Bool
-  guard o.obj_callable("keep", Alter) is Some(Fn(keep))
+  guard! o.obj_callable("keep", Alter) is Some(Fn(keep))
   assert_eq(keep([Null, Num(0), Str("cat")]), Bool(true))
   assert_eq(keep([Null, Num(0), Str("dog")]), Bool(false))
   // @enrich-with: mutates the binds map, return ignored
-  guard o.obj_callable("annotate", Alter) is Some(Fn(annotate))
+  guard! o.obj_callable("annotate", Alter) is Some(Fn(annotate))
   let binds : Map[String, @tutuca.Value] = {
     "key": Num(0),
     "value": Str("cat"),
@@ -718,10 +718,10 @@ test "typed render-time buckets: when/enrich/enrich_scope/loop_with" {
   let _ = annotate([Null, Map(binds), Num(0), Str("cat"), Null])
   assert_eq(binds.get("len"), Some(Num(3)))
   // scope form: called with no args, returns the binds map
-  guard o.obj_callable("derived", Alter) is Some(Fn(derived))
+  guard! o.obj_callable("derived", Alter) is Some(Fn(derived))
   assert_eq(derived([Null]), Map({ "upper": Str("A") }))
   // @loop-with: returns the {start, end} plan the renderer unpacks
-  guard o.obj_callable("page", Alter) is Some(Fn(page))
+  guard! o.obj_callable("page", Alter) is Some(Fn(page))
   assert_eq(
     page([Null, List([]), Null]),
     Map({ "start": Num(1), "end": Num(3) }),

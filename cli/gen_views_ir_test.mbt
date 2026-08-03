@@ -111,8 +111,8 @@ test "handlers dispatch through a compiled tree" {
   scope.compile_all()
   // The event table survived the round trip: the renderer finds the handler
   // for the element's data-eid, which is what a real DOM click resolves.
-  guard comp.get_view(None) is Some(view)
-  guard view.ctx is Some(px)
+  guard! comp.get_view(None) is Some(view)
+  guard! view.ctx is Some(px)
   let names : Array[String] = []
   for ev in px.events {
     for h in ev.handlers {

@@ -113,6 +113,70 @@ package:
 npm-pack:
     {{dev}} npm-pack
 
+# ── clean ──────────────────────────────────────────────────────────────────
+#
+# The two recipes that are NOT thin wrappers over cmd/dev, and cannot be: the
+# task runner is a native binary living in the `_build` these delete, so a
+# `clean` task would be removing the ground it stands on mid-run.
+#
+# `moon clean` on its own reclaims `_build/` and nothing else. That IS most of
+# the weight — a session's worth of CI across four targets took `_build` past
+# 1.7G here — but it cannot reach the nested moon modules (guests/*, examples/*),
+# because a nested moon.mod stops discovery, the same rule that keeps
+# check/fmt/ci out of them. Nor does it know about the Rust guest's `target/`
+# (159M), `dist/` (51M), or, in clean-all, node_modules (597M across two trees).
+#
+# Both walk rather than listing directories, because the list goes stale: this
+# repo gained `guests/table` and `guests/rust-tempconv` since the last time
+# anyone counted. And both delete only what `git check-ignore` agrees is
+# ignored — a destructive recipe should be unable to reach a tracked file even
+# if the walk is wrong.
+
+# remove build output — offline-safe, nothing here needs the network to rebuild
+clean:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    doomed=()
+    while IFS= read -r d; do doomed+=("$d"); done < <(
+      find . \( -name node_modules -o -name .mooncakes -o -name .git \) -prune \
+           -o \( -name _build -o -name dist -o -name target \) -type d -print
+    )
+    doomed+=(.playwright-mcp playground/_examples_check)
+    just _rm "${doomed[@]}"
+
+# also remove fetched trees — the next build will need the network
+clean-all: clean
+    #!/usr/bin/env bash
+    set -euo pipefail
+    doomed=()
+    while IFS= read -r d; do doomed+=("$d"); done < <(
+      find . -name .git -prune \
+           -o \( -name node_modules -o -name .mooncakes \) -print -prune
+    )
+    # Re-fetch with: `just setup` (node_modules), `moon install` (.mooncakes),
+    # `just dev fetch-moonc` (the in-browser compiler).
+    doomed+=(playground/vendor/moonc-web.cjs)
+    just _rm "${doomed[@]}"
+    echo "fetched trees are gone: run 'just setup' before the next js-target test"
+
+# internal: delete each argument, but only where git agrees it is ignored
+_rm *PATHS:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    freed=0
+    for d in {{PATHS}}; do
+      [ -e "$d" ] || continue
+      if git check-ignore -q "$d"; then
+        size=$(du -sm "$d" 2>/dev/null | cut -f1 || echo 0)
+        rm -rf "$d"
+        freed=$((freed + size))
+        echo "  removed $d (${size}M)"
+      else
+        echo "  SKIPPED, not gitignored: $d" >&2
+      fi
+    done
+    echo "freed ${freed}M"
+
 # ── publish ────────────────────────────────────────────────────────────────
 
 # publish to mooncakes.io (runs the full ci gate first; needs `moon login`)

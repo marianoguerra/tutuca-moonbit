@@ -52,8 +52,12 @@ fn[N : DomNode] morph_node(
         Some(d) => d
         None => Map([])
       }
-      let has_value = diff.contains("value")
-      let has_checked = diff.contains("checked")
+      // Looked up once rather than asked about with `contains` and then
+      // fetched again: the second lookup only existed to turn a Bool back into
+      // the value, and had to be `guard`ed against a None the first lookup had
+      // already ruled out.
+      let value_diff = diff.get("value")
+      let checked_diff = diff.get("checked")
       if diff.length() > 0 {
         let namespaced = is_namespaced(dom_node)
         for name, value in diff {
@@ -66,16 +70,14 @@ fn[N : DomNode] morph_node(
         let ns = effective_ns(t, opts)
         morph_children(dom_node, s.childs, t.childs, child_opts(t, ns, opts))
       }
-      if has_value {
-        guard diff.get("value") is Some(v)
+      if value_diff is Some(v) {
         apply_value_last(dom_node, v)
       } else if s.tag == "SELECT" && t.attrs.get("value") is Some(v) {
         // For <select>, re-apply value even when not in the diff: changing
         // the <option> children can silently shift dom.value to "".
         apply_value_last(dom_node, Some(v))
       }
-      if has_checked {
-        guard diff.get("checked") is Some(c)
+      if checked_diff is Some(c) {
         set_prop(dom_node, "checked", c, false)
       }
       dom_node
@@ -124,7 +126,12 @@ fn[N : DomNode] morph_children(
     if !has_key {
       let mut dom = parent.first_child()
       for i in 0..<old_childs.length() {
-        guard dom is Some(d)
+        // The DOM should have exactly as many children as `old_childs`
+        // describes. If it somehow has fewer, stopping is the honest answer:
+        // the remaining vnodes have nothing to morph against, and panicking
+        // would take the whole render down over a discrepancy this loop can
+        // simply not act on.
+        guard dom is Some(d) else { break }
         // Grab the sibling before morphing: a replacement detaches `d`.
         let next = d.next_sibling()
         let _ = morph_node(d, old_childs[i], new_childs[i], opts)

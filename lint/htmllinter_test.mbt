@@ -213,9 +213,9 @@ test "body context flags top-level tr" {
 ///|
 test "line/column point at the offending tag-name start" {
   let f = lint("<div>\n  <Foo></Foo>\n</div>")
-  guard f.iter().find_first(x => x.code == HtmlTagNameHasUppercase)
+  guard! f.iter().find_first(x => x.code == HtmlTagNameHasUppercase)
     is Some(finding)
-  guard finding.location is Some(loc)
+  guard! finding.location is Some(loc)
   assert_eq(loc.line, 2)
   assert_eq(loc.column, 4)
 }
@@ -223,7 +223,7 @@ test "line/column point at the offending tag-name start" {
 ///|
 test "first line is line 1" {
   let f = lint("<MyComp></MyComp>")
-  guard f[0].location is Some(loc)
+  guard! f[0].location is Some(loc)
   assert_eq(loc.line, 1)
   assert_eq(loc.column, 2) // '<' is col 1, 'M' is col 2
 }

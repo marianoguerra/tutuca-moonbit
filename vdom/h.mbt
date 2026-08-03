@@ -45,7 +45,7 @@ pub fn fragment(childs : Array[Vdom]) -> Vdom {
 /// # Example
 /// ```mbt check
 /// test {
-///   guard @vdom.h("div", attrs={ "id": Str("app") }, childs=[@vdom.text("hi")])
+///   guard! @vdom.h("div", attrs={ "id": Str("app") }, childs=[@vdom.text("hi")])
 ///     is Node(el)
 ///   inspect(el.tag, content="DIV")
 ///   assert_true(el.attrs.get("id") is Some(Str("app")))
