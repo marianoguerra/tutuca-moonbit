@@ -31,9 +31,9 @@ pub struct App[N] {
   /// against the last render — the one point where an attribute's VALUE is
   /// concrete and nothing has touched the DOM yet.
   ///
-  /// `None` is the trusted case and costs one `if` per render rather than a
-  /// check per attribute. A host that loads components it did not write
-  /// installs one; see `set_filter` and docs/sanitizer.md.
+  /// `@filter.Baseline` by default: the URL-scheme rule and the event-handler
+  /// rule, in one traversal. Opt OUT with `set_filter(None)`, which is one `if`
+  /// per render. See `set_filter` and docs/sanitizer.md.
   mut filter : &@filter.VdomFilter?
 }
 
@@ -59,7 +59,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_cache: @render.RenderCache::new(),
-    filter: None,
+    filter: Some(@filter.Baseline::new()),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -206,18 +206,37 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
 }
 
 ///|
-/// Install (or clear, with `None`) the filter that runs between building a
+/// Replace (or clear, with `None`) the filter that runs between building a
 /// vdom tree and diffing it.
+///
+/// An `App` starts with `@filter.Baseline` installed, so this is for widening
+/// — `@filter.Chain` with the markup filter in front — or for opting OUT.
+/// `None` is the behaviour every tutuca app had before that default existed:
+/// no URL check, no handler check, one `if` per render.
 ///
 /// Takes effect from the next render. It is not retroactive — a value already
 /// in the DOM stays there until something re-renders over it — for the same
 /// reason a policy applies at load: retracting what is already on the page is
 /// dropping it, not filtering it.
 ///
-/// A filter MUTATES the tree it is given. `@filter.UrlFilter` is the one this
-/// repo ships; a host may implement `@filter.VdomFilter` itself.
+/// A filter MUTATES the tree it is given.
 pub fn[N] App::set_filter(self : App[N], filter : &@filter.VdomFilter?) -> Unit {
   self.filter = filter
+}
+
+///|
+/// Everything the installed filter dropped since the last call, and clears its
+/// log. Empty when no filter is installed.
+///
+/// The default filter is one the host never constructed, so this is the only
+/// handle on what it removed. By render time there is no author to report to —
+/// a dropped value may have come from application state rather than from
+/// anyone's template — so "why did my link vanish" is answered here or nowhere.
+pub fn[N] App::take_filter_reports(self : App[N]) -> Array[@filter.Dropped] {
+  match self.filter {
+    Some(f) => f.take_reports()
+    None => []
+  }
 }
 
 ///|

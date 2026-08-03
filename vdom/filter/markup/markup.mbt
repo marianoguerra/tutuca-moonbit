@@ -49,9 +49,7 @@ pub fn MarkupFilter::new(
 
 ///|
 /// Everything dropped since the last call, and clears the log.
-pub fn MarkupFilter::take_reports(
-  self : MarkupFilter,
-) -> Array[@filter.Dropped] {
+pub impl @filter.VdomFilter for MarkupFilter with fn take_reports(self) {
   let out = self.reports.copy()
   self.reports.clear()
   out

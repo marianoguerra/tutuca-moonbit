@@ -202,23 +202,23 @@ accident of routing saving that one.
 `@filter.Baseline` is the two rules in a single traversal, and is what `set_app`
 installs.
 
-**Every page that hosts bundles installs one.** `set_app` (`host/wasm/glue.mbt`)
-calls `App::set_filter` alongside the policy it already takes and the GC sweep it
-already installs — unconditionally, because a page calling `set_app` is by
-definition a page that loads bundles, and not tier-dependent, because there is no
-legitimate `javascript:` URL in a described view at any tier. `set_app` is the
-only production path: the single `register_bundle` caller outside tests is this
-same glue. `take_filter_reports()` drains what both rules dropped, for a page
-that wants to say so.
+**Every tutuca app installs one, not only a page that hosts bundles.**
+`App::new` installs `@filter.Baseline` — the URL rule and the handler rule in
+one traversal — and `set_filter(None)` is the opt-out. Not tier-dependent,
+because there is no legitimate `javascript:` URL in a described view at any
+tier.
 
-An app mounted WITHOUT this glue gets no filter — `App::set_filter` defaults to
-`None`, the trusted case, one `if` per render. Whether a plain tutuca app should
-get one by default is a separate decision, and an open one
-(`docs/sanitizer.md`).
+This glue used to install its own, from when the seam defaulted to absent. It no
+longer does: two filters would mean reports split across two logs, and the app's
+own is installed before `set_app` is ever called. What stays here is
+`take_filter_reports()`, which drains the app's — by render time there is no
+author to tell, so a page that wants to say "this component tried to render a
+`javascript:` URL" reads it from there.
 
-One honest limit on that claim: the install is one line inside the wasm glue,
-which `moon test` never runs — the whole `tcomp` bridge is browser-only, so it is
-verified by inspection like the rest of it.
+That also retires an honest limit this section used to carry. The install was
+one line inside the wasm glue, which `moon test` never runs, so it was verified
+by inspection like the rest of the `tcomp` bridge. It is now in `App::new`,
+which the suite exercises directly (`app/filter_test.mbt`).
 
 **Raw markup could now be re-admitted, and deliberately is not.**
 `vdom/filter/markup` sanitizes a payload against the same `SanitizerConfig` and

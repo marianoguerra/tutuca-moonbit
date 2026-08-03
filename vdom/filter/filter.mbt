@@ -11,6 +11,22 @@
 pub(open) trait VdomFilter {
   /// Called once per render, on the whole tree.
   fn filter_tree(Self, @vdom.Vdom) -> Unit
+
+  /// Everything dropped since the last call, oldest first, clearing the log.
+  ///
+  /// On the trait rather than on each filter because a host does not
+  /// necessarily hold the concrete type: `App` installs a filter by default, so
+  /// the one that drops something is often one the host never constructed. A
+  /// filter that silently removed things with no way to ask what it removed
+  /// would answer "why did my link vanish" with nothing.
+  ///
+  /// Defaults to none, for a filter that only rewrites.
+  fn take_reports(Self) -> Array[Dropped] = _
+}
+
+///|
+impl VdomFilter with fn take_reports(_self) {
+  []
 }
 
 ///|
@@ -81,4 +97,14 @@ pub impl VdomFilter for Chain with fn filter_tree(self, tree) {
   for f in self.filters {
     f.filter_tree(tree)
   }
+}
+
+///|
+/// Every member's reports, in the order the members run.
+pub impl VdomFilter for Chain with fn take_reports(self) {
+  let out : Array[Dropped] = []
+  for f in self.filters {
+    out.append(f.take_reports())
+  }
+  out
 }

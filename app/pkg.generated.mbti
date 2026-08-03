@@ -39,6 +39,7 @@ pub fn[N] App::root_value(Self[N]) -> @core.Value
 pub fn[N] App::send_at_root(Self[N], String, args? : Array[@core.Value], max_turns? : Int) -> @transactor.SettleResult
 pub fn[N] App::set_filter(Self[N], &@filter.VdomFilter?) -> Unit
 pub fn[N : @vdom.DomWalk] App::start(Self[N]) -> Unit
+pub fn[N] App::take_filter_reports(Self[N]) -> Array[@filter.Dropped]
 
 pub struct DragState[N] {
   node : N

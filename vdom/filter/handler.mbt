@@ -52,7 +52,7 @@ pub fn HandlerFilter::new(max_reports? : Int = 64) -> HandlerFilter {
 
 ///|
 /// Everything dropped since the last call, and clears the log.
-pub fn HandlerFilter::take_reports(self : HandlerFilter) -> Array[Dropped] {
+pub impl VdomFilter for HandlerFilter with fn take_reports(self) {
   let out = self.reports.copy()
   self.reports.clear()
   out

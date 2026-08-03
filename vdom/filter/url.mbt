@@ -174,7 +174,7 @@ pub fn UrlFilter::new(max_reports? : Int = 64) -> UrlFilter {
 
 ///|
 /// Everything dropped since the last call, and clears the log.
-pub fn UrlFilter::take_reports(self : UrlFilter) -> Array[Dropped] {
+pub impl VdomFilter for UrlFilter with fn take_reports(self) {
   let out = self.reports.copy()
   self.reports.clear()
   out

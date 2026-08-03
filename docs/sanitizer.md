@@ -300,12 +300,18 @@ filter goes between them:
 ```moonbit
 pub(open) trait VdomFilter {
   fn filter_tree(Self, @vdom.Vdom) -> Unit
+  fn take_reports(Self) -> Array[Dropped] = _   // defaults to none
 }
 ```
 
-`App` holds a `mut filter : &VdomFilter?`, installed with `App::set_filter`.
-**Absent is the trusted case and costs nothing** — not a branch per attribute, an
-`if` per render.
+`App` holds a `mut filter : &VdomFilter?`, replaced with `App::set_filter`.
+**`@filter.Baseline` is installed by default**; `None` is the opt-out and costs
+an `if` per render rather than a branch per attribute.
+
+`take_reports` is on the trait rather than on each filter because the filter
+that drops something is now usually one the host never constructed. Draining it
+had to work without the concrete type, or the default would be a silent
+dropper.
 
 It returns `Unit` and mutates, which is load-bearing rather than a style
 preference: morph short-circuits a subtree by physical identity, and the render
@@ -443,18 +449,26 @@ after it, even though the seam it conceptually occupies is the one in
 Worth measuring before committing — `benchmarks/OPTIMIZATIONS.md` #8 is the
 precedent for a cache whose bookkeeping cost more than it saved.
 
-### What the trusted case gives up
+### What the trusted case gave up, and why the default flipped
 
-A null filter means a host app's own views get no URL check, and their dynamic
+A null filter meant a host app's own views got no URL check, and their dynamic
 values come from application state that routinely includes user-supplied data.
-That is a real loss versus a universal invariant, and it is **still open**: the
-seam ships with `None` as the default, so today an app opts in with
-`App::set_filter(Some(@filter.UrlFilter::new()))`.
+That was a real loss versus a universal invariant, and the seam originally
+shipped with `None` as the default.
 
-The answer, when someone takes it, is to make the default *installed* rather than
-absent — opt-out for an app, mandatory for a guest, zero configuration for
-either. That is a behaviour change for every existing tutuca app, which is why it
-is a separate decision from building the seam.
+**It no longer does.** `App::new` installs `@filter.Baseline` — opt-out for an
+app, mandatory for a guest, zero configuration for either — and
+`set_filter(None)` restores the old behaviour for an app that wants it. The
+argument that settled it: the trusted case was paying nothing and getting
+nothing, while every app that had never heard of the seam was the one carrying
+the risk. A default that is safe and an escape hatch that is one call is the
+right way round; the reverse asks every author to know about a document they
+have not read.
+
+What the opt-out is still for: an app with a deliberate `javascript:` URL, a
+tree that is entirely developer-authored with no user data in it, or a render
+loop hot enough that one walk matters. The first is rare, the second is hard to
+promise, and the third is measurable — see "Doing the work once".
 
 Unrelated to the filter, and belonging with Pass 1: `set_prop` routes by
 `node.has_property(name)`, and `onclick` *is* a property, so an `:onclick="…"`
@@ -522,17 +536,25 @@ What is left, in rough order of who it helps:
   braces there, since `check_view` refuses the name at registration, but a rule
   that only holds when another pass already held is not a second layer. 8 tests.
 
-- **Install the filter by default for a plain app** — the one still outstanding,
-  and the one that helps every tutuca app rather than only a dyncomp host. Pass
-  1 runs for a dyncomp guest and nobody else (`Policy::check_view` has a single
-  call site, `dyncomp/host/bundle.mbt`), so a plain app has no `on*` defense and
-  no URL defense at all until it opts in with
-  `App::set_filter(Some(@filter.Baseline::new()))`. Making that the default is a
-  behaviour change for every existing app — a `javascript:` link stops working,
-  an `onclick` attribute disappears — which is why it is its own decision and
-  wants a version bump that says so. The rule it would install now exists, which
-  was the prerequisite: defaulting the filter on before the handler rule landed
-  would have shipped the behaviour change while still leaving `on*` open.
+- ~~**Install the filter by default for a plain app.**~~ **Done** — `App::new`
+  installs `@filter.Baseline`, and `set_filter(None)` is the opt-out. Pass 1
+  runs for a dyncomp guest and nobody else (`Policy::check_view` has a single
+  call site, `dyncomp/host/bundle.mbt`), so before this a plain app had no `on*`
+  defense and no URL defense at all. It is a behaviour change for every existing
+  app — a `javascript:` link stops working, an `onclick` attribute disappears —
+  so it wants a version bump that says so.
+
+  Two things it needed that were not obvious at the plan stage:
+
+  - **`take_reports` moved onto the `VdomFilter` trait**, with a default of
+    none. The filter that drops something is now usually one the host never
+    constructed, so there is no concrete handle to drain; a filter that silently
+    removed things with no way to ask what it removed would answer "why did my
+    link vanish" with nothing. `App::take_filter_reports()` is the accessor.
+  - **`dyncomp`'s glue stopped installing its own.** It held a `Baseline` from
+    when the seam defaulted to absent; that is now redundant with the one every
+    `App` carries, and two would have meant reports split across two logs.
+    `take_filter_reports()` there drains the app's.
 - **Let a `Policy` carry a `SanitizerConfig`**, so a dyncomp host could allow a
   guest raw markup. Deliberately NOT done as part of step 5: `Policy::check_view`
   has no way to know whether the markup filter is installed, so a policy that

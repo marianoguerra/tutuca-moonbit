@@ -19,7 +19,6 @@ pub struct MarkupFilter {
   max_reports : Int
 }
 pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
-pub fn MarkupFilter::take_reports(Self) -> Array[@filter.Dropped]
 pub impl @filter.VdomFilter for MarkupFilter
 
 // Type aliases

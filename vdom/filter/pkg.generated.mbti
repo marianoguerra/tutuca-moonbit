@@ -28,7 +28,6 @@ pub struct Baseline {
   handlers : HandlerFilter
 }
 pub fn Baseline::new(max_reports? : Int) -> Self
-pub fn Baseline::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for Baseline
 
 pub struct Chain {
@@ -50,7 +49,6 @@ pub struct HandlerFilter {
   max_reports : Int
 }
 pub fn HandlerFilter::new(max_reports? : Int) -> Self
-pub fn HandlerFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for HandlerFilter
 
 pub struct UrlFilter {
@@ -58,7 +56,6 @@ pub struct UrlFilter {
   max_reports : Int
 }
 pub fn UrlFilter::new(max_reports? : Int) -> Self
-pub fn UrlFilter::take_reports(Self) -> Array[Dropped]
 pub impl VdomFilter for UrlFilter
 
 // Type aliases
@@ -66,4 +63,5 @@ pub impl VdomFilter for UrlFilter
 // Traits
 pub(open) trait VdomFilter {
   fn filter_tree(Self, @vdom.Vdom) -> Unit
+  fn take_reports(Self) -> Array[Dropped] = _
 }

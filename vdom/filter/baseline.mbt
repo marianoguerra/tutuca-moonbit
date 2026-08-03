@@ -37,7 +37,7 @@ pub fn Baseline::new(max_reports? : Int = 64) -> Baseline {
 ///
 /// URL drops first, then handler drops. Within each the order is the order they
 /// happened; across the two it is not, and nothing should read meaning into it.
-pub fn Baseline::take_reports(self : Baseline) -> Array[Dropped] {
+pub impl VdomFilter for Baseline with fn take_reports(self) {
   let out = self.url.take_reports()
   out.append(self.handlers.take_reports())
   out

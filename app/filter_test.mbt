@@ -1,8 +1,9 @@
 // The filter seam, end to end through the real render loop.
 //
 // The unit tests in `vdom/filter` prove the rule; these prove the SEAM — that
-// a filter installed on an App runs on every render, before anything reaches
-// the DOM, and that an App without one behaves exactly as it did before.
+// the filter an App carries runs on every render before anything reaches the
+// DOM, that it is on by default, and that opting out restores the old
+// behaviour exactly.
 
 ///|
 priv struct LinkState {
@@ -42,8 +43,19 @@ fn link_component() -> @component.Component {
 }
 
 ///|
+/// What an App is mounted with.
+priv enum FilterMode {
+  /// Whatever `App::new` installs — the thing most of these are about.
+  Default
+  /// `set_filter(None)`, the behaviour before the default existed.
+  Off
+  /// A host's own, replacing the default.
+  Own
+}
+
+///|
 fn mk_filtered_app(
-  install : Bool,
+  mode : FilterMode,
 ) -> (@app.App[@memdom.MemNode], @memdom.MemNode, @filter.UrlFilter) raise {
   let scope = @component.ComponentStack::new()
   scope.register_components([link_component()])
@@ -59,26 +71,55 @@ fn mk_filtered_app(
     container,
     @vdom.RenderOpts::new(doc),
   )
-  if install {
-    a.set_filter(Some(f))
+  match mode {
+    Default => ()
+    Off => a.set_filter(None)
+    Own => a.set_filter(Some(f))
   }
   a.start()
   (a, container, f)
 }
 
 ///|
-/// Absent is the trusted case: nothing installed, nothing changed. This is the
-/// test that would fail if the seam ever stopped being opt-in.
-test "an app with no filter renders exactly what it used to" {
-  let (_a, container, _f) = mk_filtered_app(false)
+/// The headline of the change: an App nobody configured still does not render
+/// a `javascript:` URL, and can say that it did not.
+test "an app filters by default" {
+  let (a, container, _f) = mk_filtered_app(Default)
   assert_true(container.to_html().contains("href=\"/safe\""))
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  let html = container.to_html()
+  assert_false(html.contains("javascript:"))
+  // The attribute went, the element stayed.
+  assert_true(html.contains("class=\"link\""))
+  // Reachable without holding the filter, which the host never constructed.
+  debug_inspect(
+    a.take_filter_reports().map(@filter.Dropped::to_string),
+    content=(
+      #|["dropped href on <A>: URL scheme is not one a view may navigate to (javascript:alert(1))"]
+    ),
+  )
+  // Drained, not copied.
+  debug_inspect(a.take_filter_reports().length(), content="0")
+}
+
+///|
+/// Opting out restores the old behaviour exactly, which is the escape hatch an
+/// app with a deliberate `javascript:` URL or a trusted-only tree needs.
+test "set_filter(None) opts out" {
+  let (a, container, _f) = mk_filtered_app(Off)
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  assert_true(container.to_html().contains("javascript:alert(1)"))
+  // Nothing to report, because nothing ran.
+  debug_inspect(a.take_filter_reports().length(), content="0")
 }
 
 ///|
 /// A value the static pass could not have seen — it arrives from state, and
 /// only at render — is dropped before the DOM is written.
-test "an installed filter drops a script URL the state produced" {
-  let (a, container, f) = mk_filtered_app(true)
+test "a host's own filter replaces the default" {
+  let (a, container, f) = mk_filtered_app(Own)
   // The initial value is fine and survives.
   assert_true(container.to_html().contains("href=\"/safe\""))
   debug_inspect(f.take_reports().length(), content="0")
@@ -114,7 +155,8 @@ test "an installed filter drops a script URL the state produced" {
 /// what is already in the DOM stays until something re-renders over it, for
 /// the same reason a policy applies at load.
 test "a filter installed after mount applies from the next render" {
-  let (a, container, f) = mk_filtered_app(false)
+  // Mounted opted-out, so there is something in the DOM to not reach back for.
+  let (a, container, f) = mk_filtered_app(Off)
   guard find_el(container, "BUTTON") is Some(bad1) else { fail("no button") }
   assert_true(a.dispatch(bad1, @render.DomEvent::new(name="click")))
   // No filter yet, so it rendered.

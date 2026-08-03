@@ -476,6 +476,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **BREAKING: every `App` sanitizes its own render output now.** `App::new`
+  installs `@filter.Baseline` — the URL-scheme rule and the event-handler rule
+  in one traversal — where the seam previously defaulted to absent. An app that
+  renders `<a href="javascript:…">` from its state, or writes a raw `onclick`
+  content attribute, loses that attribute instead of writing it to the DOM.
+
+  The old behaviour is one call: `App::set_filter(None)`. Worth taking
+  deliberately rather than reflexively — what it is for is an app with a
+  genuinely intended `javascript:` URL, or a tree with no user-supplied data
+  anywhere in it.
+
+  The reasoning, for anyone who has to decide which way to go: the trusted
+  default was paying nothing and getting nothing, while every app that had never
+  heard of the seam was the one carrying the risk. `dyncomp` hosts were already
+  covered because their glue installed a filter explicitly; a plain tutuca app
+  was not, and `Policy::check_view` — the static pass — has a single call site
+  and never runs for one. So "safe by default, opt out in one call" replaces
+  "safe if you read `docs/sanitizer.md`".
+
+- **`take_reports` is a `VdomFilter` trait method** rather than an inherent one
+  on each filter, defaulting to none for a filter that only rewrites. A host no
+  longer necessarily holds the concrete type — the filter that drops something
+  is usually the one `App::new` installed — so draining had to work without it,
+  or the new default would be a silent dropper and "why did my link vanish"
+  would have no answer. `App::take_filter_reports()` is the accessor.
+
+  `dyncomp`'s glue stops installing its own filter, since the app already
+  carries one and two would split the reports across two logs. Its
+  `take_filter_reports()` drains the app's. That also retires a caveat
+  `SECURITY.md` carried: the install used to be one line in the wasm glue, which
+  `moon test` never runs, and is now in `App::new`, which the suite exercises.
+
 - **The Rust guest is a temperature converter** (`guests/rust-tempconv`, was
   `rust-notepad`, before that `rust-counter`). A counter never has to answer
   the questions the newer halves of the contract exist for; this does. It
