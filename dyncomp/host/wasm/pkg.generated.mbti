@@ -50,6 +50,8 @@ pub fn set_policy(@policy.Policy) -> Unit
 
 pub fn snapshot(@core.Value) -> @persist.Snapshot?
 
+pub fn take_filter_reports() -> Array[String]
+
 // Errors
 
 // Types and methods
@@ -62,4 +64,3 @@ pub impl @host.Guest for WasmGuest
 // Type aliases
 
 // Traits
-

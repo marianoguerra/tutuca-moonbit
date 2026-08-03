@@ -495,7 +495,40 @@ pub fn set_app(
   current.val = Some(app)
   current_doc.val = Some(doc)
   set_policy(policy)
+  app.set_filter(Some(url_filter))
   @dyncomp.install_gc(app.transactor)
+}
+
+///|
+/// The render-time half of the sanitizer, installed by `set_app` on every page
+/// that hosts bundles.
+///
+/// `Policy::check_view` settles what a view NAMES — every tag, attribute and
+/// handler name in a view is a literal, so an allowlist over names is complete
+/// over the described part of it. It cannot settle what a value HOLDS:
+/// `AttrItem::Plain` carries a `Val`, so an `href` is an expression until it
+/// renders. This is the other half, and it runs between `render_root` and the
+/// diff — the one point where the value is concrete and the DOM is untouched.
+///
+/// NOT tier-dependent, for the same reason `check_view` is not: there is no
+/// legitimate `javascript:` URL in a described view at any tier, since tutuca
+/// has no element event handlers at all. A System bundle loses nothing by it.
+///
+/// Installed unconditionally rather than per policy, because a page calling
+/// `set_app` is by definition a page that loads bundles. A host that mounts an
+/// app WITHOUT this glue gets no filter — see `App::set_filter`, and
+/// docs/sanitizer.md for why the default there is absent.
+let url_filter : @filter.UrlFilter = @filter.UrlFilter::new()
+
+///|
+/// URL values dropped since the last call, oldest first, and clears the log.
+///
+/// The developer-facing half of the filter. By render time there is no author
+/// to report to — the value may have come from a guest's state rather than from
+/// its template — so a page that wants to say "this component tried to render a
+/// javascript: URL" drains this and shows it.
+pub fn take_filter_reports() -> Array[String] {
+  url_filter.take_reports().map(@filter.Dropped::to_string)
 }
 
 ///|

@@ -27,6 +27,14 @@ pub struct App[N] {
   /// passes and generation-rolled each render, so a subtree whose instance did
   /// not change is reused instead of rebuilt.
   render_cache : @render.RenderCache
+  /// Runs over the freshly built tree, between evaluating anode and diffing
+  /// against the last render — the one point where an attribute's VALUE is
+  /// concrete and nothing has touched the DOM yet.
+  ///
+  /// `None` is the trusted case and costs one `if` per render rather than a
+  /// check per attribute. A host that loads components it did not write
+  /// installs one; see `set_filter` and docs/sanitizer.md.
+  mut filter : &@filter.VdomFilter?
 }
 
 ///|
@@ -51,6 +59,7 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_cache: @render.RenderCache::new(),
+    filter: None,
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.
@@ -184,11 +193,31 @@ fn[N : @vdom.DomWalk] App::render_now(self : App[N]) -> Unit {
   )
   match @render.render_root(root_val, stack, ctx) {
     Some(vdom) => {
+      // Between evaluating anode and diffing: the tree is concrete and the DOM
+      // is untouched, which is true at no other point in a render.
+      if self.filter is Some(f) {
+        f.filter_tree(vdom)
+      }
       let prev = self.prev
       self.prev = Some(@vdom.render(vdom, self.root_node, self.opts, prev?))
     }
     None => ()
   }
+}
+
+///|
+/// Install (or clear, with `None`) the filter that runs between building a
+/// vdom tree and diffing it.
+///
+/// Takes effect from the next render. It is not retroactive — a value already
+/// in the DOM stays there until something re-renders over it — for the same
+/// reason a policy applies at load: retracting what is already on the page is
+/// dropping it, not filtering it.
+///
+/// A filter MUTATES the tree it is given. `@filter.UrlFilter` is the one this
+/// repo ships; a host may implement `@filter.VdomFilter` itself.
+pub fn[N] App::set_filter(self : App[N], filter : &@filter.VdomFilter?) -> Unit {
+  self.filter = filter
 }
 
 ///|

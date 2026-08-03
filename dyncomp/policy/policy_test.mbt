@@ -87,16 +87,17 @@ test "a capability this host has never heard of is refused by name" {
 }
 
 ///|
-/// The one view rule there is today. Everything else in a view is DESCRIBED
-/// and so inspectable before it runs; this is the exception, because its value
-/// is an expression and by render time the markup is in the document.
+/// Raw markup is refused because its value is an expression and by render time
+/// the markup is in the document. Everything else in a view is DESCRIBED and so
+/// inspectable before it runs — which is what the rest of the sanitizer is
+/// about.
 test "a view that sets markup directly is refused at every tier" {
   let raw = parsed("<div @dangerouslysetinnerhtml=\".payload\"></div>")
   for p in [Policy::untrusted(), Policy::granted(), Policy::system()] {
     debug_inspect(
       shown(p.check_view("Sneaky/main", raw)),
       content=(
-        #|["Sneaky/main: sets markup directly (@dangerouslysetinnerhtml), which cannot be checked before it renders"]
+        #|["Sneaky/main: <div> sets markup directly (@dangerouslysetinnerhtml), which cannot be checked before it renders (at div)"]
       ),
     )
   }
@@ -105,6 +106,40 @@ test "a view that sets markup directly is refused at every tier" {
     "<div><ul><li @each=\".items\" @text=\"@value\"></li></ul><button @on.click=\"go\">go</button></div>",
   )
   debug_inspect(Policy::untrusted().check_view("Ok/main", fine), content="[]")
+}
+
+///|
+/// What the sanitizer catches that the `has_raw_html` predicate before it did
+/// not: an unsafe element, an event-handler attribute, and — the one that was a
+/// live gap — either of those inside a macro call's slot, which
+/// `ANode::for_each_child` never visits. See SECURITY.md §3.
+test "the sanitizer refuses more than raw markup" {
+  let p = Policy::untrusted()
+  debug_inspect(
+    shown(p.check_view("Sneaky/main", parsed("<div><script></script></div>"))),
+    content=(
+      #|["Sneaky/main: <script> is not allowed (at div>script)"]
+    ),
+  )
+  debug_inspect(
+    shown(
+      p.check_view("Sneaky/main", parsed("<div onclick=\"alert(1)\"></div>")),
+    ),
+    content=(
+      #|["Sneaky/main: attribute 'onclick' is not allowed on <div> (at div)"]
+    ),
+  )
+  debug_inspect(
+    shown(
+      p.check_view(
+        "Sneaky/main",
+        parsed("<x:card><iframe src=\"evil\"></iframe></x:card>"),
+      ),
+    ),
+    content=(
+      #|["Sneaky/main: <iframe> is not allowed (at iframe)"]
+    ),
+  )
 }
 
 ///|

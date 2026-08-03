@@ -64,8 +64,14 @@ pub fn h(
   // Two lookups against a copy of every entry — and, more to the point, the
   // caller can then hand the SAME map to every render of a static-attribute
   // element, which is what lets `diff_props`'s `physical_equal` fast path
-  // answer in O(1) instead of hashing every key in both directions. Nothing
-  // mutates a VElem's attrs after construction, so sharing is safe.
+  // answer in O(1) instead of hashing every key in both directions.
+  //
+  // A `@filter.VdomFilter` DOES mutate a VElem's attrs after construction (it
+  // has to: rebuilding a node would defeat the identity fast path above). That
+  // is safe only because every construction site inside this repo builds a
+  // fresh map per render — `eval_attrs` and `clean_vdom` both do. A caller that
+  // hands the same map to two renders and installs a filter would see the first
+  // render's removals in the second.
   let props : Map[String, AttrValue] = if attrs.contains("key") ||
     attrs.contains("namespace") {
     let stripped : Map[String, AttrValue] = Map([])

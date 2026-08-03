@@ -1,0 +1,115 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/anode/sanitize"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/set",
+}
+
+// Values
+pub fn html(String) -> ElementName
+
+pub fn is_event_handler_attr(String) -> Bool
+
+pub fn mathml(String) -> ElementName
+
+pub let reserved_data_attrs : @set.Set[String]
+
+pub fn svg(String) -> ElementName
+
+pub let unsafe_elements : Array[ElementName]
+
+// Errors
+pub suberror InvalidConfig {
+  InvalidConfig(Array[ConfigError])
+}
+pub fn InvalidConfig::to_string(Self) -> String
+
+// Types and methods
+pub(all) enum ConfigError {
+  BothAllowAndRemove(what~ : String)
+  Duplicate(what~ : String, name~ : String)
+  Overlap(what~ : String, name~ : String)
+  ElementBothAttrLists(elem~ : String)
+  ElementAttrNotGlobal(elem~ : String, attr~ : String)
+  ElementAttrRepeatsGlobal(elem~ : String, attr~ : String)
+  ElementAttrRepeatsGlobalRemove(elem~ : String, attr~ : String)
+  DataAttrListed(name~ : String)
+  DataAttrsWithGlobalRemove
+} derive(Eq, @debug.Debug)
+pub fn ConfigError::to_string(Self) -> String
+
+pub(all) struct ElemAttrs {
+  allow : @set.Set[String]?
+  remove : @set.Set[String]
+}
+
+pub(all) enum ElemNs {
+  Html
+  Svg
+  MathML
+} derive(Eq, Hash, @debug.Debug)
+pub fn ElemNs::of_anode(@anode.Ns?) -> Self
+
+pub(all) struct ElementName {
+  name : String
+  ns : ElemNs
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ElementRule {
+  elem : ElementName
+  attributes : Array[String]?
+  remove_attributes : Array[String]?
+} derive(Eq, @debug.Debug)
+pub fn ElementRule::of(ElementName) -> Self
+
+pub(all) enum ElementVerdict {
+  Keep
+  Drop
+  ReplaceWithChildren
+} derive(Eq, @debug.Debug)
+
+pub struct Sanitizer {
+  allow_elements : Map[String, ElemAttrs]?
+  remove_elements : @set.Set[String]
+  replace_with_children : @set.Set[String]
+  allow_attributes : @set.Set[String]?
+  remove_attributes : @set.Set[String]
+  comments : Bool
+  data_attributes : Bool
+  raw_markup : Bool
+}
+pub fn Sanitizer::attribute_allowed(Self, String, @anode.Ns?, String) -> Bool
+pub fn Sanitizer::check(Self, @anode.ANode) -> Array[Violation]
+pub fn Sanitizer::default() -> Self
+pub fn Sanitizer::element_verdict(Self, String, @anode.Ns?) -> ElementVerdict
+pub fn Sanitizer::new(SanitizerConfig) -> Self raise InvalidConfig
+
+pub(all) struct SanitizerConfig {
+  elements : Array[ElementRule]?
+  remove_elements : Array[ElementName]?
+  replace_with_children_elements : Array[ElementName]?
+  attributes : Array[String]?
+  remove_attributes : Array[String]?
+  comments : Bool?
+  data_attributes : Bool?
+  raw_markup : Bool?
+} derive(Eq, @debug.Debug)
+pub fn SanitizerConfig::default() -> Self
+pub fn SanitizerConfig::empty() -> Self
+pub fn SanitizerConfig::validate(Self) -> Array[ConfigError]
+
+pub(all) enum Violation {
+  Element(tag~ : String, at~ : String)
+  ElementUnwrapped(tag~ : String, at~ : String)
+  Attribute(tag~ : String, name~ : String, at~ : String)
+  Comment(at~ : String)
+  RawMarkup(tag~ : String, at~ : String)
+} derive(Eq, @debug.Debug)
+pub fn Violation::at(Self) -> String
+pub fn Violation::to_string(Self) -> String
+
+// Type aliases
+
+// Traits

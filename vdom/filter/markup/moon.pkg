@@ -1,0 +1,26 @@
+// Raw markup, re-admitted as described nodes.
+//
+// `@dangerouslysetinnerhtml` is the one construct in a view whose content is
+// not described: its value is an expression, so what it holds is unknowable
+// until it renders. This is where it becomes knowable — parse the payload,
+// sanitize the parsed tree against the same `SanitizerConfig` the static pass
+// uses, and hand back vdom NODES.
+//
+// Its own package rather than a file in `vdom/filter`, because it drags an
+// HTML parser and the config model behind it, and a host that only wants the
+// URL rule should not pay for either.
+import {
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
+  // the config model and its verdicts, shared with the registration-time pass
+  // so a host cannot have two different answers to the same question
+  "marianoguerra/tutuca/anode/sanitize",
+  // `parse_fragment` — the same template-context parse a view goes through
+  "marianoguerra/tutuca/anode",
+  "moonbit-community/html/src" @html5,
+}
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/test",
+} for "test"

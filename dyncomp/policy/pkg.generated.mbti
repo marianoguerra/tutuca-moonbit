@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/dyncomp/policy"
 
 import {
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/anode/sanitize",
   "moonbitlang/core/debug",
 }
 
@@ -45,6 +46,7 @@ pub fn Policy::check_style(Self, String, String) -> Array[Refusal]
 pub fn Policy::check_view(Self, String, @anode.ANode) -> Array[Refusal]
 pub fn Policy::granted() -> Self
 pub fn Policy::grants_all(Self, Array[CapabilityReq]) -> Bool
+pub fn Policy::sanitizer(Self) -> @sanitize.Sanitizer
 pub fn Policy::system() -> Self
 pub fn Policy::untrusted() -> Self
 
@@ -72,4 +74,3 @@ pub(all) enum TrustTier {
 // Type aliases
 
 // Traits
-

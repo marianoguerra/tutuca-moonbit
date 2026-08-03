@@ -237,32 +237,41 @@ pub fn Policy::check_style(
 ///|
 /// Whether this host will render the compiled view.
 ///
-/// One rule today: a view may not set markup directly. Everything else in a
-/// view is DESCRIBED — a tag, an attribute, a handler name resolved at parse
-/// time — and so inspectable before it runs.
-/// `@dangerouslysetinnerhtml` is the exception, because its value is an
-/// expression: what it will hold is unknowable until render, and by then the
-/// markup is in the document. Refusing the construct is the only decision
-/// available ahead of time.
+/// The WHATWG Sanitizer API's config model, over the compiled tree
+/// (`@sanitize`). Everything in a view is DESCRIBED — a tag, an attribute name,
+/// a handler name resolved at parse time — and every one of those is a literal,
+/// so an allowlist over names is COMPLETE over the described part of a view.
+/// That is what makes this decidable here rather than at render.
 ///
-/// The next step is the WHATWG Sanitizer API's config model applied over this
-/// same tree, which subsumes the tag / attribute / URL-scheme question
-/// uniformly and is what would let raw markup back in safely.
+/// It is not decidable for attribute VALUES: `AttrItem::Plain` carries a `Val`,
+/// so what an `href` will hold is unknowable until render — and the Sanitizer
+/// API has no opinion about URL schemes anyway. That half is a filter between
+/// render and diff; see docs/sanitizer.md and SECURITY.md §3.
+///
+/// Not tier-dependent, and the sanitizer is the same one at every tier: a
+/// System bundle is part of the app and writes its views the ordinary way, so
+/// nothing is losing anything.
 pub fn Policy::check_view(
   self : Policy,
   where_ : String,
   tree : @anode.ANode,
 ) -> Array[Refusal] {
-  // Not tier-dependent: a System bundle is part of the app and writes its
-  // views the ordinary way, so nothing is losing anything here.
   ignore(self)
-  if tree.has_raw_html() {
-    [
-      refusal(
-        where_, "sets markup directly (@dangerouslysetinnerhtml), which cannot be checked before it renders",
-      ),
-    ]
-  } else {
-    []
-  }
+  self
+  .sanitizer()
+  .check(tree)
+  .map(v => refusal(where_, @sanitize.Violation::to_string(v)))
+}
+
+///|
+/// The sanitizer a view is checked against.
+///
+/// The baseline and nothing more, today: the unsafe elements, the event
+/// handlers, comments and raw markup. Deliberately NOT an allowlist — see
+/// `@sanitize.SanitizerConfig::default` for why one is not transcribed yet, and
+/// note that a host wanting a stricter one supplies a `SanitizerConfig` and
+/// gets `validate()` to keep it honest.
+pub fn Policy::sanitizer(self : Policy) -> @sanitize.Sanitizer {
+  ignore(self)
+  @sanitize.Sanitizer::default()
 }

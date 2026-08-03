@@ -1,0 +1,27 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/vdom/filter/markup"
+
+import {
+  "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
+}
+
+// Values
+pub const RAW_ATTR : String = "dangerouslySetInnerHTML"
+
+// Errors
+
+// Types and methods
+pub struct MarkupFilter {
+  sanitizer : @sanitize.Sanitizer
+  reports : Array[@filter.Dropped]
+  max_reports : Int
+}
+pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
+pub fn MarkupFilter::take_reports(Self) -> Array[@filter.Dropped]
+pub impl @filter.VdomFilter for MarkupFilter
+
+// Type aliases
+
+// Traits

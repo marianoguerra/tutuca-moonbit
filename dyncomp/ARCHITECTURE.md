@@ -138,12 +138,14 @@ The untrusted tier is the one this design is *for*, and a bundle there can still
 declare components, ship views, hold state, handle events, nest children and
 serve its own requests — all three sample guests run under it unchanged.
 
-Also here: the `@dangerouslysetinnerhtml` refusal, and quotas on manifest size
-(an availability bound, not a security one — the host parses every view before
-it renders anything). Still to come, and marked as such in the code: the
-`mizchi/css` style validator (until it lands, `allow_custom_css` means someone
-vouched, not that anything checked), the Sanitizer-API config over the ANode
-tree, and content-addressed bundle ids.
+Also here: the Sanitizer-API config over the ANode tree (`anode/sanitize`, run by
+`check_view`) with `@dangerouslysetinnerhtml` still refused outright, the URL
+filter `set_app` installs for the half a static pass cannot decide
+(`vdom/filter`), and quotas on manifest size (an availability bound, not a
+security one — the host parses every view before it renders anything). Still to
+come, and marked as such in the code: the `mizchi/css` style validator (until it
+lands, `allow_custom_css` means someone vouched, not that anything checked), the
+spec's default element allow-list, and content-addressed bundle ids.
 
 ### `dyncomp/ui/std` — layout as components
 
@@ -291,9 +293,11 @@ What is left, in order:
    import/export of a page as JSON — the shell already writes that shape to
    `localStorage`, so this is mostly exposing it.
 2. **The security work `policy` names but does not yet do**: the `mizchi/css`
-   validator, the Sanitizer-API port, and caller-aware request authorization,
-   which needs `RequestFn` to carry the requester's `DispatchPath`
-   (`SECURITY.md` §3–§5).
+   validator and caller-aware request authorization, which needs `RequestFn` to
+   carry the requester's `DispatchPath` (`SECURITY.md` §4–§5). The Sanitizer-API
+   port landed; what is left of it is the spec's default allow-list and
+   re-admitting raw markup through the render-time filter
+   (`docs/sanitizer.md`).
 3. **Two debts from the v0.3 bump**: `manifest.capabilities` is now enforced,
    but `control.after` still has no host implementation (it needs a timer the
    transactor owns), and the bridge supplies `env` unconditionally rather than

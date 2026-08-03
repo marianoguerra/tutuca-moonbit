@@ -10,6 +10,7 @@
 // what lets `host` depend on it rather than the reverse.
 import {
   "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/anode/sanitize",
   "moonbitlang/core/debug",
 }
 

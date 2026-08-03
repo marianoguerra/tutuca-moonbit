@@ -1,0 +1,18 @@
+// The seam between building a vdom tree and diffing it against the last one.
+//
+// A filter runs after `render_root` has finished evaluating anode and before
+// `@vdom.render` touches the DOM, which is the only point where an attribute's
+// VALUE is concrete and nothing has been written yet. Absent is the trusted
+// case and costs one `if` per render.
+//
+// Over `vdom` and nothing else: a filter rewrites a tree, and knows about no
+// policy, no bundle and no renderer. See docs/sanitizer.md.
+import {
+  "marianoguerra/tutuca/vdom",
+  "moonbitlang/core/set",
+}
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/test",
+} for "test"

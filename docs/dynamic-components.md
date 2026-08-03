@@ -8,7 +8,7 @@ the same machinery as the components you compiled in.
 Two roles, one contract. **Hosting** is `dyncomp/`. **Writing** a component is
 `tutuca new-guest`. The contract between them is one file,
 [`../dyncomp/wit/tutuca-component.wit`](../dyncomp/wit/tutuca-component.wit) —
-`tutuca:component@0.4.0`.
+`tutuca:component@0.5.0`.
 
 The full design is in [`../dyncomp/DESIGN.md`](../dyncomp/DESIGN.md); what a
 loaded bundle can and cannot do is in
@@ -177,7 +177,7 @@ states each claim's actual strength:
 | --- | --- | --- |
 | wasm imports (`values`, `control`) | nothing ambient | safe by construction |
 | `env` — clock, randomness, ids | weakened, host-supplied answers | gated; refused by default |
-| guest views | your DOM | raw markup refused; a sanitizer is next |
+| guest views | your DOM | element/attribute allowlist at registration, URL schemes at render; raw markup refused |
 | guest CSS | your stylesheet | refused outright for an untrusted bundle |
 | `control.request` → host handlers | your own services | **open** — needs caller-aware authorization |
 | a runaway guest call | the page's responsiveness | **open** — needs worker isolation |

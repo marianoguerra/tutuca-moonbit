@@ -14,7 +14,7 @@ Where a claim is weaker than it sounds, it says so.
 |---|---|---|
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM | **partly handled** — raw markup refused; a sanitizer is next |
+| guest views (tutuca templates) | the host's DOM | **handled** — a Sanitizer-API port over the tree at registration, plus a URL-scheme filter at render; raw markup still refused outright |
 | guest CSS (`component-def.style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -137,18 +137,86 @@ Two details matter about that refusal:
   already in the shared registry, contributing event names and CSS classes to
   the page that turned them down. There is a test for exactly that.
 
+**Where the refusal is weaker than it sounds.** `has_raw_html`
+(`anode/classes.mbt`) walks `ANode::for_each_child`, and that walk has two blind
+spots on an unexpanded tree. A `MacroCall`'s `node` is `None` until
+`ParseContext::compile` expands it, so a macro BODY is never visited; and
+`MacroData.slots` — the caller's own subtrees, keyed by slot name
+(`parse_context.mbt`, `new_macro_node`) — is not in `for_each_child` at all, so
+a slot's content is never visited either, expanded or not.
+
+The second one is reachable from a guest: `<x:card><div
+@dangerouslysetinnerhtml=".payload"></div></x:card>` passes `check_view` with no
+refusal. It only RENDERS if the host registered a macro named `card` whose body
+places the slot — guest views compile against the host's `ComponentStack`
+(`component/scope.mbt`, `lookup_macro`), so this is contingent on the host having
+macros rather than unconditional. It is still the walk being wrong rather than
+the policy being right, and the sanitizer walk below must not inherit it.
+
 **What is next.** Port the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
 config model to anode: a `SanitizerConfig` of `elements` / `removeElements` /
 `replaceWithChildrenElements` / `attributes` / `removeAttributes` / `comments` /
-`dataAttributes`, with per-element attribute rules and the spec's `removeUnsafe`
-baseline. Two application points — over the compiled ANode tree at registration
-(which subsumes the tag, attribute and URL-scheme problem uniformly), and at
-`set_inner_html` time, which is what would let raw markup back in safely.
+`dataAttributes`, with per-element attribute rules on the `elements` entries
+(the spec's `SanitizerElementNamespaceWithAttributes`; `removeElements` and
+`replaceWithChildrenElements` entries carry none). The design is
+[`docs/sanitizer.md`](../docs/sanitizer.md).
 
 Following the spec's shape rather than inventing an allowlist means the default
 is the one the platform already argues is safe, and the same config can later be
 handed to the native `Element.setHTML()`.
+
+**But the Sanitizer API does not answer the URL-scheme question, and an earlier
+version of this section said it did.** URL schemes are out of scope for that
+spec: its unsafe baseline is about script-bearing ELEMENTS (`script`, `iframe`,
+`object`, `embed`, `frame`, `use`, `base`) and event-handler ATTRIBUTES, and its
+own default configuration explicitly allows `href` on `<a>`. `<a
+href="javascript:…">` survives `setHTML()` with the default sanitizer intact.
+The platform's answer to that half is CSP and Trusted Types, neither of which is
+a thing anode can port.
+
+So the port buys the element and attribute-NAME layer and nothing else, and
+tutuca needs a second mechanism for attribute VALUES. It cannot run where the
+config does: an attribute value in a view is a `Val` expression
+(`AttrItem::Plain`), so what it will hold is unknowable at registration for the
+same reason `RawHtml`'s payload is.
+
+It runs a step later, as a filter between `@render.render_root` and
+`@vdom.render` (`app/loop.mbt`, `App::render_now`) — the point where the tree is
+concrete and nothing has touched the DOM yet. `@filter.UrlFilter` is that rule:
+it drops an attribute whose URL scheme executes, normalizing the way a browser
+does first (`java&#9;script:` is `javascript:`), and records what it dropped
+since by then there is no author to tell.
+
+**Every page that hosts bundles installs one.** `set_app` (`host/wasm/glue.mbt`)
+calls `App::set_filter` alongside the policy it already takes and the GC sweep it
+already installs — unconditionally, because a page calling `set_app` is by
+definition a page that loads bundles, and not tier-dependent, because there is no
+legitimate `javascript:` URL in a described view at any tier. `set_app` is the
+only production path: the single `register_bundle` caller outside tests is this
+same glue. `take_filter_reports()` drains what was dropped, for a page that wants
+to say so.
+
+An app mounted WITHOUT this glue gets no filter — `App::set_filter` defaults to
+`None`, the trusted case, one `if` per render. Whether a plain tutuca app should
+get one by default is a separate decision, and an open one
+(`docs/sanitizer.md`).
+
+One honest limit on that claim: the install is one line inside the wasm glue,
+which `moon test` never runs — the whole `tcomp` bridge is browser-only, so it is
+verified by inspection like the rest of it.
+
+**Raw markup could now be re-admitted, and deliberately is not.**
+`vdom/filter/markup` sanitizes a payload against the same `SanitizerConfig` and
+hands back described NODES — never a string, because a sanitized string that the
+browser parses a second time is the mutation-XSS vector that has bitten every
+sanitizer which shipped that shape. So the mechanism exists and is tested. What
+does not exist is a way for `Policy::check_view` to know that a host installed
+it: a policy saying `raw_markup: true` beside an app mounted without the filter
+would send the payload straight to `set_inner_html` unchecked. Guests are
+therefore still refused the construct outright, and `set_app` installs the URL
+filter only. Loosening this should be one explicit decision — a `Policy` that
+carries a config — rather than a side effect of the capability existing.
 
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 
@@ -166,7 +234,7 @@ reachable by a guest**: `Component::for_type` defaults it to `""` and
 **What is true now.** Two things.
 
 No global CSS for guests, as an invariant of the contract:
-`tutuca:component@0.4.0` has no field that reaches `global_style`, and the WIT
+`tutuca:component@0.5.0` has no field that reaches `global_style`, and the WIT
 says so where the `style` field is defined. Unscoped CSS from a bundle would
 reach the page around it, and no amount of validation makes that safe.
 

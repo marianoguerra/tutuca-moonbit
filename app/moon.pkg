@@ -5,6 +5,7 @@ import {
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
 }
 
 import {

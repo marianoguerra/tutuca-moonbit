@@ -1,7 +1,7 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.4.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.5.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
 
@@ -227,8 +227,9 @@ file's id or by URL.
 - `@dangerouslysetinnerhtml` is refused in a guest view, so a bundle that
   genuinely needs to render markup cannot. Its value is an expression, so no
   registration-time pass can see what it will hold; refusing the construct is
-  the only decision available ahead of time. A Sanitizer-API pass over the
-  rendered markup is what would let it back in (`SECURITY.md` §3).
+  the only decision available ahead of time. Running the sanitizer's config over
+  the payload in the render-time filter — where the string is finally concrete —
+  is what would let it back in (`SECURITY.md` §3, `docs/sanitizer.md`).
 - Nothing in `env` is a real clock or real entropy, by design. A component that
   needs either asks the host through `control.request`.
 
