@@ -216,6 +216,22 @@ bundles, split by provenance and regenerated together by `cmd/dev -- css-bundle`
   from a clone at the ref pinned in `scripts/fetch-margaui.mjs`, with its `tw/*`
   dropped (`--skip-prefix tw/`).
 
+A third generated-from-upstream file lives elsewhere and follows the same rule:
+
+- `anode/sanitize/spec_default_gen.mbt` — the WHATWG Sanitizer API's built-in
+  default configuration, from the **machine-readable `builtins/` in the spec
+  repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
+  Regenerate with `node scripts/fetch-sanitizer-defaults.mjs`;
+  `--check` fails if the committed file is stale.
+
+  **Never hand-transcribe an allow-list, and never take one from MDN or a blog
+  post.** An entry quietly lost is a component that mysteriously fails to
+  render; one quietly gained is a hole. The first attempt at this list was read
+  off a summary, which dropped SVG's `script` from the baseline — and since
+  element identity is namespace-qualified, `<svg><script>alert(1)</script></svg>`
+  passed the sanitizer with no violation at all. `sanitize_test.mbt` holds
+  `unsafe_elements` against the spec's own baseline for that reason.
+
 **Take `tw/*.css` from npm, never from the margaui checkout.** margaui's own
 `tw/README.md` calls its copies a manual mirror and they lag — at v0.5704.0 they
 are still missing the `mauve`/`olive`/`mist`/`taupe` palettes upstream added in

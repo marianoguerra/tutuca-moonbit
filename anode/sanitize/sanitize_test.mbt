@@ -269,3 +269,94 @@ test "a macro call's own body is not the caller's to answer for" {
   let tree = parsed("<x:card title=\"hi\"></x:card>")
   debug_inspect(shown(Sanitizer::default().check(tree)), content="[]")
 }
+
+// ---------------------------------------------------------------------------
+// Held against the spec, not against anyone's memory of it.
+
+///|
+/// The baseline was written from a summary once, and the summary dropped SVG's
+/// `script`. Element identity is namespace-qualified, so `html("script")` never
+/// matched it and this reached the DOM: an SVG `<script>` inserted through the
+/// DOM executes.
+test "an SVG script is refused" {
+  let px = @anode.ParseContext::new()
+  let tree = @anode.ANode::parse(
+      "<div><svg><script>alert(1)</script></svg></div>",
+      px,
+    ).unwrap()
+  debug_inspect(
+    Sanitizer::default().check(tree).map(Violation::to_string),
+    content=(
+      #|["<script> is not allowed (at div>svg>script)"]
+    ),
+  )
+}
+
+///|
+/// Containment rather than equality: everything the spec's baseline removes has
+/// to be refused here, and tutuca may refuse more (it refuses `base`, which the
+/// spec leaves to the config layer). Regenerate the right-hand side with
+/// `node scripts/fetch-sanitizer-defaults.mjs`.
+test "the baseline covers everything the spec's baseline removes" {
+  fn shown(e : ElementName) -> String {
+    match e.ns {
+      Html => e.name
+      Svg => "svg:" + e.name
+      MathML => "math:" + e.name
+    }
+  }
+
+  let ours = @set.Set::from_array(unsafe_elements.map(shown))
+  for e in spec_baseline_removes {
+    assert_true(ours.contains(shown(e)))
+  }
+  // The one deliberate difference, stated so a regen that dropped it would be
+  // noticed rather than absorbed.
+  let spec = @set.Set::from_array(spec_baseline_removes.map(shown))
+  debug_inspect(
+    unsafe_elements.map(shown).filter(k => !spec.contains(k)),
+    content=(
+      #|["base"]
+    ),
+  )
+}
+
+///|
+/// The transcribed allow-list is a valid config by the spec's own validity
+/// relation — which is not free, since it carries both a global attribute list
+/// and per-element ones.
+test "the spec's default configuration is valid and usable" {
+  let cfg = SanitizerConfig::spec_default()
+  debug_inspect(cfg.validate(), content="[]")
+  let s = Sanitizer::new(cfg)
+  let px = @anode.ParseContext::new()
+  // Document content passes.
+  let doc = @anode.ANode::parse(
+      "<div><p>hi <em>there</em></p><ul><li>a</li></ul></div>",
+      px,
+    ).unwrap()
+  debug_inspect(s.check(doc).map(Violation::to_string), content="[]")
+}
+
+///|
+/// The reason it is offered and not imposed: the spec's default is for pasting
+/// DOCUMENT content, and a tutuca view describes an INTERACTIVE component. A
+/// guest with a button is not an unusual guest.
+test "the spec's default configuration refuses an ordinary component view" {
+  let s = Sanitizer::new(SanitizerConfig::spec_default())
+  let px = @anode.ParseContext::new()
+  let view = @anode.ANode::parse(
+      "<div><button @on.click=\"go\">go</button><input :value=\".q\"></div>",
+      px,
+    ).unwrap()
+  debug_inspect(
+    s.check(view).map(Violation::to_string),
+    content=(
+      #|[
+      #|  "<button> is not allowed (at div>button)",
+      #|  "<input> is not allowed (at div>input)",
+      #|]
+
+    ),
+  )
+}

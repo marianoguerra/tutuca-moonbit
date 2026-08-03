@@ -16,6 +16,8 @@ pub fn mathml(String) -> ElementName
 
 pub let reserved_data_attrs : @set.Set[String]
 
+pub let spec_baseline_removes : Array[ElementName]
+
 pub fn svg(String) -> ElementName
 
 pub let unsafe_elements : Array[ElementName]
@@ -98,6 +100,7 @@ pub(all) struct SanitizerConfig {
 } derive(Eq, @debug.Debug)
 pub fn SanitizerConfig::default() -> Self
 pub fn SanitizerConfig::empty() -> Self
+pub fn SanitizerConfig::spec_default() -> Self
 pub fn SanitizerConfig::validate(Self) -> Array[ConfigError]
 
 pub(all) enum Violation {

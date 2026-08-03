@@ -153,12 +153,13 @@ places the slot — guest views compile against the host's `ComponentStack`
 macros rather than unconditional. It is still the walk being wrong rather than
 the policy being right, and the sanitizer walk below must not inherit it.
 
-**What is next.** Port the [WHATWG Sanitizer
+**The port landed** — the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
-config model to anode: a `SanitizerConfig` of `elements` / `removeElements` /
-`replaceWithChildrenElements` / `attributes` / `removeAttributes` / `comments` /
-`dataAttributes`, with per-element attribute rules on the `elements` entries
-(the spec's `SanitizerElementNamespaceWithAttributes`; `removeElements` and
+config model over the compiled tree (`anode/sanitize`): `elements` /
+`removeElements` / `replaceWithChildrenElements` / `attributes` /
+`removeAttributes` / `comments` / `dataAttributes`, with per-element attribute
+rules on the `elements` entries (the spec's
+`SanitizerElementNamespaceWithAttributes`; `removeElements` and
 `replaceWithChildrenElements` entries carry none). The design is
 [`docs/sanitizer.md`](../docs/sanitizer.md).
 
@@ -166,10 +167,26 @@ Following the spec's shape rather than inventing an allowlist means the default
 is the one the platform already argues is safe, and the same config can later be
 handed to the native `Element.setHTML()`.
 
+**A second finding, from doing that properly: an SVG `<script>` was not
+refused.** The baseline list was written from a summary of the spec rather than
+from the spec, and the spec lists `script` TWICE — once per namespace. Element
+identity here is namespace-qualified, so `html("script")` never matched, and
+
+```html
+<div><svg><script>alert(1)</script></svg></div>
+```
+
+passed `check_view` with no violation at all: registered, rendered into the
+host's page, and an SVG `script` inserted through the DOM executes. Unlike the
+macro-slot hole above this was **unconditional** — it needed nothing from the
+host. `svg("script")` is in `unsafe_elements` now, and the list is held against
+the spec's own machine-readable baseline by a test rather than against anyone's
+reading of it (`scripts/fetch-sanitizer-defaults.mjs`).
+
 **But the Sanitizer API does not answer the URL-scheme question, and an earlier
 version of this section said it did.** URL schemes are out of scope for that
-spec: its unsafe baseline is about script-bearing ELEMENTS (`script`, `iframe`,
-`object`, `embed`, `frame`, `use`, `base`) and event-handler ATTRIBUTES, and its
+spec: its unsafe baseline is about script-bearing ELEMENTS (HTML `embed`,
+`frame`, `iframe`, `object`, `script`, and SVG `script` and `use`) and event-handler ATTRIBUTES, and its
 own default configuration explicitly allows `href` on `<a>`. `<a
 href="javascript:…">` survives `setHTML()` with the default sanitizer intact.
 The platform's answer to that half is CSP and Trusted Types, neither of which is

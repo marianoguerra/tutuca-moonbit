@@ -22,8 +22,8 @@ The Sanitizer API is two things a caller can use separately:
   config, not the baseline itself.
 
 What it does NOT give is any opinion about attribute *values*. Its unsafe
-baseline is script-bearing elements (`script`, `iframe`, `object`, `embed`,
-`frame`, `base`, `use`) and event-handler attributes; its own default
+baseline is script-bearing elements (HTML `embed`, `frame`, `iframe`, `object`,
+`script`, and SVG `script` and `use`) and event-handler attributes; its own default
 configuration allows `href` on `<a>`, and `<a href="javascript:…">` comes
 through `setHTML()` untouched. The platform answers that half with CSP and
 Trusted Types. anode has to answer it itself, and somewhere else.
@@ -100,9 +100,40 @@ because there is no `innerHTML` *attribute* for it to be about;
 described, so it gets a field. Absent means denied, which is the refusal
 `Policy::check_view` already implemented.
 
+### The baseline was wrong, and going to the spec is what found it
+
+The list was written as "this exact list and no editorializing on it: `base`,
+`embed`, `frame`, `iframe`, `object`, `script`, and SVG's `use`". It came from a
+summary, and the summary was wrong.
+
+The spec's baseline lists **`script` twice** — once in HTML's namespace and once
+in SVG's. Element identity here is namespace-qualified (`ElementName::key`
+prefixes `svg:`), so `html("script")` never matched the `<script>` inside an
+`<svg>`, and
+
+```html
+<div><svg><script>alert(1)</script></svg></div>
+```
+
+passed `Sanitizer::check` with **no violation at all** — through `check_view`,
+into a registered guest component, and onto the host's page. An SVG `<script>`
+inserted through the DOM executes.
+
+`unsafe_elements` is now held against `spec_baseline_removes` by a test, and
+that array is generated from the spec's own baseline file rather than typed. The
+test asserts *containment*, not equality, because tutuca also refuses `base` —
+a `<base href>` retargets every relative URL on the host's page, which is worth
+refusing outright even though the spec leaves it to the config layer. The
+difference is asserted explicitly so that a regeneration which silently absorbed
+it would fail.
+
+The general rule, which is now in `AGENTS.md`: never hand-transcribe an
+allow-list, and never take one from MDN or a blog post. Both directions of error
+are bad, and only one of them is visible.
+
 ### Safety comes from the entry point, not the config
 
-`Sanitizer` applies the unsafe baseline — the seven unsafe elements, and every
+`Sanitizer` applies the unsafe baseline — the unsafe elements, and every
 `on*` attribute — **before** consulting the config, and a config that names
 `script` in `elements` still does not get `script`. That is the spec's own
 `setHTML()` / `setHTMLUnsafe()` split, collapsed: there is only the safe entry
@@ -138,7 +169,7 @@ it fails loudly rather than degrading.
 Two different things share the word "default" in the spec, and conflating them
 is a bug in both directions.
 
-The **baseline** (`removeUnsafe()`) is the seven elements and the event
+The **baseline** (`removeUnsafe()`) is the unsafe elements and the event
 handlers. The **default configuration** is a large allow-list of elements with
 per-element attributes, which *additionally* drops comments and `data-*`.
 MDN is explicit that the second is not the first: "calling `removeUnsafe()`, or
@@ -147,12 +178,23 @@ XSS-unsafe items. It does not remove the additional items, comments, and `data-*
 attributes."
 
 `SanitizerConfig::default()` here is the empty config, so the sanitizer is the
-baseline alone. **The spec's default allow-list is not transcribed**, and that is
-a deliberate gap rather than an oversight: it has to come from the specification
-text rather than a summary of it, because an allow-list that quietly lost an
-entry is a component that mysteriously fails to render and one that quietly
-gained an entry is a hole. A host that wants an allow-list supplies one today and
-gets `validate()` to keep it honest.
+baseline alone.
+
+**The spec's default allow-list is now transcribed**, as
+`SanitizerConfig::spec_default()` — but it is offered, not imposed, and it is
+NOT what `default()` returns. The reason is not caution: the spec's default
+configuration allows **no interactive or media element at all**. No `button`, no
+`input`, no `img`, no `form`, no `select`, no `label`. That is right for what it
+is for — pasting document content into a page — and wrong for a tutuca view,
+which describes an interactive component. Adopting it as the default would
+refuse essentially every real guest, starting with any that has a button. A host
+whose guests really are document content (a comment renderer, a CMS body) hands
+it to `Policy::with_sanitizer` and gets the platform's own answer.
+
+It is **generated**, by `scripts/fetch-sanitizer-defaults.mjs`, from the
+machine-readable `builtins/` in the spec repo at a pinned commit — which is what
+the spec's own prose is generated from, so it cannot disagree with the text the
+way a hand transcription can. That mattered immediately; see below.
 
 Two consequences of picking the baseline, both of which cost a test to find:
 
@@ -617,8 +659,12 @@ What is left, in rough order of who it helps:
   what the render loop builds, and a guest's subtree is part of that same tree by
   construction — so this would add little, and the scaffolding is a whole
   `DynManifest`. Worth it only if the composition ever stops being obvious.
-- **The spec's default allow-list is not transcribed** (see above). Until it is,
-  `default()` is the baseline and a host supplies its own allow-list.
+- ~~**The spec's default allow-list is not transcribed**.~~ **Done** —
+  `SanitizerConfig::spec_default()`, generated by
+  `scripts/fetch-sanitizer-defaults.mjs` from the spec's machine-readable
+  `builtins/` at a pinned commit. Offered rather than imposed, because it allows
+  no interactive element at all; `default()` is still the baseline. Going to the
+  spec for it is what turned up the SVG `script` hole in the baseline itself.
 - **`on*` names on a namespaced element.** ~~A test pinning the vdom
   behaviour.~~ **Done** — `vdom/memdom/event_attr_test.mbt`, 5 tests, plus the
   memdom `has_property` fix they depend on. What they establish is that the
