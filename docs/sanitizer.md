@@ -460,9 +460,29 @@ Unrelated to the filter, and belonging with Pass 1: `set_prop` routes by
 `node.has_property(name)`, and `onclick` *is* a property, so an `:onclick="…"`
 attribute takes the property path where a string assignment does nothing — and
 would take the attribute path, which compiles a handler, if `try_set_prop_ffi`
-ever returned false. That the attack fails today is an accident of routing, not a
-defense. Pass 1 removing the name is the fix; a test that pins the behaviour
-belongs with it either way.
+ever returned false. That the attack fails there is an accident of routing, not a
+defense. Pass 1 removing the name is the fix.
+
+`vdom/memdom/event_attr_test.mbt` pins this, and writing it turned up two things
+the paragraph above had wrong:
+
+- **On a namespaced element the attack does not fail at all.** `uses_prop` is
+  `!namespaced && …` (`vdom/to_dom.mbt`), so an SVG or MathML element routes
+  *every* attribute through `set_attribute` — `<svg onclick="…">` and
+  `<circle onload="…">` are written as live content attributes, and SVG elements
+  honour them. There is no accident of routing to rely on here, so this half is
+  not "fails today by luck"; it is open until a name-dropping pass covers it.
+- **memdom's `has_property` did not know about `on*`**, so it answered `false`
+  and sent `onclick` down the `set_attribute` path — the opposite of a browser.
+  Every test that might have asserted this attack fails would have asserted it
+  against the wrong DOM. Fixed by `is_event_handler_prop` in
+  `vdom/memdom/props.mbt`, using the same prefix predicate as
+  `@sanitize.is_event_handler_attr`.
+
+`never_assign` is *not* the fix, and there is a test saying so: adding `onclick`
+to that set forces the attribute path on plain HTML elements too, which is
+strictly worse. Its existing members are names whose attribute form is the
+correct one, which an event handler's is not.
 
 ## Order of work
 
@@ -484,12 +504,35 @@ belongs with it either way.
    `vdom/filter/markup`, 9 tests. Available to any host that installs it; the
    case it helps most is a plain tutuca app rendering
    `@dangerouslysetinnerhtml` over data it did not write.
+6. ~~The event-handler rule at render time, and the vdom behaviour it rests on
+   pinned.~~ **Done** — `HandlerFilter` and `Baseline` (8 tests),
+   `vdom/memdom/event_attr_test.mbt` (5 tests), and the memdom `has_property`
+   fix those depend on. This is the half of the name rule a plain app can
+   reach, since Pass 1 never runs for one.
 
 What is left, in rough order of who it helps:
 
-- **Install the filter by default for a plain app** — the one that helps every
-  tutuca app rather than only a dyncomp host, and a behaviour change for every
-  existing one, which is why it is its own decision.
+- ~~**An event-handler rule in Pass 2.**~~ **Done** — `HandlerFilter` drops
+  `on*` off `VElem.attrs` before the diff, by name and whatever the value's
+  type, which is what covers the namespaced case above that no accident of
+  routing covers. `Baseline` composes it with the URL rule in ONE traversal
+  rather than through `Chain`, which would walk the tree twice for two rules
+  that both only read `attrs` — worth a type once the filter is installed by
+  default. The dyncomp host installs `Baseline` now; that half is belt-and-
+  braces there, since `check_view` refuses the name at registration, but a rule
+  that only holds when another pass already held is not a second layer. 8 tests.
+
+- **Install the filter by default for a plain app** — the one still outstanding,
+  and the one that helps every tutuca app rather than only a dyncomp host. Pass
+  1 runs for a dyncomp guest and nobody else (`Policy::check_view` has a single
+  call site, `dyncomp/host/bundle.mbt`), so a plain app has no `on*` defense and
+  no URL defense at all until it opts in with
+  `App::set_filter(Some(@filter.Baseline::new()))`. Making that the default is a
+  behaviour change for every existing app — a `javascript:` link stops working,
+  an `onclick` attribute disappears — which is why it is its own decision and
+  wants a version bump that says so. The rule it would install now exists, which
+  was the prerequisite: defaulting the filter on before the handler rule landed
+  would have shipped the behaviour change while still leaving `on*` open.
 - **Let a `Policy` carry a `SanitizerConfig`**, so a dyncomp host could allow a
   guest raw markup. Deliberately NOT done as part of step 5: `Policy::check_view`
   has no way to know whether the markup filter is installed, so a policy that
@@ -506,7 +549,11 @@ What is left, in rough order of who it helps:
   `DynManifest`. Worth it only if the composition ever stops being obvious.
 - **The spec's default allow-list is not transcribed** (see above). Until it is,
   `default()` is the baseline and a host supplies its own allow-list.
-- **`set_prop` routes `onclick` by `has_property`**, so the attack fails today by
-  accident of routing rather than by defense. Step 1 removes the name at
-  registration, which is the actual fix, but a test pinning the vdom behaviour is
-  still owed.
+- **`on*` names on a namespaced element.** ~~A test pinning the vdom
+  behaviour.~~ **Done** — `vdom/memdom/event_attr_test.mbt`, 5 tests, plus the
+  memdom `has_property` fix they depend on. What they establish is that the
+  HTML case fails by accident of routing while the SVG/MathML case does not fail
+  at all: `uses_prop` excludes namespaced elements, so `<svg onclick="…">` is
+  written verbatim. Pass 1 refuses the name for a guest; a plain app has no
+  static pass, so this is the concrete thing the Pass 2 handler rule below has
+  to cover.

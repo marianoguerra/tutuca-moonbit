@@ -52,6 +52,26 @@ fn is_state_prop(name : String) -> Bool {
 }
 
 ///|
+/// An event-handler IDL property (`onclick`, `oninput`, …).
+///
+/// A prefix test rather than an enumeration, matching
+/// `@sanitize.is_event_handler_attr`: `"onclick" in div` is true on every
+/// element in a real browser, and the platform keeps adding handlers.
+///
+/// This is security-relevant rather than cosmetic, which is why it is a
+/// separate predicate with its own comment. `set_prop` routes by
+/// `has_property`, so a truthful answer here sends `onclick` down the property
+/// path, where assigning a STRING to `.onclick` does nothing — a browser only
+/// installs a handler from a function there. An untruthful `false`, which is
+/// what this returned before, sends it to `set_attribute` instead and writes a
+/// live `onclick="…"` content attribute. memdom is a test double, so getting
+/// this backwards meant every test asserting the attack fails was asserting it
+/// against the wrong DOM.
+fn is_event_handler_prop(name : String) -> Bool {
+  name is ['o' | 'O', 'n' | 'N', _, ..]
+}
+
+///|
 /// The JS `name in node` check. Deliberately excludes the all-lowercase
 /// spellings whose IDL property is camelCase (`readonly`, `tabindex`,
 /// `contenteditable`, `maxlength`, …) and `data-*` / `aria-*`, which fail
@@ -62,7 +82,10 @@ pub impl @vdom.DomNode for MemNode with fn has_property(self, name) {
   // Once assigned, a property exists (`el.items = x` makes `"items" in el`
   // true in a real browser too) — this is what lets a later morph clear a
   // structured custom-element property through the uses_prop path.
-  is_reflected_prop(name) || is_state_prop(name) || self.props.contains(name)
+  is_reflected_prop(name) ||
+  is_state_prop(name) ||
+  is_event_handler_prop(name) ||
+  self.props.contains(name)
 }
 
 ///|

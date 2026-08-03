@@ -495,7 +495,7 @@ pub fn set_app(
   current.val = Some(app)
   current_doc.val = Some(doc)
   set_policy(policy)
-  app.set_filter(Some(url_filter))
+  app.set_filter(Some(render_filter))
   @dyncomp.install_gc(app.transactor)
 }
 
@@ -518,17 +518,24 @@ pub fn set_app(
 /// `set_app` is by definition a page that loads bundles. A host that mounts an
 /// app WITHOUT this glue gets no filter — see `App::set_filter`, and
 /// docs/sanitizer.md for why the default there is absent.
-let url_filter : @filter.UrlFilter = @filter.UrlFilter::new()
+///
+/// `Baseline` rather than `UrlFilter` alone, so the event-handler rule runs
+/// here too. That half is belt-and-braces for a bundle — `check_view` refuses
+/// an `on*` name at registration, so a guest carrying one never loads — and it
+/// costs no extra traversal, since `Baseline` applies both rules in one walk.
+/// It is worth having anyway: the static pass is the thing being defended, and
+/// a rule that only holds when another pass already held is not a second layer.
+let render_filter : @filter.Baseline = @filter.Baseline::new()
 
 ///|
-/// URL values dropped since the last call, oldest first, and clears the log.
+/// Values dropped since the last call, oldest first, and clears the log.
 ///
 /// The developer-facing half of the filter. By render time there is no author
 /// to report to — the value may have come from a guest's state rather than from
 /// its template — so a page that wants to say "this component tried to render a
 /// javascript: URL" drains this and shows it.
 pub fn take_filter_reports() -> Array[String] {
-  url_filter.take_reports().map(@filter.Dropped::to_string)
+  render_filter.take_reports().map(@filter.Dropped::to_string)
 }
 
 ///|

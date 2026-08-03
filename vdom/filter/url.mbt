@@ -188,43 +188,37 @@ fn UrlFilter::record(self : UrlFilter, d : Dropped) -> Unit {
 }
 
 ///|
-pub impl VdomFilter for UrlFilter with fn filter_tree(self, tree) {
-  match tree {
-    Node(el) => {
-      // Collected first: removing from the map while iterating it is not a
-      // thing to rely on.
-      let doomed : Array[String] = []
-      for name, value in el.attrs {
-        if !url_attrs.contains(name.to_lower()) {
-          continue
-        }
-        // A structured value is not a URL string; `Html` is raw markup and is
-        // the next filter's problem, not this one's.
-        if value is (Data(_) | Html(_)) {
-          continue
-        }
-        let raw = value.to_attr_string()
-        if !attr_value_allowed(name, raw) {
-          doomed.push(name)
-          self.record({
-            tag: el.tag,
-            attr: name,
-            value: raw,
-            reason: "URL scheme is not one a view may navigate to",
-          })
-        }
-      }
-      for name in doomed {
-        el.attrs.remove(name)
-      }
-      for child in el.childs {
-        self.filter_tree(child)
-      }
+/// The rule for one element, so `Baseline` can apply it in a shared walk.
+fn UrlFilter::filter_elem(self : UrlFilter, el : @vdom.VElem) -> Unit {
+  // Collected first: removing from the map while iterating it is not a
+  // thing to rely on.
+  let doomed : Array[String] = []
+  for name, value in el.attrs {
+    if !url_attrs.contains(name.to_lower()) {
+      continue
     }
-    Fragment(childs) =>
-      for child in childs {
-        self.filter_tree(child)
-      }
-    Text(_) | Comment(_) => ()
+    // A structured value is not a URL string; `Html` is raw markup and is
+    // the next filter's problem, not this one's.
+    if value is (Data(_) | Html(_)) {
+      continue
+    }
+    let raw = value.to_attr_string()
+    if !attr_value_allowed(name, raw) {
+      doomed.push(name)
+      self.record({
+        tag: el.tag,
+        attr: name,
+        value: raw,
+        reason: "URL scheme is not one a view may navigate to",
+      })
+    }
   }
+  for name in doomed {
+    el.attrs.remove(name)
+  }
+}
+
+///|
+pub impl VdomFilter for UrlFilter with fn filter_tree(self, tree) {
+  walk_elems(tree, el => self.filter_elem(el))
 }

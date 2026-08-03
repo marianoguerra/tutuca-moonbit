@@ -14,7 +14,7 @@ Where a claim is weaker than it sounds, it says so.
 |---|---|---|
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM | **handled** — a Sanitizer-API port over the tree at registration, plus a URL-scheme filter at render; raw markup still refused outright |
+| guest views (tutuca templates) | the host's DOM | **handled** — a Sanitizer-API port over the tree at registration, plus URL-scheme and event-handler rules at render; raw markup still refused outright |
 | guest CSS (`component-def.style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -188,14 +188,28 @@ it drops an attribute whose URL scheme executes, normalizing the way a browser
 does first (`java&#9;script:` is `javascript:`), and records what it dropped
 since by then there is no author to tell.
 
+**One NAME rule runs there too, and not only for values.**
+`@filter.HandlerFilter` drops `on*` attributes off the tree before the diff,
+which duplicates what `check_view` already refuses at registration. That is
+deliberate rather than redundant: the static pass is the thing being defended,
+and a rule that only holds when another pass already held is not a second layer.
+It also covers a case nothing else does — `set_prop` routes by
+`has_property`, and on a plain HTML element assigning a string to `.onclick`
+is inert, but `uses_prop` is `!namespaced && …` (`vdom/to_dom.mbt`), so an SVG
+or MathML element routes every attribute through `set_attribute` and
+`<svg onclick="…">` reaches the DOM as a live content attribute. There is no
+accident of routing saving that one.
+`@filter.Baseline` is the two rules in a single traversal, and is what `set_app`
+installs.
+
 **Every page that hosts bundles installs one.** `set_app` (`host/wasm/glue.mbt`)
 calls `App::set_filter` alongside the policy it already takes and the GC sweep it
 already installs — unconditionally, because a page calling `set_app` is by
 definition a page that loads bundles, and not tier-dependent, because there is no
 legitimate `javascript:` URL in a described view at any tier. `set_app` is the
 only production path: the single `register_bundle` caller outside tests is this
-same glue. `take_filter_reports()` drains what was dropped, for a page that wants
-to say so.
+same glue. `take_filter_reports()` drains what both rules dropped, for a page
+that wants to say so.
 
 An app mounted WITHOUT this glue gets no filter — `App::set_filter` defaults to
 `None`, the trusted case, one `if` per render. Whether a plain tutuca app should
@@ -214,9 +228,11 @@ sanitizer which shipped that shape. So the mechanism exists and is tested. What
 does not exist is a way for `Policy::check_view` to know that a host installed
 it: a policy saying `raw_markup: true` beside an app mounted without the filter
 would send the payload straight to `set_inner_html` unchecked. Guests are
-therefore still refused the construct outright, and `set_app` installs the URL
-filter only. Loosening this should be one explicit decision — a `Policy` that
-carries a config — rather than a side effect of the capability existing.
+therefore still refused the construct outright, and `set_app` installs
+`Baseline` — the URL and handler rules — without the markup filter, which would
+never fire there today and would cost a walk per render for nothing. Loosening
+this should be one explicit decision — a `Policy` that carries a config —
+rather than a side effect of the capability existing.
 
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 

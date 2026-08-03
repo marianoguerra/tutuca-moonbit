@@ -14,6 +14,30 @@ pub(open) trait VdomFilter {
 }
 
 ///|
+/// Visit every element in a tree, once.
+///
+/// Shared so that composing two attribute rules costs one traversal rather
+/// than two. `Chain` exists for filters that genuinely need separate passes —
+/// one that REPLACES a subtree has to finish before one that inspects
+/// attributes — but two rules that both just inspect `attrs` do not, and the
+/// filter runs on every render.
+fn walk_elems(tree : @vdom.Vdom, visit : (@vdom.VElem) -> Unit) -> Unit {
+  match tree {
+    Node(el) => {
+      visit(el)
+      for child in el.childs {
+        walk_elems(child, visit)
+      }
+    }
+    Fragment(childs) =>
+      for child in childs {
+        walk_elems(child, visit)
+      }
+    Text(_) | Comment(_) => ()
+  }
+}
+
+///|
 /// One thing a filter removed, for a host to show a developer.
 ///
 /// A filter cannot report the way the static pass does — by the time it runs

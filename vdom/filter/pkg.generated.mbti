@@ -10,6 +10,8 @@ import {
 // Values
 pub fn attr_value_allowed(String, String) -> Bool
 
+pub fn is_event_handler_attr(String) -> Bool
+
 pub let navigational_attrs : @set.Set[String]
 
 pub fn scheme_of(String) -> String?
@@ -21,6 +23,14 @@ pub fn url_value_allowed(String, String) -> Bool
 // Errors
 
 // Types and methods
+pub struct Baseline {
+  url : UrlFilter
+  handlers : HandlerFilter
+}
+pub fn Baseline::new(max_reports? : Int) -> Self
+pub fn Baseline::take_reports(Self) -> Array[Dropped]
+pub impl VdomFilter for Baseline
+
 pub struct Chain {
   filters : Array[&VdomFilter]
 }
@@ -34,6 +44,14 @@ pub(all) struct Dropped {
   reason : String
 } derive(Eq, @debug.Debug)
 pub fn Dropped::to_string(Self) -> String
+
+pub struct HandlerFilter {
+  reports : Array[Dropped]
+  max_reports : Int
+}
+pub fn HandlerFilter::new(max_reports? : Int) -> Self
+pub fn HandlerFilter::take_reports(Self) -> Array[Dropped]
+pub impl VdomFilter for HandlerFilter
 
 pub struct UrlFilter {
   reports : Array[Dropped]

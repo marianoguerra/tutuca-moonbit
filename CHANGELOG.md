@@ -538,12 +538,149 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   for a bundle, not that anything checked it.
 
 - **`@dangerouslysetinnerhtml` in a guest view is refused**, over the shadow
-  parse the linter already does and before anything is registered. It cannot be
-  sanitized ahead of time — the directive's value is an expression, so what it
-  will hold is unknowable until render, and by then the markup is in the
-  document. Guest CSS, which is scoped by concatenation and would escape through
-  a `}`, is held instead as a contract invariant: no guest-declared field
-  reaches the host's unscoped `global_style`, and the WIT says so.
+  parse the linter already does and before anything is registered. Guest CSS,
+  which is scoped by concatenation and would escape through a `}`, is held
+  instead as a contract invariant: no guest-declared field reaches the host's
+  unscoped `global_style`, and the WIT says so.
+
+- **The WHATWG Sanitizer API, ported over anode views** (`anode/sanitize`) —
+  the spec's config model (`elements` / `removeElements` /
+  `replaceWithChildrenElements` / `attributes` / `removeAttributes` /
+  `comments` / `dataAttributes`) with its validity relation, over the compiled
+  `ANode` tree. Everything the config model asks about is a NAME, and every name
+  in a view is a literal — the parser lowercases what it reads and stores it as
+  a `String`, so there is no `:onCl${x}ick` — which is what makes an allowlist
+  over names COMPLETE over the described part of a view, and the pass decidable
+  at registration rather than at render.
+
+  Safety comes from the entry point rather than the config, as in the spec: the
+  seven unsafe elements and every `on*` attribute are refused before a config is
+  consulted, so a config naming `script` still does not get `script`. The event
+  handler half is a prefix predicate rather than the spec's enumeration, which
+  is a superset that cannot fall behind the platform.
+
+  `SanitizerConfig::default()` is the BASELINE, not the spec's default
+  configuration — those are different things, and conflating them would refuse
+  an ordinary commented view. The spec's element allow-list is deliberately not
+  transcribed: it has to come from the specification text rather than a summary
+  of it, because an entry quietly lost is a component that mysteriously fails to
+  render and one quietly gained is a hole. A host wanting an allow-list supplies
+  one and gets `validate()` to keep it honest.
+
+- **`Policy::check_view` runs the sanitizer instead of `has_raw_html`, which
+  closes a live hole.** `ANode::for_each_child` never visits `MacroData.slots`,
+  so raw markup inside a macro call's slot —
+  `<x:card><div @dangerouslysetinnerhtml=".payload"></div></x:card>` — passed
+  registration with no refusal. It only rendered if the host had registered a
+  macro named `card` whose body placed the slot, so the hole was contingent
+  rather than unconditional. The sanitizer carries its own walk rather than a
+  fix to `for_each_child`, because `set_data_attr` and `collect_registered`
+  share that function and adding `slots` would make them stamp and index the
+  same subtree twice once expansion has run. Refusals now name the element and
+  carry a locator.
+
+- **A filter seam between render and diff** (`vdom/filter`), for the half the
+  Sanitizer API declines to decide. The spec has no opinion about attribute
+  VALUES — its own default configuration allows `href` on `<a>`, so
+  `<a href="javascript:…">` comes through `setHTML()` untouched, and the
+  platform answers that with CSP and Trusted Types instead. anode answers it
+  here: a `&VdomFilter` runs between `render_root` and the diff, installed with
+  `App::set_filter`.
+
+  It is absent by default, so trusted code pays one `if` per render rather than
+  a branch per attribute. It mutates rather than rebuilds, which is load-bearing
+  and not a style preference: morph short-circuits a subtree by physical
+  identity and the render cache hands back the same `Vdom` object when a site's
+  inputs are unchanged, so a filter that rebuilt nodes would quietly turn every
+  render into a full diff.
+
+  `UrlFilter` is the rule that ships: normalize (strip whitespace and C0
+  controls from anywhere, since `java&#9;script:` is `javascript:` to a browser,
+  then lowercase), take the scheme only when its `:` precedes any `/`, `?` or
+  `#`, deny `javascript` and `vbscript` outright, and deny `data` on the
+  navigational names while allowing it on the media ones — `<img src="data:…">`
+  is ordinary, `<a href="data:text/html,…">` is a same-origin document.
+  `srcset` and `ping` are checked per entry, because they are lists and a
+  whole-string check would pass `"a.png 1x, javascript:… 2x"`. A denied value
+  drops the ATTRIBUTE, not the element, and is recorded in a bounded log the
+  host drains with `take_reports()` — by then there is no author to report to,
+  and the value may have come from application state rather than anyone's
+  template.
+
+  Installing is not retroactive: a value already in the DOM stays until
+  something re-renders over it, for the same reason a policy applies at load.
+
+- **The dyncomp host installs one**, so a loaded bundle gets both passes rather
+  than only the static one — `set_app` calls `set_filter` beside the policy and
+  the GC sweep, and `take_filter_reports()` drains the log.
+
+- **Raw markup as described NODES** (`vdom/filter/markup`), its own package
+  because it drags an HTML parser and the config model behind it and a host that
+  only wants the URL rule should not pay for either. The obvious port of
+  `setHTML()` — parse, prune, serialize, `set_inner_html` — is the shape that
+  has bitten every sanitizer which shipped it: the browser parses the string a
+  SECOND time, and any disagreement between the two parsers is a mutation-XSS
+  vector. So the payload is parsed once, sanitized as a tree, and the result
+  replaces the element's children; `set_inner_html` is never called, because the
+  attribute `set_prop` looks for is gone by then. The subtree is checked by the
+  builder, attribute values included, since no filter runs after the one that
+  created those nodes.
+
+  Guests are still refused the construct outright: `check_view` cannot know
+  whether a host installed the filter, so a policy permitting raw markup beside
+  an app mounted without it would send the payload straight to
+  `set_inner_html` unchecked. Loosening that should be one explicit decision
+  rather than a side effect of the capability existing.
+
+- **memdom answers `has_property` truthfully for `on*`.** It listed reflected
+  and state properties only, so `"onclick" in node` came back `false` and
+  `set_prop` sent the name to `set_attribute` — writing a live
+  `onclick="…"` content attribute where a browser, for which the name IS a
+  property, assigns an inert string to `.onclick` instead. memdom is the DOM
+  every `moon test` renders onto, so the divergence ran the wrong direction for
+  a test double: anything asserting that this attack fails would have asserted
+  it against a DOM that makes it succeed. Same prefix predicate as
+  `@sanitize.is_event_handler_attr`.
+
+- **`on*` attribute routing is pinned** (`vdom/memdom/event_attr_test.mbt`).
+  Not a construct tutuca asks for — a handler is `@on.click`, which compiles to
+  `data-eid` and never reaches vdom as an `on*` name — but a view that writes
+  the content attribute directly is the case a sanitizer exists for. The tests
+  record that on a plain HTML element the string lands on the property and is
+  inert, that this is an accident of routing rather than a defense (the
+  property branch falls through to `set_attribute` when assignment fails), and
+  that **on a namespaced element it is not inert at all**: `uses_prop` is
+  `!namespaced && …`, so `<svg onclick="…">` and `<circle onload="…">` are
+  written verbatim as content attributes, which SVG honours. `anode/sanitize`
+  refuses the name at registration, but only for a dyncomp guest — a plain app
+  runs no static pass, so that half is open and `docs/sanitizer.md` now says
+  which change closes it. There is also a test for why `never_assign` is not
+  the fix: it would force the attribute path on plain HTML elements too.
+
+- **An event-handler rule at render time** (`@filter.HandlerFilter`), which is
+  the half of the name rule a plain app can reach. `anode/sanitize` settles
+  names at registration and is the better place — it is cheaper and it can tell
+  the author — but `Policy::check_view` has one call site, so that pass runs for
+  a dyncomp guest and nobody else. The filter drops `on*` off the tree before
+  the diff, by name and whatever the value's type, since a view cannot express
+  a function and tutuca's own handlers are `@on.click` compiling to `data-eid`.
+  It is the only thing that covers the namespaced case, where no accident of
+  routing applies.
+
+  `@filter.Baseline` composes it with the URL rule in ONE traversal, rather than
+  `Chain::new([…])`, which walks the tree twice for two rules that both only
+  read `attrs` — a difference worth a type given the filter runs on every
+  render. `dyncomp` installs `Baseline` now instead of `UrlFilter`: the handler
+  half is belt-and-braces there, since a guest carrying an `on*` name never
+  loads, but a rule that only holds when another pass already held is not a
+  second layer, and the shared walk makes it free.
+
+  Still opt-in for a plain app — `App::set_filter(Some(@filter.Baseline::new()))`.
+  Making it the default is a behaviour change for every existing app and is
+  tracked separately in `docs/sanitizer.md`.
+
+- **`SECURITY.md` §3 is rewritten**, including a claim it got wrong about URL
+  schemes. Design, and the work still open, in `docs/sanitizer.md`.
 
 ## [0.9.3] - 2026-07-30
 
