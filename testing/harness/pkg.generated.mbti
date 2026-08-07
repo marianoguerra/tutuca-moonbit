@@ -47,4 +47,3 @@ pub fn Harness::value_of(Self, String, nth? : Int) -> String raise
 // Type aliases
 
 // Traits
-

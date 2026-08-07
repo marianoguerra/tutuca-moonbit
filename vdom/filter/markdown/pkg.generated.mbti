@@ -1,0 +1,32 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/vdom/filter/markdown"
+
+import {
+  "marianoguerra/tutuca/anode/sanitize",
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
+}
+
+// Values
+pub const MD_ATTR : String = "setInnerMd"
+
+pub fn build(String, @sanitize.Sanitizer, String, (String, String, String, String) -> Unit) -> Array[@vdom.Vdom]
+
+pub fn default_filter() -> &@filter.VdomFilter
+
+pub fn filter_for(@sanitize.Sanitizer) -> &@filter.VdomFilter
+
+// Errors
+
+// Types and methods
+pub struct MdFilter {
+  sanitizer : @sanitize.Sanitizer
+  reports : Array[@filter.Dropped]
+  max_reports : Int
+}
+pub fn MdFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
+pub impl @filter.VdomFilter for MdFilter
+
+// Type aliases
+
+// Traits

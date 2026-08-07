@@ -6,6 +6,10 @@ import {
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/filter",
+  // `App::new` installs the markdown filter, which is what makes `@setinnermd`
+  // work with no host configuration. It brings the vendored parser in with it —
+  // see the note on `App::new`, and `set_filter` for the way out.
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
 }
 
 import {

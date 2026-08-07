@@ -527,6 +527,16 @@ pub fn seq_item_access_module() -> @component.ModuleDef
 
 pub fn seq_item_access_views() -> Map[String, @anode.View]
 
+pub let set_inner_md_common_style : String
+
+pub fn set_inner_md_component(name? : String, views? : Map[String, @anode.View], init? : SetInnerMdState, common_style? : String, global_style? : String, update? : (SetInnerMdState, @component.Dispatch, &@core.Ctx) -> SetInnerMdState?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let set_inner_md_global_style : String
+
+pub fn set_inner_md_module() -> @component.ModuleDef
+
+pub fn set_inner_md_views() -> Map[String, @anode.View]
+
 pub let shared_people_common_style : String
 
 pub let shared_people_global_style : String
@@ -1855,6 +1865,11 @@ pub(all) struct SeqItemAccessState {
 }
 pub fn SeqItemAccessState::zero() -> Self
 
+pub(all) struct SetInnerMdState {
+  source : String
+}
+pub fn SetInnerMdState::zero() -> Self
+
 pub(all) enum SharedPeopleEnrichScope {
   PagerInfo
 } derive(Eq, @debug.Debug)
@@ -2157,4 +2172,3 @@ pub fn WorkspaceState::zero() -> Self
 // Type aliases
 
 // Traits
-

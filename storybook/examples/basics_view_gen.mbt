@@ -285,3 +285,67 @@ impl @component.Fields for DangerSetInnerHtmlState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+/// The state of the SetInnerMd component.
+///
+/// Declared as `interface set-inner-md` in the state block. Adding a
+/// field there adds it here, so a view that reads it type-checks and one
+/// that reads a name this struct lacks fails generation.
+pub(all) struct SetInnerMdState {
+  source : String
+}
+
+///|
+/// The zero state: every field at its type's empty value.
+///
+/// WIT declares no defaults — a default is a value, not a type — so this
+/// is type-directed, and `init` spreads it to name only what differs:
+///
+///   init={ ..SetInnerMdState::zero(), label: "Counter" }
+pub fn SetInnerMdState::zero() -> SetInnerMdState {
+  { source: "" }
+}
+
+///|
+/// The state as the fields map the render and path layers read, built
+/// field by field rather than through a `Json` round trip.
+///
+/// A field that already holds a `@tutuca.Value` is passed straight
+/// through. That is the case a JSON round trip could not do at all: an
+/// `Obj` or an `Fn` does not survive one.
+impl @component.Fields for SetInnerMdState with fn encode(s) {
+  { "source": Str(s.source) }
+}
+
+///|
+/// The fields map back into the state. None on a shape mismatch, which
+/// callers treat as a no-op write — the same contract as the JSON path.
+impl @component.Fields for SetInnerMdState with fn decode(f) {
+  guard f.get("source") is Some(Str(v_source)) else { return None }
+  Some({ source: v_source })
+}
+
+///|
+/// The file-level style — pass as `common_style~`.
+pub let set_inner_md_common_style : String = ""
+
+///|
+/// The `data-global` style — pass as `global_style~`.
+pub let set_inner_md_global_style : String = ""
+
+///|
+/// What this component's schema declares, for `schema~`.
+///
+/// This is the only thing consulted for a field's KIND — there is no
+/// inference off the init value behind it — and it is what an instance
+/// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
+/// can name these fields without a component registry.
+impl @component.Fields for SetInnerMdState with fn schema() {
+  @component.SchemaInfo::new(
+    name="SetInnerMd",
+    fingerprint="5b10907b40caa045",
+    fields=[@component.FieldInfo::new("source", TyText)],
+    view_names=["main"],
+  )
+}

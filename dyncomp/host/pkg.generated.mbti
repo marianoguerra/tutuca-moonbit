@@ -162,4 +162,3 @@ pub(open) trait Guest {
   fn restore(Self, String, Bytes) -> Int?
   fn drop_instance(Self, Int) -> Unit
 }
-

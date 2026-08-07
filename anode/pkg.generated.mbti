@@ -63,6 +63,8 @@ pub fn render_it(Int, view? : @core.Val) -> ANode
 
 pub fn scope(Int, @core.Val, ANode) -> ANode
 
+pub fn set_inner_md(val? : @core.Val) -> AttrItem
+
 pub fn show(@core.Val, ANode, id? : Int) -> ANode
 
 pub fn slot(String, ANode) -> ANode
@@ -102,6 +104,7 @@ pub(all) enum AttrItem {
   Plain(name~ : String, val~ : @core.Val)
   ConstA(name~ : String, val~ : @core.Val)
   RawHtml(val~ : @core.Val?)
+  RawMarkdown(val~ : @core.Val?)
   If(IfAttr)
 } derive(@debug.Debug)
 
@@ -298,4 +301,3 @@ pub(open) trait ParseHandler {
   fn on_deprecated_syntax(Self, DeprecatedSyntax, String?) -> Unit = _
   fn on_attributes(Self, AttrParseResult, Bool, String) -> Unit = _
 }
-

@@ -99,4 +99,3 @@ pub(open) trait ViewResolver {
   fn resolve_view(Self, Array[String], @core.Value) -> ResolvedView?
 }
 pub impl ViewResolver for @component.Components
-

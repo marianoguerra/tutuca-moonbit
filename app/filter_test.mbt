@@ -272,11 +272,7 @@ fn parent_comp() -> @component.Component {
 }
 
 ///|
-fn mk_counted() -> (
-  @app.App[@memdom.MemNode],
-  @memdom.MemNode,
-  CountingFilter,
-) raise {
+fn mk_counted() -> (@app.App[@memdom.MemNode], @memdom.MemNode, CountingFilter) raise {
   let scope = @component.ComponentStack::new()
   scope.register_components([child_comp(), parent_comp()])
   guard scope.lookup_component("FParent") is Some(p) else { fail("no FParent") }
@@ -321,4 +317,153 @@ test "a rebuild filters only what was rebuilt" {
   // ...and the child is still there, unfiltered this time because unchanged.
   assert_true(container.to_html().contains("<em>"))
   inspect(f.elems, content="3")
+}
+
+// ---------------------------------------------------------------------------
+// `@setinnermd`, end to end
+
+///|
+priv struct BodyState {
+  body : String
+}
+
+///|
+impl @component.Fields for BodyState with fn encode(s) {
+  { "body": Str(s.body) }
+}
+
+///|
+impl @component.Fields for BodyState with fn decode(f) {
+  guard f.get("body") is Some(Str(v)) else { return None }
+  Some({ body: v })
+}
+
+///|
+impl @component.Fields for BodyState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="body_state", fields=[
+    @component.FieldInfo::new("body", TyText),
+  ])
+}
+
+///|
+/// A component whose whole content is markdown from its own state — the shape
+/// of a comment renderer, a CMS body, or an LLM response.
+fn md_component() -> @component.Component {
+  @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><article @setinnermd=\".body\"></article><button @on.click=\"setBody '## two [x](javascript:alert(1))'\">x</button></div>",
+      ),
+    },
+    name="Bodied",
+    init=BodyState::{ body: "# one\n\n*hi* <script>alert(1)</script>" },
+  )
+}
+
+///|
+fn mk_md_app() -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
+  let scope = @component.ComponentStack::new()
+  scope.register_components([md_component()])
+  guard scope.lookup_component("Bodied") is Some(c) else {
+    fail("component missing")
+  }
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let a = @app.App::new(
+    scope,
+    c.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  a.start()
+  (a, container)
+}
+
+///|
+/// The headline: an app nobody configured renders markdown, and the payload's
+/// `<script>` never becomes an element — through the SAME sanitizer that judges
+/// every other node, with no permission granted anywhere.
+///
+/// The assertion is on the DOM rather than on `to_html()`, and that distinction
+/// matters here more than anywhere else in this file. memdom's serializer does
+/// no entity escaping — it says so at the top of `vdom/memdom/serialize.mbt` —
+/// so the characters `<script>` DO appear in its output. They are a TEXT node:
+/// upstream's inline parser never produces raw markup for a bare tag, and the
+/// builder turns the resulting bogus autolink into literal text, which reaches
+/// the browser through `createTextNode` and is inert. A test that asserted on
+/// the serialized string would have read that as a hole and been wrong; one
+/// that asserted the string is clean would pass only because of how a test aid
+/// prints. Asking the tree what elements exist is the question with an answer.
+test "an app renders setinnermd by default, and a script never becomes an element" {
+  let (_a, container) = mk_md_app()
+  guard find_el(container, "ARTICLE") is Some(article) else {
+    fail("no article")
+  }
+  assert_true(container.to_html().contains("<h1>one</h1>"))
+  assert_true(container.to_html().contains("<em>hi</em>"))
+  // No SCRIPT element anywhere, which is the claim that matters.
+  assert_true(find_el(article, "SCRIPT") is None)
+  // The characters survive as text, which is what a reader should see.
+  assert_true(container.to_html().contains("<script>alert(1)</script>"))
+}
+
+///|
+/// **`set_inner_html` was never called.** This is the claim the whole design
+/// rests on: the markdown became elements through `create_element`, so the
+/// browser never re-parses a string this code produced, and there is no second
+/// parser to disagree with. memdom counts real writes, so this is a fact about
+/// the run rather than about the intent.
+test "setinnermd never touches set_inner_html" {
+  let (a, container) = mk_md_app()
+  inspect(container.inner_html_sets, content="0")
+  // ...and still not after a re-render with different markdown.
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  inspect(container.inner_html_sets, content="0")
+}
+
+///|
+/// The content tracks state, and the URL rule reaches values that arrive only
+/// on a later render — the case a registration-time pass cannot see at all.
+test "setinnermd re-renders, and the url rule follows the new value" {
+  let (a, container) = mk_md_app()
+  guard find_el(container, "BUTTON") is Some(btn) else { fail("no button") }
+  assert_true(a.dispatch(btn, @render.DomEvent::new(name="click")))
+  let html = container.to_html()
+  assert_true(html.contains("<h2>two "))
+  assert_false(html.contains("<h1>"))
+  // The link kept its words and lost its destination.
+  assert_true(html.contains("<a>x</a>"))
+  assert_false(html.contains("javascript:"))
+  debug_inspect(
+    a.take_filter_reports().map(@filter.Dropped::to_string),
+    content=(
+      #|["dropped href on <ARTICLE>: URL scheme is not one a view may navigate to (javascript:alert(1))"]
+    ),
+  )
+}
+
+///|
+/// Opting out is honest about it: with no filter, the directive renders an
+/// empty element rather than markdown-as-text or markdown-as-markup.
+test "set_filter(None) makes setinnermd render nothing" {
+  let scope = @component.ComponentStack::new()
+  scope.register_components([md_component()])
+  guard scope.lookup_component("Bodied") is Some(c) else {
+    fail("component missing")
+  }
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let a = @app.App::new(
+    scope,
+    c.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  a.set_filter(None)
+  a.start()
+  let html = container.to_html()
+  assert_true(html.contains("<article></article>"))
+  assert_false(html.contains("# one"))
 }

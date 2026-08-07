@@ -66,7 +66,13 @@ fn[N : DomNode] morph_node(
           }
         }
       }
-      if !t.attrs.contains("dangerouslySetInnerHTML") {
+      // Either name still being present means `set_prop` owns this element's
+      // content — the raw-HTML one by writing it, the markdown one by clearing
+      // it (see the fail-closed branch in `to_dom.mbt`). Morphing children over
+      // the top would fight whichever it did. With the filters installed
+      // neither name survives to here, and children morph normally.
+      if !t.attrs.contains("dangerouslySetInnerHTML") &&
+        !t.attrs.contains("setInnerMd") {
         let ns = effective_ns(t, opts)
         morph_children(dom_node, s.childs, t.childs, child_opts(t, ns, opts))
       }

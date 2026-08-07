@@ -141,4 +141,3 @@ pub(all) enum UserTyKind {
 // Type aliases
 
 // Traits
-

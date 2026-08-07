@@ -1,0 +1,39 @@
+// A CommonMark + GFM parser, vendored from mizchi/markdown.mbt.
+//
+// VENDORED, NOT WRITTEN HERE. Every `.mbt` beside this file is a verbatim copy
+// of an upstream `src/*.mbt` at the commit pinned in `UPSTREAM.md`; do not
+// hand-edit one. Re-sync by copying again, not by patching.
+//
+// It is vendored rather than depended on because the published
+// `mizchi/markdown` drags `mizchi/moomaid` (a mermaid renderer) and declares
+// `supported-targets: js+wasm`, while this module's `preferred_target` is
+// wasm-gc. What is here is the parser alone: upstream's own `src/moon.pkg`
+// imports nothing but the stdlib, and the `yacc` / `parser` / `syntree` /
+// `moomaid` dependencies in its `moon.mod` belong to `src/highlight_*` and
+// `src/experimental/*`, which this copy does not include. There are no `extern`
+// declarations in it, so it is backend-agnostic.
+//
+// It is the parser and NOTHING downstream of it: upstream's HTML renderer, its
+// AST->markdown serializer, its editor-preview renderer and its incremental
+// reparser are all left behind. `vdom/filter/markdown` walks the AST straight
+// into vdom nodes, so an HTML string is never built and never re-parsed —
+// see docs/sanitizer.md.
+//
+// `moonbitlang/core/debug` is a real dependency, not a test one: `types.mbt`
+// uses `derive(Debug)` and `@debug.to_string` in its `Show` impls.
+import {
+  "moonbitlang/core/debug",
+}
+
+import {
+  "moonbitlang/core/test",
+} for "test"
+
+// The vendored files are upstream's, not ours, and `-unnecessary_annotation`
+// (warning 73) is the one this module's `check` task turns ON project-wide to
+// keep redundant `Type::` / `@pkg.` prefixes from creeping back in. Upstream
+// writes 88 of them, and hand-editing a vendored file to silence a style rule
+// is exactly what `UPSTREAM.md` forbids — so the rule is switched off HERE and
+// nowhere else, and a real warning in our own code stays visible.
+
+warnings = "-unnecessary_annotation"

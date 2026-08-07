@@ -228,6 +228,56 @@ test "raw markup is a config field, denied by default" {
 }
 
 ///|
+/// The counterpart, and the reason `@setinnermd` is a separate construct rather
+/// than a flag on the one above.
+///
+/// `raw_markup` is a permission because a raw-HTML payload reaches the DOM as
+/// markup nothing described — this config gets no say over what is inside it,
+/// which is exactly why the default is to refuse. A markdown payload has no
+/// such route: `vdom/filter/markdown` walks it into nodes and asks THIS config
+/// about every element and every attribute value on the way. There is nothing
+/// left here to refuse, so refusing it would only mean a directive that cannot
+/// be used.
+///
+/// What a host that wants less says instead is which elements it will have —
+/// `remove_elements`, or an `elements` allow-list — which is the same lever it
+/// already has over every other node in the tree, and which reaches markdown
+/// through the filter. `vdom/filter/markdown/install_test.mbt` holds that half.
+test "markdown is not a violation, under any config" {
+  let default_ = Sanitizer::default()
+  debug_inspect(
+    shown(default_.check(parsed("<div @setinnermd=\".body\"></div>"))),
+    content="[]",
+  )
+  // Not even under a config that refuses raw markup as tightly as it can while
+  // naming nothing about markdown.
+  let strict = Sanitizer::new({
+    ..SanitizerConfig::empty(),
+    raw_markup: Some(false),
+  })
+  debug_inspect(
+    shown(strict.check(parsed("<div @setinnermd=\".body\"></div>"))),
+    content="[]",
+  )
+  // And the two are independent: permitting raw markup does not change it, and
+  // the raw-HTML directive beside it is still judged on its own.
+  let permissive = Sanitizer::new({
+    ..SanitizerConfig::empty(),
+    raw_markup: Some(true),
+  })
+  debug_inspect(
+    shown(
+      permissive.check(
+        parsed(
+          "<div @setinnermd=\".body\"></div><p @dangerouslysetinnerhtml=\".x\"></p>",
+        ),
+      ),
+    ),
+    content="[]",
+  )
+}
+
+///|
 /// The walk this package has, and the one `ANode::for_each_child` does not.
 ///
 /// A macro call's children become `MacroData.slots` (`new_macro_node`), and
@@ -281,9 +331,8 @@ test "a macro call's own body is not the caller's to answer for" {
 test "an SVG script is refused" {
   let px = @anode.ParseContext::new()
   let tree = @anode.ANode::parse(
-      "<div><svg><script>alert(1)</script></svg></div>",
-      px,
-    ).unwrap()
+    "<div><svg><script>alert(1)</script></svg></div>", px,
+  ).unwrap()
   debug_inspect(
     Sanitizer::default().check(tree).map(Violation::to_string),
     content=(
@@ -332,9 +381,8 @@ test "the spec's default configuration is valid and usable" {
   let px = @anode.ParseContext::new()
   // Document content passes.
   let doc = @anode.ANode::parse(
-      "<div><p>hi <em>there</em></p><ul><li>a</li></ul></div>",
-      px,
-    ).unwrap()
+    "<div><p>hi <em>there</em></p><ul><li>a</li></ul></div>", px,
+  ).unwrap()
   debug_inspect(s.check(doc).map(Violation::to_string), content="[]")
 }
 
@@ -387,9 +435,8 @@ test "the spec's default configuration refuses an ordinary component view" {
   let s = Sanitizer::new(SanitizerConfig::spec_default())
   let px = @anode.ParseContext::new()
   let view = @anode.ANode::parse(
-      "<div><button @on.click=\"go\">go</button><input :value=\".q\"></div>",
-      px,
-    ).unwrap()
+    "<div><button @on.click=\"go\">go</button><input :value=\".q\"></div>", px,
+  ).unwrap()
   debug_inspect(
     s.check(view).map(Violation::to_string),
     content=(
@@ -397,7 +444,6 @@ test "the spec's default configuration refuses an ordinary component view" {
       #|  "<button> is not allowed (at div>button)",
       #|  "<input> is not allowed (at div>input)",
       #|]
-
     ),
   )
 }

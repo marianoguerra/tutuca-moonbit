@@ -224,6 +224,24 @@ A third generated-from-upstream file lives elsewhere and follows the same rule:
   Regenerate with `node scripts/fetch-sanitizer-defaults.mjs`;
   `--check` fails if the committed file is stale.
 
+A fourth vendored-from-upstream tree follows the same rule from the other end —
+it is copied rather than generated, but it is equally not ours to edit:
+
+- `markdown/` — the CommonMark + GFM parser, copied verbatim from
+  [mizchi/markdown.mbt](https://github.com/mizchi/markdown.mbt) at the commit
+  pinned in `markdown/UPSTREAM.md` (MIT). 15 of upstream's 29 production files;
+  the HTML renderer, serializer and incremental reparser are deliberately left
+  behind, because `vdom/filter/markdown` walks the AST straight into vdom nodes
+  and never builds an HTML string. **Do not hand-edit a file in there** —
+  re-sync by copying again, and let `markdown/parse_test.mbt` (ours, not
+  upstream's) fail if a behaviour the node builder depends on moved.
+
+  It is vendored rather than depended on because the published
+  `mizchi/markdown` drags `mizchi/moomaid` and declares `supported-targets:
+  js+wasm`, while this module prefers wasm-gc. What is copied has no
+  third-party dependency and no `extern` at all — `UPSTREAM.md` has the full
+  reasoning and the list.
+
   **Never hand-transcribe an allow-list, and never take one from MDN or a blog
   post.** An entry quietly lost is a component that mysteriously fails to
   render; one quietly gained is a hole. The first attempt at this list was read

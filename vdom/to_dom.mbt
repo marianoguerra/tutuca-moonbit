@@ -58,6 +58,22 @@ fn[N : DomNode] set_prop(
     }
     return
   }
+  // `@setinnermd` never reaches the DOM as markup, and this is where that is
+  // enforced rather than merely intended. `MdFilter` removes the attribute as
+  // it builds the sanitized children, so seeing it HERE means no filter
+  // consumed it — the app was mounted with `set_filter(None)`, or with a filter
+  // chain that does not include one.
+  //
+  // Rendering nothing is the only defensible answer. Setting the markdown as
+  // text would be wrong output; parsing it here is impossible (vdom knows about
+  // no parser and no sanitizer, deliberately); and passing it to
+  // `set_inner_html` would make a directive whose name promises it is safe into
+  // the most dangerous one in the framework. A construct that fails visibly is
+  // recoverable; one that fails open is not.
+  if name == "setInnerMd" {
+    node.replace_children()
+    return
+  }
   // Structured values are properties by definition — assign without the
   // `name in node` gate. JS routes them through the gate, but that only
   // differs pre-upgrade or on authoring mistakes (a list bound to a plain

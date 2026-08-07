@@ -134,6 +134,41 @@ let counter = counter_component(
           view="./site/examples/text_input.html"
         ></mb-playground>
 
+        <h4>Live Markdown, Sanitized</h4>
+        <p>
+          <code>@setinnermd</code> takes a markdown string and replaces the element's
+          children with the nodes it parses to — headings, lists, tables, GFM task
+          lists and footnotes. Type in the left pane and the right one re-renders.
+        </p>
+        <p>
+          Scroll the source past the rule: everything below it is an attack, and none
+          of it executes. SVG <code>&lt;script&gt;</code> (a different element from
+          HTML's, since identity is namespace-qualified), <code>&lt;iframe&gt;</code>,
+          <code>&lt;base&gt;</code>, <code>on*</code> handlers and
+          <code>javascript:</code> URLs all go — judged by the SAME sanitizer that
+          judges every other node in the tree, so there is no markdown-specific
+          allow-list to fall behind. A denied URL drops the <em>attribute</em>, not the
+          element, so the link keeps its words and loses its destination.
+        </p>
+        <p>
+          Two failure modes, both safe, and the demo shows both: markup the block
+          parser recognises becomes an element, gets a verdict, and vanishes with a
+          line in the report log. Markup it does not recognise — a bare
+          <code>&lt;script&gt;</code> among them — never becomes an element at all and
+          stays on the page as visible <em>characters</em>. Text reaches the DOM
+          through <code>createTextNode</code>, so it can never be parsed as markup.
+        </p>
+        <p>
+          The markup never becomes a string: the payload is parsed once and built into
+          vdom nodes, and <code>innerHTML</code> is never assigned. That is what
+          removes the second parse a mutation-XSS depends on — see
+          <a href="https://github.com/marianoguerra/tutuca-moonbit/blob/main/docs/sanitizer.md">docs/sanitizer.md</a>.
+        </p>
+        <mb-playground
+          src="./site/examples/markdown.mbt"
+          view="./site/examples/markdown.html"
+        ></mb-playground>
+
         <h3>Interaction Patterns</h3>
         <h4>Tree Navigation</h4>
         <p>Click folders to toggle them open or closed, and click files to select them.</p>

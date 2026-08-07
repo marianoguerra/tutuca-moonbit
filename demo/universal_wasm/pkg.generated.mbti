@@ -25,4 +25,3 @@ pub fn state_json() -> String
 // Type aliases
 
 // Traits
-

@@ -499,8 +499,8 @@ pub fn set_app(
   // filter that decision implies, so a policy permitting raw markup cannot end
   // up beside an app that would send the payload straight to `set_inner_html`.
   // One call rather than an `if` here, because the pairing is the invariant and
-  // it belongs in one place — see `@markup.filter_for`.
-  app.set_filter(Some(@markup.filter_for(policy.sanitizer)))
+  // it belongs in one place — see `@mdfilter.filter_for`.
+  app.set_filter(Some(@mdfilter.filter_for(policy.sanitizer)))
   @dyncomp.install_gc(app.transactor)
 }
 

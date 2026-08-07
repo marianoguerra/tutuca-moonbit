@@ -52,7 +52,7 @@ fn attr_to_any(v : @vdom.AttrValue) -> @core.Any {
     Str(s) => @core.any(s)
     Num(d) => @core.any(d)
     Bool(b) => @core.any(b)
-    Html(s) => @core.any(s)
+    Html(s) | Md(s) => @core.any(s)
     // Structured custom-element property: rebuild the real JS object.
     Data(j) => json_parse_ffi(j.stringify())
   }

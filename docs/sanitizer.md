@@ -462,6 +462,156 @@ Three consequences worth stating:
 - Without the filter installed, the directive behaves exactly as it always has.
   Installing it is what makes the construct safe rather than merely dangerous.
 
+### Markdown comes back the same way, and needs no permission
+
+**Implemented** as `vdom/filter/markdown`: the `@setinnermd` directive,
+`MdFilter`, and the vendored parser in `markdown/`.
+
+`@dangerouslysetinnerhtml` is the construct a host has to think about. The
+construct people actually *want* most of the time is narrower: render some
+markdown that the app did not write — a comment body, a CMS field, an LLM
+response. Before this, that meant shipping a JS markdown library and handing its
+output to the dangerous directive, which is the worst available shape: a second
+parser, outside the sanitizer, feeding a string to `innerHTML`.
+
+`@setinnermd` takes the markdown SOURCE. It reaches the DOM through
+`Block`/`Inline` → `@vdom.h`, and **every element it emits goes through
+`element_verdict` and every attribute value through `attr_value_allowed`**,
+routed through one `emit` helper so no arm of the walk can forget. There is no
+HTML string anywhere in the path.
+
+That is why the directive's name carries no warning and why **Pass 1 never
+refuses it**. `raw_markup` is a permission because a raw-HTML payload arrives as
+markup the config gets no say over — refusing the construct is the only lever
+there is. Markdown has no such route, so there is nothing to permit; a host that
+wants less says which elements it will have, the same way it does for every
+other node in the tree. `filter_for` therefore installs `MdFilter`
+unconditionally and reads no field for it.
+
+Three things this cost that were not obvious:
+
+- **`filter_for` moved to `vdom/filter/markdown`.** The chain is
+  `[MarkupFilter?] → MdFilter → Baseline`, and `markup` cannot express that —
+  the dependency runs `markdown` → `markup` and a cycle is not available. The
+  old entry point stays deprecated in `markup/deprecated.mbt`, still correct for
+  a host that wants the raw-markup rule and nothing else.
+- **`set_prop` fails closed on `setInnerMd`** (`vdom/to_dom.mbt`). Reaching it
+  means no filter consumed the attribute, and the element is CLEARED. Rendering
+  the markdown as text would be wrong output; passing it to `set_inner_html`
+  would turn the one directive whose name promises safety into the most
+  dangerous in the framework. `render_wbtest.mbt` pins both halves — nothing
+  without a filter, real nodes with one.
+- **`App::new` installs it**, so `@setinnermd` works with no configuration. The
+  price is that every app links the ~4.7k-line parser, since the call is
+  unconditional and nothing about it is dead.
+  `set_filter(Some(@filter.Baseline::new()))` is the smaller-footprint opt-out.
+
+#### Two findings from the parser that the design rests on
+
+Both are pinned by `markdown/parse_test.mbt`, and a re-sync that moves either
+one needs the builder revisited before it lands.
+
+**Inline raw HTML is only ever an HTML comment.** `Inline::HtmlInline` is
+produced from exactly one place upstream — `try_parse_html_comment` — so it is
+always a complete `<!-- … -->`. Together with `Block::HtmlBlock` being a whole
+run of lines, that means every raw-HTML carrier in the AST is self-contained and
+can go to `@anode.parse_fragment` on its own, through the same `html_nodes`
+builder `@dangerouslysetinnerhtml` uses. There is no half-open tag to reassemble
+across siblings — which is the thing that would otherwise have forced an
+AST→HTML-string step, and with it the second parse.
+
+It is also why upstream's HTML renderer is not vendored. The plan for this work
+said "AST → HTML string → parse → sanitize"; the finding is what removed the
+middle two steps.
+
+**A bare inline tag becomes a bogus autolink, not text.**
+`try_parse_autolink` accepts *any* `<…>` with no whitespace in it, so `<span>`
+arrives as `Autolink(url="span")` and `</span>` as `Autolink(url="/span")`.
+Neither is a link. The builder therefore renders an `Autolink` as an `<a>` only
+when the URL carries a real scheme (`@filter.scheme_of`), and as the literal
+text `<url>` otherwise. Without that rule a comment body containing ordinary
+HTML would fill up with stray links to relative paths — not a security hole,
+since a relative URL is allowed, but visibly wrong.
+
+The consequence for a reader: inline HTML tags render as the characters the
+author typed. That is a divergence from CommonMark, inherited from the parser
+rather than chosen, and it is the safe direction to diverge in.
+
+#### The concrete reason not to serialize
+
+The "do not re-serialize" argument above is general. Rendering the landing-site
+example in a real browser and reading the DOM back produced a specific instance
+of it, and it is worth stating because it is the kind of thing that reads as a
+bug until you follow it through.
+
+`java&#9;script:` reaches the sanitizer by two routes, and they are safe for
+**different** reasons:
+
+- **As raw HTML** (`<div><a href="java&#9;script:…">`), `@anode.parse_fragment`
+  is a real HTML parser, so it decodes the entity to a tab before anything looks
+  at the value. `attr_value_allowed` strips the tab, reads the scheme as
+  `javascript`, and denies it. The normalization does exactly the work it exists
+  for.
+- **As a markdown link destination** (`[x](java&#9;script:…)`), nothing decodes
+  it — markdown has no entity rule there — so the value stays literal. The
+  scheme is `java&#9;script`, which no browser registers, and the attribute
+  reaches the DOM through `setAttribute`, where entities are not a thing. It is
+  never `javascript:` at any point, and the link navigates nowhere.
+
+**The second is what a serializing design gets wrong.** Write the sanitized tree
+back out as HTML text and hand it to `innerHTML`, and the browser's parser
+decodes `&#9;` on the way back in: the value this code correctly allowed as an
+unknown scheme becomes `java\tscript:`, which Blink normalizes to `javascript:`
+and fires. Same input, same sanitizer, opposite outcome, and the only difference
+is the second parse.
+
+That is mutation-XSS in one line, on a value neither parser handled wrongly.
+`markdown_test.mbt` pins both routes.
+
+#### Two divergences that are ours, not the parser's
+
+- An unbalanced `HtmlBlock` (a lone `<div>` line) auto-closes inside its own
+  fragment, so markdown that followed it becomes a **sibling** rather than a
+  child. There is no partial element to leave open across a boundary when what
+  you are producing is a tree.
+- `style` on a table cell is the only attribute this package synthesizes, so a
+  config with a global `remove_attributes` naming `style` drops the alignment.
+  That is the config doing its job.
+
+#### Two failure modes, and the split is not the obvious one
+
+An attack in a markdown document fails in one of two ways, both safe, and which
+one it gets is decided by mizchi's block parser rather than by anything here:
+
+- an opener it **recognises** as an HTML block goes through
+  `@markup.html_nodes`, becomes an element, gets a verdict, and is dropped with
+  a `Dropped` report — `<svg><script>`, `<iframe>`, `<base>`, `<div onclick>`;
+- an opener it **does not** falls through to the inline parser and lands as a
+  TEXT node. `createTextNode` output can never be parsed as markup, so it is
+  inert, and nothing is reported because nothing was dropped — it was never
+  markup to begin with.
+
+**A bare `<script>` is in the second group**, as are `<object>` and inline
+`<span>`. That reads alarming in any output that prints text unescaped, and it
+is why the verification for this feature asked the DOM for a `script` element
+COUNT rather than grepping a serialized string.
+
+`markdown_test.mbt` pins the split, because a parser bump is exactly what would
+move a case across it: an upstream that adds `script` to its HTML-block list
+flips that one from "text, no report" to "dropped, one report". Still safe,
+but a visible change to what the landing-site example demonstrates.
+
+#### One thing to be careful reading in the tests
+
+memdom's `to_html()` does no entity escaping — it says so at the top of
+`vdom/memdom/serialize.mbt`, being a test aid rather than a sanitizer. So the
+characters `<script>` DO appear in its output for a document containing an
+inline `<script>` tag, as a TEXT node that reaches the browser through
+`createTextNode` and is inert. Assert on what elements the tree contains, not on
+the serialized string: one way round you read an inert text node as a hole, the
+other way you pass only because of how a debug helper prints.
+`app/filter_test.mbt` carries this warning beside the test that needed it.
+
 ### Doing the work once
 
 **The filter runs where an element is CONSTRUCTED.** `render` builds an element

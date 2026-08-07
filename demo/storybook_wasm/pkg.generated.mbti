@@ -21,4 +21,3 @@ pub fn refresh_margaui() -> Unit
 // Type aliases
 
 // Traits
-

@@ -13,5 +13,8 @@ import {
 import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
+  // the one test that walks a directive all the way to the DOM needs the
+  // filter that understands it; `render` itself knows only the trait
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "moonbitlang/core/debug",
 } for "wbtest"

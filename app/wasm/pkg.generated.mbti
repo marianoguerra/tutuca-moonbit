@@ -28,4 +28,3 @@ pub fn on_event(@mizchi/js/core.Any) -> Unit
 // Type aliases
 
 // Traits
-

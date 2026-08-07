@@ -76,6 +76,16 @@ pub(all) enum AttrItem {
   ConstA(name~ : String, val~ : @tutuca.Val)
   /// `@dangerouslysetinnerhtml` (None val = failed parse, JS keeps the attr).
   RawHtml(val~ : @tutuca.Val?)
+  /// `@setinnermd`: a markdown source string (None val = failed parse, same
+  /// sentinel convention as `RawHtml`).
+  ///
+  /// Its own variant rather than a flag on `RawHtml` because the two differ in
+  /// the only way that matters here: raw HTML is a capability a host grants
+  /// (`SanitizerConfig.raw_markup`), while markdown has no way to reach the DOM
+  /// except through a node builder that consults the sanitizer for every
+  /// element and every attribute value. Pass 1 refuses the first by default and
+  /// never refuses the second — which it cannot express if they share a case.
+  RawMarkdown(val~ : @tutuca.Val?)
   If(IfAttr)
 } derive(Debug)
 
@@ -90,7 +100,7 @@ pub(all) enum Attrs {
 
 ///|
 /// The representation an item list calls for: a list nothing made dynamic
-/// (a non-constant `Plain`, a `RawHtml`, an `If`) collapses to the evaluated
+/// (a non-constant `Plain`, a `RawHtml`, a `RawMarkdown`, an `If`) collapses to the evaluated
 /// ConstAttrs map, anything else keeps the items. The parser and `h` share
 /// this so a compiled tree cannot disagree with a parsed one.
 declare pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs

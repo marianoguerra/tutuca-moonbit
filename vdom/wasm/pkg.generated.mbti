@@ -20,4 +20,3 @@ pub impl @vdom.DomWalk for WasmNode
 // Type aliases
 
 // Traits
-

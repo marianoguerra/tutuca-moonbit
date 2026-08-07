@@ -124,4 +124,3 @@ pub fn ViewSet::component_name(Self, String) -> String
 // Type aliases
 
 // Traits
-

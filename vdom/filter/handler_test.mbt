@@ -110,11 +110,15 @@ test "data-* and aria-* are not handlers" {
 ///|
 test "Baseline applies both rules in one walk" {
   let f = Baseline::new()
-  let tree = nel("a", {
-    "href": Str("javascript:alert(1)"),
-    "onclick": Str("alert(2)"),
-    "title": Str("kept"),
-  }, childs=[nel("img", { "src": Str("data:image/png;base64,AAA") })])
+  let tree = nel(
+    "a",
+    {
+      "href": Str("javascript:alert(1)"),
+      "onclick": Str("alert(2)"),
+      "title": Str("kept"),
+    },
+    childs=[nel("img", { "src": Str("data:image/png;base64,AAA") })],
+  )
   f.filter_tree(tree)
   guard tree is Node(el) else { fail("expected an element") }
   assert_true(el.attrs.get("href") is None)

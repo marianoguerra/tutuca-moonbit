@@ -104,4 +104,3 @@ pub fn UniversalHost::apply_margaui(Self) -> Unit
 // Type aliases
 
 // Traits
-

@@ -86,7 +86,7 @@ pub fn attrs_of_items(items : Array[AttrItem]) -> Attrs {
       match item {
         // A macro-var-sourced constant stays constant (JS comment).
         Plain(val~, ..) => !(val is Const(..))
-        RawHtml(_) | If(_) => true
+        RawHtml(_) | RawMarkdown(_) | If(_) => true
         ConstA(_) => false
       }
     })
@@ -180,6 +180,12 @@ fn AttrParser::parse_directive(
       // Pushed even when the value failed to parse (JS keeps the attr with
       // the null-const sentinel).
       self.items.push(RawHtml(val~))
+    }
+    "setinnermd" => {
+      let val = self.directive_value(directive_name, s, @tutuca.parse_text)
+      // Same "push even on a failed parse" rule as the raw-HTML directive
+      // above, so the two behave alike where they can.
+      self.items.push(RawMarkdown(val~))
     }
     "push-view" => {
       let val = self.directive_value(directive_name, s, @tutuca.parse_text)
@@ -377,7 +383,7 @@ fn Attrs::to_macro_vars(self : Attrs) -> Map[String, String] {
           Plain(name~, val~) | ConstA(name~, val~) => r[name] = "\{val}"
           // JS would crash on If (no .val) and stringify RawHtml's null
           // sentinel; neither occurs in real macro calls — skipped here.
-          RawHtml(_) | If(_) => ()
+          RawHtml(_) | RawMarkdown(_) | If(_) => ()
         }
       }
   }

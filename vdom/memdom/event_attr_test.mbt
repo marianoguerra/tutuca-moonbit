@@ -67,9 +67,7 @@ test "never_assign is not the fix: it forces the attribute path" {
   // property assignment into a live content attribute. Strictly worse. The
   // members of that set are names whose attribute form is the correct one,
   // which is not true of an event handler.
-  let dom = to_dom(
-    @vdom.h("td", attrs={ "colSpan": @vdom.AttrValue::int(3) }),
-  )
+  let dom = to_dom(@vdom.h("td", attrs={ "colSpan": @vdom.AttrValue::int(3) }))
   assert_true(dom.get_attribute("colSpan") is Some("3"))
   assert_true(dom.get_property("colSpan") is None)
 }

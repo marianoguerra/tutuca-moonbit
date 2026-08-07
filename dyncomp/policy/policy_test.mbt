@@ -134,7 +134,9 @@ test "a policy carries a sanitizer a host can replace" {
   // ...and the baseline still holds inside it: permitting raw markup is not
   // permitting a script.
   debug_inspect(
-    shown(loose.check_view("Sneaky/main", parsed("<div><script></script></div>"))),
+    shown(
+      loose.check_view("Sneaky/main", parsed("<div><script></script></div>")),
+    ),
     content=(
       #|["Sneaky/main: <script> is not allowed (at div>script)"]
     ),
@@ -152,7 +154,10 @@ test "a policy can be tightened with an allow-list" {
       @sanitize.ElementRule::of(@sanitize.html("span")),
     ]),
   })
-  debug_inspect(p.check_view("Ok/main", parsed("<div><span></span></div>")), content="[]")
+  debug_inspect(
+    p.check_view("Ok/main", parsed("<div><span></span></div>")),
+    content="[]",
+  )
   debug_inspect(
     shown(p.check_view("No/main", parsed("<div><p></p></div>"))),
     content=(
@@ -166,8 +171,9 @@ test "a policy can be tightened with an allow-list" {
 /// read the message and fix it — so it raises rather than degrading.
 test "an invalid sanitizer config is refused loudly" {
   let bad : @sanitize.SanitizerConfig = {
-    ..@sanitize.SanitizerConfig::empty(),
+    ..@sanitize.SanitizerConfig::empty()
     // the spec's own validity relation: allow xor remove
+    ,
     elements: Some([@sanitize.ElementRule::of(@sanitize.html("div"))]),
     remove_elements: Some([@sanitize.html("span")]),
   }
@@ -177,7 +183,6 @@ test "an invalid sanitizer config is refused loudly" {
         @sanitize.InvalidConfig::to_string(e),
         content=(
           #|config sets both elements and remove_elements; the spec allows one or the other
-
         ),
       )
   } noraise {

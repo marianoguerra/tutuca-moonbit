@@ -6,6 +6,15 @@
 /// `set_inner_html` first. There is deliberately no `Int` variant: mixing
 /// `Num(0.0)` and a hypothetical `Int(0)` would break `Eq`-based diffing.
 ///
+/// `Md` carries the markdown SOURCE of `@setinnermd`. It is a distinct variant
+/// from `Html` rather than the same string under a different attribute name so
+/// that no code path can confuse the two: markdown text handed to
+/// `set_inner_html` would be inert-looking garbage on the page, and HTML handed
+/// to the markdown builder would be re-interpreted. Like `Html` it never
+/// reaches `setAttribute` — but unlike `Html`, reaching `set_prop` at all means
+/// something went wrong, because the filter that understands it removes it
+/// first. See the fail-closed branch in `to_dom.mbt`.
+///
 /// `Data` carries a structured (JSON-shaped) value for object/array-valued
 /// custom-element properties (the JS `h(tag, { items: [1, 2, 3] })` case).
 /// It ALWAYS takes the property path — a structured value is a property by
@@ -17,6 +26,7 @@ pub(all) enum AttrValue {
   Num(Double)
   Bool(Bool)
   Html(String)
+  Md(String)
   Data(Json)
 } derive(Eq, Debug)
 
@@ -35,7 +45,7 @@ pub fn AttrValue::to_attr_string(self : AttrValue) -> String {
     Str(s) => s
     Num(d) => d.to_string()
     Bool(b) => b.to_string()
-    Html(s) => s
+    Html(s) | Md(s) => s
     // Fallback only (Data normally never reaches setAttribute); JSON text is
     // strictly more useful than JS's "[object Object]" coercion.
     Data(j) => j.stringify()

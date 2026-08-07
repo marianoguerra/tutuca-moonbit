@@ -940,6 +940,41 @@ Registry keys are lowercased — `<x:Card>` resolves as `<x:card>`.
 
 Bypasses all escaping; children of the element are ignored when active.
 
+**Only for markup you wrote.** For content that came from a user, an API or a
+model, reach for `@setinnermd` below instead — it is the same shape without the
+escape hatch.
+
+## Markdown (`@setinnermd`)
+
+```html
+<article @setinnermd=".body"></article>
+```
+
+Takes a markdown SOURCE string and replaces the element's children with the
+nodes it parses to. CommonMark plus GFM — tables, task lists, strikethrough,
+footnotes — with no flag to turn any of it on.
+
+It is safe by construction rather than by permission, so unlike
+`@dangerouslysetinnerhtml` there is nothing to grant: the markdown never becomes
+an HTML string, and every element and attribute value it produces is judged by
+the app's own `@sanitize.Sanitizer` on the way out. `<script>`, `<iframe>`,
+`on*` handlers and `javascript:` URLs are gone; a denied URL drops the
+*attribute*, not the element, so a bad link keeps its words and loses its
+destination. Raw HTML inside the markdown goes through the same sanitizer.
+
+`App::new` installs the filter that does this, so it works with no setup.
+`set_filter(None)` opts out — and then the directive renders an EMPTY element
+rather than anything unsanitized, which is deliberate.
+
+Two behaviours worth knowing before you use it: inline HTML tags (`<span>x</span>`
+inside a paragraph) render as literal text rather than as markup, and an
+unbalanced HTML block does not adopt the markdown that follows it as children.
+
+`.body` is an ordinary text field, bound like any other; the directive re-parses
+it on every render. A worked example — editor on the left, live preview on the
+right, and a second half showing what gets refused — is on the landing site
+(`playground/site/examples/markdown.{mbt,html}`).
+
 ## State values: the `Value` enum
 
 Underneath the typed structs, all state is the `@tutuca.Value` enum —

@@ -59,7 +59,17 @@ pub fn[N : @vdom.DomWalk] App::new(
     drag: None,
     cur_drag_over: None,
     render_cache: @render.RenderCache::new(),
-    filter: Some(@filter.Baseline::new()),
+    // Safe by default, opt out with `set_filter`. `filter_for` under the
+    // default sanitizer is `MdFilter` in front of `@filter.Baseline`: the URL
+    // and `on*` rules every app has had, plus the one that makes `@setinnermd`
+    // render at all (`set_prop` fails closed on its attribute otherwise).
+    //
+    // The cost is that every app links the vendored markdown parser, because
+    // this call constructs the filter unconditionally and nothing about it is
+    // dead. An app that wants the smaller footprint back passes
+    // `@filter.Baseline::new()` to `set_filter`; `set_filter(None)` is still
+    // the full opt-out.
+    filter: Some(@mdfilter.default_filter()),
   }
   // Batched re-render (the JS setTimeout-scheduler analogue): swaps only
   // mark dirty; ONE morph runs per drained cascade.

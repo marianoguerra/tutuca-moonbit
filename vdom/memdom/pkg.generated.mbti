@@ -45,4 +45,3 @@ pub impl @vdom.DomWalk for MemNode
 // Type aliases
 
 // Traits
-

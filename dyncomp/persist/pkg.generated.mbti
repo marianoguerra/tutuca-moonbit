@@ -48,4 +48,3 @@ pub(open) trait Store {
   fn remove(Self, String) -> Unit
   fn keys(Self, prefix~ : String) -> Array[String]
 }
-

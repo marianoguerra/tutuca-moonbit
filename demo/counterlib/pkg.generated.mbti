@@ -60,4 +60,3 @@ pub fn CounterState::zero() -> Self
 // Type aliases
 
 // Traits
-

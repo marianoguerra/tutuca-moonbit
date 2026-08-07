@@ -22,4 +22,3 @@ pub fn shell_component(Array[@storybook.Section]) -> @component.Component
 // Type aliases
 
 // Traits
-

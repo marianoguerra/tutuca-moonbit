@@ -280,3 +280,62 @@ pub fn danger_set_inner_html_component(
     lookup~,
   )
 }
+
+///|
+/// The compiled `main` view.
+fn set_inner_md_main_view_ir() -> @anode.View {
+  @anode.View::from_ir(
+    "main",
+    @anode.h("section", [], [
+      @anode.h(
+        "div",
+        [@anode.attr("class", "md"), @anode.set_inner_md(val=Field("source"))],
+        [],
+      ),
+    ]),
+    [],
+  )
+}
+
+///|
+/// The component's views, already compiled — pass as `views~` to
+/// @component.component.
+pub fn set_inner_md_views() -> Map[String, @anode.View] {
+  { "main": set_inner_md_main_view_ir() }
+}
+
+///|
+/// The SetInnerMd component: `component()` with everything the view file already
+/// states filled in — its name, its compiled views and its styles. The
+/// schema and the codec are not passed at all: `SetInnerMdState` states them
+/// through `@component.Fields`, and `component()` reads them off the
+/// bound. What is left is the code no generator can write.
+///
+/// `init` defaults to the zero state and `name` to the name the template
+/// id declares — pass either when yours differs. The signature below is
+/// the whole story: anything not a parameter here, the view file states.
+pub fn set_inner_md_component(
+  name? : String = "SetInnerMd",
+  views? : Map[String, @anode.View] = set_inner_md_views(),
+  init? : SetInnerMdState = SetInnerMdState::zero(),
+  common_style? : String = set_inner_md_common_style,
+  global_style? : String = set_inner_md_global_style,
+  update? : (SetInnerMdState, @component.Dispatch, &@tutuca.Ctx) -> SetInnerMdState?,
+  slots? : Map[String, String] = Map([]),
+  slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
+  provide? : Map[String, String] = Map([]),
+  lookup? : Map[String, @component.LookupSpec] = Map([]),
+) -> @component.Component {
+  @component.component(
+    name~,
+    views~,
+    init~,
+    common_style~,
+    global_style~,
+    update?,
+    slots~,
+    slot_args~,
+    provide~,
+    lookup~,
+  )
+}

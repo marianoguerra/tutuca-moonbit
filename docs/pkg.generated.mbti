@@ -308,4 +308,3 @@ pub fn ToggleState::zero() -> Self
 // Type aliases
 
 // Traits
-

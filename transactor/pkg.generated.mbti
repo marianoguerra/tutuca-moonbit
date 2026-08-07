@@ -97,4 +97,3 @@ pub fn Transactor::settle(Self, max_turns? : Int) -> SettleResult
 pub(open) trait Requests {
   fn request_for(Self, @core.Value, String) -> RequestHandler? = _
 }
-

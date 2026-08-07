@@ -345,6 +345,13 @@ fn eval_attrs(
             }
             out["dangerouslySetInnerHTML"] = Html(html)
           }
+          RawMarkdown(val~) => {
+            let md = match val {
+              Some(v) => v.eval(stack).to_display_string()
+              None => "null" // same sentinel as RawHtml above
+            }
+            out["setInnerMd"] = Md(md)
+          }
         }
       }
   }

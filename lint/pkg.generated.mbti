@@ -99,4 +99,3 @@ pub(all) enum Suggestion {
 // Type aliases
 
 // Traits
-

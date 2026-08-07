@@ -8,6 +8,81 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`@setinnermd` — markdown in a view, sanitized by construction.** Takes a
+  markdown SOURCE string and replaces the element's children with the nodes it
+  parses to: CommonMark plus GFM (tables, task lists, strikethrough, footnotes),
+  with no flag to turn any of it on.
+
+  It is `@dangerouslysetinnerhtml`'s safe sibling, and the name carries no
+  warning because it does not need one. The markdown never becomes an HTML
+  string: `vdom/filter/markdown` walks the AST straight into vdom nodes, asking
+  the app's own `@sanitize.Sanitizer` for a verdict on **every element** and
+  running **every attribute value** past `@filter.attr_value_allowed` on the
+  way — routed through one `emit` helper so no arm of the walk can skip it.
+  `set_inner_html` is never called, so the browser never re-parses a string this
+  code produced and there is no second parse for a mutation-XSS to live in.
+  Raw HTML inside the document goes through the same `html_nodes` builder
+  `@dangerouslysetinnerhtml` uses, so a `<script>` cannot be refused by one path
+  and allowed by the other.
+
+  **There is nothing to permit, so Pass 1 never refuses it.** `raw_markup` is a
+  permission because a raw-HTML payload arrives as markup the config gets no say
+  over; markdown has no such route. A host that wants less names the elements it
+  will have, the same lever it already has over every other node in the tree.
+
+  It works with no configuration: `App::new` now installs
+  `@mdfilter.default_filter()` — `MdFilter` in front of the `@filter.Baseline`
+  it installed before. **The cost is that every app links the vendored parser**
+  (~4.7k lines), since the call is unconditional and nothing about it is dead.
+  `set_filter(Some(@filter.Baseline::new()))` restores the previous footprint;
+  `set_filter(None)` is still the full opt-out.
+
+  Without a filter that understands it, `set_prop` **fails closed** — the
+  element is cleared rather than being given the markdown as text or as markup.
+  A directive whose name promises it is sanitized has to fail visibly when
+  nothing sanitized it.
+
+  A live editor is on the landing site: source on the left, preview on the
+  right, and a second half of the document that is nothing but attacks — HTML
+  and SVG `<script>` (different elements, since identity is namespace-qualified),
+  `<iframe>`, `<base>`, `on*` handlers, `javascript:` and `data:text/html` URLs.
+  None of it renders. See `docs/sanitizer.md` for the design.
+
+- **`markdown/` — the parser, vendored from mizchi/markdown.mbt** (MIT, commit
+  pinned in `markdown/UPSTREAM.md`). 15 of upstream's 29 production files,
+  verbatim: the AST, scanner, block parser and inline parser. Its HTML renderer,
+  markdown serializer, editor-preview renderer and incremental reparser are
+  deliberately left behind — building nodes means never needing an HTML string.
+
+  Vendored rather than depended on because the published `mizchi/markdown` drags
+  `mizchi/moomaid` and declares `supported-targets: js+wasm`, while this module
+  prefers wasm-gc. What is copied has no third-party dependency and no `extern`
+  at all.
+
+  Two findings from reading that parser shaped the design, and
+  `markdown/parse_test.mbt` pins both so a re-sync cannot move them quietly:
+  `Inline::HtmlInline` is only ever a complete HTML comment (so every raw-HTML
+  carrier is self-contained and no half-open tag needs reassembling across
+  siblings — which is what removed the AST→string step from the original plan);
+  and `try_parse_autolink` accepts any `<…>` without whitespace, so `<span>`
+  arrives as `Autolink(url="span")`. The builder renders an autolink as a link
+  only when the URL has a real scheme, and as literal text otherwise —
+  without that, an ordinary comment body would fill with stray relative links.
+
+### Changed
+
+- **`filter_for` moved to `vdom/filter/markdown`.** The chain is now
+  `[MarkupFilter?] → MdFilter → Baseline`, and `markup` cannot name it: the
+  dependency runs `markdown` → `markup`, and a cycle is not available.
+  `@markup.filter_for` is deprecated and still does what it always did — the
+  right answer for a host that wants the raw-markup rule and nothing else.
+- **`@markup.html_nodes` is public**, extracted from `MarkupFilter`'s private
+  builder. One HTML-tree→sanitized-vdom builder shared by both directives,
+  rather than two that could drift apart.
+- `@vdom.AttrValue` gained `Md(String)`, and `@anode.AttrItem` gained
+  `RawMarkdown`. Both are exhaustively matched, so a downstream `match` on
+  either will need the new arm.
+
 - **`examples/` — consumers of the published package, inside the repository.**
   Each is its own module depending on `marianoguerra/tutuca` from mooncakes
   with no path dependency and no `../`. Nothing else here can catch what they

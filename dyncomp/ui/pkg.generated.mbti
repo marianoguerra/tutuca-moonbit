@@ -296,4 +296,3 @@ pub fn UniversalUi::build_standard(Self, String, Map[String, @core.Value]) -> @c
 pub type MakeInstance = (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
 
 // Traits
-

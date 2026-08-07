@@ -46,7 +46,7 @@ fn attr_to_any(v : @vdom.AttrValue) -> @core.Any {
     Str(s) => @core.any(s)
     Num(d) => @core.ToAny::to_any(d)
     Bool(b) => @core.ToAny::to_any(b)
-    Html(s) => @core.any(s)
+    Html(s) | Md(s) => @core.any(s)
     // Structured custom-element property: JSON.parse on the JS side of tdom.
     Data(j) => tdom_json_parse(j.stringify())
   }

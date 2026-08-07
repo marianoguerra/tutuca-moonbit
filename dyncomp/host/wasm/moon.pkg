@@ -21,7 +21,7 @@ import {
   "marianoguerra/tutuca/vdom/filter",
   // `filter_for`, which turns the policy's sanitizer into the filter that
   // sanitizer needs — the one place the permission and the filter are paired
-  "marianoguerra/tutuca/vdom/filter/markup" @markup,
+  "marianoguerra/tutuca/vdom/filter/markdown" @mdfilter,
   "mizchi/js/core",
   "moonbitlang/core/json",
   // a guest's persisted bytes cross this bridge as base64 text

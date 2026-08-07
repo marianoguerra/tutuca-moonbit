@@ -34,9 +34,10 @@ fn render_html(
   html : String,
   state? : @tutuca.Value = Map(Map([])),
   resolver? : &ViewResolver,
+  filter? : &@filter.VdomFilter,
 ) -> String {
   let stack = RenderStack::new(state)
-  let ctx = RenderCtx::new(view_resolver?=resolver)
+  let ctx = RenderCtx::new(view_resolver?=resolver, filter?)
   match render(parse_node(html), stack, ctx) {
     Some(v) => to_html(v)
     None => "<!-- suppressed -->"
@@ -461,5 +462,40 @@ test "dangerouslysetinnerhtml renders raw html" {
       state=state_of([("markup", Str("<b>raw</b>"))]),
     ),
     "<div><b>raw</b></div>",
+  )
+}
+
+///|
+/// `@setinnermd` evaluates to the markdown SOURCE under its own attribute name,
+/// which is as far as `render` takes it — turning that into elements is
+/// `vdom/filter/markdown`'s job, and this test deliberately runs without it.
+///
+/// What memdom shows here is the fail-closed branch in `set_prop`: no filter
+/// consumed the attribute, so the element is CLEARED rather than being given
+/// the markdown as text or as markup. A directive whose name promises it is
+/// sanitized fails visibly when nothing sanitized it.
+test "setinnermd evaluates to its source, and renders nothing on its own" {
+  assert_eq(
+    render_html(
+      "<div @setinnermd=\".body\"></div>",
+      state=state_of([("body", Str("# hi"))]),
+    ),
+    "<div></div>",
+  )
+}
+
+///|
+/// The same directive with the filter that understands it. This is the one test
+/// that walks the whole path — directive → `AttrItem::RawMarkdown` → `Md` →
+/// `MdFilter` → nodes → DOM — and the assertion is that `<h1>` is a real
+/// element with a real text child, not a string anybody parsed twice.
+test "setinnermd renders described nodes once a filter is installed" {
+  assert_eq(
+    render_html(
+      "<div @setinnermd=\".body\"></div>",
+      state=state_of([("body", Str("# hi\n\n[x](javascript:alert(1))"))]),
+      filter=@mdfilter.default_filter(),
+    ),
+    "<div><h1>hi</h1><p><a>x</a></p></div>",
   )
 }

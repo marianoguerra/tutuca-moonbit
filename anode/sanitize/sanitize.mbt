@@ -369,6 +369,19 @@ fn Sanitizer::check_attrs(
             if !self.raw_markup {
               out.push(RawMarkup(tag=d.tag, at~))
             }
+          // `@setinnermd` is never a violation, and that is the whole point of
+          // it being a separate construct. `raw_markup` is a permission because
+          // a raw-HTML payload reaches the DOM as markup that nothing described
+          // — the config has no say over what is in it. A markdown payload has
+          // no such route: `vdom/filter/markdown` walks it into nodes and asks
+          // THIS config about every element and every attribute value on the
+          // way. There is nothing left here to refuse.
+          //
+          // What a host that wants markdown gone does instead is name the
+          // elements it will not have (`remove_elements`, or an `elements`
+          // allow-list), which is the same lever it already has over every
+          // other node in the tree.
+          RawMarkdown(_) => ()
         }
       }
   }

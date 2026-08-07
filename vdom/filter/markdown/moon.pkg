@@ -1,0 +1,34 @@
+// Markdown, admitted as described nodes.
+//
+// `@setinnermd` is `@dangerouslysetinnerhtml`'s safe sibling: its value is an
+// expression too, so what it holds is just as unknowable until it renders — but
+// markdown has no route to the DOM except the one in this package, and that
+// route asks the sanitizer about every element and every attribute value it
+// builds. That is why the directive's name carries no warning and why Pass 1
+// never refuses it (`anode/sanitize/sanitize.mbt`).
+//
+// Its own package rather than a file in `vdom/filter/markup`, for the same
+// reason `markup` is not a file in `vdom/filter`: it drags a markdown parser
+// behind it, and the ~4.7k lines of `marianoguerra/tutuca/markdown` are not
+// something a host that only wants the URL rule should link. It imports
+// `markup` rather than reimplementing it — raw HTML inside a markdown document
+// goes through the SAME `html_nodes` builder `@dangerouslysetinnerhtml` does,
+// so a `<script>` cannot be refused by one path and allowed by the other.
+//
+// The dependency runs markdown -> markup and never back, which is why the
+// combined `filter_for` lives here rather than there.
+import {
+  "marianoguerra/tutuca/markdown" @md,
+  "marianoguerra/tutuca/vdom",
+  "marianoguerra/tutuca/vdom/filter",
+  "marianoguerra/tutuca/vdom/filter/markup",
+  // the config model and its verdicts, shared with the registration-time pass
+  // and with `markup`, so a host cannot have three different answers to the
+  // same question
+  "marianoguerra/tutuca/anode/sanitize",
+}
+
+import {
+  "moonbitlang/core/debug",
+  "moonbitlang/core/test",
+} for "test"

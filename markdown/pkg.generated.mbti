@@ -1,0 +1,192 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/markdown"
+
+import {
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn char_is(Char?, Char) -> Bool
+
+pub fn char_is_digit(Char?) -> Bool
+
+pub fn is_alphanumeric(Char) -> Bool
+
+pub fn is_digit(Char) -> Bool
+
+pub fn is_letter(Char) -> Bool
+
+pub fn is_punctuation(Char) -> Bool
+
+pub fn is_unicode_punctuation(Char) -> Bool
+
+pub fn is_unicode_whitespace(Char) -> Bool
+
+pub fn is_whitespace(Char) -> Bool
+
+pub fn parse(String, strict? : Bool, wikilinks? : Bool) -> ParseResult
+
+pub fn parse_inlines(String, strict? : Bool, wikilinks? : Bool) -> Array[Inline]
+
+// Errors
+
+// Types and methods
+pub(all) enum Block {
+  ThematicBreak(marker~ : Char, count~ : Int, span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  Heading(level~ : Int, style~ : HeadingStyle, children~ : Array[Inline], closing_hashes~ : Int, span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  Paragraph(children~ : Array[Inline], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  FencedCode(fence_marker~ : FenceMarker, fence_length~ : Int, info~ : String, code~ : String, indent~ : Int, span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  IndentedCode(code~ : String, span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  Blockquote(children~ : Array[Block], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  BulletList(marker~ : BulletMarker, tight~ : Bool, items~ : Array[ListItem], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  OrderedList(start~ : Int, delimiter~ : OrderedDelimiter, tight~ : Bool, items~ : Array[ListItem], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  HtmlBlock(html~ : String, span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  Table(header~ : Array[TableCell], alignments~ : Array[TableAlign], rows~ : Array[Array[TableCell]], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+  BlankLines(count~ : Int, span~ : Span)
+  FootnoteDefinition(label~ : String, children~ : Array[Block], span~ : Span, leading_trivia~ : Trivia, trailing_trivia~ : Trivia)
+}
+
+pub(all) enum BulletMarker {
+  Dash
+  Asterisk
+  Plus
+} derive(Eq, @debug.Debug)
+pub impl Show for BulletMarker
+
+pub(all) struct Document {
+  frontmatter : Frontmatter?
+  children : Array[Block]
+  span : Span
+}
+
+pub(all) enum EmphasisMarker {
+  Asterisk
+  Underscore
+} derive(Eq, @debug.Debug)
+pub impl Show for EmphasisMarker
+
+pub(all) enum FenceMarker {
+  Backtick
+  Tilde
+} derive(Eq, @debug.Debug)
+pub impl Show for FenceMarker
+
+pub(all) struct Frontmatter {
+  raw : String
+  entries : Array[(String, String)]
+  span : Span
+}
+
+pub(all) enum HardBreakStyle {
+  TwoSpaces
+  Backslash
+} derive(Eq, @debug.Debug)
+pub impl Show for HardBreakStyle
+
+pub(all) enum HeadingStyle {
+  Atx
+  Setext
+} derive(Eq, @debug.Debug)
+pub impl Show for HeadingStyle
+
+pub(all) enum Inline {
+  Text(content~ : String, span~ : Span)
+  SoftBreak(span~ : Span)
+  HardBreak(style~ : HardBreakStyle, span~ : Span)
+  Emphasis(marker~ : EmphasisMarker, children~ : Array[Inline], span~ : Span)
+  Strong(marker~ : EmphasisMarker, children~ : Array[Inline], span~ : Span)
+  Strikethrough(children~ : Array[Inline], span~ : Span)
+  Code(content~ : String, backtick_count~ : Int, span~ : Span)
+  WikiLink(target~ : String, label~ : String, fragment~ : String, span~ : Span)
+  Link(children~ : Array[Inline], url~ : String, title~ : String, span~ : Span)
+  RefLink(children~ : Array[Inline], label~ : String, span~ : Span)
+  Autolink(url~ : String, is_email~ : Bool, span~ : Span)
+  Image(alt~ : String, url~ : String, title~ : String, span~ : Span)
+  RefImage(alt~ : String, label~ : String, span~ : Span)
+  HtmlInline(html~ : String, span~ : Span)
+  FootnoteReference(label~ : String, span~ : Span)
+}
+
+pub(all) struct LinkDefinition {
+  label : String
+  url : String
+  title : String
+  span : Span
+}
+
+pub(all) struct ListItem {
+  children : Array[Block]
+  checked : Bool?
+  marker_offset : Int
+  content_offset : Int
+  span : Span
+}
+
+pub(all) enum OrderedDelimiter {
+  Dot
+  Paren
+} derive(Eq, @debug.Debug)
+pub impl Show for OrderedDelimiter
+
+pub(all) struct ParseResult {
+  document : Document
+  definitions : Array[LinkDefinition]
+}
+
+pub(all) struct Scanner {
+  source : String
+  chars : Array[Char]
+  mut pos : Int
+  len : Int
+  utf16_offsets : Array[Int]?
+}
+pub fn Scanner::advance(Self, Int) -> Unit
+pub fn Scanner::consume(Self) -> Char?
+pub fn Scanner::consume_str(Self, String) -> Bool
+pub fn Scanner::count_char(Self, Char) -> Int
+pub fn Scanner::count_leading_spaces(Self) -> Int
+pub fn Scanner::is_blank_line(Self) -> Bool
+pub fn Scanner::is_eof(Self) -> Bool
+pub fn Scanner::matches(Self, String) -> Bool
+pub fn Scanner::new(String) -> Self
+pub fn Scanner::peek(Self) -> Char?
+pub fn Scanner::peek_at(Self, Int) -> Char?
+pub fn Scanner::read_line(Self) -> String
+pub fn Scanner::remaining(Self) -> String
+pub fn Scanner::restore(Self, Int) -> Unit
+pub fn Scanner::save(Self) -> Int
+pub fn Scanner::skip_line(Self) -> Unit
+pub fn Scanner::skip_spaces(Self) -> Int
+pub fn Scanner::substring(Self, Int, Int) -> String
+
+pub(all) struct Span {
+  from : Int
+  to : Int
+} derive(Eq, @debug.Debug)
+pub fn Span::empty() -> Self
+pub fn Span::new(Int, Int) -> Self
+pub impl Show for Span
+
+pub(all) enum TableAlign {
+  Left
+  Center
+  Right
+  None
+} derive(Eq, @debug.Debug)
+pub impl Show for TableAlign
+
+pub(all) struct TableCell {
+  children : Array[Inline]
+  span : Span
+}
+
+pub(all) struct Trivia {
+  content : String
+} derive(Eq, @debug.Debug)
+pub fn Trivia::empty() -> Self
+pub fn Trivia::new(String) -> Self
+pub impl Show for Trivia
+
+// Type aliases
+
+// Traits

@@ -38,4 +38,3 @@ pub(all) struct Story {
 // Type aliases
 
 // Traits
-

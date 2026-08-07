@@ -3,8 +3,8 @@
 
 ///|
 let known_directive_names : Array[String] = [
-  "dangerouslysetinnerhtml", "slot", "push-view", "text", "show", "hide", "each",
-  "enrich-with", "when", "loop-with", "then", "else",
+  "dangerouslysetinnerhtml", "setinnermd", "slot", "push-view", "text", "show", "hide",
+  "each", "enrich-with", "when", "loop-with", "then", "else",
 ]
 
 ///|
@@ -223,7 +223,7 @@ fn check_host_bare_directives(
           match item {
             Plain(name~, ..) | ConstA(name~, ..) => names.push(name)
             If(ia) => names.push(ia.name)
-            RawHtml(_) => ()
+            RawHtml(_) | RawMarkdown(_) => ()
           }
         }
     }

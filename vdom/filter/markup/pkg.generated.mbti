@@ -12,6 +12,8 @@ pub const RAW_ATTR : String = "dangerouslySetInnerHTML"
 
 pub fn filter_for(@sanitize.Sanitizer) -> &@filter.VdomFilter
 
+pub fn html_nodes(@sanitize.Sanitizer, String, String, (String, String, String, String) -> Unit) -> Array[@vdom.Vdom]
+
 // Errors
 
 // Types and methods

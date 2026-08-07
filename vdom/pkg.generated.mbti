@@ -34,6 +34,7 @@ pub(all) enum AttrValue {
   Num(Double)
   Bool(Bool)
   Html(String)
+  Md(String)
   Data(Json)
 } derive(Eq, @debug.Debug)
 pub fn AttrValue::int(Int) -> Self
@@ -111,4 +112,3 @@ pub(open) trait DomWalk : DomNode {
   fn char_data(Self) -> String
   fn attribute(Self, String) -> String?
 }
-

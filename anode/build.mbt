@@ -79,6 +79,11 @@ pub fn raw_html(val? : @tutuca.Val) -> AttrItem {
   RawHtml(val~)
 }
 
+///|
+pub fn set_inner_md(val? : @tutuca.Val) -> AttrItem {
+  RawMarkdown(val~)
+}
+
 // ---------------------------------------------------------------------------
 // Nodes
 

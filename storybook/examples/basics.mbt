@@ -125,3 +125,48 @@ pub fn danger_set_inner_html_module() -> @component.ModuleDef {
     ],
   )
 }
+
+///|
+/// The safe sibling: `@setinnermd` takes markdown SOURCE and replaces the
+/// element's children with the nodes it parses to. No permission to grant and
+/// no escape hatch — the markdown never becomes an HTML string, and every
+/// element and attribute value it produces is judged by the app's own
+/// sanitizer on the way out. See docs/sanitizer.md.
+fn set_inner_md_comp() -> @component.Component {
+  set_inner_md_component(init={
+    source: "# Markdown\n\nWith *emphasis*, `code`, and a [link](/docs).\n\n- and\n- a list\n",
+  })
+}
+
+///|
+pub fn set_inner_md_module() -> @component.ModuleDef {
+  @component.ModuleDef::new(
+    name="set-inner-md",
+    components=[set_inner_md_comp()],
+    examples=[
+      { component: "SetInnerMd", title: "Default", args: Map([]), view: None },
+      {
+        component: "SetInnerMd",
+        title: "GFM",
+        args: {
+          "source": Str(
+            "| a | b |\n|:--|--:|\n| 1 | 2 |\n\n- [x] task lists\n- [ ] and footnotes[^1]\n\n[^1]: like this\n",
+          ),
+        },
+        view: None,
+      },
+      // The half worth looking at: none of this renders, and the reason is the
+      // same sanitizer that judges every other node in the tree.
+      {
+        component: "SetInnerMd",
+        title: "Sanitized",
+        args: {
+          "source": Str(
+            "<script>alert(1)</script>\n\n<svg><script>alert(2)</script></svg>\n\n<iframe src=\"https://example.com\"></iframe>\n\n<div onclick=\"alert(3)\">handler dropped</div>\n\n[keeps its words, loses its href](javascript:alert(4))\n",
+          ),
+        },
+        view: None,
+      },
+    ],
+  )
+}

@@ -73,4 +73,3 @@ pub fn Registry::set_builtins(Self, Array[Descriptor]) -> Unit
 // Type aliases
 
 // Traits
-

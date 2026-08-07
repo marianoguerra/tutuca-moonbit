@@ -20,6 +20,11 @@
     content: string,
     }
   }
+  interface set-inner-md {
+    record state {
+    source: string,
+    }
+  }
 </script>
 
 <template id="MinimumViableComponent"></template>
@@ -38,5 +43,11 @@
 <template id="DangerSetInnerHtml">
   <section>
     <div class="raw" @dangerouslysetinnerhtml=".content"></div>
+  </section>
+</template>
+
+<template id="SetInnerMd">
+  <section>
+    <div class="md" @setinnermd=".source"></div>
   </section>
 </template>
