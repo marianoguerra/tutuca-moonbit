@@ -8,6 +8,59 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`dyncomp/host/wasm/abi.mjs` — the canonical ABI for `tutuca:component`,
+  written once instead of shipped in every bundle.** A guest archive can now
+  carry its core module and a four-field descriptor:
+
+  ```json
+  { "world": "tutuca:component@0.5.0", "encoding": "utf16",
+    "core": "counter.component.core.wasm" }
+  ```
+
+  and the host does the lifting. What it replaces is `jco transpile` output —
+  5,000 to 7,500 lines per archive, and 38-57% of a gzipped one. That file
+  never carried anything about the component: across fifteen bundles it takes
+  eight distinct values, and which one you get is a pure function of the host
+  functions the module imports and the string encoding it was embedded with.
+  Everything else is the world, and the world is fixed, so `WORLD` in `abi.mjs`
+  transcribes `wit/tutuca-component.wit` as type descriptors and one generic
+  implementation of alignment, size, flattening, load/store and lift/lower
+  walks them.
+
+  Two things follow that are not about size:
+
+  **An archive stops carrying executable JavaScript.** `loader.mjs` imported
+  the guest's own transpiler output from a blob URL, which runs at PAGE
+  AUTHORITY — the one channel the wasm sandbox says nothing about, and the
+  thing `SECURITY.md` and a bundle audit both had to warn about rather than
+  prevent. A descriptor archive has nothing to import.
+
+  **A capability is checked against the import section.** Imports bind by name
+  against a closed table, so anything outside `tutuca:component@0.5.0` is
+  refused before a guest instruction runs — and `env` is refused unless the
+  host granted the matching capability. This is the gap `SECURITY.md` §2
+  admitted to: `Policy::check_capabilities` reads the manifest, a guest writes
+  its own manifest, and a guest that imported `env.now-ms` without mentioning
+  `cap-clock` got the clock anyway. It cannot any more. `setGrants()` is the
+  page's side of that decision; its default is `Policy::untrusted()`'s answer,
+  which is nothing.
+
+  The two trampoline core modules are not needed either. They exist because the
+  transpiler captures `memory` at instantiation time and has to break the
+  resulting cycle; every import here reads memory at CALL time, so the main
+  module is the only one instantiated — and the only one an archive must ship.
+
+  `loader.mjs` takes whichever shape arrived. An archive without a descriptor
+  still loads its transpiler output, and now says out loud that it is doing so.
+
+  Checked three ways against a fifteen-bundle corpus, not asserted: every bundle
+  driven through both implementations with the same host agrees on 379 guest
+  answers and 372 host calls; 337 computed layouts match the core signatures
+  wit-component wrote into the shipped modules; and the two codecs — one over
+  linear memory, one over flat core values — round-trip 18 types identically in
+  both encodings. The Rust guest is the one that matters: utf8, hand-written
+  bindings, and the host cannot tell.
+
 - **`@setinnermd` — markdown in a view, sanitized by construction.** Takes a
   markdown SOURCE string and replaces the element's children with the nodes it
   parses to: CommonMark plus GFM (tables, task lists, strikethrough, footnotes),

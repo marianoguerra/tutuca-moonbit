@@ -83,6 +83,29 @@ export function createTkvImports() {
   };
 }
 
+// --- what this host is willing to grant ---
+//
+// Capabilities checked against a descriptor bundle's IMPORT SECTION, which is
+// the difference between a gate and a promise: `Policy::check_capabilities`
+// reads the manifest, and a guest writes its own manifest. A guest that
+// imports `env.now-ms` and simply declines to mention `cap-clock` got the
+// clock anyway, because this bridge supplied `env` unconditionally.
+//
+// The default is what `Policy::untrusted()` says: nothing. A page that has
+// asked a person calls this before loading, and `set_policy` is the MoonBit
+// side of the same decision — wiring the two together is the piece still
+// missing, and until it lands the strict answer is the one in force.
+let grants = [];
+
+/**
+ * Capabilities (`cap-clock`, `cap-random`, `cap-timer`) that descriptor
+ * bundles loaded from now on may import. Applies at LOAD, like the policy it
+ * mirrors: narrowing it does not retract a bundle already registered.
+ */
+export function setGrants(caps) {
+  grants = [...caps];
+}
+
 // --- single-file bundle unpacking (native, dependency-free) ---
 
 async function gunzip(bytes) {
@@ -334,12 +357,12 @@ export function createTcompImports(getExports) {
     instances: [...bundles.values()].map((b) => b.instances.size),
   });
 
-  // Instantiate an imported jco ESM against a core-module resolver, register
-  // the bundle, and hand its manifest to the wasm host. Shared by the URL
-  // loader (`load`) and the dropped-archive loader (`loadArchive`); only the
-  // ESM source and the getCoreModule resolver differ between them.
-  const finishLoad = async (mod, getCoreModule, loadId) => {
-    const root = await mod.instantiate(getCoreModule, guestImports);
+  // Instantiate against a core-module resolver, register the bundle, and hand
+  // its manifest to the wasm host. Shared by the URL loader (`load`) and the
+  // dropped-archive loader (`loadArchive`); only where the bytes came from
+  // differs between them.
+  const finishLoad = async (instantiate, getCoreModule, loadId) => {
+    const root = await instantiate(getCoreModule, guestImports);
     const id = nextBundle++;
     bundles.set(id, { guest: root.guest, instances: new Map(), next: 1 });
     const manifest = JSON.stringify(root.guest.getManifest());
@@ -347,34 +370,61 @@ export function createTcompImports(getExports) {
   };
 
   // Load a dropped single-file bundle: gunzip (native DecompressionStream) ->
-  // untar -> import the *.component.js entry from a blob URL -> instantiate,
-  // resolving each core module from the in-memory tar bytes. loadId is any
-  // value not tracked in the host's notify_paths, so completion notifies the
-  // root shell (see @dhw.notify).
+  // untar -> instantiate, resolving each core module from the in-memory tar
+  // bytes. loadId is any value not tracked in the host's notify_paths, so
+  // completion notifies the root shell (see @dhw.notify).
+  //
+  // There are two archive shapes, and which one arrived is a question about
+  // the archive rather than about the host:
+  //
+  //   descriptor  a `tutuca.json` naming the world, the string encoding and
+  //               the main core module. `./abi.mjs` implements that world
+  //               once, here, and the archive carries no JavaScript at all.
+  //   transpiled  jco's `*.component.js`, imported from a blob URL. It runs
+  //               at PAGE AUTHORITY — the wasm sandbox says nothing about it —
+  //               which is the whole reason the first shape exists. Kept so an
+  //               archive built before the descriptor still loads, and warned
+  //               about so it is visible when one does.
   const loadArchive = (file, loadId) => {
     (async () => {
       const bytes = new Uint8Array(await file.arrayBuffer());
       const files = untar(await gunzip(bytes));
-      const entryName = Object.keys(files).find((n) => n.endsWith(".component.js"));
-      if (!entryName) throw new Error("no *.component.js entry in archive");
-      const blob = new Blob([files[entryName]], { type: "text/javascript" });
-      const url = URL.createObjectURL(blob);
-      try {
-        const mod = await import(url);
-        const getCoreModule = (path) => {
-          const base = String(path).split("/").pop();
-          const wasm = files[base];
-          if (!wasm) throw new Error(`missing core module in archive: ${base}`);
-          return WebAssembly.compile(wasm);
-        };
-        await finishLoad(mod, getCoreModule, loadId);
-        // the bundle's views registered new margaui utility classes; the host
-        // recompiles + reinjects <style id="margaui-css"> in MoonBit so guest
-        // styling (e.g. the counter/todo cards) applies
-        getExports().refresh_margaui?.();
-      } finally {
-        URL.revokeObjectURL(url);
+      const getCoreModule = (path) => {
+        const base = String(path).split("/").pop();
+        const wasm = files[base];
+        if (!wasm) throw new Error(`missing core module in archive: ${base}`);
+        return WebAssembly.compile(wasm);
+      };
+
+      const descriptorBytes = files["tutuca.json"];
+      if (descriptorBytes) {
+        const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
+        const { instantiate } = await import("./abi.mjs");
+        await finishLoad(
+          (g, i) => instantiate(g, i, { ...descriptor, policy: { grants } }),
+          getCoreModule,
+          loadId,
+        );
+      } else {
+        const entryName = Object.keys(files).find((n) => n.endsWith(".component.js"));
+        if (!entryName) throw new Error("archive has neither tutuca.json nor a *.component.js entry");
+        console.warn(
+          `tutuca dyncomp: "${entryName}" is transpiler output and runs at page ` +
+          "authority; an archive with a tutuca.json descriptor does not",
+        );
+        const blob = new Blob([files[entryName]], { type: "text/javascript" });
+        const url = URL.createObjectURL(blob);
+        try {
+          const mod = await import(url);
+          await finishLoad((g, i) => mod.instantiate(g, i), getCoreModule, loadId);
+        } finally {
+          URL.revokeObjectURL(url);
+        }
       }
+      // the bundle's views registered new margaui utility classes; the host
+      // recompiles + reinjects <style id="margaui-css"> in MoonBit so guest
+      // styling (e.g. the counter/todo cards) applies
+      getExports().refresh_margaui?.();
     })().catch((e) => {
       console.error("universal load failed:", e);
       getExports().dyncomp_on_load_error(loadId, String(e));
