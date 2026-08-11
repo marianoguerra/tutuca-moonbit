@@ -467,3 +467,116 @@ test "set_filter(None) makes setinnermd render nothing" {
   assert_true(html.contains("<article></article>"))
   assert_false(html.contains("# one"))
 }
+
+// ---------------------------------------------------------------------------
+// The list-valued URL attribute.
+//
+// A `list<string>` field bound to `href` is the shape of a guest field, and
+// every layer between it and the DOM used to wave it through: `value_to_attr`
+// makes it `Data`, `UrlFilter` skipped `Data` because a list is not a URL
+// string, and `set_prop` sent `Data` down the property path AHEAD of the
+// `never_assign` check that lists `href` for exactly this reason. In the
+// browser the IDL setter takes ToString of the array, so a one-element list
+// became its element: a live `javascript:` URL in the host's origin, from an
+// untrusted bundle.
+//
+// These assert on `props`, not on `to_html()`. That is the point: on `<form
+// action>` the live property leaves no attribute behind, so HTML-reading
+// assertions — which is what the tests above are — cannot see this bug at all.
+
+///|
+priv struct LinksState {
+  links : Array[String]
+}
+
+///|
+impl @component.Fields for LinksState with fn encode(s) {
+  { "links": List(s.links.map(fn(x) { @tutuca.Value::Str(x) })) }
+}
+
+///|
+impl @component.Fields for LinksState with fn decode(f) {
+  guard f.get("links") is Some(List(vs)) else { return None }
+  let out = []
+  for v in vs {
+    guard v is Str(s) else { return None }
+    out.push(s)
+  }
+  Some({ links: out })
+}
+
+///|
+impl @component.Fields for LinksState with fn schema() {
+  @component.SchemaInfo::new(fingerprint="links_state", fields=[
+    @component.FieldInfo::new("links", TyList(TyText)),
+  ])
+}
+
+///|
+fn mk_links_app(
+  filtered : Bool,
+) -> (@app.App[@memdom.MemNode], @memdom.MemNode) raise {
+  let scope = @component.ComponentStack::new()
+  let c = @component.component(
+    views={
+      "main": @anode.View::new(
+        "main",
+        raw_view="<div><a :href=\".links\" class=\"link\" @text=\"'go'\"></a><form :action=\".links\"></form></div>",
+      ),
+    },
+    name="Linker",
+    init=LinksState::{ links: ["javascript:alert(document.cookie)"] },
+  )
+  scope.register_components([c])
+  let doc = @memdom.document()
+  let container = @vdom.DomNode::create_element(doc, "DIV", None, None)
+  let a = @app.App::new(
+    scope,
+    c.make(Map([])),
+    container,
+    @vdom.RenderOpts::new(doc),
+  )
+  if !filtered {
+    a.set_filter(None)
+  }
+  a.start()
+  (a, container)
+}
+
+///|
+/// The default filter drops it and says so.
+test "a list-valued URL attribute is dropped by default" {
+  let (a, container) = mk_links_app(true)
+  guard find_el(container, "A") is Some(anchor) else { fail("no anchor") }
+  guard find_el(container, "FORM") is Some(form) else { fail("no form") }
+  // Neither the property path nor the attribute path carries it.
+  assert_false(anchor.props.contains("href"))
+  assert_false(anchor.attrs.contains("href"))
+  assert_false(form.props.contains("action"))
+  assert_false(form.attrs.contains("action"))
+  // The elements stayed; an attribute was dropped, not a node.
+  assert_true(anchor.attrs.get("class") == Some("link"))
+  debug_inspect(
+    a.take_filter_reports().map(@filter.Dropped::to_string),
+    content=(
+      #|[
+      #|  "dropped href on <A>: a structured value cannot be a URL ([\"javascript:alert(document.cookie)\"])",
+      #|  "dropped action on <FORM>: a structured value cannot be a URL ([\"javascript:alert(document.cookie)\"])",
+      #|]
+    ),
+  )
+}
+
+///|
+/// And with the filter off, `set_prop` still refuses to put it on the property
+/// path — the second layer, which is what holds when a host opts out.
+test "set_filter(None) still does not put a list on the href property" {
+  let (a, container) = mk_links_app(false)
+  guard find_el(container, "A") is Some(anchor) else { fail("no anchor") }
+  // `href` is in `never_assign`, so it degrades to inert JSON text.
+  assert_false(anchor.props.contains("href"))
+  assert_true(
+    anchor.attrs.get("href") == Some("[\"javascript:alert(document.cookie)\"]"),
+  )
+  debug_inspect(a.take_filter_reports().length(), content="0")
+}

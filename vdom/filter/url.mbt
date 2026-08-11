@@ -224,23 +224,36 @@ pub impl VdomFilter for UrlFilter with fn filter_elem(self, el) {
     if !is_url_attr(name) {
       continue
     }
-    // A structured value is not a URL string; `Html` is raw markup and is
-    // the next filter's problem, not this one's.
-    if value is (Data(_) | Html(_)) {
+    // `Html` is raw markup and is the next filter's problem, not this one's.
+    if value is Html(_) {
       continue
     }
     let raw = value.to_attr_string()
-    if !attr_value_allowed(name, raw) {
+    // A structured value is not a URL string — which is a reason to DROP it,
+    // not to allow it. This used to `continue` on exactly that reasoning. The
+    // reasoning holds about the MoonBit value and fails about the browser:
+    // `set_prop` sends `Data` down the PROPERTY path, the glue does
+    // `node.href = <array>`, and the IDL setter's ToString turns
+    // `["javascript:alert(1)"]` into `javascript:alert(1)` — a live script URL
+    // in the host's origin, from an untrusted bundle, with no host
+    // cooperation. Multi-element lists join with `,`, which is a JS comma
+    // expression, so they work too.
+    //
+    // There is no legitimate structured value for a URL attribute, so the rule
+    // needs no scheme inspection: the shape alone settles it.
+    let reason = if value is Data(_) {
+      Some("a structured value cannot be a URL")
+    } else if !attr_value_allowed(name, raw) {
+      Some("URL scheme is not one a view may navigate to")
+    } else {
+      None
+    }
+    if reason is Some(reason) {
       match doomed {
         Some(names) => names.push(name)
         None => doomed = Some([name])
       }
-      self.record({
-        tag: el.tag,
-        attr: name,
-        value: raw,
-        reason: "URL scheme is not one a view may navigate to",
-      })
+      self.record({ tag: el.tag, attr: name, value: raw, reason })
     }
   }
   if doomed is Some(names) {

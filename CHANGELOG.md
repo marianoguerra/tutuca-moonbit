@@ -6,6 +6,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Security
+
+- **A list- or map-valued URL attribute reached the DOM as a live
+  `javascript:` URL.** An untrusted bundle with a `list<string>` field and
+
+  ```html
+  <a :href=".links">go</a>   <!-- links = ["javascript:alert(document.cookie)"] -->
+  ```
+
+  got script execution in the host's origin, with no host cooperation and
+  nothing above the default `Policy::untrusted()` tier.
+
+  Three layers each declined to stop it, for individually reasonable reasons.
+  `value_to_attr` turns any structured value into `Data(Json)`, which is what
+  makes `:items=".products"` work on a custom element. `UrlFilter` skipped
+  `Data` on the grounds that a structured value is not a URL string. And
+  `set_prop` routed `Data` to property assignment ahead of the `never_assign`
+  check — the list that names `href` for precisely this reason. In the browser
+  the glue then does `node.href = <array>`, and the IDL setter takes ToString of
+  it: a one-element list stringifies to its element. Multi-element lists join
+  with `,`, which is a JS comma expression, so they work too.
+
+  The skip reasoning is true about the MoonBit value and false about what the
+  browser does with it. Both halves are fixed, because they fail
+  independently:
+
+  - `@filter.UrlFilter` now drops a structured value bound to a URL attribute
+    on shape alone, and reports it — no scheme inspection needed, since there
+    is no legitimate structured URL. Structured values on any other name are
+    untouched, which is the custom-element binding the `Data` shape exists for.
+  - `set_prop` no longer lets `Data` skip `never_assign`. Those names degrade
+    to a JSON-text attribute, which is an inert relative URL. This is the layer
+    that holds under `set_filter(None)`.
+
+  The live vectors were `<a href>` and `<form action>`; tutuca's default
+  sanitizer is a denylist, so both elements are available to an untrusted
+  bundle. `src`, `poster`, `srcset` and `ping` took the same path but are inert
+  (`javascript:` does not execute in a subresource load), and `formaction` on
+  `<button>`, `background` and a lowercased `innerhtml` became dead expandos.
+  SVG `href` is a read-only `SVGAnimatedString` and silently dropped the
+  assignment.
+
+  The regression tests assert on the property map rather than on serialized
+  HTML, which is what let this through: a live `form.action` leaves no
+  attribute behind, so the existing `to_html().contains("javascript:")` checks
+  could not observe it.
+
 ### Added
 
 - **`dyncomp/host/wasm/abi.mjs` — the canonical ABI for `tutuca:component`,

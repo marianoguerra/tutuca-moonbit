@@ -1,8 +1,9 @@
 // Object/array-valued custom-element properties (JS
 // test/vdom-custom-element.test.js). memdom has no custom-element registry
 // or setters, so instead of counting setter calls these assert the stored
-// property value across render and morph — `Data` always takes the property
-// path, never setAttribute.
+// property value across render and morph — `Data` takes the property path
+// rather than setAttribute for every name except the `never_assign` eleven,
+// which it does not get to skip (see the last test in this file).
 
 ///|
 fn ce_container() -> (MemNode, @vdom.RenderOpts[MemNode]) {
@@ -89,4 +90,43 @@ test "equal-content Data does not dirty the diff (value semantics)" {
   let c : Map[String, @vdom.AttrValue] = { "items": Data([4]) }
   guard! @vdom.diff_props(a, c) is Some(patch)
   assert_true(patch.get("items") == Some(Some(Data([4]))))
+}
+
+///|
+/// `never_assign` is not skippable by being structured, and `href` is the
+/// reason the rule exists.
+///
+/// Asserted on `props`, deliberately, and not on `to_html()`: the bug this
+/// pins was invisible in serialized output. A live `form.action` leaves the
+/// attribute empty, so a test reading HTML sees `<form></form>` and passes
+/// while the property carries the payload. The property map is where the
+/// routing decision is observable, so it is what the assertion reads.
+test "a structured value does not skip never_assign" {
+  for name in ["href", "list", "form", "download"] {
+    let (container, opts) = ce_container()
+    let payload : Json = ["javascript:alert(1)"]
+    let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
+      (name, @vdom.AttrValue::Data(payload)),
+    ])
+    let tree = @vdom.h("A", attrs~)
+    let _ = @vdom.render(tree, container, opts)
+    guard! container.first_child() is Some(el)
+    // NOT assigned as a property — that is the path that reaches the browser's
+    // ToString and turns the list back into a live script URL.
+    assert_false(el.props.contains(name))
+    // It lands as inert JSON text instead: a relative URL with no scheme.
+    assert_true(el.attrs.get(name) == Some("[\"javascript:alert(1)\"]"))
+  }
+}
+
+///|
+/// The custom-element case the `Data` branch exists for is untouched: a name
+/// outside `never_assign` still gets the real object.
+test "structured props outside never_assign still take the property path" {
+  let (container, opts) = ce_container()
+  let tree = @vdom.h("x-picker", attrs={ "items": Data([1, 2, 3]) })
+  let _ = @vdom.render(tree, container, opts)
+  guard! container.first_child() is Some(el)
+  assert_true(el.props.get("items") == Some(Data([1, 2, 3])))
+  assert_false(el.attrs.contains("items"))
 }

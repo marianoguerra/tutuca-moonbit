@@ -79,7 +79,19 @@ fn[N : DomNode] set_prop(
   // differs pre-upgrade or on authoring mistakes (a list bound to a plain
   // attribute): here the object property is always assigned, which also
   // spares memdom a custom-element registry.
-  if value is Some(Data(_) as v) {
+  //
+  // `never_assign` still applies, and skipping it was a hole. That list exists
+  // because assigning those properties is the wrong path, and a value being
+  // structured does not make it the right one: the browser's `href` setter
+  // takes ToString of whatever it is given, so a list-valued `href` reached the
+  // DOM as a live `javascript:` URL — past this function's own guard, written
+  // for that exact attribute. Falling through leaves the JSON text on the
+  // attribute instead, which is an inert relative URL.
+  //
+  // The cost is a custom element wanting a structured property under one of
+  // those eleven names (`list`, `form`, …), which now gets JSON text. That is
+  // the right way for this to be wrong.
+  if !never_assign(name) && value is Some(Data(_) as v) {
     ignore(node.set_property(name, v))
     return
   }

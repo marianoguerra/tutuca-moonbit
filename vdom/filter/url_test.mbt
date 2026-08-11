@@ -226,3 +226,49 @@ test "a URL attribute is recognized whatever its case" {
   debug_inspect(e.attrs.length(), content="2")
   debug_inspect(none_.length(), content="0")
 }
+
+///|
+/// A structured value bound to a URL attribute is dropped on shape alone.
+///
+/// This used to be skipped — "a structured value is not a URL string" — which
+/// is true of the MoonBit value and false of what the browser does with it.
+/// `set_prop` routes `Data` down the property path and the IDL setter takes
+/// ToString of the array, so `["javascript:alert(1)"]` became
+/// `javascript:alert(1)`: a live script URL in the host's origin, reachable by
+/// an untrusted bundle with a `list<string>` field and no host cooperation.
+test "a structured value bound to a URL attribute is dropped" {
+  let payload : Json = ["javascript:alert(1)"]
+  for name in ["href", "src", "action", "formaction", "srcset", "ping"] {
+    let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
+      (name, @vdom.AttrValue::Data(payload)),
+    ])
+    let (tree, reports) = filtered(el("A", attrs))
+    guard tree is Node(e) else { fail("expected an element") }
+    debug_inspect(e.attrs.contains(name), content="false")
+    debug_inspect(reports.length(), content="1")
+  }
+  // Multi-element lists too: `join(",")` is a JS comma expression, so
+  // `["javascript:alert(1)","x"]` is every bit as live as the one-element case.
+  let two : Json = ["javascript:alert(1)", "x"]
+  let (tree, reports) = filtered(el("A", { "href": Data(two) }))
+  guard tree is Node(e) else { fail("expected an element") }
+  debug_inspect(e.attrs.contains("href"), content="false")
+  debug_inspect(
+    reports,
+    content=(
+      #|["dropped href on <A>: a structured value cannot be a URL ([\"javascript:alert(1)\",\"x\"])"]
+    ),
+  )
+}
+
+///|
+/// The rule is about URL attributes, not about `Data`: a structured value on
+/// any other name is what the custom-element binding is for and is untouched.
+test "a structured value on a non-URL attribute is kept" {
+  let (tree, reports) = filtered(
+    el("X-PICKER", { "items": Data([1, 2, 3]), "config": Data({ "a": 1 }) }),
+  )
+  guard tree is Node(e) else { fail("expected an element") }
+  debug_inspect(e.attrs.length(), content="2")
+  debug_inspect(reports.length(), content="0")
+}

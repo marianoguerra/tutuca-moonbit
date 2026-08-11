@@ -240,6 +240,32 @@ one traversal — and `set_filter(None)` is the opt-out. Not tier-dependent,
 because there is no legitimate `javascript:` URL in a described view at any
 tier.
 
+**The rule used to have a hole where the value was not a string, and the shape
+of that hole is worth keeping.** A view attribute whose value evaluates to a
+list or a map becomes `AttrValue::Data(Json)` (`render/values.mbt`) — the shape
+that makes `:items=".products"` assign a real object to a custom element.
+`UrlFilter` skipped `Data` because a structured value is not a URL string, and
+`set_prop` routed `Data` to property assignment BEFORE consulting
+`never_assign`, the list that contains `href` for exactly this reason. The
+browser then closes the loop: `node.href = <array>` runs the array through the
+IDL setter's ToString, and `["javascript:alert(1)"]` stringifies to
+`javascript:alert(1)`. An untrusted bundle needed only a `list<string>` field
+and `<a :href=".links">`.
+
+Each layer was locally reasonable and the composition was not, which is the
+failure mode this document exists to catch. The skip was true about the MoonBit
+value and false about the browser's coercion of it; the routing shortcut
+optimized for a case (`Data` is a property by definition) whose exceptions it
+then inherited. Both are fixed independently — the filter drops a structured
+value on a URL attribute on shape alone, and `Data` no longer skips
+`never_assign` — because a two-layer defense whose layers share an assumption
+is one layer.
+
+It also outlived the tests because the tests read serialized HTML. The live
+vector on `<form action>` sets a property and leaves no attribute, so
+`to_html().contains("javascript:")` was blind to it by construction. The
+regressions assert on the property map.
+
 This glue used to install its own, from when the seam defaulted to absent. It no
 longer does: two filters would mean reports split across two logs, and the app's
 own is installed before `set_app` is ever called. What stays here is
