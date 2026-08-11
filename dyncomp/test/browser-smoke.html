@@ -36,9 +36,16 @@ try {
   };
   const getCoreModule = (path) =>
     WebAssembly.compileStreaming(fetch(new URL(path, jsDir)));
+  const control = {
+    log() {}, emit() {}, send() {}, sendAt() {}, bubbleAt() {},
+    stopPropagation() {}, request() {}, after() {},
+    makeInstance() { return 0n; }, dropInstance() {},
+  };
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.4.0': values,
+    'tutuca:component/values@0.6.0': values,
     'tutuca:component/values': values,
+    'tutuca:component/control@0.6.0': control,
+    'tutuca:component/control': control,
   });
   const guest = root.guest;
 
@@ -47,23 +54,23 @@ try {
     report('ok - ' + msg);
   };
 
-  const m = guest.getManifest();
+  const m = await fetch('../../guests/counter/manifest.json').then(r => r.json());
   assert(m.moduleName === 'counterlib' && m.components[0].name === 'Counter',
     'manifest crosses (module ' + m.moduleName + ')');
-  assert(/@on\.click="inc"/.test(m.components[0].views[0].html),
-    'view HTML with event attributes crosses');
+  assert(m.components[0].views[0].src === 'views/Counter.main.html',
+    'static view asset is declared');
 
   const a = new guest.Instance('Counter', [['count', { tag: 'number', val: 10 }]]);
   const b = new guest.Instance('Counter', []);
   assert(a.getField('count').val === 10 && b.getField('count').val === 0,
     'independent instances');
 
-  const a2 = a.handleEvent('input', 'inc', []);
+  const a2 = a.handleEvent('input', 'inc', []).val;
   assert(a2.getField('count').val === 11 && a.getField('count').val === 10,
     'handle-event: new instance out, old unchanged');
 
   const list = put([{ tag: 'number', val: 40 }, { tag: 'number', val: 2 }]);
-  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]);
+  const summed = b.handleEvent('receive', 'sum', [{ tag: 'list', val: list }]).val;
   assert(summed.getField('count').val === 42, 'guest read host arena mid-dispatch (sum=42)');
 
   const N = 1000;

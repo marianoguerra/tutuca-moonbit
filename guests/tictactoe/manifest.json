@@ -1,0 +1,102 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "gameslib",
+  "doc": "Small games, as loadable components.",
+  "version": "0.4.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "TicTacToe",
+      "doc": "Noughts and crosses on a three-by-three board, for two people sharing a screen.",
+      "keywords": [
+        "game",
+        "tictactoe",
+        "noughts",
+        "crosses",
+        "board",
+        "two-player",
+        "play"
+      ],
+      "category": "game",
+      "messageDocs": [
+        {
+          "name": "play",
+          "doc": "Take the square at an index."
+        },
+        {
+          "name": "reset",
+          "doc": "Clear the board and start again."
+        },
+        {
+          "name": "status",
+          "doc": "Whose turn it is, or who won."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/TicTacToe.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "square",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "squares",
+          "ty": 2,
+          "doc": "The nine squares, left to right and top to bottom: each a mark (\"X\", \"O\" or blank) and whether it is part of the winning line.",
+          "required": false,
+          "constraint": {
+            "minLen": 9,
+            "maxLen": 9,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        }
+      ],
+      "receives": [
+        "init"
+      ],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "status"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "nearly-won",
+          "argsJson": "{\"squares\": [\"X\", \"X\", \"\", \"O\", \"O\", \"\", \"\", \"\", \"\"]}",
+          "doc": "One move from a win, for looking at the winning line."
+        }
+      ],
+      "style": ""
+    }
+  ]
+}

@@ -1,0 +1,108 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "calclib",
+  "doc": "A calculator, as a loadable component.",
+  "version": "0.4.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "Calculator",
+      "doc": "A four-function calculator: digits, the four operators, and an answer.",
+      "keywords": [
+        "calculator",
+        "math",
+        "arithmetic",
+        "numbers",
+        "add",
+        "multiply",
+        "sum"
+      ],
+      "category": "tool",
+      "messageDocs": [
+        {
+          "name": "digit",
+          "doc": "Type a digit."
+        },
+        {
+          "name": "point",
+          "doc": "Type a decimal point."
+        },
+        {
+          "name": "operate",
+          "doc": "Choose an operator, working out anything pending first."
+        },
+        {
+          "name": "equals",
+          "doc": "Work out the answer."
+        },
+        {
+          "name": "clear",
+          "doc": "Start again from zero."
+        },
+        {
+          "name": "back",
+          "doc": "Undo the last digit."
+        },
+        {
+          "name": "negate",
+          "doc": "Flip the sign of what is on screen."
+        },
+        {
+          "name": "pendingLabel",
+          "doc": "The number and operator waiting, for the line above the display."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Calculator.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "display",
+          "ty": 0,
+          "doc": "What the screen says.",
+          "required": false,
+          "constraint": {
+            "maxLen": 16,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": "\"0\""
+          }
+        }
+      ],
+      "receives": [
+        "init"
+      ],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "pendingLabel"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "answer",
+          "argsJson": "{\"display\": \"42\"}",
+          "doc": "Starts showing the answer to everything."
+        }
+      ],
+      "style": ""
+    }
+  ]
+}

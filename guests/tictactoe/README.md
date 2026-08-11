@@ -18,8 +18,8 @@ counter guest and documented once, in
 [`../counter/README.md`](../counter/README.md). Only the component source
 differs:
 
-- `gen/interface/tutuca/component/guest/tictactoe.mbt` — the `Game` struct, its
-  `ComponentDef`, and `dyn_module()`
+- `gen/interface/tutuca/component/guest/tictactoe.mbt` — `Game` behavior and
+  factory; `manifest.json` + `views/` hold its declaration
 
 ```sh
 node guests/build-guest.mjs tictactoe   # dist/tictactoe.component.wasm + dist/js/

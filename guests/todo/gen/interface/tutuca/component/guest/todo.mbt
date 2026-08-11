@@ -9,7 +9,7 @@
 /// `value`/`isSend`) as handler args, so a single opaque instance handles
 /// toggle/remove/add without nested children.
 ///
-/// Everything an author writes is in this file; sdk.mbt does the rest.
+/// Its static declaration and view live beside the module; sdk.mbt does the ABI.
 
 ///|
 priv struct TodoItem {
@@ -57,35 +57,35 @@ impl DynComponent for Todo with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Todo with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return None }
+  guard bucket is INPUT else { return Unhandled }
   match name {
     // There is no "setDraft" case: `draft` is a declared field, so the host
     // generates `setDraft` from the schema and writes it through `with_field`
     // below. A handler here would be the same assignment written twice.
     // Add button, or Enter in the input via `addOnEnter isSend`
-    "add" => self.add_draft()
+    "add" => handled(self.add_draft())
     "addOnEnter" =>
       match args {
-        [@values.Value::Boolean(true), ..] => self.add_draft()
-        _ => None
+        [@values.Value::Boolean(true), ..] => handled(self.add_draft())
+        _ => Unchanged
       }
     // `@on.input="toggleAt @key"` / `@on.click="removeAt @key"` carry the
     // loop index (see key_index)
     "toggleAt" =>
       match key_index(args) {
-        Some(i) => self.toggle_at(i)
-        None => None
+        Some(i) => handled(self.toggle_at(i))
+        None => Unchanged
       }
     "removeAt" =>
       match key_index(args) {
-        Some(i) => self.remove_at(i)
-        None => None
+        Some(i) => handled(self.remove_at(i))
+        None => Unchanged
       }
     "clearDone" => {
       let kept = self.items.filter(it => !it.done)
-      Some({ items: kept, draft: self.draft } as &DynComponent)
+      Changed({ items: kept, draft: self.draft } as &DynComponent)
     }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -234,83 +234,6 @@ fn make_todo(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-fn todo_def() -> ComponentDef {
-  component_def(
-    "Todo",
-    doc="A task list: type a task, add it, tick it off, remove it.",
-    keywords=["todo", "task", "list", "checklist"],
-    category="input",
-    message_docs=[
-      { name: "add", doc: "Add the drafted task to the list." },
-      { name: "addOnEnter", doc: "Add the draft when the key was Enter." },
-      { name: "toggleAt", doc: "Tick or untick the task at an index." },
-      { name: "removeAt", doc: "Delete the task at an index." },
-      { name: "clearDone", doc: "Remove every ticked task." },
-      { name: "summary", doc: "How many tasks are done, as a sentence." },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm w-80 todo">
-          #|  <div class="card-body gap-3">
-          #|    <h2 class="card-title text-base" @text="$summary"></h2>
-          #|    <div class="join w-full">
-          #|      <input class="input input-bordered input-sm join-item grow" placeholder="Add a task…" :value=".draft" @on.input="setDraft value" @on.keydown="addOnEnter isSend" />
-          #|      <button class="btn btn-sm btn-primary join-item" @on.click="add">Add</button>
-          #|    </div>
-          #|    <ul class="flex flex-col gap-1" @hide="empty? .items">
-          #|      <li class="flex gap-2 items-center" @each=".items">
-          #|        <input type="checkbox" class="checkbox checkbox-sm" :checked="@value.done" @on.input="toggleAt @key" />
-          #|        <span class="grow text-sm" @text="@value.text"></span>
-          #|        <button class="btn btn-ghost btn-xs btn-circle" @on.click="removeAt @key">✕</button>
-          #|      </li>
-          #|    </ul>
-          #|    <p class="text-sm opacity-60 italic" @show="empty? .items">No tasks yet — add one above.</p>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // `items` is a list of {text, done} records; declaring it is what gives
-    // the host `setDraft` (which this guest no longer implements), the item
-    // mutators, structural equality and the JSON projection.
-    types=[
-      { kind: TY_TEXT, elem: None, items: [], name: "", members: [] },
-      { kind: TY_RECORD, elem: None, items: [], name: "todo-item", members: [] },
-      { kind: TY_LIST, elem: Some(1), items: [], name: "", members: [] },
-    ],
-    fields=[
-      field(
-        "draft",
-        0,
-        doc="The task being typed, not yet added.",
-        constraint=Some({ ..no_limits(), max_len: Some(200) }),
-      ),
-      field("items", 2, doc="The tasks, in the order they were added."),
-    ],
-    // `setDraft` is absent on purpose: the `draft` field implies it, and the
-    // host answers it (see `with_field`)
-    handlers=["add", "addOnEnter", "toggleAt", "removeAt", "clearDone"],
-    methods=["summary"],
-    inits=[
-      {
-        name: "groceries",
-        args_json: "{\"items\": [{\"text\": \"milk\", \"done\": false}, {\"text\": \"bread\", \"done\": true}]}",
-        doc: "A short shopping list, one item already bought.",
-      },
-    ],
-    // styling is entirely margaui (daisyUI) classes; no scoped fallback CSS
-  )
-}
-
-///|
 fn dyn_module() -> DynModule {
-  module_def(
-    "todolib",
-    [dyn_comp(todo_def(), make_todo, restore=restore_todo)],
-    // this bundle serves no requests of its own, and asks the host for nothing
-    doc="A sample task list, for exercising list fields and item mutators.",
-    version="0.4.0",
-  )
+  module_def([dyn_comp("Todo", make_todo, restore=restore_todo)])
 }

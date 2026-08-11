@@ -1,0 +1,15 @@
+<div class="card card-border bg-base-100 border-base-300 shadow-sm w-64 tictactoe">
+  <div class="card-body gap-3 p-4 items-center">
+    <div class="grid grid-cols-3 gap-1.5 board">
+      <button @each=".squares" @on.click="play @key"
+              @if.class="@value.win"
+              @then="'btn btn-success size-16 text-3xl font-bold square'"
+              @else="'btn btn-soft size-16 text-3xl font-bold square'"
+              @text="@value.mark"></button>
+    </div>
+    <div class="flex items-center justify-between gap-3 w-full">
+      <span class="text-sm font-medium opacity-70 whitespace-nowrap status" @text="$status"></span>
+      <button class="btn btn-xs btn-ghost reset" @on.click="reset">new game</button>
+    </div>
+  </div>
+</div>

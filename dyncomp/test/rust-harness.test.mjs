@@ -42,28 +42,37 @@ const values = {
 };
 
 let guest;
+let manifest;
 before(async () => {
   if (!built) return;
   const { instantiate } = await import(new URL('rust-tempconv.component.js', jsDir));
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.5.0': values,
+    'tutuca:component/values@0.6.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.5.0': control,
+    'tutuca:component/control@0.6.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
+  manifest = JSON.parse(
+    await readFile(new URL('../../guests/rust-tempconv/manifest.json', import.meta.url), 'utf8'),
+  );
+  const raw = guest.Instance.prototype.handleEvent;
+  guest.Instance.prototype.handleEvent = function (...args) {
+    const result = raw.call(this, ...args);
+    return result.tag === 'changed' ? result.val : undefined;
+  };
 });
 
 /// A method's answer, as plain text.
 const said = (inst, name) => inst.callMethod(name, []).val;
 
 test('rust guest speaks the same contract', { skip: !built }, () => {
-  const m = guest.getManifest();
-  assert.equal(m.apiVersion, 5);
+  const m = manifest;
+  assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'rusttemplib');
-  assert.match(m.components[0].views[0].html, /@on\.input="editC value"/);
+  assert.equal(m.components[0].views[0].src, 'views/TempConv.main.html');
 
   // 20°C rather than 0: three zeros would not demonstrate a conversion
   const a = new guest.Instance('TempConv', []);
@@ -87,7 +96,7 @@ test('rust guest speaks the same contract', { skip: !built }, () => {
   assert.ok(m.components[0].keywords.includes('rust'));
   assert.deepEqual(m.capabilities, []);
   // `setCelsius` is the host's mutator, not a handler this guest answers
-  assert.deepEqual(m.components[0].handlers, ['editC', 'editF', 'editK', 'preset']);
+  assert.equal(m.components[0].handlers, undefined);
   assert.deepEqual(m.components[0].inits.map((i) => i.name), ['body-heat']);
 });
 

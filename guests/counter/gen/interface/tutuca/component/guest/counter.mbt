@@ -1,13 +1,13 @@
 ///| HANDWRITTEN (not wit-bindgen output, unlike the sibling ffi/top files —
 /// regeneration must not touch it; see ../../../../../README.md).
 ///
-/// The counter guest module: opaque native state + tutuca view strings.
+/// The counter guest behavior: opaque native state behind static views.
 /// Exercises the whole `tutuca:component` surface: lazy field reads, list
 /// fields (host `@each`), a view method (`$label`), a request round trip
 /// (input "double" -> control.request -> response "double"), and nested
 /// same-bundle children (Pair holds two Counters via control.make-instance
-/// tokens). Everything an author writes is in this file; sdk.mbt does the
-/// rest.
+/// tokens). The declaration and views live in manifest.json and views/;
+/// sdk.mbt handles the generated ABI declarations.
 
 ///|
 priv struct Counter {
@@ -40,8 +40,8 @@ impl DynComponent for Counter with fn get_field(self, name) {
 ///|
 impl DynComponent for Counter with fn handle(self, bucket, name, args) {
   match (bucket, name) {
-    (INPUT, "inc") => Some(self.next(self.count + 1.0) as &DynComponent)
-    (INPUT, "dec") => Some(self.next(self.count - 1.0) as &DynComponent)
+    (INPUT, "inc") => Changed(self.next(self.count + 1.0) as &DynComponent)
+    (INPUT, "dec") => Changed(self.next(self.count - 1.0) as &DynComponent)
     // a request the HOST serves; `on_ok` routes the answer to a handler of
     // its own, which then carries just the value instead of [result, error]
     (INPUT, "double") => {
@@ -51,12 +51,12 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
         on_res: None,
         live_path: false,
       })
-      None
+      Unchanged
     }
     (RESPONSE, "doubled") =>
       match args {
-        [@values.Value::Number(n), ..] => Some(self.next(n) as &DynComponent)
-        _ => None
+        [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
+        _ => Unchanged
       }
     // a request this BUNDLE serves (dyn_module's `serve`), which its own
     // components find before any host handler of the same name
@@ -67,18 +67,18 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
         on_res: None,
         live_path: false,
       })
-      None
+      Unchanged
     }
     (RESPONSE, "triple") =>
       match args {
         // no on_ok: response args are [result, error]
-        [@values.Value::Number(n), ..] => Some(self.next(n) as &DynComponent)
-        _ => None
+        [@values.Value::Number(n), ..] => Changed(self.next(n) as &DynComponent)
+        _ => Unchanged
       }
     // tell whoever is above: a Pair parent hears this, and so would the host
     (INPUT, "announce") => {
       @control.emit("counted", [@values.Value::Number(self.count)])
-      None
+      Unchanged
     }
     // boundary exercise: sum a host list of numbers (guest -> values import)
     (RECEIVE, "sum") =>
@@ -92,23 +92,13 @@ impl DynComponent for Counter with fn handle(self, bucket, name, args) {
               _ => ()
             }
           }
-          Some(self.next(total) as &DynComponent)
+          Changed(self.next(total) as &DynComponent)
         }
-        _ => None
+        _ => Unchanged
       }
-    (RECEIVE, "init") => None
-    _ => None
+    (RECEIVE, "init") => Unchanged
+    _ => Unhandled
   }
-}
-
-///|
-/// Iterated by host `@each` over the instance itself (obj_seq_entries).
-impl DynComponent for Counter with fn seq_entries(self) {
-  let out = []
-  for i, n in self.history {
-    out.push(("h\{i}", @values.Value::Number(n)))
-  }
-  Some(out)
 }
 
 ///|
@@ -159,85 +149,6 @@ fn make_counter(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-fn counter_def() -> ComponentDef {
-  component_def(
-    "Counter",
-    doc="A number with buttons that raise and lower it, keeping every value it has held.",
-    keywords=["counter", "number", "tally", "increment"],
-    category="input",
-    message_docs=[
-      { name: "inc", doc: "Add one." },
-      { name: "dec", doc: "Subtract one." },
-      { name: "double", doc: "Ask the host to double the count." },
-      { name: "triple", doc: "Ask this bundle to triple the count." },
-      { name: "announce", doc: "Tell the parent what the count is now." },
-      { name: "sum", doc: "Replace the count with the sum of a list." },
-      { name: "label", doc: "The count as a sentence, for a view." },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm counter">
-          #|  <div class="card-body gap-2 items-center p-4">
-          #|    <div class="join">
-          #|      <button class="btn btn-sm join-item dec" @on.click="dec">−</button>
-          #|      <span class="btn btn-sm join-item no-animation pointer-events-none count" @text=".count"></span>
-          #|      <button class="btn btn-sm join-item inc" @on.click="inc">+</button>
-          #|    </div>
-          #|    <div class="join">
-          #|      <button class="btn btn-sm btn-secondary join-item double" @on.click="double">double</button>
-          #|      <button class="btn btn-sm btn-secondary join-item triple" @on.click="triple">triple</button>
-          #|      <button class="btn btn-sm btn-ghost join-item announce" @on.click="announce">announce</button>
-          #|    </div>
-          #|    <span class="text-sm opacity-70 label" @text="$label"></span>
-          #|    <ul class="flex gap-1 flex-wrap history"><li class="badge badge-sm badge-ghost" @each=".history" @when="nonZero" @text="@value"></li></ul>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // The state this component holds. Declaring it is what gives the host the
-    // JSON projection, structural equality and the generated `setCount` /
-    // `pushInHistory` mutators — none of which is implemented below. The docs
-    // and the constraint are the half a TYPE cannot state, and they are what a
-    // generated form and a catalog search read.
-    types=[
-      { kind: TY_FLOAT, elem: None, items: [], name: "", members: [] },
-      { kind: TY_LIST, elem: Some(0), items: [], name: "", members: [] },
-    ],
-    fields=[
-      field(
-        "count",
-        0,
-        doc="The current value.",
-        required=false,
-        constraint=Some({ ..no_limits(), min: Some(-1000), max: Some(1000) }),
-      ),
-      field("history", 1, doc="Every value the count has held, oldest first."),
-    ],
-    // `setCount` is deliberately NOT here: it is the mutator `count` implies,
-    // and the host answers it — declaring it would take it back.
-    handlers=["inc", "dec", "double", "triple", "announce"],
-    receives=["init", "sum"],
-    responses=["doubled", "triple"],
-    methods=["label"],
-    whens=["nonZero"],
-    // a named initial state a host can offer instead of the bare constructor
-    inits=[
-      {
-        name: "with-history",
-        args_json: "{\"count\": 3, \"history\": [0, 1, 2]}",
-        doc: "Starts at three, with the first three counts already behind it.",
-      },
-    ],
-    // styling is entirely margaui (daisyUI) classes above; the universal demo
-    // compiles them, so no scoped fallback CSS — and under the host's strict
-    // tier an empty `style` is the only thing a bundle may ship.
-  )
-}
-
-///|
 /// Two nested child Counters, created through control.make-instance and
 /// exposed as instance-token fields the host renders with <x render>.
 priv struct Pair {
@@ -261,7 +172,7 @@ impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
     // travelling further up (the host would hear it otherwise)
     (BUBBLE, "counted") => {
       @control.stop_propagation()
-      Some({ left: self.right, right: self.left } as &DynComponent)
+      Changed({ left: self.right, right: self.left } as &DynComponent)
     }
     // reach INTO this component's own subtree: `.left` is the child the left
     // field holds, and "sum" is its receive handler
@@ -269,9 +180,9 @@ impl DynComponent for Pair with fn handle(self, bucket, name, _args) {
       @control.send_at([@control.PathStep::Field("left")], "sum", [
         @values.Value::List(@values.list_new()),
       ])
-      None
+      Unchanged
     }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -303,51 +214,8 @@ fn make_pair(_args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-fn pair_def() -> ComponentDef {
-  component_def(
-    "Pair",
-    doc="Two counters side by side; announcing from either one swaps them.",
-    keywords=["counter", "pair", "layout"],
-    category="layout",
-    message_docs=[
-      { name: "zeroLeft", doc: "Set the left counter back to zero." },
-      { name: "counted", doc: "A child counter announced its value." },
-      { name: "triple", doc: "Triple a number (served by this bundle)." },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="flex flex-col gap-2 pair">
-          #|  <button class="btn btn-xs btn-ghost self-start zeroleft" @on.click="zeroLeft">zero the left one</button>
-          #|  <div class="left"><x render=".left"></div>
-          #|  <div class="right"><x render=".right"></div>
-          #|</div>
-        ),
-      },
-    ],
-    // both children are Counters from this same module, held as instance
-    // tokens (control.make-instance) — a `component` slot to the host
-    types=[
-      { kind: TY_COMP, elem: None, items: [], name: "Counter", members: [] },
-    ],
-    fields=[
-      field("left", 0, doc="The counter on the left.", required=true),
-      field("right", 0, doc="The counter on the right.", required=true),
-    ],
-    handlers=["zeroLeft"],
-    receives=["init"],
-    // what its children raise with control.emit
-    bubbles=["counted"],
-    // the bundle serves this one itself; a host handler of the same name
-    // would only be reached if this bundle did not declare it
-    requests=["triple"],
-  )
-}
-
-///|
 /// The bundle's own request handlers, which its components reach before any
-/// host handler of the same name (see `pair_def`'s `requests`).
+/// host handler of the same name (the static manifest declares `requests`).
 fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
   match (name, args) {
     ("triple", [@values.Value::Number(n), ..]) =>
@@ -360,19 +228,12 @@ fn serve_request(name : String, args : Array[@values.Value]) -> RequestResult {
 ///|
 fn dyn_module() -> DynModule {
   module_def(
-    "counterlib",
     // Neither component persists, which is the OTHER half of the persistence
     // contract worth showing: their state is exactly the fields they declare,
     // so the host projects and rebuilds them itself and a `persist` here would
     // be that list written twice.
-    [dyn_comp(counter_def(), make_counter), dyn_comp(pair_def(), make_pair)],
+    [dyn_comp("Counter", make_counter), dyn_comp("Pair", make_pair)],
     // the bundle's own request service (WIT handle-request)
     serve=serve_request,
-    doc="Sample counters — the reference bundle for the tutuca:component contract.",
-    version="0.4.0",
-    // It asks for nothing: no clock, no randomness, no timer. That is what
-    // most components need, and it is what makes this one trivially safe to
-    // mount from anywhere.
-    capabilities=[],
   )
 }

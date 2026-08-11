@@ -186,24 +186,25 @@ impl DynComponent for Calc with fn get_field(self, name) {
 
 ///|
 impl DynComponent for Calc with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return None }
+  guard bucket is INPUT else { return Unhandled }
   match name {
     "digit" =>
       match args {
-        [@values.Value::Text(d), ..] => Some(self.digit(d) as &DynComponent)
-        _ => None
+        [@values.Value::Text(d), ..] => Changed(self.digit(d) as &DynComponent)
+        _ => Unchanged
       }
-    "point" => Some(self.point() as &DynComponent)
+    "point" => Changed(self.point() as &DynComponent)
     "operate" =>
       match args {
-        [@values.Value::Text(op), ..] => Some(self.operate(op) as &DynComponent)
-        _ => None
+        [@values.Value::Text(op), ..] =>
+          Changed(self.operate(op) as &DynComponent)
+        _ => Unchanged
       }
-    "equals" => Some(self.equals() as &DynComponent)
-    "clear" => Some(Calc::zero() as &DynComponent)
-    "back" => Some(self.back() as &DynComponent)
-    "negate" => Some(self.negate() as &DynComponent)
-    _ => None
+    "equals" => Changed(self.equals() as &DynComponent)
+    "clear" => Changed(Calc::zero() as &DynComponent)
+    "back" => Changed(self.back() as &DynComponent)
+    "negate" => Changed(self.negate() as &DynComponent)
+    _ => Unhandled
   }
 }
 
@@ -299,154 +300,11 @@ fn make_calc(args : Array[(String, @values.Value)]) -> &DynComponent {
 // --- the view ---------------------------------------------------------------
 
 ///|
-/// One key of the pad. Written once, because twenty buttons differing only in
-/// a label and a handler is twenty chances to mistype one.
-fn key(label : String, handler : String, cls? : String = "btn-soft") -> String {
-  "<button class=\"btn \{cls} k\" @on.click=\"\{handler}\">\{label}</button>"
-}
-
-///|
-/// The keypad, as the classic four-column grid:
-///
-///   C  ±  ←  /
-///   7  8  9  *
-///   4  5  6  -
-///   1  2  3  +
-///   0     .  =
-///
-/// `0` spans two columns rather than leaving a hole beside it: a gap in a
-/// keypad reads as a key that failed to render.
-fn calc_view() -> String {
-  let rows = [
-    [
-      key("C", "clear", cls="btn-error btn-soft"),
-      key("±", "negate"),
-      key("←", "back"),
-      key("/", "operate '/'", cls="btn-primary"),
-    ],
-    [
-      key("7", "digit '7'", cls=""),
-      key("8", "digit '8'", cls=""),
-      key("9", "digit '9'", cls=""),
-      key("*", "operate '*'", cls="btn-primary"),
-    ],
-    [
-      key("4", "digit '4'", cls=""),
-      key("5", "digit '5'", cls=""),
-      key("6", "digit '6'", cls=""),
-      key("-", "operate '-'", cls="btn-primary"),
-    ],
-    [
-      key("1", "digit '1'", cls=""),
-      key("2", "digit '2'", cls=""),
-      key("3", "digit '3'", cls=""),
-      key("+", "operate '+'", cls="btn-primary"),
-    ],
-    [
-      key("0", "digit '0'", cls="col-span-2"),
-      key(".", "point", cls=""),
-      key("=", "equals", cls="btn-secondary"),
-    ],
-  ]
-  let pad = StringBuilder::new()
-  for row in rows {
-    for k in row {
-      pad.write_string(k)
-    }
-  }
-  let sb = StringBuilder::new()
-  sb.write_string(
-    "<div class=\"card card-border bg-base-100 border-base-300 shadow-sm w-64 calculator\">",
-  )
-  sb.write_string("<div class=\"card-body gap-3 p-4\">")
-  // The screen: one block, right-aligned, with the pending sum above it in
-  // small type. `tabular-nums` so a digit changing does not move the ones
-  // beside it, which is what makes a calculator display feel steady.
-  sb.write_string(
-    "<div class=\"rounded-box bg-base-200 px-3 py-2 text-right\">",
-  )
-  sb.write_string(
-    "<div class=\"h-4 text-xs opacity-50 font-mono tabular-nums pending\" @text=\"$pendingLabel\"></div>",
-  )
-  sb.write_string(
-    "<div class=\"text-3xl font-mono tabular-nums truncate display\" @text=\".display\"></div>",
-  )
-  sb.write_string("</div>")
-  sb.write_string("<div class=\"grid grid-cols-4 gap-1.5 pad\">")
-  sb.write_string(pad.to_string())
-  sb.write_string("</div></div></div>")
-  sb.to_string()
-}
-
-///|
-fn calc_def() -> ComponentDef {
-  component_def(
-    "Calculator",
-    doc="A four-function calculator: digits, the four operators, and an answer.",
-    keywords=[
-      "calculator", "math", "arithmetic", "numbers", "add", "multiply", "sum",
-    ],
-    category="tool",
-    message_docs=[
-      { name: "digit", doc: "Type a digit." },
-      { name: "point", doc: "Type a decimal point." },
-      {
-        name: "operate",
-        doc: "Choose an operator, working out anything pending first.",
-      },
-      { name: "equals", doc: "Work out the answer." },
-      { name: "clear", doc: "Start again from zero." },
-      { name: "back", doc: "Undo the last digit." },
-      { name: "negate", doc: "Flip the sign of what is on screen." },
-      {
-        name: "pendingLabel",
-        doc: "The number and operator waiting, for the line above the display.",
-      },
-    ],
-    views=[{ name: "main", html: calc_view() }],
-    // ONE declared field, and it is the answer rather than the working. What is
-    // pending is real state — it is in `persist` — but it means nothing outside
-    // this component, so declaring it would invite a host to write something it
-    // cannot reason about.
-    types=[{ kind: TY_TEXT, elem: None, items: [], name: "", members: [] }],
-    fields=[
-      field(
-        "display",
-        0,
-        doc="What the screen says.",
-        constraint=Some({
-          ..no_limits(),
-          max_len: Some(16),
-          default_json: "\"0\"",
-        }),
-      ),
-    ],
-    // `setDisplay` is deliberately absent: it is the mutator `display` implies,
-    // and the host answers it.
-    handlers=["digit", "point", "operate", "equals", "clear", "back", "negate"],
-    receives=["init"],
-    methods=["pendingLabel"],
-    inits=[
-      {
-        name: "answer",
-        args_json: "{\"display\": \"42\"}",
-        doc: "Starts showing the answer to everything.",
-      },
-    ],
-  )
-}
-
-///|
 fn dyn_module() -> DynModule {
   module_def(
-    "calclib",
     // It DOES persist, unlike the counter: half its state is not declared, so a
     // host projecting the declared fields would bring back the right number on
     // screen with no memory of the sum it was part-way through.
-    [dyn_comp(calc_def(), make_calc, restore=restore_calc)],
-    doc="A calculator, as a loadable component.",
-    version="0.4.0",
-    // It asks for nothing: no clock, no randomness, no timer.
-    capabilities=[],
+    [dyn_comp("Calculator", make_calc, restore=restore_calc)],
   )
 }

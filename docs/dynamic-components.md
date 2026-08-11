@@ -8,7 +8,7 @@ the same machinery as the components you compiled in.
 Two roles, one contract. **Hosting** is `dyncomp/`. **Writing** a component is
 `tutuca new-guest`. The contract between them is one file,
 [`../dyncomp/wit/tutuca-component.wit`](../dyncomp/wit/tutuca-component.wit) —
-`tutuca:component@0.5.0`.
+`tutuca:component@0.6.0`.
 
 The full design is in [`../dyncomp/DESIGN.md`](../dyncomp/DESIGN.md); what a
 loaded bundle can and cannot do is in
@@ -19,8 +19,9 @@ This page is the practical route into both.
 
 A guest declares its **shape** without revealing its **state**.
 
-The manifest says what components exist, what fields each holds and of what
-type, which messages it answers, and what its views are. The state itself never
+The static manifest says what components exist, what fields each holds and of
+what type, and which non-input messages it accepts; ordinary HTML files hold
+the views. The state itself never
 crosses the boundary: the host reads one field at a time through `get-field`
 while rendering, and a handler takes the guest's own instance and returns its
 successor. That is the same copy-on-write model a compiled-in tutuca component
@@ -32,7 +33,7 @@ them, and show it in an inspector — with nobody trusting a line of its code.
 Because the state is opaque, the guest owes the host no serialization, no
 comparison, no schema implementation.
 
-And because a guest's views are **data** — tutuca template strings the host
+And because a guest's views are **data** — HTML templates the host
 compiles with its own parser — the guest never touches the DOM. The renderer,
 event delegation, morphing, the modifiers and the linter all apply to it
 unchanged, and none of them had to learn what a bundle is.
@@ -51,16 +52,15 @@ You need `moon`, `wasm-tools` and `node`. You do **not** need `wit-bindgen`:
 the bindings ship generated and drift-checked, and the WIT in `wit/` is the
 contract to implement rather than a source to regenerate against.
 
-The scaffold is a complete MoonBit module. Exactly one file in it is yours —
-`gen/interface/tutuca/component/guest/clock.mbt` — holding a struct, its
-`DynComponent` implementation, a `ComponentDef` describing it, and a
-`dyn_module()` listing what the bundle contains. Everything else is generated
-bindings plus `sdk.mbt`, which implements every generated `declare` over that
-trait.
+The scaffold is a complete MoonBit module. Three places are yours:
+`gen/interface/tutuca/component/guest/clock.mbt` holds behavior and factories,
+`manifest.json` holds the schema/catalog/capability declaration, and `views/`
+holds normal HTML templates. Everything else is generated bindings plus
+`sdk.mbt`, which implements every generated `declare` over the trait.
 
-`.tutuca.tar.gz` is the whole distribution format: a gzipped tar of the
-transpiled output, unpacked in the browser with `DecompressionStream`. One
-file, dropped on a page.
+`.tutuca.tar.gz` is the whole distribution format: a gzipped tar containing
+`tutuca.json`, one core wasm module and the HTML views, unpacked in the browser
+with `DecompressionStream`. It contains no executable JavaScript.
 
 ### Why the SDK is copied rather than depended on
 

@@ -13,18 +13,6 @@ pub fn wasmExportConstructorInstance(
 
 ///|
 #doc(hidden)
-pub fn wasmExportGetManifest() -> Int {
-  @guest.wasmExportGetManifest()
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportGetManifestPostReturn(p0 : Int) -> Unit {
-  @guest.wasmExportGetManifestPostReturn(p0)
-}
-
-///|
-#doc(hidden)
 pub fn wasmExportHandleRequest(p0 : Int, p1 : Int, p2 : Int, p3 : Int) -> Int {
   @guest.wasmExportHandleRequest(p0, p1, p2, p3)
 }
@@ -94,18 +82,6 @@ pub fn wasmExportMethodInstancePersist(p0 : Int) -> Int {
 #doc(hidden)
 pub fn wasmExportMethodInstancePersistPostReturn(p0 : Int) -> Unit {
   @guest.wasmExportMethodInstancePersistPostReturn(p0)
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportMethodInstanceSeqEntries(p0 : Int) -> Int {
-  @guest.wasmExportMethodInstanceSeqEntries(p0)
-}
-
-///|
-#doc(hidden)
-pub fn wasmExportMethodInstanceSeqEntriesPostReturn(p0 : Int) -> Unit {
-  @guest.wasmExportMethodInstanceSeqEntriesPostReturn(p0)
 }
 
 ///|

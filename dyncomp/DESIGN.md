@@ -1,7 +1,7 @@
 # Dynamic WebAssembly tutuca components
 
 A WIT contract — [`wit/tutuca-component.wit`](wit/tutuca-component.wit),
-`tutuca:component@0.5.0` — such that anything implementing it (MoonBit, Rust,
+`tutuca:component@0.6.0` — such that anything implementing it (MoonBit, Rust,
 Go, Python, …) produces a WebAssembly *component* that a **running** tutuca app
 can fetch, instantiate, and mount into its component tree.
 
@@ -33,16 +33,17 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 1. **The host is the framework** (inversion of control). Guests import
    host-provided interfaces (`values`, `control`); the host calls guests at
    well-defined points and drives the whole lifecycle.
-2. **Views are data, rendered host-side.** tutuca has no element event
+2. **Views are static data, rendered host-side.** tutuca has no element event
    handlers — event bindings are attributes parsed at view parse time. A guest
-   ships its views as tutuca HTML template strings in its manifest; the host
+   ships ordinary HTML files named by a static JSON manifest; the host
    compiles them with anode exactly like local views (so the renderer, event
    delegation, morphing, modifiers and the linter apply unchanged). The guest
    renders nothing.
-3. **State is opaque, its SHAPE is declared.** The interface exposes views,
-   handlers and a schema. Handlers take self and return self
-   (`handle-event -> option<instance>`, a *new* resource handle; `none` =
-   unchanged); fields are read lazily by the host at render time
+3. **State is opaque, its SHAPE is statically declared.** The WIT exposes only
+   behavior; the bundle manifest carries the schema. Handlers take self and
+   return `unhandled | unchanged | changed(instance)`. The distinction lets
+   the host try a generated field mutator only when a name is not the guest's;
+   fields are read lazily by the host at render time
    (`get-field`). The schema says what fields exist and what they hold — it
    never carries their values.
 
@@ -72,7 +73,7 @@ mounted from anywhere. Neither property is useful alone.
 |---|---|
 | Component = views + a declared schema | `Component::for_type(name~, views~, schema~)` |
 | Opaque state uniform to the host | one host struct `DynObj` implementing `&Obj` (`core/spec.mbt`) wraps every guest instance |
-| What the instance IS | `Obj::obj_schema` — built from the manifest in `register_bundle` |
+| What the instance IS | `Obj::obj_schema` — built from static bundle data in `register_bundle` |
 | Handlers take self, return self | `Handler((Array[Value], &Ctx) -> Value?)` is already self-pre-bound; the guest's new handle wraps into a fresh `DynObj` |
 | Change detection / re-render | a fresh `DynObj` is a new physical identity — the COW model everything keys on — carrying the predecessor's `ObjId` at the next revision, so the render cache still hits |
 | Render reads | `Obj::obj_field` is a lazy per-name read; only fields the views evaluate cross the boundary |
@@ -92,7 +93,9 @@ No changes to `render/` or `vdom/` are needed.
 - Guest pipeline: `wit-bindgen moonbit <this dir's wit/>` → fill in the
   component file → `moon build --target wasm` → `wasm-tools component embed
   --encoding utf16` (MoonBit strings are UTF-16) → `wasm-tools component new`
-  → `jco transpile --instantiation async`. All four tools are version-coupled;
+  → `jco transpile --instantiation async` (build-time core extraction only) →
+  pack the main core wasm with `manifest.json` and `views/`. The archive ships
+  no generated JavaScript. All four tools are version-coupled;
   pin them and commit the generated bindings. Here: `guests/build-guest.mjs
   <name>` and `cmd/dev -- gen-guest-bindings` (regenerate + drift check).
 - The world imports **no WASI**, so no preview2 shims are needed in the browser.
@@ -119,7 +122,7 @@ No changes to `render/` or `vdom/` are needed.
 │  │ DynObj (&Obj) ────────┼─────────────┼─► instance table │  │
 │  │ schema + mutators     │   exports   │  value arena     │  │
 │  └───────────────────────┘  dyncomp_*  └───────┬──────────┘  │
-│                                                │ jco ESM     │
+│                                                │ host ABI    │
 │                                        ┌───────▼──────────┐  │
 │                                        │ guest component  │  │
 │                                        │ (linear-mem wasm)│  │
@@ -129,7 +132,7 @@ No changes to `render/` or `vdom/` are needed.
 
 ### Host (`host/`, backend-agnostic)
 
-- **`register_bundle`**: per manifest `component-def`, build each view at
+- **`register_bundle`**: per static manifest component, build each view at
   runtime with `@anode.View::new` (a guest's views arrive as source, so they
   cannot be compiled ahead of time), build the declared `SchemaInfo`, call
   `Component::for_type`, and register into a fresh child scope. Then compile —
@@ -145,11 +148,11 @@ No changes to `render/` or `vdom/` are needed.
 - **`DynObj`** implements `&Obj`: `component_id` → the synthesized component
   (stock view resolution); `obj_field` → `get-field` (arena-decoded; `instance`
   payloads wrap as nested `DynObj`s), falling back to the schema's mutators;
-  `obj_schema` → what the guest declared; `obj_seq_entries` → `seq-entries`;
+  `obj_schema` → what the bundle declared;
   `obj_callable` → `call-method`, in the value namespace and the render-time
-  (`@when`) one; `obj_handler` → a `Handler` that either applies a generated
-  mutator through `with-field` or forwards to `handle-event` and drains the
-  guest's buffered `control` calls through the dispatching `&Ctx`.
+  (`@when`) one; `obj_handler` → a `Handler` that forwards to `handle-event`,
+  drains buffered `control` calls, and falls back
+  to a generated mutator through `with-field` only on `unhandled`.
 - **Lifecycle**: a load registers the bundle, refreshes listeners and styles,
   and pushes a `dyncompLoaded` message so a host component seeds instances as a
   plain state change. Loading a module that is already registered hot-swaps it:
@@ -166,9 +169,9 @@ No changes to `render/` or `vdom/` are needed.
 Guests are separate moon modules under `guests/` with the wit-bindgen layout.
 [`../guests/sdk.mbt`](../guests/sdk.mbt) (no tutuca dependency) implements every
 generated `declare` over a `DynComponent` trait, so authoring a guest is: one
-struct per component implementing that trait, plus a `dyn_module()` listing the
-`ComponentDef`s, their factories, and the bundle's `serve` (its own request
-handlers).
+struct per component implementing that trait, plus a `dyn_module()` listing
+component names, factories, and the bundle's optional `serve`. The schema,
+catalog metadata, capabilities and HTML are edited directly as static files.
 
 It is COPIED into each guest rather than depended on, and that is forced rather
 than chosen: a `declare` must be implemented in the package that declares it,
@@ -176,8 +179,8 @@ and a method must be defined in the package that defines its type — `Instance`
 and the ten `declare`s both live in the guest's own generated `top.mbt`. So the
 SDK cannot be a mooncakes package, and one canonical file copied under a drift
 check is the closest available thing.
-Non-MoonBit guests implement the WIT directly — the Rust counter is a plain
-`struct Counter { count: f64 }` with zero tutuca code.
+Non-MoonBit guests implement the WIT directly — the Rust temperature converter
+is a plain Rust struct with zero tutuca code.
 
 ### JS bridge ([`host/wasm/loader.mjs`](host/wasm/loader.mjs))
 
@@ -187,13 +190,13 @@ through that file's `makeExtra` hook so a page which never loads a bundle
 carries none of this. It ships beside `glue.mbt`, whose conventions it
 implements — the two are one contract in two languages — and it carries `tkv`
 too, since `dyncomp/persist/wasm` is the only package that declares it. Inside:
-the
-bundle table (dynamic `import()` + `instantiate`), an integer-handle instance
+the bundle table (host-owned canonical ABI instantiation), an integer-handle instance
 table, the `values` arena (answered entirely in JS — compounds cross the
 JS↔host-wasm boundary as JSON), and the `control` buffer drained through the
 dispatch result. Bundles arrive as a single `.tutuca.tar.gz` — gunzipped with
 `DecompressionStream` and untarred in-browser — named either by a dropped
-file's id or by URL.
+file's id or by URL. A v0.6 archive contains `tutuca.json`, one core wasm, and
+HTML views; the older transpiler-JS shape remains a warned compatibility path.
 
 ## What a guest declares, and what it does not
 
@@ -201,8 +204,8 @@ file's id or by URL.
 |---|---|
 | its views (tutuca template source) | which `@on` names those views raise — the host reads them off the compiled views |
 | its fields, over a flat type table | how to project them to JSON, or how to compare two instances — the host does both from the schema |
-| the input names it ANSWERS ITSELF | the rest: those are the mutators its fields imply, applied host-side through `with-field` |
-| `receives` / `bubbles` / `responses` | how they are routed — that is the transactor's |
+| `receives` / `bubbles` / `responses` | input names: `event-result` distinguishes a guest handler from a host mutator dynamically |
+| — | how messages are routed — that is the transactor's |
 | `methods` and `whens` (`@when` filters) | — |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
 | what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is the hash of its archive |
@@ -220,10 +223,9 @@ file's id or by URL.
 - Guest views are parsed by the *host's* anode; the manifest `api-version`
   covers template-syntax and contract evolution, and a mismatch is refused
   rather than adapted.
-- A generated mutator name a guest wants for logic of its own has to be
-  declared in `handlers` (`resetLeft` is both a plausible handler and the
-  mutator a `left` field implies). `handle-event` is one opaque entry point, so
-  the host cannot ask "is this yours?" without calling it.
+- Every input reaches `handle-event` once before a generated mutator can run.
+  That extra call buys a single source of truth: authors no longer duplicate
+  their handler names in a manifest merely to disambiguate unchanged state.
 - `@dangerouslysetinnerhtml` is refused in a guest view, so a bundle that
   genuinely needs to render markup cannot. Its value is an expression, so no
   registration-time pass can see what it will hold; refusing the construct is

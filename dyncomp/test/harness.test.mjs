@@ -61,23 +61,40 @@ const control = {
 };
 
 let guest;
+let manifest;
+let rawHandleEvent;
 before(async () => {
   const { instantiate } = await import(new URL('counter.component.js', jsDir));
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
     // jco emits unversioned import keys today; provide both to be safe.
-    'tutuca:component/values@0.5.0': values,
+    'tutuca:component/values@0.6.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.5.0': control,
+    'tutuca:component/control@0.6.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
+  manifest = JSON.parse(
+    await readFile(new URL('../../guests/counter/manifest.json', import.meta.url), 'utf8'),
+  );
+  for (const component of manifest.components) {
+    for (const view of component.views) {
+      view.html = await readFile(new URL(`../../guests/counter/${view.src}`, import.meta.url), 'utf8');
+    }
+  }
+  // Most behavioral assertions care about the successor. Keep those terse,
+  // while retaining the raw v0.6 method for the result-semantics assertion.
+  rawHandleEvent = guest.Instance.prototype.handleEvent;
+  guest.Instance.prototype.handleEvent = function (...args) {
+    const result = rawHandleEvent.call(this, ...args);
+    return result.tag === 'changed' ? result.val : undefined;
+  };
 });
 
 test('manifest declares the component, its views and its state', () => {
-  const m = guest.getManifest();
-  assert.equal(m.apiVersion, 5);
+  const m = manifest;
+  assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'counterlib');
   assert.deepEqual(m.components.map((c) => c.name), ['Counter', 'Pair']);
   const [comp] = m.components;
@@ -94,7 +111,7 @@ test('manifest declares the component, its views and its state', () => {
   assert.equal(comp.types[0].kind, 'ty-float');
   assert.equal(comp.types[1].kind, 'ty-list');
   assert.equal(comp.types[1].elem, 0);
-  assert.deepEqual(comp.handlers, ['inc', 'dec', 'double', 'triple', 'announce']);
+  assert.equal(comp.handlers, undefined);
   assert.deepEqual(comp.receives, ['init', 'sum']);
   assert.deepEqual(comp.bubbles, []);
   assert.deepEqual(comp.responses, ['doubled', 'triple']);
@@ -115,7 +132,7 @@ test('manifest declares the component, its views and its state', () => {
 });
 
 test('the manifest carries what a catalog and a model read', () => {
-  const m = guest.getManifest();
+  const m = manifest;
   assert.match(m.doc, /reference bundle/);
   assert.equal(m.version, '0.4.0');
   // this bundle needs no clock, no randomness and no timer, so it asks for
@@ -149,6 +166,15 @@ test('handle-event is functional: new instance out, old unchanged', () => {
   assert.deepEqual(a.getField('count'), { tag: 'number', val: 10 });
   assert.equal(a.handleEvent('input', 'unknown', []), undefined);
   assert.equal(a.handleEvent('receive', 'init', []), undefined);
+});
+
+test('handle-event distinguishes unknown names from handled no-ops', () => {
+  const a = new guest.Instance('Counter', []);
+  assert.deepEqual(rawHandleEvent.call(a, 'input', 'unknown', []), { tag: 'unhandled' });
+  assert.deepEqual(rawHandleEvent.call(a, 'receive', 'init', []), { tag: 'unchanged' });
+  const result = rawHandleEvent.call(a, 'input', 'inc', []);
+  assert.equal(result.tag, 'changed');
+  assert.ok(result.val instanceof guest.Instance);
 });
 
 test('the declared fields ARE the projection: no to-json, no eq', () => {

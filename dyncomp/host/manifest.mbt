@@ -1,5 +1,5 @@
-///| The guest manifest (the WIT `guest.manifest` record), as the host sees it
-/// after the bridge serializes it to JSON. Views are tutuca template strings
+///| The bundle's static `manifest.json`, after the bridge hydrates its view
+/// files and serializes it to the host. Views are tutuca template strings
 /// compiled host-side; the declared schema — fields over a flat type table,
 /// plus the message buckets — becomes the `SchemaInfo` every generic-access
 /// seam reads (see `register_bundle`).
@@ -51,16 +51,13 @@ pub(all) struct DynComponentDef {
   keywords : Array[String]
   /// A grouping for a palette; "" = ungrouped.
   category : String
-  /// Sentences for the names in `handlers` / `receives` / `bubbles` /
+  /// Sentences for the names in views / `receives` / `bubbles` /
   /// `responses` / `methods` / `requests`, merged by name — one table rather
   /// than a doc field on six parallel lists.
   message_docs : Map[String, String]
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
-  /// `@on` names the guest answers itself; anything else a view raises is a
-  /// generated mutator the host applies (see DynObj::obj_handler).
-  handlers : Array[String]
   receives : Array[String]
   bubbles : Array[String]
   responses : Array[String]
@@ -94,7 +91,7 @@ pub(all) struct DynManifest {
 /// The manifest api-version this host implements. A bundle declaring anything
 /// else is refused rather than adapted: the contract is small enough that a
 /// shim would cost more than a rebuild of the guest.
-pub let supported_api_version : Int = 5
+pub let supported_api_version : Int = 6
 
 ///|
 suberror ManifestError {
@@ -436,7 +433,6 @@ pub fn DynManifest::from_json_string(
       views,
       types: parse_types(c),
       fields,
-      handlers: str_array(c, "handlers"),
       receives: str_array(c, "receives"),
       bubbles: str_array(c, "bubbles"),
       responses: str_array(c, "responses"),

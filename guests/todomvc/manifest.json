@@ -1,0 +1,148 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "todomvclib",
+  "doc": "TodoMVC, as a dynamic component: the whole canonical list in one bundle.",
+  "version": "0.4.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "TodoMvc",
+      "doc": "The canonical todo list: add, tick, edit in place, delete, filter, and clear what is done.",
+      "keywords": [
+        "todo",
+        "todomvc",
+        "task",
+        "list",
+        "checklist",
+        "filter"
+      ],
+      "category": "input",
+      "messageDocs": [
+        {
+          "name": "add",
+          "doc": "Add the drafted task."
+        },
+        {
+          "name": "addOnEnter",
+          "doc": "Add the draft when the key was Enter."
+        },
+        {
+          "name": "typeDraft",
+          "doc": "Hold what is being typed into the new-task box."
+        },
+        {
+          "name": "toggleAt",
+          "doc": "Tick or untick the task at an index."
+        },
+        {
+          "name": "removeAt",
+          "doc": "Delete the task at an index."
+        },
+        {
+          "name": "toggleAll",
+          "doc": "Tick everything, or untick it if it all is."
+        },
+        {
+          "name": "clearCompleted",
+          "doc": "Remove every ticked task."
+        },
+        {
+          "name": "startEdit",
+          "doc": "Open the task at an index for editing."
+        },
+        {
+          "name": "typeEdit",
+          "doc": "Hold what is being typed into the open row."
+        },
+        {
+          "name": "commitEdit",
+          "doc": "Keep the edit; an emptied row is deleted."
+        },
+        {
+          "name": "cancelEdit",
+          "doc": "Abandon the edit and keep what was there."
+        },
+        {
+          "name": "countLeft",
+          "doc": "How many tasks are not done, as a sentence."
+        },
+        {
+          "name": "matchesFilter",
+          "doc": "Whether the current filter lets a row through."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/TodoMvc.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "todo-item",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "items",
+          "ty": 2,
+          "doc": "The tasks, in the order they were typed.",
+          "required": false
+        },
+        {
+          "name": "filter",
+          "ty": 0,
+          "doc": "Which tasks are shown: all, active, or completed.",
+          "required": false,
+          "constraint": {
+            "pattern": "",
+            "format": "",
+            "enumJson": "[\"all\", \"active\", \"completed\"]",
+            "defaultJson": "\"all\""
+          }
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "draft",
+        "editText",
+        "countLeft",
+        "done"
+      ],
+      "whens": [
+        "matchesFilter"
+      ],
+      "requests": [],
+      "inits": [
+        {
+          "name": "example",
+          "argsJson": "{\"items\": [{\"text\": \"taste MoonBit\", \"done\": true}, {\"text\": \"build a component\", \"done\": false}]}",
+          "doc": "The TodoMVC sample list, one item already done."
+        }
+      ],
+      "style": ""
+    }
+  ]
+}

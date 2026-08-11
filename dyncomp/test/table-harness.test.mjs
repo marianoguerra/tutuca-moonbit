@@ -95,6 +95,7 @@ const CITIES = {
 };
 
 let guest;
+let manifest;
 const make = (args) => new guest.Instance('Table', args);
 
 before(async () => {
@@ -103,17 +104,25 @@ before(async () => {
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.5.0': values,
+    'tutuca:component/values@0.6.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.5.0': control,
+    'tutuca:component/control@0.6.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
+  manifest = JSON.parse(
+    await readFile(new URL('../../guests/table/manifest.json', import.meta.url), 'utf8'),
+  );
+  const raw = guest.Instance.prototype.handleEvent;
+  guest.Instance.prototype.handleEvent = function (...args) {
+    const result = raw.call(this, ...args);
+    return result.tag === 'changed' ? result.val : undefined;
+  };
 });
 
 test('the manifest declares one ty-table field', { skip: !built }, () => {
-  const m = guest.getManifest();
-  assert.equal(m.apiVersion, 5);
+  const m = manifest;
+  assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'tablelib');
   const [c] = m.components;
   assert.equal(c.name, 'Table');

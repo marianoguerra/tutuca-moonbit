@@ -13,8 +13,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   carry its core module and a four-field descriptor:
 
   ```json
-  { "world": "tutuca:component@0.5.0", "encoding": "utf16",
-    "core": "counter.component.core.wasm" }
+  { "world": "tutuca:component@0.6.0", "encoding": "utf16",
+    "core": "counter.component.core.wasm", "manifest": { "...": "..." } }
   ```
 
   and the host does the lifting. What it replaces is `jco transpile` output —
@@ -36,7 +36,7 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   prevent. A descriptor archive has nothing to import.
 
   **A capability is checked against the import section.** Imports bind by name
-  against a closed table, so anything outside `tutuca:component@0.5.0` is
+  against a closed table, so anything outside `tutuca:component@0.6.0` is
   refused before a guest instruction runs — and `env` is refused unless the
   host granted the matching capability. This is the gap `SECURITY.md` §2
   admitted to: `Policy::check_capabilities` reads the manifest, a guest writes
@@ -52,6 +52,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
   `loader.mjs` takes whichever shape arrived. An archive without a descriptor
   still loads its transpiler output, and now says out loud that it is doing so.
+
+- **`tutuca:component@0.6.0` separates declaration from execution.** The WIT
+  no longer exports the catalog/schema/view graph through `get-manifest`; it is
+  static `manifest.json` plus HTML files. Input handler names are no longer
+  duplicated there either: `handle-event` returns `unhandled`, `unchanged`, or
+  `changed(instance)`, so the host can fall back to a generated field mutator
+  without guessing. `seq-entries` is gone; iterable state is an ordinary
+  declared list field. The guest SDK consequently asks authors only for
+  behavior, factories, persistence, and optional request serving.
 
   Checked three ways against a fifteen-bundle corpus, not asserted: every bundle
   driven through both implementations with the same host agrees on 379 guest

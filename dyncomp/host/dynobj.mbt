@@ -259,14 +259,6 @@ pub impl @tutuca.Obj for DynObj with fn obj_with_field(self, name, v) {
 }
 
 ///|
-pub impl @tutuca.Obj for DynObj with fn obj_seq_entries(self) {
-  match self.guest.seq_entries(self.handle) {
-    Some(entries) => Some(entries.map(e => (KStr(e.0), e.1)))
-    None => None
-  }
-}
-
-///|
 pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
   // The render-time (alter) namespace is where a `@when` filter is looked up.
   // It reaches `call-method` like any other declared callable — the guest
@@ -287,31 +279,12 @@ pub impl @tutuca.Obj for DynObj with fn obj_callable(self, name, ns) {
 
 ///|
 pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
-  // An input name the guest does NOT answer, but the schema generates a
-  // mutator for, is handled here: `setCount 5` in a guest view reaches the
-  // setter its declared fields imply, through `with-field`, without the guest
-  // implementing a handler and without the dispatch crossing the boundary.
-  //
-  // The guest's own list wins, which is why it is declared rather than
-  // inferred: `handle-event` is one opaque entry point that answers to every
-  // name, so "is this yours?" cannot be asked without calling it — and calling
-  // it would make "unchanged" indistinguishable from "not mine". `resetLeft`
-  // is a generated mutator for a `left` field AND a plausible handler name;
-  // only the guest can say which it meant.
-  if bucket is Input &&
-    !self.def.handlers.contains(name) &&
-    self.mutators.get(name) is Some(g) {
-    return Some(
-      Handler((args, _ctx) => {
-        match g(self.field_box(), args) {
-          Obj(_) as nv => Some(nv)
-          _ => None
-        }
-      }),
-    )
-  }
+  // Input names are discovered dynamically. A guest can answer Unhandled,
+  // after which the field-derived mutator gets its chance. This removes the
+  // duplicated static `handlers` declaration while preserving precedence for
+  // a guest handler whose name also looks like a generated mutator.
   let declared = match bucket {
-    Input => self.def.handlers.contains(name)
+    Input => true
     Receive => self.def.receives.contains(name)
     Response => self.def.responses.contains(name)
     // A guest child raises these with control.emit; a guest PARENT hears them
@@ -333,6 +306,15 @@ pub impl @tutuca.Obj for DynObj with fn obj_handler(self, bucket, name) {
             ctx.bubble_at_path(ctx.path().concat(steps), name, args)
           Request(name, args, opts) => ctx.request(name, args, opts)
           StopPropagation => ctx.stop_propagation()
+        }
+      }
+      if !result.handled {
+        guard bucket is Input && self.mutators.get(name) is Some(g) else {
+          return None
+        }
+        return match g(self.field_box(), args) {
+          Obj(_) as nv => Some(nv)
+          _ => None
         }
       }
       match result.next {

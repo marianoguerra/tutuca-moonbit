@@ -1,6 +1,6 @@
 ///| The `tcomp` FFI + lifecycle glue. Flow (no closures cross the boundary,
 /// host-driven callbacks like the event bridge):
-///   host load(url) -> JS imports the jco ESM, instantiates the guest,
+///   host load(url) -> JS instantiates the guest core through the host ABI,
 ///   calls the exported dyncomp_on_loaded(load_id, bundle_id, manifest_json)
 ///   -> glue registers the bundle into the live app's scope, refreshes
 ///   listeners/styles, and pushes a "dyncompLoaded" message so a host
@@ -9,8 +9,8 @@
 /// Value JSON conventions with the JS bridge:
 ///   - args/maps cross as plain JSON (Value::to_json / from_json)
 ///   - get_field/call_method return "" for none, else a JSON value
-///   - seq_entries returns "" for none, else [[key, value], ...]
-///   - dispatch returns {"next": handle|null, "msgs": [{kind,name,args,...}]},
+///   - dispatch returns {"handled": bool, "next": handle|null,
+///     "msgs": [{kind,name,args,...}]},
 ///     where a msg may also carry `path` (relative steps) or `opts` (request
 ///     routing) — see control_msg below
 ///   - handle_request returns {"ok": value} or {"err": value}
@@ -30,9 +30,6 @@ extern "wasm" fn tcomp_get_field(
   handle : Int,
   name : String,
 ) -> String = "tcomp" "get_field"
-
-///|
-extern "wasm" fn tcomp_seq_entries(bundle : Int, handle : Int) -> String = "tcomp" "seq_entries"
 
 ///|
 extern "wasm" fn tcomp_dispatch(
@@ -75,6 +72,10 @@ extern "wasm" fn tcomp_load_dropped(file_id : Int, load_id : Int) -> Unit = "tco
 /// Load the same kind of bundle from a URL. One archive format, two ways to
 /// name one: what the page dropped, or what it can fetch.
 extern "wasm" fn tcomp_load_url(url : String, load_id : Int) -> Unit = "tcomp" "load_url"
+
+///|
+/// Keep the JS-side import gate on the same grants as the MoonBit policy.
+extern "wasm" fn tcomp_set_grants(caps_json : String) -> Unit = "tcomp" "set_grants"
 
 ///|
 /// The guest's own state, base64 (see the bridge): "" is a guest that does not
@@ -282,27 +283,6 @@ pub impl @dyncomp.Guest for WasmGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-pub impl @dyncomp.Guest for WasmGuest with fn seq_entries(self, handle) {
-  let s = tcomp_seq_entries(self.bundle, handle)
-  guard s != "" else { return None }
-  let j = @json.parse(s) catch {
-    _ => {
-      bad_payload("seq_entries", s)
-      return None
-    }
-  }
-  guard j is Array(items) else { return None }
-  let out = []
-  for item in items {
-    match item {
-      Array([String(key), v]) => out.push((key, self.json_to_value(v)))
-      _ => ()
-    }
-  }
-  Some(out)
-}
-
-///|
 pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
   self,
   handle,
@@ -317,7 +297,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     name,
     args_json(args),
   )
-  let empty : @dyncomp.DispatchResult = { next: None, msgs: [] }
+  let empty : @dyncomp.DispatchResult = { handled: false, next: None, msgs: [] }
   let j = @json.parse(raw) catch {
     _ => {
       bad_payload("dispatch result", raw)
@@ -325,6 +305,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
     }
   }
   guard j is Object(o) else { return empty }
+  let handled = o.get("handled") is Some(True)
   let next = match o.get("next") {
     Some(Number(n, ..)) => Some(n.to_int())
     _ => None
@@ -361,7 +342,7 @@ pub impl @dyncomp.Guest for WasmGuest with fn dispatch(
       }
     _ => ()
   }
-  { next, msgs }
+  { handled, next, msgs }
 }
 
 ///|
@@ -533,6 +514,9 @@ pub fn take_filter_reports() -> Array[String] {
 /// bundle, not narrowing the policy.
 pub fn set_policy(next : @policy.Policy) -> Unit {
   policy.val = next
+  tcomp_set_grants(
+    Json::array(next.grants.map(cap => Json::string(cap.to_string()))).stringify(),
+  )
 }
 
 ///|

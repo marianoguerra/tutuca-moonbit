@@ -1,0 +1,187 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "counterlib",
+  "doc": "Sample counters — the reference bundle for the tutuca:component contract.",
+  "version": "0.4.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "Counter",
+      "doc": "A number with buttons that raise and lower it, keeping every value it has held.",
+      "keywords": [
+        "counter",
+        "number",
+        "tally",
+        "increment"
+      ],
+      "category": "input",
+      "messageDocs": [
+        {
+          "name": "inc",
+          "doc": "Add one."
+        },
+        {
+          "name": "dec",
+          "doc": "Subtract one."
+        },
+        {
+          "name": "double",
+          "doc": "Ask the host to double the count."
+        },
+        {
+          "name": "triple",
+          "doc": "Ask this bundle to triple the count."
+        },
+        {
+          "name": "announce",
+          "doc": "Tell the parent what the count is now."
+        },
+        {
+          "name": "sum",
+          "doc": "Replace the count with the sum of a list."
+        },
+        {
+          "name": "label",
+          "doc": "The count as a sentence, for a view."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Counter.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-float",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "count",
+          "ty": 0,
+          "doc": "The current value.",
+          "required": false,
+          "constraint": {
+            "min": -1000,
+            "max": 1000,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        },
+        {
+          "name": "history",
+          "ty": 1,
+          "doc": "Every value the count has held, oldest first.",
+          "required": false
+        }
+      ],
+      "receives": [
+        "init",
+        "sum"
+      ],
+      "bubbles": [],
+      "responses": [
+        "doubled",
+        "triple"
+      ],
+      "methods": [
+        "label"
+      ],
+      "whens": [
+        "nonZero"
+      ],
+      "requests": [],
+      "inits": [
+        {
+          "name": "with-history",
+          "argsJson": "{\"count\": 3, \"history\": [0, 1, 2]}",
+          "doc": "Starts at three, with the first three counts already behind it."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "Pair",
+      "doc": "Two counters side by side; announcing from either one swaps them.",
+      "keywords": [
+        "counter",
+        "pair",
+        "layout"
+      ],
+      "category": "layout",
+      "messageDocs": [
+        {
+          "name": "zeroLeft",
+          "doc": "Set the left counter back to zero."
+        },
+        {
+          "name": "counted",
+          "doc": "A child counter announced its value."
+        },
+        {
+          "name": "triple",
+          "doc": "Triple a number (served by this bundle)."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Pair.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Counter",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "left",
+          "ty": 0,
+          "doc": "The counter on the left.",
+          "required": true
+        },
+        {
+          "name": "right",
+          "ty": 0,
+          "doc": "The counter on the right.",
+          "required": true
+        }
+      ],
+      "receives": [
+        "init"
+      ],
+      "bubbles": [
+        "counted"
+      ],
+      "responses": [],
+      "methods": [],
+      "whens": [],
+      "requests": [
+        "triple"
+      ],
+      "inits": [],
+      "style": ""
+    }
+  ]
+}

@@ -15,7 +15,7 @@
 /// business rendering a form over them. They survive a reload anyway, because
 /// `persist` writes them and the host stores the bytes without reading them.
 ///
-/// Everything an author writes is in this file; sdk.mbt does the rest.
+/// Its static declaration and view live beside the module; sdk.mbt does the ABI.
 
 ///|
 priv struct MvcItem {
@@ -155,30 +155,30 @@ impl DynComponent for TodoMvc with fn with_field(self, name, v) {
 
 ///|
 impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
-  guard bucket is INPUT else { return None }
+  guard bucket is INPUT else { return Unhandled }
   match name {
     "typeDraft" =>
       match text_arg(args) {
-        Some(s) => Some(self.changed(draft=Some(s)))
-        None => None
+        Some(s) => Changed(self.changed(draft=Some(s)))
+        None => Unchanged
       }
     // The Enter key on the new-todo box (`@on.keydown+send="addOnEnter isSend"`)
     // and the Add button reach the same place.
     "addOnEnter" =>
       match args {
-        [@values.Value::Boolean(true), ..] => self.add_draft()
-        _ => None
+        [@values.Value::Boolean(true), ..] => handled(self.add_draft())
+        _ => Unchanged
       }
-    "add" => self.add_draft()
+    "add" => handled(self.add_draft())
     "toggleAt" =>
       match key_index(args) {
-        Some(i) => self.toggle_at(i)
-        None => None
+        Some(i) => handled(self.toggle_at(i))
+        None => Unchanged
       }
     "removeAt" =>
       match key_index(args) {
-        Some(i) => self.remove_at(i)
-        None => None
+        Some(i) => handled(self.remove_at(i))
+        None => Unchanged
       }
     // The classic chevron: everything on, unless everything already is.
     "toggleAll" => {
@@ -187,10 +187,10 @@ impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
       let items = self.items.map(it => {
         ({ text: it.text, done: !all_done } : MvcItem)
       })
-      Some(self.changed(items=Some(items)))
+      Changed(self.changed(items=Some(items)))
     }
     "clearCompleted" =>
-      Some(self.changed(items=Some(self.items.filter(it => !it.done))))
+      Changed(self.changed(items=Some(self.items.filter(it => !it.done))))
     // Editing in place: open the row, type into it, and either commit or
     // abandon. Committing an empty row DELETES it, which is what TodoMVC
     // specifies and what a person emptying a box means.
@@ -198,27 +198,27 @@ impl DynComponent for TodoMvc with fn handle(self, bucket, name, args) {
       match key_index(args) {
         Some(i) =>
           if i >= 0 && i < self.items.length() {
-            Some(
+            Changed(
               self.changed(editing=Some(i), edit_text=Some(self.items[i].text)),
             )
           } else {
-            None
+            Unchanged
           }
-        None => None
+        None => Unchanged
       }
     "typeEdit" =>
       match text_arg(args) {
-        Some(s) => Some(self.changed(edit_text=Some(s)))
-        None => None
+        Some(s) => Changed(self.changed(edit_text=Some(s)))
+        None => Unchanged
       }
-    "commitEdit" => self.commit_edit()
+    "commitEdit" => handled(self.commit_edit())
     "cancelEdit" =>
       if self.editing < 0 {
-        None
+        Unchanged
       } else {
-        Some(self.changed(editing=Some(-1), edit_text=Some("")))
+        Changed(self.changed(editing=Some(-1), edit_text=Some("")))
       }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -423,114 +423,6 @@ fn make_todomvc(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-fn todomvc_def() -> ComponentDef {
-  component_def(
-    "TodoMvc",
-    doc="The canonical todo list: add, tick, edit in place, delete, filter, and clear what is done.",
-    keywords=["todo", "todomvc", "task", "list", "checklist", "filter"],
-    category="input",
-    message_docs=[
-      { name: "add", doc: "Add the drafted task." },
-      { name: "addOnEnter", doc: "Add the draft when the key was Enter." },
-      {
-        name: "typeDraft",
-        doc: "Hold what is being typed into the new-task box.",
-      },
-      { name: "toggleAt", doc: "Tick or untick the task at an index." },
-      { name: "removeAt", doc: "Delete the task at an index." },
-      { name: "toggleAll", doc: "Tick everything, or untick it if it all is." },
-      { name: "clearCompleted", doc: "Remove every ticked task." },
-      { name: "startEdit", doc: "Open the task at an index for editing." },
-      { name: "typeEdit", doc: "Hold what is being typed into the open row." },
-      { name: "commitEdit", doc: "Keep the edit; an emptied row is deleted." },
-      { name: "cancelEdit", doc: "Abandon the edit and keep what was there." },
-      { name: "countLeft", doc: "How many tasks are not done, as a sentence." },
-      {
-        name: "matchesFilter",
-        doc: "Whether the current filter lets a row through.",
-      },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm w-96 todomvc">
-          #|  <div class="card-body gap-3 p-4">
-          #|    <h2 class="card-title text-base">todos</h2>
-          #|    <div class="join w-full">
-          #|      <button class="btn btn-sm join-item toggle-all" title="toggle all" @on.click="toggleAll">v</button>
-          #|      <input class="input input-bordered input-sm join-item grow new-todo" placeholder="What needs to be done?" :value="$draft" @on.input="typeDraft value" @on.keydown+send="addOnEnter isSend" />
-          #|      <button class="btn btn-sm btn-primary join-item add" @on.click="add">Add</button>
-          #|    </div>
-          #|    <ul class="flex flex-col gap-1" @hide="empty? .items">
-          #|      <li class="flex gap-2 items-center todo-row" @each=".items" @when="matchesFilter">
-          #|        <input type="checkbox" class="checkbox checkbox-sm toggle" :checked="@value.done" @on.input="toggleAt @key" />
-          #|        <span class="grow text-sm todo-text" @hide="@value.editing" @text="@value.text" @on.dblclick="startEdit @key"></span>
-          #|        <input class="input input-bordered input-xs grow edit" @show="@value.editing" :value="$editText" @on.input="typeEdit value" @on.keydown+send="commitEdit" @on.keydown+cancel="cancelEdit" @on.blur="commitEdit" />
-          #|        <button class="btn btn-ghost btn-xs btn-circle destroy" @on.click="removeAt @key">x</button>
-          #|      </li>
-          #|    </ul>
-          #|    <p class="text-sm opacity-60 italic nothing" @show="empty? .items">Nothing to do.</p>
-          #|    <div class="flex items-center gap-1 text-xs" @hide="empty? .items">
-          #|      <span class="opacity-70 grow count-left" @text="$countLeft"></span>
-          #|      <button class="btn btn-xs filter-all" @on.click="setFilter 'all'">all</button>
-          #|      <button class="btn btn-xs filter-active" @on.click="setFilter 'active'">active</button>
-          #|      <button class="btn btn-xs filter-done" @on.click="setFilter 'completed'">done</button>
-          #|      <button class="btn btn-xs btn-ghost clear-done" @hide="empty? $done" @on.click="clearCompleted">clear</button>
-          #|    </div>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // `items` is a list of {text, done} records and `filter` is one of three
-    // words. Declaring them is what gives the host `setFilter` (which this
-    // guest does not implement), the item mutators, structural equality, the
-    // JSON projection and hot-swap migration.
-    types=[
-      { kind: TY_TEXT, elem: None, items: [], name: "", members: [] },
-      { kind: TY_RECORD, elem: None, items: [], name: "todo-item", members: [] },
-      { kind: TY_LIST, elem: Some(1), items: [], name: "", members: [] },
-    ],
-    fields=[
-      field("items", 2, doc="The tasks, in the order they were typed."),
-      field(
-        "filter",
-        0,
-        doc="Which tasks are shown: all, active, or completed.",
-        constraint=Some({
-          ..no_limits(),
-          enum_json: "[\"all\", \"active\", \"completed\"]",
-          default_json: "\"all\"",
-        }),
-      ),
-    ],
-    // `setFilter` is absent on purpose: the `filter` field implies it, and the
-    // host answers it through `with_field`.
-    handlers=[
-      "add", "addOnEnter", "typeDraft", "toggleAt", "removeAt", "toggleAll", "clearCompleted",
-      "startEdit", "typeEdit", "commitEdit", "cancelEdit",
-    ],
-    methods=["draft", "editText", "countLeft", "done"],
-    whens=["matchesFilter"],
-    inits=[
-      {
-        name: "example",
-        args_json: "{\"items\": [{\"text\": \"taste MoonBit\", \"done\": true}, {\"text\": \"build a component\", \"done\": false}]}",
-        doc: "The TodoMVC sample list, one item already done.",
-      },
-    ],
-    // styling is entirely margaui (daisyUI) classes; no scoped fallback CSS
-  )
-}
-
-///|
 fn dyn_module() -> DynModule {
-  module_def(
-    "todomvclib",
-    [dyn_comp(todomvc_def(), make_todomvc, restore=restore_todomvc)],
-    // this bundle serves no requests of its own, and asks the host for nothing
-    doc="TodoMVC, as a dynamic component: the whole canonical list in one bundle.",
-    version="0.4.0",
-  )
+  module_def([dyn_comp("TodoMvc", make_todomvc, restore=restore_todomvc)])
 }

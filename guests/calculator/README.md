@@ -18,8 +18,8 @@ counter guest and documented once, in
 [`../counter/README.md`](../counter/README.md). Only the component source
 differs:
 
-- `gen/interface/tutuca/component/guest/calculator.mbt` — the `Calc` struct,
-  its `ComponentDef`, and `dyn_module()`
+- `gen/interface/tutuca/component/guest/calculator.mbt` — `Calc` behavior,
+  persistence and factory; `manifest.json` + `views/` hold its declaration
 
 ```sh
 node guests/build-guest.mjs calculator   # dist/calculator.component.wasm + dist/js/

@@ -64,11 +64,6 @@ impl @dyncomp.Guest for StubGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn seq_entries(_self, _handle) {
-  None
-}
-
-///|
 impl @dyncomp.Guest for StubGuest with fn dispatch(
   self,
   handle,
@@ -79,6 +74,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   match (bucket, name) {
     (Input, "inc") =>
       {
+        handled: true,
         next: Some(
           self.alloc(
             self.counts.get(handle).unwrap_or(0.0) + 1.0,
@@ -92,14 +88,15 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
       match _args {
         [Str(text), ..] =>
           {
+            handled: true,
             next: Some(
               self.alloc(self.counts.get(handle).unwrap_or(0.0), note=text),
             ),
             msgs: [],
           }
-        _ => { next: None, msgs: [] }
+        _ => { handled: true, next: None, msgs: [] }
       }
-    _ => { next: None, msgs: [] }
+    _ => { handled: false, next: None, msgs: [] }
   }
 }
 
@@ -156,7 +153,7 @@ fn ty(kind : String) -> @dyncomp.DynTyDef {
 /// the generated form worth generating.
 fn stub_manifest() -> @dyncomp.DynManifest {
   {
-    api_version: 5,
+    api_version: 6,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",
@@ -212,7 +209,6 @@ fn stub_manifest() -> @dyncomp.DynManifest {
             constraint: None,
           },
         ],
-        handlers: ["inc", "jot"],
         receives: [],
         bubbles: [],
         responses: [],

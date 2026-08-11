@@ -1,6 +1,6 @@
 The three ambient facts a component cannot compute for itself: what time it
 is, an unpredictable number, and a fresh name. Each one is a CAPABILITY the
-manifest requests and the host grants (`capability-req`); an ungranted call
+static manifest requests and the host grants; an ungranted call
 traps rather than returning a plausible lie.
 
 Deliberately NOT `wasi:clocks` + `wasi:random`. Three reasons, in order:

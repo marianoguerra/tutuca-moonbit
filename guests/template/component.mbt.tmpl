@@ -1,9 +1,10 @@
 ///| HANDWRITTEN — the one file you write.
 ///
 /// Everything around it is generated: `top.mbt` and `ffi.mbt` are wit-bindgen
-/// output for `tutuca:component@0.4.0`, and `sdk.mbt` implements every one of
+/// output for `tutuca:component@0.6.0`, and `sdk.mbt` implements every one of
 /// their `declare`s over the `DynComponent` trait below. You write a struct per
-/// component and one `dyn_module()` saying what the bundle holds.
+/// component and one `dyn_module()` saying how to construct it. Its schema,
+/// docs and view live in `manifest.json` and `views/` as ordinary data.
 ///
 /// The host is the framework. Your views are DATA — tutuca template strings the
 /// host compiles and renders; you never touch the DOM. Your state is opaque —
@@ -13,7 +14,7 @@
 
 ///|
 /// One component. Fields are ordinary MoonBit; only `get_field` decides what
-/// the host may see, and only the `fields=` list below declares their shape.
+/// the host may see; `manifest.json` declares their shape.
 priv struct {{Name}} {
   count : Double
   label : String
@@ -31,8 +32,9 @@ impl DynComponent for {{Name}} with fn get_field(self, name) {
 }
 
 ///|
-/// Handle a message. `self` in, the successor out — or `None` for "nothing
-/// changed", which is cheaper than returning an identical copy.
+/// Handle a message. `self` in, and one of: Changed(next), Unchanged (this is
+/// our name but state stayed put), or Unhandled (the host may try a generated
+/// field mutator).
 ///
 /// The buckets: INPUT is what this component's own views raise (`@on.click`),
 /// RECEIVE is what a parent sends it, BUBBLE is what a child raised, RESPONSE
@@ -40,23 +42,23 @@ impl DynComponent for {{Name}} with fn get_field(self, name) {
 impl DynComponent for {{Name}} with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     (INPUT, "inc") =>
-      Some({ ..self, count: self.count + 1.0 } as &DynComponent)
+      Changed({ ..self, count: self.count + 1.0 } as &DynComponent)
     (INPUT, "dec") =>
-      Some({ ..self, count: self.count - 1.0 } as &DynComponent)
+      Changed({ ..self, count: self.count - 1.0 } as &DynComponent)
     (RECEIVE, "set") =>
       match args {
         [@values.Value::Number(n), ..] =>
-          Some({ ..self, count: n } as &DynComponent)
-        _ => None
+          Changed({ ..self, count: n } as &DynComponent)
+        _ => Unchanged
       }
     // Tell whoever holds this component what the count is now. It travels UP
     // as a bubble, and the host routes it — this component does not know, and
     // must not know, who is listening.
     (INPUT, "announce") => {
       @control.emit("counted", [@values.Value::Number(self.count)])
-      None
+      Unchanged
     }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -101,70 +103,7 @@ fn make_{{name_ident}}(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-/// What this component IS, in the terms a catalog can rank and a form can draw.
-/// `doc`, `keywords` and `message_docs` are not decoration: they are what lets
-/// someone — or a language model — find this component among forty they have
-/// never seen, and generate a form for it without trusting it.
-fn {{name_ident}}_def() -> ComponentDef {
-  component_def(
-    "{{Name}}",
-    doc="A number with a label, and buttons that raise and lower it.",
-    keywords=["counter", "number", "{{name}}"],
-    category="input",
-    message_docs=[
-      { name: "inc", doc: "Add one." },
-      { name: "dec", doc: "Subtract one." },
-      { name: "set", doc: "Set the count outright." },
-      { name: "announce", doc: "Tell the parent what the count is now." },
-      { name: "caption", doc: "The label and count as one sentence." },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm">
-          #|  <div class="card-body gap-2 items-center p-4">
-          #|    <span class="text-sm opacity-70" @text="$caption"></span>
-          #|    <div class="join">
-          #|      <button class="btn btn-sm join-item" @on.click="dec">−</button>
-          #|      <span class="btn btn-sm join-item no-animation pointer-events-none" @text=".count"></span>
-          #|      <button class="btn btn-sm join-item" @on.click="inc">+</button>
-          #|    </div>
-          #|    <button class="btn btn-xs btn-ghost" @on.click="announce">announce</button>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // The declared shape, as a FLAT table: WIT has no recursive types, so a
-    // field names its type by INDEX into this array rather than inline, and a
-    // compound points at its parts the same way (`elem`, `items`, `members`).
-    types=[
-      { kind: TY_FLOAT, elem: None, items: [], name: "", members: [] },
-      { kind: TY_TEXT, elem: None, items: [], name: "", members: [] },
-    ],
-    fields=[
-      field("count", 0, doc="How many.", required=false),
-      field("label", 1, doc="What to call it.", required=false),
-    ],
-    // what its own views raise
-    handlers=["inc", "dec", "announce"],
-    // what a parent may send it
-    receives=["set"],
-    // what it raises for whoever holds it
-    bubbles=["counted"],
-    // what its views call with `$`
-    methods=["caption"],
-  )
-}
-
-///|
-/// The bundle: every component in it, and how to build each one.
-///
-/// `capabilities` is the honest list of ambient facts this bundle needs — a
-/// clock, randomness, a timer. Asking for none is what makes a bundle safe to
-/// mount from anywhere, and an untrusted host REFUSES one that asks for
-/// something it will not grant rather than handing it a plausible lie.
+/// The runtime half of the bundle: every component name and its factory.
 fn dyn_module() -> DynModule {
-  module_def("{{name}}", [dyn_comp({{name_ident}}_def(), make_{{name_ident}})], doc="A tutuca:component bundle.", version="0.1.0", capabilities=[])
+  module_def([dyn_comp("{{Name}}", make_{{name_ident}})])
 }

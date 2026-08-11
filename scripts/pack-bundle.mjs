@@ -1,12 +1,12 @@
 #!/usr/bin/env node
-// Pack a guest's jco-transpiled bundle (the runtime files under
-// guests/<name>/dist/js) into a SINGLE self-contained `.tutuca.tar.gz`: a
+// Pack a guest's core wasm + static manifest into one `.tutuca.tar.gz`: a
 // gzipped ustar tar the universal demo drops onto the page and unpacks
 // in-browser (native DecompressionStream + the tiny tar reader in
 // demo/universal_wasm/loader.mjs).
 //
-// Only runtime files are included — the ESM entry (*.component.js) and its
-// core modules (*.wasm). Type files (*.d.ts, interfaces/) are dropped.
+// The archive contains no executable JavaScript: the host owns the canonical
+// ABI. `tutuca.json` declares the world/core/encoding and carries the static
+// component manifest; views are ordinary HTML assets beside it.
 //
 // No dependency: Node's built-in zlib gzips a tar we build by hand (Node has
 // no built-in tar writer). Regular files only, stored by basename.
@@ -14,12 +14,13 @@
 // Usage: node scripts/pack-bundle.mjs [srcDir] [outFile]
 //   defaults: guests/counter/dist/js  ->  dist/universal/examples/counter.tutuca.tar.gz
 import { gzipSync } from "node:zlib";
-import { mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
+import { existsSync, mkdirSync, readdirSync, readFileSync, writeFileSync } from "node:fs";
 import { basename, dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 
 const repoRoot = join(dirname(fileURLToPath(import.meta.url)), "..");
 const srcDir = join(repoRoot, process.argv[2] ?? "guests/counter/dist/js");
+const guestDir = dirname(dirname(srcDir));
 const outFile = join(
   repoRoot,
   process.argv[3] ?? "dist/universal/examples/counter.tutuca.tar.gz",
@@ -59,17 +60,41 @@ function buildTar(files) {
   return Buffer.concat(chunks);
 }
 
-const names = readdirSync(srcDir).filter(
-  (n) => n.endsWith(".component.js") || n.endsWith(".wasm"),
-);
-if (!names.some((n) => n.endsWith(".component.js"))) {
-  console.error(`pack-bundle: no *.component.js in ${srcDir}`);
+const names = readdirSync(srcDir);
+const core = names.find((n) => n.endsWith(".component.core.wasm"));
+if (!core) {
+  console.error(`pack-bundle: no *.component.core.wasm in ${srcDir}`);
   process.exit(1);
 }
-const files = names.map((n) => ({
-  name: basename(n),
-  data: readFileSync(join(srcDir, n)),
-}));
+const manifestPath = join(guestDir, "manifest.json");
+if (!existsSync(manifestPath)) {
+  console.error(`pack-bundle: no static manifest at ${manifestPath}`);
+  process.exit(1);
+}
+const manifest = JSON.parse(readFileSync(manifestPath, "utf8"));
+const descriptor = {
+  world: "tutuca:component@0.6.0",
+  encoding: manifest.stringEncoding ?? "utf16",
+  core,
+  manifest,
+};
+const files = [
+  { name: "tutuca.json", data: Buffer.from(JSON.stringify(descriptor)) },
+  { name: core, data: readFileSync(join(srcDir, core)) },
+];
+const viewDir = join(guestDir, "views");
+for (const component of manifest.components ?? []) {
+  for (const view of component.views ?? []) {
+    const name = basename(view.src ?? "");
+    if (!name || !existsSync(join(viewDir, name))) {
+      console.error(`pack-bundle: missing view ${view.src ?? "<unnamed>"}`);
+      process.exit(1);
+    }
+    if (!files.some((f) => f.name === name)) {
+      files.push({ name, data: readFileSync(join(viewDir, name)) });
+    }
+  }
+}
 
 mkdirSync(dirname(outFile), { recursive: true });
 writeFileSync(outFile, gzipSync(buildTar(files), { level: 9 }));

@@ -1,0 +1,114 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "todolib",
+  "doc": "A sample task list, for exercising list fields and item mutators.",
+  "version": "0.4.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "Todo",
+      "doc": "A task list: type a task, add it, tick it off, remove it.",
+      "keywords": [
+        "todo",
+        "task",
+        "list",
+        "checklist"
+      ],
+      "category": "input",
+      "messageDocs": [
+        {
+          "name": "add",
+          "doc": "Add the drafted task to the list."
+        },
+        {
+          "name": "addOnEnter",
+          "doc": "Add the draft when the key was Enter."
+        },
+        {
+          "name": "toggleAt",
+          "doc": "Tick or untick the task at an index."
+        },
+        {
+          "name": "removeAt",
+          "doc": "Delete the task at an index."
+        },
+        {
+          "name": "clearDone",
+          "doc": "Remove every ticked task."
+        },
+        {
+          "name": "summary",
+          "doc": "How many tasks are done, as a sentence."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Todo.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-record",
+          "items": [],
+          "name": "todo-item",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 1,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "draft",
+          "ty": 0,
+          "doc": "The task being typed, not yet added.",
+          "required": false,
+          "constraint": {
+            "maxLen": 200,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        },
+        {
+          "name": "items",
+          "ty": 2,
+          "doc": "The tasks, in the order they were added.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "summary"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "groceries",
+          "argsJson": "{\"items\": [{\"text\": \"milk\", \"done\": false}, {\"text\": \"bread\", \"done\": true}]}",
+          "doc": "A short shopping list, one item already bought."
+        }
+      ],
+      "style": ""
+    }
+  ]
+}

@@ -171,10 +171,14 @@ fn is_build_output(rel : String) -> Bool {
 
 ///|
 /// What the borrowed guest tree does NOT contribute: its build output, and the
-/// two files the overlay replaces with placeholder-carrying versions.
+/// files the overlay replaces with placeholder-carrying versions.
 fn skip_from_guest(rel : String) -> Bool {
   let own_source = TEMPLATE_GUEST_PKG + "/counter.mbt"
-  rel == "README.md" || rel == own_source || is_build_output(rel)
+  rel == "README.md" ||
+  rel == "manifest.json" ||
+  rel.has_prefix("views/") ||
+  rel == own_source ||
+  is_build_output(rel)
 }
 
 ///|

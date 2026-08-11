@@ -1,0 +1,11 @@
+<div class="card bg-base-100 border border-base-300 shadow-sm">
+  <div class="card-body gap-2 items-center p-4">
+    <span class="text-sm opacity-70" @text="$caption"></span>
+    <div class="join">
+      <button class="btn btn-sm join-item" @on.click="dec">−</button>
+      <span class="btn btn-sm join-item no-animation pointer-events-none" @text=".count"></span>
+      <button class="btn btn-sm join-item" @on.click="inc">+</button>
+    </div>
+    <button class="btn btn-xs btn-ghost" @on.click="announce">announce</button>
+  </div>
+</div>

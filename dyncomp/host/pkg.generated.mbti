@@ -65,6 +65,7 @@ pub(all) enum ControlMsg {
 } derive(Eq, @debug.Debug)
 
 pub(all) struct DispatchResult {
+  handled : Bool
   next : Int?
   msgs : Array[ControlMsg]
 } derive(Eq, @debug.Debug)
@@ -78,7 +79,6 @@ pub(all) struct DynComponentDef {
   views : Array[DynViewDef]
   types : Array[DynTyDef]
   fields : Array[DynFieldDef]
-  handlers : Array[String]
   receives : Array[String]
   bubbles : Array[String]
   responses : Array[String]
@@ -153,7 +153,6 @@ pub(all) struct DynViewDef {
 pub(open) trait Guest {
   fn create(Self, String, Map[String, @core.Value]) -> Int
   fn get_field(Self, Int, String) -> @core.Value?
-  fn seq_entries(Self, Int) -> Array[(String, @core.Value)]?
   fn dispatch(Self, Int, @core.HandlerBucket, String, Array[@core.Value]) -> DispatchResult
   fn call_method(Self, Int, String, Array[@core.Value]) -> @core.Value
   fn with_field(Self, Int, String, @core.Value) -> Int?

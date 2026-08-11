@@ -1,4 +1,4 @@
-// The canonical ABI for `tutuca:component@0.5.0`, written once, host-side.
+// The canonical ABI for `tutuca:component@0.6.0`, written once, host-side.
 //
 // This replaces the `*.component.js` that `jco transpile` emits into every
 // bundle archive. That file is ~5,000-7,500 lines and 38-57% of a gzipped
@@ -33,14 +33,9 @@
 //
 // DEVIATIONS from jco, deliberate and total:
 //
-//   - `list<u32>` lifts to an Array, where jco lifts it to a Uint32Array. The
-//     only one in this world is `ty-def.items`, and the manifest reaches the
-//     host through `JSON.stringify`: a Uint32Array stringifies to `{"0":3}`,
-//     which `dyncomp/host/manifest.mbt` does not match as a list, so a
-//     `ty-tuple`'s members were being dropped without a word. No shipped
-//     bundle declares a tuple yet, so this fixes a latent bug rather than a
-//     live one. `list<u8>` still lifts to a Uint8Array, which is what
-//     `persist` / `restore` already pass around.
+//   - `list<u32>` lifts to an Array, where jco lifts it to a Uint32Array.
+//     `list<u8>` still lifts to a Uint8Array, which is what `persist` /
+//     `restore` pass around.
 
 // ---------------------------------------------------------------------------
 // type descriptors
@@ -59,15 +54,13 @@ const list = (t) => ({ k: "list", t });
 const option = (t) => ({ k: "option", t });
 // Field names are the JS spelling (kebab-case lowered to camelCase), because
 // that is what a lifted record IS — `request-opts.live-path` reaches the host
-// as `opts.livePath`, and `manifest.api-version` reaches it as `apiVersion`,
-// which is the key `dyncomp/host/manifest.mbt` reads. Declaration ORDER is not
-// cosmetic: it is the memory layout.
+// as `opts.livePath`. Declaration ORDER is not cosmetic: it is the memory
+// layout.
 const record = (fields) => ({ k: "record", fields });
 const tuple = (ts) => ({ k: "tuple", ts });
 // Cases are [name, payload|null]; a lifted variant is `{tag}` or `{tag, val}`.
 const variant = (cases) => ({ k: "variant", cases });
-// An enum lifts to its WIT name verbatim — `"ty-bool"`, `"cap-clock"` — not to
-// a camelCased one. The host matches on those spellings.
+// An enum lifts to its WIT name verbatim, not to a camelCased one.
 const enumeration = (names) => ({ k: "enum", names });
 
 // ---------------------------------------------------------------------------
@@ -99,72 +92,12 @@ const REQUEST_OPTS = record([
 
 const LOG_LEVEL = enumeration(["debug", "info", "warn", "error"]);
 const BUCKET = enumeration(["input", "receive", "response", "bubble"]);
-const CAPABILITY = enumeration(["cap-clock", "cap-random", "cap-timer"]);
-const TY_KIND = enumeration([
-  "ty-bool", "ty-int", "ty-float", "ty-text",
-  "ty-list", "ty-tuple", "ty-option", "ty-omap",
-  "ty-record", "ty-enum", "ty-variant", "ty-flags", "ty-set",
-  "ty-comp", "ty-table", "ty-any",
-]);
-
-const VIEW_DEF = record([["name", STRING], ["html", STRING]]);
-const NAMED_DOC = record([["name", STRING], ["doc", STRING]]);
-const TY_DEF = record([
-  ["kind", TY_KIND],
-  ["elem", option(U32)],
-  ["items", list(U32)],
-  ["name", STRING],
-  ["members", list(STRING)],
-]);
-const CONSTRAINT = record([
-  ["min", option(F64)],
-  ["max", option(F64)],
-  ["minLen", option(U32)],
-  ["maxLen", option(U32)],
-  ["pattern", STRING],
-  ["format", STRING],
-  ["enumJson", STRING],
-  ["defaultJson", STRING],
-]);
-const FIELD_DEF = record([
-  ["name", STRING],
-  ["ty", U32],
-  ["doc", STRING],
-  ["required", BOOL],
-  ["constraint", option(CONSTRAINT)],
-]);
-const INIT_DEF = record([["name", STRING], ["argsJson", STRING], ["doc", STRING]]);
-const COMPONENT_DEF = record([
-  ["name", STRING],
-  ["doc", STRING],
-  ["keywords", list(STRING)],
-  ["category", STRING],
-  ["messageDocs", list(NAMED_DOC)],
-  ["views", list(VIEW_DEF)],
-  ["types", list(TY_DEF)],
-  ["fields", list(FIELD_DEF)],
-  ["handlers", list(STRING)],
-  ["receives", list(STRING)],
-  ["bubbles", list(STRING)],
-  ["responses", list(STRING)],
-  ["methods", list(STRING)],
-  ["whens", list(STRING)],
-  ["requests", list(STRING)],
-  ["inits", list(INIT_DEF)],
-  ["style", STRING],
-]);
-const CAPABILITY_REQ = record([["cap", CAPABILITY], ["reason", STRING]]);
-const MANIFEST = record([
-  ["apiVersion", U32],
-  ["moduleName", STRING],
-  ["doc", STRING],
-  ["version", STRING],
-  ["homepage", STRING],
-  ["authors", list(STRING)],
-  ["capabilities", list(CAPABILITY_REQ)],
-  ["components", list(COMPONENT_DEF)],
-]);
 const REQUEST_RESULT = variant([["ok", VALUE], ["err", VALUE]]);
+const EVENT_RESULT = variant([
+  ["unhandled", null],
+  ["unchanged", null],
+  ["changed", OWN],
+]);
 
 const ARGS = list(tuple([STRING, VALUE]));
 
@@ -225,13 +158,12 @@ export const IMPORTS = {
   },
 };
 
-const GUEST = "tutuca:component/guest@0.5.0";
+const GUEST = "tutuca:component/guest@0.6.0";
 const RESOURCE_NS = `[export]${GUEST}`;
 
 // The export side. `post` names the `cabi_post_*` that frees what a lift
 // returned; the four without one return nothing that owns memory.
 const EXPORTS = {
-  getManifest: { core: `${GUEST}#get-manifest`, params: [], result: MANIFEST, post: true },
   handleRequest: {
     core: `${GUEST}#handle-request`,
     params: [STRING, list(VALUE)],
@@ -254,16 +186,10 @@ const EXPORTS = {
     result: option(VALUE),
     post: true,
   },
-  seqEntries: {
-    core: `${GUEST}#[method]instance.seq-entries`,
-    params: [BORROW],
-    result: option(list(tuple([STRING, VALUE]))),
-    post: true,
-  },
   handleEvent: {
     core: `${GUEST}#[method]instance.handle-event`,
     params: [BORROW, BUCKET, STRING, list(VALUE)],
-    result: option(OWN),
+    result: EVENT_RESULT,
   },
   callMethod: {
     core: `${GUEST}#[method]instance.call-method`,
@@ -853,7 +779,7 @@ const unversioned = (m) => m.replace(/@[\d.]+$/, "");
 // A host may key its implementations with or without the version; `loader.mjs`
 // supplies both spellings, jco resolved either, so both work here.
 function implFor(imports, iface, spec, fnName) {
-  const table = imports[iface] ?? imports[`${iface}@0.5.0`];
+  const table = imports[iface] ?? imports[`${iface}@0.6.0`];
   const fn = table?.[spec.impl];
   if (typeof fn !== "function") {
     throw new Error(`host does not implement ${iface}#${fnName}`);
@@ -930,7 +856,7 @@ function liftExport(cx, spec, coreFn, postFn) {
 // ---------------------------------------------------------------------------
 
 /**
- * Instantiate a `tutuca:component@0.5.0` guest from its core module alone.
+ * Instantiate a `tutuca:component@0.6.0` guest from its core module alone.
  *
  * `getCoreModule(name)` resolves a name to a `WebAssembly.Module` (or a promise
  * of one), exactly as it does for a transpiled bundle. `imports` is the host's
@@ -939,7 +865,7 @@ function liftExport(cx, spec, coreFn, postFn) {
  *
  * `descriptor` is what the archive carries in place of 200KB of JavaScript:
  *
- *   { world: "tutuca:component@0.5.0", encoding: "utf16" | "utf8",
+ *   { world: "tutuca:component@0.6.0", encoding: "utf16" | "utf8",
  *     core: "<name>.component.core.wasm" }
  *
  * `policy.grants` is the list of capabilities the host is willing to give this
@@ -953,9 +879,9 @@ function liftExport(cx, spec, coreFn, postFn) {
  * time, so the main module is the only one instantiated.
  */
 export async function instantiate(getCoreModule, imports, descriptor = {}) {
-  const { world = "tutuca:component@0.5.0", encoding = "utf16", core } = descriptor;
-  if (world !== "tutuca:component@0.5.0") {
-    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.5.0)`);
+  const { world = "tutuca:component@0.6.0", encoding = "utf16", core } = descriptor;
+  if (world !== "tutuca:component@0.6.0") {
+    throw new Error(`unsupported world: ${world} (this host implements tutuca:component@0.6.0)`);
   }
   const grants = descriptor.policy?.grants ?? [];
 
@@ -989,7 +915,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
     if (!spec) {
       throw new Error(
         `bundle imports ${imp.module}#${imp.name}, which is outside ` +
-        `tutuca:component@0.5.0 — refused`,
+        `tutuca:component@0.6.0 — refused`,
       );
     }
     if (spec.cap && !grants.includes(spec.cap)) {
@@ -1057,12 +983,11 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
       return call.getField(this.#rep(), name);
     }
 
-    seqEntries() {
-      return call.seqEntries(this.#rep());
-    }
-
     handleEvent(bucket, name, args) {
-      return wrap(call.handleEvent(this.#rep(), bucket, name, args));
+      const result = call.handleEvent(this.#rep(), bucket, name, args);
+      return result.tag === "changed"
+        ? { tag: "changed", val: wrap(result.val) }
+        : result;
     }
 
     callMethod(name, args) {
@@ -1087,7 +1012,6 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
 
   const guest = {
     Instance,
-    getManifest: () => call.getManifest(),
     handleRequest: (name, args) => call.handleRequest(name, args),
   };
   return { guest, [GUEST]: guest };
@@ -1097,7 +1021,7 @@ export async function instantiate(getCoreModule, imports, descriptor = {}) {
 // the world without instantiating anything.
 export const _abi = {
   alignment, sizeOf, flatten, payloadOffset, discSize,
-  WORLD: { IMPORTS, EXPORTS, VALUE, MANIFEST, REQUEST_RESULT, PATH_STEP, REQUEST_OPTS, LOG_LEVEL, ARGS },
+  WORLD: { IMPORTS, EXPORTS, VALUE, EVENT_RESULT, REQUEST_RESULT, PATH_STEP, REQUEST_OPTS, LOG_LEVEL, ARGS },
   // The two codecs, so a test can check they agree. They are written
   // independently — one walks linear memory, the other walks flat core values
   // — and a type they disagree about is a type that survives being passed one

@@ -671,7 +671,7 @@ pub fn guest_build_steps() -> Array[Step] {
 }
 
 ///|
-/// Pack each guest's jco output into one droppable `.tutuca.tar.gz`, into the
+/// Pack each guest's core wasm + static assets into one droppable `.tutuca.tar.gz`, into the
 /// universal demo's examples/.
 pub fn guest_pack_steps() -> Array[Step] {
   let out : Array[Step] = []
@@ -733,7 +733,7 @@ pub fn universal_steps() -> Array[Step] {
       from="demo/universal_wasm/index.html",
       to="\{DIST}/universal/index.html",
     ),
-    // pack each guest's jco output into one droppable .tutuca.tar.gz
+    // pack each guest's core wasm + static assets into one droppable archive
     ..guest_pack_steps(),
   ]
 }

@@ -19,11 +19,6 @@ impl @dyncomp.Guest for StubGuest with fn get_field(_self, _handle, _name) {
 }
 
 ///|
-impl @dyncomp.Guest for StubGuest with fn seq_entries(_self, _handle) {
-  None
-}
-
-///|
 impl @dyncomp.Guest for StubGuest with fn dispatch(
   _self,
   _handle,
@@ -31,7 +26,7 @@ impl @dyncomp.Guest for StubGuest with fn dispatch(
   _name,
   _args,
 ) {
-  { next: None, msgs: [] }
+  { handled: false, next: None, msgs: [] }
 }
 
 ///|
@@ -83,7 +78,7 @@ fn plain(name : String, ty_ : Int, doc? : String = "") -> @dyncomp.DynFieldDef {
 /// A counter bundle, documented the way v3 lets a guest document itself.
 fn counter_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 5,
+    api_version: 6,
     module_name: "counterlib",
     doc: "Sample counters.",
     version: "0.3.0",
@@ -108,7 +103,6 @@ fn counter_bundle() -> @dyncomp.DynManifest {
         ],
         types: [ty("ty-float")],
         fields: [plain("count", 0, doc="The current value.")],
-        handlers: ["inc"],
         receives: [],
         bubbles: [],
         responses: [],
@@ -133,7 +127,7 @@ fn counter_bundle() -> @dyncomp.DynManifest {
 /// component proves nothing.
 fn todo_bundle() -> @dyncomp.DynManifest {
   {
-    api_version: 5,
+    api_version: 6,
     module_name: "todolib",
     doc: "A sample task list.",
     version: "0.3.0",
@@ -158,7 +152,6 @@ fn todo_bundle() -> @dyncomp.DynManifest {
           plain("draft", 0, doc="The task being typed."),
           plain("items", 1),
         ],
-        handlers: ["add"],
         receives: [],
         bubbles: [],
         responses: [],

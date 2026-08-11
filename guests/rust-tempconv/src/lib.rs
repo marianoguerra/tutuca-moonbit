@@ -1,7 +1,6 @@
-//! A tutuca:component guest in Rust: opaque native state + tutuca view
-//! strings, implementing the same WIT as guests/counter with zero tutuca
-//! code. Handlers are functional (self in, self out); the host renders the
-//! views and drives everything.
+//! A tutuca:component guest in Rust: opaque native state implementing the
+//! same WIT as guests/counter with zero tutuca code. The bundle's manifest and
+//! view are static assets; this module contains behavior only.
 //!
 //! A temperature converter rather than another counter, because a counter
 //! never has to answer the two questions the contract's newer halves exist
@@ -23,173 +22,14 @@ wit_bindgen::generate!({
 });
 
 use exports::tutuca::component::guest::{
-    Bucket, ComponentDef, Constraint, FieldDef, Guest, GuestInstance, InitDef, Instance, Manifest,
-    NamedDoc, RequestResult, TyDef, TyKind, ViewDef,
+    Bucket, EventResult, Guest, GuestInstance, Instance, RequestResult,
 };
 use tutuca::component::values::Value;
 
 struct Component;
 
-/// The one index into the component's type table (WIT has no recursive types,
-/// so a compound names its parts by index; this one has no compounds).
-const TY_FLOAT: u32 = 0;
-
 impl Guest for Component {
     type Instance = TempConv;
-
-    fn get_manifest() -> Manifest {
-        Manifest {
-            api_version: 5,
-            module_name: "rusttemplib".into(),
-            doc: "The polyglot proof: the same contract, in Rust, with no tutuca code.".into(),
-            version: "0.4.0".into(),
-            homepage: "".into(),
-            authors: vec![],
-            // It asks the host for nothing — no clock, no randomness, no timer.
-            capabilities: vec![],
-            components: vec![ComponentDef {
-                name: "TempConv".into(),
-                doc: "Type a temperature in Celsius, Fahrenheit or Kelvin; the other two follow."
-                    .into(),
-                keywords: vec![
-                    "temperature".into(),
-                    "convert".into(),
-                    "celsius".into(),
-                    "fahrenheit".into(),
-                    "kelvin".into(),
-                    "units".into(),
-                    "rust".into(),
-                ],
-                category: "input".into(),
-                message_docs: vec![
-                    NamedDoc {
-                        name: "editC".into(),
-                        doc: "Set the temperature from the Celsius box.".into(),
-                    },
-                    NamedDoc {
-                        name: "editF".into(),
-                        doc: "Set the temperature from the Fahrenheit box.".into(),
-                    },
-                    NamedDoc {
-                        name: "editK".into(),
-                        doc: "Set the temperature from the Kelvin box.".into(),
-                    },
-                    NamedDoc {
-                        name: "preset".into(),
-                        doc: "Jump to a well-known temperature, in Celsius.".into(),
-                    },
-                    NamedDoc {
-                        name: "cText".into(),
-                        doc: "What the Celsius box shows.".into(),
-                    },
-                    NamedDoc {
-                        name: "fText".into(),
-                        doc: "What the Fahrenheit box shows.".into(),
-                    },
-                    NamedDoc {
-                        name: "kText".into(),
-                        doc: "What the Kelvin box shows.".into(),
-                    },
-                    NamedDoc {
-                        name: "note".into(),
-                        doc: "What this temperature is, in a few words.".into(),
-                    },
-                ],
-                views: vec![ViewDef {
-                    name: "main".into(),
-                    // margaui (daisyUI) classes, matching the universal demo's
-                    // styling; the "rust" badge marks this as the Rust guest.
-                    //
-                    // Each box shows a METHOD rather than the declared field,
-                    // because the box being typed in has to show those
-                    // characters while the other two show the number. One field
-                    // could only ever do one of those.
-                    html: r#"<div class="card card-border bg-base-100 border-base-300 shadow-sm w-72 tempconv">
-  <div class="card-body gap-3 p-4">
-    <div class="flex items-center gap-2">
-      <span class="badge badge-sm badge-warning">rust</span>
-      <span class="badge badge-sm badge-soft note" @text="$note"></span>
-    </div>
-    <label class="input w-full">
-      <span class="label">&#176;C</span>
-      <input class="box-c grow tabular-nums" inputmode="decimal" :value="$cText" @on.input="editC value" />
-    </label>
-    <label class="input w-full">
-      <span class="label">&#176;F</span>
-      <input class="box-f grow tabular-nums" inputmode="decimal" :value="$fText" @on.input="editF value" />
-    </label>
-    <label class="input w-full">
-      <span class="label">K</span>
-      <input class="box-k grow tabular-nums" inputmode="decimal" :value="$kText" @on.input="editK value" />
-    </label>
-    <div class="join justify-center">
-      <button class="btn btn-xs btn-soft join-item preset-freeze" @on.click="preset 0">freezing</button>
-      <button class="btn btn-xs btn-soft join-item preset-body" @on.click="preset 37">body</button>
-      <button class="btn btn-xs btn-soft join-item preset-boil" @on.click="preset 100">boiling</button>
-    </div>
-  </div>
-</div>"#
-                        .into(),
-                }],
-                // The declared state: ONE number. Everything the view shows is
-                // derived from it, and everything the guest keeps beyond it is
-                // a draft — which is exactly why this component has a `persist`
-                // and the counter does not.
-                types: vec![TyDef {
-                    kind: TyKind::TyFloat,
-                    elem: None,
-                    items: vec![],
-                    name: "".into(),
-                    members: vec![],
-                }],
-                fields: vec![FieldDef {
-                    name: "celsius".into(),
-                    ty: TY_FLOAT,
-                    doc: "The temperature, in degrees Celsius.".into(),
-                    required: false,
-                    constraint: Some(Constraint {
-                        // Absolute zero is a floor the physics gives us, and a
-                        // form offering to go below it is offering a
-                        // temperature that does not exist.
-                        min: Some(-273.15),
-                        max: Some(10_000.0),
-                        min_len: None,
-                        max_len: None,
-                        pattern: "".into(),
-                        format: "".into(),
-                        enum_json: "".into(),
-                        default_json: "20".into(),
-                    }),
-                }],
-                // `setCelsius` is absent on purpose: the `celsius` field
-                // implies it, and the host answers it through `with_field`.
-                handlers: vec![
-                    "editC".into(),
-                    "editF".into(),
-                    "editK".into(),
-                    "preset".into(),
-                ],
-                receives: vec!["init".into()],
-                bubbles: vec![],
-                responses: vec![],
-                methods: vec![
-                    "cText".into(),
-                    "fText".into(),
-                    "kText".into(),
-                    "note".into(),
-                ],
-                whens: vec![],
-                requests: vec![],
-                inits: vec![InitDef {
-                    name: "body-heat".into(),
-                    args_json: r#"{"celsius":37}"#.into(),
-                    doc: "Starts at body temperature.".into(),
-                }],
-                // styling is entirely margaui (daisyUI) classes; no fallback CSS
-                style: "".into(),
-            }],
-        }
-    }
 
     /// This bundle serves no requests of its own.
     fn handle_request(name: String, _args: Vec<Value>) -> RequestResult {
@@ -426,25 +266,33 @@ impl GuestInstance for TempConv {
         }
     }
 
-    fn seq_entries(&self) -> Option<Vec<(String, Value)>> {
-        None
-    }
-
-    fn handle_event(&self, b: Bucket, name: String, args: Vec<Value>) -> Option<Instance> {
+    fn handle_event(&self, b: Bucket, name: String, args: Vec<Value>) -> EventResult {
         // There is no "setCelsius" case: `celsius` is a declared field, so the
         // host generates the mutator and writes it through `with_field`. A
         // handler here would be the same assignment written twice.
         if !matches!(b, Bucket::Input) {
-            return None;
+            return EventResult::Unhandled;
         }
         match name.as_str() {
-            "editC" => self.typed('c', &text_arg(&args)?),
-            "editF" => self.typed('f', &text_arg(&args)?),
-            "editK" => self.typed('k', &text_arg(&args)?),
+            "editC" => text_arg(&args)
+                .and_then(|text| self.typed('c', &text))
+                .map(EventResult::Changed)
+                .unwrap_or(EventResult::Unchanged),
+            "editF" => text_arg(&args)
+                .and_then(|text| self.typed('f', &text))
+                .map(EventResult::Changed)
+                .unwrap_or(EventResult::Unchanged),
+            "editK" => text_arg(&args)
+                .and_then(|text| self.typed('k', &text))
+                .map(EventResult::Changed)
+                .unwrap_or(EventResult::Unchanged),
             // A preset ends any edit in progress, which is what makes the three
             // boxes agree again: `at` clears the draft.
-            "preset" => TempConv::at(num_arg(&args)?),
-            _ => None,
+            "preset" => num_arg(&args)
+                .and_then(TempConv::at)
+                .map(EventResult::Changed)
+                .unwrap_or(EventResult::Unchanged),
+            _ => EventResult::Unhandled,
         }
     }
 

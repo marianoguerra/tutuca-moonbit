@@ -137,16 +137,6 @@ impl Guest for FakeGuest with fn get_field(self, handle, name) {
 }
 
 ///|
-impl Guest for FakeGuest with fn seq_entries(self, handle) {
-  // counters iterate as a single ("h0", count) entry; pairs and frames don't
-  if self.pairs.contains(handle) || self.titles.contains(handle) {
-    None
-  } else {
-    Some([("h0", Num(self.counters.get(handle).unwrap()))])
-  }
-}
-
-///|
 impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
   // the Pair's own buckets: it hears its children's bubbles and addresses them
   // by relative path
@@ -155,22 +145,34 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
       // a child announced itself: swap the two, and keep the bubble from
       // reaching the host shell above
       (Bubble, "counted") =>
-        { next: Some(self.alloc_pair(r, l)), msgs: [StopPropagation] }
+        {
+          handled: true,
+          next: Some(self.alloc_pair(r, l)),
+          msgs: [StopPropagation],
+        }
       // reach INTO the subtree: `.left` is the child the left field holds
       (Input, "resetLeft") =>
-        { next: None, msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])] }
-      _ => { next: None, msgs: [] }
+        {
+          handled: true,
+          next: None,
+          msgs: [SendAt([FieldStep("left")], "setTo", [Num(0)])],
+        }
+      _ => { handled: false, next: None, msgs: [] }
     }
+  }
+  if self.titles.contains(handle) {
+    return { handled: false, next: None, msgs: [] }
   }
   let count = self.counters.get(handle).unwrap()
   match (bucket, name) {
     (Input, "inc") =>
-      { next: Some(self.next_of(handle, count + 1.0)), msgs: [] }
+      { handled: true, next: Some(self.next_of(handle, count + 1.0)), msgs: [] }
     (Input, "dec") =>
-      { next: Some(self.next_of(handle, count - 1.0)), msgs: [] }
+      { handled: true, next: Some(self.next_of(handle, count - 1.0)), msgs: [] }
     // the response comes back at "doubled" with just the value (on_ok_name)
     (Input, "double") =>
       {
+        handled: true,
         next: None,
         msgs: [
           Request(
@@ -182,31 +184,41 @@ impl Guest for FakeGuest with fn dispatch(self, handle, bucket, name, args) {
       }
     (Response, "doubled") =>
       match args {
-        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { next: None, msgs: [] }
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
+        _ => { handled: true, next: None, msgs: [] }
       }
     // a request the BUNDLE serves (see handle_request), not the host
     (Input, "triple") =>
       {
+        handled: true,
         next: None,
         msgs: [Request("triple", [Num(count)], @tutuca.RequestOpts::new())],
       }
     (Response, "triple") =>
       match args {
-        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { next: None, msgs: [] }
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
+        _ => { handled: true, next: None, msgs: [] }
       }
     (Input, "notify") =>
-      { next: None, msgs: [Emit("counterChanged", [Str("changed!")])] }
+      {
+        handled: true,
+        next: None,
+        msgs: [Emit("counterChanged", [Str("changed!")])],
+      }
     // bubbles to whatever is above: a Pair parent, or the host shell
-    (Input, "announce") => { next: None, msgs: [Emit("counted", [Num(count)])] }
-    (Input, "reset") => { next: Some(self.next_of(handle, 0.0)), msgs: [] }
+    (Input, "announce") =>
+      { handled: true, next: None, msgs: [Emit("counted", [Num(count)])] }
+    (Input, "reset") =>
+      { handled: true, next: Some(self.next_of(handle, 0.0)), msgs: [] }
     (Receive, "setTo") =>
       match args {
-        [Num(n), ..] => { next: Some(self.next_of(handle, n)), msgs: [] }
-        _ => { next: None, msgs: [] }
+        [Num(n), ..] =>
+          { handled: true, next: Some(self.next_of(handle, n)), msgs: [] }
+        _ => { handled: true, next: None, msgs: [] }
       }
-    _ => { next: None, msgs: [] }
+    _ => { handled: false, next: None, msgs: [] }
   }
 }
 
@@ -342,7 +354,7 @@ fn counter_manifest() -> DynManifest {
     members: [],
   }
   {
-    api_version: 5,
+    api_version: 6,
     module_name: "counterlib",
     doc: "Sample counters, for exercising the contract.",
     version: "0.1.0",
@@ -383,9 +395,6 @@ fn counter_manifest() -> DynManifest {
         fields: [plain_field("count", 0), plain_field("history", 1)],
         // `setCount` is deliberately absent: it is the mutator the `count`
         // field implies, and the host answers it
-        handlers: [
-          "inc", "dec", "double", "triple", "notify", "announce", "reset",
-        ],
         receives: ["init", "setTo"],
         bubbles: [],
         responses: ["doubled", "triple"],
@@ -428,7 +437,6 @@ fn counter_manifest() -> DynManifest {
         // other case.
         // `resetLeft` is ALSO the generated mutator name for a `left` field;
         // saying so here is what makes it the guest's
-        handlers: ["resetLeft"],
         receives: [],
         bubbles: ["counted"],
         responses: [],
@@ -472,7 +480,6 @@ fn counter_manifest() -> DynManifest {
           },
         ],
         fields: [plain_field("title", 0), plain_field("body", 1)],
-        handlers: [],
         receives: [],
         bubbles: [],
         responses: [],
@@ -714,18 +721,6 @@ test "event modifiers in guest views dispatch through stock parsing" {
   inspect(h.text(".count"), content="5")
   h.key_down(".kbd", "Escape")
   inspect(h.text(".count"), content="0")
-}
-
-///|
-test "host @each iterates a guest instance via seq-entries" {
-  collect_superseded()
-  let fake = FakeGuest::new()
-  let (h, bundle) = mount_with_bundle(fake)
-  guard! bundle.make_instance("Counter", args={ "count": Num(10) }) is Some(c)
-  h.send_at_root("setSlot", args=[c.to_value()])
-  debug_inspect(h.texts("li.s"), content="[\"10\"]")
-  h.click(".inc")
-  debug_inspect(h.texts("li.s"), content="[\"11\"]")
 }
 
 ///|
@@ -1029,7 +1024,7 @@ test "component_names lists the manifest's components in order" {
 ///|
 test "manifest parses from the bridge's JSON projection" {
   let json =
-    #|{"apiVersion": 5, "moduleName": "counterlib", "components": [
+    #|{"apiVersion": 6, "moduleName": "counterlib", "components": [
     #|  {"name": "Counter",
     #|   "views": [{"name": "main", "html": "<div>{.count}</div>"}],
     #|   "types": [{"kind": "ty-int", "elem": null, "items": [], "name": "", "members": []},
@@ -1156,7 +1151,7 @@ test "a guest view that sets markup directly is refused" {
 /// validates with.
 test "catalog metadata parses: docs, constraints and capability requests" {
   let json =
-    #|{"apiVersion": 5, "moduleName": "formlib",
+    #|{"apiVersion": 6, "moduleName": "formlib",
     #| "doc": "Form controls.", "version": "1.2.0", "authors": ["ana"],
     #| "capabilities": [{"cap": "cap-clock", "reason": "stamps entries"},
     #|                  {"cap": "cap-teleport", "reason": "?"}],
@@ -1220,7 +1215,7 @@ test "catalog metadata parses: docs, constraints and capability requests" {
 /// hand-written manifest should not have to spell out blanks.
 test "a manifest with no catalog metadata still parses" {
   let json =
-    #|{"apiVersion": 5, "moduleName": "bare", "components": [
+    #|{"apiVersion": 6, "moduleName": "bare", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [], "fields": [],
     #|   "receives": [], "bubbles": [], "responses": [], "methods": [],
@@ -1235,7 +1230,7 @@ test "a manifest with no catalog metadata still parses" {
 ///|
 test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let json =
-    #|{"apiVersion": 5, "moduleName": "m", "components": [
+    #|{"apiVersion": 6, "moduleName": "m", "components": [
     #|  {"name": "C", "views": [{"name": "main", "html": "<div></div>"}],
     #|   "types": [{"kind": "ty-list", "elem": 0, "items": [], "name": "", "members": []}],
     #|   "fields": [{"name": "loop", "ty": 0}, {"name": "gone", "ty": 9}],
@@ -1294,7 +1289,7 @@ impl @component.Fields for TestShellState with fn schema() {
 ///|
 test "a bundle's views are linted at load" {
   let bad : DynManifest = {
-    api_version: 5,
+    api_version: 6,
     module_name: "sloppylib",
     doc: "",
     version: "",
@@ -1316,7 +1311,6 @@ test "a bundle's views are linted at load" {
         ],
         types: [],
         fields: [],
-        handlers: [],
         receives: [],
         bubbles: [],
         responses: [],
@@ -1360,7 +1354,7 @@ test "a `$method` the manifest never declared is reported at load" {
     members: [],
   }
   let sloppy : DynManifest = {
-    api_version: 5,
+    api_version: 6,
     module_name: "statlib",
     doc: "",
     version: "",
@@ -1388,7 +1382,6 @@ test "a `$method` the manifest never declared is reported at load" {
         ],
         types: [float_ty],
         fields: [plain_field("count", 0)],
-        handlers: [],
         receives: [],
         bubbles: [],
         responses: [],

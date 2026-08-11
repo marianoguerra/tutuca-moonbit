@@ -21,9 +21,11 @@ pub(all) enum ControlMsg {
 } derive(Debug, Eq)
 
 ///|
-/// Result of forwarding one event to the guest: the successor instance
-/// handle (None = unchanged) plus any buffered control messages.
+/// Result of forwarding one event to the guest. `handled` distinguishes a
+/// real no-op handler from an unknown input name, which lets the host fall
+/// back to a generated field mutator only for the latter.
 pub(all) struct DispatchResult {
+  handled : Bool
   next : Int?
   msgs : Array[ControlMsg]
 } derive(Debug, Eq)
@@ -32,7 +34,6 @@ pub(all) struct DispatchResult {
 pub(open) trait Guest {
   fn create(Self, component : String, args : Map[String, @tutuca.Value]) -> Int
   fn get_field(Self, handle : Int, name : String) -> @tutuca.Value?
-  fn seq_entries(Self, handle : Int) -> Array[(String, @tutuca.Value)]?
   fn dispatch(
     Self,
     handle : Int,

@@ -50,7 +50,7 @@ That declared shape is what makes both layers possible from one core.
 
 | package | status | responsibility |
 |---|---|---|
-| `dyncomp/wit` | v0.4.0 | the contract |
+| `dyncomp/wit` | v0.6.0 | the runtime behavior contract; static declaration lives in each bundle |
 | `dyncomp/host` | built | registration, `DynObj`, lifecycle, GC |
 | `dyncomp/policy` | built | trust tiers, capability grants, quotas, the view rule |
 | `dyncomp/registry` | built | the cross-bundle catalog and its search |
@@ -73,9 +73,9 @@ ranking over name, title, summary, keywords and field names.
 
 This is what v0.3 of the contract was for. Before it, a component was a name
 with handlers hanging off it; there was nothing to rank on and nothing for a
-person or a model to read before choosing. `component-def` now carries `doc`,
-`keywords`, `category` and a `message-docs` table, and `field-def` carries a
-`doc` of its own.
+person or a model to read before choosing. The static manifest now carries
+`doc`, `keywords`, `category` and a `messageDocs` table, and each field carries
+a `doc` of its own.
 
 The universal demo's `listComponents` request handler becomes a thin caller of
 this, instead of building rows inline from `@dhw.loaded_components()`.

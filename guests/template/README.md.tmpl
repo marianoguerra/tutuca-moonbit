@@ -4,17 +4,20 @@ A WebAssembly component that a **running** tutuca app can fetch, instantiate and
 mount — no rebuild of the host, no shared language, no trust required. Scaffolded
 by `tutuca new-guest {{name}}`.
 
-## The one file you write
+## The three files you write
 
-`gen/interface/tutuca/component/guest/{{name_ident}}.mbt`. Everything else is
-generated or fixed:
+Behavior is in `gen/interface/tutuca/component/guest/{{name_ident}}.mbt`, the
+declaration is `manifest.json`, and views are ordinary files under `views/`.
+Everything else is generated or fixed:
 
 | path | what it is |
 | --- | --- |
-| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.4.0`. The host generates its side from this same file. |
+| `wit/tutuca-component.wit` | the contract, `tutuca:component@0.6.0`. The host implements this same world. |
 | `gen/`, `interface/`, `world/` | `wit-bindgen moonbit` output, checked in — so building needs no wit-bindgen |
 | `gen/interface/tutuca/component/guest/sdk.mbt` | the guest SDK: implements every generated `declare` over the `DynComponent` trait |
 | `gen/interface/tutuca/component/guest/{{name_ident}}.mbt` | **yours** |
+| `manifest.json` | **yours**: schema, docs, message buckets and capabilities |
+| `views/{{Name}}.main.html` | **yours**: a tutuca HTML template |
 
 ## Build
 
@@ -24,8 +27,8 @@ node build.mjs     # -> dist/{{name}}.component.wasm + dist/js/
 node pack.mjs      # -> {{name}}.tutuca.tar.gz
 ```
 
-Then drop `{{name}}.tutuca.tar.gz` on a universal host page. Every component your
-`dyn_module()` declares joins its catalog.
+Then drop `{{name}}.tutuca.tar.gz` on a universal host page. Every component in
+`manifest.json` joins its catalog.
 
 Needs `moon` v0.10.x, `wasm-tools` 1.244.x and Node. These are version-coupled —
 bumping one without the others produces a component the host rejects.
@@ -34,18 +37,18 @@ bumping one without the others produces a component the host rejects.
 
 1. **The host is the framework.** You never render, never touch the DOM, never
    install a listener. You are called at defined points and you answer.
-2. **Views are data.** Your views are tutuca template strings in your manifest;
+2. **Views are data.** Your views are ordinary HTML files named by your manifest;
    the host compiles them with its own parser, so its renderer, event
    delegation, morphing and linter apply to you unchanged.
 3. **State is opaque, its shape is declared.** The host never sees inside your
    struct. It reads one field at a time through `get_field`, and it knows what
-   fields exist because your `ComponentDef` says so. That split is what lets a
+   fields exist because `manifest.json` says so. That split is what lets a
    catalog rank you, a form configure you and an inspector show you — with
    nobody trusting your code.
 4. **Ambient authority is granted, never assumed.** The world imports no WASI:
    no filesystem, no network, no clock, no entropy. The three facts you cannot
    compute for yourself — the time, a random number, a fresh id — are
-   capabilities you request in `dyn_module(capabilities=[...])` and a host
+   capabilities you request in `manifest.json` and a host
    grants or refuses. A host that will not grant one **refuses the bundle**
    rather than handing you a plausible lie.
 

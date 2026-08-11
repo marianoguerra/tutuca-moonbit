@@ -12,10 +12,11 @@ Where a claim is weaker than it sounds, it says so.
 
 | Channel | Reaches | State |
 |---|---|---|
+| archive code | page authority | **closed in v0.6** — descriptor bundles contain no executable JS; legacy JS bundles are warned compatibility input |
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
 | guest views (tutuca templates) | the host's DOM | **handled** — a Sanitizer-API port over the tree at registration, plus URL-scheme and event-handler rules at render; raw markup still refused outright |
-| guest CSS (`component-def.style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
+| guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
 
@@ -25,7 +26,8 @@ executable form of most of this document.
 
 ## 1. The wasm sandbox
 
-`world dynamic-component` imports exactly three interfaces and no WASI
+`world dynamic-component` imports three callable interfaces plus the
+types-only `tables` interface, and no WASI
 (`wit/tutuca-component.wit`). A guest therefore has **no** filesystem, network,
 sockets, environment variables, subprocesses, storage, or — except through
 `env`, below — clock and entropy. It cannot reach the DOM at all: tutuca has no
@@ -45,7 +47,7 @@ properties follow from the contract's shape rather than from the wasm engine:
 - **`make-instance` is same-bundle only**, in the host-assigned token space.
 - **Arena handles die at the call boundary**, so nothing a guest captured stays
   reachable after it returns.
-- **The type table is depth-guarded** at 16 (`host/manifest.mbt`,
+- **The static manifest's type table is depth-guarded** at 16 (`host/manifest.mbt`,
   `ty_info_at`), because a manifest that crossed a trust boundary cannot be
   trusted to be acyclic.
 - **No clock meant no measurement.** Before `env`, a guest could not read time
@@ -81,8 +83,11 @@ them that way (`dyncomp/host/wasm/loader.mjs`):
   and may coalesce, delay or drop it; there is no cancel, because a guest cannot
   cancel what it does not own.
 
-Each is gated by a capability the manifest requests (`cap-clock`, `cap-random`,
-`cap-timer`) and the host grants. An ungranted capability **refuses the bundle**
+Each is gated by a capability the static manifest requests (`cap-clock`,
+`cap-random`, `cap-timer`) and the host grants. For v0.6 descriptor bundles,
+the host-owned ABI also checks the core module's actual import section before
+the first guest instruction runs: omitting a capability from metadata cannot
+hide an import. An ungranted capability **refuses the bundle**
 rather than degrading it: a capability that is present but lies is worse than
 one that is absent — a guest reading a frozen zero from an ungranted clock
 cannot tell that from midnight.
@@ -101,13 +106,23 @@ dropping the bundle. Until 0.9.6 there was no such argument and the browser host
 registered everything as untrusted no matter what the page wanted, which made
 the two upper tiers reachable only from a test.
 
-Two gaps remain on this path, both marked in the code: the browser bridge
-supplies `env` unconditionally rather than per grant (harmless while jco elides
-an import no guest calls), and `control.after` has no host implementation at
-all — the bridge warns rather than crashing, because an absent import makes jco
-throw something that says nothing about why.
+The legacy transpiler-JS compatibility path still supplies `env` the old way;
+it is visibly warned and cannot load a v0.6 descriptor. `control.after` still
+has no host implementation — the bridge warns rather than crashing.
 
 `control.request` is deliberately *not* a capability — see §5.
+
+### Archive code is no longer a channel
+
+Before v0.6, every archive carried jco's generated `*.component.js`, and the
+loader imported it from a blob URL. Generated or not, that JavaScript ran with
+the page's authority before wasm's import boundary could constrain it.
+
+A v0.6 archive instead contains `tutuca.json`, one core wasm module, and HTML
+view files. [`host/wasm/abi.mjs`](host/wasm/abi.mjs) is the sole canonical-ABI
+implementation and binds imports by name against the WIT-derived table. An
+unknown import is refused before instantiation. The old archive shape remains
+loadable only for migration and logs an explicit page-authority warning.
 
 ## 3. Guest views: raw markup is refused
 
@@ -265,7 +280,7 @@ before. Granting it is one call a host makes deliberately, which was the point.
 
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 
-**The finding, and a correction.** A guest's `component-def.style` rides on the
+**The finding, and a correction.** A guest's static manifest `style` rides on the
 `"main"` **view's** style, not on `common_style` (`host/bundle.mbt`), and
 `Component::compile_style` emits it as
 `[data-cid="N"][data-vid="main"]{<style>}` by string concatenation
@@ -278,9 +293,8 @@ reachable by a guest**: `Component::for_type` defaults it to `""` and
 
 **What is true now.** Two things.
 
-No global CSS for guests, as an invariant of the contract:
-`tutuca:component@0.5.0` has no field that reaches `global_style`, and the WIT
-says so where the `style` field is defined. Unscoped CSS from a bundle would
+No global CSS for guests, as an invariant of the bundle format:
+the v0.6 static manifest has no field that reaches `global_style`. Unscoped CSS from a bundle would
 reach the page around it, and no amount of validation makes that safe.
 
 And an **untrusted bundle ships no CSS at all** — `Policy::check_style` refuses
@@ -378,16 +392,19 @@ is handed back.
 ## 8. Provenance
 
 A bundle's identity should be the **hash of the archive it arrived in**, not
-anything it says about itself. The manifest's `doc` / `version` / `homepage` /
-`authors` are advisory and labelled as such in the WIT; nothing resolves against
-them. Content-addressed bundle ids (SHA-256, computed in the JS loader) are the
+anything it says about itself. The static manifest's `doc` / `version` /
+`homepage` / `authors` are advisory; nothing resolves against them.
+Content-addressed bundle ids (SHA-256, computed in the JS loader) are the
 next step, and signing is a step after that.
 
 ## What to check when changing this
 
-- Adding a field to `component-def` or `manifest`: does anything you added reach
-  `global_style`, or reach the DOM as text rather than as a description? Those
-  are the two shapes that have gone wrong here.
+- Adding a field to the static manifest: does anything you added reach
+  `global_style`, resolve an external resource, or reach the DOM as text rather
+  than as a description? Those are the shapes that have gone wrong here.
+- Adding a WIT export: is it runtime behavior that genuinely cannot be static
+  bundle data? Metadata in wasm executes code merely to describe code and
+  expands the canonical ABI attack surface.
 - Adding to `control`: is it buffered and applied by the host, or does it act?
   Only `log` acts, and only because logging cannot be misused into anything.
 - Adding to `env`: is the answer weaker than the platform's own, and is it

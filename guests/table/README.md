@@ -30,8 +30,8 @@ toolchain pins and the Component Model gotchas — is identical to the counter
 guest and documented once, in [`../counter/README.md`](../counter/README.md).
 Only the component source differs:
 
-- `gen/interface/tutuca/component/guest/table.mbt` — the `TableView` struct, its
-  `ComponentDef`, and `dyn_module()`
+- `gen/interface/tutuca/component/guest/table.mbt` — `TableView` behavior and factory
+- `manifest.json` + `views/` — its schema/catalog declaration and template
 
 ```sh
 node guests/build-guest.mjs table       # dist/table.component.wasm + dist/js/

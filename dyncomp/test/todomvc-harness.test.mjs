@@ -66,23 +66,32 @@ const shown = (inst) =>
   });
 
 let guest;
+let manifest;
 before(async () => {
   if (!built) return;
   const { instantiate } = await import(new URL('todomvc.component.js', jsDir));
   const getCoreModule = async (path) =>
     WebAssembly.compile(await readFile(new URL(path, jsDir)));
   const root = await instantiate(getCoreModule, {
-    'tutuca:component/values@0.5.0': values,
+    'tutuca:component/values@0.6.0': values,
     'tutuca:component/values': values,
-    'tutuca:component/control@0.5.0': control,
+    'tutuca:component/control@0.6.0': control,
     'tutuca:component/control': control,
   });
   guest = root.guest;
+  manifest = JSON.parse(
+    await readFile(new URL('../../guests/todomvc/manifest.json', import.meta.url), 'utf8'),
+  );
+  const raw = guest.Instance.prototype.handleEvent;
+  guest.Instance.prototype.handleEvent = function (...args) {
+    const result = raw.call(this, ...args);
+    return result.tag === 'changed' ? result.val : undefined;
+  };
 });
 
-test('the manifest declares two fields and eleven handlers', { skip: !built }, () => {
-  const m = guest.getManifest();
-  assert.equal(m.apiVersion, 5);
+test('the static manifest declares the component schema', { skip: !built }, () => {
+  const m = manifest;
+  assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'todomvclib');
   const [c] = m.components;
   assert.equal(c.name, 'TodoMvc');
@@ -92,7 +101,7 @@ test('the manifest declares two fields and eleven handlers', { skip: !built }, (
   assert.equal(c.fields[1].constraint.enumJson, '["all", "active", "completed"]');
   assert.equal(c.fields[1].constraint.defaultJson, '"all"');
   // `setFilter` is the host's mutator; the guest never answers that name
-  assert.ok(!c.handlers.includes('setFilter'));
+  assert.equal(c.handlers, undefined);
   assert.deepEqual(c.whens, ['matchesFilter']);
   assert.deepEqual(c.inits.map((i) => i.name), ['example']);
 });

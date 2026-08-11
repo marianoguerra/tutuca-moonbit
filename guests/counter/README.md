@@ -2,7 +2,7 @@
 
 The reference guest for the dynamic-wasm-component design
 ([`../../dyncomp/DESIGN.md`](../../dyncomp/DESIGN.md)): a counter with
-opaque native state and tutuca view strings, compiled to a WebAssembly
+opaque native state and static tutuca views, compiled to a WebAssembly
 component any `tutuca:component` host can load. This README is the shared
 reference for every MoonBit guest — [`../table`](../table/README.md),
 [`../todo`](../todo/README.md), [`../todomvc`](../todomvc/),
@@ -21,11 +21,11 @@ what they compute.
   commit. It is a copy rather than a dependency because a `declare` must be
   implemented in its own package and `Instance`'s methods must be defined where
   `Instance` is, and both of those are here.
-- `gen/interface/tutuca/component/guest/counter.mbt` — **the only file a
-  component author writes**: a `Counter` struct implementing
-  `DynComponent`, its `ComponentDef` (views, the declared state schema, the
-  message buckets, style) and `dyn_module()` (the components, their factories,
-  and the bundle's own request handlers)
+- `gen/interface/tutuca/component/guest/counter.mbt` — behavior: structs
+  implementing `DynComponent`, factories, and optional request serving
+- `manifest.json` — schema, catalog metadata, non-input message buckets and
+  capabilities; input handler names are discovered through `event-result`
+- `views/*.html` — host-compiled tutuca templates
 
 There is no `wit/` here. The one WIT in the repo is
 [`dyncomp/wit/tutuca-component.wit`](../../dyncomp/wit/tutuca-component.wit):
@@ -37,7 +37,9 @@ cannot silently implement a different contract than the host expects.
 
 Both MoonBit guests share one parameterized builder
 ([`../build-guest.mjs`](../build-guest.mjs)): moon build → wasm-tools
-embed/new → jco transpile, into `dist/` (gitignored).
+embed/new → jco transpile (to extract the core), into `dist/` (gitignored).
+Packing ships the main core wasm plus the static manifest/views, not the
+generated JavaScript.
 
 ```sh
 node guests/build-guest.mjs counter     # dist/counter.component.wasm + dist/js/

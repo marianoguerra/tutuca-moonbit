@@ -464,8 +464,8 @@ pub fn stop_propagation() -> Unit {
 }
 
 ///|
-/// Fire a request handler — one this bundle serves (see
-/// `component-def.requests`) or, failing that, one the HOST registered. The
+/// Fire a request handler — one the static manifest says this bundle serves,
+/// or, failing that, one the HOST registered. The
 /// response arrives as a later handle-event(response, ...), routed by `opts`.
 ///
 /// A bundle's OWN handlers run inside the guest, so they inherit the guest's

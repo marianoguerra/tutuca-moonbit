@@ -85,11 +85,9 @@ export function createTkvImports() {
 
 // --- what this host is willing to grant ---
 //
-// Capabilities checked against a descriptor bundle's IMPORT SECTION, which is
-// the difference between a gate and a promise: `Policy::check_capabilities`
-// reads the manifest, and a guest writes its own manifest. A guest that
-// imports `env.now-ms` and simply declines to mention `cap-clock` got the
-// clock anyway, because this bridge supplied `env` unconditionally.
+// Capabilities are checked against a descriptor bundle's IMPORT SECTION,
+// which is the difference between a gate and a promise. The static manifest
+// remains useful for consent UI, but it cannot hide what the module imports.
 //
 // The default is what `Policy::untrusted()` says: nothing. A page that has
 // asked a person calls this before loading, and `set_policy` is the MoonBit
@@ -314,10 +312,13 @@ export function createTcompImports(getExports) {
     // jco 1.25 resolves unversioned keys at runtime; provide both spellings
     // (the versioned one tracks the WIT package version)
     "tutuca:component/values": valuesImpl,
+    "tutuca:component/values@0.6.0": valuesImpl,
     "tutuca:component/values@0.5.0": valuesImpl,
     "tutuca:component/control": controlImpl,
+    "tutuca:component/control@0.6.0": controlImpl,
     "tutuca:component/control@0.5.0": controlImpl,
     "tutuca:component/env": envImpl,
+    "tutuca:component/env@0.6.0": envImpl,
     "tutuca:component/env@0.5.0": envImpl,
   };
   // `tutuca:component/tables` is deliberately absent: it declares types and no
@@ -361,12 +362,35 @@ export function createTcompImports(getExports) {
   // its manifest to the wasm host. Shared by the URL loader (`load`) and the
   // dropped-archive loader (`loadArchive`); only where the bytes came from
   // differs between them.
-  const finishLoad = async (instantiate, getCoreModule, loadId) => {
+  const finishLoad = async (instantiate, getCoreModule, loadId, manifest = null) => {
     const root = await instantiate(getCoreModule, guestImports);
     const id = nextBundle++;
     bundles.set(id, { guest: root.guest, instances: new Map(), next: 1 });
-    const manifest = JSON.stringify(root.guest.getManifest());
-    getExports().dyncomp_on_loaded(loadId, id, manifest);
+    const manifestJson = JSON.stringify(manifest ?? root.guest.getManifest());
+    getExports().dyncomp_on_loaded(loadId, id, manifestJson);
+  };
+
+  // A v0.6 descriptor carries the declaration as data. Views are separate
+  // HTML assets so authors and editors handle HTML rather than a string inside
+  // source code; hydrate them only after untarring, before MoonBit parses the
+  // manifest exactly as it did for v0.5's get-manifest result.
+  const hydrateManifest = (descriptor, files) => {
+    const manifest = structuredClone(descriptor.manifest);
+    if (!manifest || manifest.manifestVersion !== 1) {
+      throw new Error("tutuca.json has no supported static manifest");
+    }
+    for (const component of manifest.components ?? []) {
+      for (const view of component.views ?? []) {
+        const name = String(view.src ?? "").split("/").pop();
+        const bytes = files[name];
+        if (!name || !bytes) {
+          throw new Error(`static manifest view is missing from archive: ${view.src}`);
+        }
+        view.html = new TextDecoder().decode(bytes);
+        delete view.src;
+      }
+    }
+    return manifest;
   };
 
   // Load a dropped single-file bundle: gunzip (native DecompressionStream) ->
@@ -400,10 +424,12 @@ export function createTcompImports(getExports) {
       if (descriptorBytes) {
         const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
         const { instantiate } = await import("./abi.mjs");
+        const manifest = hydrateManifest(descriptor, files);
         await finishLoad(
           (g, i) => instantiate(g, i, { ...descriptor, policy: { grants } }),
           getCoreModule,
           loadId,
+          manifest,
         );
       } else {
         const entryName = Object.keys(files).find((n) => n.endsWith(".component.js"));
@@ -432,6 +458,7 @@ export function createTcompImports(getExports) {
   };
 
   return {
+    set_grants: (capsJson) => setGrants(JSON.parse(capsJson)),
     // A bundle is a `.tutuca.tar.gz` archive, and there are two ways to name
     // one: the id of a file the user dropped, or a URL to fetch it from. Both
     // end in the same unpack-and-instantiate path.
@@ -472,25 +499,18 @@ export function createTcompImports(getExports) {
       arena.clear();
       return out;
     },
-    seq_entries: (bundle, handle) => {
-      const entries = instOf(bundle, handle)?.seqEntries();
-      const out = entries === undefined
-        ? ""
-        : JSON.stringify(entries.map(([k, v]) => [k, guestToJson(v)]));
-      arena.clear();
-      return out;
-    },
     dispatch: (bundle, handle, bucketInt, name, argsJson) => {
       const bucket = ["input", "receive", "response", "bubble"][bucketInt] ?? "input";
       controlBuf = [];
       const args = JSON.parse(argsJson).map(jsonToGuest);
       const inst = instOf(bundle, handle);
-      if (!inst) return JSON.stringify({ next: null, msgs: [] });
+      if (!inst) return JSON.stringify({ handled: false, next: null, msgs: [] });
       const comp = bundles.get(bundle).instances.get(handle).comp;
-      const next = inst.handleEvent(bucket, name, args);
+      const result = inst.handleEvent(bucket, name, args);
       drainChildren();
       const out = JSON.stringify({
-        next: next === undefined ? null : register(bundle, next, comp),
+        handled: result.tag !== "unhandled",
+        next: result.tag === "changed" ? register(bundle, result.val, comp) : null,
         msgs: controlBuf,
       });
       arena.clear();

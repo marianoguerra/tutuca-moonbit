@@ -156,21 +156,21 @@ fn text_list(xs : Array[String]) -> @values.Value {
 impl DynComponent for TableView with fn handle(self, bucket, name, args) {
   match (bucket, name) {
     (INPUT, "nextPage") =>
-      Some(
+      Changed(
         self.retable(self.table, self.page + 1, self.sort, self.descending)
         as &DynComponent,
       )
     (INPUT, "prevPage") =>
-      Some(
+      Changed(
         self.retable(self.table, self.page - 1, self.sort, self.descending)
         as &DynComponent,
       )
     (INPUT, "firstPage") =>
-      Some(
+      Changed(
         self.retable(self.table, 0, self.sort, self.descending) as &DynComponent,
       )
     (INPUT, "lastPage") =>
-      Some(
+      Changed(
         self.retable(
           self.table,
           page_count(self.table, self.page_size) - 1,
@@ -193,13 +193,13 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
           let cmd : @tables.Command = SortBy({ column: id, descending })
           match apply_command(self.table, cmd) {
             Ok(sorted) =>
-              Some(self.retable(sorted, 0, id, descending) as &DynComponent)
+              Changed(self.retable(sorted, 0, id, descending) as &DynComponent)
             // A refused command is a no-op, not a crash. The id came from the
             // view, so a miss means the table changed under it.
-            Err(_) => None
+            Err(_) => Unchanged
           }
         }
-        _ => None
+        _ => Unchanged
       }
     // Replace the data wholesale — how a parent or the host hands this
     // component a new table (`ctx.send("load", [table])`).
@@ -207,19 +207,21 @@ impl DynComponent for TableView with fn handle(self, bucket, name, args) {
       match args {
         [v, ..] =>
           match table_of_value(v) {
-            Some(t) => Some(self.retable(t, 0, "", false) as &DynComponent)
-            None => None
+            Some(t) => Changed(self.retable(t, 0, "", false) as &DynComponent)
+            None => Unchanged
           }
-        _ => None
+        _ => Unchanged
       }
     (RECEIVE, "clear") =>
       match apply_command(self.table, Clear) {
         Ok(t) =>
-          Some(self.retable(t, 0, self.sort, self.descending) as &DynComponent)
-        Err(_) => None
+          Changed(
+            self.retable(t, 0, self.sort, self.descending) as &DynComponent,
+          )
+        Err(_) => Unchanged
       }
-    (RECEIVE, "init") => None
-    _ => None
+    (RECEIVE, "init") => Unchanged
+    _ => Unhandled
   }
 }
 
@@ -292,110 +294,6 @@ fn make_table(args : Array[(String, @values.Value)]) -> &DynComponent {
 }
 
 ///|
-fn table_def() -> ComponentDef {
-  component_def(
-    "Table",
-    doc="Tabular data as typed columns: a sortable, paged table you hand a set of columns and their values.",
-    keywords=[
-      "table", "grid", "data", "rows", "columns", "spreadsheet", "dataset",
-    ],
-    category="data",
-    message_docs=[
-      {
-        name: "sortBy",
-        doc: "Sort by a column; clicking the sorted one reverses it.",
-      },
-      { name: "nextPage", doc: "Show the next page of rows." },
-      { name: "prevPage", doc: "Show the previous page of rows." },
-      { name: "firstPage", doc: "Jump to the first page." },
-      { name: "lastPage", doc: "Jump to the last page." },
-      { name: "load", doc: "Replace the data with a new table." },
-      { name: "clear", doc: "Drop every row, keeping the columns." },
-    ],
-    views=[
-      {
-        name: "main",
-        html: (
-          #|<div class="card bg-base-100 border border-base-300 shadow-sm table-card">
-          #|  <div class="card-body gap-2 p-4">
-          #|    <div class="flex items-center justify-between gap-2">
-          #|      <span class="text-sm opacity-70 summary" @text="$summary"></span>
-          #|      <div class="join">
-          #|        <button class="btn btn-xs join-item first" @on.click="firstPage" :disabled="$atFirst">«</button>
-          #|        <button class="btn btn-xs join-item prev" @on.click="prevPage" :disabled="$atFirst">‹</button>
-          #|        <span class="btn btn-xs join-item no-animation pointer-events-none page" @text=".page"></span>
-          #|        <button class="btn btn-xs join-item next" @on.click="nextPage" :disabled="$atLast">›</button>
-          #|        <button class="btn btn-xs join-item last" @on.click="lastPage" :disabled="$atLast">»</button>
-          #|      </div>
-          #|    </div>
-          #|    <div class="overflow-x-auto">
-          #|      <table class="table table-zebra table-sm">
-          #|        <thead>
-          #|          <tr>
-          #|            <th @x @each=".ids" class="cursor-pointer select-none th-sort" @on.click="sortBy @value">
-          #|              <x text="@value"></x><span @show="$sortedBy @value" @text="$sortMark"></span>
-          #|            </th>
-          #|          </tr>
-          #|        </thead>
-          #|        <tbody>
-          #|          <tr @x @each=".rows" class="row">
-          #|            <td @x @each="@value" @text="@value" class="cell"></td>
-          #|          </tr>
-          #|        </tbody>
-          #|      </table>
-          #|    </div>
-          #|    <p @show=".empty" class="italic opacity-60 text-sm empty">no rows</p>
-          #|  </div>
-          #|</div>
-        ),
-      },
-    ],
-    // ONE declared field of the standard table type. That single `TY_TABLE` is
-    // what makes the host project a real JSON Schema for `data` — with the
-    // column shape, the four cell types and their ranges — instead of the
-    // titled-but-empty stub every `ty-record` gets. It is the whole point of
-    // the type existing.
-    types=[
-      { kind: TY_TABLE, elem: None, items: [], name: "", members: [] },
-      { kind: TY_INT, elem: None, items: [], name: "", members: [] },
-    ],
-    fields=[
-      field(
-        "data",
-        0,
-        doc="The table to show: one entry per column, each with a stable id, a label, a type (i32, f64, str or bool) and its values in row order. Every column must have the same number of values; use null for a missing one.",
-        required=true,
-      ),
-      field(
-        "pageSize",
-        1,
-        doc="How many rows to show at once.",
-        required=false,
-        constraint=Some({ ..no_limits(), min: Some(1), max: Some(500) }),
-      ),
-    ],
-    handlers=["sortBy", "nextPage", "prevPage", "firstPage", "lastPage"],
-    receives=["init", "load", "clear"],
-    methods=["sortedBy", "sortMark", "atFirst", "atLast", "summary"],
-    inits=[
-      {
-        name: "cities",
-        args_json: "{\"data\": {\"columns\": [{\"id\": \"city\", \"label\": \"City\", \"type\": \"str\", \"values\": [\"Berlin\", \"Athens\", \"Lima\", \"Oslo\"]}, {\"id\": \"pop\", \"label\": \"Population\", \"type\": \"i32\", \"values\": [3664000, 664000, null, 709000]}, {\"id\": \"lat\", \"label\": \"Latitude\", \"type\": \"f64\", \"values\": [52.52, 37.98, -12.05, 59.91]}, {\"id\": \"capital\", \"label\": \"Capital\", \"type\": \"bool\", \"values\": [true, true, true, true]}]}, \"pageSize\": 3}",
-        doc: "Four cities across all four column types, one population missing, paged three at a time.",
-      },
-    ],
-  )
-}
-
-///|
 fn dyn_module() -> DynModule {
-  module_def(
-    "tablelib",
-    [dyn_comp(table_def(), make_table)],
-    doc="A typed data table — the reference consumer of the shared tutuca:component/tables vocabulary.",
-    version="0.1.0",
-    // No clock, no randomness, no timer: a table is a projection of what it
-    // was handed, and everything it does is a function of that.
-    capabilities=[],
-  )
+  module_def([dyn_comp("Table", make_table)])
 }
