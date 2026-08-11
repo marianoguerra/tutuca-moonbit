@@ -52,18 +52,21 @@ fn coerce_cell(
     ("bool", False) => Bool(false)
     ("f64", Number(n, ..)) => Num(n)
     ("i32", Number(n, ..)) => {
-      if n != n.trunc() {
-        errors.push(err(pointer, "an i32 column holds whole numbers, got \{n}"))
-      } else if n.is_inf() || n.is_nan() {
+      if n.is_inf() ||
+        n.is_nan() ||
+        n < -9007199254740991.0 ||
+        n > 9007199254740991.0 {
         // A JSON integer literal past 2^53 does not survive the parse — it
         // arrives already rounded, or, far enough out, as an infinity. Echoing
         // it back would print a number nobody wrote. This is the concrete shape
         // of why a column is `i32` and a big id is a `str`.
         errors.push(
           err(
-            pointer, "not a finite number — a value too large to survive JSON belongs in a str column",
+            pointer, "not a safely represented integer — a value outside JSON's exact integer range belongs in a str column",
           ),
         )
+      } else if n != n.trunc() {
+        errors.push(err(pointer, "an i32 column holds whole numbers, got \{n}"))
       } else if n < -2147483648.0 || n > 2147483647.0 {
         errors.push(
           err(

@@ -581,7 +581,7 @@ test "cell types, i32 range, duplicate ids and unknown keys are all reported" {
     content=(
       #|[
       #|  "/data/columns/0/values/1: an i32 column holds whole numbers, got 2.5",
-      #|  "/data/columns/0/values/2: not a finite number — a value too large to survive JSON belongs in a str column",
+      #|  "/data/columns/0/values/2: not a safely represented integer — a value outside JSON's exact integer range belongs in a str column",
       #|  "/data/columns/0/values/3: expected i32 or null, got string",
       #|  "/data/columns/1/id: duplicate column id n, already used by column 0",
       #|  "/data/columns/1/type: expected one of i32, f64, str, bool, got nope",
