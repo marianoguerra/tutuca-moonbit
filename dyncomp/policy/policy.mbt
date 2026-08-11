@@ -6,10 +6,9 @@
 ///|
 /// How much a host is willing to believe about where a bundle came from.
 ///
-/// A tier is not a scale of "how dangerous" — a bundle has no ambient
-/// authority at any tier. It is a scale of how much CONVENIENCE the host will
-/// extend: whether to hand over a clock, and whether to render CSS the bundle
-/// wrote rather than making it use the host's utility classes.
+/// The authority a host deliberately extends to a bundle. Untrusted has no
+/// ambient capabilities or direct DOM network/CSS channel; Granted adds the
+/// surfaces a person approved; System is app code shipped by the host.
 pub(all) enum TrustTier {
   /// Shipped with the app. Everything it asks for.
   System
@@ -260,21 +259,20 @@ pub fn Policy::check_style(
 /// That is what makes this decidable here rather than at render.
 ///
 /// It is not decidable for attribute VALUES: `AttrItem::Plain` carries a `Val`,
-/// so what an `href` will hold is unknowable until render — and the Sanitizer
-/// API has no opinion about URL schemes anyway. That half is a filter between
-/// render and diff; see docs/sanitizer.md and SECURITY.md §3.
-///
-/// Not tier-dependent, and the sanitizer is the same one at every tier: a
-/// System bundle is part of the app and writes its views the ordinary way, so
-/// nothing is losing anything.
+/// so what an `href` will hold is unknowable until render. For an Untrusted
+/// bundle the authority check therefore refuses browser network/CSS SINKS by
+/// name, alongside raw Markdown and arbitrary utility CSS. Granted/System
+/// bundles retain the ordinary URL filter at render time.
 pub fn Policy::check_view(
   self : Policy,
   where_ : String,
   tree : @anode.ANode,
 ) -> Array[Refusal] {
-  self.sanitizer
-  .check(tree)
-  .map(v => refusal(where_, @sanitize.Violation::to_string(v)))
+  let out = self.sanitizer
+    .check(tree)
+    .map(v => refusal(where_, @sanitize.Violation::to_string(v)))
+  out.append(self.check_untrusted_view_authority(where_, tree))
+  out
 }
 
 ///|
@@ -296,8 +294,10 @@ pub fn Policy::check_view(
 ///   `data-nid` — which `@sanitize` carves out ahead of any config precisely
 ///   because an allow-list that forgot them renders a component that then
 ///   responds to nothing.
-/// - **loosen**, most usefully with `raw_markup: true`. That one is only safe
-///   when the render-time markup filter is installed; see
+/// - **loosen**, on a Granted/System policy, most usefully with
+///   `raw_markup: true`. Untrusted keeps refusing it because sanitized HTML
+///   may still make a network request. For a trusted tier it is only safe when
+///   the render-time markup filter is installed; see
 ///   `@markup.filter_for`, which is what pairs the two so a host cannot
 ///   have the permission without the filter.
 pub fn Policy::with_sanitizer(
@@ -310,11 +310,13 @@ pub fn Policy::with_sanitizer(
 ///|
 /// Whether a guest view may use `@dangerouslysetinnerhtml`.
 ///
-/// False everywhere by default. A host that flips it MUST also install the
+/// False everywhere by default, and always false for Untrusted: even sanitized
+/// HTML can contain a non-script network request. A trusted host that flips it
+/// MUST also install the
 /// markup filter — the payload is a `Val` at registration, so nothing decided
 /// here can see what it will hold, and without the filter it goes to
 /// `set_inner_html` unchecked. `@markup.filter_for` reads this and builds the
 /// matching filter, which is how the two stay in step.
 pub fn Policy::allows_raw_markup(self : Policy) -> Bool {
-  self.sanitizer.raw_markup
+  self.tier != Untrusted && self.sanitizer.raw_markup
 }

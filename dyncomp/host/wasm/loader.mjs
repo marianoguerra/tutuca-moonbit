@@ -106,30 +106,180 @@ export function setGrants(caps) {
 
 // --- single-file bundle unpacking (native, dependency-free) ---
 
-async function gunzip(bytes) {
+// These bounds apply BEFORE the manifest's structural quotas. A manifest
+// cannot protect the work needed to reach it: the archive has already been
+// downloaded, decompressed and walked by then. Deliberately generous relative
+// to the shipped bundles, but finite so a dropped gzip/tar is not a tab-sized
+// allocation or an unbounded parser loop.
+export const ARCHIVE_LIMITS = Object.freeze({
+  compressedBytes: 16 * 1024 * 1024,
+  expandedBytes: 64 * 1024 * 1024,
+  entryBytes: 32 * 1024 * 1024,
+  files: 8192,
+});
+
+export async function gunzip(bytes, limits = ARCHIVE_LIMITS) {
+  if (bytes.byteLength > limits.compressedBytes) {
+    throw new Error(
+      `bundle archive is too large: ${bytes.byteLength} compressed bytes ` +
+      `(the limit is ${limits.compressedBytes})`,
+    );
+  }
   const stream = new Blob([bytes]).stream().pipeThrough(new DecompressionStream("gzip"));
-  return new Uint8Array(await new Response(stream).arrayBuffer());
+  const reader = stream.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limits.expandedBytes) {
+        await reader.cancel("expanded archive limit exceeded");
+        throw new Error(
+          `bundle archive expands past ${limits.expandedBytes} bytes`,
+        );
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.byteLength;
+  }
+  return out;
 }
 
-function untar(bytes) {
-  const files = {};
+export async function readCompressedResponse(response, limits = ARCHIVE_LIMITS) {
+  const advertised = Number(response.headers.get("content-length"));
+  if (Number.isFinite(advertised) && advertised > limits.compressedBytes) {
+    throw new Error(
+      `bundle archive is too large: ${advertised} compressed bytes ` +
+      `(the limit is ${limits.compressedBytes})`,
+    );
+  }
+  if (!response.body) {
+    throw new Error("bundle response has no readable body");
+  }
+  const reader = response.body.getReader();
+  const chunks = [];
+  let total = 0;
+  try {
+    for (;;) {
+      const { done, value } = await reader.read();
+      if (done) break;
+      total += value.byteLength;
+      if (total > limits.compressedBytes) {
+        await reader.cancel("compressed archive limit exceeded");
+        throw new Error(
+          `bundle archive exceeds ${limits.compressedBytes} compressed bytes`,
+        );
+      }
+      chunks.push(value);
+    }
+  } finally {
+    reader.releaseLock();
+  }
+  const out = new Uint8Array(total);
+  let at = 0;
+  for (const chunk of chunks) {
+    out.set(chunk, at);
+    at += chunk.byteLength;
+  }
+  return out;
+}
+
+function tarNumber(header, start, end, field) {
+  const raw = new TextDecoder()
+    .decode(header.subarray(start, end))
+    .replace(/[\0 ]+$/g, "")
+    .trim();
+  if (!/^[0-7]+$/.test(raw)) {
+    throw new Error(`invalid tar ${field}: expected octal digits`);
+  }
+  const value = Number.parseInt(raw, 8);
+  if (!Number.isSafeInteger(value) || value < 0) {
+    throw new Error(`invalid tar ${field}: out of range`);
+  }
+  return value;
+}
+
+function checkTarHeader(header) {
+  const expected = tarNumber(header, 148, 156, "checksum");
+  let actual = 0;
+  for (let i = 0; i < header.length; i++) {
+    actual += i >= 148 && i < 156 ? 0x20 : header[i];
+  }
+  if (actual !== expected) {
+    throw new Error(`invalid tar header checksum: got ${expected}, expected ${actual}`);
+  }
+}
+
+export function untar(bytes, limits = ARCHIVE_LIMITS) {
+  if (bytes.byteLength > limits.expandedBytes) {
+    throw new Error(
+      `bundle archive is too large: ${bytes.byteLength} expanded bytes ` +
+      `(the limit is ${limits.expandedBytes})`,
+    );
+  }
+  const files = Object.create(null);
   const td = new TextDecoder();
-  const octal = (buf) => parseInt(td.decode(buf).replace(/[\0 ]+$/g, "").trim() || "0", 8) | 0;
   let off = 0;
+  let fileCount = 0;
+  let payloadBytes = 0;
   while (off + 512 <= bytes.length) {
     const header = bytes.subarray(off, off + 512);
     if (header.every((b) => b === 0)) break; // end-of-archive zero block(s)
+    checkTarHeader(header);
     const name = td.decode(header.subarray(0, 100)).replace(/\0.*$/s, "");
-    const size = octal(header.subarray(124, 136));
+    const size = tarNumber(header, 124, 136, "size");
     const typeflag = header[156]; // '0' (0x30) or NUL = regular file
     const dataStart = off + 512;
-    if (name && (typeflag === 0x30 || typeflag === 0)) {
-      const base = name.replace(/^\.\//, "").split("/").pop();
-      files[base] = bytes.subarray(dataStart, dataStart + size);
+    const dataEnd = dataStart + size;
+    const next = dataStart + Math.ceil(size / 512) * 512;
+    if (dataEnd > bytes.length || next > bytes.length || next <= off) {
+      throw new Error(`truncated or non-advancing tar entry: ${name || "<unnamed>"}`);
     }
-    off = dataStart + Math.ceil(size / 512) * 512;
+    if (typeflag !== 0x30 && typeflag !== 0) {
+      throw new Error(`unsupported tar entry type ${typeflag}: ${name || "<unnamed>"}`);
+    }
+    if (!name) throw new Error("tar archive contains an unnamed file");
+    if (size > limits.entryBytes) {
+      throw new Error(
+        `tar entry is too large: ${name} has ${size} bytes ` +
+        `(the limit is ${limits.entryBytes})`,
+      );
+    }
+    fileCount += 1;
+    payloadBytes += size;
+    if (fileCount > limits.files) {
+      throw new Error(`tar archive has too many files (the limit is ${limits.files})`);
+    }
+    if (payloadBytes > limits.expandedBytes) {
+      throw new Error(`tar payloads exceed ${limits.expandedBytes} bytes`);
+    }
+    const base = name.replace(/^\.\//, "").split("/").pop();
+    if (!base || Object.hasOwn(files, base)) {
+      throw new Error(`duplicate or ambiguous tar basename: ${base || name}`);
+    }
+    files[base] = bytes.subarray(dataStart, dataEnd);
+    off = next;
   }
   return files;
+}
+
+export function requireDescriptor(files) {
+  const descriptor = files["tutuca.json"];
+  if (!descriptor) {
+    throw new Error(
+      "archive has no tutuca.json descriptor; legacy JavaScript bundles are not supported",
+    );
+  }
+  return descriptor;
 }
 
 // --- tcomp: the dynamic-component bridge ---
@@ -398,20 +548,12 @@ export function createTcompImports(getExports) {
   // bytes. loadId is any value not tracked in the host's notify_paths, so
   // completion notifies the root shell (see @dhw.notify).
   //
-  // There are two archive shapes, and which one arrived is a question about
-  // the archive rather than about the host:
-  //
-  //   descriptor  a `tutuca.json` naming the world, the string encoding and
-  //               the main core module. `./abi.mjs` implements that world
-  //               once, here, and the archive carries no JavaScript at all.
-  //   transpiled  jco's `*.component.js`, imported from a blob URL. It runs
-  //               at PAGE AUTHORITY — the wasm sandbox says nothing about it —
-  //               which is the whole reason the first shape exists. Kept so an
-  //               archive built before the descriptor still loads, and warned
-  //               about so it is visible when one does.
-  const loadArchive = (file, loadId) => {
+  // A descriptor names the world, string encoding and main core module.
+  // `./abi.mjs` implements that world once, here, and the archive carries no
+  // JavaScript at all. The older `*.component.js` archive shape is deliberately
+  // not accepted: warning before importing page-authority code is not a sandbox.
+  const loadArchiveBytes = (bytes, loadId) => {
     (async () => {
-      const bytes = new Uint8Array(await file.arrayBuffer());
       const files = untar(await gunzip(bytes));
       const getCoreModule = (path) => {
         const base = String(path).split("/").pop();
@@ -420,33 +562,16 @@ export function createTcompImports(getExports) {
         return WebAssembly.compile(wasm);
       };
 
-      const descriptorBytes = files["tutuca.json"];
-      if (descriptorBytes) {
-        const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
-        const { instantiate } = await import("./abi.mjs");
-        const manifest = hydrateManifest(descriptor, files);
-        await finishLoad(
-          (g, i) => instantiate(g, i, { ...descriptor, policy: { grants } }),
-          getCoreModule,
-          loadId,
-          manifest,
-        );
-      } else {
-        const entryName = Object.keys(files).find((n) => n.endsWith(".component.js"));
-        if (!entryName) throw new Error("archive has neither tutuca.json nor a *.component.js entry");
-        console.warn(
-          `tutuca dyncomp: "${entryName}" is transpiler output and runs at page ` +
-          "authority; an archive with a tutuca.json descriptor does not",
-        );
-        const blob = new Blob([files[entryName]], { type: "text/javascript" });
-        const url = URL.createObjectURL(blob);
-        try {
-          const mod = await import(url);
-          await finishLoad((g, i) => mod.instantiate(g, i), getCoreModule, loadId);
-        } finally {
-          URL.revokeObjectURL(url);
-        }
-      }
+      const descriptorBytes = requireDescriptor(files);
+      const descriptor = JSON.parse(new TextDecoder().decode(descriptorBytes));
+      const { instantiate } = await import("./abi.mjs");
+      const manifest = hydrateManifest(descriptor, files);
+      await finishLoad(
+        (g, i) => instantiate(g, i, { ...descriptor, policy: { grants } }),
+        getCoreModule,
+        loadId,
+        manifest,
+      );
       // the bundle's views registered new margaui utility classes; the host
       // recompiles + reinjects <style id="margaui-css"> in MoonBit so guest
       // styling (e.g. the counter/todo cards) applies
@@ -455,6 +580,23 @@ export function createTcompImports(getExports) {
       console.error("universal load failed:", e);
       getExports().dyncomp_on_load_error(loadId, String(e));
     });
+  };
+
+  const loadArchive = (file, loadId) => {
+    if (file.size > ARCHIVE_LIMITS.compressedBytes) {
+      getExports().dyncomp_on_load_error(
+        loadId,
+        `bundle archive is too large: ${file.size} compressed bytes ` +
+          `(the limit is ${ARCHIVE_LIMITS.compressedBytes})`,
+      );
+      return;
+    }
+    file.arrayBuffer()
+      .then(buffer => loadArchiveBytes(new Uint8Array(buffer), loadId))
+      .catch((e) => {
+        console.error("universal load failed:", e);
+        getExports().dyncomp_on_load_error(loadId, String(e));
+      });
   };
 
   return {
@@ -474,7 +616,7 @@ export function createTcompImports(getExports) {
       (async () => {
         const res = await fetch(new URL(url, document.baseURI));
         if (!res.ok) throw new Error(`${res.status} ${res.statusText}`);
-        loadArchive(await res.blob(), loadId);
+        loadArchiveBytes(await readCompressedResponse(res), loadId);
       })().catch((e) => {
         console.error("dyncomp load failed:", e);
         getExports().dyncomp_on_load_error(loadId, String(e));

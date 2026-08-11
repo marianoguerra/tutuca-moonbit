@@ -123,14 +123,15 @@ The executable half of [`SECURITY.md`](SECURITY.md). `host` owns the mechanics
 of loading, this owns the decisions, and `register_bundle` takes a `Policy`
 (defaulting to `untrusted`) and enforces it before it parses anything.
 
-Three tiers, differing in *convenience* rather than in authority — a bundle has
-no ambient authority at any of them:
+Three tiers, differing in authority deliberately extended by the host:
 
 | | `Untrusted` (default) | `Granted` | `System` |
 |---|---|---|---|
 | `cap-clock` / `cap-random` | no | yes | yes |
 | `cap-timer` | no | no | yes |
 | its own CSS | no | yes | yes |
+| direct DOM URL/CSS sinks | no | yes, render-time scheme filtered | yes, render-time scheme filtered |
+| sanitized runtime HTML | no | configurable | configurable |
 
 An ungranted capability **refuses the bundle** rather than degrading it: a guest
 reading a frozen zero from an ungranted clock cannot tell that from midnight.
@@ -139,13 +140,12 @@ declare components, ship views, hold state, handle events, nest children and
 serve its own requests — all three sample guests run under it unchanged.
 
 Also here: the Sanitizer-API config over the ANode tree (`anode/sanitize`, run by
-`check_view`) with `@dangerouslysetinnerhtml` still refused outright, the URL
-filter `set_app` installs for the half a static pass cannot decide
-(`vdom/filter`), and quotas on manifest size (an availability bound, not a
-security one — the host parses every view before it renders anything). Still to
-come, and marked as such in the code: the `mizchi/css` style validator (until it
-lands, `allow_custom_css` means someone vouched, not that anything checked), the
-spec's default element allow-list, and content-addressed bundle ids.
+`check_view`), the untrusted authority walk that refuses direct network/CSS
+sinks while retaining autonomous custom elements, the render-time URL filter
+(`vdom/filter`), and quotas on manifest/archive size. Still to come, and marked
+as such in the code: the `mizchi/css` style validator (until it lands,
+`allow_custom_css` means someone vouched, not that anything checked) and
+content-addressed bundle ids.
 
 ### `dyncomp/ui/std` — layout as components
 

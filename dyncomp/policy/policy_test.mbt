@@ -60,13 +60,86 @@ test "an ungranted capability refuses, and says which and why" {
 /// A person saying yes gets the clock and ids, and still not a timer: a bundle
 /// that wants to wake itself up is asking for something nobody can
 /// meaningfully consent to in one dialog.
-test "the tiers differ in convenience, not in authority" {
+test "the tiers grant capabilities deliberately" {
   let clock : Array[CapabilityReq] = [{ cap: CapClock, reason: "" }]
   let timer : Array[CapabilityReq] = [{ cap: CapTimer, reason: "" }]
   assert_false(Policy::untrusted().grants_all(clock))
   assert_true(Policy::granted().grants_all(clock))
   assert_false(Policy::granted().grants_all(timer))
   assert_true(Policy::system().grants_all(timer))
+}
+
+///|
+/// Untrusted means the wasm guest cannot turn its described DOM into a browser
+/// fetch. Sink NAMES are rejected because their values may be dynamic and
+/// unknowable until render.
+test "untrusted views cannot name direct browser network or CSS sinks" {
+  let p = Policy::untrusted()
+  for
+    pair in [
+      ("<a href=\"/leave\">go</a>", "attribute 'href'"),
+      ("<img :src=\".avatar\" />", "attribute 'src'"),
+      (
+        "<svg><circle fill=\"url(https://attacker.test/pixel)\"></circle></svg>",
+        "attribute 'fill'",
+      ),
+      ("<button is=\"x-fetching-button\">go</button>", "may not use 'is'"),
+      ("<style>.x{background:url(/pixel)}</style>", "may not create <style>"),
+      (
+        "<svg><animate attributeName=\"href\" to=\"https://attacker.test\"></animate></svg>",
+        "may not create <animate>",
+      ),
+      ("<div @setinnermd=\".body\"></div>", "may not render runtime Markdown"),
+      (
+        "<div class=\"bg-[url(https://attacker.test/pixel)]\"></div>", "bracketed arbitrary utility classes",
+      ),
+    ] {
+    let (view, needle) = pair
+    let messages = shown(p.check_view("Guest/main", parsed(view)))
+    assert_true(messages.any(message => message.contains(needle)))
+  }
+}
+
+///|
+/// A macro body belongs to the host definition, but slot contents belong to
+/// the caller. They are a historically easy traversal gap, so hold this
+/// authority check against them explicitly.
+test "untrusted network checks reach macro slots" {
+  let refusals = shown(
+    Policy::untrusted().check_view(
+      "Guest/main",
+      parsed("<x:card><a href=\"https://attacker.test\">go</a></x:card>"),
+    ),
+  )
+  assert_true(refusals.any(message => message.contains("attribute 'href'")))
+}
+
+///|
+/// Autonomous custom elements stay usable. Ordinary values and structured
+/// properties are intentionally preserved; only customized built-ins and
+/// browser-native sinks are removed from the untrusted surface.
+test "untrusted views retain autonomous custom elements" {
+  let view = parsed(
+    "<x-picker :items=\".items\" mode=\"compact\" class=\"flex gap-2\"></x-picker>",
+  )
+  debug_inspect(
+    Policy::untrusted().check_view("Guest/main", view),
+    content="[]",
+  )
+}
+
+///|
+/// A Granted/System bundle was vouched for as app code. It keeps the normal
+/// render-time URL filtering and may use the richer DOM/CSS surface.
+test "trusted tiers retain network and CSS-capable view syntax" {
+  let view = parsed(
+    "<section style=\"background:url(/trusted)\"><a href=\"/ok\">ok</a><div @setinnermd=\".body\"></div></section>",
+  )
+  debug_inspect(
+    Policy::granted().check_view("Trusted/main", view),
+    content="[]",
+  )
+  debug_inspect(Policy::system().check_view("Trusted/main", view), content="[]")
 }
 
 ///|
@@ -120,7 +193,18 @@ test "a policy carries a sanitizer a host can replace" {
   // Loosened: the construct passes registration. Only safe because
   // `@markup.filter_for` gives this policy the markup filter — see the test
   // for that pairing in vdom/filter/markup.
-  let loose = strict.with_sanitizer({
+  let configured_untrusted = strict.with_sanitizer({
+    ..@sanitize.SanitizerConfig::empty(),
+    raw_markup: Some(true),
+  })
+  assert_false(configured_untrusted.allows_raw_markup())
+  assert_true(
+    shown(configured_untrusted.check_view("No/main", raw)).any(message => {
+      message.contains("may not render runtime HTML")
+    }),
+  )
+
+  let loose = Policy::granted().with_sanitizer({
     ..@sanitize.SanitizerConfig::empty(),
     raw_markup: Some(true),
   })
@@ -129,8 +213,8 @@ test "a policy carries a sanitizer a host can replace" {
 
   // Everything else about the policy is untouched — it is the same policy with
   // a different sanitizer, not a different tier.
-  debug_inspect(loose.tier, content="Untrusted")
-  assert_false(loose.allow_custom_css)
+  debug_inspect(loose.tier, content="Granted")
+  assert_true(loose.allow_custom_css)
   // ...and the baseline still holds inside it: permitting raw markup is not
   // permitting a script.
   debug_inspect(
@@ -219,7 +303,10 @@ test "the sanitizer refuses more than raw markup" {
       ),
     ),
     content=(
-      #|["Sneaky/main: <iframe> is not allowed (at iframe)"]
+      #|[
+      #|  "Sneaky/main: <iframe> is not allowed (at iframe)",
+      #|  "Sneaky/main: untrusted views may not use network/CSS sink attribute 'src' on <iframe>",
+      #|]
     ),
   )
 }

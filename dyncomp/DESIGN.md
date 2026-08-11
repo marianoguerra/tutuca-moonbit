@@ -196,7 +196,8 @@ JS↔host-wasm boundary as JSON), and the `control` buffer drained through the
 dispatch result. Bundles arrive as a single `.tutuca.tar.gz` — gunzipped with
 `DecompressionStream` and untarred in-browser — named either by a dropped
 file's id or by URL. A v0.6 archive contains `tutuca.json`, one core wasm, and
-HTML views; the older transpiler-JS shape remains a warned compatibility path.
+HTML views. The older transpiler-JS shape is rejected: it executed archive
+JavaScript at page authority and a warning was not an isolation boundary.
 
 ## What a guest declares, and what it does not
 

@@ -8,6 +8,25 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Security
 
+- **Archive loading is now bounded and legacy JavaScript bundles are gone.**
+  The tar reader coerced an octal entry size through `| 0`; a crafted size
+  wrapped negative and made the offset stop advancing, freezing the page.
+  Gzip expansion and fetched archive bodies were also unbounded before the
+  manifest quotas could run. The loader now streams under compressed and
+  expanded byte ceilings, validates tar checksums and checked sizes, requires
+  every entry to advance within the input, and caps entry size/file count.
+  Archives without `tutuca.json` are refused instead of importing a legacy
+  `*.component.js` blob at page authority.
+
+- **Untrusted dyncomp views can no longer use the DOM as a direct network
+  channel.** Registration refuses URL-bearing attributes, inline/embedded and
+  SVG CSS sinks, SMIL mutation elements, runtime Markdown, and bracketed
+  arbitrary utility CSS. Autonomous custom elements and ordinary structured
+  properties remain supported; customized built-ins (`is=`) are refused. A
+  host-registered custom element's constructor/setters still run as trusted
+  page code, so hosts can narrow that residual gadget surface with a sanitizer
+  element/attribute allow-list.
+
 - **A list- or map-valued URL attribute reached the DOM as a live
   `javascript:` URL.** An untrusted bundle with a `list<string>` field and
 
@@ -97,8 +116,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   resulting cycle; every import here reads memory at CALL time, so the main
   module is the only one instantiated — and the only one an archive must ship.
 
-  `loader.mjs` takes whichever shape arrived. An archive without a descriptor
-  still loads its transpiler output, and now says out loud that it is doing so.
+  `loader.mjs` now accepts only that descriptor shape. An archive without one
+  is rejected rather than importing its transpiler output at page authority.
 
 - **`tutuca:component@0.6.0` separates declaration from execution.** The WIT
   no longer exports the catalog/schema/view graph through `get-manifest`; it is

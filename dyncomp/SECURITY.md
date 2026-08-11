@@ -12,10 +12,11 @@ Where a claim is weaker than it sounds, it says so.
 
 | Channel | Reaches | State |
 |---|---|---|
-| archive code | page authority | **closed in v0.6** — descriptor bundles contain no executable JS; legacy JS bundles are warned compatibility input |
+| archive code | page authority | **closed** — only descriptor bundles load; legacy JavaScript archives are rejected |
+| archive parsing | page responsiveness/memory | **bounded** — compressed, expanded, entry and file-count limits; checked tar arithmetic and headers |
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM | **handled** — a Sanitizer-API port over the tree at registration, plus URL-scheme and event-handler rules at render; raw markup still refused outright |
+| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown and guest-authored arbitrary utility CSS are refused; autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -106,9 +107,8 @@ dropping the bundle. Until 0.9.6 there was no such argument and the browser host
 registered everything as untrusted no matter what the page wanted, which made
 the two upper tiers reachable only from a test.
 
-The legacy transpiler-JS compatibility path still supplies `env` the old way;
-it is visibly warned and cannot load a v0.6 descriptor. `control.after` still
-has no host implementation — the bridge warns rather than crashing.
+`control.after` still has no host implementation — the bridge warns rather
+than crashing.
 
 `control.request` is deliberately *not* a capability — see §5.
 
@@ -118,13 +118,24 @@ Before v0.6, every archive carried jco's generated `*.component.js`, and the
 loader imported it from a blob URL. Generated or not, that JavaScript ran with
 the page's authority before wasm's import boundary could constrain it.
 
-A v0.6 archive instead contains `tutuca.json`, one core wasm module, and HTML
-view files. [`host/wasm/abi.mjs`](host/wasm/abi.mjs) is the sole canonical-ABI
+A descriptor archive instead contains `tutuca.json`, one core wasm module, and
+HTML view files. [`host/wasm/abi.mjs`](host/wasm/abi.mjs) is the sole canonical-ABI
 implementation and binds imports by name against the WIT-derived table. An
-unknown import is refused before instantiation. The old archive shape remains
-loadable only for migration and logs an explicit page-authority warning.
+unknown import is refused before instantiation. An archive without
+`tutuca.json` is rejected; the old `*.component.js` compatibility path no
+longer exists, because warning before importing page-authority code is not a
+sandbox.
 
-## 3. Guest views: raw markup is refused
+Reaching the descriptor is bounded too (`host/wasm/loader.mjs`). Dropped files
+are size-checked before `arrayBuffer`; fetched responses are counted while
+streaming; gzip output is counted while decompressing; and tar parsing has
+limits on expanded bytes, individual entries and file count. Tar sizes use
+checked JavaScript numbers rather than a signed 32-bit coercion, headers have
+their checksum verified, entries must advance within the input, and duplicate
+basenames are rejected. `test/archive.test.mjs` holds the parser against the
+former wraparound hang and compressed/expanded limit regressions.
+
+## 3. Guest views: markup and browser egress are refused
 
 **The finding.** `anode/attrs.mbt` parses `@dangerouslysetinnerhtml` into a
 `RawHtml` attribute item, and `vdom/to_dom.mbt` routes it to
@@ -234,6 +245,44 @@ accident of routing saving that one.
 `@filter.Baseline` is the two rules in a single traversal, and is what `set_app`
 installs.
 
+**An untrusted dyncomp has a stricter rule than an ordinary app view.** URL
+scheme filtering prevents script URLs, but it does not prevent a guest from
+using `<img src>`, `<a href>`, `<form action>`, SVG `fill="url(...)"`, inline
+CSS, or a utility such as `bg-[url(...)]` as a network egress channel. Nor can
+registration validate the value of `:src=".field"`, because that value does
+not exist yet.
+
+`Policy::check_view` therefore refuses the sink **name**, at registration, for
+the `Untrusted` tier (`policy/view_authority.mbt`): navigation/subresource URL
+attributes, inline and SVG CSS URL sinks, `<style>`, `<link>`, `<meta>`, SMIL
+elements that can mutate a sink after filtering, runtime HTML/Markdown, and
+bracketed arbitrary utility classes. Literal host-provided utility names such as
+`flex gap-2` remain available. `Granted` and `System` retain the normal
+render-time URL scheme filter and the richer view surface.
+
+This intentionally means an untrusted component cannot even render a relative
+link or image directly. If it needs one, it asks the host through a deliberately
+authorized channel and the host renders or supplies the safe result; there is
+no value-level distinction between “a useful fetch” and “an exfiltration fetch”
+that the guest cannot choose dynamically.
+
+**Custom elements are not banned, but they cannot be made an isolation
+boundary.** Autonomous tags such as `<x-picker :items=".items">` and ordinary
+scalar/structured properties remain allowed. The `is` attribute is refused for
+untrusted views, closing customized built-ins, and the browser-native
+URL/style/event surfaces above are removed. This preserves the useful custom
+element binding that `AttrValue::Data` exists for.
+
+The residual is explicit: constructing an autonomous custom element, or
+assigning any of its properties, invokes JavaScript registered by the host
+page. That constructor/setter can fetch, navigate, mutate global state or do
+anything else the page can do. No attribute filter can distinguish an inert
+`items` setter from a malicious `items` setter. A host loading hostile bundles
+must therefore treat its registered custom-element implementations as trusted
+gadgets and, where that is too broad, tighten `Policy::with_sanitizer` to an
+element/attribute allow-list. Supporting arbitrary custom elements and claiming
+they cannot execute host code are incompatible requirements.
+
 **Every tutuca app installs one, not only a page that hosts bundles.**
 `App::new` installs `@filter.Baseline` — the URL rule and the handler rule in
 one traversal — and `set_filter(None)` is the opt-out. Not tier-dependent,
@@ -278,7 +327,7 @@ one line inside the wasm glue, which `moon test` never runs, so it was verified
 by inspection like the rest of the `tcomp` bridge. It is now in `App::new`,
 which the suite exercises directly (`app/filter_test.mbt`).
 
-**Raw markup is refused by default, and a host can now grant it.**
+**Raw markup is refused by default, and a trusted host can grant it.**
 `vdom/filter/markup` sanitizes a payload against the same `SanitizerConfig` and
 hands back described NODES — never a string, because a sanitized string that the
 browser parses a second time is the mutation-XSS vector that has bitten every
@@ -300,9 +349,10 @@ evidence about a filter without inverting that. What is available is to make one
 function the only place the two are named together, and to test it from both
 sides (`vdom/filter/markup/install_test.mbt`).
 
-The default is unchanged: every tier's sanitizer refuses raw markup, so a guest
-that has not been explicitly granted it is refused at registration exactly as
-before. Granting it is one call a host makes deliberately, which was the point.
+Every tier's default sanitizer refuses raw markup. `Granted` and `System` can
+opt into the paired sanitizer/filter deliberately. `Untrusted` cannot: even
+after scripts and dangerous schemes are removed, dynamic HTML can still create
+an ordinary network request and bypass the registration-time sink-name walk.
 
 ## 4. Guest CSS: no global stylesheet, and a validator to come
 
@@ -328,6 +378,10 @@ a non-empty `style` at the default tier, on the grounds that a bundle should
 style with the host's utility classes, which the host compiles and which
 therefore cannot break out of anything. All three sample guests already do
 exactly that, so the strict default costs nothing real.
+
+That includes CSS smuggled through view syntax: untrusted views cannot use
+inline/embedded CSS or bracketed arbitrary utility classes. They may use only
+literal utility names whose definitions the host already owns and compiles.
 
 Above that tier the block is currently accepted **unvalidated**, and that is a
 known gap rather than a decision: `allow_custom_css` today means someone
@@ -387,6 +441,11 @@ generous by design: they catch a runaway, not an author. A per-bundle cap on
 LIVE INSTANCES is not there yet, because it has to be enforced at
 `make_instance` time rather than at registration.
 
+The archive layer is bounded before manifest quotas can apply: 16 MiB
+compressed, 64 MiB expanded, 32 MiB per tar entry, and 8192 files. These are
+availability ceilings rather than permissions and live in `ARCHIVE_LIMITS` so
+the loader and its regression tests share one definition.
+
 ## 7. `persist` / `restore`: the host stores bytes it never reads
 
 `instance.persist` hands the host a `list<u8>` and `[static]instance.restore`
@@ -428,6 +487,10 @@ next step, and signing is a step after that.
 - Adding a field to the static manifest: does anything you added reach
   `global_style`, resolve an external resource, or reach the DOM as text rather
   than as a description? Those are the shapes that have gone wrong here.
+- Adding an element, attribute, directive or class compiler feature: can it
+  fetch directly, accept CSS `url()`, mutate another attribute after filters,
+  or invoke a host custom-element setter? Update the untrusted authority walk
+  and its macro-slot tests if so.
 - Adding a WIT export: is it runtime behavior that genuinely cannot be static
   bundle data? Metadata in wasm executes code merely to describe code and
   expands the canonical ABI attack surface.

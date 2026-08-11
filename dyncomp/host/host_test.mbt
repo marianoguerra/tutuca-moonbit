@@ -1086,6 +1086,35 @@ test "the default policy refuses CSS, capabilities and a bomb" {
 }
 
 ///|
+/// Hold the policy decision at the registration seam too: this is where a
+/// parsed guest view either joins the shared app registry or disappears.
+test "untrusted registration blocks DOM egress but keeps custom elements" {
+  let register_view = (html : String) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let base = counter_manifest()
+    let manifest : DynManifest = {
+      ..base,
+      module_name: "view-policy",
+      components: [
+        { ..base.components[0], style: "", views: [{ name: "main", html }] },
+      ],
+    }
+    let mut ok = true
+    try
+      register_bundle(h.app.scope, FakeGuest::new(), manifest) |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  assert_false(register_view("<a :href=\".count\">leave</a>"))
+  assert_false(register_view("<div @setinnermd=\".count\"></div>"))
+  assert_true(
+    register_view("<x-picker :items=\".history\" mode=\"compact\"></x-picker>"),
+  )
+}
+
+///|
 /// The one view construct a host cannot inspect before it runs, and therefore
 /// the one it refuses. Note WHERE the refusal lands: nothing of a refused
 /// bundle reaches the shared component registry, so its markup never

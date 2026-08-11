@@ -177,7 +177,7 @@ states each claim's actual strength:
 | --- | --- | --- |
 | wasm imports (`values`, `control`) | nothing ambient | safe by construction |
 | `env` — clock, randomness, ids | weakened, host-supplied answers | gated; refused by default |
-| guest views | your DOM | element/attribute allowlist at registration, URL schemes at render; raw markup refused |
+| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks and runtime markup; trusted tiers retain filtered URLs |
 | guest CSS | your stylesheet | refused outright for an untrusted bundle |
 | `control.request` → host handlers | your own services | **open** — needs caller-aware authorization |
 | a runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -188,6 +188,13 @@ clock or entropy beyond what a capability grant supplies. The default tier is
 the one the design is *for* — a bundle there can still declare components, ship
 views, hold state, handle events, nest children and serve its own requests, and
 all six sample guests run under it unchanged.
+
+Autonomous custom elements remain available to untrusted views, including
+structured property bindings. The host page owns their JavaScript, though: a
+registered element's constructor or setter can exercise page authority. The
+default policy removes `is=` and browser-native network/CSS sinks, but a host
+that exposes effectful custom elements should use a sanitizer allow-list to
+narrow which tags and properties an untrusted bundle may invoke.
 
 The two open rows are open on purpose and are marked as such in the code. If
 you host untrusted bundles today, they are what to think about.
