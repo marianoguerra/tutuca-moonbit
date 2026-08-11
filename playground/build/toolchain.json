@@ -1,7 +1,7 @@
 {
   "_": "The ONE toolchain pin for the in-browser playground. The payload bakes the INSTALLED moon toolchain's core .mi/.core bundles (assemble.mjs) and hands them to a js_of_ocaml moonc built elsewhere (@moonbit/moonc-worker), so the two must come from the same moonc. Bump both fields together, re-fetch with `node playground/build/fetch-compiler.mjs --force`, and re-run `cmd/dev -- playground` (check-viewgen-tab.mjs is what proves the pair agrees).",
-  "mooncWorker": "0.1.202608042",
-  "moonc": "v0.10.6+80dc50f24",
-  "mooncBuild": "80dc50f24",
-  "moon": "0.1.20260803"
+  "mooncWorker": "0.1.202608112",
+  "moonc": "v0.10.7+bc794d341",
+  "mooncBuild": "bc794d341",
+  "moon": "0.1.20260807"
 }
