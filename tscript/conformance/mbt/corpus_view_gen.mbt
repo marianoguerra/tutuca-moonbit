@@ -231,7 +231,9 @@ pub(all) enum CorpusInput {
   Case33
   Case34
   Case35
+  Case36
   Case37
+  Case39
   Case4
   Case5
   Case6
@@ -273,7 +275,9 @@ pub fn CorpusInput::name(self : CorpusInput) -> String {
     Case33 => "case33"
     Case34 => "case34"
     Case35 => "case35"
+    Case36 => "case36"
     Case37 => "case37"
+    Case39 => "case39"
     Case4 => "case4"
     Case5 => "case5"
     Case6 => "case6"
@@ -316,7 +320,9 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
     "case33" => Some(Case33)
     "case34" => Some(Case34)
     "case35" => Some(Case35)
+    "case36" => Some(Case36)
     "case37" => Some(Case37)
+    "case39" => Some(Case39)
     "case4" => Some(Case4)
     "case5" => Some(Case5)
     "case6" => Some(Case6)
@@ -333,7 +339,7 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
 /// handler added to corpus.html breaks every `match` over this type
 /// until it is handled.
 ///
-/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case18, case19, case20, case21, case22, case23, case24, case25, case26, case28, case29, case30, case31, case32, case33, case34, case35.
+/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case18, case19, case20, case21, case22, case23, case24, case25, case26, case27, case28, case30, case31, case32, case33, case34, case35, case36, case37.
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum CorpusMsg {
@@ -351,12 +357,12 @@ pub(all) enum CorpusMsg {
   Case16
   /// `@on.click="case17 …"`
   Case17
-  /// `@on.click="case27 …"`
-  Case27
+  /// `@on.click="case29 …"`
+  Case29
   /// `@on.click="case3 …"`
   Case3
-  /// `@on.click="case37 …"`
-  Case37(Double)
+  /// `@on.click="case39 …"`
+  Case39(Double)
   /// `@on.click="case7 …"`
   Case7
   /// `@on.click="case9 …"`
@@ -380,9 +386,9 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
       ("case15", []) => Case15
       ("case16", []) => Case16
       ("case17", []) => Case17
-      ("case27", []) => Case27
+      ("case29", []) => Case29
       ("case3", []) => Case3
-      ("case37", [Num(a0)]) => Case37(a0)
+      ("case39", [Num(a0)]) => Case39(a0)
       ("case7", []) => Case7
       ("case9", []) => Case9
       _ => Unknown(name, args)
@@ -428,8 +434,8 @@ impl @component.Fields for CorpusState with fn schema() {
       "case0", "case1", "case10", "case11", "case12", "case13", "case14", "case15",
       "case16", "case17", "case18", "case19", "case2", "case20", "case21", "case22",
       "case23", "case24", "case25", "case26", "case27", "case28", "case29", "case3",
-      "case30", "case31", "case32", "case33", "case34", "case35", "case37", "case4",
-      "case5", "case6", "case7", "case8", "case9",
+      "case30", "case31", "case32", "case33", "case34", "case35", "case36", "case37",
+      "case39", "case4", "case5", "case6", "case7", "case8", "case9",
     ],
     receives=["resetTo"],
     methods=["long"],

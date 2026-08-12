@@ -297,6 +297,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The corpus writes its handlers in the script block.** Every example whose
+  behaviour the block can express now states it there, and the MoonBit beside
+  it holds only what the block deliberately does not spell — a seed value, a
+  request's options, a path walk, a child component being built.
+
+  Sixteen handlers moved across eleven files. Six components lost their
+  `update~` entirely (`storybook/examples`' counter, traffic light, show/hide,
+  `Status`, the playground's counter and the landing page's hero snippet), and
+  three schemas grew the `receive` declarations that made it possible —
+  `Status`'s `Flash`/`Clear`, `SendReceive`'s `ClearDraft`, and the `Init` the
+  host dispatches at `Request` and personal-site's `Root`. A message no view
+  writes has nowhere else to be declared, and until the block could answer one
+  there was no reason to declare it.
+
+  What did NOT move is the more useful half of the answer, because each case
+  names a boundary the language chose: a `@key` or a `value` argument carries
+  no type from its call sites, so `selectItem @key` binds raw; a `compute` is
+  answered by the render stack and a handler runs after one; and `walk_path`,
+  `RequestOpts` and `Component::make` are MoonBit by design. The `pred` in
+  `render_child.html` still has its body written twice for the same reason —
+  the backend skips `compute`/`pred` declarations, so that block declares and
+  MoonBit implements.
+
+  Three emitter bugs surfaced by doing it, each of which had no corpus case:
+
+      (.count + 1) mod 3     emitted unbalanced parentheses — `mod` wraps its
+                             left-hand side, and the chain was built by
+                             appending, which cannot reach backwards
+      .count += 1            on a ONE-field state emitted `{ ..s, count: … }`,
+                             which is `unused_struct_update`, and a generated
+                             file must not be the thing that warns
+      .values.push 3         into an `Array[Any]` was refused, though widening
+                             into `Any` is the one conversion that needs no
+                             guess
+
+  `mod` and `/` now have corpus cases, so both backends are held to them.
+
 - **A `<script type="tutuca/script">` block compiles to MoonBit.** `gen-views`
   emits `<comp>_inline_update` — one match over `@component.Dispatch` in the
   shape a hand-written arm takes — and the generated wrapper composes it ahead

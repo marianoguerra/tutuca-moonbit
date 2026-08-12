@@ -45,8 +45,10 @@ pub fn case_name(i : Int) -> String? {
     33 => Some("case33")
     34 => Some("case34")
     35 => Some("case35")
-    36 => Some("resetTo")
+    36 => Some("case36")
     37 => Some("case37")
+    38 => Some("resetTo")
+    39 => Some("case39")
     _ => None
   }
 }

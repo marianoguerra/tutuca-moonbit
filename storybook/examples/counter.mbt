@@ -1,24 +1,19 @@
 // Port of docs/examples/counter.js.
 //
-// Teaches: one `update` match over every event the views raise. `inc` and
-// `dec` are both bare `@on` handler names, so both arrive as Inputs and both
-// are answered here — there is no second place to put a handler. `setCount`
-// is a GENERATED mutator (every field gets setX/updateX/resetX), so neither
-// arm writes a setter by hand.
+// Teaches: a component with no `update` at all. `inc` and `dec` are both bare
+// `@on` handler names, and both are answered in the file's
+// `<script type="tutuca/script">` block, which `gen-views` compiles into
+// `counter_inline_update` and the wrapper composes ahead of `update~`.
+// `setCount` is a GENERATED mutator (every field gets setX/resetX), so it is
+// not written anywhere either.
 //
-// The whole definition is the update: `counter_component` is generated from
+// What is left is the module definition: `counter_component` is generated from
 // counter.html and already carries the name, the compiled views, the styles,
 // the direct codec and the schema. Nothing here restates the view file.
 
 ///|
 fn counter_comp() -> @component.Component {
-  counter_component(update=(s, msg, _ctx) => {
-    match CounterMsg::from_dispatch(msg) {
-      Some(Inc) => Next({ count: s.count + 1 })
-      Some(Dec) => Next({ count: s.count - 1 })
-      Some(Unknown(_, _)) | None => Unhandled
-    }
-  })
+  counter_component()
 }
 
 ///|

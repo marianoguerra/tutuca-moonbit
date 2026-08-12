@@ -12,17 +12,9 @@
 // --- Counter (from the counter example) ------------------------------------
 
 fn cx_counter_comp() -> @component.Component {
-  counter_component(
-    init=CounterState::{ count: 0 },
-    update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-      Some(Dec) => Next({ count: s.count - 1 })
-      // Served by a generated mutator or another bucket: the view
-      // spells these bare now, so they arrive as Inputs, and
-      // returning None falls through to whatever answers them.
-      Some(Inc) => Next({ count: s.count + 1 })
-      Some(Unknown(_, _)) | None => Unhandled
-    },
-  )
+  // `inc` and `dec` are in the view file's `<script type="tutuca/script"
+  // for="Counter">` block, so the whole counter is its seed.
+  counter_component(init=CounterState::{ count: 0 })
 }
 
 // --- To-Do (from the todo example) -----------------------------------------

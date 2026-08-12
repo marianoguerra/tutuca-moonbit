@@ -75,6 +75,61 @@ impl @component.Fields for RequestExampleState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum RequestExampleReceive {
+  Init
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn RequestExampleReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> RequestExampleReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("init", []) => Init
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn RequestExampleReceive::to_dispatch(
+  self : RequestExampleReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Init => ("init", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn RequestExampleReceive::send(
+  self : RequestExampleReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let request_example_common_style : String = ""
 
@@ -117,6 +172,10 @@ pub fn RequestExampleInput::parse(s : String) -> RequestExampleInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to request.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: toggleView.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum RequestExampleMsg {
   /// `@on.click="loadAnotherWay …"`
   LoadAnotherWay
@@ -124,8 +183,6 @@ pub(all) enum RequestExampleMsg {
   ResetQuery
   /// `@on.input="setQuery …"`
   SetQuery(String)
-  /// `@on.click="toggleView …"`
-  ToggleView
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -143,7 +200,6 @@ pub fn RequestExampleMsg::from_dispatch(
       ("loadAnotherWay", []) => LoadAnotherWay
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
@@ -172,7 +228,7 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="7e70c0faef442b04",
+    fingerprint="f34b7c20519b21a2",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
@@ -181,6 +237,7 @@ impl @component.Fields for RequestExampleState with fn schema() {
       @component.FieldInfo::new("error", TyAny),
     ],
     inputs=["loadAnotherWay", "resetQuery", "setQuery", "toggleView"],
+    receives=["init"],
     view_names=["main"],
   )
 }

@@ -121,6 +121,42 @@ pub fn request_example_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn request_example_inline_update(
+  s : RequestExampleState,
+  msg : @component.Dispatch,
+  ctx : &@tutuca.Ctx,
+) -> @component.Update[RequestExampleState] {
+  match msg {
+    Input("toggleView", _args) => {
+      let s = {
+        ..s,
+        view: if (Str(s.view) : @tutuca.Value) == (Str("main") : @tutuca.Value) {
+          "edit"
+        } else {
+          "main"
+        },
+      }
+      Next(s)
+    }
+    Receive("init", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
+      let s = { ..s, isLoading: true }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The RequestExample component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `RequestExampleState` states them
@@ -161,7 +197,16 @@ pub fn request_example_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match request_example_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

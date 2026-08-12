@@ -45,24 +45,24 @@
         <li>HTML-first</li>
         <li>Reactive value language</li>
       </ul>
-      <pre class="hero-teaser"><code>&lt;!-- counter.html — the state AND the view --&gt;
+      <pre class="hero-teaser"><code>&lt;!-- counter.html — the state, the behaviour AND the view --&gt;
 &lt;script type="tutuca/state"&gt;
   state Counter { count : Int }
+&lt;/script&gt;
+
+&lt;script type="tutuca/script"&gt;
+  on inc { .count += 1 }
 &lt;/script&gt;
 
 &lt;template id="Counter"&gt;
   &lt;button @on.click="inc" @text=".count"&gt;&lt;/button&gt;
 &lt;/template&gt;
 
-// counter.mbt — `tutuca gen-views` generated CounterState, CounterMsg and
-// counter_component from the schema and the view above, and checked `.count`
-// against them. What is left is the part only you can write.
-let counter = counter_component(
-  update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-    Some(Inc) => Next({ count: s.count + 1 })
-    Some(Unknown(_, _)) | None => Unhandled
-  },
-)</code></pre>
+// counter.mbt — `tutuca gen-views` generated CounterState and
+// counter_component from the three blocks above, checked `.count` against the
+// schema, and compiled `inc` into the update the wrapper already passes.
+// A whole counter, and nothing left to say about it.
+let counter = counter_component()</code></pre>
     </header>
     <main>
       <section id="try-it">
@@ -81,8 +81,9 @@ let counter = counter_component(
           what <code>tutuca gen-views</code> makes of that view — the compiled
           tree plus a typed message enum, compiled as part of the same package.
           Edit the View tab and watch Generated follow: add an
-          <code>@on</code> handler there and the next run fails until the
-          component's <code>match</code> handles it.
+          <code>@on</code> handler there and answer it in the same file's
+          <code>tutuca/script</code> block — or leave it unanswered, and the
+          next run fails until the component's <code>match</code> handles it.
         </p>
         <h3>Hello, Counter</h3>
         <mb-playground

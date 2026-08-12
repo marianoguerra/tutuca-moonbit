@@ -27,6 +27,20 @@
     sortByEnd : Bool
     sortAsc : Bool
   }
+
+  /// Dispatched by the host after `start()`. No view writes it.
+  receive Root {
+    Init
+  }
+</script>
+
+<script type="tutuca/script" for="Root">
+  /// Ask for the data. Nothing else moves — the entries arrive on the
+  /// `loadData` response, which sorts them and collects the facets, and that
+  /// is a MoonBit handler.
+  receive init {
+    request 'loadData'
+  }
 </script>
 
 <template id="AltUrl">

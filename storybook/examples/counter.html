@@ -4,6 +4,19 @@
   }
 </script>
 
+<script type="tutuca/script">
+  /// One step up, one step down. Both are `@on` names the views write, and
+  /// neither reads anything but the field it moves — which is the whole of
+  /// what a counter is.
+  on inc {
+    .count += 1
+  }
+
+  on dec {
+    .count -= 1
+  }
+</script>
+
 <template>
   <div class="join join-vertical">
     <button class="btn btn-error" @on.click="dec">-</button>

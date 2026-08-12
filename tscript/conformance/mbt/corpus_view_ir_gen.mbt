@@ -97,7 +97,11 @@ fn corpus_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("button", [@anode.eid(35)], [@anode.text("case35")]),
       @anode.text(" "),
-      @anode.h("button", [@anode.eid(36)], [@anode.text("case37")]),
+      @anode.h("button", [@anode.eid(36)], [@anode.text("case36")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(37)], [@anode.text("case37")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(38)], [@anode.text("case39")]),
     ]),
     [
       [@anode.on("click", HandlerName(name="case0", ns=Input))],
@@ -141,13 +145,13 @@ fn corpus_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="case21", ns=Input))],
       [@anode.on("click", HandlerName(name="case22", ns=Input))],
       [@anode.on("click", HandlerName(name="case23", ns=Input))],
+      [@anode.on("click", HandlerName(name="case24", ns=Input))],
+      [@anode.on("click", HandlerName(name="case25", ns=Input))],
       [
-        @anode.on("click", HandlerName(name="case24", ns=Input), args=[
+        @anode.on("click", HandlerName(name="case26", ns=Input), args=[
           @anode.const_num(5.0),
         ]),
       ],
-      [@anode.on("click", HandlerName(name="case25", ns=Input))],
-      [@anode.on("click", HandlerName(name="case26", ns=Input))],
       [@anode.on("click", HandlerName(name="case27", ns=Input))],
       [@anode.on("click", HandlerName(name="case28", ns=Input))],
       [@anode.on("click", HandlerName(name="case29", ns=Input))],
@@ -156,13 +160,15 @@ fn corpus_main_view_ir() -> @anode.View {
       [@anode.on("click", HandlerName(name="case32", ns=Input))],
       [@anode.on("click", HandlerName(name="case33", ns=Input))],
       [@anode.on("click", HandlerName(name="case34", ns=Input))],
+      [@anode.on("click", HandlerName(name="case35", ns=Input))],
+      [@anode.on("click", HandlerName(name="case36", ns=Input))],
       [
-        @anode.on("click", HandlerName(name="case35", ns=Input), args=[
+        @anode.on("click", HandlerName(name="case37", ns=Input), args=[
           @anode.const_num(3.0),
         ]),
       ],
       [
-        @anode.on("click", HandlerName(name="case37", ns=Input), args=[
+        @anode.on("click", HandlerName(name="case39", ns=Input), args=[
           @anode.const_num(4.0),
         ]),
       ],
@@ -240,10 +246,22 @@ fn corpus_inline_update(
       Next(s)
     }
     Input("case19", _args) => {
-      let s = { ..s, name: s.name + "!" }
+      let d0 = 3.0
+      guard d0 != 0.0 else { return Unchanged }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() % d0.to_int() }
       Next(s)
     }
     Input("case20", _args) => {
+      let d0 = 4.0
+      guard d0 != 0.0 else { return Unchanged }
+      let s = { ..s, ratio: (s.count.to_double() + 5.0) / d0 }
+      Next(s)
+    }
+    Input("case21", _args) => {
+      let s = { ..s, name: s.name + "!" }
+      Next(s)
+    }
+    Input("case22", _args) => {
       let s = {
         ..s,
         name: (Str(s.name) : @tutuca.Value).to_display_string() +
@@ -252,11 +270,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case21", _args) => {
+    Input("case23", _args) => {
       let s = { ..s, name: if s.ok { "yes" } else { "no" } }
       Next(s)
     }
-    Input("case22", _args) => {
+    Input("case24", _args) => {
       let s = if s.ok {
         let s = { ..s, count: 1 }
         s
@@ -266,7 +284,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case23", _args) => {
+    Input("case25", _args) => {
       let s = { ..s, count: 7 }
       let s = if s.ok {
         let s = { ..s, count: 1 }
@@ -276,7 +294,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case24", args) => {
+    Input("case26", args) => {
       guard args.get(0) is Some(Num(p)) else { return Unchanged }
       let s = {
         ..s,
@@ -292,7 +310,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case25", _args) => {
+    Input("case27", _args) => {
       let s = {
         ..s,
         ok: ({
@@ -316,7 +334,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case26", _args) => {
+    Input("case28", _args) => {
       let s = {
         ..s,
         ok: match @tutuca.builtin("truthy?") {
@@ -335,11 +353,11 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case28", _args) => {
+    Input("case30", _args) => {
       let s = { ..s, items: s.items + ["c"] }
       Next(s)
     }
-    Input("case29", _args) => {
+    Input("case31", _args) => {
       guard 0 >= 0 && 0 <= s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -347,7 +365,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case30", _args) => {
+    Input("case32", _args) => {
       guard 1 >= 0 && 1 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -359,7 +377,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case31", _args) => {
+    Input("case33", _args) => {
       guard 0 >= 0 && 0 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -367,7 +385,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case32", _args) => {
+    Input("case34", _args) => {
       guard 9 >= 0 && 9 < s.items.length() else { return Unchanged }
       let s = {
         ..s,
@@ -375,7 +393,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case33", _args) => {
+    Input("case35", _args) => {
       let s = {
         ..s,
         tags: {
@@ -415,7 +433,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case34", _args) => {
+    Input("case36", _args) => {
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
       let s = { ..s, ok: true }
@@ -426,7 +444,7 @@ fn corpus_inline_update(
       }
       Next(s)
     }
-    Input("case35", args) => {
+    Input("case37", args) => {
       guard args.get(0) is Some(Num(k)) else { return Unchanged }
       let effects : Array[() -> Unit] = []
       effects.push(() => ctx.bubble("rowPicked", [(Num(k) : @tutuca.Value)]))
@@ -530,7 +548,9 @@ pub fn corpus_component(
               Case33,
               Case34,
               Case35,
+              Case36,
               Case37,
+              Case39,
               Case4,
               Case5,
               Case6,

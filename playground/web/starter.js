@@ -16,16 +16,26 @@ const EXAMPLES = {
   // the compiled tree and the message enum generated from its @on handlers.
   Counter: {
     view: `<!-- Edit this and the Generated tab updates; the component tab sees the
-     names it declares. Adding an @on handler here breaks the match below
-     until you handle it — that is the point. -->
+     names it declares. Every half of the component is here — the state, the
+     behaviour, and the view — and the component tab is what is left over. -->
 
-<!-- The state is declared here too: CounterState, its zero(), and its
-     @component.Fields impl (schema + codec) are generated from this block,
-     so the component tab never writes a codec by hand. -->
+<!-- The state: CounterState, its zero(), and its @component.Fields impl
+     (schema + codec) are generated from this block, so the component tab
+     never writes a codec by hand. -->
 <script type="tutuca/state">
   state Counter {
     count : Int
     label : String
+  }
+</script>
+
+<!-- The behaviour. \`d\` is typed by the CALL SITES below — both pass a
+     number — and this block compiles into the update the wrapper passes.
+     Write a handler it cannot compile and the Generated tab says which one,
+     by name; that one goes in the component tab as an \`update~\`. -->
+<script type="tutuca/script">
+  on add(d) {
+    .count += d
   }
 </script>
 
@@ -39,24 +49,21 @@ const EXAMPLES = {
   </div>
 </template>
 `,
-    code: `// The view lives in the View tab. \`tutuca gen-views\` turns it into the
-// module in the Generated tab, which is compiled as part of THIS package —
-// so CounterState, counter_component() and CounterMsg are all in scope here.
+    code: `// The view lives in the View tab. \`tutuca gen-views\` turns its three
+// blocks into the module in the Generated tab, which is compiled as part of
+// THIS package — so CounterState and counter_component() are in scope here.
 //
-// Schema AND templates together generate \`counter_component(...)\`: a
-// @component.component() with the name, views and styles already filled in,
-// leaving the handlers. The codec and the schema are not parameters — they
-// are the state type's @component.Fields impl.
+// Schema, script AND templates together generate \`counter_component(...)\`: a
+// @component.component() with the name, views, styles and the compiled \`add\`
+// handler already filled in. The codec and the schema are not parameters —
+// they are the state type's @component.Fields impl.
+//
+// Which leaves the one thing the view file cannot state: what this counter
+// starts at.
 
 fn build() -> @component.ModuleDef {
   let counter = counter_component(
     init=CounterState::{ count: 0, label: "clicks" },
-    // CounterMsg is generated from the @on handlers in the View tab, with
-    // payload types read off the call sites — \`add 1\` makes Add(Double).
-    update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-      Some(Add(d)) => Some({ ..s, count: s.count + d.to_int() })
-      Some(Unknown(_, _)) | None => None
-    },
   )
   @component.ModuleDef::new(
     name="counter", components=[counter],
@@ -185,9 +192,9 @@ fn build() -> @component.ModuleDef {
   name="Counter",
   init=CounterState::{ count: 0 },
   update=(s : CounterState, msg, _ctx) => match msg {
-      Input("dec", _) => Some({ count: s.count - 1 })
-      Input("inc", _) => Some({ count: s.count + 1 })
-      _ => None
+      Input("dec", _) => Next({ count: s.count - 1 })
+      Input("inc", _) => Next({ count: s.count + 1 })
+      _ => Unhandled
     },
 )
   @component.ModuleDef::new(

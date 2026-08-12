@@ -19,6 +19,31 @@
   }
 </script>
 
+<script type="tutuca/script" for="PushView">
+  /// Flip the pushed view name. The label under the button is `$getToggleLabel`
+  /// and stays in MoonBit — a `compute` is answered while rendering, and this
+  /// runs after.
+  on toggleView {
+    .view = if .view is 'main' { 'edit' } else { 'main' }
+  }
+</script>
+
+<script type="tutuca/script" for="Pagination">
+  /// Step back, never past the first page.
+  on prev {
+    .page = max 0 (.page - 1)
+  }
+
+  /// Step forward, never past the last one.
+  ///
+  /// `((len .items) - 1) / .pageSize` is the last page's index with its
+  /// fraction still on it — the field is an Int and takes the whole part, so
+  /// the division needs no ceiling of its own.
+  on next {
+    .page = min (.page + 1) (((len .items) - 1) / .pageSize)
+  }
+</script>
+
 <template id="PushView">
   <section class="flex flex-col gap-3">
     <div class="flex justify-between">

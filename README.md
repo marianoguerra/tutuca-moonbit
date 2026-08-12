@@ -17,21 +17,27 @@ backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and
   state Counter { count: Int }
 </script>
 
+<script type="tutuca/script">
+  on inc { .count += 1 }
+</script>
+
 <template id="Counter">
   <button @on.click="inc" @text=".count"></button>
 </template>
 ```
 
 ```moonbit
-// `tutuca gen-views` made CounterState, CounterMsg and counter_component out
-// of the schema and the view above, and checked `.count` against them. The
+// `tutuca gen-views` made CounterState and counter_component out of the three
+// blocks above, checked `.count` against the schema in both the view and the
+// handler, and compiled `inc` into the update the wrapper already passes. The
 // name, the views, the styles, the codec and the schema are not arguments —
-// the view file states them, and the wrapper passes them.
-counter_component(update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-  Some(Inc) => Some({ count: s.count + 1 })
-  Some(Unknown(_, _)) | None => None
-})
+// the view file states them.
+counter_component()
 ```
+
+A handler the block cannot compile — one that walks a path, or builds a child
+component — is REFUSED by name, with the reason, and comes back as an
+`update~` argument. The rest stay in the file.
 
 ## Start here
 

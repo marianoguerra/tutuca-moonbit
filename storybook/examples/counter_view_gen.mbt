@@ -86,11 +86,11 @@ pub fn CounterInput::parse(s : String) -> CounterInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to counter.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: inc, dec.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum CounterMsg {
-  /// `@on.click="dec …"`
-  Dec
-  /// `@on.click="inc …"`
-  Inc
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -103,8 +103,6 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("dec", []) => Dec
-      ("inc", []) => Inc
       _ => Unknown(name, args)
     },
   )

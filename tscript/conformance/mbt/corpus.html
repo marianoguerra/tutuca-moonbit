@@ -123,23 +123,33 @@
     .count = 10 - 3 - 2
   }
 
-  /// case 19: plus concatenates two strings
+  /// case 19: mod wraps a counter, and takes the whole left-hand side with it
   on case19 {
+    .count = (.count + 1) mod 3
+  }
+
+  /// case 20: a quotient keeps its fraction until the field takes it
+  on case20 {
+    .ratio = (.count + 5) / 4
+  }
+
+  /// case 21: plus concatenates two strings
+  on case21 {
     .name = .name + '!'
   }
 
-  /// case 20: a string template interpolates whole expressions
-  on case20 {
+  /// case 22: a string template interpolates whole expressions
+  on case22 {
     .name = $'{.name} has {len .items}'
   }
 
-  /// case 21: if picks a branch in a value position
-  on case21 {
+  /// case 23: if picks a branch in a value position
+  on case23 {
     .name = if .ok { 'yes' } else { 'no' }
   }
 
-  /// case 22: if picks a branch in a statement position
-  on case22 {
+  /// case 24: if picks a branch in a statement position
+  on case24 {
     if .ok {
       .count = 1
     } else {
@@ -147,89 +157,89 @@
     }
   }
 
-  /// case 23: an if with no else and a false condition changes nothing else
-  on case23 {
+  /// case 25: an if with no else and a false condition changes nothing else
+  on case25 {
     .count = 7
     if .ok {
       .count = 1
     }
   }
 
-  /// case 24: clamp, over the range the corpus's prev/next call sites use
-  on case24(p) {
+  /// case 26: clamp, over the range the corpus's prev/next call sites use
+  on case26(p) {
     .page = clamp p 0 ((len .items) - 1)
   }
 
-  /// case 25: the shape predicates mean what they mean in a slot
-  on case25 {
+  /// case 27: the shape predicates mean what they mean in a slot
+  on case27 {
     .ok = empty? .tags
   }
 
-  /// case 26: truthy? treats an empty collection as falsy
-  on case26 {
+  /// case 28: truthy? treats an empty collection as falsy
+  on case28 {
     .ok = truthy? .tags
   }
 
   pred long(s) { (len s) > 2 }
 
-  /// case 27: a declared predicate applies exactly like a builtin
-  on case27 {
+  /// case 29: a declared predicate applies exactly like a builtin
+  on case29 {
     .ok = long .name
   }
 
-  /// case 28: push appends
-  on case28 {
+  /// case 30: push appends
+  on case30 {
     .items.push 'c'
   }
 
-  /// case 29: insertAt puts it before the index
-  on case29 {
+  /// case 31: insertAt puts it before the index
+  on case31 {
     .items.insertAt 0 'z'
   }
 
-  /// case 30: setAt replaces
-  on case30 {
+  /// case 32: setAt replaces
+  on case32 {
     .items.setAt 1 'B'
   }
 
-  /// case 31: deleteAt removes, and a key that is not there refuses
-  on case31 {
+  /// case 33: deleteAt removes, and a key that is not there refuses
+  on case33 {
     .items.deleteAt 0
   }
 
-  /// case 32: deleteAt past the end changes nothing
-  on case32 {
+  /// case 34: deleteAt past the end changes nothing
+  on case34 {
     .items.deleteAt 9
   }
 
-  /// case 33: a set adds, removes and toggles by member
-  on case33 {
+  /// case 35: a set adds, removes and toggles by member
+  on case35 {
     .tags.add 'x'
     .tags.add 'y'
     .tags.remove 'x'
     .tags.toggle 'z'
   }
 
-  /// case 34: effects come out in order, with the state
-  on case34 {
+  /// case 36: effects come out in order, with the state
+  on case36 {
     request 'loadData'
     .ok = true
     send 'flash' .name
     stop
   }
 
-  /// case 35: a bubble carries what it was given
-  on case35(k) {
+  /// case 37: a bubble carries what it was given
+  on case37(k) {
     bubble 'rowPicked' k
   }
 
-  /// case 36: a receive arm answers a message no view writes
+  /// case 38: a receive arm answers a message no view writes
   receive resetTo(n) {
     .count = n
   }
 
-  /// case 37: an input name no arm answers is not this bucket's business
-  receive case37(n) {
+  /// case 39: an input name no arm answers is not this bucket's business
+  receive case39(n) {
     .count = n
   }
 
@@ -262,9 +272,9 @@
   <button @on.click="case21">case21</button>
   <button @on.click="case22">case22</button>
   <button @on.click="case23">case23</button>
-  <button @on.click="case24 5">case24</button>
+  <button @on.click="case24">case24</button>
   <button @on.click="case25">case25</button>
-  <button @on.click="case26">case26</button>
+  <button @on.click="case26 5">case26</button>
   <button @on.click="case27">case27</button>
   <button @on.click="case28">case28</button>
   <button @on.click="case29">case29</button>
@@ -273,7 +283,9 @@
   <button @on.click="case32">case32</button>
   <button @on.click="case33">case33</button>
   <button @on.click="case34">case34</button>
-  <button @on.click="case35 3">case35</button>
-  <button @on.click="case37 4">case37</button>
+  <button @on.click="case35">case35</button>
+  <button @on.click="case36">case36</button>
+  <button @on.click="case37 3">case37</button>
+  <button @on.click="case39 4">case39</button>
 </div>
 </template>

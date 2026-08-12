@@ -18,18 +18,17 @@
 // test — which is exactly what the tests here do.
 
 ///|
+/// `init` and `toggleView` are in the view file's
+/// `<script type="tutuca/script">` block: `request` is one of the effects that
+/// language spells, and the block queues it so it goes out only if the whole
+/// transition finished. What is left here is the half a small language would
+/// model badly — a request's OPTIONS, and the responses, which unpack a result
+/// into entries.
 fn request_example_comp(entry : @component.Component) -> @component.Component {
   request_example_component(
     init={ items: [], query: "", view: "main", isLoading: false, error: Null },
     update=(s, msg, ctx) => {
       match msg {
-        Input("toggleView", _) =>
-          Next({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
-        // the host dispatches this after start() — see App::send_at_root
-        Receive("init", _) => {
-          ctx.request("loadData", [], @tutuca.RequestOpts::new())
-          Next({ ..s, isLoading: true })
-        }
         // the same request, routed to DIFFERENT response handlers by name
         Input("loadAnotherWay", _) => {
           ctx.request(

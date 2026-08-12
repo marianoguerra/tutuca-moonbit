@@ -483,9 +483,11 @@ pub fn ShowHideInput::parse(s : String) -> ShowHideInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to state_and_updates.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: incCount.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum ShowHideMsg {
-  /// `@on.click="incCount …"`
-  IncCount
   /// `@on.click="toggleIsOpen …"`
   ToggleIsOpen
   /// An Input dispatch the views do not declare, or a declared name
@@ -500,7 +502,6 @@ pub fn ShowHideMsg::from_dispatch(d : @component.Dispatch) -> ShowHideMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("incCount", []) => IncCount
       ("toggleIsOpen", []) => ToggleIsOpen
       _ => Unknown(name, args)
     },

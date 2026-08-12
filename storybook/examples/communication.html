@@ -4,9 +4,22 @@
     count : Int
   }
 
+  /// The two names a sibling addresses this component by. No view writes
+  /// either one, so the schema is the only place they can be declared — and
+  /// declaring them is what lets the script block answer them.
+  receive Status {
+    Flash(String)
+    Clear
+  }
+
   state SendReceive {
     draft : String
     status : Status
+  }
+
+  /// Sent by `submit` to SELF, so the two call sites share one body.
+  receive SendReceive {
+    ClearDraft
   }
 
   state TreeItem {
@@ -19,6 +32,28 @@
   state TreeRoot {
     log : Array[Any]
     root : TreeItem
+  }
+</script>
+
+<script type="tutuca/script" for="Status">
+  /// Show a message, and remember how many have come through.
+  receive flash(m) {
+    .message = m
+    .count += 1
+  }
+
+  /// Stop showing it. The count is a running total and does not reset.
+  receive clear {
+    .message = ''
+  }
+</script>
+
+<script type="tutuca/script" for="SendReceive">
+  /// Empty the input. `submit` cannot join it here: addressing the sibling by
+  /// path is what that handler is FOR, and a path is what this block does not
+  /// spell.
+  receive clearDraft {
+    .draft = ''
   }
 </script>
 

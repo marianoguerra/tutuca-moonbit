@@ -11,25 +11,20 @@ let traffic_lights : Array[String] = ["red", "orange", "green"]
 /// `lightIndex` field by the `light` method; per-colour visibility uses the
 /// built-in binary predicate `equals?` (written predicate-first) in place of
 /// React's inline `&&`.
+///
+/// `nextLight` is in the view file's `<script type="tutuca/script">` block —
+/// it only moves an index, which is what that block is for. `light` cannot
+/// follow it: naming the colours means indexing `traffic_lights`, and the
+/// block has no way to name a MoonBit value.
 fn traffic_light_comp() -> @component.Component {
-  traffic_light_component(
-    init={ lightIndex: 0 },
-    compute=m => {
-      match m {
-        Light =>
-          Some((s, _args) => {
-            Str(traffic_lights[s.lightIndex % traffic_lights.length()])
-          })
-      }
-    },
-    update=(s, msg, _ctx) => {
-      match TrafficLightMsg::from_dispatch(msg) {
-        Some(NextLight) =>
-          Next({ lightIndex: (s.lightIndex + 1) % traffic_lights.length() })
-        Some(Unknown(_, _)) | None => Unhandled
-      }
-    },
-  )
+  traffic_light_component(init={ lightIndex: 0 }, compute=m => {
+    match m {
+      Light =>
+        Some((s, _args) => {
+          Str(traffic_lights[s.lightIndex % traffic_lights.length()])
+        })
+    }
+  })
 }
 
 ///|

@@ -493,6 +493,30 @@ pub fn root_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn root_inline_update(
+  s : RootState,
+  msg : @component.Dispatch,
+  ctx : &@tutuca.Ctx,
+) -> @component.Update[RootState] {
+  match msg {
+    Receive("init", _args) => {
+      let effects : Array[() -> Unit] = []
+      effects.push(() => ctx.request("loadData", [], @tutuca.RequestOpts::new()))
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The Root component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `RootState` states them
@@ -537,7 +561,16 @@ pub fn root_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match root_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     compute=match compute {
       Some(f) =>
         @component.build_bucket(

@@ -8,6 +8,28 @@
   }
 </script>
 
+<script type="tutuca/script" for="BarChart">
+  /// Add a bar, up to nine. The height is derived from the length rather than
+  /// drawn at random, so the picture is the same on every run — a test can
+  /// look at it.
+  ///
+  /// An `if` with no `else` that does not fire is still an answer: the arm
+  /// claimed `addBar` and nothing moved, which is not the same as not knowing
+  /// the name.
+  on addBar {
+    if (len .values) < 9 {
+      .values.push (((((len .values) * 17) + 23) mod 90) + 10)
+    }
+  }
+
+  /// Drop the last bar, never the last one standing.
+  on removeBar {
+    if (len .values) > 1 {
+      .values.deleteAt ((len .values) - 1)
+    }
+  }
+</script>
+
 <template id="BarChart">
   <div class="flex flex-col gap-3">
     <svg viewBox="0 0 300 120" role="img">

@@ -149,13 +149,13 @@ pub fn BarChartInput::parse(s : String) -> BarChartInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to svg_more.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: addBar, removeBar.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum BarChartMsg {
-  /// `@on.click="addBar …"`
-  AddBar
   /// `@on.click="randomize …"`
   Randomize
-  /// `@on.click="removeBar …"`
-  RemoveBar
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -168,9 +168,7 @@ pub fn BarChartMsg::from_dispatch(d : @component.Dispatch) -> BarChartMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("addBar", []) => AddBar
       ("randomize", []) => Randomize
-      ("removeBar", []) => RemoveBar
       _ => Unknown(name, args)
     },
   )

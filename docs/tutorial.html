@@ -61,6 +61,19 @@
   }
 </script>
 
+<script type="tutuca/script" for="Counter">
+  /// The counter's whole behaviour, in the file that already holds its state
+  /// and its view. `gen-views` compiles this into the update the generated
+  /// `counter_component` passes, so the MoonBit side has nothing to answer.
+  on inc {
+    .count += 1
+  }
+
+  on dec {
+    .count -= 1
+  }
+</script>
+
 <template id="Counter">
   <div>
     <button class="dec" @on.click="dec">-</button>

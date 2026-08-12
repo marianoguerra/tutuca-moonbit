@@ -52,6 +52,59 @@ impl @component.Fields for StatusState with fn decode(f) {
 }
 
 ///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum StatusReceive {
+  Flash(String)
+  Clear
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn StatusReceive::from_dispatch(d : @component.Dispatch) -> StatusReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("flash", [Str(a0)]) => Flash(a0)
+      ("clear", []) => Clear
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn StatusReceive::to_dispatch(
+  self : StatusReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    Flash(a0) => ("flash", [Str(a0)])
+    Clear => ("clear", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn StatusReceive::send(self : StatusReceive, ctx : &@tutuca.Ctx) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
+}
+
+///|
 /// The file-level style — pass as `common_style~`.
 pub let status_common_style : String = ""
 
@@ -69,11 +122,12 @@ pub let status_global_style : String = ""
 impl @component.Fields for StatusState with fn schema() {
   @component.SchemaInfo::new(
     name="Status",
-    fingerprint="a5b9f8a6ceb2d065",
+    fingerprint="451702e1de4e8805",
     fields=[
       @component.FieldInfo::new("message", TyText),
       @component.FieldInfo::new("count", TyInt),
     ],
+    receives=["flash", "clear"],
     view_names=["main"],
   )
 }
@@ -119,6 +173,61 @@ impl @component.Fields for SendReceiveState with fn decode(f) {
   guard f.get("draft") is Some(Str(v_draft)) else { return None }
   let v_status = f.get("status").unwrap_or(Null)
   Some({ draft: v_draft, status: v_status })
+}
+
+///|
+/// The Receive arm of @component.Dispatch, decoded.
+///
+/// Declared as `variant receive` in the state block. These names are
+/// raised by component code rather than written in a view, so the views
+/// cannot type them — the schema is the only place they can be declared.
+pub(all) enum SendReceiveReceive {
+  ClearDraft
+  /// A receive the schema does not declare, or a declared name whose
+  /// runtime arguments did not match the declared types.
+  Unknown(String, Array[@tutuca.Value])
+}
+
+///|
+/// Decode a Receive dispatch. None for any other bucket.
+///
+/// A payload that does not match falls into `Unknown` rather than being
+/// coerced: an `s32` handler handed 2.5 has been sent the wrong thing,
+/// and silently truncating it would hide that.
+pub fn SendReceiveReceive::from_dispatch(
+  d : @component.Dispatch,
+) -> SendReceiveReceive? {
+  guard d is Receive(name, args) else { return None }
+  Some(
+    match (name, args) {
+      ("clearDraft", []) => ClearDraft
+      _ => Unknown(name, args)
+    },
+  )
+}
+
+///|
+/// The dispatch name and arguments this message raises as.
+pub fn SendReceiveReceive::to_dispatch(
+  self : SendReceiveReceive,
+) -> (String, Array[@tutuca.Value]) {
+  match self {
+    ClearDraft => ("clearDraft", [])
+    Unknown(n, args) => (n, args)
+  }
+}
+
+///|
+/// Send this message to self; it arrives as a later Receive dispatch.
+///
+/// The name comes from the schema, so it cannot drift from the one
+/// `from_dispatch` decodes.
+pub fn SendReceiveReceive::send(
+  self : SendReceiveReceive,
+  ctx : &@tutuca.Ctx,
+) -> Unit {
+  let (name, args) = self.to_dispatch()
+  ctx.send(name, args)
 }
 
 ///|
@@ -200,12 +309,13 @@ pub fn SendReceiveMsg::from_dispatch(
 impl @component.Fields for SendReceiveState with fn schema() {
   @component.SchemaInfo::new(
     name="SendReceive",
-    fingerprint="e1869636699defad",
+    fingerprint="9bd36dcfa38d8897",
     fields=[
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
     ],
     inputs=["clearStatus", "setDraft", "submit"],
+    receives=["clearDraft"],
     view_names=["main"],
   )
 }

@@ -13,6 +13,16 @@
   }
 </script>
 
+<script type="tutuca/script" for="TrafficLight">
+  /// Step to the next colour, wrapping at the end of the cycle.
+  ///
+  /// The three names are the `$light` method's business, not this one's: the
+  /// handler only ever moves an index, so `mod 3` is all it needs to know.
+  on nextLight {
+    .lightIndex = (.lightIndex + 1) mod 3
+  }
+</script>
+
 <template id="TrafficLight">
   <section class="flex flex-col gap-2">
     <button class="btn btn-primary" @on.click="nextLight">Next light</button>

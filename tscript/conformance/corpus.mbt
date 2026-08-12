@@ -261,6 +261,18 @@ pub fn cases() -> Array[Case] {
       after=Some(with_fields({ "count": Num(5) })),
     ),
     on_case(
+      "mod wraps a counter, and takes the whole left-hand side with it",
+      "on go { .count = (.count + 1) mod 3 }",
+      "go",
+      after=Some(with_fields({ "count": Num(1) })),
+    ),
+    on_case(
+      "a quotient keeps its fraction until the field takes it",
+      "on go { .ratio = (.count + 5) / 4 }",
+      "go",
+      after=Some(with_fields({ "ratio": Num(1.25) })),
+    ),
+    on_case(
       "plus concatenates two strings",
       "on go { .name = .name + '!' }",
       "go",

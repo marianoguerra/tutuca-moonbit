@@ -20,6 +20,9 @@ priv suberror NoWay {
 ///|
 priv struct E {
   def : @statedef.StateDef
+  /// The generated state struct's name. Needed by `spread`, for the one
+  /// literal that carries no `..s` to infer from.
+  state_ty : String
   /// Parameter name -> its language type, or None for a raw `@tutuca.Value`.
   mut params : Map[String, @statedef.StateTy?]
   /// Statements the current one needs FIRST — a bounds check, a divisor
@@ -44,7 +47,7 @@ pub fn emit(
   fn_name~ : String,
   surface? : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
-  let e = E::{ def, params: Map([]), prelude: [], uses_ctx: false }
+  let e = E::{ def, state_ty, params: Map([]), prelude: [], uses_ctx: false }
   let arms : Array[String] = []
   let refusals : Array[Refusal] = []
   let answers : Map[String, Array[String]] = {
@@ -289,6 +292,24 @@ fn E::stmt(self : E, s : @tscript.Stmt, pad : String) -> String raise NoWay {
 }
 
 ///|
+/// One copy-on-write rebind of `s`, with one field replaced.
+///
+/// `{ ..s, count: … }` on a ONE-field struct is `unused_struct_update` — the
+/// spread covers nothing — and a generated file must not be the thing that
+/// warns. Dropping it takes the inference the spread was supplying with it, so
+/// the annotation goes back on: several examples in one package declare a
+/// one-field state and MoonBit cannot pick between their record types.
+///
+/// A single-field state is not an edge case; it is what a counter looks like.
+fn E::rebind(self : E, field : String, rhs : String, pad : String) -> String {
+  if self.def.fields.length() == 1 {
+    "\{pad}let s : \{self.state_ty} = { \{binding_of(field)}: \{rhs} }\n"
+  } else {
+    "\{pad}let s = { ..s, \{binding_of(field)}: \{rhs} }\n"
+  }
+}
+
+///|
 fn E::stmt_body(
   self : E,
   s : @tscript.Stmt,
@@ -311,12 +332,12 @@ fn E::stmt_body(
       // Copy-on-write, exactly as a hand-written arm spells it. Rebinding `s`
       // rather than accumulating one literal is what lets a later statement
       // read what an earlier one wrote.
-      "\{pad}let s = { ..s, \{binding_of(field)}: \{rhs} }\n"
+      self.rebind(field, rhs, pad)
     }
     SMethod(place~, call~, args~, ..) => {
       let (field, ty) = self.root_field(place)
       let next = self.collection_call(call, field, ty, args)
-      "\{pad}let s = { ..s, \{binding_of(field)}: \{next} }\n"
+      self.rebind(field, next, pad)
     }
     SEffect(name~, args~, ..) => self.effect(name, args, pad)
     SIf(cond~, then_~, else_~, ..) => {
@@ -641,11 +662,16 @@ fn E::to_ty(
   from : @statedef.StateTy,
   to : @statedef.StateTy,
 ) -> String raise NoWay {
-  let _ = self
   if from == to {
     return src
   }
   match (from, to) {
+    // Widening into `Any`, which IS `@tutuca.Value` — the one direction that
+    // needs no guess, because every language type has a Value spelling and the
+    // codec already writes it. The other direction is refused where a raw
+    // parameter is read: a Value could be anything, and picking one is the
+    // guess this backend does not make.
+    (_, TAny) => self.value_of(src, from)
     // The one numeric surface, made explicit. Truncating into an integer field
     // is what the generated codec's decode does with the same value.
     (TInt(..), TFloat) => "\{src}.to_double()"
@@ -844,8 +870,11 @@ fn E::chain(
         b.write_string(")")
         return (b.to_string(), TText)
       }
-      let b = StringBuilder::new()
-      b.write_string("(\{self.to_ty(first, tf, TFloat)}")
+      // Folded rather than appended, because `mod` WRAPS what came before it
+      // instead of extending it: `a mod b` is a round trip through Int, and
+      // the accumulated left-hand side has to be inside that trip. Growing one
+      // string left to right cannot express an operator that reaches backwards.
+      let mut acc = self.to_ty(first, tf, TFloat)
       for i, op in ops {
         // A zero divisor is "no change", which is what the interpreter
         // answers. MoonBit's Double division answers Infinity instead, and
@@ -858,18 +887,14 @@ fn E::chain(
         } else {
           self.at_num(operands[i + 1])
         }
-        match op {
+        acc = match op {
           // MoonBit has no `%` on Double, and the language's `mod` is over
           // whole numbers anyway — the interpreter truncates both sides too.
-          "mod" =>
-            b.write_string(
-              " ).to_int() % (\{rhs}).to_int()).to_double() + (0.0",
-            )
-          _ => b.write_string(" \{op} \{rhs}")
+          "mod" => "((\{acc}).to_int() % (\{rhs}).to_int()).to_double()"
+          _ => "(\{acc} \{op} \{rhs})"
         }
       }
-      b.write_string(")")
-      (b.to_string(), TFloat)
+      (acc, TFloat)
     }
   }
 }

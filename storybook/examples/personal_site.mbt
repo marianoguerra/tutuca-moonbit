@@ -276,6 +276,11 @@ fn root_views_with_decoy() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `init` is in the view file's `<script type="tutuca/script">` block: it fires
+/// one request and changes nothing, which is the whole of what that language
+/// spells for an effect. The rest of the buckets stay here — sorting entries,
+/// toggling a facet in a set and collecting the categories out of a response
+/// are list work, not field work.
 fn root_comp() -> @component.Component {
   root_component(
     // The one argument this component overrides: its views are the generated
@@ -346,7 +351,7 @@ fn root_comp() -> @component.Component {
           })
       }
     },
-    update=(s, msg, ctx) => {
+    update=(s, msg, _ctx) => {
       match msg {
         Input("clearFilters", _) =>
           Next({
@@ -419,10 +424,6 @@ fn root_comp() -> @component.Component {
             allRoles: roles,
             selectedRoles: ps_set_of(roles),
           })
-        }
-        Receive("init", _) => {
-          ctx.request("loadData", [], @tutuca.RequestOpts::new())
-          Next(s)
         }
         _ => Unhandled
       }

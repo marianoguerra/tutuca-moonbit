@@ -48,6 +48,32 @@ pub fn status_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn status_inline_update(
+  s : StatusState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[StatusState] {
+  match msg {
+    Receive("flash", args) => {
+      guard args.get(0) is Some(Str(m)) else { return Unchanged }
+      let s = { ..s, message: m }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      Next(s)
+    }
+    Receive("clear", _args) => {
+      let s = { ..s, message: "" }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The Status component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `StatusState` states them
@@ -77,7 +103,16 @@ pub fn status_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match status_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     slots~,
     slot_args~,
     provide~,
@@ -141,6 +176,26 @@ pub fn send_receive_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn send_receive_inline_update(
+  s : SendReceiveState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[SendReceiveState] {
+  match msg {
+    Receive("clearDraft", _args) => {
+      let s = { ..s, draft: "" }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The SendReceive component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `SendReceiveState` states them
@@ -175,7 +230,16 @@ pub fn send_receive_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match send_receive_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

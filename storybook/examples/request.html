@@ -6,6 +6,32 @@
     isLoading : Bool
     error : Any
   }
+
+  /// The host dispatches this after `start()`. No view writes it, so the
+  /// schema is the only place it can be declared.
+  receive {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Flip the pushed view name.
+  on toggleView {
+    .view = if .view is 'main' { 'edit' } else { 'main' }
+  }
+
+  /// Fire the request and say so. `request` is an effect here, which means it
+  /// goes out only if the whole body finished — a message sent beside a
+  /// transition that did not happen is the one outcome nobody can reason
+  /// about afterwards.
+  ///
+  /// `loadAnotherWay` sends the SAME request to different response handlers,
+  /// which is a `RequestOpts`, and choosing a request's options is one of the
+  /// two things this language deliberately leaves in MoonBit.
+  receive init {
+    request 'loadData'
+    .isLoading = true
+  }
 </script>
 
 <template>

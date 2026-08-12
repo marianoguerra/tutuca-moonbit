@@ -21,6 +21,14 @@
   }
 </script>
 
+<script type="tutuca/script" for="ShowHide">
+  /// The panel's own counter. `toggleIsOpen` is not here because it is not
+  /// written anywhere: a Bool field generates its own toggle.
+  on incCount {
+    .count += 1
+  }
+</script>
+
 <template id="AttributeBinding">
   <section class="flex flex-col gap-3">
     <input class="input s" :value=".str" @on.input="setStr value" :title="$'Content is {.str}'">

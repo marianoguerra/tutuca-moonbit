@@ -102,13 +102,15 @@ pub fn PushViewInput::parse(s : String) -> PushViewInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to rendering.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: toggleView.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum PushViewMsg {
   /// `@on.keydown="resetQuery …"`
   ResetQuery
   /// `@on.input="setQuery …"`
   SetQuery(String)
-  /// `@on.click="toggleView …"`
-  ToggleView
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -123,7 +125,6 @@ pub fn PushViewMsg::from_dispatch(d : @component.Dispatch) -> PushViewMsg? {
     match (name, args) {
       ("resetQuery", []) => ResetQuery
       ("setQuery", [Str(a0)]) => SetQuery(a0)
-      ("toggleView", []) => ToggleView
       _ => Unknown(name, args)
     },
   )
@@ -446,11 +447,11 @@ pub fn PaginationInput::parse(s : String) -> PaginationInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to rendering.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: prev, next.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum PaginationMsg {
-  /// `@on.click="next …"`
-  Next
-  /// `@on.click="prev …"`
-  Prev
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -463,8 +464,6 @@ pub fn PaginationMsg::from_dispatch(d : @component.Dispatch) -> PaginationMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("next", []) => Next
-      ("prev", []) => Prev
       _ => Unknown(name, args)
     },
   )

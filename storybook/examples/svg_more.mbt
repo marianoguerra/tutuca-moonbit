@@ -15,6 +15,12 @@
 /// tests deterministic (and because randomness is not the point), this derives
 /// the next heights from the current ones instead — still reactive, still
 /// re-renders the bars, just reproducible.
+///
+/// `addBar` and `removeBar` are in the view file's
+/// `<script type="tutuca/script">` block: adding to and deleting from a list
+/// under a bound is what its collection methods are for. `randomize` stays
+/// here — it rewrites EVERY element, which is a map over the list and not a
+/// mutation of one position.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
     init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)] },
@@ -68,24 +74,6 @@ fn bar_chart_comp() -> @component.Component {
           })
           Next({ values: next })
         }
-        Input("addBar", _) =>
-          if s.values.length() >= 9 {
-            // At the cap: this arm claimed `addBar` and refuses, which is a
-            // different answer from not knowing the name.
-            Unchanged
-          } else {
-            let out = s.values.copy()
-            out.push(Num(((s.values.length() * 17 + 23) % 90 + 10).to_double()))
-            Next({ values: out })
-          }
-        Input("removeBar", _) =>
-          if s.values.length() <= 1 {
-            Unchanged
-          } else {
-            let out = s.values.copy()
-            let _ = out.pop()
-            Next({ values: out })
-          }
         _ => Unhandled
       }
     },

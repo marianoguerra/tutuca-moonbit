@@ -55,28 +55,45 @@ resolving a name:
 
 ## Your first component
 
-A component is a plain **state struct** plus a call to
-`@component.component(...)`: a name, a view (the template string), the
-initial state, and typed handler buckets. The MoonBit port of the canonical
-counter:
+A component is a **view file** plus whatever that file cannot state. The file
+holds three blocks — the state schema, the behaviour, and the templates — and
+`tutuca gen-views` turns all three into `counter_component`, which already
+carries the name, the compiled views, the styles, the codec, the schema and the
+compiled handlers:
+
+```html
+<!-- tutorial.html -->
+<script type="tutuca/state">
+  state Counter { count : Int }
+</script>
+
+<script type="tutuca/script">
+  on inc { .count += 1 }
+  on dec { .count -= 1 }
+</script>
+
+<template id="Counter">
+  <div>
+    <button class="dec" @on.click="dec">-</button>
+    <span class="count" @text=".count"></span>
+    <button class="inc" @on.click="inc">+</button>
+  </div>
+</template>
+```
+
+Which leaves the MoonBit port of the canonical counter with nothing to say:
 
 ```mbt check
 ///|
 fn counter() -> @component.Component {
-  counter_component(
-    // views call update by bare name: @on.click="dec". `CounterMsg` is
-    // generated from those names, so adding one to the view breaks this match
-    // until it is answered.
-    update=(s, msg, _ctx) => {
-      match CounterMsg::from_dispatch(msg) {
-        Some(Inc) => Next({ count: s.count + 1 })
-        Some(Dec) => Next({ count: s.count - 1 })
-        Some(Unknown(_, _)) | None => Unhandled
-      }
-    },
-    // Every handler the views raise is answered here, `inc` included:
-    // there is one place for them.
-  )
+  // Views call update by bare name: @on.click="dec". Both names are answered
+  // in the file's `tutuca/script` block, which `gen-views` compiles and
+  // composes AHEAD of the `update~` this does not pass.
+  //
+  // Write a handler that block cannot compile — one that walks a path, or
+  // builds a child component — and `gen-views` says which one, by name. That
+  // one comes back here as an `update~`, and the rest stay where they are.
+  counter_component()
 }
 
 ///|
@@ -90,6 +107,14 @@ fn counter_module() -> @component.ModuleDef {
 Things to notice:
 
 - **The view file declares the state.** `CounterState` is generated from the
-  `<script type="tutuca/state">
+  `<script type="tutuca/state">` block, along with its zero value and its
+  codec, so no MoonBit here writes a field list twice.
+- **It declares the behaviour too.** A `<script type="tutuca/script">` block
+  is checked against that schema — `.count` has to be a field, and `+=` has to
+  be arithmetic — and compiled into a match over the same dispatch a
+  hand-written arm takes.
+- **What is left is what neither block can state.** A seed value, a request's
+  options, a handler that reaches for a path or builds a child: those are
+  arguments to `counter_component(...)`, and everything else is the file.
 
 

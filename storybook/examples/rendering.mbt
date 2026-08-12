@@ -32,15 +32,6 @@ fn entries_of(entry : @component.Component) -> Array[@tutuca.Value] {
 fn push_view_comp() -> @component.Component {
   push_view_component(
     init={ items: [], query: "", view: "main" },
-    update=(s, msg, _ctx) => {
-      match PushViewMsg::from_dispatch(msg) {
-        Some(ToggleView) =>
-          Next({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
-        // Served by the generated mutators for the `query` field.
-        Some(ResetQuery) | Some(SetQuery(_)) => Unhandled
-        Some(Unknown(_, _)) | None => Unhandled
-      }
-    },
     compute=m => {
       match m {
         GetToggleLabel =>
@@ -134,6 +125,11 @@ pub fn seq_item_access_module() -> @component.ModuleDef {
 /// `@loop-with="paginate"` runs once per render and returns a `start`/`end`
 /// slice range: `@each` never walks the off-page items. Slicing keeps each
 /// item's ORIGINAL key, so the badge on page 2 reads 5, 6, 7… not 0, 1, 2.
+///
+/// `prev` and `next` are in the view file's `<script type="tutuca/script">`
+/// block — `clamp`, `min` and `max` are in that language because moving a page
+/// index is the commonest handler there is. `page_count` stays here for the
+/// labels, which are `compute`s.
 fn pagination_comp() -> @component.Component {
   pagination_component(
     init={ items: [], page: 0, pageSize: 5 },
@@ -145,14 +141,6 @@ fn pagination_comp() -> @component.Component {
           Some((s, _args) => Str("Page \{s.page + 1} of \{page_count(s)}"))
         IsFirstPage => Some((s, _args) => Bool(s.page <= 0))
         IsLastPage => Some((s, _args) => Bool(s.page >= page_count(s) - 1))
-      }
-    },
-    update=(s, msg, _ctx) => {
-      match PaginationMsg::from_dispatch(msg) {
-        Some(Prev) => Next({ ..s, page: @cmp.maximum(0, s.page - 1) })
-        Some(Next) =>
-          Next({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })
-        Some(Unknown(_, _)) | None => Unhandled
       }
     },
     loop_with=l => {

@@ -22,20 +22,22 @@
 ///|
 /// A sibling that owns its own state and knows nothing about who messages it —
 /// the path is the only coupling.
+///
+/// Both messages are declared in the schema's `receive Status` block and
+/// answered in the file's `<script type="tutuca/script">` block, so the whole
+/// component is its view file: nothing is left to pass.
 fn status_comp() -> @component.Component {
-  status_component(init={ message: "", count: 0 }, update=(s, msg, _ctx) => {
-    match msg {
-      Receive("flash", [Str(m), ..]) => Next({ message: m, count: s.count + 1 })
-      Receive("clear", _) => Next({ ..s, message: "" })
-      _ => Unhandled
-    }
-  })
+  status_component(init={ message: "", count: 0 })
 }
 
 ///|
 /// `ctx.send_at_path(path, name, args)` addresses a specific component by path;
 /// `ctx.send(name, args)` dispatches a `Receive` arm on SELF (so several call
 /// sites can share one handler body without duplicating it).
+///
+/// Only `submit` and `clearStatus` are left: both address the CHILD by path,
+/// which is the one thing the script block deliberately does not spell.
+/// `clearDraft` — the message `submit` sends to itself — is in the block.
 fn send_receive_comp() -> @component.Component {
   send_receive_component(init={ ..SendReceiveState::zero(), draft: "" }, update=(
     s,
@@ -60,7 +62,6 @@ fn send_receive_comp() -> @component.Component {
         ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
         Unchanged
       }
-      Receive("clearDraft", _) => Next({ ..s, draft: "" })
       _ => Unhandled
     }
   })

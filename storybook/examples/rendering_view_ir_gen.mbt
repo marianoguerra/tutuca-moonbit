@@ -89,6 +89,33 @@ pub fn push_view_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn push_view_inline_update(
+  s : PushViewState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[PushViewState] {
+  match msg {
+    Input("toggleView", _args) => {
+      let s = {
+        ..s,
+        view: if (Str(s.view) : @tutuca.Value) == (Str("main") : @tutuca.Value) {
+          "edit"
+        } else {
+          "main"
+        },
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The PushView component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `PushViewState` states them
@@ -130,7 +157,16 @@ pub fn push_view_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match push_view_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     compute=match compute {
       Some(f) =>
         @component.build_bucket(
@@ -355,6 +391,47 @@ pub fn pagination_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn pagination_inline_update(
+  s : PaginationState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[PaginationState] {
+  match msg {
+    Input("prev", _args) => {
+      let s = {
+        ..s,
+        page: (if 0.0 > s.page.to_double() - 1.0 {
+          0.0
+        } else {
+          s.page.to_double() - 1.0
+        }).to_int(),
+      }
+      Next(s)
+    }
+    Input("next", _args) => {
+      let d0 = s.pageSize.to_double()
+      guard d0 != 0.0 else { return Unchanged }
+      let s = {
+        ..s,
+        page: (if s.page.to_double() + 1.0 <
+          (s.items.length().to_double() - 1.0) / d0 {
+          s.page.to_double() + 1.0
+        } else {
+          (s.items.length().to_double() - 1.0) / d0
+        }).to_int(),
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The Pagination component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `PaginationState` states them
@@ -395,7 +472,16 @@ pub fn pagination_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match pagination_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     compute=match compute {
       Some(f) =>
         @component.build_bucket(

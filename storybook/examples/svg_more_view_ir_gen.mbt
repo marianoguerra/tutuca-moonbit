@@ -123,6 +123,56 @@ pub fn bar_chart_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn bar_chart_inline_update(
+  s : BarChartState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[BarChartState] {
+  match msg {
+    Input("addBar", _args) => {
+      let s = if s.values.length().to_double() < 9.0 {
+        let d0 = 90.0
+        guard d0 != 0.0 else { return Unchanged }
+        let s : BarChartState = {
+          values: s.values +
+          [
+            (
+              Num(
+                ((s.values.length().to_double() * 17.0 + 23.0).to_int() %
+                d0.to_int()).to_double() +
+                10.0,
+              ) : @tutuca.Value),
+          ],
+        }
+        s
+      } else {
+        s
+      }
+      Next(s)
+    }
+    Input("removeBar", _args) => {
+      let s = if s.values.length().to_double() > 1.0 {
+        let at = (s.values.length().to_double() - 1.0).to_int()
+        guard at >= 0 && at < s.values.length() else { return Unchanged }
+        let s : BarChartState = {
+          values: s.values[0:at].to_owned() + s.values[at + 1:].to_owned(),
+        }
+        s
+      } else {
+        s
+      }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The BarChart component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `BarChartState` states them
@@ -169,7 +219,16 @@ pub fn bar_chart_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match bar_chart_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

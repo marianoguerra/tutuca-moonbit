@@ -50,6 +50,30 @@ pub fn counter_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// The dispatches the `<script type="tutuca/script">` block answers.
+///
+/// Composed AHEAD of the author's `update~`, which stays optional and is
+/// consulted only for a name this does not answer. GENERATED — edit the
+/// block, not this.
+fn counter_inline_update(
+  s : CounterState,
+  msg : @component.Dispatch,
+  _ctx : &@tutuca.Ctx,
+) -> @component.Update[CounterState] {
+  match msg {
+    Input("inc", _args) => {
+      let s : CounterState = { count: (s.count.to_double() + 1.0).to_int() }
+      Next(s)
+    }
+    Input("dec", _args) => {
+      let s : CounterState = { count: (s.count.to_double() - 1.0).to_int() }
+      Next(s)
+    }
+    _ => Unhandled
+  }
+}
+
+///|
 /// The Counter component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `CounterState` states them
@@ -80,7 +104,16 @@ pub fn counter_component(
     init~,
     common_style~,
     global_style~,
-    update?,
+    update=(s, msg, ctx) => {
+      match counter_inline_update(s, msg, ctx) {
+        Unhandled =>
+          match update {
+            Some(u) => u(s, msg, ctx)
+            None => Unhandled
+          }
+        answered => answered
+      }
+    },
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

@@ -32,6 +32,18 @@
   }
 </script>
 
+<script type="tutuca/script" for="Counter">
+  /// Six components share this file, so a script block says which one it
+  /// answers for — a `.count` here has to mean exactly one state.
+  on inc {
+    .count += 1
+  }
+
+  on dec {
+    .count -= 1
+  }
+</script>
+
 <!-- Every component in the module keeps its views in this one file; the
      `<template id="Name">` says which component each belongs to. -->
 <template id="Counter">

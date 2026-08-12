@@ -83,9 +83,11 @@ pub fn TrafficLightInput::parse(s : String) -> TrafficLightInput? {
 /// inferred from the argument shapes written at the call sites, so a
 /// handler added to conditionals.html breaks every `match` over this type
 /// until it is handled.
+///
+/// Absent, because the script block answers them: nextLight.
+/// `update` is consulted only for a dispatch the block did not claim, so
+/// an arm for one of these could never run.
 pub(all) enum TrafficLightMsg {
-  /// `@on.click="nextLight …"`
-  NextLight
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -100,7 +102,6 @@ pub fn TrafficLightMsg::from_dispatch(
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("nextLight", []) => NextLight
       _ => Unknown(name, args)
     },
   )

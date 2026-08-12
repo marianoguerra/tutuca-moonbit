@@ -131,30 +131,25 @@ pub fn event_modifiers_module() -> @component.ModuleDef {
 /// None), not hidden with CSS — see the README "Divergences" note. Both also
 /// work directly on an `<x>` render op, wrapping the produced node with no
 /// extra DOM.
+///
+/// Neither button needs an arm: `toggleIsOpen` is the generated toggle for a
+/// Bool field, and `incCount` is one line in the file's
+/// `<script type="tutuca/script">` block. `$label` stays here because a
+/// `compute` is answered by the render stack, which is not what that block
+/// compiles.
 fn show_hide_comp() -> @component.Component {
-  show_hide_component(
-    init={ isOpen: false, count: 0 },
-    compute=m => {
-      match m {
-        Label =>
-          Some((s, _args) => {
-            if s.isOpen {
-              Str("Hide details")
-            } else {
-              Str("Show details")
-            }
-          })
-      }
-    },
-    update=(s, msg, _ctx) => {
-      match ShowHideMsg::from_dispatch(msg) {
-        Some(IncCount) => Next({ ..s, count: s.count + 1 })
-        // Served by the generated toggle for the `isOpen` field.
-        Some(ToggleIsOpen) => Unhandled
-        Some(Unknown(_, _)) | None => Unhandled
-      }
-    },
-  )
+  show_hide_component(init={ isOpen: false, count: 0 }, compute=m => {
+    match m {
+      Label =>
+        Some((s, _args) => {
+          if s.isOpen {
+            Str("Hide details")
+          } else {
+            Str("Show details")
+          }
+        })
+    }
+  })
 }
 
 ///|
