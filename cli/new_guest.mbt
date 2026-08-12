@@ -133,66 +133,31 @@ pub fn substitute_guest_name(text : String, name : String) -> String {
 /// Parse new-guest's own args and either finish purely (help, dry-run, usage
 /// errors, missing assets) or hand the shell a write plan.
 fn run_new_guest(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let mut name = ""
-  let mut dir = ""
-  let mut dry_run = false
-  let mut force = false
-  let mut want_dir = false
-  for a in args {
-    if want_dir {
-      dir = a
-      want_dir = false
-      continue
-    }
-    match a {
-      "--dir" => want_dir = true
-      "--dry-run" => dry_run = true
-      "--force" | "-f" => force = true
-      "-h" | "--help" =>
-        return Done({ out: new_guest_help, err: "", exit_code: 0 })
-      other =>
-        if other.has_prefix("-") {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "unknown flag '\{other}' for new-guest",
-                hint="see `tutuca new-guest -h` for the accepted flags",
-              ),
-            ),
-          )
-        } else if name != "" {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "new-guest takes one name, got '\{name}' and '\{other}'",
-                hint="one bundle per directory; run it again for the second.",
-              ),
-            ),
-          )
-        } else {
-          name = other
-        }
-    }
+  let parsed = match parse_flags(args, command_spec("new-guest")) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: new_guest_help, err: "", exit_code: 0 })
   }
-  if want_dir {
+  let dry_run = parsed.bool("dry-run")
+  let force = parsed.bool("force")
+  let dir = parsed.str("dir").unwrap_or("")
+  // One name, because one bundle per directory. A second positional is the
+  // user meaning two guests, and saying so beats silently building the first.
+  if parsed.positionals.length() > 1 {
     return Done(
       error_emit(
         opts,
         err(
-          CODE_USAGE_MISSING_ARGUMENT,
-          "--dir needs a path",
-          hint="e.g. `tutuca new-guest clock --dir ./guests/clock`",
+          CODE_USAGE_UNKNOWN_FLAG,
+          "new-guest takes one name, got '\{parsed.positionals[0]}' and '\{parsed.positionals[1]}'",
+          hint="one bundle per directory; run it again for the second.",
         ),
       ),
     )
   }
+  let name = parsed.positionals.get(0).unwrap_or("")
   if name == "" {
     return Done(
       error_emit(

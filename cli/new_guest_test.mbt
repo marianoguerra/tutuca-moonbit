@@ -55,7 +55,10 @@ test "new-guest rejects --dir with no path" {
   match @cli.plan(["new-guest", "clock", "--dir"]) {
     Done(emit) => {
       assert_eq(emit.exit_code, 1)
-      assert_true(emit.err.contains("--dir needs a path"))
+      // The message is `parse_flags`', not new-guest's: a flag declared as
+      // taking a string and given none is the grammar's business, and now says
+      // so identically for every command.
+      assert_true(emit.err.contains("'--dir' needs a value"))
     }
     _ => fail("expected Done")
   }

@@ -41,6 +41,8 @@ pub fn collect_view_classes(Array[(String, String)]) -> Result[Array[String], Er
 
 pub fn command_names() -> Array[String]
 
+pub fn command_spec(String) -> CommandSpec
+
 pub fn err(String, String, suggestion? : @lint.Suggestion, hint? : String, where_? : String, exit_code? : Int) -> ErrShape
 
 pub let error_codes : Array[String]
@@ -92,6 +94,8 @@ pub fn new_guest_success(String, String) -> String
 pub fn new_guest_target_exists(GlobalOpts, String) -> Emit
 
 pub fn overview() -> String
+
+pub fn parse_flags(Array[String], CommandSpec) -> Result[ParsedArgs, ErrShape]
 
 pub fn pascal_case(String) -> String
 
@@ -160,6 +164,11 @@ pub(all) struct FlagSpec {
   description : String?
 } derive(Eq, @debug.Debug)
 
+pub(all) enum FlagValue {
+  Bool(Bool)
+  Str(String)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct GenInput {
   input : String
   target : String
@@ -194,6 +203,13 @@ pub(all) enum Outcome {
   Watch(GlobalOpts, plan~ : WatchPlan)
   GenCss(GlobalOpts, plan~ : CssPlan)
 } derive(Eq, @debug.Debug)
+
+pub(all) struct ParsedArgs {
+  flags : Map[String, FlagValue]
+  positionals : Array[String]
+}
+pub fn ParsedArgs::bool(Self, String) -> Bool
+pub fn ParsedArgs::str(Self, String) -> String?
 
 pub(all) struct PositionalSpec {
   name : String

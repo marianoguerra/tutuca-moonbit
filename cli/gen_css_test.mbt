@@ -64,7 +64,10 @@ test "gen-css rejects a polyfill level the compiler does not have" {
     _ => abort("expected a Done outcome")
   }
   assert_eq(emit.exit_code, 1)
-  assert_true(emit.err.contains("--polyfills expects 0, 1, 2 or 3"))
+  assert_true(emit.err.contains("'--polyfills' expects 0, 1, 2, 3, got '9'"))
+  // The hint is the flag's own registry description, so what 1 and 2 mean
+  // does not have to be written a second time in an error message.
+  assert_true(emit.err.contains("1=@property"))
 }
 
 ///|

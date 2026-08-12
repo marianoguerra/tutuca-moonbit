@@ -109,9 +109,21 @@ test "usage errors" {
     emit_of(plan_gen([])),
     content="tutuca: gen-views requires an input .html file or a directory\n  hint: `tutuca gen-views path/to/counter.html --name Counter`, or `tutuca gen-views src/`\n",
   )
+  // The suggestion is the registry's doing: `parse_flags` offers every
+  // spelling the command declares as a candidate, so this is the behaviour
+  // `help_overview` has always promised for unknown flags.
   inspect(
     emit_of(plan_gen(["a.html", "--nope"])),
-    content="tutuca: unknown flag '--nope' for gen-views\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
+    content="tutuca: unknown flag '--nope' for gen-views\n  did you mean '--name'?\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
+  )
+  // A flag that EXTENDS a real one is UNKNOWN, not a malformed version of it.
+  // Matching was by prefix, so this used to report "--out needs a value" —
+  // naming a flag the user never wrote. No suggestion here because `--output`
+  // is three edits from `--out` and the budget is two; reporting the right
+  // error without a guess beats reporting the wrong error confidently.
+  inspect(
+    emit_of(plan_gen(["a.html", "--output", "x"])),
+    content="tutuca: unknown flag '--output' for gen-views\n  hint: see `tutuca gen-views -h` for the accepted flags\n",
   )
   // Two paths is no longer an error: it is the whole point of a batch, and
   // what lets a view reference a component another file declares.

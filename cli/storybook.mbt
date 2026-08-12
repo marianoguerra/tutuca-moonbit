@@ -26,79 +26,34 @@ let storybook_help : String =
 /// Parse storybook's args and either finish purely (help, usage errors) or
 /// hand the shell a serve/copy request.
 fn run_storybook(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let mut dir = ""
-  let mut port = 4321
-  let mut out : String? = None
-  let mut i = 0
-  fn bad_port(v : String) -> Outcome {
-    Done(
-      error_emit(
-        opts,
-        err(
-          CODE_USAGE_BAD_FLAG_VALUE,
-          "invalid --port value '\{v}'",
-          hint="pass a positive integer, e.g. --port 4321",
-        ),
-      ),
-    )
+  let parsed = match parse_flags(args, command_spec("storybook")) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-
-  while i < args.length() {
-    let a = args[i]
-    match a {
-      "-h" | "--help" =>
-        return Done({ out: storybook_help, err: "", exit_code: 0 })
-      "--port" | "--out" => {
-        i = i + 1
-        if i >= args.length() {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "flag '\{a}' expects a value",
-                hint="see `tutuca storybook -h` for the accepted flags",
-              ),
-            ),
-          )
-        }
-        if a == "--port" {
-          match parse_port(args[i]) {
-            Some(p) => port = p
-            None => return bad_port(args[i])
-          }
-        } else {
-          out = Some(args[i])
-        }
-      }
-      other =>
-        if other.has_prefix("--port=") {
-          let val = other[7:].to_owned()
-          match parse_port(val) {
-            Some(p) => port = p
-            None => return bad_port(val)
-          }
-        } else if other.has_prefix("--out=") {
-          out = Some(other[6:].to_owned())
-        } else if other.has_prefix("-") {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "unknown flag '\{other}' for storybook",
-                hint="see `tutuca storybook -h` for the accepted flags",
-              ),
-            ),
-          )
-        } else {
-          dir = other
-        }
-    }
-    i = i + 1
-  }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: storybook_help, err: "", exit_code: 0 })
+  }
+  let dir = parsed.positionals.get(0).unwrap_or("")
+  let out = parsed.str("out")
+  // The registry says `--port` takes a string; that it must be a positive
+  // integer is this command's rule, not the flag grammar's.
+  let port = match parsed.str("port") {
+    Some(v) =>
+      match parse_port(v) {
+        Some(p) => p
+        None =>
+          return Done(
+            error_emit(
+              opts,
+              err(
+                CODE_USAGE_BAD_FLAG_VALUE,
+                "invalid --port value '\{v}'",
+                hint="pass a positive integer, e.g. --port 4321",
+              ),
+            ),
+          )
+      }
+    None => 4321
   }
   ServeStorybook(opts, dir~, port~, out~)
 }

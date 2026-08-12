@@ -187,60 +187,18 @@ fn join_path(dir : String, file : String) -> String {
 /// Parse gen-views' own args. Finishes purely on help and usage errors;
 /// otherwise hands the shell the input path to read and what to do with it.
 fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let roots : Array[String] = []
-  let mut name : String? = None
-  let mut out : String? = None
-  let mut dry_run = false
-  let mut ir = true
-  let mut i = 0
-  while i < args.length() {
-    let a = args[i]
-    let value_of = (flag : String) => {
-      if a.has_prefix(flag + "=") {
-        Some(a[flag.length() + 1:].to_owned())
-      } else if a == flag && i + 1 < args.length() {
-        i = i + 1
-        Some(args[i])
-      } else {
-        None
-      }
-    }
-    match a {
-      "-h" | "--help" =>
-        return Done({ out: gen_views_help, err: "", exit_code: 0 })
-      "--dry-run" => dry_run = true
-      "--no-ir" => ir = false
-      _ =>
-        if a.has_prefix("--name") {
-          match value_of("--name") {
-            Some(v) => name = Some(v)
-            None => return Done(missing_value(opts, "--name"))
-          }
-        } else if a.has_prefix("--out") {
-          match value_of("--out") {
-            Some(v) => out = Some(v)
-            None => return Done(missing_value(opts, "--out"))
-          }
-        } else if a.has_prefix("-") {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "unknown flag '\{a}' for gen-views",
-                hint="see `tutuca gen-views -h` for the accepted flags",
-              ),
-            ),
-          )
-        } else {
-          roots.push(a)
-        }
-    }
-    i = i + 1
+  let parsed = match parse_flags(args, command_spec("gen-views")) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: gen_views_help, err: "", exit_code: 0 })
   }
+  let roots = parsed.positionals
+  let name = parsed.str("name")
+  let out = parsed.str("out")
+  let dry_run = parsed.bool("dry-run")
+  let ir = !parsed.bool("no-ir")
   if roots.is_empty() {
     return Done(
       error_emit(
@@ -281,18 +239,6 @@ fn run_gen_views(args : Array[String], opts : GlobalOpts) -> Outcome {
     )
   }
   GenViews(opts, roots~, out~, name~, dry_run~, ir~)
-}
-
-///|
-fn missing_value(opts : GlobalOpts, flag : String) -> Emit {
-  error_emit(
-    opts,
-    err(
-      CODE_USAGE_MISSING_ARGUMENT,
-      "\{flag} needs a value",
-      hint="write it as `\{flag}=<value>` or `\{flag} <value>`",
-    ),
-  )
 }
 
 ///|

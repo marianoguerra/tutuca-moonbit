@@ -1,4 +1,15 @@
 // The `tutuca help` reference. One text, because there is one command set.
+//
+// HAND-WRITTEN, and deliberately so: it restates flags `registry.mbt` already
+// declares, but as prose that says when to reach for each one, grouped and
+// ordered for a person reading top to bottom. Generated text cannot do that,
+// and the attempt would make both worse. So this is the one place a flag is
+// written twice on purpose — everything else (dispatch, parsing, the
+// `agent-context` schema, `help <command>`) reads the registry.
+//
+// The cost is that a flag added to the registry does not appear here until
+// somebody adds it. `agent_context_test.mbt` pins the registry against this
+// text so that stays visible rather than silent.
 
 ///|
 let overview_body : String =

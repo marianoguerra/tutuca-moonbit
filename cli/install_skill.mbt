@@ -40,36 +40,18 @@ let install_skill_help : String =
 /// Parse install-skill's own args and either finish purely (help, dry-run,
 /// usage errors, missing assets) or hand the shell a write plan.
 fn run_install_skill(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let mut user = false
-  let mut project = false
-  let mut dot_agents = false
-  let mut dry_run = false
-  let mut force = false
-  for a in args {
-    match a {
-      "--user" => user = true
-      "--project" => project = true
-      "--dot-agents" => dot_agents = true
-      "--dry-run" => dry_run = true
-      "--force" | "-f" => force = true
-      "-h" | "--help" =>
-        return Done({ out: install_skill_help, err: "", exit_code: 0 })
-      other =>
-        return Done(
-          error_emit(
-            opts,
-            err(
-              CODE_USAGE_UNKNOWN_FLAG,
-              "unknown flag '\{other}' for install-skill",
-              hint="see `tutuca install-skill -h` for the accepted flags",
-            ),
-          ),
-        )
-    }
+  let parsed = match parse_flags(args, command_spec("install-skill")) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: install_skill_help, err: "", exit_code: 0 })
   }
+  let user = parsed.bool("user")
+  let project = parsed.bool("project")
+  let dot_agents = parsed.bool("dot-agents")
+  let dry_run = parsed.bool("dry-run")
+  let force = parsed.bool("force")
   if user && project {
     return Done(
       error_emit(

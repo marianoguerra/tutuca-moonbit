@@ -65,81 +65,21 @@ let watch_help : String =
 /// Parse `watch`'s own args. Finishes purely on help and usage errors,
 /// otherwise hands the shell the plan.
 fn run_watch(args : Array[String], opts : GlobalOpts) -> Outcome {
-  let paths : Array[String] = []
-  let mut name : String? = None
-  let mut out : String? = None
-  let mut ir = true
-  let mut tailwind_css : String? = None
-  let mut margaui_css : String? = None
-  let mut css_entry : String? = None
-  let mut css_classes : String? = None
-  let mut i = 0
-  while i < args.length() {
-    let a = args[i]
-    let value_of = (flag : String) => {
-      if a.has_prefix(flag + "=") {
-        Some(a[flag.length() + 1:].to_owned())
-      } else if a == flag && i + 1 < args.length() {
-        i = i + 1
-        Some(args[i])
-      } else {
-        None
-      }
-    }
-    match a {
-      "-h" | "--help" => return Done({ out: watch_help, err: "", exit_code: 0 })
-      "--no-ir" => ir = false
-      _ =>
-        if a.has_prefix("--name") {
-          match value_of("--name") {
-            Some(v) => name = Some(v)
-            None => return Done(missing_value(opts, "--name"))
-          }
-        } else if a.has_prefix("--out") {
-          match value_of("--out") {
-            Some(v) => out = Some(v)
-            None => return Done(missing_value(opts, "--out"))
-          }
-        } else if a.has_prefix("--tailwind-css") {
-          match value_of("--tailwind-css") {
-            Some(v) => tailwind_css = Some(v)
-            None => return Done(missing_value(opts, "--tailwind-css"))
-          }
-        } else if a.has_prefix("--margaui-css") {
-          match value_of("--margaui-css") {
-            Some(v) => margaui_css = Some(v)
-            None => return Done(missing_value(opts, "--margaui-css"))
-          }
-        } else if a.has_prefix("--css-entry") {
-          match value_of("--css-entry") {
-            Some(v) => css_entry = Some(v)
-            None => return Done(missing_value(opts, "--css-entry"))
-          }
-        } else if a.has_prefix("--css-classes") {
-          match value_of("--css-classes") {
-            Some(v) => css_classes = Some(v)
-            None => return Done(missing_value(opts, "--css-classes"))
-          }
-        } else if a.has_prefix("-") {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "unknown flag '\{a}' for watch",
-                hint="see `tutuca watch -h` for the accepted flags",
-              ),
-            ),
-          )
-        } else {
-          paths.push(a)
-        }
-    }
-    i = i + 1
+  let parsed = match parse_flags(args, command_spec("watch")) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: watch_help, err: "", exit_code: 0 })
   }
+  let paths = parsed.positionals
+  let name = parsed.str("name")
+  let out = parsed.str("out")
+  let ir = !parsed.bool("no-ir")
+  let tailwind_css = parsed.str("tailwind-css")
+  let margaui_css = parsed.str("margaui-css")
+  let css_entry = parsed.str("css-entry")
+  let css_classes = parsed.str("css-classes")
   if name is Some(_) && paths.length() > 1 {
     return Done(
       error_emit(

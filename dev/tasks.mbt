@@ -504,6 +504,44 @@ fn build_commands() -> Array[Command] {
 }
 
 ///|
+/// Assembled tasks: name -> (about, the steps it plans).
+///
+/// These cannot be `tasks()` entries because they are not a list of commands —
+/// each builds its plan, with mkdirs, copies and rewrites interleaved. They
+/// used to be a chain of `if name == "…"` in `plan()` AND a hand-written line
+/// each in `help_text()`, which is two lists that had to agree and did not:
+/// `guests` had a branch and no line, so it ran and never appeared in `--help`.
+/// One list, walked by both.
+fn assembled() -> Array[(String, String, () -> Array[Step])] {
+  [
+    ("dist", "build all + assemble a runnable dist/ folder", dist_steps),
+    (
+      "skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/", skill_embed_steps,
+    ),
+    (
+      "guest-template-embed", "regenerate cli/guest_template_gen.mbt (the tree `tutuca new-guest` writes) from guests/counter + dyncomp/wit + guests/template",
+      guest_template_embed_steps,
+    ),
+    (
+      "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
+      universal_steps,
+    ),
+    (
+      "dyncomp-storybook", "assemble the dyncomp storybook + every sample .tutuca.tar.gz into dist/dyncomp-storybook",
+      dyncomp_storybook_steps,
+    ),
+    (
+      "guests", "build every guest bundle (wit-bindgen output → component → ESM); needs wasm-tools + jco",
+      guest_build_steps,
+    ),
+    (
+      "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",
+      css_bundle_steps,
+    ),
+  ]
+}
+
+///|
 /// Composite tasks: name -> (about, member base-task names) whose commands are
 /// concatenated.
 fn composites() -> Array[(String, String, Array[String])] {
@@ -679,26 +717,11 @@ pub fn plan(name : String) -> Array[Step]? {
       return Some(out)
     }
   }
-  if name == "dist" {
-    return Some(dist_steps())
-  }
-  if name == "skill-embed" {
-    return Some(skill_embed_steps())
-  }
-  if name == "guest-template-embed" {
-    return Some(guest_template_embed_steps())
-  }
-  if name == "css-bundle" {
-    return Some(css_bundle_steps())
-  }
-  if name == "universal" {
-    return Some(universal_steps())
-  }
-  if name == "dyncomp-storybook" {
-    return Some(dyncomp_storybook_steps())
-  }
-  if name == "guests" {
-    return Some(guest_build_steps())
+  for entry in assembled() {
+    let (aname, _, steps) = entry
+    if aname == name {
+      return Some(steps())
+    }
   }
   None
 }
@@ -1032,19 +1055,9 @@ pub fn help_text() -> String {
     let (cname, about, _) = entry
     line(cname, about)
   }
-  line("dist", "build all + assemble a runnable dist/ folder")
-  line("skill-embed", "regenerate cli/skill_assets_gen.mbt from skill/tutuca/")
-  line(
-    "guest-template-embed", "regenerate cli/guest_template_gen.mbt (the tree `tutuca new-guest` writes) from guests/counter + dyncomp/wit + guests/template",
-  )
-  line(
-    "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
-  )
-  line(
-    "dyncomp-storybook", "assemble the dyncomp storybook + every sample .tutuca.tar.gz into dist/dyncomp-storybook",
-  )
-  line(
-    "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",
-  )
+  for entry in assembled() {
+    let (aname, about, _) = entry
+    line(aname, about)
+  }
   sb.to_string()
 }

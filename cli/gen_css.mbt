@@ -69,73 +69,24 @@ fn run_gen_css(
 ) -> Outcome {
   let help = if margaui { gen_margaui_css_help } else { gen_tailwind_css_help }
   let command = if margaui { "gen-margaui-css" } else { "gen-tailwind-css" }
-  let paths : Array[String] = []
-  let mut out : String? = None
-  let mut entry : String? = None
-  let mut extra_classes : String? = None
-  let mut print_classes = false
-  // @tw.POLYFILL_ALL — see parse_polyfills.
-  let mut polyfills = 3
-  let mut i = 0
-  while i < args.length() {
-    let a = args[i]
-    let value_of = (flag : String) => {
-      if a.has_prefix(flag + "=") {
-        Some(a[flag.length() + 1:].to_owned())
-      } else if a == flag && i + 1 < args.length() {
-        i = i + 1
-        Some(args[i])
-      } else {
-        None
-      }
-    }
-    match a {
-      "-h" | "--help" => return Done({ out: help, err: "", exit_code: 0 })
-      "--print-classes" => print_classes = true
-      _ =>
-        if a == "-o" || a.has_prefix("--out") {
-          match value_of(if a == "-o" { "-o" } else { "--out" }) {
-            Some(v) => out = Some(v)
-            None => return Done(missing_value(opts, "--out"))
-          }
-        } else if a.has_prefix("--entry") {
-          match value_of("--entry") {
-            Some(v) => entry = Some(v)
-            None => return Done(missing_value(opts, "--entry"))
-          }
-        } else if a.has_prefix("--classes") {
-          match value_of("--classes") {
-            Some(v) => extra_classes = Some(v)
-            None => return Done(missing_value(opts, "--classes"))
-          }
-        } else if a.has_prefix("--polyfills") {
-          match value_of("--polyfills") {
-            Some(v) =>
-              match parse_polyfills(v) {
-                Some(n) => polyfills = n
-                None => return Done(bad_polyfills(opts, command, v))
-              }
-            None => return Done(missing_value(opts, "--polyfills"))
-          }
-        } else if a.has_prefix("-") {
-          return Done(
-            error_emit(
-              opts,
-              err(
-                CODE_USAGE_UNKNOWN_FLAG,
-                "unknown flag '\{a}' for \{command}",
-                hint="see `tutuca \{command} -h` for the accepted flags",
-              ),
-            ),
-          )
-        } else {
-          paths.push(a)
-        }
-    }
-    i = i + 1
+  let parsed = match parse_flags(args, command_spec(command)) {
+    Ok(p) => p
+    Err(e) => return Done(error_emit(opts, e))
   }
-  if opts.help {
+  if parsed.bool("help") || opts.help {
     return Done({ out: help, err: "", exit_code: 0 })
+  }
+  let paths = parsed.positionals
+  let out = parsed.str("out")
+  let entry = parsed.str("entry")
+  let extra_classes = parsed.str("classes")
+  let print_classes = parsed.bool("print-classes")
+  // The registry declares the accepted values, so `parse_flags` has already
+  // refused anything else; this is only the string -> Int mapping.
+  // @tw.POLYFILL_ALL is the default.
+  let polyfills = match parsed.str("polyfills") {
+    Some(v) => parse_polyfills(v).unwrap_or(3)
+    None => 3
   }
   // No roots means "this project", the same default `watch` takes.
   if paths.length() == 0 {
@@ -165,18 +116,6 @@ fn parse_polyfills(value : String) -> Int? {
     "3" => Some(3)
     _ => None
   }
-}
-
-///|
-fn bad_polyfills(opts : GlobalOpts, command : String, value : String) -> Emit {
-  error_emit(
-    opts,
-    err(
-      CODE_USAGE_BAD_FLAG_VALUE,
-      "--polyfills expects 0, 1, 2 or 3, got '\{value}'",
-      hint="0=none, 1=@property, 2=color-mix, 3=all; see `tutuca \{command} -h`",
-    ),
-  )
 }
 
 ///|
@@ -231,18 +170,7 @@ pub fn collect_view_classes(
 /// looks broken. Alphabetical is also the order a class list is scanned in when
 /// checking what the collector missed.
 pub fn lex_compare(a : String, b : String) -> Int {
-  let (ac, bc) = (a.to_array(), b.to_array())
-  let shorter = if ac.length() < bc.length() {
-    ac.length()
-  } else {
-    bc.length()
-  }
-  for i in 0..<shorter {
-    if ac[i] != bc[i] {
-      return if ac[i] < bc[i] { -1 } else { 1 }
-    }
-  }
-  ac.length() - bc.length()
+  a.lexical_compare(b)
 }
 
 ///|

@@ -113,13 +113,23 @@ test "rewrite repoints a demo script src" {
 }
 
 ///|
+/// Every RUNNABLE task is listed, which is stronger than it sounds: `guests`
+/// was runnable and unlisted for as long as `plan` and `help_text` kept
+/// separate lists of the assembled tasks. This walks the names `plan` actually
+/// answers, so a task that gains a plan and no line fails here.
 test "help_text lists every task name" {
   let help = @dev.help_text()
   for task in @dev.tasks() {
     assert_true(help.contains(task.name))
   }
-  assert_true(help.contains("ci"))
-  assert_true(help.contains("dist"))
+  for
+    name in [
+      "ci", "dist", "skill-embed", "guest-template-embed", "universal", "dyncomp-storybook",
+      "guests", "css-bundle",
+    ] {
+    assert_true(@dev.plan(name) is Some(_))
+    assert_true(help.contains(name))
+  }
 }
 
 ///|

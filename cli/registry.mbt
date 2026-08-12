@@ -320,3 +320,18 @@ pub fn find_command(name : String) -> CommandSpec? {
 pub fn command_names() -> Array[String] {
   commands.map(c => c.name)
 }
+
+///|
+/// The spec for a command this binary defines, by name.
+///
+/// Unlike `find_command`, this cannot fail: every caller is a command handler
+/// asking for its OWN entry, and a handler with no registry entry is a
+/// programming error rather than a user one. The empty fallback keeps the
+/// signature total — a command that fell out of the registry then rejects
+/// every flag, which is loud and testable, rather than crashing a shell.
+pub fn command_spec(name : String) -> CommandSpec {
+  match find_command(name) {
+    Some(c) => c
+    None => { name, describe: "", flags: [], positionals: [] }
+  }
+}
