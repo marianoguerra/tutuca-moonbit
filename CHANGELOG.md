@@ -296,6 +296,24 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A named fixture did nothing when applied to a component already placed.**
+  `place_form` emptied the argument map whenever a fixture was named, on the
+  assumption that whatever built the component would resolve it — but the
+  reconfigure branch returns before anything is built, and wrote the empty map
+  through field by field. A per-field write cannot tell "write nothing" apart
+  from "nothing changed", so the panel closed and the fixture silently did not
+  apply. Only ctrl/cmd-clicking a catalog entry, which opens the form BEFORE
+  placing, ever worked.
+
+  The two operations are different on purpose — placing CONSTRUCTS, reconfiguring
+  WRITES THROUGH so that everything the schema does not name survives — and a
+  fixture is a statement about arguments, so it is now resolved to those
+  arguments in `place_form`, where the decision belongs, and both paths consume
+  the same map. `InitInfo::args` is already decoded host-side for a loaded
+  bundle as much as a standard component, so nothing crosses the boundary to do
+  it. `UniversalUi::build` loses its `init` parameter with the last of three
+  copies of the resolution.
+
 - **The dyncomp storybook lent no host services to what it hosted.** Its module
   was built without a `requests` map at all, so a guest that asked the page for
   something it cannot compute got nothing — the sample counter's `double` button

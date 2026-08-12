@@ -90,7 +90,7 @@ fn UniversalUi::place_default(
         status: "\{d.ref_.to_id()} needs some arguments",
       })
     Ok(args) =>
-      match self.build(ref_, "", args) {
+      match self.build(ref_, args) {
         Some(inst) => {
           if !self.deliver(ctx, inst) {
             return Some({ ..s, commandBar: Null, status: "nowhere to put it" })
@@ -121,9 +121,30 @@ fn UniversalUi::place_form(
     return Some({ ..s, status: "no such component: \{ref_.to_id()}" })
   }
   // A named fixture is the component's own answer to "what arguments", so the
-  // blank form beside it is not consulted.
+  // blank form beside it is not consulted — but it has to be RESOLVED here, to
+  // the arguments it names.
+  //
+  // Leaving it to whatever builds the component is what used to break: placing
+  // CONSTRUCTS and reconfiguring WRITES THROUGH, and only the first of those can
+  // be handed a fixture NAME. The second writes the map field by field, so the
+  // empty map this used to pass meant "write nothing" — which a per-field write
+  // cannot tell apart from "nothing changed". The panel closed and the fixture
+  // silently did nothing.
+  //
+  // `InitInfo::args` is already decoded host-side, for a loaded bundle as much
+  // as a standard component, so resolving costs nothing and nothing crosses the
+  // boundary to do it.
   let args = if init != "" {
-    Map([])
+    match d.inits.filter(i => i.name == init) {
+      [chosen, ..] => chosen.args
+      // The fixture is gone — a bundle hot-swapped under an open panel is the
+      // way that happens. Saying so beats quietly placing the defaults.
+      _ =>
+        return Some({
+          ..s,
+          status: "\{ref_.to_id()} has no fixture \"\{init}\"",
+        })
+    }
   } else {
     match d.coerce_args(form_args(fields)) {
       Ok(a) => a
@@ -161,7 +182,7 @@ fn UniversalUi::place_form(
     ctx.send_at_path(at, "applyConfig", [Map(args)])
     return self.close_config(s, ctx)
   }
-  match self.build(ref_, init, args) {
+  match self.build(ref_, args) {
     Some(inst) => {
       if !self.deliver(ctx, inst) {
         return Some({ ..s, configPanel: Null, status: "nowhere to put it" })

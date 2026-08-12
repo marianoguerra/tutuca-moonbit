@@ -688,3 +688,51 @@ test "an absent optional stays absent rather than becoming an empty string" {
   h.click(".form-create")
   @debug.assert_eq(h.find_all(".the-counter").length(), 1)
 }
+
+///|
+/// A fixture applied to a component that is ALREADY placed.
+///
+/// Placing and reconfiguring are different operations: placing CONSTRUCTS, and
+/// reconfiguring WRITES THROUGH field by field so that everything the schema
+/// does not name survives. A fixture is a statement about arguments, so the
+/// panel has to resolve it to those arguments — handing the NAME down to a
+/// constructor works only on the path where a constructor runs.
+///
+/// It used to pass an empty map on the other path, and a per-field write cannot
+/// tell that apart from "nothing changed": the panel closed and the fixture
+/// silently did nothing. Only ctrl/cmd-clicking a catalog entry — which opens
+/// the form BEFORE placing — ever applied one.
+///
+/// Resolving at the panel is also what keeps the write-through honest: the
+/// branch below it applies the fixture's arguments field by field to the
+/// instance that is already there, rather than replacing it — so a fixture that
+/// names `count` and not `label` leaves `label` alone, and anything the guest
+/// keeps privately is never in the conversation at all.
+test "a fixture applies to a component that is already there" {
+  let guest = StubGuest::new()
+  let h = mount_app(guest~)
+  h.click(".universal-add")
+  pick(h, "Counter")
+  h.type_into(".field-string", "tally")
+  h.type_into(".field-number", "5")
+  h.click(".form-create")
+  @debug.assert_eq(h.text(".guest-count"), "5")
+
+  // The panel offers the same fixture the placing form did.
+  h.click(".universal-badge")
+  @debug.assert_eq(h.texts(".form-init"), ["at-three — Starts at three."])
+  h.click(".form-init")
+  @debug.assert_eq(h.find_all(".config-panel").length(), 0)
+  @debug.assert_eq(h.text(".guest-count"), "3")
+
+  // The instance was written to, not replaced: the cell still holds one
+  // component and the badge still names it.
+  @debug.assert_eq(h.find_all(".the-counter").length(), 1)
+  @debug.assert_eq(h.text(".universal-badge"), "Counter")
+
+  // and it is still the component it was: reopening the panel finds the same
+  // instance, holding what the fixture put in it.
+  h.click(".universal-badge")
+  @debug.assert_eq(h.text(".config-title"), "counterlib/Counter")
+  @debug.assert_eq(h.text(".guest-count"), "3")
+}

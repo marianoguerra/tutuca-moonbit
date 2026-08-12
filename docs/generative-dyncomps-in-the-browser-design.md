@@ -7,7 +7,6 @@ and no native toolchain.
 [`dyncomp/SECURITY.md`](../dyncomp/SECURITY.md) is what a bundle can and cannot
 do. [`dyncomp/ARCHITECTURE.md`](../dyncomp/ARCHITECTURE.md) is the shape above
 them. This is how a bundle comes into existence without a build machine.
-[`dyncomp-playground.md`](dyncomp-playground.md) is the execution plan.
 
 ## The claim
 
@@ -130,15 +129,32 @@ imports it) and one `linkCore` with the fixed 14-entry `exportedFunctions` list.
 The wasm target uses linear-memory strings, so `useJsBuiltinString` is false —
 unlike the wasm-gc host path, which depends on JS String Builtins.
 
-**One upstream gap.** `moon` passes `moonc link-core` five wasm-specific flags;
-`moonc-web`'s `linkCore` exposes only `exportedFunctions`. Linking with what it
-can express today produces all 14 canonical exports but **no `memory` export**,
-which `abi.mjs` requires to lift and lower strings. Adding
-`-export-memory-name memory` and `-heap-start-address 16` yields a module
-structurally identical to the native one (differing only in the `name` custom
-section) that passes `wasm-tools component embed` + `component new`.
+**One upstream gap.** `moon build --target wasm --release --dry-run` in
+`guests/counter` shows `moonc link-core` receiving five wasm-specific flags:
 
-So the gap is two parameters in `@moonbit/moonc-worker`, and nothing else.
+| flag | exposed by `moonc-web` `linkCore`? |
+|---|---|
+| `-exported_functions=…` | yes — `exportedFunctions` |
+| `-export-memory-name memory` | **no** |
+| `-heap-start-address 16` | **no** |
+| `-wasm-module-name …` | no (cosmetic — `name` custom section only) |
+| `-pkg-config-path ./gen/moon.pkg` | no (redundant; moon passes the flags explicitly) |
+
+Grepping the vendored `moonc-web.cjs` confirms this is a real gap and not a
+spelling difference: it reads exactly `target`, `useJsBuiltinString`,
+`importedStringConstants`, `exportedFunctions`, `outputFormat`, `testMode`,
+`debug`, `stopOnMain`, `noOpt` — zero occurrences of any memory or heap flag.
+
+Linking with **only** what `moonc-web` can express today produces all 14
+canonical exports but **no `memory` export**, which `abi.mjs` requires to lift
+and lower strings. Adding `-export-memory-name memory` and
+`-heap-start-address 16` yields a module structurally identical to the native one
+(differing only in the `name` custom section, from omitting `-wasm-module-name`)
+that passes `wasm-tools component embed` + `component new` — confirming it is a
+valid `tutuca:component` core module.
+
+So the gap is two parameters in `@moonbit/moonc-worker`, and nothing else. Not
+jco, not wit-bindgen, not wasm-tools.
 
 ### The mount seam
 
@@ -180,6 +196,25 @@ ustar writer plus gzip. The browser port swaps `node:zlib` for
    from archives precisely because "warning before importing page-authority code
    is not a sandbox" (SECURITY.md §2). A browser-built bundle must contain the
    same three things and no more: `tutuca.json`, one core wasm, HTML views.
+
+### What validation is given up
+
+Beyond the four things above, which `abi.mjs` already owns, skipping
+`embed`/`new` gives up exactly one thing: **build-time WIT conformance
+validation**. The trade:
+
+- The world is fixed and known (`tutuca:component@0.6.0`), and the export list is
+  generated, not hand-authored per guest.
+- `abi.mjs` binds imports by name against a closed table, so an out-of-contract
+  import is refused **at load time, host-side** — which SECURITY.md already
+  treats as the security-relevant check. A build-time tool noticing later is
+  weaker, not stronger.
+- The native `guests/build-guest.mjs` path keeps the full validation, so CI still
+  proves the bindings and the world agree.
+
+The browser path is a *faster* path to the same artifact, not a replacement for
+the validated one. Verification step 3 below closes the loop by running the
+round-trip in CI, where wasm-tools already exists.
 
 ## Security consequences
 

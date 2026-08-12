@@ -81,27 +81,17 @@ fn UniversalUi::make_(
 fn UniversalUi::build(
   self : UniversalUi,
   ref_ : @registry.ComponentRef,
-  init : String,
   args : Map[String, @tutuca.Value],
 ) -> @tutuca.Value? {
   if !is_builtin(ref_) {
-    return (self.make)(ref_, init, args)
+    // No fixture name crosses here. A named fixture is resolved to its
+    // arguments by whoever asked (`place_form`), because a fixture is a
+    // statement about ARGUMENTS and this seam is the only one that takes them —
+    // the other thing a person does with a fixture is apply it to a component
+    // that already exists, which constructs nothing at all.
+    return (self.make)(ref_, "", args)
   }
-  // A named fixture is the component's own answer to "what arguments", so it
-  // wins over whatever was in the form beside it.
-  let with_init = if init == "" {
-    args
-  } else {
-    match self.registry.describe(ref_) {
-      Some(d) =>
-        match d.inits.filter(i => i.name == init) {
-          [chosen, ..] => chosen.args
-          _ => args
-        }
-      None => args
-    }
-  }
-  match self.std.build(ref_.name, with_init) {
+  match self.std.build(ref_.name, args) {
     Null => None
     v => Some(v)
   }
