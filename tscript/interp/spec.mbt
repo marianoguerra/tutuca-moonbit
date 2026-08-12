@@ -1,0 +1,104 @@
+// Spec for the interpreter: what running a body needs and what it produces.
+// READONLY by convention; the implementation is in eval.mbt / run.mbt.
+
+///|
+/// What a body asked the framework to do, beyond changing its own state.
+///
+/// The vocabulary is the one `dyncomp`'s `ControlMsg` already has, and that is
+/// not a coincidence: a guest dispatching inside its own wasm answers with
+/// exactly this list, so an interpreted card and a compiled one hand the host
+/// the same thing. Neither knows what the host will do with it.
+pub(all) enum Effect {
+  /// `send 'flash' .msg` — at this component.
+  ESend(name~ : String, args~ : Array[@tutuca.Value])
+  /// `bubble 'rowPicked' @key` — up the path it was raised on.
+  EBubble(name~ : String, args~ : Array[@tutuca.Value])
+  /// `request 'loadData'` — resolved through the registry, not a position.
+  ERequest(name~ : String)
+  /// `sendAt &.status 'flash' 'Saved'` — at a POSITION, relative to this
+  /// component. The steps are what `&` reified; the host concatenates its own
+  /// path in front, exactly as the MoonBit idiom does by hand.
+  ESendAt(
+    steps~ : Array[@tutuca.Step],
+    name~ : String,
+    args~ : Array[@tutuca.Value]
+  )
+  /// `stop`
+  EStop
+} derive(Debug, Eq)
+
+///|
+/// What a name means while a body runs.
+///
+/// Three scopes, and they do not shadow each other: `.field` is state, a bare
+/// name is a parameter, `@name` is a binding. That is the same separation the
+/// sigils make in a template, which is why a reader needs no scoping rule.
+pub(all) struct Env {
+  /// This component's fields.
+  state : Map[String, @tutuca.Value]
+  /// The declaration's parameters, bound to the dispatch arguments.
+  params : Map[String, @tutuca.Value]
+  /// `@value`, `@key`, `@index`, `@iter`, and whatever an `enrich` produced.
+  binds : Map[String, @tutuca.Value]
+  /// What the block declares, so an application can reach a `pred` or a
+  /// `compute`. Keyed by name; a `pred` and a `compute` share the namespace
+  /// because both answer an application.
+  callables : Map[String, @tscript.Decl]
+  /// The component's declared schema, when there is one. Used for exactly one
+  /// thing: an assignment into an integer field truncates, matching what the
+  /// generated codec's decode does with the same value.
+  schema : @tutuca.SchemaInfo?
+}
+
+///|
+/// An environment over a state map, with nothing else bound.
+declare pub fn Env::of_state(
+  state : Map[String, @tutuca.Value],
+  callables? : Map[String, @tscript.Decl],
+  schema? : @tutuca.SchemaInfo,
+) -> Env
+
+///|
+/// What running a statement body produced.
+///
+/// `state` is None when the body did not finish — a missing key, an index past
+/// the end, a name that did not resolve, a value of the wrong shape. That is
+/// not an error path bolted on: it IS the framework's existing contract, the
+/// same `None` an `update` arm returns and the same thing every generated
+/// mutator does when handed something it cannot use. Effects are dropped with
+/// it, because half a transition is worse than none.
+pub(all) struct Outcome {
+  state : Map[String, @tutuca.Value]?
+  effects : Array[Effect]
+} derive(Debug, Eq)
+
+///|
+/// The outcome of a body that could not finish.
+declare pub fn Outcome::nothing() -> Outcome
+
+///|
+/// Evaluate one expression. None when it could not be evaluated at all —
+/// which is the same thing as the transition around it not happening.
+declare pub fn eval(e : @tscript.Expr, env : Env) -> @tutuca.Value?
+
+///|
+/// Run a statement body against an environment.
+declare pub fn run(body : Array[@tscript.Stmt], env : Env) -> Outcome
+
+///|
+/// Run a declaration whose body is one expression — a `compute` or a `pred`.
+declare pub fn call(d : @tscript.Decl, env : Env) -> @tutuca.Value?
+
+///|
+/// Run a declaration whose body is statements, with `args` bound to its
+/// parameters in order.
+///
+/// A body declaring more parameters than the dispatch carried binds the extras
+/// to `Null` rather than refusing: an argument list is what a caller happened
+/// to write, and the checker is where a disagreement with the schema is
+/// reported.
+declare pub fn dispatch(
+  d : @tscript.Decl,
+  args : Array[@tutuca.Value],
+  env : Env,
+) -> Outcome

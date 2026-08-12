@@ -1,0 +1,62 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tutucard"
+
+import {
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/viewfile",
+  "moonbitlang/core/debug",
+  "moonbitlang/core/ref",
+}
+
+// Values
+pub fn load(String, name~ : String) -> Card raise CardError
+
+// Errors
+pub suberror CardError {
+  BadFile(@viewfile.FileError)
+  BadScript(line~ : Int, message~ : String, span~ : @tscript.Span)
+  NoViews
+  ManyComponents(Array[String])
+}
+pub fn CardError::message(Self) -> String
+
+// Types and methods
+pub(all) struct Card {
+  component : @component.Component
+  issues : Array[CardIssue]
+  def : @statedef.StateDef?
+}
+pub fn Card::initial(Self, fixture? : String) -> Map[String, @core.Value]
+
+pub(all) struct CardIssue {
+  code : String
+  message : String
+  line : Int
+  span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+pub struct CardObj {
+  deck : Deck
+  fields : Map[String, @core.Value]
+  id : @core.ObjId
+}
+pub impl @core.Obj for CardObj
+
+pub struct Deck {
+  comp_id : @ref.Ref[Int]
+  schema : @core.SchemaInfo
+  inputs : Map[String, @tscript.Decl]
+  receives : Map[String, @tscript.Decl]
+  bubbles : Map[String, @tscript.Decl]
+  responses : Map[String, @tscript.Decl]
+  callables : Map[String, @tscript.Decl]
+  alters : Map[String, @tscript.Decl]
+  mutators : Map[String, (@component.FieldBox, Array[@core.Value]) -> @core.Value]
+}
+
+// Type aliases
+
+// Traits

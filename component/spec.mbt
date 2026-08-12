@@ -323,6 +323,7 @@ declare pub fn Component::for_type(
   global_style? : String,
   provide? : Map[String, String],
   lookup? : Map[String, LookupSpec],
+  make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
 ) -> Component
 
 ///|

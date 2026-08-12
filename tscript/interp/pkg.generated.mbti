@@ -1,0 +1,47 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript/interp"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn call(@tscript.Decl, Env) -> @core.Value?
+
+pub fn dispatch(@tscript.Decl, Array[@core.Value], Env) -> Outcome
+
+pub fn eval(@tscript.Expr, Env) -> @core.Value?
+
+pub fn run(Array[@tscript.Stmt], Env) -> Outcome
+
+// Errors
+
+// Types and methods
+pub(all) enum Effect {
+  ESend(name~ : String, args~ : Array[@core.Value])
+  EBubble(name~ : String, args~ : Array[@core.Value])
+  ERequest(name~ : String)
+  ESendAt(steps~ : Array[@core.Step], name~ : String, args~ : Array[@core.Value])
+  EStop
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Env {
+  state : Map[String, @core.Value]
+  params : Map[String, @core.Value]
+  binds : Map[String, @core.Value]
+  callables : Map[String, @tscript.Decl]
+  schema : @core.SchemaInfo?
+}
+pub fn Env::of_state(Map[String, @core.Value], callables? : Map[String, @tscript.Decl], schema? : @core.SchemaInfo) -> Self
+
+pub(all) struct Outcome {
+  state : Map[String, @core.Value]?
+  effects : Array[Effect]
+} derive(Eq, @debug.Debug)
+pub fn Outcome::nothing() -> Self
+
+// Type aliases
+
+// Traits

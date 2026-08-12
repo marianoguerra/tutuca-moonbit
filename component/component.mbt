@@ -313,8 +313,9 @@ pub fn Component::for_type(
   global_style? : String = "",
   provide? : Map[String, String] = Map([]),
   lookup? : Map[String, LookupSpec] = Map([]),
+  make? : (Map[String, @tutuca.Value]) -> @tutuca.Value,
 ) -> Component {
-  new_component(
+  let comp = new_component(
     name,
     common_style,
     global_style,
@@ -324,6 +325,17 @@ pub fn Component::for_type(
     Map([]),
     schema~,
   )
+  // Without this a `for_type` component cannot be INSTANTIATED, only adopted:
+  // `make_fn` defaults to answering Null, and the field is package-private, so
+  // a holder of foreign instances had nowhere to say how one is built. The
+  // dyncomp host worked around it with a `Bundle::make_instance` of its own,
+  // which meant an app root could never simply be a guest. A card needs the
+  // ordinary path, so the parameter is the ordinary answer.
+  match make {
+    Some(f) => comp.make_fn = f
+    None => ()
+  }
+  comp
 }
 
 ///|

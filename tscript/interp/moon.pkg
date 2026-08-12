@@ -1,0 +1,33 @@
+// Running a script block, over `@tutuca.Value`.
+//
+// The first of the language's backends, and the one that makes a component
+// with no compiler behind it possible. It walks the same AST the MoonBit
+// emitter will walk and the wasm-gc emitter would; no backend may add a node
+// the others cannot express, and the conformance corpus is what holds them to
+// that.
+//
+// It depends on `core` and `tscript` and nothing else. In particular it does
+// NOT depend on `component` or on `dyncomp`: what a body produces is a
+// successor state and a list of EFFECTS, and turning an effect into a
+// `ctx.send` or a `ControlMsg` is the host's job. That keeps the evaluator
+// testable as a function — state and arguments in, state and effects out —
+// which is the whole reason the conformance corpus can be a table.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/core/string",
+}
+
+// The corpus is DATA and this package is the first backend held to it. The
+// adapter lives here rather than there so `conformance` stays free of any
+// backend's types.
+import {
+  "marianoguerra/tutuca/tscript/conformance",
+  // The corpus states a SCHEMA per case, because one of the things a backend
+  // can get wrong is what a declared type does to a value on the way in. The
+  // interpreter itself needs no `statedef` — a `SchemaInfo` is all it reads —
+  // so the parse lives in the adapter, where it costs the shipped package
+  // nothing.
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/statedef/info",
+} for "test"

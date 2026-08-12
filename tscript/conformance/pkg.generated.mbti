@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript/conformance"
+
+import {
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn cases() -> Array[Case]
+
+pub fn show_effect(String, Array[@core.Value]) -> String
+
+// Errors
+
+// Types and methods
+pub(all) enum Bucket {
+  BInput
+  BReceive
+  BBubble
+  BResponse
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Case {
+  name : String
+  schema : String
+  script : String
+  before : Map[String, @core.Value]
+  bucket : Bucket
+  handler : String
+  args : Array[@core.Value]
+  after : Map[String, @core.Value]?
+  effects : Array[String]
+}
+
+// Type aliases
+
+// Traits
