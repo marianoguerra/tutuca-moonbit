@@ -92,5 +92,37 @@ check(
 // author is about to fix, and the pane says so.
 check("a card with no script block has none", R.parts(BARE).script, null);
 
+// The pane shows the block's body, not where the block sits in the file. The
+// pair has to compose to the identity on an untouched pane — a projection that
+// rewrites the card just by being LOOKED at is worse than an indented pane.
+check("a pane starts at column zero", R.dedented(p.views[1].text), "<b>row</b>");
+check("…with no line the tags left behind", R.dedented(p.state.text), "state Counter { n: Int }");
+check(
+  "an untouched pane splices back the same characters",
+  R.reindented(p.views[1].text, R.dedented(p.views[1].text)),
+  p.views[1].text,
+);
+check(
+  "an edited pane comes back indented like the block",
+  R.reindented(p.views[1].text, "<b>row</b>\n<i>and more</i>"),
+  "\n  <b>row</b>\n  <i>and more</i>\n",
+);
+// A line the author left empty stays empty: indenting it is how a file grows
+// the trailing whitespace nobody typed.
+check(
+  "a blank line comes back blank",
+  R.reindented(p.views[1].text, "<b>row</b>\n\n<i>more</i>"),
+  "\n  <b>row</b>\n\n  <i>more</i>\n",
+);
+// Content on the tag's own line has no indentation to take, and inventing one
+// would rewrite the line on the first keystroke.
+const inline = R.parts(BARE).views[0];
+check("an inline template is left as it is", R.dedented(inline.text), "<p></p>");
+check(
+  "…and splices back as it is",
+  R.reindented(inline.text, "<p>hi</p>"),
+  "<p>hi</p>",
+);
+
 console.log(failed === 0 ? "\nregions: all checks pass" : `\n${failed} region check(s) failed`);
 process.exit(failed === 0 ? 0 : 1);

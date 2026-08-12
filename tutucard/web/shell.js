@@ -7,7 +7,15 @@
 // mounted, and the runtime that does it is already on the page.
 
 import { EXAMPLES } from "./examples.js";
-import { addView, componentOf, parts, renameView, splice } from "./regions.js";
+import {
+  addView,
+  componentOf,
+  dedented,
+  parts,
+  reindented,
+  renameView,
+  splice,
+} from "./regions.js";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -39,6 +47,15 @@ const DEBOUNCE_MS = 180;
 
 /** Lines the last load complained about, for the gutter. */
 let markedLines = new Set();
+
+/**
+ * The region text the structured pane last agreed with — what it was drawn
+ * from, or what it last spliced in. Compared against rather than the pane's own
+ * value because the pane holds a DEDENTED projection: re-deriving it on every
+ * debounce would fight a typist who indents a line, so the pane is left alone
+ * until the card changes underneath it.
+ */
+let paneEcho = null;
 
 function componentName(source) {
   // The template's id names the component, when it has one. Otherwise the
@@ -208,8 +225,13 @@ function drawPart() {
   els.part.hidden = false;
   // Only when it CHANGED: assigning `value` moves the caret to the end, and
   // this runs on the same debounce as the reload — so a typist would be
-  // fighting it.
-  if (els.part.value !== region.text) els.part.value = region.text;
+  // fighting it. A raw edit, another tab or a new example changes the region
+  // out from under the pane; an edit made HERE does not redraw the pane it
+  // came from.
+  if (region.text !== paneEcho) {
+    els.part.value = dedented(region.text);
+    paneEcho = region.text;
+  }
 }
 
 /** The view tabs, `main` first. */
@@ -288,7 +310,9 @@ function setPart(part) {
 function onPartInput() {
   const region = currentRegion();
   if (!region) return;
-  els.source.value = splice(els.source.value, region, els.part.value);
+  const text = reindented(region.text, els.part.value);
+  paneEcho = text;
+  els.source.value = splice(els.source.value, region, text);
   scheduleReload();
 }
 

@@ -99,6 +99,66 @@ function strip(r) {
 }
 
 /**
+ * How a block is laid out inside its tags: the lines between them, the
+ * indentation those lines share, and whatever precedes the closing tag on its
+ * own line. Null when the block keeps content on the tag's line
+ * (`<template>x</template>`) — there is no indentation to speak of there, and
+ * inventing one would rewrite the line on the first keystroke.
+ */
+function shape(text) {
+  if (!text.startsWith("\n")) return null;
+  const body = text.slice(1).split("\n");
+  const tail = body.pop();
+  if (tail.trim() !== "") return null; // the close shares a line with content
+  const indents = body
+    .filter((l) => l.trim() !== "")
+    .map((l) => /^[ \t]*/.exec(l)[0]);
+  const shortest = indents.reduce((a, b) => (b.length < a.length ? b : a), indents[0] ?? "");
+  // Tabs here and spaces there: no common prefix exists, so take none rather
+  // than slice a line at a column that means nothing in it.
+  const indent = indents.every((i) => i.startsWith(shortest)) ? shortest : "";
+  return { body, indent, tail };
+}
+
+/**
+ * A block's body, without the indentation the tag it sits in gave it.
+ *
+ * The one thing the structured panes normalize. A pane that opens with a blank
+ * line and puts `<div>` at column 2 is showing where the block sits in the
+ * FILE, and the file is what the raw view is for — here the author is editing
+ * the view itself, so it starts at column 0. `reindented` puts the file's shape
+ * back, which keeps the characters that reach the card the author's.
+ *
+ * @param {string} text a region's text, as `parts` sliced it
+ */
+export function dedented(text) {
+  const s = shape(text);
+  if (!s) return text;
+  return s.body
+    .map((l) => (l.startsWith(s.indent) ? l.slice(s.indent.length) : l))
+    .join("\n");
+}
+
+/**
+ * A pane's text, indented the way `text` was, ready to splice back.
+ *
+ * `text` is the region as it stands — the indentation is read from the card
+ * rather than remembered from the draw, so a pane edited after a raw edit lands
+ * the way the block reads NOW.
+ *
+ * @param {string} text a region's text, as `parts` sliced it
+ * @param {string} pane what the pane holds
+ */
+export function reindented(text, pane) {
+  const s = shape(text);
+  if (!s) return pane;
+  // Blank lines stay blank: indenting them is how a file grows the trailing
+  // whitespace nobody typed.
+  const body = pane.split("\n").map((l) => (l === "" ? "" : s.indent + l));
+  return `\n${body.join("\n")}\n${s.tail}`;
+}
+
+/**
  * The source with `region`'s characters replaced.
  *
  * One splice at a time, and the caller re-splits afterwards: two edits against
