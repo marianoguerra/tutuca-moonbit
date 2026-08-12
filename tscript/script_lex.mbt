@@ -54,10 +54,18 @@ pub(all) enum STok {
 } derive(Debug, Eq)
 
 ///|
-/// A token and where it came from.
+/// A token, where it came from, and whether anything separated it from the
+/// token before.
+///
+/// `pre_space` exists for exactly one rule, and the rule is load-bearing: a
+/// `.` continues a path only when it is ATTACHED. Without it `min .a .b` would
+/// parse as `min` applied to the single place `.a.b`, because the two token
+/// streams are otherwise identical — and an application of two place
+/// arguments is one of the commonest shapes the language has.
 pub(all) struct ScriptToken {
   tok : STok
   span : Span
+  pre_space : Bool
 } derive(Debug, Eq)
 
 ///|
@@ -102,8 +110,11 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
   // inside `{` separates two.
   let mut depth = 0
   let mut i = 0
+  // Set by every whitespace and comment run, cleared by every token pushed.
+  let gap : Ref[Bool] = Ref(false)
   fn push(t : STok, start : Int, end_ : Int) -> Unit {
-    out.push({ tok: t, span: { start, end_ } })
+    out.push({ tok: t, span: { start, end_ }, pre_space: gap.val })
+    gap.val = false
   }
 
   fn sep_pending() -> Bool {
@@ -122,10 +133,12 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       if depth == 0 && sep_pending() {
         push(TSep, i, i + 1)
       }
+      gap.val = true
       i = i + 1
       continue
     }
     if c == ' ' || c == '\t' || c == '\r' {
+      gap.val = true
       i = i + 1
       continue
     }
@@ -133,6 +146,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
       if sep_pending() {
         push(TSep, i, i + 1)
       }
+      gap.val = true
       i = i + 1
       continue
     }
@@ -146,6 +160,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
         text.write_char(chars[j])
         j = j + 1
       }
+      gap.val = true
       if doc {
         // One token per `///` line. Joining a run of them into one comment is
         // the parser's job, because a newline between two of them is a real
@@ -284,6 +299,7 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
   while out.last() is Some({ tok: TSep, .. }) {
     out.pop() |> ignore
   }
+  gap.val = true
   push(TEof, n, n)
   out
 }

@@ -31,6 +31,12 @@ fn P::peek(self : P) -> STok {
 }
 
 ///|
+/// Whether the token at the cursor was separated from the one before it.
+fn P::gap(self : P) -> Bool {
+  self.toks[self.at].pre_space
+}
+
+///|
 fn P::peek_at(self : P, n : Int) -> STok {
   let i = self.at + n
   if i < self.toks.length() {
@@ -490,10 +496,12 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
   let mut prev_was_index = false
   for ;; {
     match p.peek() {
-      // `.name` continues the path — but only when a name follows, so a `.`
-      // that starts the next statement is not swallowed.
+      // `.name` continues the path — but only when it is ATTACHED, and only
+      // when a name follows. Detached, it is the next ARGUMENT: `min .a .b`
+      // is two operands and `.a.b` is one place, and whitespace is the only
+      // thing that tells them apart.
       TDot =>
-        if p.peek_at(1) is TIdent(n) {
+        if !p.gap() && p.peek_at(1) is TIdent(n) {
           p.bump() |> ignore
           p.bump() |> ignore
           steps.push(PField(n))
@@ -502,6 +510,9 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
           break
         }
       TLBracket => {
+        if p.gap() {
+          break
+        }
         let br = p.span()
         if for_ref && prev_was_index {
           raise BadPlace(

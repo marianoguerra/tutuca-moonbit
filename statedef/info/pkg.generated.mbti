@@ -1,0 +1,24 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/statedef/info"
+
+import {
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/statedef",
+}
+
+// Values
+pub fn schema_info(@statedef.StateDef, name? : String, fingerprint? : String, inputs? : Array[String], methods? : Array[String], ids? : Array[String], view_names? : Array[String], init_names? : Array[String]) -> @core.SchemaInfo
+
+pub fn ty_info(@statedef.StateDef, @statedef.StateTy) -> @core.TyInfo
+
+pub fn zero_of(@statedef.StateDef, @statedef.StateTy) -> @core.Value
+
+pub fn zero_value(@statedef.StateDef) -> Map[String, @core.Value]
+
+// Errors
+
+// Types and methods
+
+// Type aliases
+
+// Traits

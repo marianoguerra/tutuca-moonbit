@@ -1,0 +1,29 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript/check"
+
+import {
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn check(Array[@tscript.Decl], @statedef.StateDef, surface? : Surface) -> Array[Finding]
+
+// Errors
+
+// Types and methods
+pub(all) struct Finding {
+  code : String
+  message : String
+  span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Surface {
+  inputs : Map[String, Array[@statedef.StateTy?]]
+} derive(Eq, @debug.Debug)
+pub fn Surface::empty() -> Self
+
+// Type aliases
+
+// Traits

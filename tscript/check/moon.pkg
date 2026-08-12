@@ -1,0 +1,19 @@
+// Type-checking a `<script type="tutuca/script">` block against a schema.
+//
+// A package of its own because it is the first thing in the language that
+// needs `statedef`. `tscript` is text in, AST out, and stays that way — it
+// ships to a browser twice over and should carry nothing a parse does not
+// need. Checking is what happens once a declaration meets the type it is
+// about.
+//
+// The governing rule is `viewgen/check_state.mbt`'s, adopted unchanged:
+// **unknown is not wrong**. A `$method` result, a `*dyn`, a bind this block
+// cannot see and a child component's fields are all opaque, and an opaque
+// value silences every check that would have been made of it. A checker that
+// guessed would cost more in false failures than the real ones are worth —
+// which is why almost every rule below is written as "when BOTH sides are
+// known".
+import {
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/statedef",
+}

@@ -1,0 +1,20 @@
+// A parsed schema as RUNTIME description: `StateDef` -> `@tutuca.SchemaInfo`.
+//
+// A sub-package rather than a file in `statedef`, and the reason is stated in
+// `statedef/types.mbt`: `ty_info_src` returns TEXT because "statedef stays a
+// pure text-in/text-out package, and importing core here would drag
+// `@tutuca.Value` in for the sake of one enum". That rule is right and it
+// stays; what changes is that there is now a consumer who needs the VALUE and
+// not the source of it.
+//
+// The consumer is a runtime. `viewgen` emits `ty_info_src` into a generated
+// module and the MoonBit compiler turns it into a `TyInfo` — which works
+// because there is a compiler. A card is mounted in a browser with no
+// generator and no compiler anywhere in the payload, so the same projection
+// has to be available as a function. One declaration, two ways of reaching the
+// same description, and the emitter and this file are checked against each
+// other by the test suite here.
+import {
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/core" @tutuca,
+}
