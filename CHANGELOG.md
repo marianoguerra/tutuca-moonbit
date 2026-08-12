@@ -330,6 +330,43 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Deleting the one nothing could reach is what makes the missing middle
   visible.
 
+- **The slot parser is out of `core`,** in a new `tscript` package —
+  `ParseCtx`, `Issue`, `IssueRole`, `HandlerParse` and the nine `parse_*`
+  entries, plus the tokenizer. `core` never called any of them: the production
+  callers are `anode` (every directive and `<x>` op) and `component`
+  (`provide` / `lookup`), which now import `tscript`. The AST stays where it
+  was, because `Step::ScopeBindStep` embeds a `Val` and that cycle is why the
+  value and path layers share one package.
+
+  `tokenize_value(String) -> Array[String]` is `tokenize(String) ->
+  Array[Token]`, and `Issue` gains a `span`.
+
+- **`viewgen/split.mbt` is a package of its own, `viewfile`,** with `ViewFile`,
+  `ViewSet`, `RawView`, `MacroDef` and a new `FileError` for what a FILE can do
+  wrong — as opposed to what generation can. `@viewgen.split_file` stays and
+  wraps the failure as `GenError::File(e)`, so callers about to call
+  `emit_module` still hold one error type.
+
+### Added
+
+- **Every value-language diagnostic now carries a position.** A `Token` has a
+  half-open character range, an `Issue` has the span of the token it is about,
+  and `@show="empty? Foo"` blames `Foo` at column 7 instead of blaming the
+  attribute. Until now the value language had no position anywhere in it and
+  the best a caller could do was name the enclosing tag.
+
+  Spans are character indices, not UTF-16 units — they index the same
+  `Array[Char]` `viewfile` slices with and the WHATWG tokenizer counts in, so a
+  span from a slot and a span from a file agree on any input. They stop at the
+  token: a failure inside a `$'…'` placeholder reports the whole template
+  token.
+
+- **`<script type="tutuca/script">` is sliced out of a view file** as
+  `ViewFile.script : Block?` — raw text, its character offset and its line.
+  Unparsed on purpose: a state block is self-contained, and checking a script
+  block needs the schema AND the argument types the views imply, neither of
+  which exists at split time. Nothing reads it yet.
+
 ### Fixed
 
 - **A declared bound the field's type cannot carry no longer reaches the
