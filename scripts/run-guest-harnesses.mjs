@@ -44,4 +44,7 @@ if (missing.length > 0) {
 }
 
 console.log("\n── harnesses ──");
-run("node", ["--test", "dyncomp/test/"]);
+// The GLOB, not the directory. `node --test dyncomp/test/` treats the whole
+// directory as one test and reports a single opaque failure; the glob is what
+// CONTRIBUTING.md has always documented, and what discovers the eight files.
+run("node", ["--test", "dyncomp/test/*.test.mjs"]);
