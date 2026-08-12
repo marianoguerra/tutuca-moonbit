@@ -577,10 +577,15 @@ priv struct Post {
   /// the message stands on its own, and what the fold button counts.
   foldable : Int
   folded : Bool
-  /// Whether another component keeps this one's like / repost / fold. A row of
-  /// a thread does: it announces what the reader did and the thread decides,
-  /// which is the ownership tutuca wants (see `Thread`). On its own — the
-  /// default — a post keeps its own.
+  /// Whether this message is a ROW inside a larger surface — a thread, a feed —
+  /// rather than standing on its own. A row draws smaller (the view picks the
+  /// avatar size from it) and sits under something that owns the list it is in.
+  ///
+  /// It used to mean more than that: a row's like / repost / fold was kept by
+  /// the component above, because a child in a list could not return a successor
+  /// (the host encoded a nested instance only at the top level of a written
+  /// value, so the list came back as plain data and the write was refused). That
+  /// is fixed, so a row keeps its own answers like anything else.
   owned : Bool
 }
 
@@ -659,44 +664,34 @@ fn facets_value(facets : Array[Facet]) -> @values.Value {
 impl DynComponent for Post with fn handle(self, bucket, name, _args) {
   guard bucket is INPUT else { return Unhandled }
   match name {
-    // Optimistic, and announced: the count moves here and the bubble is what
-    // a host would turn into the `app.bsky.feed.like` write. This bundle
-    // cannot reach the network — it is telling whoever holds it what happened.
+    // Optimistic, and announced: the flag is THIS row's — it returns its own
+    // successor, and the host writes it home into whatever list holds it — while
+    // the bubble is what a host would turn into the `app.bsky.feed.like` write.
+    // The two are different jobs: one is what the screen shows, the other is
+    // what somebody with a network connection should do about it. This bundle
+    // has no network and is only saying what happened.
     "toggleLike" => {
       @control.emit(if self.liked { "unliked" } else { "liked" }, [
         vtext(self.msg.uri),
       ])
-      // `owned`: a row does not keep the answer, the thread does — and hands
-      // this row back rebuilt. Anything else keeps it.
-      if self.owned {
-        Unchanged
-      } else {
-        Changed({ ..self, liked: !self.liked } as &DynComponent)
-      }
+      Changed({ ..self, liked: !self.liked } as &DynComponent)
     }
     "toggleRepost" => {
       @control.emit(if self.reposted { "unreposted" } else { "reposted" }, [
         vtext(self.msg.uri),
       ])
-      if self.owned {
-        Unchanged
-      } else {
-        Changed({ ..self, reposted: !self.reposted } as &DynComponent)
-      }
+      Changed({ ..self, reposted: !self.reposted } as &DynComponent)
     }
-    // The fold flag is THIS row's, and the bubble is what the thread above
-    // hears — it is the one that knows which rows are under this one, and this
-    // one does not need to.
+    // The fold flag is THIS row's too, and the bubble is what the thread above
+    // hears: the row knows it is folded, and only the thread knows which rows
+    // are UNDER it and therefore stop rendering. Both halves are needed, and
+    // they are not the same fact.
     "toggleFold" => {
       guard self.foldable > 0 else { return Unchanged }
       @control.emit(if self.folded { "unfolded" } else { "folded" }, [
         vtext(self.msg.uri),
       ])
-      if self.owned {
-        Unchanged
-      } else {
-        Changed({ ..self, folded: !self.folded } as &DynComponent)
-      }
+      Changed({ ..self, folded: !self.folded } as &DynComponent)
     }
     _ => Unhandled
   }
@@ -860,8 +855,8 @@ fn child_args(
     ("liked", @values.Value::Boolean(liked)),
     ("reposted", @values.Value::Boolean(reposted)),
     ("folded", @values.Value::Boolean(folded)),
-    // the row's state belongs to whoever built it: its buttons announce and
-    // this component decides (see Thread)
+    // this message is a row inside something larger, which is what the view
+    // reads to draw it smaller
     ("owned", @values.Value::Boolean(true)),
   ]
 }
@@ -896,10 +891,14 @@ priv struct Thread {
   focus : String
   /// One child token per message, in `posts` order.
   children : Array[UInt64]
-  /// The uris this reader liked / reposted / folded away. A message with no
-  /// uri cannot be tracked here, and its buttons do nothing but announce.
-  liked : Array[String]
-  reposted : Array[String]
+  /// The uris this reader folded away. It is here rather than on the row
+  /// because it is the THREAD's question: which messages stop rendering because
+  /// something above them is folded. The row keeps its own `folded` for its own
+  /// glyph, and the two are different facts about the same click.
+  ///
+  /// Likes and reposts are NOT here. They used to be, kept only so a rebuilt row
+  /// could be handed them back — a workaround for a child in a list being unable
+  /// to return a successor. The row keeps them now.
   collapsed : Array[String]
 }
 
@@ -916,6 +915,24 @@ fn replies_under(posts : Array[Msg], i : Int) -> Int {
     n = n + 1
   }
   n
+}
+
+///|
+/// A list the HOST is writing back, as child tokens.
+///
+/// `None` unless every element is an instance, which is what makes a write of
+/// plain data — a fixture, a form, anything that is not the list this component
+/// handed out — a refusal rather than a silently emptied field.
+fn tokens_of(v : @values.Value) -> Array[UInt64]? {
+  guard v is @values.Value::List(h) else { return None }
+  let out : Array[UInt64] = []
+  for i in 0U..<@values.list_len(h) {
+    guard @values.list_get(h, i) is @values.Value::Instance(t) else {
+      return None
+    }
+    out.push(t)
+  }
+  Some(out)
 }
 
 ///|
@@ -946,8 +963,6 @@ fn Thread::make_row(self : Thread, i : Int) -> UInt64 {
       m,
       focus=m.uri != "" && m.uri == self.focus,
       foldable=replies_under(self.posts, i),
-      liked=self.liked.contains(m.uri),
-      reposted=self.reposted.contains(m.uri),
       folded=self.collapsed.contains(m.uri),
     ),
   )
@@ -960,21 +975,6 @@ fn Thread::build_rows(self : Thread) -> Thread {
   let children : Array[UInt64] = []
   for i in 0..<self.posts.length() {
     children.push(self.make_row(i))
-  }
-  { ..self, children, }
-}
-
-///|
-/// One row again, with whatever this reader has just done to it. The old token
-/// is released because this component will not return it any more, which is
-/// exactly what `drop-instance` is for.
-fn Thread::rebuild_row(self : Thread, uri : String) -> Thread {
-  let children = self.children.copy()
-  for i in 0..<self.posts.length() {
-    if self.posts[i].uri == uri && i < children.length() {
-      @control.drop_instance(children[i])
-      children[i] = self.make_row(i)
-    }
   }
   { ..self, children, }
 }
@@ -1039,30 +1039,22 @@ impl DynComponent for Thread with fn handle(self, bucket, name, args) {
   guard args is [@values.Value::Text(uri), ..] else { return Unhandled }
   guard uri != "" && self.has(uri) else { return Unchanged }
   match name {
+    // The row has already flipped its OWN `folded` and returned a successor;
+    // what this adds is the half only the thread knows — which messages sit
+    // under it and therefore stop rendering. It does not rebuild the row:
+    // destroying and remaking it would throw away the successor the host just
+    // wrote home, along with whatever else the reader had done to it.
     "folded" | "unfolded" => {
       @control.stop_propagation()
       let on = name == "folded"
       guard self.collapsed.contains(uri) != on else { return Unchanged }
-      let next : Thread = {
-        ..self,
-        collapsed: with_uri(self.collapsed, uri, on),
-      }
-      Changed(next.rebuild_row(uri) as &DynComponent)
+      Changed(
+        { ..self, collapsed: with_uri(self.collapsed, uri, on) }
+        as &DynComponent,
+      )
     }
-    "liked" | "unliked" => {
-      let next : Thread = {
-        ..self,
-        liked: with_uri(self.liked, uri, name == "liked"),
-      }
-      Changed(next.rebuild_row(uri) as &DynComponent)
-    }
-    "reposted" | "unreposted" => {
-      let next : Thread = {
-        ..self,
-        reposted: with_uri(self.reposted, uri, name == "reposted"),
-      }
-      Changed(next.rebuild_row(uri) as &DynComponent)
-    }
+    // `liked` / `reposted` are deliberately not handled: the row keeps them, and
+    // the announcement is for whoever above can actually write a record.
     _ => Unhandled
   }
 }
@@ -1101,14 +1093,30 @@ impl DynComponent for Thread with fn with_field(self, name, v) {
         posts: msgs_of(h),
         focus: self.focus,
         children: [],
-        liked: [],
-        reposted: [],
         collapsed: [],
       }
       Some(next.build_rows() as &DynComponent)
     }
     ("focus", @values.Value::Text(s)) =>
       Some(({ ..self, focus: s } : Thread).build_rows() as &DynComponent)
+    // A row returned a successor and the host is writing the whole list home.
+    // What it hands back is the list it was SHOWN — `visible()` — so it goes
+    // home through the same function that decided those positions. A length that
+    // does not match means the two disagree about what is on screen, and
+    // guessing which position a token belongs to is worse than refusing.
+    ("rows", _) =>
+      match tokens_of(v) {
+        Some(shown) => {
+          let at = self.visible().filter(i => i < self.children.length())
+          guard at.length() == shown.length() else { None }
+          let children = self.children.copy()
+          for k, i in at {
+            children[i] = shown[k]
+          }
+          Some({ ..self, children, } as &DynComponent)
+        }
+        None => None
+      }
     _ => None
   }
 }
@@ -1130,9 +1138,7 @@ fn make_thread(args : Array[(String, @values.Value)]) -> &DynComponent {
       _ => ()
     }
   }
-  (
-    { posts, focus, children: [], liked: [], reposted: [], collapsed: [] } :
-    Thread).build_rows()
+  ({ posts, focus, children: [], collapsed: [] } : Thread).build_rows()
   as &DynComponent
 }
 
@@ -1152,8 +1158,6 @@ priv struct Profile {
   following : Bool
   posts : Array[Msg]
   children : Array[UInt64]
-  liked : Array[String]
-  reposted : Array[String]
 }
 
 ///|
@@ -1162,14 +1166,7 @@ fn Profile::make_row(self : Profile, i : Int) -> UInt64 {
   let m = self.posts[i]
   @control.make_instance(
     "Post",
-    child_args(
-      { ..m, depth: 0 },
-      focus=false,
-      foldable=0,
-      liked=self.liked.contains(m.uri),
-      reposted=self.reposted.contains(m.uri),
-      folded=false,
-    ),
+    child_args({ ..m, depth: 0 }, focus=false, foldable=0),
   )
 }
 
@@ -1178,18 +1175,6 @@ fn Profile::build_rows(self : Profile) -> Profile {
   let children : Array[UInt64] = []
   for i in 0..<self.posts.length() {
     children.push(self.make_row(i))
-  }
-  { ..self, children, }
-}
-
-///|
-fn Profile::rebuild_row(self : Profile, uri : String) -> Profile {
-  let children = self.children.copy()
-  for i in 0..<self.posts.length() {
-    if self.posts[i].uri == uri && i < children.length() {
-      @control.drop_instance(children[i])
-      children[i] = self.make_row(i)
-    }
   }
   { ..self, children, }
 }
@@ -1220,7 +1205,7 @@ impl DynComponent for Profile with fn get_field(self, name) {
 }
 
 ///|
-impl DynComponent for Profile with fn handle(self, bucket, name, args) {
+impl DynComponent for Profile with fn handle(self, bucket, name, _args) {
   match (bucket, name) {
     // Same shape as a row's like: the flag moves, the follower count follows
     // it through `bump`, and the bubble is what a host would turn into the
@@ -1231,25 +1216,10 @@ impl DynComponent for Profile with fn handle(self, bucket, name, args) {
       ])
       Changed({ ..self, following: !self.following } as &DynComponent)
     }
-    // a row of the feed announced; the flags are this component's, as in Thread
-    (BUBBLE, "liked" | "unliked" | "reposted" | "unreposted") =>
-      match args {
-        [@values.Value::Text(uri), ..] => {
-          guard uri != "" && self.posts.iter().any(m => m.uri == uri) else {
-            return Unchanged
-          }
-          let next : Profile = if name is ("liked" | "unliked") {
-            { ..self, liked: with_uri(self.liked, uri, name == "liked") }
-          } else {
-            {
-              ..self,
-              reposted: with_uri(self.reposted, uri, name == "reposted"),
-            }
-          }
-          Changed(next.rebuild_row(uri) as &DynComponent)
-        }
-        _ => Unhandled
-      }
+    // A row's like or repost is the ROW's, and it announces upward for whoever
+    // can write the record. A feed has nothing to add to that — unlike a thread,
+    // which still owns which rows a fold hides — so it does not handle them and
+    // they keep bubbling.
     _ => Unhandled
   }
 }
@@ -1285,9 +1255,18 @@ impl DynComponent for Profile with fn with_field(self, name, v) {
       Some({ ..self, following: b } as &DynComponent)
     ("posts", @values.Value::List(h)) =>
       Some(
-        ({ ..self, posts: msgs_of(h), liked: [], reposted: [] } : Profile).build_rows()
-        as &DynComponent,
+        ({ ..self, posts: msgs_of(h) } : Profile).build_rows() as &DynComponent,
       )
+    // A row returned a successor and the host is writing the whole list home.
+    // A feed shows every row it has, so the positions map straight across.
+    ("rows", _) =>
+      match tokens_of(v) {
+        Some(children) => {
+          guard children.length() == self.children.length() else { None }
+          Some({ ..self, children, } as &DynComponent)
+        }
+        None => None
+      }
     _ => None
   }
 }
@@ -1327,8 +1306,6 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       following,
       posts,
       children: [],
-      liked: [],
-      reposted: [],
     } : Profile).build_rows()
   as &DynComponent
 }

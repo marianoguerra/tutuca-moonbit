@@ -14,8 +14,10 @@
 //   2. A thread is a list of child `Post`s, made through `control.make-instance`
 //      — the only shape in which a reply keeps its links, since a view cannot
 //      iterate a value it found inside another iteration.
-//   3. Folding is a bubble from a row and a filter here: the children are built
-//      once, so a like three rows down survives a fold.
+//   3. A row keeps its OWN like / repost / fold and returns a successor; the
+//      thread additionally keeps which uris are folded, because only it knows
+//      which rows sit under one and therefore stop rendering. Two facts about
+//      the same click, and neither is the other's.
 //   4. The engagement flags stay APART from the counts the record came with.
 //
 // The fake host below implements `make-instance` the way the real bridge does
@@ -89,6 +91,22 @@ const field = (inst, name) => plain(inst.getField(name));
 /// The child a row token names, and the field the view would read off it.
 const child = (token) => children.get(token);
 const rowField = (inst, name) => field(inst, 'rows').map((t) => field(child(t), name));
+
+/// What the real bridge does when a guest returns a successor: give it a handle
+/// of its own, in the same table `make-instance` fills.
+const register = (inst) => { const t = nextToken++; children.set(t, inst); return t; };
+
+/// The host writing a changed child home: it hands the parent its WHOLE list
+/// with the new instance in place of the old one, which is
+/// `obj_with_field("rows", List([… Obj …]))`. It only works because `child_json`
+/// encodes an instance at any depth inside the value being written — before
+/// that the list arrived as plain data, the guest refused it, and the successor
+/// was dropped on the floor.
+const writeRow = (parent, at, next) => {
+  const tokens = field(parent, 'rows').slice();
+  tokens[at] = register(next);
+  return parent.withField('rows', list(tokens.map((t) => ({ tag: 'instance', val: t }))));
+};
 
 /// The message shape all three components read, as the host hands it over.
 const message = (m) => map({
@@ -328,80 +346,84 @@ test('a thread is a list of Posts, indented by depth', { skip: !built }, () => {
   assert.equal(t.callMethod('summary', []).val, '4 messages');
 });
 
-test('folding is a bubble from a row and a filter here', { skip: !built }, () => {
+test('folding is the row\'s flag and the thread\'s filter, not one or the other', { skip: !built }, () => {
   const t = thread();
   const rows = field(t, 'rows');
   emitted.length = 0;
 
-  // The row announces and keeps nothing: its state belongs to the thread, so
-  // `toggleFold` is `unchanged` plus a bubble.
-  assert.equal(child(rows[1]).handleEvent('input', 'toggleFold', []), undefined);
+  // The row keeps its own flag — it returns a successor — AND announces, because
+  // the thread is the only one that knows what sits under it.
+  const folded = child(rows[1]).handleEvent('input', 'toggleFold', []);
+  assert.notEqual(folded, undefined);
+  assert.equal(field(folded, 'folded'), true);
+  assert.equal(field(folded, 'foldLabel'), '+1');
   assert.deepEqual(emitted, [['folded', [{ tag: 'text', val: 'at://b/app.bsky.feed.post/2' }]]]);
 
-  // …and the thread, hearing it, drops what was under it, hands that row back
-  // rebuilt with the flag, and keeps the bubble from travelling on to a page
-  // that has no use for it
+  // The host writes that successor home, and the thread — hearing the bubble —
+  // drops what was under it and keeps the bubble from travelling on to a page
+  // that has no use for it.
   emitted.length = 0;
-  const t2 = t.handleEvent('bubble', 'folded', [text('at://b/app.bsky.feed.post/2')]);
+  const t2 = writeRow(t, 1, folded)
+    .handleEvent('bubble', 'folded', [text('at://b/app.bsky.feed.post/2')]);
   assert.deepEqual(rowField(t2, 'name'), ['Alice', 'Bob', 'Carol']);
   assert.deepEqual(rowField(t2, 'folded'), [false, true, false]);
   assert.deepEqual(rowField(t2, 'foldLabel'), ['−', '+1', '−']);
   assert.equal(t2.callMethod('summary', []).val, '4 messages · 1 folded away');
   assert.deepEqual(emitted.map(([n]) => n), ['stopPropagation']);
 
-  // only the folded row was rebuilt; the others are the same children, which
-  // is what keeps a like three rows down
+  // The thread rebuilt NOTHING: every row it did not touch is the same child it
+  // was, which is what keeps a like three rows down. (It used to destroy and
+  // remake the folded row to hand it the flag back; now the row already has it,
+  // and remaking it would throw away whatever else the reader had done.)
   const after = field(t2, 'rows');
   assert.equal(after[0], rows[0]);
-  assert.notEqual(after[1], rows[1]);
+  assert.equal(after[2], rows[3]);
 
   // folding the root takes everything below it
-  const rootFolded = t2.handleEvent('bubble', 'folded', [text('at://a/app.bsky.feed.post/1')]);
+  const rootRow = child(field(t2, 'rows')[0]);
+  const rootFolded = writeRow(t2, 0, rootRow.handleEvent('input', 'toggleFold', []))
+    .handleEvent('bubble', 'folded', [text('at://a/app.bsky.feed.post/1')]);
   assert.deepEqual(rowField(rootFolded, 'name'), ['Alice']);
   // and unfolding puts them back
   const back = rootFolded
     .handleEvent('bubble', 'unfolded', [text('at://a/app.bsky.feed.post/1')])
     .handleEvent('bubble', 'unfolded', [text('at://b/app.bsky.feed.post/2')]);
   assert.equal(field(back, 'rows').length, 4);
-  assert.deepEqual(rowField(back, 'folded'), [false, false, false, false]);
-
-  // a row with nothing under it changes nothing, even if it says it folded
-  const leaf = t.handleEvent('bubble', 'folded', [text('at://c/app.bsky.feed.post/4')]);
-  assert.equal(field(leaf, 'rows').length, 4);
 });
 
-test('a row liked in a thread is kept BY the thread, and still announced', { skip: !built }, () => {
+test('a row keeps its own like, and still announces it', { skip: !built }, () => {
   const t = thread();
   emitted.length = 0;
 
-  // the row announces; it does not keep the like, so nothing is superseded and
-  // nothing has to travel back into the thread's list of children
-  assert.equal(child(field(t, 'rows')[0]).handleEvent('input', 'toggleLike', []), undefined);
+  // The row is the one that changed, so the row is the one that returns a
+  // successor. The thread has nothing to add — it does not handle the bubble at
+  // all, and does not stop it: only whoever is above can write the record.
+  const row = child(field(t, 'rows')[0]);
+  const liked = row.handleEvent('input', 'toggleLike', []);
+  assert.notEqual(liked, undefined);
+  assert.equal(field(liked, 'liked'), true);
+  // the count the record came with is untouched; the flag is added on top
+  assert.equal(field(liked, 'likeCount'), 0);
+  assert.equal(field(liked, 'likes'), '1');
   assert.deepEqual(emitted.map(([n]) => n), ['liked']);
 
   emitted.length = 0;
-  const liked = t.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]);
-  assert.deepEqual(rowField(liked, 'liked'), [true, false, false, false]);
-  // the count the record came with is still what it was; the flag is added on
-  assert.deepEqual(rowField(liked, 'likeCount'), [0, 0, 0, 0]);
-  assert.deepEqual(rowField(liked, 'likes'), ['1', '0', '0', '0']);
-  // and the bubble is NOT stopped: only whoever is above can write the record
+  const t2 = writeRow(t, 0, liked);
+  assert.deepEqual(rowField(t2, 'liked'), [true, false, false, false]);
+  assert.deepEqual(rowField(t2, 'likes'), ['1', '0', '0', '0']);
+  // the thread neither claimed the bubble nor stopped it
+  assert.equal(t2.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.deepEqual(emitted, []);
 
-  const unliked = liked.handleEvent('bubble', 'unliked', [text('at://a/app.bsky.feed.post/1')]);
-  assert.deepEqual(rowField(unliked, 'liked'), [false, false, false, false]);
+  const unliked = child(field(t2, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  assert.equal(field(unliked, 'liked'), false);
 
-  // a repost is the same shape. Note this continues from the LATEST thread
-  // rather than from `t`: rebuilding a row releases the token the row had, so
-  // the superseded instance that still names it is not one to read again —
-  // which is true of a superseded instance anyway.
-  const reposted = unliked.handleEvent('bubble', 'reposted', [text('at://c/app.bsky.feed.post/4')]);
-  assert.deepEqual(rowField(reposted, 'reposted'), [false, false, false, true]);
-
-  // a bubble about a message this thread does not have changes nothing
-  assert.equal(reposted.handleEvent('bubble', 'liked', [text('at://z/app.bsky.feed.post/9')]), undefined);
-  // and one from a message with no uri cannot be tracked at all
-  assert.equal(reposted.handleEvent('bubble', 'liked', [text('')]), undefined);
+  // a repost is the same shape, and lands on a different row
+  const reposted = child(field(t2, 'rows')[3]).handleEvent('input', 'toggleRepost', []);
+  const t3 = writeRow(t2, 3, reposted);
+  assert.deepEqual(rowField(t3, 'reposted'), [false, false, false, true]);
+  // and the like three rows up is still there, because nothing was rebuilt
+  assert.deepEqual(rowField(t3, 'liked'), [true, false, false, false]);
 });
 
 test('the focused message is the one the thread was told about', { skip: !built }, () => {
@@ -460,8 +482,12 @@ test('a profile counts a follow on top of the number the record came with', { sk
   assert.deepEqual(rowField(p, 'foldable'), [0, 0]);
   assert.deepEqual(rowField(p, 'owned'), [true, true]);
 
-  // and a row of the feed is kept the same way a thread keeps one
-  const withLike = p.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]);
+  // A row of the feed keeps its own like, exactly as a row of a thread does.
+  // The feed itself has nothing to add — no fold, so nothing it alone knows —
+  // so it does not handle the bubble and does not stop it.
+  const liked = child(field(p, 'rows')[0]).handleEvent('input', 'toggleLike', []);
+  const withLike = writeRow(p, 0, liked);
   assert.deepEqual(rowField(withLike, 'liked'), [true, false]);
+  assert.equal(p.handleEvent('bubble', 'liked', [text('at://a/app.bsky.feed.post/1')]), undefined);
   assert.match(p.callMethod('summary', []).val, /^Alice Alpha @alice\.bsky\.social — 12K followers/);
 });

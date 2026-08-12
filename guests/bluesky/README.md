@@ -82,22 +82,30 @@ like three rows down survives a fold.
 
 ### Where a row's state lives
 
-A row's like, repost and fold are kept by the THREAD (or the profile), keyed by
-uri, and a row is rebuilt with the new flag. `owned` is what a row is told at
-build time so its buttons only announce.
+A row keeps its own like, repost and fold: `toggleLike` returns a successor and
+the host writes it home into whatever list holds the row. It also EMITS —
+`liked`, `reposted`, `folded` with the uri — because what the screen shows and
+what somebody with a network connection should do about it are two different
+jobs, and this bundle can only do the first.
 
-The thread is what knows which messages are under which, so it is the only
-thing that can answer a fold; keeping the like and the repost beside it means
-one answer to "what has this reader done" rather than three places to look.
+The thread keeps one thing beside that, and only because it is the only one who
+can: which uris are folded AWAY. A row knows it is folded — that is its own
+glyph — but which messages sit UNDER it and therefore stop rendering is a fact
+about the tree, and the tree is the thread's. So a fold is two facts about one
+click, and the thread does not rebuild the row to record its half; rebuilding
+would throw away the successor the host just wrote home.
 
-It is also the shape that survived a host limitation. A successor a CHILD
-returns travels home through the parent's field, and until `child_json`
-(`dyncomp/host/dynobj.mbt`) recursed, the bridge markered an instance only at
-the TOP level of the written value while the decoder handled them at any depth
-— so a child inside a LIST field could not come back, and a row that kept its
-own state counted up in the guest and not on the screen. That is fixed now.
-Announcing and being rebuilt is kept because it is the better design, not
-because it is the only one that works.
+A profile has no fold, so it keeps nothing: it does not handle those bubbles at
+all, and they carry on up.
+
+That is not how it was first written. Until `child_json`
+(`dyncomp/host/dynobj.mbt`) recursed, the bridge markered a nested instance only
+at the TOP level of a written value while the decoder already handled them at
+any depth — so a child inside a LIST field could not come back, a row that kept
+its own state counted up in the guest and not on the screen, and the flags had
+to live in the thread keyed by uri with the row rebuilt around them. `owned`
+survives from that arrangement with a smaller job: it now only says "this is a
+row inside something larger", which is what the view reads to draw it smaller.
 
 ### Facets
 

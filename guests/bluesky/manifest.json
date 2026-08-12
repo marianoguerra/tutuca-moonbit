@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "apiVersion": 6,
   "moduleName": "blueskylib",
-  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data — no network, no clock, no capabilities.",
+  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data \u2014 no network, no clock, no capabilities.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
@@ -56,7 +56,7 @@
         },
         {
           "name": "folded",
-          "doc": "This row folded its replies away; carries its uri, and the thread above is what acts on it."
+          "doc": "This row folded its replies away; carries its uri. The row keeps the flag; the thread above is what knows which messages stop rendering because of it."
         },
         {
           "name": "unfolded",
@@ -64,11 +64,11 @@
         },
         {
           "name": "foldTitle",
-          "doc": "What the fold button will do, spelled out — its label is a glyph."
+          "doc": "What the fold button will do, spelled out \u2014 its label is a glyph."
         },
         {
           "name": "owned",
-          "doc": "Set by whoever builds a row; its buttons then only announce."
+          "doc": "Set by whoever builds a row; it draws smaller and sits inside their list."
         }
       ],
       "views": [
@@ -177,7 +177,7 @@
         {
           "name": "images",
           "ty": 4,
-          "doc": "Attached images as { alt }. Only the alt text is rendered — an untrusted bundle may not name an image source.",
+          "doc": "Attached images as { alt }. Only the alt text is rendered \u2014 an untrusted bundle may not name an image source.",
           "required": false
         },
         {
@@ -238,7 +238,7 @@
           "name": "owned",
           "ty": 6,
           "required": false,
-          "doc": "Whether another component keeps this one's like / repost / fold. A row of a thread does — it announces and the thread decides. On its own (the default) a post keeps its own."
+          "doc": "Whether this message is a row inside a larger surface \u2014 a thread, a feed \u2014 rather than standing on its own. A row draws smaller. It keeps its own like / repost / fold either way."
         }
       ],
       "receives": [],
@@ -281,7 +281,7 @@
       "messageDocs": [
         {
           "name": "folded",
-          "doc": "A row folded its replies away — the thread is what knows which rows those are, so it drops them and stops the bubble here."
+          "doc": "A row folded its replies away \u2014 the thread is what knows which rows those are, so it drops them and stops the bubble here."
         },
         {
           "name": "unfolded",
@@ -339,7 +339,7 @@
         {
           "name": "posts",
           "ty": 1,
-          "doc": "The conversation in reading order, each message { uri, displayName, handle, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } — depth being how deep in the reply tree it sits.",
+          "doc": "The conversation in reading order, each message { uri, displayName, handle, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } \u2014 depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
@@ -367,7 +367,7 @@
       "inits": [
         {
           "name": "conversation",
-          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no — it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}]}",
+          "argsJson": "{\"focus\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 2, \"repostCount\": 34, \"likeCount\": 1280, \"depth\": 0}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kbbb\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"does the host have to trust the bundle for this?\", \"createdAt\": \"2026-08-11T14:21:00Z\", \"replyCount\": 1, \"likeCount\": 18, \"depth\": 1}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kccc\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"no \u2014 it declares a schema, and the views are data the host compiles. it never touches the DOM\", \"createdAt\": \"2026-08-11T14:40:00Z\", \"replyCount\": 1, \"likeCount\": 44, \"depth\": 2}, {\"uri\": \"at://did:plc:bob00000000000000000000/app.bsky.feed.post/3kddd\", \"displayName\": \"Bob Beta\", \"handle\": \"bob.bsky.social\", \"text\": \"that is the part I kept getting wrong. thanks!\", \"createdAt\": \"2026-08-11T15:02:00Z\", \"likeCount\": 7, \"depth\": 3}, {\"uri\": \"at://did:plc:carol0000000000000000000/app.bsky.feed.post/3keee\", \"displayName\": \"Carol Gamma\", \"handle\": \"carol.bsky.social\", \"text\": \"how big is one of these bundles?\", \"createdAt\": \"2026-08-11T15:30:00Z\", \"likeCount\": 3, \"depth\": 1}]}",
           "doc": "A five-message conversation three levels deep, focused on its root."
         }
       ],

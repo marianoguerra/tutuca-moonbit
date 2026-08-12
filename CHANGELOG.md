@@ -146,13 +146,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
     be a loop in the component that owns the message. `Thread` and `Profile`
     therefore make one child `Post` per message through
     `control.make-instance` — the only shape in which a reply keeps its links.
-  - A row's like / repost / fold is kept by the thread, keyed by uri, and the
-    row is rebuilt with the new flag — the thread is the only thing that can
-    answer a fold, so it is where the rest belongs too. It is also the shape
-    that survived the `with_field` marker asymmetry `child_json` fixes in this
-    same release: before it, a successor a child returned could not travel back
-    into a parent's LIST field, and a like inside a thread counted up in the
-    guest and not on the screen.
+  - A row keeps its own like / repost / fold and returns a successor; the thread
+    keeps only which uris are folded AWAY, because a row knows it is folded and
+    only the thread knows which messages sit UNDER it and therefore stop
+    rendering. Two facts about one click, and the thread does not rebuild the
+    row to record its half. A profile, having no fold, keeps nothing.
+
+    It was first written with all three kept by the thread and the row rebuilt
+    around them, because `with_field` markered a nested child only at the top
+    level of the written value — see the `child_json` fix below. `owned`
+    survives from that arrangement with a smaller job: it now only says "this is
+    a row inside something larger", which is what the view reads to draw it
+    smaller.
 
 - **`dyncomp/host/wasm/abi.mjs` — the canonical ABI for `tutuca:component`,
   written once instead of shipped in every bundle.** A guest archive can now
