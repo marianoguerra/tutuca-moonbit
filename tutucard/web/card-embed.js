@@ -1,0 +1,261 @@
+// <mb-card src="./cards/counter.html"> — an embeddable, editable CARD.
+//
+// The card sibling of `<mb-playground>` (playground/site/embed.js), and the
+// difference between the two is the whole reason this file is short. That one
+// carries an in-browser MoonBit compiler: a 5.5 MB worker, a per-target
+// prebuilt closure, a manifest, a target toggle, a fallback path for engines
+// without JS-String-Builtins, and an iframe to mount the result in. This one
+// has a `.html` file and a runtime that is already on the page. The edit loop
+// is one call:
+//
+//   globalThis.__tutucard.mount(previewId, source, name)
+//
+// and everything else here draws what it answers.
+//
+// Two deliberate simplifications against the standalone card playground
+// (tutucard/web/shell.js), which is a tool where this is an illustration: no
+// structured editor (the raw file IS the point being made), and no state or
+// activity panels (a reader wants to see the thing work, and the panels are
+// what you open when you are debugging one).
+//
+// LIGHT DOM, not a shadow root, and that is load-bearing rather than lazy. A
+// card's `<style>` blocks are installed into the document by the framework and
+// scoped there, so a shadow root would cut every card off from its own styles;
+// and the host mounts by element id, which `document.getElementById` has to be
+// able to find. The visible cost is that the page's CSS reaches the preview —
+// which for an example embedded in a page is the behaviour you want.
+
+import { componentOf } from "./regions.js";
+
+/** Debounce, so a fast typist re-mounts on pauses rather than per keystroke. */
+const DEBOUNCE_MS = 180;
+
+/** One id per element, so several cards on a page cannot collide. */
+let seq = 0;
+
+/**
+ * The stylesheet, added once for the whole page.
+ *
+ * A `<style>` rather than the constructable kind: this is one small rule set
+ * on a documentation page, and adoptedStyleSheets would buy nothing but a
+ * feature check. Every selector is under `mb-card` so a page that never uses
+ * one pays nothing, and so nothing here reaches a card's own markup.
+ */
+const STYLE = `
+mb-card {
+  display: block;
+  margin: 1rem 0;
+  border: 1px solid var(--border-color, #898ea4);
+  border-radius: var(--standard-border-radius, 5px);
+  overflow: hidden;
+  background: var(--accent-bg, #f5f7ff);
+}
+mb-card .mbc-bar {
+  display: flex; align-items: center; gap: 0.5rem;
+  padding: 0.35rem 0.6rem;
+  border-bottom: 1px solid var(--border-color, #898ea4);
+  font-size: 0.75rem;
+}
+mb-card .mbc-bar .mbc-name { font-weight: 600; }
+mb-card .mbc-bar .mbc-note { margin-left: auto; opacity: 0.55; font-size: 0.7rem; }
+mb-card .mbc-status.good { color: #2a7; }
+mb-card .mbc-status.warn { color: #b58900; }
+mb-card .mbc-status.bad { color: #c33; }
+mb-card .mbc-grid { display: grid; grid-template-columns: 1fr 1fr; }
+mb-card .mbc-source {
+  display: block; width: 100%; box-sizing: border-box;
+  min-height: 18rem; max-height: 32rem; resize: vertical;
+  border: 0; padding: 0.6rem;
+  background: transparent; color: inherit;
+  font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5;
+  tab-size: 2;
+}
+mb-card .mbc-source:focus { outline: none; }
+mb-card .mbc-right {
+  border-left: 1px solid var(--border-color, #898ea4);
+  background: var(--bg, #fff);
+  display: flex; flex-direction: column; min-width: 0;
+}
+mb-card .mbc-preview { padding: 0.75rem; flex: 1; overflow: auto; }
+/* A card that cannot load keeps its last render rather than blanking: a
+   syntax error is the ordinary state of a half-typed line, and a preview that
+   empties between two keystrokes is worse than one that is visibly behind. */
+mb-card .mbc-preview.stale { opacity: 0.45; }
+mb-card .mbc-issues {
+  margin: 0; padding: 0; list-style: none;
+  max-height: 9rem; overflow: auto;
+  border-top: 1px solid var(--border-color, #898ea4);
+  font-family: ui-monospace, monospace; font-size: 0.7rem;
+}
+mb-card .mbc-issues:empty { display: none; }
+mb-card .mbc-issues li { display: flex; gap: 0.4rem; padding: 0.25rem 0.6rem; }
+mb-card .mbc-issues .mbc-where {
+  font: inherit; cursor: pointer; padding: 0 0.3rem;
+  border: 1px solid var(--border-color, #898ea4); border-radius: 3px;
+  background: transparent; color: inherit; flex: 0 0 auto;
+}
+mb-card .mbc-issues code { color: var(--accent, #0d47a1); flex: 0 0 auto; }
+@media (max-width: 768px) {
+  mb-card .mbc-grid { grid-template-columns: 1fr; }
+  mb-card .mbc-right { border-left: 0; border-top: 1px solid var(--border-color, #898ea4); }
+}
+`;
+
+function installStyle() {
+  if (document.getElementById("mb-card-style")) return;
+  const el = document.createElement("style");
+  el.id = "mb-card-style";
+  el.textContent = STYLE;
+  document.head.append(el);
+}
+
+class MbCard extends HTMLElement {
+  connectedCallback() {
+    // Guard against a re-connect (a move in the DOM re-runs this): the element
+    // keeps its id and its app, and rebuilding both would leave the old one
+    // mounted with nothing pointing at it.
+    if (this.previewId) return;
+    installStyle();
+    this.previewId = `mb-card-preview-${++seq}`;
+    this.innerHTML = `
+      <div class="mbc-bar">
+        <span class="mbc-name"></span>
+        <span class="mbc-status">…</span>
+        <span class="mbc-note">edit the card — it re-mounts as you type</span>
+      </div>
+      <div class="mbc-grid">
+        <textarea class="mbc-source" spellcheck="false" autocomplete="off"
+          autocapitalize="off" autocorrect="off"></textarea>
+        <div class="mbc-right">
+          <div class="mbc-preview" id="${this.previewId}"></div>
+          <ul class="mbc-issues"></ul>
+        </div>
+      </div>`;
+    this.sourceEl = this.querySelector(".mbc-source");
+    this.previewEl = this.querySelector(".mbc-preview");
+    this.issuesEl = this.querySelector(".mbc-issues");
+    this.statusEl = this.querySelector(".mbc-status");
+    this.nameEl = this.querySelector(".mbc-name");
+    this.sourceEl.addEventListener("input", () => this.scheduleReload());
+
+    this.loadSource().then(() => {
+      // Mount the first time this element scrolls into view. A card is cheap
+      // — no compiler, nothing fetched — but a page of them still does nothing
+      // until it is looked at, and a reader who never scrolls down pays for
+      // nothing they did not see.
+      this._io = new IntersectionObserver(
+        (entries) => {
+          for (const e of entries) {
+            if (!e.isIntersecting) continue;
+            this._io.disconnect();
+            this.reload();
+          }
+        },
+        { rootMargin: "200px" },
+      );
+      this._io.observe(this);
+    });
+  }
+
+  disconnectedCallback() {
+    this._io?.disconnect();
+    clearTimeout(this._timer);
+    // The app holds transactor subscriptions and delegated DOM listeners, and
+    // nothing else will ever call for them again: this element is the only
+    // thing that knows its mount point.
+    globalThis.__tutucard?.unmount(this.previewId);
+    this.previewId = null;
+  }
+
+  /** The card, from the `src` attribute. */
+  async loadSource() {
+    const src = this.getAttribute("src");
+    if (!src) {
+      this.sourceEl.value = "<!-- <mb-card> needs a src -->";
+      return;
+    }
+    try {
+      const resp = await fetch(src);
+      if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
+      this.sourceEl.value = await resp.text();
+    } catch (e) {
+      this.sourceEl.value = `<!-- failed to load ${src}: ${e.message} -->`;
+    }
+  }
+
+  scheduleReload() {
+    clearTimeout(this._timer);
+    this._timer = setTimeout(() => this.reload(), DEBOUNCE_MS);
+  }
+
+  setStatus(text, cls) {
+    this.statusEl.textContent = text;
+    this.statusEl.className = "mbc-status " + (cls || "");
+  }
+
+  /** Parse, check, mount, and draw what came back. */
+  reload() {
+    if (!globalThis.__tutucard) {
+      this.setStatus("runtime did not load", "bad");
+      return;
+    }
+    const source = this.sourceEl.value;
+    const report = JSON.parse(
+      globalThis.__tutucard.mount(
+        this.previewId,
+        source,
+        componentOf(source) || "Card",
+      ),
+    );
+    if (!report.ok) {
+      this.previewEl.classList.add("stale");
+      this.setStatus("cannot load", "bad");
+      this.drawIssues([
+        {
+          line: report.line,
+          code: "SYNTAX",
+          // The loader's message names its own line because it is also what a
+          // CLI would print. The line button says that here, so drop it.
+          message: report.error.replace(/^line \d+: /, ""),
+          start: report.start,
+          end: report.end,
+        },
+      ]);
+      return;
+    }
+    this.previewEl.classList.remove("stale");
+    this.nameEl.textContent = report.component;
+    const n = report.issues.length;
+    this.setStatus(
+      n === 0 ? "ok" : `${n} issue${n === 1 ? "" : "s"}`,
+      n === 0 ? "good" : "warn",
+    );
+    this.drawIssues(report.issues);
+  }
+
+  drawIssues(issues) {
+    this.issuesEl.replaceChildren();
+    for (const issue of issues) {
+      const li = document.createElement("li");
+      const where = document.createElement("button");
+      where.className = "mbc-where";
+      where.type = "button";
+      where.textContent = `line ${issue.line}`;
+      // The span is in FILE coordinates, which is what the script block's
+      // recorded offset is for: clicking a diagnostic selects the exact
+      // characters it is about.
+      where.addEventListener("click", () => {
+        this.sourceEl.focus();
+        this.sourceEl.setSelectionRange(issue.start, issue.end);
+      });
+      const code = document.createElement("code");
+      code.textContent = issue.code ?? "";
+      const msg = document.createElement("span");
+      msg.textContent = issue.message;
+      li.append(where, code, msg);
+      this.issuesEl.append(li);
+    }
+  }
+}
+
+customElements.define("mb-card", MbCard);

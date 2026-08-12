@@ -15,9 +15,16 @@
       /* Give the embedded playgrounds room to breathe: main already spans the
          full width, so just cap and center them. */
       mb-playground { max-width: 64rem; margin: 1.5rem auto; }
+      mb-card { max-width: 64rem; margin: 1.5rem auto; }
       main > section > p { max-width: 48rem; margin-inline: auto; }
     </style>
     <script type="module" src="./site/embed.js"></script>
+    <!-- The card runtime is a classic script that installs `__tutucard`; the
+         element is a module, and a module runs after a classic one, so the
+         order below is the whole of the wiring. No worker, no payload, no
+         manifest — a card is parsed and mounted. -->
+    <script src="./site/tutucard.js"></script>
+    <script type="module" src="./site/card-embed.js"></script>
   </head>
   <body>
     <nav>
@@ -99,6 +106,30 @@ let counter = counter_component()</code></pre>
           src="./site/examples/toggle.mbt"
           view="./site/examples/toggle.html"
         ></mb-playground>
+
+        <h3>A card — the same file, with no compiler</h3>
+        <p>
+          Every example above compiles MoonBit in your browser. This one does
+          not: a <strong>card</strong> is the same view file — schema, script,
+          templates — <em>interpreted</em>, so it parses and mounts in
+          milliseconds against a runtime that is already on this page. Edit it
+          and it re-mounts as you type; there is nothing to run.
+        </p>
+        <p>
+          What you give up is the part the compiler was for. A card cannot name
+          a MoonBit value, so there are no imports, no closures, and no child
+          components built at run time — and every handler has to fit the
+          language in the <code>tutuca/script</code> block. What it keeps is
+          everything else, including the checking: the diagnostics below the
+          preview are the same ones <code>tutuca gen-views</code> reports, with
+          the same line and column.
+        </p>
+        <mb-card src="./site/cards/counter.html"></mb-card>
+        <p>
+          The <a href="./tutucard/">card playground</a> is the same loader with
+          more panels — the state tree, the dispatch log, and a structured
+          editor that shows one block of the file at a time.
+        </p>
       </section>
 
       <section id="examples">

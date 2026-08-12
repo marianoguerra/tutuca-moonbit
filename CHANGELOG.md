@@ -295,6 +295,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   only when the URL has a real scheme, and as literal text otherwise —
   without that, an ordinary comment body would fill with stray relative links.
 
+### Added
+
+- **`<mb-card>` — a card, embedded in a page as an example.** The card sibling
+  of `<mb-playground>`, and the difference between the two is the point being
+  made: that one carries a 5.5 MB in-browser MoonBit compiler, a worker, a
+  per-target prebuilt closure and a manifest; this one has a `.html` file and a
+  runtime that is already on the page. The edit loop is one call, so the
+  element is an editor, a preview, and the diagnostics the loader answers.
+
+      <script src="./site/tutucard.js"></script>
+      <script type="module" src="./site/card-embed.js"></script>
+      ...
+      <mb-card src="./site/cards/counter.html"></mb-card>
+
+  The landing page embeds one, under the two `<mb-playground>` examples, so the
+  subset is visible next to the thing it is a subset of.
+
+  The host grew the half a page of examples needs: `mount(id, source, name)`
+  and `unmount(id)` address a card by where it renders, and the one `current`
+  app became a map keyed by mount point. `load` is now `mount` at the
+  playground's own element, so the standalone page is one caller of the new
+  entry rather than a second path.
+
+  LIGHT DOM, deliberately. A card's `<style>` blocks are installed into the
+  document and scoped there, so a shadow root would cut every card off from its
+  own styles, and the host mounts by element id, which `getElementById` has to
+  be able to find. The page's CSS reaching the preview is the behaviour an
+  embedded example wants anyway.
+
 ### Changed
 
 - **The corpus writes its handlers in the script block.** Every example whose

@@ -622,6 +622,17 @@ fn dist_steps() -> Array[Step] {
       args: ["playground/build/assemble.mjs"],
     }),
   )
+  // The card runtime, which the landing site's <mb-card> embeds load. Assembled
+  // BEFORE the site, because assemble-site.mjs copies dist/tutucard/tutucard.js
+  // beside the page — the card playground itself is a separate task, but its
+  // runtime is what makes an embedded card on the landing page work at all.
+  steps.push(
+    Run({
+      label: "assemble dist/tutucard (the card runtime the site embeds)",
+      prog: "node",
+      args: ["tutucard/build/assemble.mjs"],
+    }),
+  )
   steps.push(
     Run({
       label: "assemble landing site (dist root)",

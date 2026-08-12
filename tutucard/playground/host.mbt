@@ -5,12 +5,28 @@
 // there is no compiler, no worker and no build step between the two.
 
 ///|
-/// The mounted app, held so the panels can read it after events have morphed
-/// the DOM, and so the next `load` can tear it down.
-let current : Ref[@app.App[@bdom.BrowserNode]?] = Ref(None)
+/// One mounted card: the app, and the dispatches it has raised since it was
+/// mounted.
+///
+/// The app is held so the panels can read it after events have morphed the
+/// DOM, and so the next load into the same place can tear it down.
+priv struct Slot {
+  mut app : @app.App[@bdom.BrowserNode]?
+  activity : Array[Json]
+}
 
 ///|
-/// Where the card mounts. One app per page, which is the playground shape.
+/// The mounted cards, by the id of the element each renders into.
+///
+/// A Map rather than one `current`, because a card is now two things: the
+/// playground page, which has exactly one, and an embedded example, of which a
+/// page of documentation has as many as it has examples. Keying by the mount
+/// point is what makes the second work — the element is where a card lives,
+/// and two cards cannot share one.
+let slots : Map[String, Slot] = Map([])
+
+///|
+/// Where the playground page's card mounts. The embeds pass their own.
 let root_id : Ref[String] = Ref("preview")
 
 ///|
@@ -20,14 +36,29 @@ let root_id : Ref[String] = Ref("preview")
 const ACTIVITY_CAP = 200
 
 ///|
-let activity : Array[Json] = []
+/// The slot for a mount point, made on first use.
+fn slot_of(id : String) -> Slot {
+  match slots.get(id) {
+    Some(s) => s
+    None => {
+      let s = Slot::{ app: None, activity: [] }
+      slots[id] = s
+      s
+    }
+  }
+}
 
 ///|
 /// Install the page-facing entry points.
 ///
-/// `load` is the whole API. Everything else is a getter the panels poll, in
-/// the same shape `playground/host` publishes — so the shell's inspector,
-/// activity and margaui panes work over a card without knowing it is one.
+/// `load` is the whole API for the playground page. Everything else is a
+/// getter the panels poll, in the same shape `playground/host` publishes — so
+/// the shell's inspector, activity and margaui panes work over a card without
+/// knowing it is one.
+///
+/// `mount` / `unmount` are the same loop addressed by mount point rather than
+/// by "the page's one card", which is what an embedded example needs: it
+/// arrives and leaves with its element, and several live side by side.
 pub fn install() -> Unit {
   publish(
     (source, name) => load(source, name),
@@ -35,6 +66,8 @@ pub fn install() -> Unit {
     () => state_json(),
     () => classes_json(),
     () => activity_json(),
+    (id, source, name) => mount_at(id, source, name),
+    id => unmount_at(id),
   )
 }
 
@@ -45,8 +78,34 @@ extern "js" fn publish(
   state : () -> String,
   classes : () -> String,
   activity : () -> String,
+  mount : (String, String, String) -> String,
+  unmount : (String) -> Unit,
 ) -> Unit =
-  #|(load, check, state, classes, activity) => { globalThis.__tutucard = { load, check, state, classes, activity } }
+  #|(load, check, state, classes, activity, mount, unmount) => { globalThis.__tutucard = { load, check, state, classes, activity, mount, unmount } }
+
+///|
+/// Parse, check and mount a card into the element with this id.
+///
+/// The same report `load` answers, and the same teardown-first order — the
+/// difference is only WHERE, which is the whole of what an embed needs. An id
+/// that is not on the page answers `"mounted": false` rather than failing:
+/// an embed that has been removed while a debounce was in flight is an
+/// ordinary thing, not an error to report to a reader.
+pub fn mount_at(id : String, source : String, name : String) -> String {
+  teardown(id)
+  report(source, name, mount_into=Some(id))
+}
+
+///|
+/// Tear a card down and forget its mount point.
+///
+/// Called when an embed leaves the document. Dropping the slot as well as the
+/// app matters: the map is keyed by element id, and a page that adds and
+/// removes embeds would otherwise keep one entry per id it has ever used.
+pub fn unmount_at(id : String) -> Unit {
+  teardown(id)
+  slots.remove(id)
+}
 
 ///|
 /// Parse, check and mount a card. Answers a JSON report the editor reads.
@@ -64,8 +123,7 @@ extern "js" fn publish(
 /// what makes a live editor unusable, and a live editor is the one thing this
 /// exists to be good at.
 pub fn load(source : String, name : String) -> String {
-  teardown()
-  report(source, name, mount_it=true)
+  mount_at(root_id.val, source, name)
 }
 
 ///|
@@ -77,11 +135,11 @@ pub fn load(source : String, name : String) -> String {
 /// them, or the check that keeps the starter cards on this page loading — and
 /// none of those has a DOM.
 pub fn check(source : String, name : String) -> String {
-  report(source, name, mount_it=false)
+  report(source, name, mount_into=None)
 }
 
 ///|
-fn report(source : String, name : String, mount_it~ : Bool) -> String {
+fn report(source : String, name : String, mount_into~ : String?) -> String {
   let card = @tutucard.load(source, name~) catch {
     e => {
       let (line, from, to) = locate(e)
@@ -103,7 +161,10 @@ fn report(source : String, name : String, mount_it~ : Bool) -> String {
       "end": Json::number(i.span.end_.to_double()),
     })
   })
-  let mounted = if mount_it { mount(card) } else { false }
+  let mounted = match mount_into {
+    Some(id) => mount(card, id)
+    None => false
+  }
   Json::object({
     "ok": Json::boolean(true),
     "component": Json::string(card.component.name),
@@ -129,19 +190,20 @@ fn locate(e : @tutucard.CardError) -> (Int, Int, Int) {
 /// Called before every load, and it has to be: the app holds transactor
 /// subscriptions and DOM listeners, and a keystroke-driven editor would
 /// otherwise accumulate one set per character typed.
-fn teardown() -> Unit {
-  match current.val {
+fn teardown(id : String) -> Unit {
+  guard slots.get(id) is Some(slot) else { return }
+  match slot.app {
     Some(app) => app.destroy()
     None => ()
   }
-  current.val = None
-  activity.clear()
+  slot.app = None
+  slot.activity.clear()
 }
 
 ///|
-fn mount(card : @tutucard.Card) -> Bool {
+fn mount(card : @tutucard.Card, id : String) -> Bool {
   let doc = @dom.window().document()
-  guard doc.getElementById(root_id.val) is Some(root_el) else { return false }
+  guard doc.getElementById(id) is Some(root_el) else { return false }
   // The preview element is reused across loads, so whatever the last card
   // rendered has to go before this one renders into it.
   let root_node = @bdom.BrowserNode::from_element(root_el)
@@ -157,12 +219,16 @@ fn mount(card : @tutucard.Card) -> Bool {
     _ => return false
   }
   @glue.install(a)
+  // Into the DOCUMENT, not the mount point: a card's `<style>` blocks are
+  // scoped by the framework, so several embedded cards on one page each add
+  // their own rules without reaching each other's nodes.
   @glue.install_styles(a, @bdom.BrowserNode::from_document(doc))
-  current.val = Some(a)
+  let slot = slot_of(id)
+  slot.app = Some(a)
   a.transactor.observe(record => {
-    activity.push(record.to_json())
-    if activity.length() > ACTIVITY_CAP {
-      activity.remove(0) |> ignore
+    slot.activity.push(record.to_json())
+    if slot.activity.length() > ACTIVITY_CAP {
+      slot.activity.remove(0) |> ignore
     }
   })
   |> ignore
@@ -173,25 +239,39 @@ fn mount(card : @tutucard.Card) -> Bool {
 }
 
 ///|
-/// The dispatches since the last load, as a JSON array.
+/// The dispatches since the playground page's card was last loaded, as a JSON
+/// array.
 pub fn activity_json() -> String {
-  Json::array(activity).stringify()
+  match slots.get(root_id.val) {
+    Some(slot) => Json::array(slot.activity).stringify()
+    None => "[]"
+  }
 }
 
 ///|
-/// The card's current state, as JSON — an instance projects to its declared
-/// fields, so the panel shows the state tree.
+/// The playground page's card's current state, as JSON — an instance projects
+/// to its declared fields, so the panel shows the state tree.
 pub fn state_json() -> String {
-  match current.val {
+  match page_app() {
     Some(a) => a.root_value().to_json().stringify()
     None => "null"
   }
 }
 
 ///|
+/// The app the playground page's panels read. The embeds have their own and
+/// show no panels, so this is the only slot the getters ever ask about.
+fn page_app() -> @app.App[@bdom.BrowserNode]? {
+  match slots.get(root_id.val) {
+    Some(slot) => slot.app
+    None => None
+  }
+}
+
+///|
 /// The margaui class set the mounted views can show, for the page to compile.
 pub fn classes_json() -> String {
-  match current.val {
+  match page_app() {
     Some(a) => {
       let arr = a.scope.comps.collect_classes()
       Json::array(arr.map(c => Json::string(c))).stringify()

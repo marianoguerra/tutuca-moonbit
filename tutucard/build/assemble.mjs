@@ -33,6 +33,10 @@ function assemble() {
     "shell.css",
     "examples.js",
     "regions.js",
+    // The embeddable element ships beside the playground rather than only in
+    // the landing site's folder: a host that has this directory has the
+    // runtime, and `<mb-card>` needs nothing else.
+    "card-embed.js",
   ]) {
     cpSync(join(WEB, name), join(OUT, name));
   }

@@ -1,9 +1,10 @@
-// Every starter card loads, with no issues.
+// Every card that ships loads, with no issues.
 //
 // The one thing that has to keep being true as the language moves, and the one
-// nothing else checks: the examples are JavaScript strings in a file no MoonBit
-// test can reach, so a card that stopped parsing would be found by whoever
-// opened the page. This runs the REAL loader over them — the same
+// nothing else checks: the starter cards are JavaScript strings in a file no
+// MoonBit test can reach, and the landing site's are `.html` files in no moon
+// package, so a card that stopped parsing would be found by whoever opened the
+// page. This runs the REAL loader over both sets — the same
 // `globalThis.__tutucard.load` the page calls — in the assembled payload.
 //
 // It runs headless, so it calls `check` rather than `load` — the same report
@@ -11,7 +12,7 @@
 // agent that generated a card, or a build step over a directory of them,
 // validates without showing anything.
 
-import { readFileSync } from "node:fs";
+import { readdirSync, readFileSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
 import { pathToFileURL } from "node:url";
@@ -44,8 +45,22 @@ const { EXAMPLES } = await import(
   pathToFileURL(join(OUT, "examples.js")).href
 );
 
+// The starter cards, plus the ones the landing page embeds in <mb-card>. Read
+// off disk rather than out of the assembled site, so this checks what is in the
+// tree whether or not the site has been assembled.
+const SITE_CARDS = join(REPO, "playground", "site", "cards");
+const cards = [
+  ...EXAMPLES.map((e) => ({ name: e.name, source: e.source })),
+  ...readdirSync(SITE_CARDS)
+    .filter((f) => f.endsWith(".html"))
+    .map((f) => ({
+      name: `site/cards/${f}`,
+      source: readFileSync(join(SITE_CARDS, f), "utf8"),
+    })),
+];
+
 let failed = 0;
-for (const ex of EXAMPLES) {
+for (const ex of cards) {
   const report = JSON.parse(globalThis.__tutucard.check(ex.source, "Card"));
   if (!report.ok) {
     console.error(`✗ ${ex.name}: ${report.error} (line ${report.line})`);
@@ -63,7 +78,7 @@ for (const ex of EXAMPLES) {
 }
 
 if (failed > 0) {
-  console.error(`\n${failed} starter card(s) do not load`);
+  console.error(`\n${failed} card(s) do not load`);
   process.exit(1);
 }
-console.log(`\n${EXAMPLES.length}/${EXAMPLES.length} starter cards load`);
+console.log(`\n${cards.length}/${cards.length} cards load`);

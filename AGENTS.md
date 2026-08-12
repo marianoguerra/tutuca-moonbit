@@ -118,7 +118,7 @@ moon run --target native cmd/dev -- <task>
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
-| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no compiler at all: a card is parsed and mounted, so the payload is the runtime and the page. Ends by loading every starter card through the real loader, since they are JS strings no MoonBit test can reach, and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
+| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no compiler at all: a card is parsed and mounted, so the payload is the runtime and the page. Ends by loading every card through the real loader — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -180,7 +180,11 @@ copied beside it as `app-loader.mjs`; `dist/universal/` additionally gets
 first repointed, since it is the only page that loads bundles),
 `dist/storybook/` (the storybook
 gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
-`dist/playground/` + `dist/site/`, and
+`dist/playground/` + `dist/site/` + `dist/tutucard/` (the landing page embeds
+BOTH kinds of live example: `<mb-playground>`, which compiles MoonBit in the
+browser against `dist/playground/`, and `<mb-card>`, which compiles nothing —
+`assemble-site.mjs` copies `dist/tutucard/tutucard.js` beside the page, which
+is why `dist` assembles the card runtime before the site), and
 `dist/cli/tutuca` (the native CLI binary). The wasm pages need a browser with
 the JS String Builtins proposal, e.g. Chrome. Serve dist with any static file
 server: `cd dist && python3 -m http.server` — or `dist/cli/tutuca storybook`

@@ -1,0 +1,88 @@
+<!-- A card: one file, no compiler. The page that shows this one parsed it and
+     mounted it, in the browser, with nothing between the two.
+
+     Everything a card can be is here — a schema, handlers, derived values, and
+     views — which is also the whole of the subset. What it cannot do is name a
+     MoonBit value: no imports, no closures, no components built at run time.
+     Reach for one of those and you are writing a component, and the compiler
+     comes back. -->
+
+<script type="tutuca/state">
+  state Counter {
+    label   : String
+    count   : Int
+    history : Array[Int]
+  }
+
+  /// A message the views never write, so the schema is the only place it can
+  /// be declared — and the only place its payload can be typed.
+  receive Counter {
+    ResetTo(Int)
+  }
+</script>
+
+<script type="tutuca/script">
+  /// Move the counter by `d`, remembering where it landed.
+  ///
+  /// `.count` on the second line reads what the first one wrote: a statement
+  /// rebinds the state, so the trail records where the counter ENDED rather
+  /// than where it started.
+  on add(d) {
+    .count += d
+    .history.push .count
+  }
+
+  /// A handler that raises a message at itself, so two buttons can share one
+  /// body without either of them repeating it.
+  on start {
+    send 'resetTo' 0
+  }
+
+  receive resetTo(n) {
+    .count = n
+    .history.push .count
+  }
+
+  /// A derived value. `$summary` is how a template calls it.
+  ///
+  /// A card starts at the schema's ZERO state — there is no seed to pass, since
+  /// there is no MoonBit here to pass one — so the label is empty until someone
+  /// types it, and this says what to show meanwhile. Both arms are required:
+  /// an expression has to have a value.
+  compute summary {
+    if .label is '' { $'{.count}' } else { $'{.label}: {.count}' }
+  }
+
+  /// A named boolean — the same thing, with its answer declared, which is what
+  /// lets `@show` be checked.
+  pred moved { (len .history) > 0 }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: flex;
+    flex-direction: column;
+    gap: .5rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .trail { display: flex; gap: .3rem; flex-wrap: wrap; list-style: none; margin: 0; padding: 0; }
+    .trail li { font: .75rem ui-monospace, monospace; opacity: .7; }
+  </style>
+  <div>
+    <h3 style="margin:0"><x text="$summary"></x></h3>
+    <p class="row">
+      <button @on.click="add 1">+1</button>
+      <button @on.click="add -1">-1</button>
+      <button @on.click="start">reset</button>
+    </p>
+    <label class="row">
+      label
+      <input :value=".label" @on.input="setLabel value" placeholder="name it">
+    </label>
+    <ul class="trail" @show="$moved">
+      <li @each=".history"><x text="@value"></x></li>
+    </ul>
+    <p @hide="$moved"><em>press a button — the trail shows where it landed</em></p>
+  </div>
+</template>
