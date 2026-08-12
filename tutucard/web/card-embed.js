@@ -40,10 +40,22 @@ let seq = 0;
  * on a documentation page, and adoptedStyleSheets would buy nothing but a
  * feature check. Every selector is under `mb-card` so a page that never uses
  * one pays nothing, and so nothing here reaches a card's own markup.
+ *
+ * The element's own box is styled through `:where`, which zeroes the rule's
+ * specificity: this sheet is appended when the first card connects, so it
+ * lands AFTER the page's stylesheet and would otherwise win every tie by
+ * order alone. It won the landing page's `margin: 1.5rem auto` that way, and
+ * the card sat flush left beside the playgrounds it is meant to be compared
+ * with. What is here is a DEFAULT for a page that says nothing; the page has
+ * the last word on where its own element sits. `<mb-playground>` gets this
+ * free from `:host`, which page rules already outrank.
  */
 const STYLE = `
-mb-card {
+:where(mb-card) {
   display: block;
+  /* Border inside the width a page gives it, so a card capped at the same
+     max-width as an mb-playground lines up with it edge for edge. */
+  box-sizing: border-box;
   margin: 1rem 0;
   border: 1px solid var(--border-color, #898ea4);
   border-radius: var(--standard-border-radius, 5px);
