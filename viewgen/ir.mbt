@@ -32,17 +32,6 @@
 let q : String = "@anode."
 
 ///|
-/// True when every view in this set can be emitted as a tree. A single
-/// view sends the whole file back to the source path, so a component never
-/// mixes the two.
-pub fn ir_supported(file : @viewfile.ViewFile) -> Bool {
-  try compile_file(file) |> ignore catch {
-    _ => return false
-  }
-  true
-}
-
-///|
 /// Replace every expanded MacroCall with its expansion. Semantically a no-op
 /// — render(MacroCall) renders exactly `d.node` — and it leaves a tree with
 /// no node type the emitter cannot express.
@@ -350,8 +339,9 @@ fn node_expr(node : @anode.ANode, indent : String) -> String raise GenError {
       (if d.from_render_each { ", from_render_each=true" } else { "" }) +
       ")"
     }
-    // Only reachable if the caller skipped ir_supported; a generator bug
-    // rather than a user error.
+    // A macro the generator could not expand. Raised rather than emitted:
+    // the tree path cannot express it, and `emit_ir_module_opt` turns this
+    // into the None that sends the file back to the source path.
     MacroCall(d) =>
       raise ViewParseIssue(
         view="?",
@@ -451,9 +441,9 @@ fn emit_ir_module_compiled(
 }
 
 ///|
-/// `ir_supported` and `emit_ir_module` in one pass: emitting a view IS the
-/// check, so the failure that made `ir_supported` answer false is the same one
-/// caught here — asking first only bought a second compile of every view.
+/// Emitting a view IS the check: the failure a separate "can this be emitted?"
+/// pass would report is the same one caught here, so asking first only bought a
+/// second compile of every view.
 ///
 /// Output is all-or-nothing: the builder is discarded with the error, so a file
 /// that fails on its last view emits nothing rather than a truncated module.

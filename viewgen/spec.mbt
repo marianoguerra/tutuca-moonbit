@@ -171,16 +171,13 @@ declare pub fn emit_modules(
 ) -> GeneratedModules raise GenError
 
 ///|
-/// True when every view can be emitted as a compiled tree. A view whose tree
-/// still holds a macro call cannot: macros are registered from MoonBit at
-/// runtime, so the generator cannot expand them.
-declare pub fn ir_supported(file : @viewfile.ViewFile) -> Bool
-
-///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
 /// view parses into, written with anode's builders (`@anode.h` / `text` /
 /// `attr` / `on` …), plus the `<v>_views()` builder (passed as `views~`).
-/// Only valid when `ir_supported` holds.
+///
+/// Raises for a view that cannot be emitted as a tree — one whose tree still
+/// holds a macro call (macros are registered from MoonBit at runtime, so the
+/// generator cannot expand them), or a `$name` in an `@on` position.
 declare pub fn emit_ir_module(
   name : String,
   source_file : String,
@@ -189,11 +186,10 @@ declare pub fn emit_ir_module(
 
 ///|
 /// The companion IR module, or None when the file cannot be emitted as compiled
-/// trees — `ir_supported` and `emit_ir_module` in one pass.
+/// trees.
 ///
-/// Prefer this to the pair: they compile every view separately, so asking the
-/// question costs as much as emitting the answer. `ir_supported` remains for
-/// callers that only want to know.
+/// Prefer this to asking first and then emitting: every view compiles
+/// separately, so the question costs as much as the answer.
 declare pub fn emit_ir_module_opt(
   name : String,
   source_file : String,

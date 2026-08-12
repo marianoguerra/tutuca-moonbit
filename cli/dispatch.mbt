@@ -33,9 +33,6 @@ pub fn plan(argv : Array[String]) -> Outcome {
     "watch" => return run_watch(command_args, opts)
     _ => ()
   }
-  if opts.help && find_command(command) is Some(_) {
-    return Done(run_help(Some(command), opts))
-  }
   Done(unknown_command(command, opts))
 }
 

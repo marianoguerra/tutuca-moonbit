@@ -191,7 +191,7 @@ test "a policy carries a sanitizer a host can replace" {
   assert_true(strict.check_view("Sneaky/main", raw).length() == 1)
 
   // Loosened: the construct passes registration. Only safe because
-  // `@markup.filter_for` gives this policy the markup filter — see the test
+  // `@markdown.filter_for` gives this policy the markup filter — see the test
   // for that pairing in vdom/filter/markup.
   let configured_untrusted = strict.with_sanitizer({
     ..@sanitize.SanitizerConfig::empty(),

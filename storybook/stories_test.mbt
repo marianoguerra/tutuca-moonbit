@@ -15,11 +15,3 @@ test "stories() covers the example registry and groups into sections" {
   assert_eq(total, all.length())
 }
 
-///|
-test "dry-run text lists sections and stories" {
-  let sections = sections_of(stories())
-  let text = dry_run_text(sections)
-  assert_true(text.contains("Basics"))
-  assert_true(text.contains("- counter"))
-  assert_true(text.contains("stories in"))
-}

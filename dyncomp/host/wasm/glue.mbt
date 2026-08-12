@@ -681,7 +681,7 @@ pub fn migrate_instance(
 ///|
 /// The component names a loaded module declares, in manifest order. Empty if
 /// the module is not loaded. Lets a host mount every component of a freshly
-/// loaded bundle (the universal drop shell) without hard-coding names.
+/// loaded bundle without hard-coding names.
 pub fn bundle_component_names(module_name : String) -> Array[String] {
   guard by_name.get(module_name) is Some(bid) else { return [] }
   guard bundles.get(bid) is Some(bundle) else { return [] }
@@ -690,8 +690,10 @@ pub fn bundle_component_names(module_name : String) -> Array[String] {
 
 ///|
 /// Every currently-loaded component as (module_name, component_name) pairs,
-/// across all registered bundles. Backs the universal demo's "listComponents"
-/// request so a picker can enumerate what can be mounted.
+/// across all registered bundles, so a picker can enumerate what can be
+/// mounted. Part of this bridge's published surface: no page in this repo
+/// calls it — `dyncomp/storybook` walks the bundles itself — but a host that
+/// wants a picker needs an enumeration it does not have to keep itself.
 pub fn loaded_components() -> Array[(String, String)] {
   let out = []
   for module_name, bid in by_name {

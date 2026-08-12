@@ -46,7 +46,6 @@ test "the macro expands at generation time" {
 ///|
 test "a macro view compiles to a tree, with no macro node left in it" {
   let vs = @viewgen.split_file(macro_html)
-  assert_true(@viewgen.ir_supported(vs))
   let ir = @viewgen.emit_ir_module("Icons", "icons.html", vs)
   // The expansion is inlined: <svg> from the macro body appears in the tree,
   // and no MacroCall constructor survives (it is not expressible).

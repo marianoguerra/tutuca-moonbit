@@ -6,6 +6,49 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Removed
+
+- **Five public functions nothing called.** Each was reachable, documented and
+  dead; keeping them meant every reader had to work out which of them mattered.
+
+  - `@storybook.dry_run_text` / `dry_run_json`, and the `storybook/report.mbt`
+    they lived in. They formatted the output of `tutuca storybook --dry-run`, a
+    flag the CLI removed — `cli/dispatch_test.mbt` asserts it is now rejected.
+    Their only remaining caller was their own test.
+  - `@tscript.parse_slot_body` — no caller and no test, in production or
+    anywhere else.
+  - `@viewgen.ir_supported` — superseded by `emit_ir_module_opt`, which answers
+    the same question by emitting rather than by compiling every view a second
+    time to ask first. `gen-views` stopped calling it two releases ago; only
+    tests still did, and each of those either asserted something its next line
+    already proved or hid what it was skipping (see below).
+  - `@storybook_ui.shell_component` — a one-line wrapper over `build_shell`
+    that `mount` bypasses.
+  - `@markup.filter_for`, deprecated since the chain moved to
+    `vdom/filter/markdown`. It was kept on the argument that it was still right
+    for a host wanting the raw-markup rule and the baseline and nothing else.
+    Nothing ever wanted that, and an app wired through it rendered
+    `@setinnermd` as an empty element. A host that does want the pair can build
+    it in one line — `docs/sanitizer.md` shows it.
+
+### Changed
+
+- **The example-corpus sweep now says which views it skips, and why.** It asked
+  `ir_supported` first and counted every `false` as "cannot be generated". That
+  hid the actual reason: this harness feeds each view in ISOLATION, so a call
+  to a macro its own file declares has no definition in scope and the view does
+  not parse. The sweep now emits once and classifies the error, so the two
+  expected causes are named and **every other error fails the test** instead of
+  quietly inflating the unsupported count.
+
+### Fixed
+
+- **`anode`'s default parse-issue handler bypassed the warning hook.** It used
+  `println` directly, two lines below a doc comment promising it warns, so a
+  host that redirected `@tutuca.warn` into an error pane or the browser console
+  never saw parse issues. It now goes through the hook like the rest of the
+  package.
+
 ### Security
 
 - **Archive loading is now bounded and legacy JavaScript bundles are gone.**

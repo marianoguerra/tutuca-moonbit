@@ -338,7 +338,7 @@ had installed that filter: a policy saying `raw_markup: true` beside an app
 mounted without it would send the payload straight to `set_inner_html`
 unchecked. So the permission and the filter are now derived from the SAME value.
 `Policy` carries a `Sanitizer`; `Policy::with_sanitizer(config)` replaces it;
-and `@markup.filter_for(policy.sanitizer)` returns the filter that sanitizer
+and `@markdown.filter_for(policy.sanitizer)` returns the filter that sanitizer
 requires — the markup filter in front of `Baseline` when raw markup is
 permitted, `Baseline` alone when it is not. `set_app` calls it, so a host cannot
 hold the permission without the filter.
@@ -347,7 +347,7 @@ It is a function rather than a type-level proof because `dyncomp/policy` is a
 leaf over `anode` and must not import `vdom` — the permission cannot carry
 evidence about a filter without inverting that. What is available is to make one
 function the only place the two are named together, and to test it from both
-sides (`vdom/filter/markup/install_test.mbt`).
+sides (`vdom/filter/markdown/install_test.mbt`).
 
 Every tier's default sanitizer refuses raw markup. `Granted` and `System` can
 opt into the paired sanitizer/filter deliberately. `Untrusted` cannot: even

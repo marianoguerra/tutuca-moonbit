@@ -33,8 +33,6 @@ pub fn parse_script(String) -> Array[Decl] raise ScriptError
 
 pub fn parse_sequence(String, ParseCtx) -> @core.Val?
 
-pub fn parse_slot_body(String, stmts~ : Bool) -> Body raise ScriptError
-
 pub fn parse_text(String, ParseCtx) -> @core.Val?
 
 pub fn parse_token(String, ParseCtx) -> @core.Val?

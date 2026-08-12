@@ -327,21 +327,6 @@ fn parse_body(p : P, stmts~ : Bool) -> Body raise ScriptError {
   }
 }
 
-///|
-pub fn parse_slot_body(
-  source : String,
-  stmts~ : Bool,
-) -> Body raise ScriptError {
-  let p : P = { toks: tokenize_script(source), at: 0 }
-  p.skip_seps()
-  let b = parse_body(p, stmts~)
-  p.skip_seps()
-  if !(p.peek() is TEof) {
-    p.fail("the end of the body")
-  }
-  b
-}
-
 // ---------------------------------------------------------------------------
 // Statements
 

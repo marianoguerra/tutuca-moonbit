@@ -7,10 +7,6 @@ import {
 }
 
 // Values
-pub fn dry_run_json(Array[Section]) -> Json
-
-pub fn dry_run_text(Array[Section]) -> String
-
 pub fn sections_of(Array[Story]) -> Array[Section]
 
 pub fn stories() -> Array[Story]

@@ -23,8 +23,6 @@ pub fn emit_modules(String, String, @viewfile.ViewFile, include_ir? : Bool, debu
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 
-pub fn ir_supported(@viewfile.ViewFile) -> Bool
-
 pub fn split_file(String, name? : String) -> @viewfile.ViewFile raise GenError
 
 pub fn variant_name(String) -> String

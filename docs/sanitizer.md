@@ -493,8 +493,11 @@ Three things this cost that were not obvious:
 - **`filter_for` moved to `vdom/filter/markdown`.** The chain is
   `[MarkupFilter?] → MdFilter → Baseline`, and `markup` cannot express that —
   the dependency runs `markdown` → `markup` and a cycle is not available. The
-  old entry point stays deprecated in `markup/deprecated.mbt`, still correct for
-  a host that wants the raw-markup rule and nothing else.
+  old entry point in `markup/` was kept deprecated for a while, on the argument
+  that it was still right for a host wanting the raw-markup rule and nothing
+  else; nothing ever called it, and it silently rendered `@setinnermd` as an
+  empty element, so it is gone. Build the pair yourself if you want it:
+  `@filter.Chain::new([@markup.MarkupFilter::new(sanitizer~), @filter.Baseline::new()])`.
 - **`set_prop` fails closed on `setInnerMd`** (`vdom/to_dom.mbt`). Reaching it
   means no filter consumed the attribute, and the element is CLEARED. Rendering
   the markdown as text would be wrong output; passing it to `set_inner_html`
@@ -739,7 +742,7 @@ correct one, which an event handler's is not.
 7. ~~The filter installed by default, and a `Policy` that carries its own
    sanitizer.~~ **Done** — `App::new` installs `@filter.Baseline`,
    `take_reports` moved onto the trait so the default is drainable, and
-   `Policy::with_sanitizer` + `@markup.filter_for` make raw markup a permission
+   `Policy::with_sanitizer` + `@markdown.filter_for` make raw markup a permission
    a host can actually grant.
 
 What is left, in rough order of who it helps:
@@ -782,7 +785,7 @@ What is left, in rough order of who it helps:
   The precondition that held this back — `Policy::check_view` has no way to know
   whether the markup filter is installed, so `raw_markup: true` beside an app
   mounted without it would send the payload straight to `set_inner_html`
-  unchecked — is answered by `@markup.filter_for`, which takes the sanitizer and
+  unchecked — is answered by `@markdown.filter_for`, which takes the sanitizer and
   returns the filter it needs: the markup filter in front of `Baseline` when raw
   markup is permitted, `Baseline` alone when it is not. `set_app` calls it, so
   the permission and the filter are set from the same value and cannot come
@@ -793,7 +796,7 @@ What is left, in rough order of who it helps:
   business importing `vdom`, so the permission cannot carry evidence about a
   filter. What is available is to make one function the only place the two are
   named together, and to test it from both sides — which is what
-  `vdom/filter/markup/install_test.mbt` does.
+  `vdom/filter/markdown/install_test.mbt` does.
 
   Order inside the chain is load-bearing: the markup filter REPLACES a subtree,
   so the attribute rules must run after the nodes they inspect exist. Built the

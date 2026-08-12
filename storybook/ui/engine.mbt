@@ -743,13 +743,6 @@ fn build_shell(
 }
 
 ///|
-/// The gallery root component generated from the grouped sections (instances
-/// are built by `mount`).
-pub fn shell_component(sections : Array[@sb.Section]) -> @component.Component {
-  build_shell(sections).0
-}
-
-///|
 /// Mount the gallery on `root_node`: register the shell (and any host URL
 /// persistence handlers) in the root scope, each story's module in its own
 /// child scope, pre-build each story instance from that scope, seed them as the

@@ -65,7 +65,6 @@ let ir_html : String =
 ///|
 test "a component built from the compiled tree renders identically" {
   let views = @viewgen.split_file(ir_html)
-  assert_true(@viewgen.ir_supported(views))
   let from_source = @component.component(
     views={
       "main": @anode.View::new(

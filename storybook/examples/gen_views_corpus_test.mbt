@@ -13,8 +13,8 @@
 // tree the emitter round-trips through @viewgen matches what the parser
 // produced. The emitted TEXT cannot be compiled inside a test, so what is
 // verified here is the tree/event model — that every construct in the corpus
-// is expressible, and that ir_supported is honest about the ones that are not
-// (macro users).
+// is expressible, and that the emitter is honest about the ones that are not
+// (macro users, and `$name` in an `@on` position).
 
 ///|
 /// The node id a node was filed under, for the "every node is at its own
@@ -73,15 +73,22 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       init: [],
       scripts: [],
     }
-    if !@viewgen.ir_supported(set) {
-      // Two things opt a view out, and both are things `gen-views` would
-      // refuse anyway: a macro it cannot expand, and a `$name` in an `@on`
-      // position (MethodInEventPosition). Anything else would be a hole.
-      unsupported = unsupported + 1
-      continue
-    }
-    // Emitting must not raise, and must produce a loadable-looking module.
+    // Emitting IS the check — asking first only bought a second compile of
+    // every view.
+    //
+    // Two errors opt a view out. `ViewParseIssue` is mostly an artifact of
+    // this harness rather than a limit of the tree path: each view is fed in
+    // ISOLATION, so a call to a macro its file declares has no definition in
+    // scope and the view does not parse (the `LintDemo` fixture, which carries
+    // a deliberately-unknown directive, lands here too). `$name` in an `@on`
+    // position is the real one. Naming both is what keeps this honest —
+    // every OTHER error is a hole, and counting them all as `unsupported`
+    // would hide it.
     let src = @viewgen.emit_ir_module("C", "corpus.html", set) catch {
+      MethodInEventPosition(_) | ViewParseIssue(_) => {
+        unsupported = unsupported + 1
+        continue
+      }
       e => {
         failures.push("\{cname}/\{vname}: \{@viewgen.GenError::message(e)}")
         continue
@@ -113,8 +120,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   }
   assert_eq(failures, [])
   // Most of the corpus must actually go through the tree path — if a change
-  // made ir_supported answer false everywhere, the sweep would still "pass"
-  // without this.
+  // made every view fail to emit, the sweep would still "pass" without this.
   assert_true(emitted > unsupported * 3)
   assert_true(emitted >= 25)
   inspect(

@@ -249,17 +249,6 @@ declare pub fn ScriptError::span(self : ScriptError) -> Span
 declare pub fn parse_script(source : String) -> Array[Decl] raise ScriptError
 
 ///|
-/// Parse one body written in a slot: `{ … }` with the braces included.
-///
-/// `stmts` picks which shape is legal, which the SLOT decides — a handler slot
-/// takes statements, a value slot takes one expression and may not assign or
-/// dispatch.
-declare pub fn parse_slot_body(
-  source : String,
-  stmts~ : Bool,
-) -> Body raise ScriptError
-
-///|
 /// Print a declaration back as canonical source. Round-tripping through this
 /// is how the grammar is pinned: parse, print, parse again, and the two ASTs
 /// agree.

@@ -55,7 +55,6 @@ test "one generated module carries every component in the file" {
 ///|
 test "the IR module carries every component too, macros expanded" {
   let f = @viewgen.split_file(multi_html)
-  assert_true(@viewgen.ir_supported(f))
   let ir = @viewgen.emit_ir_module("Ignored", "json.html", f)
   for
     want in [

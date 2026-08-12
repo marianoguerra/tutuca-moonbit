@@ -298,7 +298,7 @@ pub fn Policy::check_view(
 ///   `raw_markup: true`. Untrusted keeps refusing it because sanitized HTML
 ///   may still make a network request. For a trusted tier it is only safe when
 ///   the render-time markup filter is installed; see
-///   `@markup.filter_for`, which is what pairs the two so a host cannot
+///   `@markdown.filter_for`, which is what pairs the two so a host cannot
 ///   have the permission without the filter.
 pub fn Policy::with_sanitizer(
   self : Policy,
@@ -315,7 +315,7 @@ pub fn Policy::with_sanitizer(
 /// MUST also install the
 /// markup filter — the payload is a `Val` at registration, so nothing decided
 /// here can see what it will hold, and without the filter it goes to
-/// `set_inner_html` unchecked. `@markup.filter_for` reads this and builds the
+/// `set_inner_html` unchecked. `@markdown.filter_for` reads this and builds the
 /// matching filter, which is how the two stay in step.
 pub fn Policy::allows_raw_markup(self : Policy) -> Bool {
   self.tier != Untrusted && self.sanitizer.raw_markup
