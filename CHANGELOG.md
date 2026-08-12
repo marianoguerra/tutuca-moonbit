@@ -296,6 +296,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A declared bound the field's type cannot carry no longer reaches the
+  generated JSON Schema, and is named at load.** A manifest's `constraint`
+  object spells "not stated" two ways, because it mirrors WIT: `null` (or an
+  absent key) for the four bounds, `""` for the four strings. Four of those keys
+  are safe to write blank, which is what makes the other two a trap — writing
+  the record out in full, as every sample guest's manifest modelled, states
+  bounds nobody meant.
+
+  They failed three different quiet ways. `"maxLen": 0` forbids every value: the
+  form shows `≤ 0 chars` and Apply refuses the whole submission, including the
+  fields that were fine. `"min"`/`"max"` on anything but a number was skipped
+  when validating (`v is Num` guards it) but emitted into the schema anyway —
+  `{"type":"string","format":"date-time","minimum":0,"maximum":0}` — which is a
+  false statement to the one reader that cannot ask what was meant.
+  `guests/slack`'s `Message.createdAt` had exactly that, written the day the
+  guest was.
+
+  Three changes, none of which touch the semantics — a stated zero is a real
+  bound and the host still will not second-guess one:
+
+  - `apply_constraint` gates numeric bounds on the type, the way the length
+    keywords beside it already did.
+  - `register_bundle` raises `INERT_CONSTRAINT` as a hint for a bound the type
+    cannot carry, beside `UNDECLARED_METHOD` and for the same reason: the
+    failure is silent, and load is the first moment the manifest and the type
+    are both in hand.
+  - The sample guests now write only the keys they mean, since copying one is
+    how the habit spreads. `tutuca new-guest` already emitted
+    `"constraint": null` and was the odd one out.
+
+  `skill/tutuca/schema.md` documents the vocabulary, which appeared in no doc
+  or skill file at all before this.
+
 - **A named fixture did nothing when applied to a component already placed.**
   `place_form` emptied the argument map whenever a fixture was named, on the
   assumption that whatever built the component would resolve it — but the

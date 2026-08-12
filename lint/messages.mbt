@@ -24,6 +24,7 @@ pub fn lint_code_name(code : LintCode) -> String {
     MaybeAddAtPrefix => "MAYBE_ADD_AT_PREFIX"
     MaybeDropAtPrefix => "MAYBE_DROP_AT_PREFIX"
     UndeclaredMethod => "UNDECLARED_METHOD"
+    InertConstraint => "INERT_CONSTRAINT"
     HtmlTagNameHasUppercase => "HTML_TAG_NAME_HAS_UPPERCASE"
     HtmlSvgTagWillLowercase => "HTML_SVG_TAG_WILL_LOWERCASE"
     HtmlSvgAttrWillLowercase => "HTML_SVG_ATTR_WILL_LOWERCASE"
@@ -193,6 +194,16 @@ pub fn finding_message(f : Finding) -> String {
       }
       "'$\{name}' is not a method this component declares, so it evaluates to nothing and the attribute or directive reading it is dropped silently; add it to the component's declared methods" +
       hint
+    }
+    // The manifest's constraint record spells "unstated" two ways — `null` for
+    // the four bounds, `""` for the strings beside them — so a guest that
+    // writes the record out in full states bounds it did not mean. The zeros
+    // are the ones that bite: `"maxLen": 0` forbids every value, and the form
+    // then refuses the whole submission including the fields that were fine.
+    InertConstraint => {
+      let key = info_or(info, "key", "")
+      let kind = info_or(info, "kind", "")
+      "'\{key}' says nothing about '\{name}', which is \{kind} — it is ignored when validating and dropped from the generated schema; the manifest spells an unstated bound as `null` or by leaving the key out, so a 0 written to fill the record in is a bound nobody meant"
     }
     BadValue => bad_value_message(info) + tags
     UnsupportedExprSyntax => unsupported_expr_message(info) + tags

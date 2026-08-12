@@ -2,7 +2,7 @@
   "manifestVersion": 1,
   "apiVersion": 6,
   "moduleName": "counterlib",
-  "doc": "Sample counters — the reference bundle for the tutuca:component contract.",
+  "doc": "Sample counters \u2014 the reference bundle for the tutuca:component contract.",
   "version": "0.4.0",
   "homepage": "",
   "authors": [],
@@ -78,11 +78,7 @@
           "required": false,
           "constraint": {
             "min": -1000,
-            "max": 1000,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
-            "defaultJson": ""
+            "max": 1000
           }
         },
         {

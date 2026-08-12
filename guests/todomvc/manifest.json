@@ -115,8 +115,6 @@
           "doc": "Which tasks are shown: all, active, or completed.",
           "required": false,
           "constraint": {
-            "pattern": "",
-            "format": "",
             "enumJson": "[\"all\", \"active\", \"completed\"]",
             "defaultJson": "\"all\""
           }

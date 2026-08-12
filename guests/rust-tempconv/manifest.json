@@ -79,9 +79,6 @@
           "constraint": {
             "min": -273.15,
             "max": 10000,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
             "defaultJson": "20"
           }
         }

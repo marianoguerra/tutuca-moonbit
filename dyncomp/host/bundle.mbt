@@ -195,6 +195,7 @@ pub fn register_bundle(
       Some((id, _, def)) => {
         comps[comp.name] = (id, comp.schema, def)
         screen_method_names(diagnostics, comp, def)
+        screen_constraints(diagnostics, def)
       }
       None => ()
     }
@@ -219,6 +220,89 @@ fn diagnostic_line(
   into.push(
     "\{@lint.lint_code_name(f.code)} (\{level}) \{where_}: \{@lint.finding_message(f)}",
   )
+}
+
+///|
+/// A declared bound the field's TYPE cannot carry.
+///
+/// The manifest's constraint record spells "unstated" two ways — `null` (or an
+/// absent key) for the four bounds, `""` for the strings beside them — and four
+/// of the six keys are safe to write blank. So the habit of writing the record
+/// out in full, which every sample guest's manifest teaches, quietly states four
+/// zeros. Each one fails differently and none of them fail loudly:
+///
+///   - `minLen` / `maxLen: 0` on text or a collection is a REAL bound that
+///     forbids every value. Nothing here can tell that apart from one somebody
+///     meant, so it is not what this screens for — it is why the screen exists.
+///   - `min` / `max` on anything but a number is dropped when validating
+///     (`v is Num` guards it) and dropped from the generated schema, so it does
+///     nothing at all except mislead whoever reads the manifest.
+///   - `minLen` / `maxLen` on a number or a bool, likewise.
+///
+/// The second and third are what this names, because they are the ones that are
+/// unambiguously a mistake: a bound that cannot apply was not a decision. A hint
+/// rather than a warning — nothing is broken — and the value of saying it is
+/// that an author learns the spelling before writing the one that IS broken.
+fn screen_constraints(into : Array[String], def : DynComponentDef) -> Unit {
+  for f in def.field_infos() {
+    guard def.fields.filter(d => d.name == f.name) is [decl, ..] else {
+      continue
+    }
+    guard decl.constraint is Some(c) else { continue }
+    if !numeric_bound_applies(f.ty) {
+      if c.min is Some(_) {
+        constraint_hint(into, def, f.name, "min", f.ty)
+      }
+      if c.max is Some(_) {
+        constraint_hint(into, def, f.name, "max", f.ty)
+      }
+    }
+    if !length_bound_applies(f.ty) {
+      if c.min_len is Some(_) {
+        constraint_hint(into, def, f.name, "minLen", f.ty)
+      }
+      if c.max_len is Some(_) {
+        constraint_hint(into, def, f.name, "maxLen", f.ty)
+      }
+    }
+  }
+}
+
+///|
+/// Mirrors `@jsonschema`'s emission gate: the two have to agree, because one
+/// decides what is dropped and the other is what says so.
+fn numeric_bound_applies(ty : @tutuca.TyInfo) -> Bool {
+  match ty {
+    TyInt | TyFloat | TyAny => true
+    TyOption(inner) => numeric_bound_applies(inner)
+    _ => false
+  }
+}
+
+///|
+fn length_bound_applies(ty : @tutuca.TyInfo) -> Bool {
+  match ty {
+    TyBool | TyInt | TyFloat | TyComp(_) | TyTable => false
+    TyOption(inner) => length_bound_applies(inner)
+    _ => true
+  }
+}
+
+///|
+fn constraint_hint(
+  into : Array[String],
+  def : DynComponentDef,
+  field : String,
+  key : String,
+  ty : @tutuca.TyInfo,
+) -> Unit {
+  diagnostic_line(into, "\{def.name}.\{field}", {
+    code: InertConstraint,
+    level: Hint,
+    info: [("name", field), ("key", key), ("kind", ty.show_wit())],
+    location: None,
+    suggestion: None,
+  })
 }
 
 ///|

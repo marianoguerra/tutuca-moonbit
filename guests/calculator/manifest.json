@@ -78,9 +78,6 @@
           "required": false,
           "constraint": {
             "maxLen": 16,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
             "defaultJson": "\"0\""
           }
         }

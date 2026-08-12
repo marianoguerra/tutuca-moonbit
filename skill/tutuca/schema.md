@@ -269,6 +269,59 @@ Each is checked against the schema — a fixture setting a field the schema
 dropped fails the build — and becomes `CounterState::fresh()` plus a public
 `counter_init_args("fresh")` for a ModuleDef example.
 
+## Constraints (dynamic components only)
+
+A compiled-in component states its bounds in MoonBit. A **dynamic component**
+states them in `manifest.json`, in a `constraint` object beside each field —
+the half a type cannot say. The host validates against it, generates the form
+control from it, and projects it into the JSON Schema an agent reads.
+
+```json
+{ "name": "email", "ty": 0, "required": true,
+  "constraint": { "maxLen": 254, "format": "email" } }
+```
+
+| key | means | applies to |
+| --- | --- | --- |
+| `min` / `max` | magnitude | numbers only |
+| `minLen` / `maxLen` | characters on text, elements on a collection | text, lists, maps, sets |
+| `pattern` | a regular expression the value must match | text |
+| `format` | a JSON Schema format (`email`, `uri`, `date-time`, …) | text |
+| `enumJson` | the allowed values, as a JSON array in a string | any |
+| `defaultJson` | what a form pre-fills, as JSON in a string | any |
+
+**Write only the keys you mean.** "Not stated" has two spellings in one object,
+because the record mirrors WIT: `null` (or leaving the key out) for the four
+bounds, which are `option<f64>` / `option<u32>`, and `""` for the four strings.
+Four of the six are safe to write blank, which is exactly what makes the other
+two a trap:
+
+```json
+"constraint": { "min": 0, "max": 0, "maxLen": 0, "pattern": "", "format": "" }
+```
+
+Three of those are blanks and three are **stated bounds**. `"maxLen": 0` forbids
+every value — the form shows `≤ 0 chars` and Apply refuses the whole submission,
+including the fields that were fine. `"min": 0, "max": 0` pins a number to
+exactly zero, and on a field that is not a number it does nothing at all except
+mislead every reader of the manifest.
+
+A stated zero is a real bound and the host will not second-guess one. What it
+does do is say something when a bound cannot apply to the field's type:
+
+```
+INERT_CONSTRAINT (hint) Message.createdAt: 'min' says nothing about
+'createdAt', which is string — it is ignored when validating and dropped from
+the generated schema; …
+```
+
+That arrives in `Bundle::diagnostics()` at load, and a bound the type cannot
+carry never reaches the emitted JSON Schema — so an agent generating arguments
+is not told a timestamp has a maximum of zero.
+
+`tutuca new-guest` writes `"constraint": null` for a field with nothing to say,
+which is the shape to copy.
+
 ## See also
 
 - [core.md](./core.md#component-skeleton) — what you write beside the generated

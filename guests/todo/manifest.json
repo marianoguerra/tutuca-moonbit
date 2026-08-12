@@ -79,11 +79,7 @@
           "doc": "The task being typed, not yet added.",
           "required": false,
           "constraint": {
-            "maxLen": 200,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
-            "defaultJson": ""
+            "maxLen": 200
           }
         },
         {

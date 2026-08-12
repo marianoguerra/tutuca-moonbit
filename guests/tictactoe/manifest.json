@@ -71,11 +71,7 @@
           "required": false,
           "constraint": {
             "minLen": 9,
-            "maxLen": 9,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
-            "defaultJson": ""
+            "maxLen": 9
           }
         }
       ],

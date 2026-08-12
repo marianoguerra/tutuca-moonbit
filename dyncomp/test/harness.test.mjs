@@ -105,8 +105,12 @@ test('manifest declares the component, its views and its state', () => {
   assert.equal(comp.fields[0].required, false);
   assert.equal(comp.fields[0].constraint.min, -1000);
   assert.equal(comp.fields[0].constraint.max, 1000);
-  // "" is the contract's spelling for "not stated"
-  assert.equal(comp.fields[0].constraint.format, '');
+  // "" and an absent key are the same thing — "not stated" — so the manifest
+  // writes only the keys it means. Filling the record in is what states bounds
+  // nobody meant, and a `0` written to fill it in is a real bound: see the
+  // INERT_CONSTRAINT hint the host raises at load.
+  assert.equal(comp.fields[0].constraint.format, undefined);
+  assert.equal(comp.fields[0].constraint.pattern, undefined);
   assert.equal(comp.fields[1].constraint, undefined);
   assert.equal(comp.types[0].kind, 'ty-float');
   assert.equal(comp.types[1].kind, 'ty-list');

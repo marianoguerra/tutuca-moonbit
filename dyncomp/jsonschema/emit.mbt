@@ -164,27 +164,67 @@ fn ty_schema(ty : @tutuca.TyInfo, defs : Defs) -> Json {
 }
 
 ///|
+/// Whether a numeric bound (`min` / `max`) says anything about this type.
+///
+/// An `option<f64>` on a text field is not a bound that is merely unused — it is
+/// a keyword JSON Schema will not read on a `"type": "string"`, and a reader
+/// that does not know that (an agent generating arguments, most of all) is being
+/// told something false. `TyAny` keeps it: a value that could be a number could
+/// be bounded.
+fn bounds_numeric(ty : @tutuca.TyInfo) -> Bool {
+  match ty {
+    TyInt | TyFloat | TyAny => true
+    TyOption(inner) => bounds_numeric(inner)
+    _ => false
+  }
+}
+
+///|
+/// Whether a length bound says anything about this type. A length is characters
+/// on text and elements on a collection; a bool has neither.
+fn bounds_length(ty : @tutuca.TyInfo) -> Bool {
+  match ty {
+    TyBool | TyInt | TyFloat | TyComp(_) | TyTable => false
+    TyOption(inner) => bounds_length(inner)
+    _ => true
+  }
+}
+
+///|
 /// Apply the half a type cannot state. Which keyword a bound becomes depends on
 /// what it is bounding: `min`/`max` are numeric, `min_len`/`max_len` are a
 /// length, and a length means characters on a string and elements on an array.
+///
+/// A bound the type cannot carry is DROPPED rather than emitted. The manifest
+/// record spells "unstated" as `None` for these four and `""` for the strings
+/// beside them, so a guest that writes the record out in full states four zeros
+/// it did not mean — and the schema is read by things that cannot ask what was
+/// intended. `register_bundle` says so as a diagnostic; this is the half that
+/// keeps it out of what an agent reads. (A bound the type CAN carry is emitted
+/// as given, zero included: a stated zero is a real bound and this is not the
+/// place to second-guess one.)
 fn apply_constraint(schema : Json, ty : @tutuca.TyInfo, c : Constraint) -> Json {
   let mut out = schema
-  if c.min is Some(n) {
-    out = with_key(out, "minimum", Json::number(n))
-  }
-  if c.max is Some(n) {
-    out = with_key(out, "maximum", Json::number(n))
+  if bounds_numeric(ty) {
+    if c.min is Some(n) {
+      out = with_key(out, "minimum", Json::number(n))
+    }
+    if c.max is Some(n) {
+      out = with_key(out, "maximum", Json::number(n))
+    }
   }
   let (min_kw, max_kw) = match ty {
     TyList(_) | TyTuple(_) | TyFlags(_, _) | TySet => ("minItems", "maxItems")
     TyOMap(_) => ("minProperties", "maxProperties")
     _ => ("minLength", "maxLength")
   }
-  if c.min_len is Some(n) {
-    out = with_key(out, min_kw, Json::number(n.to_double()))
-  }
-  if c.max_len is Some(n) {
-    out = with_key(out, max_kw, Json::number(n.to_double()))
+  if bounds_length(ty) {
+    if c.min_len is Some(n) {
+      out = with_key(out, min_kw, Json::number(n.to_double()))
+    }
+    if c.max_len is Some(n) {
+      out = with_key(out, max_kw, Json::number(n.to_double()))
+    }
   }
   if c.pattern != "" {
     out = with_key(out, "pattern", Json::string(c.pattern))

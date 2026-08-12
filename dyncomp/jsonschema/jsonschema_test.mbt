@@ -620,3 +620,74 @@ test "a table that is not an object fails at the table, not inside it" {
     ),
   )
 }
+
+///|
+/// A bound the type cannot carry does not reach the schema.
+///
+/// The manifest's constraint record spells "unstated" as `None` for the four
+/// bounds and `""` for the strings beside it, so writing the record out in full
+/// — which is what copying a sample guest's manifest teaches — states four
+/// zeros nobody meant. Validation shrugs most of them off (`min`/`max` are
+/// guarded by `v is Num`), but the SCHEMA is what an agent reads with nobody
+/// there to ask, and `{"type":"string","minimum":0,"maximum":0}` tells it
+/// something false about a timestamp.
+test "a bound the type cannot carry never reaches the schema" {
+  let s = schema_of([
+    @tutuca.FieldInfo::new("createdAt", TyText),
+    @tutuca.FieldInfo::new("count", TyInt),
+    @tutuca.FieldInfo::new("on", TyBool),
+    @tutuca.FieldInfo::new("tags", TyList(TyText)),
+  ])
+  let zeros = {
+    ..Constraint::none(),
+    min: Some(0),
+    max: Some(0),
+    max_len: Some(0),
+  }
+  let docs : Map[String, FieldDoc] = {
+    "createdAt": {
+      doc: "",
+      required: false,
+      constraint: Some({ ..zeros, format: "date-time", max_len: None }),
+    },
+    "count": {
+      doc: "",
+      required: false,
+      constraint: Some({ ..zeros, max_len: None }),
+    },
+    "on": { doc: "", required: false, constraint: Some(zeros) },
+    "tags": { doc: "", required: false, constraint: Some(zeros) },
+  }
+  let props = at(of_schema(s, docs~), "properties").unwrap()
+  // a numeric bound says nothing about text, so it is dropped rather than
+  // advertised
+  inspect(
+    compact(at(props, "createdAt").unwrap()),
+    content=(
+      #|{"type":"string","format":"date-time"}
+    ),
+  )
+  // …while on a number it is a real bound, emitted as given — a stated zero
+  // constrains, and this is not the place to second-guess one
+  inspect(
+    compact(at(props, "count").unwrap()),
+    content=(
+      #|{"type":"integer","minimum":0,"maximum":0}
+    ),
+  )
+  // a bool has neither a length nor a magnitude
+  inspect(
+    compact(at(props, "on").unwrap()),
+    content=(
+      #|{"type":"boolean"}
+    ),
+  )
+  // and a collection keeps the length under the keyword it uses, without the
+  // numeric bounds beside it
+  inspect(
+    compact(at(props, "tags").unwrap()),
+    content=(
+      #|{"type":"array","items":{"type":"string"},"maxItems":0}
+    ),
+  )
+}

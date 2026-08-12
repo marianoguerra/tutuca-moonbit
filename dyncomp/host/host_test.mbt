@@ -1558,3 +1558,101 @@ test "child_json encodes a nested guest instance at any depth" {
     content="[\"x\",true,null]",
   )
 }
+
+///|
+/// A bound the field's type cannot carry is named at load.
+///
+/// The manifest's constraint record spells "unstated" two ways — `null` or an
+/// absent key for the four bounds, `""` for the strings beside them — and four
+/// of the six keys are safe to write blank. Writing the record out in full,
+/// which is what copying a sample guest's manifest teaches, therefore states
+/// bounds nobody meant, and they fail quietly in three different ways. The
+/// unambiguous ones are worth saying out loud: a bound that cannot apply to the
+/// type was not a decision.
+test "a bound the type cannot carry is a load-time hint" {
+  let h = @harness.mount(shell_module(), "Shell")
+  let bounded = (c : @jsonschema.Constraint) => {
+    (Some(c) : @jsonschema.Constraint?)
+  }
+  let manifest : DynManifest = {
+    ..counter_manifest(),
+    components: [
+      {
+        ..counter_manifest().components[0],
+        fields: [
+          // a magnitude on text: dropped when validating (`v is Num`) and
+          // dropped from the schema, so it does nothing but mislead a reader
+          {
+            name: "label",
+            ty: 1,
+            doc: "",
+            required: false,
+            constraint: bounded({
+              ..@jsonschema.Constraint::none(),
+              min: Some(0),
+              max: Some(0),
+            }),
+          },
+          // a length on a number, likewise
+          {
+            name: "count",
+            ty: 0,
+            doc: "",
+            required: false,
+            constraint: bounded({
+              ..@jsonschema.Constraint::none(),
+              max_len: Some(0),
+            }),
+          },
+        ],
+      },
+    ],
+  }
+  let bundle = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    manifest,
+    policy=vouched(),
+  )
+  let said = bundle.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT"))
+  assert_eq(said.length(), 3)
+  assert_true(said[0].contains("Counter.label") && said[0].contains("'min'"))
+  assert_true(said[1].contains("Counter.label") && said[1].contains("'max'"))
+  assert_true(said[2].contains("Counter.count") && said[2].contains("'maxLen'"))
+  // it says what to write instead, because the spelling is the whole trap
+  assert_true(said[0].contains("`null`"))
+
+  // …and a bound the type CAN carry is not mentioned: `maxLen` on text is a
+  // real bound, including a zero, and second-guessing one is not this pass's
+  // job.
+  let fine : DynManifest = {
+    ..manifest,
+    components: [
+      {
+        ..manifest.components[0],
+        fields: [
+          {
+            name: "label",
+            ty: 1,
+            doc: "",
+            required: false,
+            constraint: bounded({
+              ..@jsonschema.Constraint::none(),
+              max_len: Some(0),
+            }),
+          },
+        ],
+      },
+    ],
+  }
+  let quiet = register_bundle(
+    h.app.scope,
+    FakeGuest::new(),
+    fine,
+    policy=vouched(),
+  )
+  assert_eq(
+    quiet.diagnostics().filter(d => d.has_prefix("INERT_CONSTRAINT")).length(),
+    0,
+  )
+}

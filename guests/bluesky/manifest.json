@@ -148,11 +148,7 @@
           "doc": "What the message says.",
           "required": false,
           "constraint": {
-            "maxLen": 300,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
-            "defaultJson": ""
+            "maxLen": 300
           }
         },
         {
@@ -162,10 +158,7 @@
           "required": false,
           "constraint": {
             "maxLen": 64,
-            "pattern": "",
-            "format": "date-time",
-            "enumJson": "",
-            "defaultJson": ""
+            "format": "date-time"
           }
         },
         {
@@ -481,11 +474,7 @@
           "doc": "The account's own description of itself.",
           "required": false,
           "constraint": {
-            "maxLen": 256,
-            "pattern": "",
-            "format": "",
-            "enumJson": "",
-            "defaultJson": ""
+            "maxLen": 256
           }
         },
         {

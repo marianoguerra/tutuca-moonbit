@@ -5,9 +5,10 @@
 //
 // Scope: this package RUNS no component-model rules (field/method/provide
 // checks need the component layer). It still owns their vocabulary —
-// `UndeclaredMethod` is raised by the dyncomp host, which has the manifest in
-// hand, and named/worded here so one finding does not print in a second
-// format. Findings are plain data; formatting is the caller's job.
+// `UndeclaredMethod` and `InertConstraint` are raised by the dyncomp host,
+// which has the manifest in hand, and named/worded here so one finding does not
+// print in a second format. Findings are plain data; formatting is the caller's
+// job.
 
 ///|
 pub(all) enum LintLevel {
@@ -31,6 +32,9 @@ pub(all) enum LintCode {
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
+  /// A declared bound the field's type cannot carry — a `max-len` on a number,
+  /// a `min`/`max` on text. Raised by the dyncomp host at load.
+  InertConstraint
   HtmlTagNameHasUppercase
   HtmlSvgTagWillLowercase
   HtmlSvgAttrWillLowercase

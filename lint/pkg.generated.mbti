@@ -46,6 +46,7 @@ pub(all) enum LintCode {
   MaybeAddAtPrefix
   MaybeDropAtPrefix
   UndeclaredMethod
+  InertConstraint
   HtmlTagNameHasUppercase
   HtmlSvgTagWillLowercase
   HtmlSvgAttrWillLowercase
