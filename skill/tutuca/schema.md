@@ -101,14 +101,19 @@ verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery value"`,
 | int / float | `Int` / `Double` | — |
 | bool | `Bool` | `toggleX` |
 | any | `@tutuca.Value` | — (`Null`, instances, `Fn`s, heterogeneous data) |
-| list | `Array[...]` | `pushInX`, `insertInXAt`, `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt` |
-| map / omap | `Map[String, ...]` | `setInXAt`, `updateInXAt`, `deleteInXAt`/`removeInXAt` |
+| list | `Array[...]` | `pushInX`, `insertInXAt`, `setInXAt`, `deleteInXAt`/`removeInXAt` |
+| map / omap | `Map[String, ...]` | `setInXAt`, `deleteInXAt`/`removeInXAt` |
 | set (`text-set`, `flags`) | `Map[String, Bool]` | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
 | comp | `@tutuca.Value` | — a slot, filled through the scope at `make()` (see [Slots](#slots)) |
 
-**Every** field additionally gets `setX`, `updateX` (takes a `Fn` value —
-code-side use), `resetX`, and `xLen` (`Null` for non-sized values). A `compute`
-entry of the same name wins over the generated one.
+**Every** field additionally gets `setX`, `resetX`, and `xLen` (`Null` for
+non-sized values). A `compute` entry of the same name wins over the generated
+one.
+
+There is deliberately **no `updateX`** and no `updateInXAt`. Both would take a
+function value and apply it to the current one, and a view can write values but
+never a lambda — so no template could ever call either. Transforming a value in
+place is what the handler language is for.
 
 Emptiness / truthiness / null checks are not generated — use the boolean
 predicates `empty?`, `truthy?`, `falsy?`, `null?`, `equals?` in a conditional

@@ -118,48 +118,6 @@ pub fn Value::to_display_string(self : Value) -> String {
 }
 
 ///|
-fn Pred::of_name(name : String) -> Pred? {
-  match name {
-    "empty?" => Some(IsEmpty)
-    "truthy?" => Some(IsTruthy)
-    "falsy?" => Some(IsFalsy)
-    "null?" => Some(IsNull)
-    "equals?" => Some(Equals)
-    _ => None
-  }
-}
-
-///|
-pub fn Pred::name(self : Pred) -> String {
-  match self {
-    IsEmpty => "empty?"
-    IsTruthy => "truthy?"
-    IsFalsy => "falsy?"
-    IsNull => "null?"
-    Equals => "equals?"
-  }
-}
-
-///|
-fn Pred::arity(self : Pred) -> Int {
-  match self {
-    Equals => 2
-    _ => 1
-  }
-}
-
-///|
-fn Pred::apply(self : Pred, args : Array[Value]) -> Bool {
-  match self {
-    IsEmpty => args[0] is Null || size_of(args[0]) is Some(0)
-    IsTruthy => pred_truthy(args[0])
-    IsFalsy => !pred_truthy(args[0])
-    IsNull => args[0] is Null
-    Equals => args[0] == args[1]
-  }
-}
-
-///|
 fn lit_value(lit : Lit) -> Value {
   match lit {
     LNull => Null
@@ -223,7 +181,16 @@ pub fn Val::eval(self : Val, stack : &Stack) -> Value {
       }
       Str(buf.to_string())
     }
-    Predicate(pred~, args~) => Bool(pred.apply(args.map(a => a.eval(stack))))
+    // The parser only builds an `App` whose name resolves and whose argument
+    // count matches, so the lookup here cannot fail on anything it produced.
+    // It can still miss for an `App` built by hand or decoded from an IR
+    // module written by an older generator, and `Null` is the honest answer
+    // there — the same one an unresolved name gives everywhere else.
+    App(name~, args~) =>
+      match builtin(name) {
+        Some(b) => (b.apply)(args.map(a => a.eval(stack)))
+        None => Null
+      }
     Name(name) => stack.lookup_name(name)
     HandlerName(name~, ns~) =>
       match stack.get_handler_for(name, ns) {

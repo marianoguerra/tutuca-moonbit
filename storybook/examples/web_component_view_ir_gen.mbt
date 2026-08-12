@@ -30,7 +30,7 @@ fn emoji_picker_main_view_ir() -> @anode.View {
       ],
       [
         @anode.hide(
-          Predicate(pred=IsTruthy, args=[Field("current")]),
+          App(name="truthy?", args=[Field("current")]),
           @anode.h("p", [@anode.attr("class", "hint")], [
             @anode.text("\n    Select the "),
             @anode.h("em", [], [@anode.text("Toggle Picker")]),
@@ -41,14 +41,14 @@ fn emoji_picker_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("current")]),
+          App(name="truthy?", args=[Field("current")]),
           @anode.h("p", [@anode.attr("class", "label")], [
             @anode.text("Selected emoji:"),
           ]),
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("current")]),
+          App(name="truthy?", args=[Field("current")]),
           @anode.h("span", [@anode.attr("class", "current text-9xl")], [
             @anode.dyn_text(Field("current")),
           ]),

@@ -32,8 +32,14 @@ fn val_source(val : Val) -> String {
       buf.write_char('\'')
       buf.to_string()
     }
-    Predicate(pred~, args~) =>
-      pred.name() + " " + args.map(a => val_source(a)).join(" ")
+    App(name~, args~) =>
+      // A zero-argument application prints as the bare name, so the round trip
+      // holds once the vocabulary admits one.
+      if args.is_empty() {
+        name
+      } else {
+        name + " " + args.map(a => val_source(a)).join(" ")
+      }
     Name(name) => name
     HandlerName(name~, ..) => name
     TypeName(name) => name

@@ -190,7 +190,7 @@ fn comp_view_main_view_ir() -> @anode.View {
           Field("isExpanded"),
           @anode.h("div", [], [
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("rawView")]),
+              App(name="truthy?", args=[Field("rawView")]),
               @anode.h(
                 "pre",
                 [
@@ -203,7 +203,7 @@ fn comp_view_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.hide(
-              Predicate(pred=IsTruthy, args=[Field("rawView")]),
+              App(name="truthy?", args=[Field("rawView")]),
               @anode.h(
                 "div",
                 [

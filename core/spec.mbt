@@ -24,14 +24,19 @@ pub(all) enum Lit {
 } derive(Debug, Eq)
 
 ///|
-/// Boolean predicates usable in conditional slots (JS PREDICATES table)
-pub(all) enum Pred {
-  IsEmpty // "empty?"  arity 1
-  IsTruthy // "truthy?" arity 1
-  IsFalsy // "falsy?"  arity 1
-  IsNull // "null?"   arity 1
-  Equals // "equals?" arity 2
-} derive(Debug, Eq)
+/// One name an application may head: its arity, and what it does to
+/// already-evaluated arguments.
+///
+/// The table lives in `value_builtin.mbt` and is reachable only through
+/// `builtin` / `builtin_names`, so a caller sees a vocabulary rather than an
+/// enum it would have to match exhaustively. `apply` is only ever called with
+/// exactly `arity` arguments — the parser refuses anything else, which is what
+/// lets the implementations index positionally.
+pub struct Builtin {
+  name : String
+  arity : Int
+  apply : (Array[Value]) -> Value
+}
 
 ///|
 /// Handler namespaces are a fixed enumeration (JS passes "input"/"alter" strings)
@@ -49,7 +54,11 @@ pub(all) enum HandlerNamespace {
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool)
   StrTpl(Array[Val?])
-  Predicate(pred~ : Pred, args~ : Array[Val])
+  /// A name applied to arguments — `empty? .items`, `equals? .view 'detail'`.
+  /// The name is resolved at EVALUATION time (against `builtin`, and later
+  /// against the component's own declared predicates), which is what lets the
+  /// vocabulary grow without this enum growing a case.
+  App(name~ : String, args~ : Array[Val])
   Name(String) // bare lowercase name
   HandlerName(name~ : String, ns~ : HandlerNamespace)
   TypeName(String) // bare Uppercase name
@@ -410,8 +419,11 @@ pub(all) enum IssueRole {
   BadMacroVar // "macro-var": unknown ^name
   BadHandlerName // "handler-name"
   BadHandlerArg // "handler-arg"
-  UnknownPredicate // "predicate"
-  PredicateArity(Pred) // "predicate-arity": wrong arg count for this predicate
+  UnknownPredicate // "predicate": no builtin (and no declaration) of that name
+  /// "predicate-arity": wrong argument count. Carries the name and what the
+  /// vocabulary says it takes, because with an open table the reader cannot
+  /// look the arity up in an enum.
+  PredicateArity(name~ : String, want~ : Int)
   BadPredicateArg // "predicate-arg"
 } derive(Debug, Eq)
 
@@ -518,18 +530,12 @@ declare pub fn Val::is_literal(self : Val) -> Bool
 declare pub impl Show for Val
 
 ///|
-declare fn Pred::of_name(name : String) -> Pred?
+/// The builtin a name denotes, or None when nothing does.
+declare pub fn builtin(name : String) -> Builtin?
 
 ///|
-/// Source name: "empty?", "truthy?", "falsy?", "null?", "equals?"
-declare pub fn Pred::name(self : Pred) -> String
-
-///|
-declare fn Pred::arity(self : Pred) -> Int
-
-///|
-/// Apply the predicate to already-evaluated args (length must equal arity)
-declare fn Pred::apply(self : Pred, args : Array[Value]) -> Bool
+/// Every builtin name, sorted — the vocabulary a suggestion ranges over.
+declare pub fn builtin_names() -> Array[String]
 
 ///|
 /// JS sizeOf: Some(length) for Str/List/Map, None for unsized values

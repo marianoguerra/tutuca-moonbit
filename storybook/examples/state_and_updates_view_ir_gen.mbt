@@ -277,7 +277,7 @@ fn event_modifiers_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("lastSentSearch")]),
+        App(name="truthy?", args=[Field("lastSentSearch")]),
         @anode.h("p", [@anode.attr("class", "sent")], [
           @anode.text("\n    Search: \""),
           @anode.h("span", [@anode.attr("class", "sent-q")], [

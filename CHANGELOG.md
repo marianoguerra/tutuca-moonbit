@@ -294,6 +294,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   The universal page looks the same: the URL box the storybook draws is behind
   `show_url`, which defaults off.
 
+- **The five boolean predicates are a table now, not an enum.**
+  `Val::Predicate(pred~ : Pred, args~)` is `Val::App(name~ : String, args~)`,
+  and `enum Pred` is gone. The names, the arities and the semantics live in a
+  `Map[String, Builtin]` reachable through `builtin(name)` and
+  `builtin_names()`; the AST carries the *name*, which is why `Val` still
+  derives `Eq` and `Debug` even though a `Builtin` holds a closure.
+
+  Nothing an author writes changes: `empty? .items` and
+  `equals? .view 'detail'` parse to the same shape under a different
+  constructor, `parse_bool` is still the only entry that builds one, and a
+  condition slot is still the only place one is admitted. What changes is that
+  the set can grow. An enum could never have held a predicate an author
+  declares, because it would have needed a case per declaration — which is the
+  whole reason `Predicate` needed its own AST node, its own parse path and its
+  own no-kind exception in the group table.
+
+  Two smaller consequences. `IssueRole::PredicateArity` carries
+  `(name~, want~)` rather than a `Pred`, so the diagnostic can state the arity
+  a reader can no longer look up in an enum — `'equals?' takes 2 arguments`.
+  And every `*_view_ir_gen.mbt` regenerates, since the emitted IR names the
+  builtin as a string instead of a constructor.
+
+### Removed
+
+- **`updateX` and `updateInXAt` are gone from the generated mutators.** Both
+  took a *function* value and applied it to the current one. A view can write
+  values and never a lambda, so no template could ever call either, and outside
+  `component/component_test.mbt` the tree had no call site at all.
+
+  It was worse than dead. The gap between "set a field" and "transform a field
+  with a function nobody can supply" is exactly why `Some(Inc) => Some({ count:
+  s.count + 1 })` is hand-written in every counter in the corpus: there was a
+  mutator that assigns and a mutator that maps, and nothing in between.
+  Deleting the one nothing could reach is what makes the missing middle
+  visible.
+
 ### Fixed
 
 - **A declared bound the field's type cannot carry no longer reaches the

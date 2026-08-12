@@ -13,8 +13,7 @@ fn ParseCtx::issue(self : ParseCtx, role : IssueRole, value : String) -> Unit {
 }
 
 ///|
-/// One kind per parsed value (JS K_* bits). Predicates have no kind: they
-/// never pass through a group check (parse_bool builds them directly).
+/// One kind per parsed value (JS K_* bits).
 priv enum Kind {
   KConst
   KStrTpl
@@ -25,6 +24,11 @@ priv enum Kind {
   KType
   KSeq
   KMethod
+  /// A name applied to arguments. Admitted in the CONDITION group only: a
+  /// condition slot asks a yes/no question, which is what an application
+  /// answers, and a value slot spells a call with `$`. Widening it further is
+  /// what the expression language does, not this table.
+  KApp
 }
 
 ///|
@@ -55,14 +59,14 @@ fn kind_of(val : Val) -> Kind? {
     Dyn(_) => Some(KDyn)
     TypeName(_) => Some(KType)
     Name(_) | HandlerName(..) => Some(KName)
-    Predicate(..) => None
+    App(..) => Some(KApp)
   }
 }
 
 ///|
 fn in_group(kind : Kind, group : Group) -> Bool {
   match group {
-    GBool => kind is (KField | KMethod | KBind | KDyn | KConst)
+    GBool => kind is (KField | KMethod | KBind | KDyn | KConst | KApp)
     GText => kind is (KField | KMethod | KBind | KDyn | KConst | KStrTpl)
     // `$m` is in every value-read group but never in a path-bearing one: a
     // method result has no addressable path.
@@ -366,7 +370,7 @@ pub fn parse_bool(s : String, ctx : ParseCtx) -> Val? {
     return if tokens.length() == 0 {
       None
     } else {
-      parse_predicate(t, tokens, ctx)
+      parse_application(t, tokens, ctx)
     }
   }
   match parse_token(tokens[0], ctx) {
@@ -466,17 +470,27 @@ fn parse_handler(
 }
 
 ///|
-/// Head token is the predicate, tail are its args parsed individually as
+/// Head token names the callable, tail are its args parsed individually as
 /// boolean-group values (tokens.length > 1 here).
-fn parse_predicate(s : String, tokens : Array[String], ctx : ParseCtx) -> Val? {
-  let pred_name = tokens[0]
-  guard Pred::of_name(pred_name) is Some(pred) else {
-    ctx.issue(UnknownPredicate, pred_name)
+///
+/// The name resolves against the builtin vocabulary rather than a closed enum,
+/// so the arity is looked up rather than matched. An argument is itself a
+/// boolean-group value, which now includes another application — but only one
+/// written as a single token, so nesting still needs the parenthesised grammar
+/// the expression language brings rather than arriving here by accident.
+fn parse_application(
+  s : String,
+  tokens : Array[String],
+  ctx : ParseCtx,
+) -> Val? {
+  let name = tokens[0]
+  guard builtin(name) is Some(b) else {
+    ctx.issue(UnknownPredicate, name)
     return None
   }
   let arity = tokens.length() - 1
-  if arity != pred.arity() {
-    ctx.issue(PredicateArity(pred), s)
+  if arity != b.arity {
+    ctx.issue(PredicateArity(name~, want=b.arity), s)
     return None
   }
   let args : Array[Val] = []
@@ -490,5 +504,5 @@ fn parse_predicate(s : String, tokens : Array[String], ctx : ParseCtx) -> Val? {
       }
     }
   }
-  Some(Predicate(pred~, args~))
+  Some(App(name~, args~))
 }

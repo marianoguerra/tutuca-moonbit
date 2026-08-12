@@ -147,10 +147,10 @@ Every state field generates mutators, so you rarely write setters at all.
 Views call them by bare name in an event position (`@on.click="resetCount"`,
 `@on.input="setName value"`) and with `$` in a value one (`@text="$xLen"`):
 
-| Field kind | Generated (on top of `setX` / `updateX` / `resetX` / `xLen`) |
+| Field kind | Generated (on top of `setX` / `resetX` / `xLen`) |
 |---|---|
 | Bool | `toggleX` |
-| List / Map / OMap | `pushInX`, `insertInXAt`, `setInXAt`, `updateInXAt`, `removeInXAt` (alias `deleteInXAt`) |
+| List / Map / OMap | `pushInX`, `insertInXAt`, `setInXAt`, `removeInXAt` (alias `deleteInXAt`) |
 | Set | `addInX`, `removeInX` (alias `deleteInX`), `hasInX`, `toggleInX` |
 
 The names keep their JS camelCase spelling on purpose — that is what lets

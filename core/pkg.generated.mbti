@@ -8,6 +8,10 @@ import {
 }
 
 // Values
+pub fn builtin(String) -> Builtin?
+
+pub fn builtin_names() -> Array[String]
+
 pub fn mutator_name(String, String) -> String
 
 pub fn parse_alter_handler(String, ParseCtx) -> Val?
@@ -47,6 +51,12 @@ pub let warn_hook : @ref.Ref[(String) -> Unit]
 // Errors
 
 // Types and methods
+pub struct Builtin {
+  name : String
+  arity : Int
+  apply : (Array[Value]) -> Value
+}
+
 pub(all) struct DispatchPath {
   items : Array[DispatchStep]
 } derive(Eq, @debug.Debug)
@@ -117,7 +127,7 @@ pub(all) enum IssueRole {
   BadHandlerName
   BadHandlerArg
   UnknownPredicate
-  PredicateArity(Pred)
+  PredicateArity(name~ : String, want~ : Int)
   BadPredicateArg
 } derive(Eq, @debug.Debug)
 
@@ -185,15 +195,6 @@ pub(all) enum PathKey {
 } derive(Eq, @debug.Debug)
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
-
-pub(all) enum Pred {
-  IsEmpty
-  IsTruthy
-  IsFalsy
-  IsNull
-  Equals
-} derive(Eq, @debug.Debug)
-pub fn Pred::name(Self) -> String
 
 pub(all) struct RequestOpts {
   on_ok_name : String?
@@ -264,7 +265,7 @@ pub fn TyInfo::zero(Self) -> Value
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool)
   StrTpl(Array[Val?])
-  Predicate(pred~ : Pred, args~ : Array[Val])
+  App(name~ : String, args~ : Array[Val])
   Name(String)
   HandlerName(name~ : String, ns~ : HandlerNamespace)
   TypeName(String)

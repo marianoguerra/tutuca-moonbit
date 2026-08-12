@@ -317,7 +317,7 @@ fn toggle_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("message")]),
+        App(name="truthy?", args=[Field("message")]),
         @anode.h("p", [@anode.attr("class", "msg")], [
           @anode.dyn_text(Field("message")),
         ]),
@@ -595,7 +595,7 @@ fn status_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      Predicate(pred=IsTruthy, args=[Field("message")]),
+      App(name="truthy?", args=[Field("message")]),
       @anode.h("p", [@anode.attr("class", "status")], [
         @anode.dyn_text(Field("message")),
       ]),

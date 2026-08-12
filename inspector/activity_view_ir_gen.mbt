@@ -57,7 +57,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("handlerName")]),
+              App(name="truthy?", args=[Field("handlerName")]),
               @anode.h(
                 "span",
                 [
@@ -80,7 +80,7 @@ fn activity_entry_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("matched")]),
+              App(name="truthy?", args=[Field("matched")]),
               @anode.h(
                 "span",
                 [

@@ -62,7 +62,11 @@ fn value_issue_message(role : @tutuca.IssueRole) -> String {
     BadHandlerName => "not a valid handler name"
     BadHandlerArg => "not a valid handler argument"
     UnknownPredicate => "unknown predicate"
-    PredicateArity(p) => "wrong number of arguments for '\{p.name()}'"
+    // With an open vocabulary the arity is a fact about the declaration
+    // rather than something the reader can look up in an enum, so the
+    // message carries it.
+    PredicateArity(name~, want~) =>
+      "'\{name}' takes \{want} argument" + (if want == 1 { "" } else { "s" })
     BadPredicateArg => "not a valid predicate argument"
   }
 }
@@ -171,7 +175,7 @@ fn walk_val(val : @tutuca.Val, c : Collect, root_scope : Bool) -> Unit {
           None => ()
         }
       }
-    Predicate(args~, ..) =>
+    App(args~, ..) =>
       for a in args {
         walk_val(a, c, root_scope)
       }

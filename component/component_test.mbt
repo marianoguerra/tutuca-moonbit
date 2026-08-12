@@ -53,7 +53,7 @@ test "make fills defaults and coerces args" {
 }
 
 ///|
-test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
+test "generated mutators: set/toggle/push/setAt/delete/len/reset" {
   let comp = todo_comp()
   let t0 = comp.make(Map([]))
   guard t0 is Obj(o) else { fail("not obj") }
@@ -69,17 +69,6 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
   }
   guard toggle([Null]) is Obj(o2) else { fail("toggle did not return obj") }
   assert_true(o2.obj_field("done") == Some(Bool(true)))
-  guard o1.obj_field("updateCount") is Some(Fn(upd)) else {
-    fail("no updateCount")
-  }
-  let bump : @tutuca.Value = Fn(args => {
-    match args {
-      [Num(n)] => Num(n + 1)
-      _ => Num(-1)
-    }
-  })
-  guard upd([Null, bump]) is Obj(o3) else { fail("update failed") }
-  assert_true(o3.obj_field("count") == Some(Num(1)))
   guard o1.obj_field("pushInItems") is Some(Fn(push)) else { fail("no push") }
   guard push([Null, Str("a")]) is Obj(o4) else { fail("push failed") }
   assert_true(o4.obj_field("items") == Some(List([Str("a")])))
@@ -90,19 +79,6 @@ test "generated mutators: set/toggle/update/push/setAt/delete/len/reset" {
     fail("setAt failed")
   }
   assert_true(o5.obj_field("items") == Some(List([Str("b")])))
-  guard o4.obj_field("updateInItemsAt") is Some(Fn(update_at)) else {
-    fail("no updateAt")
-  }
-  let add_bang : @tutuca.Value = Fn(args => {
-    match args {
-      [Str(s)] => Str(s + "!")
-      _ => Null
-    }
-  })
-  guard update_at([Null, Num(0), add_bang]) is Obj(o5u) else {
-    fail("updateAt failed")
-  }
-  assert_true(o5u.obj_field("items") == Some(List([Str("a!")])))
   guard o5.obj_field("deleteInItemsAt") is Some(Fn(del)) else { fail("no del") }
   guard del([Null, Num(0)]) is Obj(o6) else { fail("del failed") }
   assert_true(o6.obj_field("items") == Some(List([])))
@@ -226,17 +202,11 @@ test "omap slot field: keyed mutators over an ordered Map" {
   guard! o.obj_field("setInMAt") is Some(Fn(set_at))
   guard! set_at([Null, Str("y"), Num(2)]) is Obj(o2)
   assert_true(o2.obj_field("m").unwrap() == Map({ "x": Num(1), "y": Num(2) }))
-  guard! o.obj_field("updateInMAt") is Some(Fn(update_at))
-  let double : @tutuca.Value = Fn(args => {
-    match args {
-      [Num(n)] => Num(n * 2)
-      _ => Null
-    }
-  })
-  guard! update_at([Null, Str("x"), double]) is Obj(o2u)
-  assert_true(o2u.obj_field("m").unwrap() == Map({ "x": Num(2) }))
-  assert_true(physical_equal(update_at([Null, Str("missing"), double]), t))
   guard! o.obj_field("deleteInMAt") is Some(Fn(del))
+  // A key that is not there is a no-op that hands back the SAME object, not an
+  // equal one: the transactor reads `physical_equal` as "nothing happened" and
+  // skips the spine rebuild, so identity is the contract rather than equality.
+  assert_true(physical_equal(del([Null, Str("missing")]), t))
   guard! del([Null, Str("x")]) is Obj(o3)
   assert_true(o3.obj_field("m").unwrap() == Map(Map([])))
 }

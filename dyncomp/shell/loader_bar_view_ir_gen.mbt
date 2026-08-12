@@ -27,7 +27,7 @@ fn loader_bar_main_view_ir() -> @anode.View {
       [@anode.attr("class", "loader-bar flex items-center gap-2")],
       [
         @anode.hide(
-          Predicate(pred=IsEmpty, args=[Field("samples")]),
+          App(name="empty?", args=[Field("samples")]),
           @anode.h("span", [@anode.attr("class", "join")], [
             @anode.each(
               0,

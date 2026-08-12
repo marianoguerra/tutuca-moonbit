@@ -212,7 +212,7 @@ fn Checker::val(
           self.val(v, sc)
         }
       }
-    Predicate(args~, ..) =>
+    App(args~, ..) =>
       for a in args {
         self.val(a, sc)
       }

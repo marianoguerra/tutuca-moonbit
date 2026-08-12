@@ -294,7 +294,7 @@ fn instance_explorer_main_view_ir() -> @anode.View {
                 @anode.attr("role", "tab"),
                 @anode.if_attr(
                   "class",
-                  Predicate(pred=Equals, args=[
+                  App(name="equals?", args=[
                     Field("activeTab"),
                     @anode.const_str("instance"),
                   ]),
@@ -314,7 +314,7 @@ fn instance_explorer_main_view_ir() -> @anode.View {
                   @anode.attr("role", "tab"),
                   @anode.if_attr(
                     "class",
-                    Predicate(pred=Equals, args=[
+                    App(name="equals?", args=[
                       Field("activeTab"),
                       @anode.const_str("component"),
                     ]),
@@ -330,7 +330,7 @@ fn instance_explorer_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[
+          App(name="equals?", args=[
             Field("activeTab"),
             @anode.const_str("instance"),
           ]),
@@ -338,7 +338,7 @@ fn instance_explorer_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[
+          App(name="equals?", args=[
             Field("activeTab"),
             @anode.const_str("component"),
           ]),

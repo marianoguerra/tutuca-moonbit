@@ -106,7 +106,7 @@ form:
 pub(all) enum Val {
   Const(lit~ : Lit, from_macro~ : Bool) // 'text', 42, true
   StrTpl(Array[Val?]) // $'a {.b} c'
-  Predicate(pred~ : Pred, args~ : Array[Val]) // truthy? .x / equals? .a .b
+  App(name~ : String, args~ : Array[Val]) // truthy? .x / equals? .a .b
   Name(String) // bare lowercase: input handler / event arg
   HandlerName(name~ : String, ns~ : HandlerNamespace)
   TypeName(String) // bare Uppercase
@@ -139,12 +139,14 @@ test "parsing: one sigil, one Val variant" {
       #|Some(Bind("key"))
     ),
   )
-  // predicates are only legal in boolean slots (@show, @hide, @if, @when),
-  // so they parse through parse_bool, not parse_text
+  // an application is only legal in a boolean slot (@show, @hide, @if,
+  // @when), so it parses through parse_bool, not parse_text. The AST holds
+  // the NAME: `builtin` resolves it, so the vocabulary is a table rather than
+  // a case of this enum.
   debug_inspect(
     @tutuca.parse_bool("truthy? .msg", px),
     content=(
-      #|Some(Predicate(pred=IsTruthy, args=[Field("msg")]))
+      #|Some(App(name="truthy?", args=[Field("msg")]))
     ),
   )
   debug_inspect(

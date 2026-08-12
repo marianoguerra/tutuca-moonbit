@@ -47,7 +47,7 @@ fn universal_edit_view_ir() -> @anode.View {
       ],
       [
         @anode.show(
-          Predicate(pred=IsNull, args=[Field("child")]),
+          App(name="null?", args=[Field("child")]),
           @anode.h(
             "button",
             [
@@ -61,7 +61,7 @@ fn universal_edit_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Predicate(pred=IsNull, args=[Field("child")]),
+          App(name="null?", args=[Field("child")]),
           @anode.h(
             "span",
             [
@@ -75,7 +75,7 @@ fn universal_edit_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Predicate(pred=IsNull, args=[Field("child")]),
+          App(name="null?", args=[Field("child")]),
           @anode.h(
             "button",
             [
@@ -714,7 +714,7 @@ fn tabs_edit_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.hide(
-              Predicate(pred=IsEmpty, args=[Field("tabs")]),
+              App(name="empty?", args=[Field("tabs")]),
               @anode.h(
                 "button",
                 [@anode.attr("class", "tab-close tab"), @anode.eid(2)],

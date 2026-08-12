@@ -150,7 +150,7 @@ fn story_card_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("init")]),
+              App(name="truthy?", args=[Field("init")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-ghost card-init")],
@@ -176,7 +176,7 @@ fn story_card_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Predicate(pred=IsTruthy, args=[Field("error")]),
+          App(name="truthy?", args=[Field("error")]),
           @anode.h(
             "div",
             [@anode.attr("class", "p-3 grow bg-base-200 card-stage")],
@@ -185,7 +185,7 @@ fn story_card_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("error")]),
+          App(name="truthy?", args=[Field("error")]),
           @anode.h(
             "p",
             [@anode.attr("class", "alert alert-error m-3 text-xs card-error")],
@@ -230,7 +230,7 @@ fn story_card_details_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("init")]),
+              App(name="truthy?", args=[Field("init")]),
               @anode.h(
                 "span",
                 [@anode.attr("class", "badge badge-xs badge-ghost card-init")],
@@ -263,7 +263,7 @@ fn story_card_details_view_ir() -> @anode.View {
           ],
           [
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("doc")]),
+              App(name="truthy?", args=[Field("doc")]),
               @anode.h(
                 "p",
                 [@anode.attr("class", "text-xs opacity-70 card-doc")],
@@ -272,7 +272,7 @@ fn story_card_details_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("args")]),
+              App(name="truthy?", args=[Field("args")]),
               @anode.h(
                 "pre",
                 [
@@ -287,7 +287,7 @@ fn story_card_details_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Predicate(pred=IsTruthy, args=[Field("error")]),
+          App(name="truthy?", args=[Field("error")]),
           @anode.h(
             "div",
             [@anode.attr("class", "p-3 grow bg-base-200 card-stage")],
@@ -296,7 +296,7 @@ fn story_card_details_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("error")]),
+          App(name="truthy?", args=[Field("error")]),
           @anode.h(
             "p",
             [@anode.attr("class", "alert alert-error m-3 text-xs card-error")],
@@ -518,7 +518,7 @@ fn dyncomp_storybook_main_view_ir() -> @anode.View {
               ]),
               @anode.text(" "),
               @anode.show(
-                Predicate(pred=IsEmpty, args=[Field("nav")]),
+                App(name="empty?", args=[Field("nav")]),
                 @anode.h(
                   "p",
                   [

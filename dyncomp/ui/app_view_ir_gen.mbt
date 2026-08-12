@@ -204,7 +204,7 @@ fn command_bar_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsEmpty, args=[Field("hits")]),
+              App(name="empty?", args=[Field("hits")]),
               @anode.h(
                 "p",
                 [
@@ -323,7 +323,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ]),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("doc")]),
+          App(name="truthy?", args=[Field("doc")]),
           @anode.h(
             "span",
             [@anode.attr("class", "text-[0.65rem] opacity-60 field-doc")],
@@ -332,7 +332,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[Field("kind"), @anode.const_str("bool")]),
+          App(name="equals?", args=[Field("kind"), @anode.const_str("bool")]),
           @anode.h(
             "input",
             [
@@ -346,10 +346,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[
-            Field("kind"),
-            @anode.const_str("number"),
-          ]),
+          App(name="equals?", args=[Field("kind"), @anode.const_str("number")]),
           @anode.h(
             "input",
             [
@@ -363,10 +360,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[
-            Field("kind"),
-            @anode.const_str("string"),
-          ]),
+          App(name="equals?", args=[Field("kind"), @anode.const_str("string")]),
           @anode.h(
             "input",
             [
@@ -380,7 +374,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[Field("kind"), @anode.const_str("enum")]),
+          App(name="equals?", args=[Field("kind"), @anode.const_str("enum")]),
           @anode.h(
             "select",
             [
@@ -407,7 +401,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[Field("kind"), @anode.const_str("json")]),
+          App(name="equals?", args=[Field("kind"), @anode.const_str("json")]),
           @anode.h(
             "textarea",
             [
@@ -423,7 +417,7 @@ fn schema_field_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("error")]),
+          App(name="truthy?", args=[Field("error")]),
           @anode.h(
             "span",
             [@anode.attr("class", "text-error text-[0.65rem] field-error")],
@@ -532,7 +526,7 @@ fn schema_form_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("doc")]),
+        App(name="truthy?", args=[Field("doc")]),
         @anode.h("p", [@anode.attr("class", "text-xs opacity-70 form-doc")], [
           @anode.dyn_text(Field("doc")),
         ]),
@@ -543,7 +537,7 @@ fn schema_form_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.hide(
-        Predicate(pred=IsEmpty, args=[Field("inits")]),
+        App(name="empty?", args=[Field("inits")]),
         @anode.h(
           "div",
           [@anode.attr("class", "flex gap-1 flex-wrap form-inits")],
@@ -572,7 +566,7 @@ fn schema_form_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("error")]),
+        App(name="truthy?", args=[Field("error")]),
         @anode.h("p", [@anode.attr("class", "text-error text-xs form-error")], [
           @anode.dyn_text(Field("error")),
         ]),
@@ -700,7 +694,7 @@ fn config_panel_main_view_ir() -> @anode.View {
         ]),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=Equals, args=[Field("mode"), @anode.const_str("view")]),
+          App(name="equals?", args=[Field("mode"), @anode.const_str("view")]),
           @anode.h(
             "p",
             [

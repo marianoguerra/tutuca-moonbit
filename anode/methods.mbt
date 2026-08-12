@@ -17,7 +17,7 @@ fn add_val_methods(val : @tutuca.Val, into : Set[String]) -> Unit {
           add_val_methods(v, into)
         }
       }
-    Predicate(args~, ..) =>
+    App(args~, ..) =>
       for arg in args {
         add_val_methods(arg, into)
       }

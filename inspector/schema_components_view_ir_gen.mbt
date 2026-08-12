@@ -127,7 +127,7 @@ fn schema_scalar_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -136,7 +136,7 @@ fn schema_scalar_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -376,7 +376,7 @@ fn schema_object_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -385,7 +385,7 @@ fn schema_object_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -625,7 +625,7 @@ fn schema_array_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -634,7 +634,7 @@ fn schema_array_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -870,7 +870,7 @@ fn schema_enum_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -879,7 +879,7 @@ fn schema_enum_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -1118,7 +1118,7 @@ fn schema_combinator_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -1127,7 +1127,7 @@ fn schema_combinator_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -1365,7 +1365,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("title")]),
+          App(name="truthy?", args=[Field("title")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/80 italic")],
@@ -1374,7 +1374,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.show(
-          Predicate(pred=IsTruthy, args=[Field("description")]),
+          App(name="truthy?", args=[Field("description")]),
           @anode.h(
             "span",
             [@anode.attr("class", "block text-base-content/50")],
@@ -1392,7 +1392,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
           ],
           [
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("ifNode")]),
+              App(name="truthy?", args=[Field("ifNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",
@@ -1419,7 +1419,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("thenNode")]),
+              App(name="truthy?", args=[Field("thenNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",
@@ -1446,7 +1446,7 @@ fn schema_conditional_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("elseNode")]),
+              App(name="truthy?", args=[Field("elseNode")]),
               @anode.h("div", [@anode.attr("class", "contents")], [
                 @anode.h(
                   "span",

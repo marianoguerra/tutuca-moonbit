@@ -115,7 +115,7 @@ fn ps_entry_main_view_ir() -> @anode.View {
             ),
             @anode.text(" "),
             @anode.show(
-              Predicate(pred=IsTruthy, args=[Field("startYear")]),
+              App(name="truthy?", args=[Field("startYear")]),
               @anode.h(
                 "span",
                 [
@@ -175,7 +175,7 @@ fn ps_entry_main_view_ir() -> @anode.View {
         ),
         @anode.text(" "),
         @anode.hide(
-          Predicate(pred=IsEmpty, args=[Field("altUrls")]),
+          App(name="empty?", args=[Field("altUrls")]),
           @anode.h("div", [@anode.attr("class", "alts")], [
             @anode.h("ul", [], [
               @anode.each(

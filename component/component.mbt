@@ -496,9 +496,17 @@ pub fn schema_mutators(
 
 ///|
 /// Generated per-field mutators (oo.js ClassBuilder), JS camelCase names so
-/// views port verbatim: set/update/reset/toggle/len/pushIn/setInAt/updateInAt/
-/// deleteInAt/removeInAt for list/map/omap, and addIn/deleteIn/removeIn/hasIn/
-/// toggleIn for sets. getInAt is the only deferred accessor.
+/// views port verbatim: set/reset/len/pushIn/setInAt/deleteInAt/removeInAt for
+/// list/map/omap, toggle for bools, and addIn/deleteIn/removeIn/hasIn/toggleIn
+/// for sets. getInAt is the only deferred accessor.
+///
+/// NOTE(dropped): JS's `update<X>` and `updateIn<X>At` took a FUNCTION value
+/// and applied it to the current one. A view can write values and never a
+/// lambda, so no template could ever call either, and outside this package's
+/// own tests the tree had no call site. Worse, the gap between "set a field"
+/// and "transform a field with a function nobody can supply" is exactly why
+/// `inc`/`dec` were hand-written in every counter in the corpus. The
+/// in-between is an expression language (`.count += 1`), not a lambda.
 fn gen_mutators(
   fields : Map[String, FieldSpec],
   into : Map[String, (FieldBox, Array[@tutuca.Value]) -> @tutuca.Value],
@@ -509,13 +517,6 @@ fn gen_mutators(
     }
     into[mut_name("reset", name)] = (inst, _args) => {
       (inst.set)(name, spec.default)
-    }
-    // the update fn is a plain lambda: it receives ONLY the current value
-    into[mut_name("update", name)] = (inst, args) => {
-      match args {
-        [Fn(f), ..] => (inst.set)(name, f([(inst.get)(name)]))
-        _ => (inst.value)()
-      }
     }
     into[name + "Len"] = (inst, _args) => {
       match @tutuca.size_of((inst.get)(name)) {
@@ -599,9 +600,6 @@ fn gen_mutators(
         into[mut_name("setIn", name) + "At"] = (inst, args) => {
           seq_set(inst, name, args)
         }
-        into[mut_name("updateIn", name) + "At"] = (inst, args) => {
-          seq_update(inst, name, args)
-        }
         // JS names these deleteIn<X>At / removeIn<X>At for KEYED fields:
         // extendProtoForKeyed passes `${uname}At` into extendDeleteInAt
         // (src/oo.js:201). The bare deleteIn<X> / removeIn<X> spelling is the
@@ -653,26 +651,6 @@ fn seq_set(
     [key_arg, value, ..] =>
       match mutator_key(key_arg) {
         Some(key) => put_seq_item(inst, field, key, value)
-        None => (inst.value)()
-      }
-    _ => (inst.value)()
-  }
-}
-
-///|
-fn seq_update(
-  inst : FieldBox,
-  field : String,
-  args : Array[@tutuca.Value],
-) -> @tutuca.Value {
-  match args {
-    [key_arg, Fn(f), ..] =>
-      match mutator_key(key_arg) {
-        Some(key) =>
-          match (inst.get)(field).item_opt(key) {
-            Some(current) => put_seq_item(inst, field, key, f([current]))
-            None => (inst.value)()
-          }
         None => (inst.value)()
       }
     _ => (inst.value)()

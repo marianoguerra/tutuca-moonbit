@@ -92,7 +92,7 @@ fn request_example_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=IsTruthy, args=[Field("error")]),
+        App(name="truthy?", args=[Field("error")]),
         @anode.h("div", [@anode.attr("class", "error")], [
           @anode.dyn_text(Field("error"), id=2),
         ]),

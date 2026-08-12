@@ -175,31 +175,40 @@ test "quoted constant works in parse_macro_attr" {
 }
 
 ///|
-test "single-token value is not a predicate" {
+test "single-token value is not an application" {
   let ctx = @core.ParseCtx::new()
   guard! @core.parse_bool(".items", ctx) is Some(r)
   assert_true(r is Field("items"))
-  assert_true(!(r is Predicate(..)))
+  assert_true(!(r is App(..)))
 }
 
 ///|
-test "unary predicates parse to a PredicateVal" {
+test "unary predicates parse to a one-argument application" {
   let ctx = @core.ParseCtx::new()
-  for
-    pair in [
-      (@core.Pred::IsEmpty, "empty?"),
-      (IsTruthy, "truthy?"),
-      (IsFalsy, "falsy?"),
-      (IsNull, "null?"),
-    ] {
-    let (expected, name) = pair
-    guard! @core.parse_bool("\{name} .items", ctx)
-      is Some(Predicate(pred~, args~))
-    assert_true(pred == expected)
-    assert_eq(pred.name(), name)
+  for pred_name in ["empty?", "truthy?", "falsy?", "null?"] {
+    guard! @core.parse_bool("\{pred_name} .items", ctx)
+      is Some(App(name~, args~))
+    // The AST carries the NAME, not a constructor: that is what lets the
+    // vocabulary grow without this enum growing a case.
+    assert_eq(name, pred_name)
     assert_eq(args.length(), 1)
     assert_true(args[0] is Field("items"))
   }
+}
+
+///|
+test "the builtin vocabulary is a table a caller can enumerate" {
+  // The five used to be an enum nothing outside could add to. They are now
+  // rows, and the row is what carries the arity the parser checks against.
+  assert_eq(@core.builtin_names(), [
+    "empty?", "equals?", "falsy?", "null?", "truthy?",
+  ])
+  guard! @core.builtin("empty?") is Some(b)
+  assert_eq(b.name, "empty?")
+  assert_eq(b.arity, 1)
+  guard! @core.builtin("equals?") is Some(eq)
+  assert_eq(eq.arity, 2)
+  assert_true(@core.builtin("present?") is None)
 }
 
 ///|
@@ -220,7 +229,13 @@ test "arity mismatch returns None" {
   // port extension: the arity issue carries the predicate as payload
   assert_true(
     ctx.issues ==
-    [{ kind: BadValue, role: PredicateArity(IsEmpty), value: "empty? .a .b" }],
+    [
+      {
+        kind: BadValue,
+        role: PredicateArity(name="empty?", want=1),
+        value: "empty? .a .b",
+      },
+    ],
   )
 }
 
@@ -234,7 +249,7 @@ test "bad predicate arg returns None" {
 ///|
 test "predicate args accept bind values" {
   let ctx = @core.ParseCtx::new()
-  guard! @core.parse_bool("truthy? @flag", ctx) is Some(Predicate(args~, ..))
+  guard! @core.parse_bool("truthy? @flag", ctx) is Some(App(args~, ..))
   assert_true(args[0] is Bind("flag"))
 }
 
@@ -303,12 +318,11 @@ test "$ method handler keeps its args" {
 }
 
 ///|
-test "equals? parses to a PredicateVal with a Const string arg" {
+test "equals? parses to a two-argument application with a Const string arg" {
   let ctx = @core.ParseCtx::new()
   guard! @core.parse_bool("equals? .view 'detail'", ctx)
-    is Some(Predicate(pred~, args~))
-  assert_true(pred == Equals)
-  assert_eq(pred.name(), "equals?")
+    is Some(App(name~, args~))
+  assert_eq(name, "equals?")
   assert_eq(args.length(), 2)
   assert_true(args[0] is Field("view"))
   assert_true(args[1] is Const(lit=LStr("detail"), ..))
@@ -318,7 +332,7 @@ test "equals? parses to a PredicateVal with a Const string arg" {
 test "string literal arg preserves interior spaces" {
   let ctx = @core.ParseCtx::new()
   guard! @core.parse_bool("equals? .name 'John Doe'", ctx)
-    is Some(Predicate(args~, ..))
+    is Some(App(args~, ..))
   assert_eq(args.length(), 2)
   assert_true(args[1] is Const(lit=LStr("John Doe"), ..))
 }
@@ -326,8 +340,7 @@ test "string literal arg preserves interior spaces" {
 ///|
 test "escaped quote in a string literal arg" {
   let ctx = @core.ParseCtx::new()
-  guard! @core.parse_bool("equals? .name 'it\\'s'", ctx)
-    is Some(Predicate(args~, ..))
+  guard! @core.parse_bool("equals? .name 'it\\'s'", ctx) is Some(App(args~, ..))
   assert_true(args[1] is Const(lit=LStr("it's"), ..))
 }
 

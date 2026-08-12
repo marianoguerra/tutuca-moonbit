@@ -167,17 +167,6 @@ fn const_expr(lit : @tutuca.Lit) -> String {
 }
 
 ///|
-fn pred_expr(p : @tutuca.Pred) -> String {
-  match p {
-    IsEmpty => "IsEmpty"
-    IsTruthy => "IsTruthy"
-    IsFalsy => "IsFalsy"
-    IsNull => "IsNull"
-    Equals => "Equals"
-  }
-}
-
-///|
 fn val_expr(val : @tutuca.Val) -> String {
   match val {
     Const(lit~, from_macro~) =>
@@ -195,10 +184,10 @@ fn val_expr(val : @tutuca.Val) -> String {
       })
       "StrTpl([" + items.join(", ") + "])"
     }
-    Predicate(pred~, args~) =>
-      "Predicate(pred=\{pred_expr(pred)}, args=[" +
-      args.map(val_expr).join(", ") +
-      "])"
+    // The name rides as a string rather than a constructor: the vocabulary is
+    // a table, so there is no enum for the generated module to name.
+    App(name~, args~) =>
+      "App(name=\{quote(name)}, args=[" + args.map(val_expr).join(", ") + "])"
     Name(n) => "Name(\{quote(n)})"
     HandlerName(name~, ns~) => {
       let ns_name = match ns {

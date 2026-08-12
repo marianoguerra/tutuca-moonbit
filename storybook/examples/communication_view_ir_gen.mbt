@@ -23,7 +23,7 @@ fn status_main_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "main",
     @anode.show(
-      Predicate(pred=IsTruthy, args=[Field("message")]),
+      App(name="truthy?", args=[Field("message")]),
       @anode.h("div", [@anode.attr("class", "alert alert-info")], [
         @anode.h("span", [@anode.attr("class", "msg")], [
           @anode.dyn_text(Field("message")),

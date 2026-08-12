@@ -37,7 +37,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-todo"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("todo"),
                 ]),
@@ -56,7 +56,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-json"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("json"),
                 ]),
@@ -75,7 +75,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-tree"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("tree"),
                 ]),
@@ -94,7 +94,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-personal-site"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("personalSite"),
                 ]),
@@ -113,7 +113,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-dnd"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("dnd"),
                 ]),
@@ -132,7 +132,7 @@ fn composability_main_view_ir() -> @anode.View {
               @anode.attr("id", "tab-visual-wasm"),
               @anode.if_attr(
                 "class",
-                Predicate(pred=Equals, args=[
+                App(name="equals?", args=[
                   Field("activeSection"),
                   @anode.const_str("visualWasm"),
                 ]),
@@ -147,7 +147,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("todo"),
         ]),
@@ -157,7 +157,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("json"),
         ]),
@@ -167,7 +167,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("tree"),
         ]),
@@ -177,7 +177,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("personalSite"),
         ]),
@@ -187,7 +187,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("dnd"),
         ]),
@@ -197,7 +197,7 @@ fn composability_main_view_ir() -> @anode.View {
       ),
       @anode.text(" "),
       @anode.show(
-        Predicate(pred=Equals, args=[
+        App(name="equals?", args=[
           Field("activeSection"),
           @anode.const_str("visualWasm"),
         ]),
