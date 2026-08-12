@@ -8,10 +8,12 @@
 //   moon run --target native cmd/main -- gen-views demo/counterlib/counter.html --name Counter
 //
 // so neither the handler names nor the field names below are matched as
-// strings. Adding an `@on` handler to counter.html and regenerating makes
-// the `update` match non-exhaustive until it is handled; adding a field to
-// the schema adds it to CounterState; and a view that reads a field the
-// schema does not declare fails generation outright.
+// strings. Adding a field to the schema adds it to CounterState, and a view
+// that reads a field the schema does not declare fails generation outright.
+//
+// The BEHAVIOUR is in the file too now, in its `<script type="tutuca/script">`
+// block. What is left in this file is the one thing no generator can write:
+// which named fixture the component seeds from.
 //
 // It emits two modules: counter_view_gen.mbt (the state type and the view
 // types) and counter_view_ir_gen.mbt (the already-compiled @anode tree, plus
@@ -19,38 +21,20 @@
 // views, the styles, the codec and the schema are nowhere in this file).
 
 ///|
-/// Move the counter to `n`, remembering where it landed.
-fn counter_at(s : CounterState, n : Int) -> CounterState {
-  { ..s, count: n, history: s.history + [n] }
-}
-
-///|
+/// The whole component, in one argument.
+///
+/// `add` and `resetTo` are in the file's `<script type="tutuca/script">`
+/// block, and `gen-views` compiles them into `counter_inline_update`, which
+/// the wrapper composes ahead of `update~`. `setLabel` and `resetCount` were
+/// never written here either — they fall through to the mutators the schema's
+/// fields generate.
+///
+/// What is left is `init`: the named `fresh` state from the init block, in
+/// place of the zero state the wrapper would otherwise use. Fixtures live in
+/// that block rather than in the schema because a default is a value, not a
+/// type — and each is checked against the schema at generation time.
 pub fn counter_comp() -> @component.Component {
-  counter_component(
-    // The named `fresh` state from the init block, in place of the zero state
-    // the wrapper would otherwise use. Fixtures live in that block rather
-    // than in the schema because a default is a value, not a type — and each
-    // is checked against the schema at generation time.
-    init=CounterState::fresh(),
-    update=(s, msg, _ctx) => {
-      // The Input bucket, typed from the views' `@on` attributes.
-      match CounterMsg::from_dispatch(msg) {
-        Some(Add(d)) => return Some(counter_at(s, s.count + d.to_int()))
-        // Served by the mutators generated from the state's fields: returning
-        // None here lets Input dispatch fall through to them
-        // (component/instance.mbt obj_handler).
-        Some(SetLabel(_)) | Some(ResetCount) => return None
-        // Not a name the view declares — try the other buckets below.
-        Some(Unknown(_, _)) | None => ()
-      }
-      // The Receive bucket, typed from the schema. The views never write
-      // these names, so before the schema this arm could only match a string.
-      match CounterReceive::from_dispatch(msg) {
-        Some(ResetTo(n)) => Some(counter_at(s, n))
-        Some(Unknown(_, _)) | None => None
-      }
-    },
-  )
+  counter_component(init=CounterState::fresh())
 }
 
 ///|
@@ -95,7 +79,7 @@ test "the component takes its kinds from the schema, not the seed value" {
   assert_eq(si.init_names, ["fresh", "with-history"])
   assert_eq(si.view_names, ["main"])
   // `count` seeds at 0, which `FieldSpec::of_default` would also call FInt —
-  // but for the wrong reason. The schema says s32.
+  // but for the wrong reason. The schema says Int.
   //
   // Matched rather than compared: FieldKind carries a Map[String, Value] in its
   // FComp arm, and Value holds Fn and &Obj, so it cannot derive Eq.
@@ -105,10 +89,10 @@ test "the component takes its kinds from the schema, not the seed value" {
   guard! si.field("label") is Some(lf)
   assert_true(lf.kind() is FText)
   // ...and an element type, which a runtime spec has no room for. Structural,
-  // so a reader can descend rather than receive the string "s32" and stop.
+  // so a reader can descend rather than receive the string "Int" and stop.
   guard! si.field("history") is Some(hf)
   assert_eq(hf.ty, TyList(TyInt))
-  assert_eq(hf.ty.show_source(), "list<s32>")
+  assert_eq(hf.ty.show_source(), "Array[Int]")
   assert_true(hf.kind() is FList)
   assert_eq(hf.ty.elem(), Some(TyInt))
   // ...and the default the inspector shows is the type's zero, reachable

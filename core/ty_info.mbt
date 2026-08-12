@@ -63,20 +63,22 @@ pub(all) enum TyInfo {
 /// file and what they will edit.
 pub fn TyInfo::show_source(self : TyInfo) -> String {
   match self {
-    TyBool => "bool"
-    TyInt => "s32"
-    TyFloat => "f64"
-    TyText => "string"
-    TyList(e) => "list<" + e.show_source() + ">"
-    TyTuple(ts) => "tuple<" + ts.map(t => t.show_source()).join(", ") + ">"
-    TyOption(e) => "option<" + e.show_source() + ">"
-    TyRecord(n) | TyEnum(n) | TyVariant(n) | TyFlags(n, _) => n
-    TySet => "text-set"
-    TyOMap(v) => "an ordered map of " + v.show_source()
-    TyComp(Some(c)) => "the " + c + " component"
-    TyComp(None) => "component"
-    TyTable => "table"
-    TyAny => "any"
+    TyBool => "Bool"
+    TyInt => "Int"
+    TyFloat => "Double"
+    TyText => "String"
+    TyList(e) => "Array[" + e.show_source() + "]"
+    TyTuple(ts) => "(" + ts.map(t => t.show_source()).join(", ") + ")"
+    TyOption(e) => e.show_source() + "?"
+    TyRecord(n) | TyEnum(n) | TyVariant(n) => n
+    // A closed set names its enum, which is where the membership is written.
+    TyFlags(n, _) => "Set[" + n + "]"
+    TySet => "Set[String]"
+    TyOMap(v) => "Map[String, " + v.show_source() + "]"
+    TyComp(Some(c)) => "Component[" + c + "]"
+    TyComp(None) => "Component"
+    TyTable => "Table"
+    TyAny => "Any"
   }
 }
 

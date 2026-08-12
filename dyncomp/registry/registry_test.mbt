@@ -221,7 +221,7 @@ test "summary falls back through doc, keywords, then the shape" {
   guard! reg.describe({ module_: "counterlib", name: "Counter" }) is Some(d)
   inspect(d.summary(), content="A number with buttons that raise and lower it.")
   let bare : Descriptor = { ..d, doc: "", keywords: [] }
-  inspect(bare.summary(), content="count: f64")
+  inspect(bare.summary(), content="count: Double")
   let kw : Descriptor = { ..d, doc: "" }
   inspect(kw.summary(), content="tally, increment")
 }
@@ -252,7 +252,7 @@ test "a descriptor projects its own args schema, and coerces against it" {
   guard! d.coerce_args(@json.parse("{\"count\": \"x\"}")) is Err(errors)
   debug_inspect(
     errors.map(e => "\{e.pointer}: \{e.message}"),
-    content="[\"/count: expected f64, got string\"]",
+    content="[\"/count: expected Double, got string\"]",
   )
 }
 

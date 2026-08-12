@@ -138,10 +138,17 @@ fn P::skip_seps(self : P) -> Unit {
 
 ///|
 /// The mutating collection methods, receiver-first, with their arity.
+///
+/// `delete` and `remove` are one method under two names, and so are `deleteAt`
+/// and `removeAt`. The generated mutators already spell both
+/// (`deleteInXAt` / `removeInXAt`), and a language that took only one of each
+/// would make the choice of spelling a thing to look up.
 pub fn collection_method(name : String) -> Int? {
   match name {
-    "push" | "deleteAt" | "add" | "remove" | "toggle" => Some(1)
-    "insertAt" | "setAt" => Some(2)
+    "clear" => Some(0)
+    "push" | "deleteAt" | "removeAt" | "add" | "remove" | "delete" | "toggle" =>
+      Some(1)
+    "insertAt" | "setAt" | "set" => Some(2)
     _ => None
   }
 }
@@ -434,7 +441,7 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
       guard collection_method(m_name) is Some(arity) else {
         raise Unexpected(
           got="`\{m_name}`",
-          want="a collection method: push, insertAt, setAt, deleteAt, add, remove or toggle",
+          want="a collection method: push, insertAt, setAt, deleteAt/removeAt, clear, add, remove/delete, set or toggle",
           span=place.span,
         )
       }

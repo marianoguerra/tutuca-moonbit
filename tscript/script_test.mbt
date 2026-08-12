@@ -185,7 +185,7 @@ test "a method arity that does not match is refused" {
   )
   assert_eq(
     script_err("on x { .items.frobnicate 1 }"),
-    "expected a collection method: push, insertAt, setAt, deleteAt, add, remove or toggle, found `frobnicate`",
+    "expected a collection method: push, insertAt, setAt, deleteAt/removeAt, clear, add, remove/delete, set or toggle, found `frobnicate`",
   )
 }
 

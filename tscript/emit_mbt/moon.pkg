@@ -1,0 +1,27 @@
+// The MoonBit backend: a script block as a dispatch function over the typed
+// state struct.
+//
+// The second of three backends over one AST, and the one whose existence is
+// the argument for the corpus. The interpreter walks `@tutuca.Value` where
+// every number is a `Num(Double)`; this walks a MoonBit struct where `.count`
+// is an `Int` and `.history` an `Array[Int]`. Two implementations of one
+// semantics, and the only thing that keeps them honest is being held to the
+// same table.
+//
+// The numeric rule is what makes them agree by construction: **every
+// arithmetic expression is emitted as `Double`**, and the conversion happens
+// where a value meets a declared type. That is not a convenience — it is the
+// interpreter's own model (`Value` has a single `Num(Double)`) written out in
+// a language that has more than one number, so a card and a compiled component
+// round the same expression the same way.
+//
+// What it cannot compile it REFUSES, by name, with the reason. The design
+// reserves roughly 15% of the corpus for MoonBit — `walk_path`, request
+// options, node-replacing `swap`, dyncomp lifecycle — and a backend that
+// guessed at those would be worse than one that says which handler to write by
+// hand.
+import {
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check",
+  "marianoguerra/tutuca/statedef",
+}

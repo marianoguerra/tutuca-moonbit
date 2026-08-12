@@ -289,9 +289,9 @@ test "errors are collected, and each points at where it happened" {
     errors.map(e => "\{e.pointer}: \{e.message}"),
     content=(
       #|[
-      #|  "/name: expected string, got number",
+      #|  "/name: expected String, got number",
       #|  "/count: expected an integer, got 1.5",
-      #|  "/tags/1: expected string, got number",
+      #|  "/tags/1: expected String, got number",
       #|  "/extra: no such field",
       #|]
     ),

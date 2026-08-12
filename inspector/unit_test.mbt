@@ -238,9 +238,9 @@ test "component_summary reads fields, buckets, and view sources" {
   inspect(fields.length(), content="4")
   guard fields[0] is Map(f0) else { fail("field row is not a Map") }
   assert_true(f0.get("name") is Some(Str("title")))
-  // The author's WIT spelling, not a label reconstructed from the runtime
+  // The author's own spelling, not a label reconstructed from the runtime
   // kind — which is the whole difference between describing and reflecting.
-  assert_true(f0.get("type") is Some(Str("string")))
+  assert_true(f0.get("type") is Some(Str("String")))
   assert_true(f0.get("default") is Some(Str("")))
   // methods = the compute names. `inc`/`reset` are update arms, not
   // methods: they answer a dispatch rather than a field read. The generated
@@ -480,8 +480,8 @@ test "a described component surfaces what reflection cannot" {
   guard! d.get("fields") is Some(List(fields))
   guard! fields[2] is Map(tags)
   assert_eq(tags.get("name"), Some(Str("tags")))
-  assert_eq(tags.get("type"), Some(Str("list<string>")))
-  assert_eq(tags.get("elem"), Some(Str("string")))
+  assert_eq(tags.get("type"), Some(Str("Array[String]")))
+  assert_eq(tags.get("elem"), Some(Str("String")))
 }
 
 ///|
@@ -673,10 +673,10 @@ test "state editor: rows come from the schema, controls from the kinds" {
   assert_true(oget(rows[0], "text") is Str("Hello"))
   assert_true(oget(rows[1], "kind") is Str("num"))
   assert_true(oget(rows[1], "num") is Num(3.0))
-  // the WIT spelling, not a label reconstructed from the runtime kind.
-  // `values` is a marker alias for `list<any>`, and the spelling is now a
-  // function of the type, so it normalizes the way the generator already did.
-  assert_true(oget(rows[2], "type") is Str("list<any>"))
+  // the schema's own spelling, not a label reconstructed from the runtime
+  // kind. The spelling is a function of the type, so it normalizes the way the
+  // generator already did.
+  assert_true(oget(rows[2], "type") is Str("Array[Any]"))
   // a list is a tree, not a control: shown, not edited
   assert_true(oget(rows[2], "kind") is Str("readonly"))
   assert_true(oget(rows[2], "editable") is Bool(false))

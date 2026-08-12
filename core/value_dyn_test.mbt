@@ -201,7 +201,7 @@ test "an instance names its own fields, with no registry in hand" {
   assert_eq(r.field_names(), ["title", "tags"])
   guard! r.field_info("tags") is Some(fi)
   assert_eq(fi.ty, TyList(TyText))
-  assert_eq(fi.ty.show_source(), "list<string>")
+  assert_eq(fi.ty.show_source(), "Array[String]")
   assert_eq(fi.ty.elem(), Some(TyText))
   assert_true(fi.kind() is FList)
   assert_true(r.field_info("nope") is None)

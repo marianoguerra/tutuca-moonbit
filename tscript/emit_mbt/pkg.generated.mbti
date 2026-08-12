@@ -1,0 +1,34 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript/emit_mbt"
+
+import {
+  "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn emit(Array[@tscript.Decl], @statedef.StateDef, state_ty~ : String, fn_name~ : String, surface? : @check.Surface) -> Emitted
+
+// Errors
+
+// Types and methods
+pub(all) struct Emitted {
+  source : String
+  answers_input : Array[String]
+  answers_receive : Array[String]
+  answers_bubble : Array[String]
+  answers_response : Array[String]
+  refusals : Array[Refusal]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Refusal {
+  name : String
+  why : String
+  span : @tscript.Span
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

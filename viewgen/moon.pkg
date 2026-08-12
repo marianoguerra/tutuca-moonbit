@@ -10,6 +10,8 @@ import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/tscript/check",
+  "marianoguerra/tutuca/tscript/emit_mbt",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",

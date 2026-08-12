@@ -8,3 +8,12 @@ import {
   "moonbitlang/core/json",
   "moonbitlang/core/debug",
 }
+
+// The headless harness mounts the module as a live app and drives it through
+// the DOM, which is the only way to check that the SCRIPT BLOCK's handlers
+// actually run: everything above them is generated, so a test that called
+// MoonBit directly would be testing the generator's output rather than the
+// component.
+import {
+  "marianoguerra/tutuca/testing/harness",
+} for "test"

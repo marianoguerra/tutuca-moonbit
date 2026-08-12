@@ -47,6 +47,9 @@ fn emit_wrapper(
   v : String,
   _def : @statedef.StateDef,
   surface : Surface,
+  /// The `<comp>_inline_update` this wrapper composes ahead of `update~`, when
+  /// the file's script block compiled one.
+  inline : String?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let methods = declared_methods(surface)
@@ -103,6 +106,22 @@ fn emit_wrapper(
   out.write_string(
     wrapper_opt("lookup", "Map[String, @component.LookupSpec]", "Map([])"),
   )
+  // The block first, the author's `update` second, the generated mutators
+  // last. `None` from the block means "no arm claimed this name", which is a
+  // different answer from `Some(s)` — "answered, and nothing changed" — and
+  // that distinction is what makes the fall-through work.
+  let update_arg = match inline {
+    Some(f) =>
+      "    update=(s, msg, ctx) => match \{f}(s, msg, ctx) {\n" +
+      "      Some(next) => Some(next)\n" +
+      "      None =>\n" +
+      "        match update {\n" +
+      "          Some(u) => u(s, msg, ctx)\n" +
+      "          None => None\n" +
+      "        }\n" +
+      "    },\n"
+    None => "    update?=update,\n"
+  }
   out.write_string(
     ") -> @component.Component {\n" +
     "  @component.component(\n" +
@@ -111,7 +130,7 @@ fn emit_wrapper(
     "    init~,\n" +
     "    common_style~,\n" +
     "    global_style~,\n" +
-    "    update?=update,\n",
+    update_arg,
   )
   for b in wrapper_buckets(t, s, surface, methods) {
     out.write_string(

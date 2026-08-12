@@ -428,13 +428,24 @@ fn emit_ir_module_compiled(
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
   for comp in compiled.components {
     let cname = comp.raw.component_name(name)
-    emit_ir_component(
-      cname,
-      comp,
-      state_for(file, cname, name),
-      with_script(comp.surface, file, cname),
-      out,
-    )
+    let state = state_for(file, cname, name)
+    let surface = with_script(comp.surface, file, cname)
+    // The script block, compiled — None when the file writes none, and None
+    // for a component with no schema, which has no state type to write a
+    // transition over.
+    let inline = match state {
+      Some(def) =>
+        inline_emit(
+          file,
+          cname,
+          def,
+          surface,
+          value_prefix(cname),
+          "\{type_prefix(cname)}State",
+        )
+      None => None
+    }
+    emit_ir_component(cname, comp, state, surface, inline, out)
   }
   out.to_string()
 }
@@ -494,6 +505,7 @@ fn emit_ir_component(
   compiled : CompiledComponent,
   state : @statedef.StateDef?,
   surface : Surface,
+  inline : @emit_mbt.Emitted?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -537,8 +549,17 @@ fn emit_ir_component(
   // with it rather than in the types module: the two arrive and leave
   // together. A component with no schema has no state type to make its
   // parameters out of, and keeps calling `component()` directly.
+  // The block's transitions, ahead of the wrapper that composes them.
+  let inline_name = match inline {
+    Some(e) if e.source != "" => {
+      out.write_string(e.source)
+      out.write_string("\n")
+      Some(inline_fn_name(v))
+    }
+    _ => None
+  }
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, surface, out)
+    emit_wrapper(name, t, v, def, surface, inline_name, out)
   }
 }
 

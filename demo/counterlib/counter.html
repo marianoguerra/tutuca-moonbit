@@ -12,6 +12,24 @@
   }
 </script>
 
+<script type="tutuca/script">
+  /// Move the counter by `d`, remembering where it landed.
+  ///
+  /// `.count` reads the value the line above wrote: a statement rebinds the
+  /// state, so the push records where the counter ENDED rather than where it
+  /// started.
+  on add(d) {
+    .count += d
+    .history.push .count
+  }
+
+  /// The same move, addressed by name rather than by a click.
+  receive resetTo(n) {
+    .count = n
+    .history.push .count
+  }
+</script>
+
 <script type="tutuca/init">
 {
   "fresh":        { "label": "Counter" },

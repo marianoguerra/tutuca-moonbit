@@ -530,18 +530,31 @@ fn emit_module_compiled(
     let inits = file.init.filter(p => p.0 == init_key).map(p => p.1)
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
+    let surface = with_script(compiled_comp.surface, file, cname)
     if state is Some(def) {
       check_views(compiled_comp.views, def, prog, hints)
+      // A declaration the MoonBit backend will not compile is not an error —
+      // the design reserves the hardest sixth of the corpus for hand-written
+      // MoonBit — but it IS something the author has to read, or they will
+      // wonder why the handler they wrote in the block does nothing.
+      if inline_emit(
+          file,
+          cname,
+          def,
+          surface,
+          value_prefix(cname),
+          "\{type_prefix(cname)}State",
+        )
+        is Some(e) {
+        for r in e.refusals {
+          hints.push(
+            "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)",
+          )
+        }
+      }
     }
     emit_component(
-      cname,
-      source_file,
-      comp,
-      with_script(compiled_comp.surface, file, cname),
-      state,
-      inits,
-      debug_derive,
-      out,
+      cname, source_file, comp, surface, state, inits, debug_derive, out,
     )
   }
   out.to_string()
