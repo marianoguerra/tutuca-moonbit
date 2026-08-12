@@ -1,0 +1,59 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>tutucard playground</title>
+    <link rel="stylesheet" href="./shell.css" />
+  </head>
+  <body>
+    <header class="bar">
+      <h1>tutucard</h1>
+      <p class="tagline">
+        A component that is one <code>.html</code> file — state, script, views.
+        No compiler on this page.
+      </p>
+      <label class="examples">
+        <span>example</span>
+        <select id="example"></select>
+      </label>
+      <span id="status" class="status">…</span>
+    </header>
+
+    <main class="grid">
+      <section class="pane editor-pane">
+        <h2>Card</h2>
+        <!-- A plain textarea with a gutter beside it. Deliberately not an
+             editor component: the point of this page is the CARD, and a
+             syntax-highlighting dependency would be the largest thing on it. -->
+        <div class="editor">
+          <pre id="gutter" class="gutter" aria-hidden="true"></pre>
+          <textarea
+            id="source"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+          ></textarea>
+        </div>
+      </section>
+
+      <section class="pane">
+        <h2>Preview</h2>
+        <div id="preview" class="preview"></div>
+        <h2>Diagnostics</h2>
+        <ul id="issues" class="issues"></ul>
+      </section>
+
+      <section class="pane">
+        <h2>State</h2>
+        <pre id="state" class="json"></pre>
+        <h2>Activity</h2>
+        <ol id="activity" class="activity"></ol>
+      </section>
+    </main>
+
+    <script src="./tutucard.js"></script>
+    <script type="module" src="./shell.js"></script>
+  </body>
+</html>

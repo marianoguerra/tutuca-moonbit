@@ -1,0 +1,26 @@
+// The card playground's mount facade.
+//
+// The payload here is the whole story. The existing `playground/` ships a
+// 5.5 MB `moonc` worker, a prebuilt `.mi`/`.core` bundle per target, and a
+// toolchain pin asserted at assemble time — because it compiles the user's
+// MoonBit in the browser. A card needs none of that: it is parsed and mounted,
+// so the edit loop is parse → check → mount and the payload is the tutuca
+// runtime plus the language front end.
+//
+// Which means the interesting entry point is `load(source)`, called on every
+// keystroke. It tears the previous app down and builds a new one, and answers
+// the diagnostics as JSON so the editor can underline them — with real columns,
+// which nothing in a view file could report until `tscript` carried spans.
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/tutucard",
+  "marianoguerra/tutuca/app/browser" @glue,
+  "marianoguerra/tutuca/vdom/browser" @bdom,
+  "mizchi/js_browser/dom",
+  "moonbitlang/core/json",
+}
+
+supported_targets = "js"
+
+pkgtype(kind: "executable")

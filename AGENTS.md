@@ -117,6 +117,7 @@ moon run --target native cmd/dev -- <task>
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
+| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no compiler at all: a card is parsed and mounted, so the payload is the runtime and the page. Ends by loading every starter card through the real loader, since they are JS strings no MoonBit test can reach |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It

@@ -278,6 +278,28 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "tutucard-playground",
+      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host, copy the shell, then check every starter card loads",
+      commands: [
+        // No compiler, no worker, no prebuilt .mi/.core closure and no
+        // toolchain pin — a card is parsed and mounted, so what ships is the
+        // runtime and the page. assemble.mjs runs the build itself.
+        {
+          label: "assemble dist/tutucard",
+          prog: "node",
+          args: ["tutucard/build/assemble.mjs"],
+        },
+        // The starter cards are JavaScript strings no MoonBit test can reach,
+        // so a card that stopped parsing would be found by whoever opened the
+        // page. This runs the real loader over every one of them.
+        {
+          label: "check · starter cards load",
+          prog: "node",
+          args: ["tutucard/build/check-examples.mjs"],
+        },
+      ],
+    },
+    {
       name: "npm-pack",
       about: "stage + `npm pack` the playground's two npm packages from an assembled dist/ (packs only — publishing stays manual; see CONTRIBUTING.md)",
       commands: [
