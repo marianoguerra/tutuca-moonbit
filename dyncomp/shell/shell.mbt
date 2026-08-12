@@ -177,3 +177,30 @@ pub fn loader_bar_comp(
     }
   })
 }
+
+///|
+/// Services a demo PAGE offers to whatever it hosts.
+///
+/// `double` is the one `guests/counter` calls (`control.request "double"`),
+/// and it is here to demonstrate the seam rather than because doubling is
+/// interesting: it is a guest asking the page for something it cannot compute
+/// for itself. A bundle that serves a request of the same NAME answers its own
+/// components first — the counter's `triple` is served by its own bundle and
+/// never reaches this map.
+///
+/// In the shell because both demo pages need exactly it, and had it twice: the
+/// universal host to show the seam, the storybook because a card whose button
+/// does nothing is a card that lies about the component. The two pages are
+/// deliberately different from each other, which is a statement about what
+/// they SHOW — not a reason for the sample service behind them to be written
+/// out twice.
+pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
+  {
+    "double": RequestFn((args, respond) => {
+      match args {
+        [Num(n)] => respond(Ok(Num(n * 2.0)))
+        _ => respond(Err(Str("double: expected one number")))
+      }
+    }),
+  }
+}

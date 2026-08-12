@@ -121,3 +121,48 @@ test "help_text lists every task name" {
   assert_true(help.contains("ci"))
   assert_true(help.contains("dist"))
 }
+
+///|
+/// The two bundle-hosting pages are assembled by ONE function, so this pins
+/// what varies (the directory, the demo package, the .wasm name) and what must
+/// not (the four loader files, the repointing, the packed archives beside the
+/// page). A page missing `abi.mjs` mounts, draws, and fails on the first
+/// bundle with a message about a module nobody mentioned — the failure the
+/// comment in `dyncomp_page_steps` is about.
+test "both dyncomp pages are assembled the same way, into their own directory" {
+  let pages = [
+    ("universal", "universal_wasm.wasm", @dev.universal_steps()),
+    (
+      "dyncomp-storybook",
+      "dyncomp_storybook_wasm.wasm",
+      @dev.dyncomp_storybook_steps(),
+    ),
+  ]
+  for page in pages {
+    let (into, wasm_name, steps) = page
+    let dests : Array[String] = []
+    for st in steps {
+      match st {
+        Copy(from=_, to~) => dests.push(to)
+        WriteRewritten(from=_, to~, old_src=_, new_src=_) => dests.push(to)
+        _ => ()
+      }
+    }
+    for
+      name in [
+        "loader.mjs", "app-loader.mjs", "dyncomp-loader.mjs", "abi.mjs", "index.html",
+        wasm_name,
+      ] {
+      assert_true(dests.contains("dist/\{into}/\{name}"))
+    }
+    // nothing lands in the OTHER page's directory
+    let other = if into == "universal" {
+      "dyncomp-storybook"
+    } else {
+      "universal"
+    }
+    for d in dests {
+      assert_false(d.has_prefix("dist/\{other}/"))
+    }
+  }
+}

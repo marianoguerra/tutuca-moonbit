@@ -26,6 +26,8 @@ pub fn make_instance(@registry.ComponentRef, String, Map[String, @core.Value]) -
 
 pub fn refresh_margaui() -> Unit
 
+pub fn sample_host_requests() -> Map[String, @component.RequestFn]
+
 pub fn set_live_app(@app.App[@wasm.WasmNode]) -> Unit
 
 // Errors

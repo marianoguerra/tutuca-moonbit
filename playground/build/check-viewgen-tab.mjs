@@ -115,8 +115,14 @@ const loadCompiler = () => {
 let moonc = loadCompiler();
 const manifest = JSON.parse(readFileSync(join(OUT, "manifest.json"), "utf8"));
 
-// The boot glue compiler.worker.js injects, per backend. Kept in step with the
-// BOOT table there — a drift makes this check pass on code the page can't run.
+// The boot glue compiler.worker.js injects, per backend.
+//
+// It is a COPY, and it cannot stop being one: the worker is a classic worker
+// whose cross-origin path wraps it in a blob that `importScripts()` the real
+// URL, so the worker resolves nothing relative to itself and cannot pull in a
+// shared file (playground/web/runtime.js spells that out). What it can do is
+// fail loudly, which `assertBootInStep` below does — this check exists to
+// catch drift, and a drift HERE makes it pass on code the page cannot run.
 const BOOT = {
   js: `fn main {
   @host.mount(build(), "app")
@@ -133,6 +139,30 @@ fn main {
 `,
 };
 const WASM_EXPORTS = ["mount", "on_event", "state_json", "classes_json", "activity_json"];
+
+// Hold the copy above against the original. Text containment, not parsing: the
+// worker is a script rather than a module, so there is nothing to import — but
+// the glue is a verbatim string literal in both, so "does the worker's source
+// contain this exact text" answers the only question that matters.
+function assertBootInStep() {
+  const workerSrc = readFileSync(
+    join(REPO, "playground", "web", "compiler.worker.js"),
+    "utf8",
+  );
+  for (const [target, glue] of Object.entries(BOOT)) {
+    if (!workerSrc.includes(glue)) {
+      console.error(
+        `BOOT drift: the ${target} boot glue in this check is not in ` +
+          `playground/web/compiler.worker.js.\n` +
+          `This check would then pass on code the page cannot run. Copy the ` +
+          `worker's table over the one here (the worker is the original).\n` +
+          `--- expected to find ---\n${glue}`,
+      );
+      process.exit(1);
+    }
+  }
+}
+assertBootInStep();
 
 // Load the .mi/.core payload a backend links against.
 function payload(target) {

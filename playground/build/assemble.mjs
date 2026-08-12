@@ -14,6 +14,7 @@ import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import { ensureCompiler, TOOLCHAIN } from "./fetch-compiler.mjs";
 import { copyScoped } from "../../scripts/scope-bundle.mjs";
+import { DIRECT } from "./direct-packages.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MOON_HOME = process.env.MOON_HOME || join(process.env.HOME, ".moon");
@@ -45,23 +46,9 @@ function assertToolchain() {
 }
 assertToolchain();
 
-// packages a user may import directly (distinct aliases — no browser/browser clash).
-// The value+path runtime lives in the `core/` package (marianoguerra/tutuca/core),
-// but examples import it as @tutuca. The in-browser moonc aliases a direct import
-// by the .mi's own package name (it has no moon.pkg to re-alias core -> @tutuca the
-// way the library's packages do), so we expose the module-ROOT package instead
-// (marianoguerra/tutuca, name -> alias @tutuca), a thin facade that re-exports
-// core's value types (see reexport.mbt). Its .mi is lib/tutuca.mi.
-const DIRECT = [
-  ["host", "playground/host/host"],
-  ["component", "component/component"],
-  ["tutuca", "tutuca"],
-  ["anode", "anode/anode"],
-  ["app", "app/app"],
-  ["render", "render/render"],
-  ["vdom", "vdom/vdom"],
-  ["transactor", "transactor/transactor"],
-];
+// The packages a user may import directly. In direct-packages.mjs because
+// `scripts/check-playground-examples.mjs` needs the same list to write the
+// `moon.pkg` it checks an example against — see the note there.
 
 const bundleDir = (t) => join(MOON_HOME, `lib/core/_build/${t}/release/bundle`);
 const buildDir = (t) => join(REPO, `_build/${t}/debug/build`);

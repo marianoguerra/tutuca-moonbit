@@ -14,4 +14,3 @@ test "stories() covers the example registry and groups into sections" {
   }
   assert_eq(total, all.length())
 }
-

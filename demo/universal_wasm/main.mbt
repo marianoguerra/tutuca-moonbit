@@ -5,8 +5,9 @@
 /// by `moon test`) and the host around it is `dyncomp/ui/wasm` — both published,
 /// so this file is what a consumer copies rather than what they read for the
 /// machinery. What stays is the part that is genuinely this page's: which
-/// bundles it offers, whether it remembers a session, one service it lends to
-/// what it hosts, and the wasm-gc export list.
+/// bundles it offers, whether it remembers a session, and the wasm-gc export
+/// list. (The sample `double` service it lends to what it hosts is
+/// `@shell.sample_host_requests` — the storybook page offers the same one.)
 ///
 /// An export list is per-package `link` configuration and cannot come from a
 /// dependency, so the five entry points are re-exported here as one-line
@@ -78,26 +79,6 @@ fn samples() -> Array[@shell.LoaderBarSample] {
   ]
 }
 
-///|
-/// Services this HOST provides to whatever it hosts.
-///
-/// `double` is the one the sample counter calls (`control.request "double"`),
-/// and it is here to demonstrate the seam rather than because doubling is
-/// interesting: it is a guest asking the page for something it cannot compute
-/// for itself. A bundle that serves a request of the same NAME answers its own
-/// components first — the counter's `triple` is served by its own bundle and
-/// never reaches this map.
-fn host_requests() -> Map[String, @component.RequestFn] {
-  {
-    "double": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 2.0)))
-        _ => respond(Err(Str("double: expected one number")))
-      }
-    }),
-  }
-}
-
 // --- lifecycle exports ---------------------------------------------------
 
 ///|
@@ -110,7 +91,12 @@ pub fn mount() -> Unit {
   } else {
     None
   }
-  @uiw.mount(session~, samples=samples(), requests=host_requests()) |> ignore
+  @uiw.mount(
+    session~,
+    samples=samples(),
+    requests=@shell.sample_host_requests(),
+  )
+  |> ignore
 }
 
 ///|

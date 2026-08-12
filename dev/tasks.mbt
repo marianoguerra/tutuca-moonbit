@@ -804,29 +804,53 @@ const UNIVERSAL_WASM = "_build/wasm-gc/release/build/demo/universal_wasm/univers
 /// that hosts runtime-loaded bundles; the storybook gallery used to carry a
 /// second, smaller shell for the same job and no longer does.
 pub fn universal_steps() -> Array[Step] {
+  dyncomp_page_steps(
+    label="universal demo",
+    demo="demo/universal_wasm",
+    wasm=UNIVERSAL_WASM,
+    into="universal",
+  )
+}
+
+///|
+/// Assemble one bundle-hosting page into `dist/<into>/`.
+///
+/// The two such pages differ in what they SHOW — a blank host to build on
+/// versus a gallery that fetches everything at mount — and in nothing about
+/// how they are assembled: same release build, same guest bundles, same four
+/// loader files with the same repointing, same packed archives beside them.
+/// That was eleven steps written out twice, which is eleven chances for the
+/// pages to be assembled differently for no reason anybody chose.
+fn dyncomp_page_steps(
+  label~ : String,
+  demo~ : String,
+  wasm~ : String,
+  into~ : String,
+) -> Array[Step] {
+  let dir = "\{DIST}/\{into}"
+  // The .wasm keeps the demo package's own name beside the page, which is what
+  // that page's index.html and loader already fetch.
+  let wasm_name = wasm.split("/").last().unwrap_or(wasm).to_owned()
   [
     Run(
-      moon("build · wasm-gc universal demo (release)", [
-        "build", "--target", "wasm-gc", "--release", "demo/universal_wasm",
+      moon("build · wasm-gc \{label} (release)", [
+        "build", "--target", "wasm-gc", "--release", demo,
       ]),
     ),
     ..guest_build_steps(),
-    Mkdir("\{DIST}/universal"),
-    Mkdir("\{DIST}/universal/examples"),
-    Copy(from=UNIVERSAL_WASM, to="\{DIST}/universal/universal_wasm.wasm"),
-    Run(wasm_opt("\{DIST}/universal/universal_wasm.wasm")),
-    Copy(
-      from="demo/universal_wasm/loader.mjs",
-      to="\{DIST}/universal/loader.mjs",
-    ),
-    Copy(from="app/wasm/loader.mjs", to="\{DIST}/universal/app-loader.mjs"),
+    Mkdir(dir),
+    Mkdir("\{dir}/examples"),
+    Copy(from=wasm, to="\{dir}/\{wasm_name}"),
+    Run(wasm_opt("\{dir}/\{wasm_name}")),
+    Copy(from="\{demo}/loader.mjs", to="\{dir}/loader.mjs"),
+    Copy(from="app/wasm/loader.mjs", to="\{dir}/app-loader.mjs"),
     // The dyncomp bridge imports the app one. In the repo (and in the published
     // tarball, where both sit under marianoguerra/tutuca) that relative path
     // resolves; in dist the two land flat beside the page, so repoint it — the
     // same repointing the demo pages' <script src> gets.
     WriteRewritten(
       from="dyncomp/host/wasm/loader.mjs",
-      to="\{DIST}/universal/dyncomp-loader.mjs",
+      to="\{dir}/dyncomp-loader.mjs",
       old_src="../../../app/wasm/loader.mjs",
       new_src="./app-loader.mjs",
     ),
@@ -836,13 +860,10 @@ pub fn universal_steps() -> Array[Step] {
     // message about a module nobody mentioned. It is the canonical ABI, which
     // moved host-side in 0.12.0 (dyncomp/host/wasm/abi.mjs), and it has no
     // imports of its own, so it is copied verbatim.
-    Copy(from="dyncomp/host/wasm/abi.mjs", to="\{DIST}/universal/abi.mjs"),
-    Copy(
-      from="demo/universal_wasm/index.html",
-      to="\{DIST}/universal/index.html",
-    ),
+    Copy(from="dyncomp/host/wasm/abi.mjs", to="\{dir}/abi.mjs"),
+    Copy(from="\{demo}/index.html", to="\{dir}/index.html"),
     // pack each guest's core wasm + static assets into one droppable archive
-    ..guest_pack_steps(into="\{DIST}/universal/examples"),
+    ..guest_pack_steps(into="\{dir}/examples"),
   ]
 }
 
@@ -864,48 +885,12 @@ const DYNCOMP_STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/dyncomp_storyb
 /// person builds on, and this shows everything a bundle declares without
 /// anybody building anything.
 pub fn dyncomp_storybook_steps() -> Array[Step] {
-  [
-    Run(
-      moon("build · wasm-gc dyncomp storybook (release)", [
-        "build", "--target", "wasm-gc", "--release", "demo/dyncomp_storybook_wasm",
-      ]),
-    ),
-    ..guest_build_steps(),
-    Mkdir("\{DIST}/dyncomp-storybook"),
-    Mkdir("\{DIST}/dyncomp-storybook/examples"),
-    Copy(
-      from=DYNCOMP_STORYBOOK_WASM,
-      to="\{DIST}/dyncomp-storybook/dyncomp_storybook_wasm.wasm",
-    ),
-    Run(wasm_opt("\{DIST}/dyncomp-storybook/dyncomp_storybook_wasm.wasm")),
-    Copy(
-      from="demo/dyncomp_storybook_wasm/loader.mjs",
-      to="\{DIST}/dyncomp-storybook/loader.mjs",
-    ),
-    Copy(
-      from="app/wasm/loader.mjs",
-      to="\{DIST}/dyncomp-storybook/app-loader.mjs",
-    ),
-    // The dyncomp bridge imports the app one; in dist the two land flat beside
-    // the page, so repoint it. Same rewrite the universal page's copy gets.
-    WriteRewritten(
-      from="dyncomp/host/wasm/loader.mjs",
-      to="\{DIST}/dyncomp-storybook/dyncomp-loader.mjs",
-      old_src="../../../app/wasm/loader.mjs",
-      new_src="./app-loader.mjs",
-    ),
-    // The canonical ABI, `import()`ed lazily by the loader above when an
-    // archive is unpacked. See the note in `universal_steps`.
-    Copy(
-      from="dyncomp/host/wasm/abi.mjs",
-      to="\{DIST}/dyncomp-storybook/abi.mjs",
-    ),
-    Copy(
-      from="demo/dyncomp_storybook_wasm/index.html",
-      to="\{DIST}/dyncomp-storybook/index.html",
-    ),
-    ..guest_pack_steps(into="\{DIST}/dyncomp-storybook/examples"),
-  ]
+  dyncomp_page_steps(
+    label="dyncomp storybook",
+    demo="demo/dyncomp_storybook_wasm",
+    wasm=DYNCOMP_STORYBOOK_WASM,
+    into="dyncomp-storybook",
+  )
 }
 
 ///|

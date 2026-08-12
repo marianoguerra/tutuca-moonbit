@@ -14,10 +14,10 @@
 //
 // Build: moon build --target wasm-gc demo/universal_wasm
 import {
-  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/ui/wasm" @uiw,
   // `LoaderBarSample` — one bundle to offer as a button. The bar is shared
-  // with the storybook page, so its record lives beside it.
+  // with the storybook page, so its record lives beside it, as does the sample
+  // `double` service both pages offer their guests.
   "marianoguerra/tutuca/dyncomp/shell",
   "mizchi/js/core",
 }

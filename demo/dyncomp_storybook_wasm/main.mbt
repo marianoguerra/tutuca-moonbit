@@ -43,31 +43,16 @@ fn samples() -> Array[@shell.LoaderBarSample] {
 // --- lifecycle exports ---------------------------------------------------
 
 ///|
-/// Services this PAGE provides to whatever it hosts.
-///
-/// `double` is the one the sample counter calls (`control.request "double"`),
-/// and a storybook needs it for the same reason the editor does: a card whose
-/// button does nothing is a card that lies about the component. A bundle that
-/// serves a request of the same NAME answers its own components first — the
-/// counter's `triple` is its own and never reaches this map.
-fn host_requests() -> Map[String, @component.RequestFn] {
-  {
-    "double": RequestFn((args, respond) => {
-      match args {
-        [Num(n)] => respond(Ok(Num(n * 2.0)))
-        _ => respond(Err(Str("double: expected one number")))
-      }
-    }),
-  }
-}
-
-///|
 pub fn mount() -> Unit {
   // `untrusted` is the default and this page keeps it deliberately: a
   // storybook is where an unfamiliar bundle gets opened, so it is the last
   // place to relax what a bundle may reach. Every sample above runs under it
   // unchanged.
-  @sbw.mount(samples=samples(), autoload=true, requests=host_requests())
+  @sbw.mount(
+    samples=samples(),
+    autoload=true,
+    requests=@shell.sample_host_requests(),
+  )
   |> ignore
 }
 

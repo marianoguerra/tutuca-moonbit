@@ -13,9 +13,9 @@
 //
 // Build + assemble: moon run --target native cmd/dev -- dyncomp-storybook
 import {
-  "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/storybook/wasm" @sbw,
-  // `LoaderBarSample` — one bundle to offer as a button
+  // `LoaderBarSample` — one bundle to offer as a button, and the sample
+  // `double` service both pages offer their guests
   "marianoguerra/tutuca/dyncomp/shell",
   "mizchi/js/core",
 }

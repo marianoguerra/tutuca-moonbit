@@ -68,5 +68,3 @@ pub fn builtin_names() -> Array[String] {
   out.sort_by((a, b) => a.lexical_compare(b))
   out
 }
-
-
