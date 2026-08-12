@@ -7,6 +7,12 @@ import {
 }
 
 // Values
+pub fn collection_method(String) -> Int?
+
+pub fn effect_min_arity(String) -> Int?
+
+pub fn kind_word(DeclKind) -> String
+
 pub let no_span : Span
 
 pub fn parse_alter_handler(String, ParseCtx) -> @core.Val?
@@ -23,7 +29,11 @@ pub fn parse_macro_attr(String, ParseCtx) -> @core.Val?
 
 pub fn parse_provide(String, ParseCtx) -> @core.Val?
 
+pub fn parse_script(String) -> Array[Decl] raise ScriptError
+
 pub fn parse_sequence(String, ParseCtx) -> @core.Val?
+
+pub fn parse_slot_body(String, stmts~ : Bool) -> Body raise ScriptError
 
 pub fn parse_text(String, ParseCtx) -> @core.Val?
 
@@ -31,9 +41,70 @@ pub fn parse_token(String, ParseCtx) -> @core.Val?
 
 pub fn tokenize(String) -> Array[Token]
 
+pub fn tokenize_script(String) -> Array[ScriptToken] raise ScriptError
+
 // Errors
+pub suberror ScriptError {
+  Unexpected(got~ : String, want~ : String, span~ : Span)
+  MixedFamilies(first~ : String, second~ : String, span~ : Span)
+  NonAssociative(op~ : String, span~ : Span)
+  MisplacedRef(span~ : Span)
+  BadPlace(why~ : String, span~ : Span)
+  UnknownKind(got~ : String, span~ : Span)
+  DuplicateDecl(name~ : String, span~ : Span)
+}
+pub fn ScriptError::message(Self) -> String
+pub fn ScriptError::span(Self) -> Span
 
 // Types and methods
+pub(all) enum AssignOp {
+  ASet
+  AAdd
+  ASub
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Body {
+  Stmts(Array[Stmt])
+  Value(Expr)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Decl {
+  kind : DeclKind
+  name : String
+  params : Array[Param]
+  body : Body
+  doc : String
+  span : Span
+  name_span : Span
+} derive(Eq, @debug.Debug)
+pub fn Decl::to_source(Self) -> String
+
+pub(all) enum DeclKind {
+  DOn
+  DReceive
+  DBubble
+  DResponse
+  DCompute
+  DPred
+  DEnrich
+  DEnrichScope
+} derive(Eq, @debug.Debug)
+
+pub(all) enum Expr {
+  ELit(lit~ : @core.Lit, span~ : Span)
+  ETpl(parts~ : Array[TplPart], span~ : Span)
+  ERead(place~ : Place, span~ : Span)
+  EMethod(name~ : String, span~ : Span)
+  EDyn(name~ : String, span~ : Span)
+  EName(name~ : String, span~ : Span)
+  EApp(name~ : String, args~ : Array[Expr], span~ : Span)
+  EChain(family~ : OpFamily, ops~ : Array[String], operands~ : Array[Expr], span~ : Span)
+  EUnary(op~ : UnOp, operand~ : Expr, span~ : Span)
+  EIf(cond~ : Expr, then_~ : Expr, else_~ : Expr, span~ : Span)
+  ERef(place~ : Place, span~ : Span)
+} derive(Eq, @debug.Debug)
+pub fn Expr::to_source(Self) -> String
+
 pub(all) struct HandlerParse {
   handler : @core.Val
   args : Array[@core.Val]
@@ -59,20 +130,97 @@ pub(all) enum IssueRole {
   BadPredicateArg
 } derive(Eq, @debug.Debug)
 
+pub(all) enum OpFamily {
+  FLogic
+  FCompare
+  FImplies
+  FAdd
+  FMul
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Param {
+  name : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
 pub struct ParseCtx {
   macro_vars : Map[String, String]
   issues : Array[Issue]
 }
 pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> Self
 
+pub(all) enum PathStep {
+  PField(String)
+  PIndex(Expr)
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Place {
+  root : PlaceRoot
+  steps : Array[PathStep]
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) enum PlaceRoot {
+  PState(String)
+  PBind(String)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum STok {
+  TLBrace
+  TRBrace
+  TLParen
+  TRParen
+  TLBracket
+  TRBracket
+  TComma
+  TSep
+  TDot
+  TAt
+  TDollar
+  TCaret
+  TAmp
+  TAssign
+  TPlusAssign
+  TMinusAssign
+  TOp(String)
+  TIdent(String)
+  TNum(Double)
+  TStr(String)
+  TTpl(String)
+  TDoc(String)
+  TEof
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ScriptToken {
+  tok : STok
+  span : Span
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Span {
   start : Int
   end_ : Int
 } derive(Eq, @debug.Debug)
 
+pub(all) enum Stmt {
+  SAssign(place~ : Place, op~ : AssignOp, value~ : Expr, span~ : Span)
+  SMethod(place~ : Place, call~ : String, args~ : Array[Expr], span~ : Span)
+  SEffect(name~ : String, args~ : Array[Expr], span~ : Span)
+  SIf(cond~ : Expr, then_~ : Array[Stmt], else_~ : Array[Stmt], span~ : Span)
+} derive(Eq, @debug.Debug)
+
 pub(all) struct Token {
   text : String
   span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) enum TplPart {
+  TText(String)
+  TExpr(Expr)
+} derive(Eq, @debug.Debug)
+
+pub(all) enum UnOp {
+  UNot
+  UNeg
 } derive(Eq, @debug.Debug)
 
 // Type aliases
