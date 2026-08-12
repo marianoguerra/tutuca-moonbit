@@ -119,7 +119,9 @@ pub fn json_selector_component(
   init? : JsonSelectorState = JsonSelectorState::zero(),
   common_style? : String = json_selector_common_style,
   global_style? : String = json_selector_global_style,
-  update? : (JsonSelectorState, @component.Dispatch, &@tutuca.Ctx) -> JsonSelectorState?,
+  update? : (JsonSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonSelectorState,
+  ],
   swap? : (JsonSelectorInput) -> ((
     JsonSelectorState,
     Array[@tutuca.Value],
@@ -198,7 +200,9 @@ pub fn json_null_component(
   init? : JsonNullState = JsonNullState::zero(),
   common_style? : String = json_null_common_style,
   global_style? : String = json_null_global_style,
-  update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
+  update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonNullState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -275,7 +279,9 @@ pub fn json_bool_component(
   init? : JsonBoolState = JsonBoolState::zero(),
   common_style? : String = json_bool_common_style,
   global_style? : String = json_bool_global_style,
-  update? : (JsonBoolState, @component.Dispatch, &@tutuca.Ctx) -> JsonBoolState?,
+  update? : (JsonBoolState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonBoolState,
+  ],
   swap? : (JsonBoolInput) -> ((
     JsonBoolState,
     Array[@tutuca.Value],
@@ -358,7 +364,9 @@ pub fn json_string_component(
   init? : JsonStringState = JsonStringState::zero(),
   common_style? : String = json_string_common_style,
   global_style? : String = json_string_global_style,
-  update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> JsonStringState?,
+  update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonStringState,
+  ],
   swap? : (JsonStringInput) -> ((
     JsonStringState,
     Array[@tutuca.Value],
@@ -443,7 +451,9 @@ pub fn json_number_component(
   init? : JsonNumberState = JsonNumberState::zero(),
   common_style? : String = json_number_common_style,
   global_style? : String = json_number_global_style,
-  update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> JsonNumberState?,
+  update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonNumberState,
+  ],
   swap? : (JsonNumberInput) -> ((
     JsonNumberState,
     Array[@tutuca.Value],
@@ -574,7 +584,9 @@ pub fn json_array_component(
   init? : JsonArrayState = JsonArrayState::zero(),
   common_style? : String = json_array_common_style,
   global_style? : String = json_array_global_style,
-  update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> JsonArrayState?,
+  update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonArrayState,
+  ],
   swap? : (JsonArrayInput) -> ((
     JsonArrayState,
     Array[@tutuca.Value],
@@ -671,7 +683,9 @@ pub fn json_object_key_val_component(
   init? : JsonObjectKeyValState = JsonObjectKeyValState::zero(),
   common_style? : String = json_object_key_val_common_style,
   global_style? : String = json_object_key_val_global_style,
-  update? : (JsonObjectKeyValState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectKeyValState?,
+  update? : (JsonObjectKeyValState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonObjectKeyValState,
+  ],
   swap? : (JsonObjectKeyValInput) -> ((
     JsonObjectKeyValState,
     Array[@tutuca.Value],
@@ -804,7 +818,9 @@ pub fn json_object_component(
   init? : JsonObjectState = JsonObjectState::zero(),
   common_style? : String = json_object_common_style,
   global_style? : String = json_object_global_style,
-  update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectState?,
+  update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonObjectState,
+  ],
   swap? : (JsonObjectInput) -> ((
     JsonObjectState,
     Array[@tutuca.Value],

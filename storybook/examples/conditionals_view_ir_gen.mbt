@@ -78,7 +78,9 @@ pub fn traffic_light_component(
   init? : TrafficLightState = TrafficLightState::zero(),
   common_style? : String = traffic_light_common_style,
   global_style? : String = traffic_light_global_style,
-  update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> TrafficLightState?,
+  update? : (TrafficLightState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TrafficLightState,
+  ],
   compute? : (TrafficLightMethod) -> ((TrafficLightState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (TrafficLightInput) -> ((
     TrafficLightState,
@@ -265,7 +267,9 @@ pub fn tabbed_u_i_component(
   init? : TabbedUIState = TabbedUIState::zero(),
   common_style? : String = tabbed_u_i_common_style,
   global_style? : String = tabbed_u_i_global_style,
-  update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> TabbedUIState?,
+  update? : (TabbedUIState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TabbedUIState,
+  ],
   swap? : (TabbedUIInput) -> ((
     TabbedUIState,
     Array[@tutuca.Value],
@@ -366,7 +370,9 @@ pub fn list_and_filter_component(
   init? : ListAndFilterState = ListAndFilterState::zero(),
   common_style? : String = list_and_filter_common_style,
   global_style? : String = list_and_filter_global_style,
-  update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> ListAndFilterState?,
+  update? : (ListAndFilterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ListAndFilterState,
+  ],
   swap? : (ListAndFilterInput) -> ((
     ListAndFilterState,
     Array[@tutuca.Value],

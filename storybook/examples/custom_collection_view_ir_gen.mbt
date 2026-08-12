@@ -70,7 +70,9 @@ pub fn playlist_component(
   init? : PlaylistState = PlaylistState::zero(),
   common_style? : String = playlist_common_style,
   global_style? : String = playlist_global_style,
-  update? : (PlaylistState, @component.Dispatch, &@tutuca.Ctx) -> PlaylistState?,
+  update? : (PlaylistState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PlaylistState,
+  ],
   swap? : (PlaylistInput) -> ((
     PlaylistState,
     Array[@tutuca.Value],
@@ -139,7 +141,9 @@ pub fn song_component(
   init? : SongState = SongState::zero(),
   common_style? : String = song_common_style,
   global_style? : String = song_global_style,
-  update? : (SongState, @component.Dispatch, &@tutuca.Ctx) -> SongState?,
+  update? : (SongState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SongState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

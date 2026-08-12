@@ -145,7 +145,7 @@ to a `Value::Map`:
 update=(s, msg, _ctx) => match msg {
   Input("onEmojiClick", [Map(detail), ..]) =>
     Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
-  _ => None
+  _ => Unhandled
 }
 ```
 

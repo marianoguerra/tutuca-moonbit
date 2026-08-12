@@ -103,7 +103,9 @@ pub fn swatch_picker_component(
   init? : SwatchPickerState = SwatchPickerState::zero(),
   common_style? : String = swatch_picker_common_style,
   global_style? : String = swatch_picker_global_style,
-  update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> SwatchPickerState?,
+  update? : (SwatchPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SwatchPickerState,
+  ],
   swap? : (SwatchPickerInput) -> ((
     SwatchPickerState,
     Array[@tutuca.Value],
@@ -312,7 +314,9 @@ pub fn quadratic_component(
   init? : QuadraticState = QuadraticState::zero(),
   common_style? : String = quadratic_common_style,
   global_style? : String = quadratic_global_style,
-  update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> QuadraticState?,
+  update? : (QuadraticState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    QuadraticState,
+  ],
   compute? : (QuadraticMethod) -> ((QuadraticState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (QuadraticInput) -> ((
     QuadraticState,

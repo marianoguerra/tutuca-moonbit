@@ -84,7 +84,9 @@ pub fn schema_property_component(
   init? : SchemaPropertyState = SchemaPropertyState::zero(),
   common_style? : String = schema_property_common_style,
   global_style? : String = schema_property_global_style,
-  update? : (SchemaPropertyState, @component.Dispatch, &@tutuca.Ctx) -> SchemaPropertyState?,
+  update? : (SchemaPropertyState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaPropertyState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -172,7 +174,9 @@ pub fn schema_branch_component(
   init? : SchemaBranchState = SchemaBranchState::zero(),
   common_style? : String = schema_branch_common_style,
   global_style? : String = schema_branch_global_style,
-  update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> SchemaBranchState?,
+  update? : (SchemaBranchState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaBranchState,
+  ],
   compute? : (SchemaBranchMethod) -> ((SchemaBranchState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

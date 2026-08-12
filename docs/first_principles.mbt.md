@@ -484,8 +484,8 @@ tree is navigable and rebuildable:
 fn mailbox_module() -> @component.ModuleDef {
   let note = note_component(update=(_s, msg, _ctx) => {
     match NoteReceive::from_dispatch(msg) {
-      Some(Write(t)) => Some({ text: t })
-      Some(Unknown(_, _)) | None => None
+      Some(Write(t)) => Next({ text: t })
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
   let mailbox = mailbox_component(update=(_s, msg, ctx) => {
@@ -493,9 +493,9 @@ fn mailbox_module() -> @component.ModuleDef {
       // forward to the child by path — used from the host in section 9
       Receive("write", args) => {
         ctx.send_at_path(ctx.path().concat([FieldStep("note")]), "write", args)
-        None
+        Unchanged
       }
-      _ => None
+      _ => Unhandled
     }
   })
   @component.ModuleDef::new(name="mailbox", components=[mailbox, note])

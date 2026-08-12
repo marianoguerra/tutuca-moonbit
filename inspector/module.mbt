@@ -164,11 +164,11 @@ fn rich_sample_comp() -> @component.Component {
   rich_sample_component(
     update=(s, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Some({ ..s, count: s.count + 1 })
-        Input("reset", _) => Some({ ..s, count: 0 })
+        Input("inc", _) => Next({ ..s, count: s.count + 1 })
+        Input("reset", _) => Next({ ..s, count: 0 })
         Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
-          Some(s)
-        _ => None
+          Next(s)
+        _ => Unhandled
       }
     },
     loop_with=l => {
@@ -192,8 +192,8 @@ fn sample_card_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("bump", _) => Some({ ..s, count: s.count + 1 })
-        _ => None
+        Input("bump", _) => Next({ ..s, count: s.count + 1 })
+        _ => Unhandled
       }
     },
   )

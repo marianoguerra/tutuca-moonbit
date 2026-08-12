@@ -64,7 +64,9 @@ pub fn list_iteration_component(
   init? : ListIterationState = ListIterationState::zero(),
   common_style? : String = list_iteration_common_style,
   global_style? : String = list_iteration_global_style,
-  update? : (ListIterationState, @component.Dispatch, &@tutuca.Ctx) -> ListIterationState?,
+  update? : (ListIterationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ListIterationState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

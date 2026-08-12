@@ -58,7 +58,9 @@ pub fn comp_name_component(
   init? : CompNameState = CompNameState::zero(),
   common_style? : String = comp_name_common_style,
   global_style? : String = comp_name_global_style,
-  update? : (CompNameState, @component.Dispatch, &@tutuca.Ctx) -> CompNameState?,
+  update? : (CompNameState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CompNameState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -137,7 +139,9 @@ pub fn comp_field_component(
   init? : CompFieldState = CompFieldState::zero(),
   common_style? : String = comp_field_common_style,
   global_style? : String = comp_field_global_style,
-  update? : (CompFieldState, @component.Dispatch, &@tutuca.Ctx) -> CompFieldState?,
+  update? : (CompFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CompFieldState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -255,7 +259,9 @@ pub fn comp_view_component(
   init? : CompViewState = CompViewState::zero(),
   common_style? : String = comp_view_common_style,
   global_style? : String = comp_view_global_style,
-  update? : (CompViewState, @component.Dispatch, &@tutuca.Ctx) -> CompViewState?,
+  update? : (CompViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CompViewState,
+  ],
   compute? : (CompViewMethod) -> ((CompViewState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (CompViewInput) -> ((
     CompViewState,
@@ -431,7 +437,9 @@ pub fn comp_section_component(
   init? : CompSectionState = CompSectionState::zero(),
   common_style? : String = comp_section_common_style,
   global_style? : String = comp_section_global_style,
-  update? : (CompSectionState, @component.Dispatch, &@tutuca.Ctx) -> CompSectionState?,
+  update? : (CompSectionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CompSectionState,
+  ],
   compute? : (CompSectionMethod) -> ((CompSectionState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (CompSectionInput) -> ((
     CompSectionState,
@@ -565,7 +573,9 @@ pub fn component_inspector_component(
   init? : ComponentInspectorState = ComponentInspectorState::zero(),
   common_style? : String = component_inspector_common_style,
   global_style? : String = component_inspector_global_style,
-  update? : (ComponentInspectorState, @component.Dispatch, &@tutuca.Ctx) -> ComponentInspectorState?,
+  update? : (ComponentInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ComponentInspectorState,
+  ],
   compute? : (ComponentInspectorMethod) -> ((
     ComponentInspectorState,
     Array[@tutuca.Value],

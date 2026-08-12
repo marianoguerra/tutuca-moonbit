@@ -197,27 +197,36 @@ fn[S : Composite] composite_page_range(
 /// A helper an `update` DELEGATES to rather than a bucket of its own: a
 /// component with arms of its own ends its match with
 /// `_ => composite_update(s, msg)`, so the sharing survives without a second
-/// place for a handler to live. `None` means "no change", which is what the
-/// old bucket expressed by returning `s` unchanged at a boundary.
-fn[S : Composite] composite_update(s : S, msg : @component.Dispatch) -> S? {
+/// place for a handler to live.
+///
+/// The three answers are the reason `Update` exists. A page boundary is
+/// `Unchanged` — this helper claimed `prevPage` and there is nowhere further
+/// back to go — where a name it does not know at all is `Unhandled`, which
+/// hands the dispatch on. Under `S?` both were `None`, so a click on `prev` at
+/// page 0 fell through to whatever generated mutator happened to share the
+/// name.
+fn[S : Composite] composite_update(
+  s : S,
+  msg : @component.Dispatch,
+) -> @component.Update[S] {
   match msg {
     Input("prevPage", _) => {
       let cur = s.current_page()
       if cur > 0 {
-        Some(s.with_current_page(cur - 1))
+        Next(s.with_current_page(cur - 1))
       } else {
-        None
+        Unchanged
       }
     }
     Input("nextPage", _) => {
       let cur = s.current_page()
       if cur < page_count_of(s) - 1 {
-        Some(s.with_current_page(cur + 1))
+        Next(s.with_current_page(cur + 1))
       } else {
-        None
+        Unchanged
       }
     }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -380,8 +389,8 @@ fn toggle_wrapped(value : @tutuca.Value) -> @tutuca.Value {
 fn data_inspector_comp() -> @component.Component {
   data_inspector_component(update=(s, msg, _ctx) => {
     match msg {
-      Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
-      _ => None
+      Input("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
+      _ => Unhandled
     }
   })
 }

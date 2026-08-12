@@ -177,6 +177,31 @@ pub(all) enum Dispatch {
 }
 
 ///|
+/// What an `update` arm answers.
+///
+/// Three cases because the question has three answers, and an `S?` could only
+/// spell two of them. `None` used to mean BOTH "no arm claimed this name" and
+/// "my arm ran and chose not to change anything", and the dispatch site could
+/// not tell them apart — so an author could not veto a write: an
+/// `Input("setTitle", _) => None` fell through to the generated setter and the
+/// change landed anyway. `Some(s)` where `s` was the same object was the only
+/// way to say "handled, no change", which made `physical_equal` part of the
+/// CONTRACT rather than an optimization the transactor happens to make.
+///
+/// The same three the refusal taxonomy names: nothing claimed it, a rule
+/// refused it, nothing changed.
+pub(all) enum Update[S] {
+  /// No arm claimed this name. Try the next answerer — the generated
+  /// mutators, for an `Input`.
+  Unhandled
+  /// This arm answered, and the state stays exactly as it is. Nothing further
+  /// is tried, which is what makes a veto expressible.
+  Unchanged
+  /// This arm answered; here is the successor.
+  Next(S)
+}
+
+///|
 /// The typed loopCtx handed to a @loop-with handler: `lookup` reads `@name`
 /// binds from the render stack; `filter` applies the loop's own @when to a
 /// (key, value, iter_data) triple (true when no @when is present).
@@ -271,7 +296,7 @@ declare pub fn[S : @tutuca.Fields] component(
   init~ : S,
   common_style? : String,
   global_style? : String,
-  update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
+  update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value],
   swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?],
   when? : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool],

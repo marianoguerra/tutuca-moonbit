@@ -63,13 +63,13 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
       // the handler CAPTURES the child Component; the view just says
       // @on.click="onAddItem" (no component-reference value exists)
-      Some(OnAddItem) => Some({ ..s, items: s.items + [item.make(Map([]))] })
+      Some(OnAddItem) => Next({ ..s, items: s.items + [item.make(Map([]))] })
       // `@key` is a binding, so the payload is @tutuca.Value; returning
       // None falls through to the generated list mutator, which answers it
-      Some(RemoveInItemsAt(_)) => None
+      Some(RemoveInItemsAt(_)) => Unhandled
       // toggleHideCompleted: generated Bool mutator — same fall-through
-      Some(ToggleHideCompleted) => None
-      Some(Unknown(_, _)) | None => None
+      Some(ToggleHideCompleted) => Unhandled
+      Some(Unknown(_, _)) | None => Unhandled
     },
     when=w => match w {
       // items are Item INSTANCES (Obj values) — read fields off them

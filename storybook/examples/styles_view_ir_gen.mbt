@@ -103,7 +103,9 @@ pub fn styles_example_component(
   init? : StylesExampleState = StylesExampleState::zero(),
   common_style? : String = styles_example_common_style,
   global_style? : String = styles_example_global_style,
-  update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleState?,
+  update? : (StylesExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StylesExampleState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -162,7 +164,9 @@ pub fn styles_example_root_component(
   init? : StylesExampleRootState = StylesExampleRootState::zero(),
   common_style? : String = styles_example_root_common_style,
   global_style? : String = styles_example_root_global_style,
-  update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> StylesExampleRootState?,
+  update? : (StylesExampleRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StylesExampleRootState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

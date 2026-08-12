@@ -76,7 +76,9 @@ pub fn rich_sample_component(
   init? : RichSampleState = RichSampleState::zero(),
   common_style? : String = rich_sample_common_style,
   global_style? : String = rich_sample_global_style,
-  update? : (RichSampleState, @component.Dispatch, &@tutuca.Ctx) -> RichSampleState?,
+  update? : (RichSampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    RichSampleState,
+  ],
   compute? : (RichSampleMethod) -> ((RichSampleState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (RichSampleInput) -> ((
     RichSampleState,
@@ -169,7 +171,9 @@ pub fn sample_card_component(
   init? : SampleCardState = SampleCardState::zero(),
   common_style? : String = sample_card_common_style,
   global_style? : String = sample_card_global_style,
-  update? : (SampleCardState, @component.Dispatch, &@tutuca.Ctx) -> SampleCardState?,
+  update? : (SampleCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SampleCardState,
+  ],
   compute? : (SampleCardMethod) -> ((SampleCardState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SampleCardInput) -> ((
     SampleCardState,

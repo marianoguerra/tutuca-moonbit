@@ -101,8 +101,8 @@ test "handlers dispatch through a compiled tree" {
     init=ir_state(),
     update=(s : IrState, msg, _ctx) => {
       match msg {
-        Input("add", [Num(d)]) => Some({ ..s, count: s.count + d.to_int() })
-        _ => None
+        Input("add", [Num(d)]) => Next({ ..s, count: s.count + d.to_int() })
+        _ => Unhandled
       }
     },
   )

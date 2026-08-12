@@ -56,7 +56,7 @@ fn dnd_comp() -> @component.Component {
         // Served by the mutators generated from the state's fields: the
         // view spells them bare now, so they arrive as Inputs, and
         // returning None falls through to them.
-        Some(ResetQuery | SetQuery(_)) => None
+        Some(ResetQuery | SetQuery(_)) => Unhandled
         // args: [@key (the TARGET row's key), dragInfo]
         Some(OnDropOnItem(Num(t), Obj(di))) => {
           let target = t.to_int()
@@ -69,9 +69,9 @@ fn dnd_comp() -> @component.Component {
               }
             _ => -1
           }
-          Some({ ..s, items: move_index_to_index(s.items, source, target) })
+          Next({ ..s, items: move_index_to_index(s.items, source, target) })
         }
-        Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
+        Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

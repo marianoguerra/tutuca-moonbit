@@ -121,7 +121,9 @@ pub fn attribute_binding_component(
   init? : AttributeBindingState = AttributeBindingState::zero(),
   common_style? : String = attribute_binding_common_style,
   global_style? : String = attribute_binding_global_style,
-  update? : (AttributeBindingState, @component.Dispatch, &@tutuca.Ctx) -> AttributeBindingState?,
+  update? : (AttributeBindingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    AttributeBindingState,
+  ],
   swap? : (AttributeBindingInput) -> ((
     AttributeBindingState,
     Array[@tutuca.Value],
@@ -222,7 +224,9 @@ pub fn conditional_attributes_component(
   init? : ConditionalAttributesState = ConditionalAttributesState::zero(),
   common_style? : String = conditional_attributes_common_style,
   global_style? : String = conditional_attributes_global_style,
-  update? : (ConditionalAttributesState, @component.Dispatch, &@tutuca.Ctx) -> ConditionalAttributesState?,
+  update? : (ConditionalAttributesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ConditionalAttributesState,
+  ],
   swap? : (ConditionalAttributesInput) -> ((
     ConditionalAttributesState,
     Array[@tutuca.Value],
@@ -329,7 +333,9 @@ pub fn event_modifiers_component(
   init? : EventModifiersState = EventModifiersState::zero(),
   common_style? : String = event_modifiers_common_style,
   global_style? : String = event_modifiers_global_style,
-  update? : (EventModifiersState, @component.Dispatch, &@tutuca.Ctx) -> EventModifiersState?,
+  update? : (EventModifiersState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    EventModifiersState,
+  ],
   swap? : (EventModifiersInput) -> ((
     EventModifiersState,
     Array[@tutuca.Value],
@@ -444,7 +450,9 @@ pub fn show_hide_component(
   init? : ShowHideState = ShowHideState::zero(),
   common_style? : String = show_hide_common_style,
   global_style? : String = show_hide_global_style,
-  update? : (ShowHideState, @component.Dispatch, &@tutuca.Ctx) -> ShowHideState?,
+  update? : (ShowHideState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ShowHideState,
+  ],
   compute? : (ShowHideMethod) -> ((ShowHideState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (ShowHideInput) -> ((
     ShowHideState,

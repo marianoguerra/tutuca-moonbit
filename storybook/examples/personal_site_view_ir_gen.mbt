@@ -63,7 +63,9 @@ pub fn alt_url_component(
   init? : AltUrlState = AltUrlState::zero(),
   common_style? : String = alt_url_common_style,
   global_style? : String = alt_url_global_style,
-  update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> AltUrlState?,
+  update? : (AltUrlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    AltUrlState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -215,7 +217,9 @@ pub fn ps_entry_component(
   init? : PsEntryState = PsEntryState::zero(),
   common_style? : String = ps_entry_common_style,
   global_style? : String = ps_entry_global_style,
-  update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> PsEntryState?,
+  update? : (PsEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PsEntryState,
+  ],
   compute? : (PsEntryMethod) -> ((PsEntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   enrich? : (PsEntryEnrich) -> ((
     PsEntryState,
@@ -504,7 +508,9 @@ pub fn root_component(
   init? : RootState = RootState::zero(),
   common_style? : String = root_common_style,
   global_style? : String = root_global_style,
-  update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> RootState?,
+  update? : (RootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    RootState,
+  ],
   compute? : (RootMethod) -> ((RootState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (RootInput) -> ((RootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   when? : (RootWhen) -> ((

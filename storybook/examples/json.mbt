@@ -72,14 +72,14 @@ fn json_number_comp() -> @component.Component {
           let parsed : Double? = Some(@string.parse_double(raw)) catch {
             _ => None
           }
-          Some(
+          Next(
             match parsed {
               Some(n) => { strValue: raw, value: n }
               None => { ..s, strValue: raw }
             },
           )
         }
-        Some(Unknown(_, _)) | None => None
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -158,17 +158,19 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
   json_array_component(init={ items: [] }, update=(s, msg, _ctx) => {
     match JsonArrayMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and
-      // returning None falls through to them.
-      Some(RemoveInItemsAt(_)) => None
+      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
+      // falls through to them.
+      Some(RemoveInItemsAt(_)) => Unhandled
       // add a fresh JsonSelector so the user can pick the new element's type
-      Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
+      Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)] })
       Some(OnDropOnItem(a0, a1)) =>
         match json_dropped_items(s.items, [a0, a1]) {
-          Some(items) => Some({ items, })
-          None => None
+          Some(items) => Next({ items, })
+          // The drop did not land on a row this list holds. It claimed the
+          // name, so nothing further is tried.
+          None => Unchanged
         }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -183,23 +185,25 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
   json_object_component(init={ items: [] }, update=(s, msg, _ctx) => {
     match JsonObjectMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and
-      // returning None falls through to them.
-      Some(RemoveInItemsAt(_)) => None
+      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
+      // falls through to them.
+      Some(RemoveInItemsAt(_)) => Unhandled
       // a key/value row whose value is a fresh selector
       Some(AddItem) => {
         let row = match reg.comps.get("JsonObjectKeyVal") {
           Some(kv) => kv.make({ "value": json_make_selector(reg) })
           None => Null
         }
-        Some({ items: s.items + [row] })
+        Next({ items: s.items + [row] })
       }
       Some(OnDropOnItem(a0, a1)) =>
         match json_dropped_items(s.items, [a0, a1]) {
-          Some(items) => Some({ items, })
-          None => None
+          Some(items) => Next({ items, })
+          // The drop did not land on a row this list holds. It claimed the
+          // name, so nothing further is tried.
+          None => Unchanged
         }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }

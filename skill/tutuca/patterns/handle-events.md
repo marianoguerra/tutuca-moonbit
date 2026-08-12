@@ -35,9 +35,9 @@ a `Value`, so asking for one silently yields `Null`.
 // `CounterMsg` is generated from the `@on` names the views raise, so adding
 // one to the view makes this match non-exhaustive until it is answered.
 update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-  Some(Inc) => Some({ count: s.count + 1 })
-  Some(Dec) => Some({ count: s.count - 1 })
-  Some(Unknown(_, _)) | None => None
+  Some(Inc) => Next({ count: s.count + 1 })
+  Some(Dec) => Next({ count: s.count - 1 })
+  Some(Unknown(_, _)) | None => Unhandled
 },
 ```
 

@@ -145,7 +145,9 @@ pub fn instance_fields_component(
   init? : InstanceFieldsState = InstanceFieldsState::zero(),
   common_style? : String = instance_fields_common_style,
   global_style? : String = instance_fields_global_style,
-  update? : (InstanceFieldsState, @component.Dispatch, &@tutuca.Ctx) -> InstanceFieldsState?,
+  update? : (InstanceFieldsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    InstanceFieldsState,
+  ],
   compute? : (InstanceFieldsMethod) -> ((
     InstanceFieldsState,
     Array[@tutuca.Value],
@@ -251,7 +253,9 @@ pub fn instance_inspector_component(
   init? : InstanceInspectorState = InstanceInspectorState::zero(),
   common_style? : String = instance_inspector_common_style,
   global_style? : String = instance_inspector_global_style,
-  update? : (InstanceInspectorState, @component.Dispatch, &@tutuca.Ctx) -> InstanceInspectorState?,
+  update? : (InstanceInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    InstanceInspectorState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -402,7 +406,9 @@ pub fn instance_explorer_component(
   init? : InstanceExplorerState = InstanceExplorerState::zero(),
   common_style? : String = instance_explorer_common_style,
   global_style? : String = instance_explorer_global_style,
-  update? : (InstanceExplorerState, @component.Dispatch, &@tutuca.Ctx) -> InstanceExplorerState?,
+  update? : (InstanceExplorerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    InstanceExplorerState,
+  ],
   swap? : (InstanceExplorerInput) -> ((
     InstanceExplorerState,
     Array[@tutuca.Value],

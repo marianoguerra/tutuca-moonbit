@@ -17,12 +17,12 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
     init=ItemsState::{ items: [] },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
-      Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
+      Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
       // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => None
-      Some(Unknown(_, _)) | None => None
+      Some(RemoveInItemsAt(_)) => Unhandled
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }

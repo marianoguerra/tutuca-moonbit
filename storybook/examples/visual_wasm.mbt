@@ -127,14 +127,14 @@ fn vw_instr_imm(name : String, label : String) -> @component.Component {
             _ => ""
           }
           let parsed : Int? = Some(@string.parse_int(raw)) catch { _ => None }
-          Some(
+          Next(
             match parsed {
               Some(v) => { value: v, rawValue: raw }
               None => { ..s, rawValue: raw }
             },
           )
         }
-        _ => None
+        _ => Unhandled
       }
     },
     compute={
@@ -367,11 +367,11 @@ fn vw_types_comp(reg : VwReg) -> @component.Component {
             items.length(),
           )
           items.insert(at, vw_make_type(reg, "TypeI32"))
-          Some({ items, })
+          Next({ items, })
         }
         Input("appendItem", _) =>
-          Some({ items: s.items + [vw_make_type(reg, "TypeI32")] })
-        _ => None
+          Next({ items: s.items + [vw_make_type(reg, "TypeI32")] })
+        _ => Unhandled
       }
     },
   )
@@ -426,14 +426,16 @@ fn vw_blocklike_view(keyword : String) -> String {
 ///|
 fn vw_container_update(
   reg : VwReg,
-) -> (VwContainerState, @component.Dispatch, &@tutuca.Ctx) -> VwContainerState? {
+) -> (VwContainerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+  VwContainerState,
+] {
   (s, msg, _ctx) => {
     match msg {
       Input("addItemAt", args) =>
-        Some({ ..s, items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)) })
+        Next({ ..s, items: vw_insert_picker(reg, s.items, vw_int_arg(args, 0)) })
       Input("appendItem", _) =>
-        Some({ ..s, items: s.items + [vw_make_picker(reg)] })
-      _ => None
+        Next({ ..s, items: s.items + [vw_make_picker(reg)] })
+      _ => Unhandled
     }
   }
 }
@@ -575,17 +577,17 @@ fn vw_if_comp(reg : VwReg) -> @component.Component {
     update=(s : VwIfState, msg, _ctx) => {
       match msg {
         Input("addThnAt", args) =>
-          Some({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) })
+          Next({ ..s, thn: vw_insert_picker(reg, s.thn, vw_int_arg(args, 0)) })
         Input("appendInThn", _) =>
-          Some({ ..s, thn: s.thn + [vw_make_picker(reg)] })
+          Next({ ..s, thn: s.thn + [vw_make_picker(reg)] })
         Input("addElseAt", args) =>
-          Some({
+          Next({
             ..s,
             else_: vw_insert_picker(reg, s.else_, vw_int_arg(args, 0)),
           })
         Input("appendInElse", _) =>
-          Some({ ..s, else_: s.else_ + [vw_make_picker(reg)] })
-        _ => None
+          Next({ ..s, else_: s.else_ + [vw_make_picker(reg)] })
+        _ => Unhandled
       }
     },
   )
@@ -620,8 +622,8 @@ fn vw_section_comp() -> @component.Component {
     update=(s : VwSectionState, msg, _ctx) => {
       match msg {
         Input("addDefaultItem", _) =>
-          Some({ ..s, items: s.items + [vw_with_editing(s.defaultItem)] })
-        _ => None
+          Next({ ..s, items: s.items + [vw_with_editing(s.defaultItem)] })
+        _ => Unhandled
       }
     },
   )
@@ -663,10 +665,10 @@ fn vw_memory_comp() -> @component.Component {
     update=(s : VwMemoryState, msg, _ctx) => {
       match msg {
         Input("setNFromString", args) =>
-          Some({ ..s, n: vw_int_value(args, s.n) })
+          Next({ ..s, n: vw_int_value(args, s.n) })
         Input("setMFromString", args) =>
-          Some({ ..s, m: vw_int_value(args, s.m) })
-        _ => None
+          Next({ ..s, m: vw_int_value(args, s.m) })
+        _ => Unhandled
       }
     },
   )
@@ -770,10 +772,10 @@ fn vw_picker_comp(reg : VwReg) -> @component.Component {
       match msg {
         Input(name, _) =>
           match sections.get(name) {
-            Some(f) => Some(f(s))
-            None => None
+            Some(f) => Next(f(s))
+            None => Unhandled
           }
-        _ => None
+        _ => Unhandled
       }
     },
     compute~,

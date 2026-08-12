@@ -15,12 +15,12 @@ fn palette_row_comp() -> @component.Component {
         PaletteRowBubble::ComponentPicked(s.module_, s.name, configure).bubble(
           ctx,
         )
-        Some(s)
+        Next(s)
       }
       Some(Unknown(_, _)) | None =>
         match PaletteRowReceive::from_dispatch(msg) {
-          Some(SetSelected(selected)) => Some({ ..s, selected, })
-          Some(Unknown(_, _)) | None => None
+          Some(SetSelected(selected)) => Next({ ..s, selected, })
+          Some(Unknown(_, _)) | None => Unhandled
         }
     }
   })
@@ -57,14 +57,14 @@ fn command_bar_comp() -> @component.Component {
       let hits = s.hits.mapi((i, r) => {
         r.call_field("setSelected", [Bool(i == cursor)])
       })
-      (Some({ ..s, hits, cursor }) : CommandBarState?)
+      (Next({ ..s, hits, cursor }) : @component.Update[CommandBarState])
     }
     match CommandBarMsg::from_dispatch(msg) {
       // The bar does not search — it cannot, since the catalog is the app's.
       // It reports what was typed and gets new rows back.
       Some(SetQuery(q)) => {
         ctx.bubble("queryChanged", [Str(q)])
-        Some({ ..s, query: q })
+        Next({ ..s, query: q })
       }
       Some(Nav(key)) =>
         match key {
@@ -72,11 +72,11 @@ fn command_bar_comp() -> @component.Component {
           "ArrowUp" => with_cursor(moved(s.cursor, -1, s.hits.length()))
           "Escape" => {
             ctx.bubble("commandClose", [])
-            None
+            Unchanged
           }
           "Enter" => {
             guard s.cursor >= 0 && s.cursor < s.hits.length() else {
-              return None
+              return Unchanged
             }
             let row = s.hits[s.cursor]
             ctx.bubble("componentPicked", [
@@ -84,18 +84,18 @@ fn command_bar_comp() -> @component.Component {
               row.field("name"),
               Bool(s.configure),
             ])
-            None
+            Unchanged
           }
-          _ => None
+          _ => Unhandled
         }
       // A click on the backdrop. It reaches here rather than being swallowed
       // by the panel because the panel is inside it, and a click inside the
       // panel stops at whatever it hit.
       Some(Close) => {
         ctx.bubble("commandClose", [])
-        None
+        Unchanged
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -115,7 +115,7 @@ fn schema_field_comp() -> @component.Component {
         SchemaFieldBubble::FieldEdited(s.name, v.to_display_string()).bubble(
           ctx,
         )
-        Some(
+        Next(
           match (s.kind, v) {
             ("bool", _) => { ..s, flag: v.is_truthy(), error: "" }
             // A number control still hands back text, and `text` is what
@@ -126,7 +126,7 @@ fn schema_field_comp() -> @component.Component {
           },
         )
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -144,7 +144,7 @@ fn schema_form_comp() -> @component.Component {
           Str(""),
           List(s.fields),
         ])
-        return None
+        return Unchanged
       }
       Some(UseInit(init)) => {
         ctx.bubble("submitForm", [
@@ -153,11 +153,11 @@ fn schema_form_comp() -> @component.Component {
           init,
           List(s.fields),
         ])
-        return None
+        return Unchanged
       }
       Some(Cancel) => {
         ctx.bubble("cancelForm", [])
-        return None
+        return Unchanged
       }
       Some(Unknown(_, _)) | None => ()
     }
@@ -174,13 +174,13 @@ fn schema_form_comp() -> @component.Component {
           f.call_field("setError", [Str(msg)])
         })
         let general = by_field.get("").unwrap_or(Str("")).str()
-        return Some({ ..s, fields, error: general })
+        return Next({ ..s, fields, error: general })
       }
       Some(Unknown(_, _)) | None => ()
     }
     match msg {
-      Bubble("fieldEdited", _) => Some({ ..s, error: "" })
-      _ => None
+      Bubble("fieldEdited", _) => Next({ ..s, error: "" })
+      _ => Unhandled
     }
   })
 }
@@ -193,9 +193,9 @@ fn config_panel_comp() -> @component.Component {
     match ConfigPanelMsg::from_dispatch(msg) {
       Some(Close) => {
         ConfigPanelBubble::CloseConfig.bubble(ctx)
-        None
+        Unchanged
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }

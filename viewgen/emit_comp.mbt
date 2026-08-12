@@ -82,7 +82,7 @@ fn emit_wrapper(
   // No default: `component()` takes an update as an Option, and this one is
   // forwarded as one rather than being given an empty stand-in.
   out.write_string(
-    "  update? : (\{s}, @component.Dispatch, &@tutuca.Ctx) -> \{s}?,\n",
+    "  update? : (\{s}, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[\{s}],\n",
   )
   for b in wrapper_buckets(t, s, surface, methods) {
     // No default: an absent bucket is `None`, and the call below turns that
@@ -107,18 +107,17 @@ fn emit_wrapper(
     wrapper_opt("lookup", "Map[String, @component.LookupSpec]", "Map([])"),
   )
   // The block first, the author's `update` second, the generated mutators
-  // last. `None` from the block means "no arm claimed this name", which is a
-  // different answer from `Some(s)` — "answered, and nothing changed" — and
-  // that distinction is what makes the fall-through work.
+  // last. `Unhandled` is the only answer that hands the name on: `Unchanged`
+  // means the block claimed it and chose not to move, which stops here.
   let update_arg = match inline {
     Some(f) =>
       "    update=(s, msg, ctx) => match \{f}(s, msg, ctx) {\n" +
-      "      Some(next) => Some(next)\n" +
-      "      None =>\n" +
+      "      Unhandled =>\n" +
       "        match update {\n" +
       "          Some(u) => u(s, msg, ctx)\n" +
-      "          None => None\n" +
+      "          None => Unhandled\n" +
       "        }\n" +
+      "      answered => answered\n" +
       "    },\n"
     None => "    update?=update,\n"
   }

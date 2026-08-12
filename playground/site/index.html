@@ -59,8 +59,8 @@
 // against them. What is left is the part only you can write.
 let counter = counter_component(
   update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-    Some(Inc) => Some({ count: s.count + 1 })
-    Some(Unknown(_, _)) | None => None
+    Some(Inc) => Next({ count: s.count + 1 })
+    Some(Unknown(_, _)) | None => Unhandled
   },
 )</code></pre>
     </header>

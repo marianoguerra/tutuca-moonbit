@@ -124,7 +124,7 @@ pub fn[S : @tutuca.Fields] component(
   init~ : S,
   common_style? : String = "",
   global_style? : String = "",
-  update? : (S, Dispatch, &@tutuca.Ctx) -> S?,
+  update? : (S, Dispatch, &@tutuca.Ctx) -> Update[S],
   compute? : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value] = Map([]),
   swap? : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?] = Map([],
   ),

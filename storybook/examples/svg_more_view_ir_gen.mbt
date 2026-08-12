@@ -138,7 +138,9 @@ pub fn bar_chart_component(
   init? : BarChartState = BarChartState::zero(),
   common_style? : String = bar_chart_common_style,
   global_style? : String = bar_chart_global_style,
-  update? : (BarChartState, @component.Dispatch, &@tutuca.Ctx) -> BarChartState?,
+  update? : (BarChartState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    BarChartState,
+  ],
   swap? : (BarChartInput) -> ((
     BarChartState,
     Array[@tutuca.Value],

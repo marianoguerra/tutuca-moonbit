@@ -110,7 +110,9 @@ pub fn person_component(
   init? : PersonState = PersonState::zero(),
   common_style? : String = person_common_style,
   global_style? : String = person_global_style,
-  update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> PersonState?,
+  update? : (PersonState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PersonState,
+  ],
   swap? : (PersonInput) -> ((PersonState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -194,7 +196,9 @@ pub fn strategies_component(
   init? : StrategiesState = StrategiesState::zero(),
   common_style? : String = strategies_common_style,
   global_style? : String = strategies_global_style,
-  update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> StrategiesState?,
+  update? : (StrategiesState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StrategiesState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -343,7 +347,9 @@ pub fn naive_people_component(
   init? : NaivePeopleState = NaivePeopleState::zero(),
   common_style? : String = naive_people_common_style,
   global_style? : String = naive_people_global_style,
-  update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> NaivePeopleState?,
+  update? : (NaivePeopleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    NaivePeopleState,
+  ],
   swap? : (NaivePeopleInput) -> ((
     NaivePeopleState,
     Array[@tutuca.Value],

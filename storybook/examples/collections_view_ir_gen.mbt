@@ -91,7 +91,9 @@ pub fn render_with_scope_component(
   init? : RenderWithScopeState = RenderWithScopeState::zero(),
   common_style? : String = render_with_scope_common_style,
   global_style? : String = render_with_scope_global_style,
-  update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> RenderWithScopeState?,
+  update? : (RenderWithScopeState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    RenderWithScopeState,
+  ],
   swap? : (RenderWithScopeInput) -> ((
     RenderWithScopeState,
     Array[@tutuca.Value],
@@ -209,7 +211,9 @@ pub fn list_filter_enrich_component(
   init? : ListFilterEnrichState = ListFilterEnrichState::zero(),
   common_style? : String = list_filter_enrich_common_style,
   global_style? : String = list_filter_enrich_global_style,
-  update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> ListFilterEnrichState?,
+  update? : (ListFilterEnrichState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ListFilterEnrichState,
+  ],
   swap? : (ListFilterEnrichInput) -> ((
     ListFilterEnrichState,
     Array[@tutuca.Value],
@@ -348,7 +352,9 @@ pub fn list_filter_enrich_with_component(
   init? : ListFilterEnrichWithState = ListFilterEnrichWithState::zero(),
   common_style? : String = list_filter_enrich_with_common_style,
   global_style? : String = list_filter_enrich_with_global_style,
-  update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> ListFilterEnrichWithState?,
+  update? : (ListFilterEnrichWithState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ListFilterEnrichWithState,
+  ],
   swap? : (ListFilterEnrichWithInput) -> ((
     ListFilterEnrichWithState,
     Array[@tutuca.Value],

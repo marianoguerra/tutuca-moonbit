@@ -79,7 +79,9 @@ pub fn counter_component(
   init? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
-  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,
+  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CounterState,
+  ],
   swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

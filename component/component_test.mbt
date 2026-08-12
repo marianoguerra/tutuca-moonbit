@@ -32,8 +32,8 @@ fn todo_comp() -> @component.Component {
     },
     update=(s : TodoState, msg, _ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Some({ ..s, title: t })
-        _ => None
+        Receive("rename", [Str(t)]) => Next({ ..s, title: t })
+        _ => Unhandled
       }
     },
   )
@@ -276,8 +276,8 @@ test "a compute entry is a pre-bound Fn; an update arm is not" {
     init=CountOnly::{ count: 1 },
     update=(s : CountOnly, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Some({ count: s.count + 1 })
-        _ => None
+        Input("inc", _) => Next({ count: s.count + 1 })
+        _ => Unhandled
       }
     },
     compute={ "label": (s : CountOnly, _args) => Str("n=\{s.count}") },
@@ -532,8 +532,8 @@ test "Value fields in S carry Obj instances losslessly through updates" {
     init=StashedState::{ items: [] },
     update=(s : StashedState, msg, _ctx) => {
       match msg {
-        Receive("add", [item, ..]) => Some({ items: s.items + [item] })
-        _ => None
+        Receive("add", [item, ..]) => Next({ items: s.items + [item] })
+        _ => Unhandled
       }
     },
   )

@@ -120,7 +120,9 @@ pub fn loader_bar_component(
   init? : LoaderBarState = LoaderBarState::zero(),
   common_style? : String = loader_bar_common_style,
   global_style? : String = loader_bar_global_style,
-  update? : (LoaderBarState, @component.Dispatch, &@tutuca.Ctx) -> LoaderBarState?,
+  update? : (LoaderBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    LoaderBarState,
+  ],
   swap? : (LoaderBarInput) -> ((
     LoaderBarState,
     Array[@tutuca.Value],

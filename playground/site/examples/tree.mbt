@@ -31,12 +31,12 @@ fn tree_item_comp() -> @component.Component {
           false // stop at the leaf: self
         })
         ctx.bubble("treeItemSelected", [self_v])
-        Some({ ..s, isOpen: !s.isOpen })
+        Next({ ..s, isOpen: !s.isOpen })
       }
       // a TreeItem between the source and the root sees the event and passes
       // it on unchanged (returning None = no change)
-      Bubble("treeItemSelected", _) => None
-      _ => None
+      Bubble("treeItemSelected", _) => Unhandled
+      _ => Unhandled
     },
   )
 }
@@ -58,9 +58,9 @@ fn tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ ..s, log, })
+        Next({ ..s, log, })
       }
-      _ => None
+      _ => Unhandled
     },
   )
 }

@@ -54,7 +54,9 @@ pub fn greeting_component(
   init? : GreetingState = GreetingState::zero(),
   common_style? : String = greeting_common_style,
   global_style? : String = greeting_global_style,
-  update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> GreetingState?,
+  update? : (GreetingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    GreetingState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -117,7 +119,9 @@ pub fn page_component(
   init? : PageState = PageState::zero(),
   common_style? : String = page_common_style,
   global_style? : String = page_global_style,
-  update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> PageState?,
+  update? : (PageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PageState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -224,7 +228,9 @@ pub fn entry_component(
   init? : EntryState = EntryState::zero(),
   common_style? : String = entry_common_style,
   global_style? : String = entry_global_style,
-  update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> EntryState?,
+  update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    EntryState,
+  ],
   compute? : (EntryMethod) -> ((EntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (EntryInput) -> ((EntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
@@ -301,7 +307,9 @@ pub fn multiple_views_component(
   init? : MultipleViewsState = MultipleViewsState::zero(),
   common_style? : String = multiple_views_common_style,
   global_style? : String = multiple_views_global_style,
-  update? : (MultipleViewsState, @component.Dispatch, &@tutuca.Ctx) -> MultipleViewsState?,
+  update? : (MultipleViewsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    MultipleViewsState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

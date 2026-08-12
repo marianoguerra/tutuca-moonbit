@@ -29,12 +29,14 @@ fn attribute_binding_comp() -> @component.Component {
       match AttributeBindingMsg::from_dispatch(msg) {
         Some(SetRawNumber(v)) =>
           match (Some(@string.parse_int(v)) catch { _ => None }) {
-            Some(n) => Some({ ..s, num: n })
-            None => None
+            Some(n) => Next({ ..s, num: n })
+            // A bad number leaves the state untouched — and `Unchanged`, not
+            // `Unhandled`, because this arm claimed `setRawNumber`.
+            None => Unchanged
           }
         // Served by the generated mutators for `str` and `bool`.
-        Some(SetStr(_)) | Some(SetBool(_)) => None
-        Some(Unknown(_, _)) | None => None
+        Some(SetStr(_)) | Some(SetBool(_)) => Unhandled
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -97,11 +99,11 @@ fn event_modifiers_comp() -> @component.Component {
   ) => {
     match EventModifiersMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and
-      // returning None falls through to them.
-      Some(ResetQuery | SetLastSentSearch(_)) => None
-      Some(OnInput(v)) => Some({ ..s, query: v })
-      Some(Unknown(_, _)) | None => None
+      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
+      // falls through to them.
+      Some(ResetQuery | SetLastSentSearch(_)) => Unhandled
+      Some(OnInput(v)) => Next({ ..s, query: v })
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -146,10 +148,10 @@ fn show_hide_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match ShowHideMsg::from_dispatch(msg) {
-        Some(IncCount) => Some({ ..s, count: s.count + 1 })
+        Some(IncCount) => Next({ ..s, count: s.count + 1 })
         // Served by the generated toggle for the `isOpen` field.
-        Some(ToggleIsOpen) => None
-        Some(Unknown(_, _)) | None => None
+        Some(ToggleIsOpen) => Unhandled
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

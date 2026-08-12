@@ -50,9 +50,9 @@ fn playlist_comp() -> @component.Component {
     update=(s, msg, _ctx) => {
       match PlaylistMsg::from_dispatch(msg) {
         Some(RemoveSong(key_v)) => {
-          guard key_v is Str(key) else { return None }
-          guard s.songs is Obj(o) else { return None }
-          guard o.obj_seq_entries() is Some(entries) else { return None }
+          guard key_v is Str(key) else { return Unchanged }
+          guard s.songs is Obj(o) else { return Unchanged }
+          guard o.obj_seq_entries() is Some(entries) else { return Unchanged }
           let mut next = KeyedList::{ order: [], items: Map([]) }
           for entry in entries {
             let (pk, v) = entry
@@ -61,9 +61,9 @@ fn playlist_comp() -> @component.Component {
               _ => ()
             }
           }
-          Some({ songs: Obj(next) })
+          Next({ songs: Obj(next) })
         }
-        Some(Unknown(_, _)) | None => None
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

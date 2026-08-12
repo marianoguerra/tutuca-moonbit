@@ -20,7 +20,7 @@ update=(s : LogState, msg, ctx) => match msg {
     log.insert(0, Str(label))
     Some({ ..s, log, })
   }
-  _ => None
+  _ => Unhandled
 },
 
 // send / receive — deliver to one target (self, or ctx.at() for another)
@@ -29,8 +29,8 @@ update=(s : ChatState, msg, ctx) => match msg {
     ctx.at().field("status").send("flash", [Str(s.draft)])
     None
   }
-  Receive("flash", [Str(message), ..]) => Some({ ..s, message, })
-  _ => None
+  Receive("flash", [Str(message), ..]) => Next({ ..s, message, })
+  _ => Unhandled
 },
 
 // request / response — async scope-registered work, result routed back
@@ -41,7 +41,7 @@ update=(s : ListState, msg, ctx) => match msg {
   }
   Response("loadData", [res, _err]) => // args = [res, err]
     Some({ ..s, isLoading: false, items: res.list() })
-  _ => None
+  _ => Unhandled
 },
 ```
 

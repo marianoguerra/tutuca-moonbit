@@ -60,7 +60,9 @@ pub fn table_row_component(
   init? : TableRowState = TableRowState::zero(),
   common_style? : String = table_row_common_style,
   global_style? : String = table_row_global_style,
-  update? : (TableRowState, @component.Dispatch, &@tutuca.Ctx) -> TableRowState?,
+  update? : (TableRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TableRowState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -129,7 +131,9 @@ pub fn item_table_component(
   init? : ItemTableState = ItemTableState::zero(),
   common_style? : String = item_table_common_style,
   global_style? : String = item_table_global_style,
-  update? : (ItemTableState, @component.Dispatch, &@tutuca.Ctx) -> ItemTableState?,
+  update? : (ItemTableState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ItemTableState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -184,7 +188,9 @@ pub fn select_option_component(
   init? : SelectOptionState = SelectOptionState::zero(),
   common_style? : String = select_option_common_style,
   global_style? : String = select_option_global_style,
-  update? : (SelectOptionState, @component.Dispatch, &@tutuca.Ctx) -> SelectOptionState?,
+  update? : (SelectOptionState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SelectOptionState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -258,7 +264,9 @@ pub fn item_select_component(
   init? : ItemSelectState = ItemSelectState::zero(),
   common_style? : String = item_select_common_style,
   global_style? : String = item_select_global_style,
-  update? : (ItemSelectState, @component.Dispatch, &@tutuca.Ctx) -> ItemSelectState?,
+  update? : (ItemSelectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ItemSelectState,
+  ],
   swap? : (ItemSelectInput) -> ((
     ItemSelectState,
     Array[@tutuca.Value],
@@ -329,7 +337,9 @@ pub fn pseudo_x_demo_component(
   init? : PseudoXDemoState = PseudoXDemoState::zero(),
   common_style? : String = pseudo_x_demo_common_style,
   global_style? : String = pseudo_x_demo_global_style,
-  update? : (PseudoXDemoState, @component.Dispatch, &@tutuca.Ctx) -> PseudoXDemoState?,
+  update? : (PseudoXDemoState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PseudoXDemoState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

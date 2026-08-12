@@ -102,7 +102,9 @@ pub fn palette_row_component(
   init? : PaletteRowState = PaletteRowState::zero(),
   common_style? : String = palette_row_common_style,
   global_style? : String = palette_row_global_style,
-  update? : (PaletteRowState, @component.Dispatch, &@tutuca.Ctx) -> PaletteRowState?,
+  update? : (PaletteRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PaletteRowState,
+  ],
   swap? : (PaletteRowInput) -> ((
     PaletteRowState,
     Array[@tutuca.Value],
@@ -256,7 +258,9 @@ pub fn command_bar_component(
   init? : CommandBarState = CommandBarState::zero(),
   common_style? : String = command_bar_common_style,
   global_style? : String = command_bar_global_style,
-  update? : (CommandBarState, @component.Dispatch, &@tutuca.Ctx) -> CommandBarState?,
+  update? : (CommandBarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CommandBarState,
+  ],
   swap? : (CommandBarInput) -> ((
     CommandBarState,
     Array[@tutuca.Value],
@@ -479,7 +483,9 @@ pub fn schema_field_component(
   init? : SchemaFieldState = SchemaFieldState::zero(),
   common_style? : String = schema_field_common_style,
   global_style? : String = schema_field_global_style,
-  update? : (SchemaFieldState, @component.Dispatch, &@tutuca.Ctx) -> SchemaFieldState?,
+  update? : (SchemaFieldState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaFieldState,
+  ],
   swap? : (SchemaFieldInput) -> ((
     SchemaFieldState,
     Array[@tutuca.Value],
@@ -627,7 +633,9 @@ pub fn schema_form_component(
   init? : SchemaFormState = SchemaFormState::zero(),
   common_style? : String = schema_form_common_style,
   global_style? : String = schema_form_global_style,
-  update? : (SchemaFormState, @component.Dispatch, &@tutuca.Ctx) -> SchemaFormState?,
+  update? : (SchemaFormState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaFormState,
+  ],
   swap? : (SchemaFormInput) -> ((
     SchemaFormState,
     Array[@tutuca.Value],
@@ -742,7 +750,9 @@ pub fn config_panel_component(
   init? : ConfigPanelState = ConfigPanelState::zero(),
   common_style? : String = config_panel_common_style,
   global_style? : String = config_panel_global_style,
-  update? : (ConfigPanelState, @component.Dispatch, &@tutuca.Ctx) -> ConfigPanelState?,
+  update? : (ConfigPanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ConfigPanelState,
+  ],
   swap? : (ConfigPanelInput) -> ((
     ConfigPanelState,
     Array[@tutuca.Value],
@@ -886,7 +896,9 @@ pub fn universal_app_component(
   init? : UniversalAppState = UniversalAppState::zero(),
   common_style? : String = universal_app_common_style,
   global_style? : String = universal_app_global_style,
-  update? : (UniversalAppState, @component.Dispatch, &@tutuca.Ctx) -> UniversalAppState?,
+  update? : (UniversalAppState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    UniversalAppState,
+  ],
   compute? : (UniversalAppMethod) -> ((UniversalAppState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (UniversalAppInput) -> ((
     UniversalAppState,

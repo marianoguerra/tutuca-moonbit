@@ -131,7 +131,9 @@ pub fn universal_component(
   init? : UniversalState = UniversalState::zero(),
   common_style? : String = universal_common_style,
   global_style? : String = universal_global_style,
-  update? : (UniversalState, @component.Dispatch, &@tutuca.Ctx) -> UniversalState?,
+  update? : (UniversalState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    UniversalState,
+  ],
   compute? : (UniversalMethod) -> ((UniversalState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (UniversalInput) -> ((
     UniversalState,
@@ -292,7 +294,9 @@ pub fn stack_component(
   init? : StackState = StackState::zero(),
   common_style? : String = stack_common_style,
   global_style? : String = stack_global_style,
-  update? : (StackState, @component.Dispatch, &@tutuca.Ctx) -> StackState?,
+  update? : (StackState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StackState,
+  ],
   compute? : (StackMethod) -> ((StackState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (StackInput) -> ((StackState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
@@ -464,7 +468,9 @@ pub fn grid_component(
   init? : GridState = GridState::zero(),
   common_style? : String = grid_common_style,
   global_style? : String = grid_global_style,
-  update? : (GridState, @component.Dispatch, &@tutuca.Ctx) -> GridState?,
+  update? : (GridState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    GridState,
+  ],
   compute? : (GridMethod) -> ((GridState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (GridInput) -> ((GridState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
@@ -573,7 +579,9 @@ pub fn tab_page_component(
   init? : TabPageState = TabPageState::zero(),
   common_style? : String = tab_page_common_style,
   global_style? : String = tab_page_global_style,
-  update? : (TabPageState, @component.Dispatch, &@tutuca.Ctx) -> TabPageState?,
+  update? : (TabPageState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TabPageState,
+  ],
   swap? : (TabPageInput) -> ((TabPageState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -769,7 +777,9 @@ pub fn tabs_component(
   init? : TabsState = TabsState::zero(),
   common_style? : String = tabs_common_style,
   global_style? : String = tabs_global_style,
-  update? : (TabsState, @component.Dispatch, &@tutuca.Ctx) -> TabsState?,
+  update? : (TabsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TabsState,
+  ],
   swap? : (TabsInput) -> ((TabsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   when? : (TabsWhen) -> ((
     TabsState,
@@ -870,7 +880,9 @@ pub fn text_component(
   init? : TextState = TextState::zero(),
   common_style? : String = text_common_style,
   global_style? : String = text_global_style,
-  update? : (TextState, @component.Dispatch, &@tutuca.Ctx) -> TextState?,
+  update? : (TextState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TextState,
+  ],
   compute? : (TextMethod) -> ((TextState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -951,7 +963,9 @@ pub fn textarea_component(
   init? : TextareaState = TextareaState::zero(),
   common_style? : String = textarea_common_style,
   global_style? : String = textarea_global_style,
-  update? : (TextareaState, @component.Dispatch, &@tutuca.Ctx) -> TextareaState?,
+  update? : (TextareaState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TextareaState,
+  ],
   swap? : (TextareaInput) -> ((
     TextareaState,
     Array[@tutuca.Value],

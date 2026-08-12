@@ -137,11 +137,11 @@ fn comp_view_comp() -> @component.Component {
         Input("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
             ctx.bubble("toggleAllViews", [Bool(!s.isExpanded)])
-            None
+            Unhandled
           } else {
-            Some({ ..s, isExpanded: !s.isExpanded })
+            Next({ ..s, isExpanded: !s.isExpanded })
           }
-        _ => None
+        _ => Unhandled
       }
     },
   )
@@ -205,9 +205,9 @@ fn comp_section_comp() -> @component.Component {
         Input("toggle", args) =>
           if args.get(0) is Some(Bool(true)) {
             ctx.bubble("toggleAllSections", [Bool(!s.isExpanded)])
-            None
+            Unhandled
           } else {
-            Some({ ..s, isExpanded: !s.isExpanded })
+            Next({ ..s, isExpanded: !s.isExpanded })
           }
         // The shared prev/next page arms.
         _ => composite_update(s, msg)
@@ -262,9 +262,9 @@ fn component_inspector_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match ComponentInspectorBubble::from_dispatch(msg) {
-        Some(ToggleAllSections(on)) => Some(set_all_sections(s, on))
-        Some(ToggleAllViews(on)) => Some(set_all_views(s, on))
-        Some(Unknown(_, _)) | None => None
+        Some(ToggleAllSections(on)) => Next(set_all_sections(s, on))
+        Some(ToggleAllViews(on)) => Next(set_all_views(s, on))
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

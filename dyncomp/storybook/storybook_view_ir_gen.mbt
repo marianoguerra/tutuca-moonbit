@@ -84,7 +84,9 @@ pub fn story_nav_component(
   init? : StoryNavState = StoryNavState::zero(),
   common_style? : String = story_nav_common_style,
   global_style? : String = story_nav_global_style,
-  update? : (StoryNavState, @component.Dispatch, &@tutuca.Ctx) -> StoryNavState?,
+  update? : (StoryNavState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StoryNavState,
+  ],
   swap? : (StoryNavInput) -> ((
     StoryNavState,
     Array[@tutuca.Value],
@@ -332,7 +334,9 @@ pub fn story_card_component(
   init? : StoryCardState = StoryCardState::zero(),
   common_style? : String = story_card_common_style,
   global_style? : String = story_card_global_style,
-  update? : (StoryCardState, @component.Dispatch, &@tutuca.Ctx) -> StoryCardState?,
+  update? : (StoryCardState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StoryCardState,
+  ],
   compute? : (StoryCardMethod) -> ((StoryCardState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (StoryCardInput) -> ((
     StoryCardState,
@@ -628,7 +632,9 @@ pub fn dyncomp_storybook_component(
   init? : DyncompStorybookState = DyncompStorybookState::zero(),
   common_style? : String = dyncomp_storybook_common_style,
   global_style? : String = dyncomp_storybook_global_style,
-  update? : (DyncompStorybookState, @component.Dispatch, &@tutuca.Ctx) -> DyncompStorybookState?,
+  update? : (DyncompStorybookState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DyncompStorybookState,
+  ],
   compute? : (DyncompStorybookMethod) -> ((
     DyncompStorybookState,
     Array[@tutuca.Value],

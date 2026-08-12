@@ -32,9 +32,9 @@ fn id_comp() -> @component.Component {
     update=(s : IdState, msg, _ctx) => {
       match msg {
         // returns a struct that is EQUAL to the current state
-        Receive("touch", _) => Some({ ..s })
-        Receive("rename", [Str(t)]) => Some({ ..s, title: t })
-        _ => None
+        Receive("touch", _) => Next({ ..s })
+        Receive("rename", [Str(t)]) => Next({ ..s, title: t })
+        _ => Unhandled
       }
     },
   )

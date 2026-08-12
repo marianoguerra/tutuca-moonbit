@@ -15,8 +15,8 @@ fn emoji_picker_comp() -> @component.Component {
   ) => {
     match msg {
       Input("onEmojiClick", [Map(detail), ..]) =>
-        Some({ ..s, current: detail.get("unicode").unwrap_or(Null) })
-      _ => None
+        Next({ ..s, current: detail.get("unicode").unwrap_or(Null) })
+      _ => Unhandled
     }
   })
 }

@@ -25,9 +25,9 @@
 fn status_comp() -> @component.Component {
   status_component(init={ message: "", count: 0 }, update=(s, msg, _ctx) => {
     match msg {
-      Receive("flash", [Str(m), ..]) => Some({ message: m, count: s.count + 1 })
-      Receive("clear", _) => Some({ ..s, message: "" })
-      _ => None
+      Receive("flash", [Str(m), ..]) => Next({ message: m, count: s.count + 1 })
+      Receive("clear", _) => Next({ ..s, message: "" })
+      _ => Unhandled
     }
   })
 }
@@ -54,14 +54,14 @@ fn send_receive_comp() -> @component.Component {
           // …and message SELF, reusing the `clearDraft` receive handler
           ctx.send("clearDraft", []) // this handler changes nothing directly; the messages do
         }
-        None
+        Unchanged
       }
       Input("clearStatus", _) => {
         ctx.send_at_path(ctx.path().concat([FieldStep("status")]), "clear", [])
-        None
+        Unchanged
       }
-      Receive("clearDraft", _) => Some({ ..s, draft: "" })
-      _ => None
+      Receive("clearDraft", _) => Next({ ..s, draft: "" })
+      _ => Unhandled
     }
   })
 }
@@ -107,12 +107,12 @@ fn tree_item_comp() -> @component.Component {
             false
           })
           ctx.bubble("treeItemSelected", [self_v])
-          Some({ ..s, isOpen: !s.isOpen })
+          Next({ ..s, isOpen: !s.isOpen })
         }
         // a TreeItem between the source and the root sees the event and passes
         // it on unchanged (returning None = no change)
-        Bubble("treeItemSelected", _) => None
-        _ => None
+        Bubble("treeItemSelected", _) => Unhandled
+        _ => Unhandled
       }
     },
   )
@@ -139,9 +139,9 @@ fn tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ ..s, log, })
+        Next({ ..s, log, })
       }
-      _ => None
+      _ => Unhandled
     }
   })
 }

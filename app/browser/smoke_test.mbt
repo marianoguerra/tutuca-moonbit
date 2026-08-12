@@ -44,8 +44,8 @@ fn counter_comp() -> @component.Component {
     init=SmokeCounterState::{ n: 0, label: "start" },
     update=(s : SmokeCounterState, msg, _ctx) => {
       match msg {
-        Input("bump", _) => Some({ ..s, n: s.n + 1 })
-        _ => None
+        Input("bump", _) => Next({ ..s, n: s.n + 1 })
+        _ => Unhandled
       }
     },
   )
@@ -148,10 +148,10 @@ test "browser: real drag events run the drag lifecycle" {
       match msg {
         Input("landed", [Obj(info), ..]) =>
           match info.obj_field("type") {
-            Some(Str(kind)) => Some({ landed_kind: kind })
-            _ => None
+            Some(Str(kind)) => Next({ landed_kind: kind })
+            _ => Unhandled
           }
-        _ => None
+        _ => Unhandled
       }
     },
   )

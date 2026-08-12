@@ -49,14 +49,14 @@ fn board_comp() -> @component.Component {
             Some(Obj(_)) => "yes"
             _ => "no"
           }
-          Some({
+          Next({
             ..s,
             received: bind("value") + "/" + dragged_is_board,
             kind,
             from: bind("key"),
           })
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )

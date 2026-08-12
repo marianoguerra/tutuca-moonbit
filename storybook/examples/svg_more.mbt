@@ -66,25 +66,27 @@ fn bar_chart_comp() -> @component.Component {
               _ => v
             }
           })
-          Some({ values: next })
+          Next({ values: next })
         }
         Input("addBar", _) =>
           if s.values.length() >= 9 {
-            None
+            // At the cap: this arm claimed `addBar` and refuses, which is a
+            // different answer from not knowing the name.
+            Unchanged
           } else {
             let out = s.values.copy()
             out.push(Num(((s.values.length() * 17 + 23) % 90 + 10).to_double()))
-            Some({ values: out })
+            Next({ values: out })
           }
         Input("removeBar", _) =>
           if s.values.length() <= 1 {
-            None
+            Unchanged
           } else {
             let out = s.values.copy()
             let _ = out.pop()
-            Some({ values: out })
+            Next({ values: out })
           }
-        _ => None
+        _ => Unhandled
       }
     },
   )

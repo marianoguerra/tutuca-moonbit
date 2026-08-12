@@ -63,7 +63,9 @@ pub fn status_component(
   init? : StatusState = StatusState::zero(),
   common_style? : String = status_common_style,
   global_style? : String = status_global_style,
-  update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> StatusState?,
+  update? : (StatusState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StatusState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -154,7 +156,9 @@ pub fn send_receive_component(
   init? : SendReceiveState = SendReceiveState::zero(),
   common_style? : String = send_receive_common_style,
   global_style? : String = send_receive_global_style,
-  update? : (SendReceiveState, @component.Dispatch, &@tutuca.Ctx) -> SendReceiveState?,
+  update? : (SendReceiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SendReceiveState,
+  ],
   swap? : (SendReceiveInput) -> ((
     SendReceiveState,
     Array[@tutuca.Value],
@@ -259,7 +263,9 @@ pub fn tree_item_component(
   init? : TreeItemState = TreeItemState::zero(),
   common_style? : String = tree_item_common_style,
   global_style? : String = tree_item_global_style,
-  update? : (TreeItemState, @component.Dispatch, &@tutuca.Ctx) -> TreeItemState?,
+  update? : (TreeItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TreeItemState,
+  ],
   compute? : (TreeItemMethod) -> ((TreeItemState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (TreeItemInput) -> ((
     TreeItemState,
@@ -354,7 +360,9 @@ pub fn tree_root_component(
   init? : TreeRootState = TreeRootState::zero(),
   common_style? : String = tree_root_common_style,
   global_style? : String = tree_root_global_style,
-  update? : (TreeRootState, @component.Dispatch, &@tutuca.Ctx) -> TreeRootState?,
+  update? : (TreeRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TreeRootState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

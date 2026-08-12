@@ -284,6 +284,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **`update` answers an enum, not an `Option`.** `(S, Dispatch, &Ctx) -> S?`
+  became `-> Update[S]`, with three cases:
+
+      Unhandled     no arm claimed this name — try the generated mutators
+      Unchanged     this arm answered, and the state stays as it is
+      Next(s)       this arm answered; here is the successor
+
+  `None` used to mean the first TWO of those, and the dispatch site could not
+  tell them apart — so a handler could not veto a write: an
+  `Input("setTitle", _) => None` meant to refuse fell through to the generated
+  setter and the change landed anyway. `Some(s)` where `s` was the same object
+  was the only way to say "handled, no change", which made `physical_equal`
+  part of the CONTRACT rather than an optimization the transactor happens to
+  make.
+
+  They are the same three the refusal taxonomy names — nothing claimed it, a
+  rule refused it, nothing changed — and the migration is mechanical: an arm
+  that produced a successor becomes `Next(…)`, a trailing `_ => None` becomes
+  `_ => Unhandled`, and a guard inside an arm that already claimed the name
+  becomes `Unchanged`. `inspector`'s shared `composite_update` is the clearest
+  case: at page 0, `prevPage` now REFUSES rather than falling through to
+  whatever mutator happens to share the name.
+
 - **The state block is no longer WIT.** `<script type="tutuca/state">` now
   reads a small language of its own that spells its types the way MoonBit does:
   `state Counter { count : Int, tags : Set[String] }` where the file used to

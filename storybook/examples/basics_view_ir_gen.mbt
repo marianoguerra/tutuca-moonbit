@@ -46,7 +46,9 @@ pub fn minimum_viable_component_component(
   init? : MinimumViableComponentState = MinimumViableComponentState::zero(),
   common_style? : String = minimum_viable_component_common_style,
   global_style? : String = minimum_viable_component_global_style,
-  update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> MinimumViableComponentState?,
+  update? : (MinimumViableComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    MinimumViableComponentState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -99,7 +101,9 @@ pub fn static_view_component_component(
   init? : StaticViewComponentState = StaticViewComponentState::zero(),
   common_style? : String = static_view_component_common_style,
   global_style? : String = static_view_component_global_style,
-  update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> StaticViewComponentState?,
+  update? : (StaticViewComponentState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StaticViewComponentState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -189,7 +193,9 @@ pub fn text_directive_component(
   init? : TextDirectiveState = TextDirectiveState::zero(),
   common_style? : String = text_directive_common_style,
   global_style? : String = text_directive_global_style,
-  update? : (TextDirectiveState, @component.Dispatch, &@tutuca.Ctx) -> TextDirectiveState?,
+  update? : (TextDirectiveState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    TextDirectiveState,
+  ],
   compute? : (TextDirectiveMethod) -> ((
     TextDirectiveState,
     Array[@tutuca.Value],
@@ -261,7 +267,9 @@ pub fn danger_set_inner_html_component(
   init? : DangerSetInnerHtmlState = DangerSetInnerHtmlState::zero(),
   common_style? : String = danger_set_inner_html_common_style,
   global_style? : String = danger_set_inner_html_global_style,
-  update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> DangerSetInnerHtmlState?,
+  update? : (DangerSetInnerHtmlState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DangerSetInnerHtmlState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -320,7 +328,9 @@ pub fn set_inner_md_component(
   init? : SetInnerMdState = SetInnerMdState::zero(),
   common_style? : String = set_inner_md_common_style,
   global_style? : String = set_inner_md_global_style,
-  update? : (SetInnerMdState, @component.Dispatch, &@tutuca.Ctx) -> SetInnerMdState?,
+  update? : (SetInnerMdState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SetInnerMdState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

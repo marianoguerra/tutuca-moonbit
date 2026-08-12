@@ -42,9 +42,9 @@ fn activity_log_comp() -> @component.Component {
           }
           out.push(e)
         }
-        Some({ events: out, hasEvents: true })
+        Next({ events: out, hasEvents: true })
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }

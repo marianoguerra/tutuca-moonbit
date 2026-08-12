@@ -13,9 +13,9 @@ fn build() -> @component.ModuleDef {
   let counter = counter_component(
     init=CounterState::{ count: 0 },
     update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-      Some(Dec) => Some({ count: s.count - 1 })
-      Some(Inc) => Some({ count: s.count + 1 })
-      Some(Unknown(_, _)) | None => None
+      Some(Dec) => Next({ count: s.count - 1 })
+      Some(Inc) => Next({ count: s.count + 1 })
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
   @component.ModuleDef::new(

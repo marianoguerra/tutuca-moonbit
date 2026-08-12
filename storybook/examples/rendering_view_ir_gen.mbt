@@ -104,7 +104,9 @@ pub fn push_view_component(
   init? : PushViewState = PushViewState::zero(),
   common_style? : String = push_view_common_style,
   global_style? : String = push_view_global_style,
-  update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> PushViewState?,
+  update? : (PushViewState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PushViewState,
+  ],
   compute? : (PushViewMethod) -> ((PushViewState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (PushViewInput) -> ((
     PushViewState,
@@ -241,7 +243,9 @@ pub fn seq_item_access_component(
   init? : SeqItemAccessState = SeqItemAccessState::zero(),
   common_style? : String = seq_item_access_common_style,
   global_style? : String = seq_item_access_global_style,
-  update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> SeqItemAccessState?,
+  update? : (SeqItemAccessState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SeqItemAccessState,
+  ],
   compute? : (SeqItemAccessMethod) -> ((
     SeqItemAccessState,
     Array[@tutuca.Value],
@@ -366,7 +370,9 @@ pub fn pagination_component(
   init? : PaginationState = PaginationState::zero(),
   common_style? : String = pagination_common_style,
   global_style? : String = pagination_global_style,
-  update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> PaginationState?,
+  update? : (PaginationState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PaginationState,
+  ],
   compute? : (PaginationMethod) -> ((PaginationState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (PaginationInput) -> ((
     PaginationState,

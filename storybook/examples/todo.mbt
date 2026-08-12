@@ -19,11 +19,11 @@ fn todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(init={ items: [] }, update=(s, msg, _ctx) => {
     match ItemsMsg::from_dispatch(msg) {
       // Served by the mutators generated from the state's fields: the
-      // view spells them bare now, so they arrive as Inputs, and
-      // returning None falls through to them.
-      Some(RemoveInItemsAt(_)) => None
-      Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
-      Some(Unknown(_, _)) | None => None
+      // view spells them bare now, so they arrive as Inputs, and `Unhandled`
+      // falls through to them.
+      Some(RemoveInItemsAt(_)) => Unhandled
+      Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }

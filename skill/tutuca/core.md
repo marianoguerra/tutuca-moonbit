@@ -82,12 +82,19 @@ problems, pair it with the `moon` toolchain: `moon check` (all targets),
   and a view names it bare. A `compute` entry is pure — `(s, args) => Value`
   — and exists for the other job: a `$`-callable evaluated in a VALUE
   position (`@text="$label"`), where no event and no ctx exist. The
-  `update` fn — `(s, msg, ctx) => S?` — gets the `&Ctx` and can
+  `update` fn — `(s, msg, ctx) => Update[S]` — gets the `&Ctx` and can
   `ctx.send` / `ctx.request`. Every `@on` handler is written bare,
   whichever bucket serves it; `$` is for value positions only.
-- **`update` returns `S?`; `None` means "no change".** Returning `None`
-  leaves the root untouched (a cheap no-op); return `Some(new_state)` to
-  commit. The match must be total — always end with `_ => None`.
+- **`update` returns `Update[S]`, which has three cases.** `Next(s2)`
+  commits a successor. `Unchanged` says "my arm ran and the state stays as
+  it is" — nothing further is tried, which is how a handler VETOES a write.
+  `Unhandled` says "no arm claimed this name" and hands the dispatch on to
+  the generated mutators. The match must be total — always end with
+  `_ => Unhandled`.
+
+  The three are distinct on purpose. Under `S?` both refusals were `None`,
+  so an `Input("setTitle", _) => None` meant to veto fell through to the
+  generated setter and the write landed anyway.
 - **The bucket enums are closed and view-driven.** With generated views,
   `compute` / `when` / `enrich` / … are functions over enums whose cases
   come from the names the views reference. You cannot pre-declare a
@@ -157,8 +164,8 @@ fn counter_comp() -> @component.Component {
   // the styles, the schema and the state <-> Value codec. `CounterState` and
   // `CounterMsg` are generated too.
   counter_component(update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-    Some(Inc) => Some({ count: s.count + 1 })
-    Some(Unknown(_, _)) | None => None
+    Some(Inc) => Next({ count: s.count + 1 })
+    Some(Unknown(_, _)) | None => Unhandled
   })
 }
 
@@ -419,17 +426,18 @@ need no annotation:
 my_comp_component(
   // `init` defaults to MyCompState::zero() — pass it only for what differs
   init={ ..MyCompState::zero(), count: 0 },
-  // ONE effectful dispatch match: (s, msg, ctx) => S?  (None = no change)
+  // ONE effectful dispatch match: (s, msg, ctx) => Update[S]
+  // (Next = successor, Unchanged = mine and no, Unhandled = not mine)
   update=(s, msg, ctx) => match msg {
-    Input("onClick", _) => Some({ ..s, count: s.count + 1 })
+    Input("onClick", _) => Next({ ..s, count: s.count + 1 })
     Receive("init", _) => {
       ctx.request("loadData", [], @tutuca.RequestOpts::new())
       Some({ ..s, isLoading: true })
     }
-    Bubble("itemPicked", [item, ..]) => Some({ ..s, selected: item })
+    Bubble("itemPicked", [item, ..]) => Next({ ..s, selected: item })
     Response("loadData", [List(rows), _err]) =>
       Some({ ..s, items: rows.map(r => r.str()), isLoading: false })
-    _ => None // ALWAYS needed
+    _ => Unhandled // ALWAYS needed
   },
   // Each bucket is keyed by an enum generated from the names the views use,
   // so the match is exhaustive over them and a name added to a view is a
@@ -824,7 +832,7 @@ canonical list; other files link here rather than restating it.
 
 | Bucket | Signature | Answers |
 | ------ | --------- | ------- |
-| `update` | `(S, Dispatch, &Ctx) -> S?` | every event and message; one match over all four channels |
+| `update` | `(S, Dispatch, &Ctx) -> Update[S]` | every event and message; one match over all four channels |
 | `compute` | `(S, Array[Value]) -> Value` | a `$name` in a **value** position — pure, no ctx |
 | `swap` | `(S, Array[Value], &Ctx) -> Value?` | an `Input` that replaces this node with a different **Value** |
 | `when` | `(S, key, value, iterData) -> Bool` | `@when` iteration filters |
@@ -842,7 +850,9 @@ function from a generated enum returning the handler as an `Option`:
 compute=m => match m { Label => Some((s, _args) => Str("n=\{s.count}")) }
 ```
 
-Return `None` for a case to fall through to a generated mutator. The raw
+Return `None` for a case to leave it unanswered. (That is the bucket's own
+`Option`, not `update`'s three-case `Update` — a bucket entry either exists
+or does not.) The raw
 `@component.component(...)` call instead takes a **string-keyed map**:
 
 ```moonbit nocheck
@@ -884,12 +894,13 @@ An `Input` name is offered to three things, in order
 (`component/instance.mbt:360-408`):
 
 1. **`swap`**, if it has an entry for that name — it wins over `update`;
-2. **`update`**, if its match claims the name (returns `Some`);
+2. **`update`**, if its match claims the name (answers `Next` or `Unchanged`);
 3. the **generated mutator** of that name (`setX`, `pushInX`, `toggleX`, …).
 
 So a view writing `setTitle 'x'` reaches the setter every field gets without the
-component declaring anything, and an `update` arm returning `None` falls through
-to it rather than swallowing the event.
+component declaring anything, and an `update` arm answering `Unhandled` falls
+through to it rather than swallowing the event. An arm answering `Unchanged`
+stops there — that is the difference between "not mine" and "mine, and no".
 
 ### What `swap` is for
 

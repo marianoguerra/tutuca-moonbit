@@ -44,9 +44,9 @@ fn composability_comp(
             "init",
             [],
           )
-          Some(s)
+          Next(s)
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )

@@ -142,7 +142,7 @@ you want to look at it.
 
   ```moonbit
   test "update: dec at unit level" {
-    let u = counter_update() // fn () -> (S, Dispatch, &Ctx) -> S?
+    let u = counter_update() // fn () -> (S, Dispatch, &Ctx) -> Update[S]
     // NullCtx for arms that don't dispatch
     match u(CounterState::{ count: 3 }, Input("dec", []), @tutuca.NullCtx::{  }) {
       Some(s2) => assert_eq(s2.count, 2)

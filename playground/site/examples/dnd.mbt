@@ -29,15 +29,15 @@ fn build() -> @component.ModuleDef {
             }
           _ => -1
         }
-        Some({ ..s, items: move_index_to_index(s.items, source, target) })
+        Next({ ..s, items: move_index_to_index(s.items, source, target) })
       }
-      Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => None
+      Some(OnDropOnItem(_, _)) | Some(Unknown(_, _)) | None => Unhandled
     
   // Served by a generated mutator or another bucket: the view
   // spells these bare now, so they arrive as Inputs, and
   // returning None falls through to whatever answers them.
-  Some(ResetQuery) => None
-  Some(SetQuery(_)) => None},
+  Some(ResetQuery) => Unhandled
+  Some(SetQuery(_)) => Unhandled},
   )
   @component.ModuleDef::new(
     name="dnd-example",

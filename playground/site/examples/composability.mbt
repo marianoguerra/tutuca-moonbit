@@ -15,12 +15,12 @@ fn cx_counter_comp() -> @component.Component {
   counter_component(
     init=CounterState::{ count: 0 },
     update=(s, msg, _ctx) => match CounterMsg::from_dispatch(msg) {
-      Some(Dec) => Some({ count: s.count - 1 })
+      Some(Dec) => Next({ count: s.count - 1 })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
       // returning None falls through to whatever answers them.
-      Some(Inc) => Some({ count: s.count + 1 })
-      Some(Unknown(_, _)) | None => None
+      Some(Inc) => Next({ count: s.count + 1 })
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }
@@ -38,12 +38,12 @@ fn cx_todo_items_comp(item : @component.Component) -> @component.Component {
   items_component(
     init=ItemsState::{ items: [] },
     update=(s, msg, _ctx) => match ItemsMsg::from_dispatch(msg) {
-      Some(OnAddItem) => Some({ items: s.items + [item.make(Map([]))] })
+      Some(OnAddItem) => Next({ items: s.items + [item.make(Map([]))] })
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
       // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => None
-      Some(Unknown(_, _)) | None => None
+      Some(RemoveInItemsAt(_)) => Unhandled
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }
@@ -72,10 +72,10 @@ fn cx_tree_item_comp() -> @component.Component {
           false // stop at the leaf: self
         })
         ctx.bubble("treeItemSelected", [self_v])
-        Some({ ..s, isOpen: !s.isOpen })
+        Next({ ..s, isOpen: !s.isOpen })
       }
-      Bubble("treeItemSelected", _) => None
-      _ => None
+      Bubble("treeItemSelected", _) => Unhandled
+      _ => Unhandled
     },
   )
 }
@@ -96,9 +96,9 @@ fn cx_tree_root_comp() -> @component.Component {
         }
         let log = s.log.copy()
         log.insert(0, Str("selected: \{label}"))
-        Some({ ..s, log, })
+        Next({ ..s, log, })
       }
-      _ => None
+      _ => Unhandled
     },
   )
 }

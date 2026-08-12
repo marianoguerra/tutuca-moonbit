@@ -106,21 +106,21 @@ fn counter_inline_update(
   s : CounterState,
   msg : @component.Dispatch,
   _ctx : &@tutuca.Ctx,
-) -> CounterState? {
+) -> @component.Update[CounterState] {
   match msg {
     Input("add", args) => {
-      guard args.get(0) is Some(Num(d)) else { return None }
+      guard args.get(0) is Some(Num(d)) else { return Unchanged }
       let s = { ..s, count: (s.count.to_double() + d).to_int() }
       let s = { ..s, history: s.history + [s.count] }
-      Some(s)
+      Next(s)
     }
     Receive("resetTo", args) => {
-      guard args.get(0) is Some(Num(n)) else { return None }
+      guard args.get(0) is Some(Num(n)) else { return Unchanged }
       let s = { ..s, count: n.to_int() }
       let s = { ..s, history: s.history + [s.count] }
-      Some(s)
+      Next(s)
     }
-    _ => None
+    _ => Unhandled
   }
 }
 
@@ -140,7 +140,9 @@ pub fn counter_component(
   init? : CounterState = CounterState::zero(),
   common_style? : String = counter_common_style,
   global_style? : String = counter_global_style,
-  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,
+  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    CounterState,
+  ],
   swap? : (CounterInput) -> ((CounterState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -155,12 +157,12 @@ pub fn counter_component(
     global_style~,
     update=(s, msg, ctx) => {
       match counter_inline_update(s, msg, ctx) {
-        Some(next) => Some(next)
-        None =>
+        Unhandled =>
           match update {
             Some(u) => u(s, msg, ctx)
-            None => None
+            None => Unhandled
           }
+        answered => answered
       }
     },
     swap=match swap {

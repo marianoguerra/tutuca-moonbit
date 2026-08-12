@@ -25,8 +25,8 @@ fn traffic_light_comp() -> @component.Component {
     update=(s, msg, _ctx) => {
       match TrafficLightMsg::from_dispatch(msg) {
         Some(NextLight) =>
-          Some({ lightIndex: (s.lightIndex + 1) % traffic_lights.length() })
-        Some(Unknown(_, _)) | None => None
+          Next({ lightIndex: (s.lightIndex + 1) % traffic_lights.length() })
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

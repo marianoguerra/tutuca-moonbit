@@ -108,8 +108,8 @@ fn instance_fields_comp() -> @component.Component {
 fn instance_inspector_comp() -> @component.Component {
   instance_inspector_component(update=(s, msg, _ctx) => {
     match msg {
-      Input("toggleIsExpanded", _) => Some({ value: toggle_wrapped(s.value) })
-      _ => None
+      Input("toggleIsExpanded", _) => Next({ value: toggle_wrapped(s.value) })
+      _ => Unhandled
     }
   })
 }

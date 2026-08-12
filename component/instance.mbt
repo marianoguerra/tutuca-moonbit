@@ -12,7 +12,7 @@ priv struct TypedSpec[S] {
   mut comp : Component?
   init : S
   s_fields : Array[String]
-  update : ((S, Dispatch, &@tutuca.Ctx) -> S?)?
+  update : ((S, Dispatch, &@tutuca.Ctx) -> Update[S])?
   compute : Map[String, (S, Array[@tutuca.Value]) -> @tutuca.Value]
   swap : Map[String, (S, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?]
   when : Map[String, (S, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool]
@@ -414,8 +414,12 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
             Response => Response(name, args)
           }
           match u(self.state, d, ctx) {
-            Some(s2) => return Some(self.with_state(s2).to_value())
-            None => ()
+            Next(s2) => return Some(self.with_state(s2).to_value())
+            // Answered, and nothing changed. The instance's own Value, which
+            // is memoized — so the transactor's `physical_equal` reads it as
+            // "nothing happened" and no generated mutator is consulted.
+            Unchanged => return Some(self.to_value())
+            Unhandled => ()
           }
         }
         None => ()

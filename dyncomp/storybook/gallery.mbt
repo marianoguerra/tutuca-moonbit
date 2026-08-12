@@ -179,9 +179,9 @@ fn nav_comp() -> @component.Component {
       // a list.
       Some(Pick) => {
         StoryNavBubble::NavPicked(s.module_, s.name).bubble(ctx)
-        None
+        Unchanged
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -203,9 +203,9 @@ fn card_comp() -> @component.Component {
         // cannot do — so it says what it is and lets the gallery answer.
         Some(Rebuild) => {
           StoryCardBubble::RebuildCard(s.module_, s.name, s.init_).bubble(ctx)
-          None
+          Unhandled
         }
-        Some(Unknown(_, _)) | None => None
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -256,11 +256,11 @@ fn Gallery::root_comp(
     update=(s, msg, ctx) => {
       match DyncompStorybookMsg::from_dispatch(msg) {
         Some(SetQuery(q)) =>
-          return Some({ ..s, query: q, emptyMessage: "" } |> with_empty_message)
-        Some(ChooseTheme(t)) => return Some({ ..s, theme: t })
-        Some(ToggleWide) => return Some({ ..s, wide: not_(s.wide) })
+          return Next({ ..s, query: q, emptyMessage: "" } |> with_empty_message)
+        Some(ChooseTheme(t)) => return Next({ ..s, theme: t })
+        Some(ToggleWide) => return Next({ ..s, wide: not_(s.wide) })
         Some(ToggleDetails) =>
-          return Some({
+          return Next({
             ..s,
             mode: if s.mode == "details" {
               "main"
@@ -269,7 +269,7 @@ fn Gallery::root_comp(
             },
           })
         Some(ShowAll) =>
-          return Some(
+          return Next(
             { ..s, module_: "", name: "", nav: self.nav("", "") }
             |> with_empty_message,
           )
@@ -289,13 +289,13 @@ fn Gallery::root_comp(
             "filesDropped",
             [files],
           )
-          return None
+          return Unhandled
         }
         Some(Unknown(_, _)) | None => ()
       }
       match DyncompStorybookReceive::from_dispatch(msg) {
-        Some(CatalogChanged(module_)) => return Some(self.reloaded(s, module_))
-        Some(SetStatus(t)) => return Some({ ..s, status: t })
+        Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
+        Some(SetStatus(t)) => return Next({ ..s, status: t })
         Some(Unknown(_, _)) | None => ()
       }
       // The same two, arriving from BELOW: the host's loader sits inside the
@@ -303,12 +303,12 @@ fn Gallery::root_comp(
       // declared because both happen — a test pushes the news down, and a
       // running page has it come up.
       match DyncompStorybookBubble::from_dispatch(msg) {
-        Some(CatalogChanged(module_)) => return Some(self.reloaded(s, module_))
+        Some(CatalogChanged(module_)) => return Next(self.reloaded(s, module_))
         Some(Unknown(_, _)) | None => ()
       }
       match StoryNavBubble::from_dispatch(msg) {
         Some(NavPicked(module_, name)) =>
-          return Some(
+          return Next(
             { ..s, module_, name, nav: self.nav(module_, name) }
             |> with_empty_message,
           )
@@ -331,11 +331,11 @@ fn Gallery::root_comp(
               c
             }
           })
-          return Some({ ..s, cards, })
+          return Next({ ..s, cards, })
         }
         Some(Unknown(_, _)) | None => ()
       }
-      None
+      Unhandled
     },
   )
 }

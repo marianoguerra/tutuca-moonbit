@@ -84,7 +84,9 @@ pub fn nested_state_component(
   init? : NestedStateState = NestedStateState::zero(),
   common_style? : String = nested_state_common_style,
   global_style? : String = nested_state_global_style,
-  update? : (NestedStateState, @component.Dispatch, &@tutuca.Ctx) -> NestedStateState?,
+  update? : (NestedStateState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    NestedStateState,
+  ],
   swap? : (NestedStateInput) -> ((
     NestedStateState,
     Array[@tutuca.Value],

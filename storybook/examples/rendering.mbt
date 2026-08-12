@@ -35,10 +35,10 @@ fn push_view_comp() -> @component.Component {
     update=(s, msg, _ctx) => {
       match PushViewMsg::from_dispatch(msg) {
         Some(ToggleView) =>
-          Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
+          Next({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
         // Served by the generated mutators for the `query` field.
-        Some(ResetQuery) | Some(SetQuery(_)) => None
-        Some(Unknown(_, _)) | None => None
+        Some(ResetQuery) | Some(SetQuery(_)) => Unhandled
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
     compute=m => {
@@ -149,10 +149,10 @@ fn pagination_comp() -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match PaginationMsg::from_dispatch(msg) {
-        Some(Prev) => Some({ ..s, page: @cmp.maximum(0, s.page - 1) })
+        Some(Prev) => Next({ ..s, page: @cmp.maximum(0, s.page - 1) })
         Some(Next) =>
-          Some({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })
-        Some(Unknown(_, _)) | None => None
+          Next({ ..s, page: @cmp.minimum(page_count(s) - 1, s.page + 1) })
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
     loop_with=l => {

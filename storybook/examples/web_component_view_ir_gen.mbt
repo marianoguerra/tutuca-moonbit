@@ -97,7 +97,9 @@ pub fn emoji_picker_component(
   init? : EmojiPickerState = EmojiPickerState::zero(),
   common_style? : String = emoji_picker_common_style,
   global_style? : String = emoji_picker_global_style,
-  update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> EmojiPickerState?,
+  update? : (EmojiPickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    EmojiPickerState,
+  ],
   swap? : (EmojiPickerInput) -> ((
     EmojiPickerState,
     Array[@tutuca.Value],

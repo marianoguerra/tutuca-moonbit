@@ -170,7 +170,9 @@ pub fn activity_entry_component(
   init? : ActivityEntryState = ActivityEntryState::zero(),
   common_style? : String = activity_entry_common_style,
   global_style? : String = activity_entry_global_style,
-  update? : (ActivityEntryState, @component.Dispatch, &@tutuca.Ctx) -> ActivityEntryState?,
+  update? : (ActivityEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ActivityEntryState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -251,7 +253,9 @@ pub fn activity_log_component(
   init? : ActivityLogState = ActivityLogState::zero(),
   common_style? : String = activity_log_common_style,
   global_style? : String = activity_log_global_style,
-  update? : (ActivityLogState, @component.Dispatch, &@tutuca.Ctx) -> ActivityLogState?,
+  update? : (ActivityLogState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ActivityLogState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

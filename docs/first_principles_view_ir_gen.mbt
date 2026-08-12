@@ -50,7 +50,9 @@ pub fn fp_greeting_component(
   init? : FpGreetingState = FpGreetingState::zero(),
   common_style? : String = fp_greeting_common_style,
   global_style? : String = fp_greeting_global_style,
-  update? : (FpGreetingState, @component.Dispatch, &@tutuca.Ctx) -> FpGreetingState?,
+  update? : (FpGreetingState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    FpGreetingState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -105,7 +107,9 @@ pub fn note_component(
   init? : NoteState = NoteState::zero(),
   common_style? : String = note_common_style,
   global_style? : String = note_global_style,
-  update? : (NoteState, @component.Dispatch, &@tutuca.Ctx) -> NoteState?,
+  update? : (NoteState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    NoteState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -158,7 +162,9 @@ pub fn mailbox_component(
   init? : MailboxState = MailboxState::zero(),
   common_style? : String = mailbox_common_style,
   global_style? : String = mailbox_global_style,
-  update? : (MailboxState, @component.Dispatch, &@tutuca.Ctx) -> MailboxState?,
+  update? : (MailboxState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    MailboxState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

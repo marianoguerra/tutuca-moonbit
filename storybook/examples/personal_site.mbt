@@ -349,13 +349,13 @@ fn root_comp() -> @component.Component {
     update=(s, msg, ctx) => {
       match msg {
         Input("clearFilters", _) =>
-          Some({
+          Next({
             ..s,
             selectedCategories: ps_set_of(s.allCategories),
             selectedRoles: ps_set_of(s.allRoles),
           })
         Input("onCategoryToggle", args) =>
-          Some({
+          Next({
             ..s,
             selectedCategories: ps_facet_toggle(
               s.allCategories,
@@ -364,16 +364,16 @@ fn root_comp() -> @component.Component {
             ),
           })
         Input("onRoleToggle", args) =>
-          Some({
+          Next({
             ..s,
             selectedRoles: ps_facet_toggle(s.allRoles, s.selectedRoles, args),
           })
         Input("onToggleSortByEnd", _) =>
-          Some(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
+          Next(ps_resort({ ..s, sortByEnd: !s.sortByEnd }))
         Input("onToggleSortAsc", _) =>
-          Some(ps_resort({ ..s, sortAsc: !s.sortAsc }))
+          Next(ps_resort({ ..s, sortAsc: !s.sortAsc }))
         Input("onToggleFeaturedFirst", _) =>
-          Some(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
+          Next(ps_resort({ ..s, featuredFirst: !s.featuredFirst }))
         Response("loadData", args) => {
           let entries = match args {
             [List(a), ..] => a
@@ -406,7 +406,7 @@ fn root_comp() -> @component.Component {
           cats.sort_by((a, b) => a.lexical_compare(b))
           let roles = role_set.keys().collect()
           roles.sort_by((a, b) => a.lexical_compare(b))
-          Some({
+          Next({
             ..s,
             allEntries: ps_sort(
               entries,
@@ -422,9 +422,9 @@ fn root_comp() -> @component.Component {
         }
         Receive("init", _) => {
           ctx.request("loadData", [], @tutuca.RequestOpts::new())
-          Some(s)
+          Next(s)
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )

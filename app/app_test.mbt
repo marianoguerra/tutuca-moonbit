@@ -56,9 +56,9 @@ fn item_comp() -> @component.Component {
     init=ItemState::{ label: "plain" },
     update=(_s : ItemState, msg, _ctx) => {
       match msg {
-        Input("pick", [Str(l)]) => Some({ label: l })
-        Response("load", [Str(l), _]) => Some({ label: l })
-        _ => None
+        Input("pick", [Str(l)]) => Next({ label: l })
+        Response("load", [Str(l), _]) => Next({ label: l })
+        _ => Unhandled
       }
     },
   )

@@ -514,12 +514,12 @@ fn shell_module() -> @component.ModuleDef {
     init=TestShellState::{ slot: Null, note: "" },
     update=(s : TestShellState, msg, _ctx) => {
       match msg {
-        Receive("setSlot", [v, ..]) => Some({ ..s, slot: v })
-        Bubble("counterChanged", [v, ..]) => Some({ ..s, note: v.str() })
+        Receive("setSlot", [v, ..]) => Next({ ..s, slot: v })
+        Bubble("counterChanged", [v, ..]) => Next({ ..s, note: v.str() })
         // only reached when nothing below stopped the bubble
         Bubble("counted", [v, ..]) =>
-          Some({ ..s, note: "counted \{v.to_display_string()}" })
-        _ => None
+          Next({ ..s, note: "counted \{v.to_display_string()}" })
+        _ => Unhandled
       }
     },
   )
@@ -580,8 +580,8 @@ fn filler_comp() -> @component.Component {
     init=FillerState::{ note: "fresh" },
     update=(s, msg, _ctx) => {
       match msg {
-        Input("bump", _) => Some({ note: s.note + "!" })
-        _ => None
+        Input("bump", _) => Next({ note: s.note + "!" })
+        _ => Unhandled
       }
     },
   )

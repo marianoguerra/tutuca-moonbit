@@ -123,18 +123,19 @@ pub fn loader_bar_comp(
       Some(LoadSample(Str(url))) => {
         notify(Started(url), ctx)
         @dhw.load_url(ctx.path(), url) |> ignore
-        return Some({ ..s, url, status: "loading \{url}…" })
+        return Next({ ..s, url, status: "loading \{url}…" })
       }
-      Some(LoadSample(_)) => return None
-      Some(TypeUrl(url)) => return Some({ ..s, url, })
+      // The name was claimed, and a payload that is not a URL is not a load.
+      Some(LoadSample(_)) => return Unchanged
+      Some(TypeUrl(url)) => return Next({ ..s, url, })
       Some(LoadUrl) => {
         let url = s.url.trim().to_owned()
         if url == "" {
-          return Some({ ..s, status: "nothing to load" })
+          return Next({ ..s, status: "nothing to load" })
         }
         notify(Started(url), ctx)
         @dhw.load_url(ctx.path(), url) |> ignore
-        return Some({ ..s, status: "loading \{url}…" })
+        return Next({ ..s, status: "loading \{url}…" })
       }
       Some(Unknown(_, _)) | None => ()
     }
@@ -143,7 +144,7 @@ pub fn loader_bar_comp(
       // carried, and the id names the file the browser still holds. No
       // page-level JS is involved — this is an ordinary handler.
       Some(FilesDropped(files)) => {
-        guard files is List(items) else { return None }
+        guard files is List(items) else { return Unchanged }
         let mut any = false
         for f in items {
           match f.field("id") {
@@ -156,23 +157,23 @@ pub fn loader_bar_comp(
         }
         // A drop that carried no file at all is not a load, and telling
         // somebody it is loading would be a lie that never resolves.
-        guard any else { return None }
+        guard any else { return Unchanged }
         notify(Started(""), ctx)
-        Some({ ..s, status: "loading…" })
+        Next({ ..s, status: "loading…" })
       }
       Some(DyncompLoaded(module_name)) => {
         LoaderBarBubble::CatalogChanged(module_name).bubble(ctx)
         notify(Loaded(module_name), ctx)
-        Some({ ..s, status: "loaded \{module_name}" })
+        Next({ ..s, status: "loaded \{module_name}" })
       }
       // The refusal's own words: "this host takes no CSS from a bundle", "no
       // such component". A generic sentence here would throw away the one
       // thing a person can act on.
       Some(DyncompError(why)) => {
         notify(Failed(why), ctx)
-        Some({ ..s, status: why })
+        Next({ ..s, status: why })
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }

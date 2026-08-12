@@ -64,9 +64,13 @@ declare pub fn Env::of_state(
 /// `state` is None when the body did not finish — a missing key, an index past
 /// the end, a name that did not resolve, a value of the wrong shape. That is
 /// not an error path bolted on: it IS the framework's existing contract, the
-/// same `None` an `update` arm returns and the same thing every generated
+/// `Unchanged` an `update` arm answers and the same thing every generated
 /// mutator does when handed something it cannot use. Effects are dropped with
 /// it, because half a transition is worse than none.
+///
+/// There is no `Unhandled` here on purpose: this type describes a body that
+/// RAN, and whether a name has a body at all is decided by the caller before
+/// it gets here.
 pub(all) struct Outcome {
   state : Map[String, @tutuca.Value]?
   effects : Array[Effect]

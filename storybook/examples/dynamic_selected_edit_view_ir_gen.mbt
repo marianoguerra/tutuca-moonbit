@@ -93,7 +93,9 @@ pub fn dse_root_component(
   init? : DseRootState = DseRootState::zero(),
   common_style? : String = dse_root_common_style,
   global_style? : String = dse_root_global_style,
-  update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> DseRootState?,
+  update? : (DseRootState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DseRootState,
+  ],
   swap? : (DseRootInput) -> ((DseRootState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -187,7 +189,9 @@ pub fn dse_editor_component(
   init? : DseEditorState = DseEditorState::zero(),
   common_style? : String = dse_editor_common_style,
   global_style? : String = dse_editor_global_style,
-  update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> DseEditorState?,
+  update? : (DseEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DseEditorState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -267,7 +271,9 @@ pub fn dse_entry_component(
   init? : DseEntryState = DseEntryState::zero(),
   common_style? : String = dse_entry_common_style,
   global_style? : String = dse_entry_global_style,
-  update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> DseEntryState?,
+  update? : (DseEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DseEntryState,
+  ],
   swap? : (DseEntryInput) -> ((
     DseEntryState,
     Array[@tutuca.Value],

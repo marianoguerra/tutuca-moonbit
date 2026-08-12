@@ -109,7 +109,9 @@ pub fn file_picker_component(
   init? : FilePickerState = FilePickerState::zero(),
   common_style? : String = file_picker_common_style,
   global_style? : String = file_picker_global_style,
-  update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> FilePickerState?,
+  update? : (FilePickerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    FilePickerState,
+  ],
   compute? : (FilePickerMethod) -> ((FilePickerState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (FilePickerInput) -> ((
     FilePickerState,

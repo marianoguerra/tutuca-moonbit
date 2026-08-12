@@ -81,7 +81,9 @@ pub fn selector_entry_component(
   init? : SelectorEntryState = SelectorEntryState::zero(),
   common_style? : String = selector_entry_common_style,
   global_style? : String = selector_entry_global_style,
-  update? : (SelectorEntryState, @component.Dispatch, &@tutuca.Ctx) -> SelectorEntryState?,
+  update? : (SelectorEntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SelectorEntryState,
+  ],
   swap? : (SelectorEntryInput) -> ((
     SelectorEntryState,
     Array[@tutuca.Value],
@@ -172,7 +174,9 @@ pub fn selector_component(
   init? : SelectorState = SelectorState::zero(),
   common_style? : String = selector_common_style,
   global_style? : String = selector_global_style,
-  update? : (SelectorState, @component.Dispatch, &@tutuca.Ctx) -> SelectorState?,
+  update? : (SelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SelectorState,
+  ],
   swap? : (SelectorInput) -> ((
     SelectorState,
     Array[@tutuca.Value],
@@ -285,7 +289,9 @@ pub fn entry_editor_and_selector_component(
   init? : EntryEditorAndSelectorState = EntryEditorAndSelectorState::zero(),
   common_style? : String = entry_editor_and_selector_common_style,
   global_style? : String = entry_editor_and_selector_global_style,
-  update? : (EntryEditorAndSelectorState, @component.Dispatch, &@tutuca.Ctx) -> EntryEditorAndSelectorState?,
+  update? : (EntryEditorAndSelectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    EntryEditorAndSelectorState,
+  ],
   swap? : (EntryEditorAndSelectorInput) -> ((
     EntryEditorAndSelectorState,
     Array[@tutuca.Value],
@@ -376,7 +382,9 @@ pub fn sheet_component(
   init? : SheetState = SheetState::zero(),
   common_style? : String = sheet_common_style,
   global_style? : String = sheet_global_style,
-  update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> SheetState?,
+  update? : (SheetState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SheetState,
+  ],
   swap? : (SheetInput) -> ((SheetState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -453,7 +461,9 @@ pub fn toolbar_component(
   init? : ToolbarState = ToolbarState::zero(),
   common_style? : String = toolbar_common_style,
   global_style? : String = toolbar_global_style,
-  update? : (ToolbarState, @component.Dispatch, &@tutuca.Ctx) -> ToolbarState?,
+  update? : (ToolbarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ToolbarState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -520,7 +530,9 @@ pub fn panel_component(
   init? : PanelState = PanelState::zero(),
   common_style? : String = panel_common_style,
   global_style? : String = panel_global_style,
-  update? : (PanelState, @component.Dispatch, &@tutuca.Ctx) -> PanelState?,
+  update? : (PanelState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    PanelState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -584,7 +596,9 @@ pub fn workspace_component(
   init? : WorkspaceState = WorkspaceState::zero(),
   common_style? : String = workspace_common_style,
   global_style? : String = workspace_global_style,
-  update? : (WorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> WorkspaceState?,
+  update? : (WorkspaceState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    WorkspaceState,
+  ],
   compute? : (WorkspaceMethod) -> ((WorkspaceState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

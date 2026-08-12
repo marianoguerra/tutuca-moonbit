@@ -58,7 +58,9 @@ pub fn json_null_component(
   init? : JsonNullState = JsonNullState::zero(),
   common_style? : String = json_null_common_style,
   global_style? : String = json_null_global_style,
-  update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> JsonNullState?,
+  update? : (JsonNullState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonNullState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -126,7 +128,9 @@ pub fn json_boolean_component(
   init? : JsonBooleanState = JsonBooleanState::zero(),
   common_style? : String = json_boolean_common_style,
   global_style? : String = json_boolean_global_style,
-  update? : (JsonBooleanState, @component.Dispatch, &@tutuca.Ctx) -> JsonBooleanState?,
+  update? : (JsonBooleanState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonBooleanState,
+  ],
   compute? : (JsonBooleanMethod) -> ((JsonBooleanState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -197,7 +201,9 @@ pub fn json_number_component(
   init? : JsonNumberState = JsonNumberState::zero(),
   common_style? : String = json_number_common_style,
   global_style? : String = json_number_global_style,
-  update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> JsonNumberState?,
+  update? : (JsonNumberState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonNumberState,
+  ],
   compute? : (JsonNumberMethod) -> ((JsonNumberState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -269,7 +275,9 @@ pub fn json_string_component(
   init? : JsonStringState = JsonStringState::zero(),
   common_style? : String = json_string_common_style,
   global_style? : String = json_string_global_style,
-  update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> JsonStringState?,
+  update? : (JsonStringState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonStringState,
+  ],
   compute? : (JsonStringMethod) -> ((JsonStringState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -340,7 +348,9 @@ pub fn value_fn_component(
   init? : ValueFnState = ValueFnState::zero(),
   common_style? : String = value_fn_common_style,
   global_style? : String = value_fn_global_style,
-  update? : (ValueFnState, @component.Dispatch, &@tutuca.Ctx) -> ValueFnState?,
+  update? : (ValueFnState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ValueFnState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -402,7 +412,9 @@ pub fn value_obj_component(
   init? : ValueObjState = ValueObjState::zero(),
   common_style? : String = value_obj_common_style,
   global_style? : String = value_obj_global_style,
-  update? : (ValueObjState, @component.Dispatch, &@tutuca.Ctx) -> ValueObjState?,
+  update? : (ValueObjState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ValueObjState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -548,7 +560,9 @@ pub fn json_array_component(
   init? : JsonArrayState = JsonArrayState::zero(),
   common_style? : String = json_array_common_style,
   global_style? : String = json_array_global_style,
-  update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> JsonArrayState?,
+  update? : (JsonArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonArrayState,
+  ],
   compute? : (JsonArrayMethod) -> ((JsonArrayState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (JsonArrayInput) -> ((
     JsonArrayState,
@@ -742,7 +756,9 @@ pub fn json_object_component(
   init? : JsonObjectState = JsonObjectState::zero(),
   common_style? : String = json_object_common_style,
   global_style? : String = json_object_global_style,
-  update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> JsonObjectState?,
+  update? : (JsonObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonObjectState,
+  ],
   compute? : (JsonObjectMethod) -> ((JsonObjectState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (JsonObjectInput) -> ((
     JsonObjectState,
@@ -863,7 +879,9 @@ pub fn json_property_component(
   init? : JsonPropertyState = JsonPropertyState::zero(),
   common_style? : String = json_property_common_style,
   global_style? : String = json_property_global_style,
-  update? : (JsonPropertyState, @component.Dispatch, &@tutuca.Ctx) -> JsonPropertyState?,
+  update? : (JsonPropertyState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    JsonPropertyState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -918,7 +936,9 @@ pub fn data_inspector_component(
   init? : DataInspectorState = DataInspectorState::zero(),
   common_style? : String = data_inspector_common_style,
   global_style? : String = data_inspector_global_style,
-  update? : (DataInspectorState, @component.Dispatch, &@tutuca.Ctx) -> DataInspectorState?,
+  update? : (DataInspectorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    DataInspectorState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

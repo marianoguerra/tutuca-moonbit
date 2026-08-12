@@ -36,8 +36,8 @@ fn dse_root_comp() -> @component.Component {
     provide={ "items": ".items", "selected": ".items[.selectedKey]" },
     update=(s, msg, _ctx) => {
       match DseRootMsg::from_dispatch(msg) {
-        Some(SelectItem(Str(key))) => Some({ ..s, selectedKey: key })
-        Some(SelectItem(_)) | Some(Unknown(_, _)) | None => None
+        Some(SelectItem(Str(key))) => Next({ ..s, selectedKey: key })
+        Some(SelectItem(_)) | Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

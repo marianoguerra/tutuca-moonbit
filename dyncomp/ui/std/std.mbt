@@ -121,18 +121,18 @@ fn universal_comp() -> @component.Component {
         // and ctrl/cmd asks to configure it on the way in.
         Some(Add(configure)) => {
           UniversalBubble::AddRequested(configure).bubble(ctx)
-          return Some(s)
+          return Next(s)
         }
         // The badge is what configures, not the box: a click on the box would
         // mean never being able to click through to what is held.
         Some(Pick) => {
           UniversalBubble::ConfigRequested(s.child).bubble(ctx)
-          return Some(s)
+          return Next(s)
         }
         // Emptying gives the `+` back rather than deleting the cell. Deleting
         // a cell is the container's affordance, because the container is what
         // owns how many there are.
-        Some(Remove) => return Some({ child: Null })
+        Some(Remove) => return Next({ child: Null })
         // `dropped` is the pill, or an OS file drag that happens to have
         // landed here. Only the first is ours; the second has to keep
         // travelling, because `drop` stops at the first component that
@@ -145,29 +145,29 @@ fn universal_comp() -> @component.Component {
           if info.field("type").str() == "config-pill" {
             UniversalBubble::ConfigRequested(s.child).bubble(ctx)
             ctx.stop_propagation()
-            return Some(s)
+            return Next(s)
           }
-          return None
+          return Unhandled
         }
         Some(Unknown(_, _)) | None => ()
       }
       match UniversalReceive::from_dispatch(msg) {
-        Some(Hold(child)) => Some({ child, })
-        Some(Empty) => Some({ child: Null })
+        Some(Hold(child)) => Next({ child, })
+        Some(Empty) => Next({ child: Null })
         // Written through the child's own COW rather than by rebuilding it
         // from arguments: everything the schema does NOT name — a half-typed
         // sentence, a scroll position, whatever a guest keeps privately —
         // survives a change to what it does.
         Some(ApplyConfig(fields)) => {
-          guard s.child is Obj(_) else { return None }
-          guard fields is Map(m) else { return None }
+          guard s.child is Obj(_) else { return Unchanged }
+          guard fields is Map(m) else { return Unchanged }
           let mut next = s.child
           for k, v in m {
             next = next.with_field(k, v)
           }
-          Some({ child: next })
+          Next({ child: next })
         }
-        Some(Unknown(_, _)) | None => None
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -262,13 +262,13 @@ fn Std::stack_comp(self : Std) -> @component.Component {
     update=(s, msg, _ctx) => {
       match StackMsg::from_dispatch(msg) {
         Some(InsertAt(at)) =>
-          Some({
+          Next({
             ..s,
             children: spliced(s.children, at.num().to_int(), self.cell()),
           })
         Some(AppendCell) =>
-          Some({ ..s, children: spliced(s.children, -1, self.cell()) })
-        Some(Unknown(_, _)) | None => None
+          Next({ ..s, children: spliced(s.children, -1, self.cell()) })
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -392,11 +392,11 @@ fn Std::grid_comp(self : Std) -> @component.Component {
     },
     update=(s, msg, _ctx) => {
       match GridMsg::from_dispatch(msg) {
-        Some(AddColBefore) => Some(self.grow(s, s.cols + 1, s.rows, 1, 0))
-        Some(AddColAfter) => Some(self.grow(s, s.cols + 1, s.rows, 0, 0))
-        Some(AddRowBefore) => Some(self.grow(s, s.cols, s.rows + 1, 0, 1))
-        Some(AddRowAfter) => Some(self.grow(s, s.cols, s.rows + 1, 0, 0))
-        Some(Unknown(_, _)) | None => None
+        Some(AddColBefore) => Next(self.grow(s, s.cols + 1, s.rows, 1, 0))
+        Some(AddColAfter) => Next(self.grow(s, s.cols + 1, s.rows, 0, 0))
+        Some(AddRowBefore) => Next(self.grow(s, s.cols, s.rows + 1, 0, 1))
+        Some(AddRowAfter) => Next(self.grow(s, s.cols, s.rows + 1, 0, 0))
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )
@@ -468,16 +468,16 @@ fn tab_page_comp() -> @component.Component {
     ctx,
   ) => {
     match TabPageMsg::from_dispatch(msg) {
-      Some(SetLabel(label)) => Some({ ..s, label, })
+      Some(SetLabel(label)) => Next({ ..s, label, })
       Some(DoneRename) => {
         TabPageBubble::DoneRename.bubble(ctx)
-        None
+        Unchanged
       }
       Some(CancelRename) => {
         TabPageBubble::CancelRename.bubble(ctx)
-        None
+        Unchanged
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     }
   })
 }
@@ -533,9 +533,9 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
         Some(Activate(args)) => {
           let at = match args {
             [i, ..] => i.num().to_int()
-            _ => return None
+            _ => return Unchanged
           }
-          guard at >= 0 && at < s.tabs.length() else { return None }
+          guard at >= 0 && at < s.tabs.length() else { return Unchanged }
           let configure = match args {
             [_, c, ..] => c.is_truthy()
             _ => false
@@ -543,20 +543,20 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
           // ctrl/cmd is "configure this" everywhere else in the app, and a
           // tab's only configuration is its name.
           return if configure {
-            Some({
+            Next({
               ..s,
               active: at,
               renaming: true,
               original: s.tabs[at].field("label").str(),
             })
           } else {
-            Some({ ..s, active: at, renaming: false, original: "" })
+            Next({ ..s, active: at, renaming: false, original: "" })
           }
         }
         Some(AddTab) => {
           let tabs = s.tabs.copy()
           tabs.push(self.tab_page(label="tab \{tabs.length() + 1}"))
-          return Some({
+          return Next({
             tabs,
             active: tabs.length() - 1,
             renaming: false,
@@ -569,11 +569,11 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
         Some(CloseActive) => {
           let at = active_of(s)
           if at < 0 {
-            return None
+            return Unhandled
           }
           let tabs = s.tabs.copy()
           tabs.remove(at) |> ignore
-          return Some({
+          return Next({
             tabs,
             active: if at > 0 {
               at - 1
@@ -589,24 +589,24 @@ fn Std::tabs_comp(self : Std) -> @component.Component {
       match msg {
         Bubble("doneRename", _) =>
           if s.renaming {
-            Some({ ..s, renaming: false, original: "" })
+            Next({ ..s, renaming: false, original: "" })
           } else {
-            None
+            Unhandled
           }
         // Escape puts the old name back. It is kept rather than recomputed,
         // because typing already overwrote it — that is what renaming live
         // costs, and this is what pays it.
         Bubble("cancelRename", _) => {
-          guard s.renaming else { return None }
+          guard s.renaming else { return Unchanged }
           let at = active_of(s)
           guard at >= 0 else {
-            return Some({ ..s, renaming: false, original: "" })
+            return Next({ ..s, renaming: false, original: "" })
           }
           let tabs = s.tabs.copy()
           tabs[at] = tabs[at].call_field("setLabel", [Str(s.original)])
-          Some({ ..s, tabs, renaming: false, original: "" })
+          Next({ ..s, tabs, renaming: false, original: "" })
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )

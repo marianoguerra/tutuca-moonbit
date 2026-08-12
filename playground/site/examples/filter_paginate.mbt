@@ -66,14 +66,14 @@ fn fp_update() -> (
   NaivePeopleState,
   @component.Dispatch,
   &@tutuca.Ctx,
-) -> NaivePeopleState? {
+) -> @component.Update[NaivePeopleState] {
   (s, msg, _ctx) => match msg {
     // reset to page 0 on every query change, so a shrinking result set never
     // strands you on an empty page
-    Input("search", [Str(q), ..]) => Some({ ..s, query: q, page: 0 })
+    Input("search", [Str(q), ..]) => Next({ ..s, query: q, page: 0 })
     Input("prev", _) => {
       let (_, current) = fp_clamp(s.page, fp_match_count(s), s.pageSize)
-      Some({ ..s, page: @cmp.maximum(0, current - 1) })
+      Next({ ..s, page: @cmp.maximum(0, current - 1) })
     }
     Input("next", _) => {
       let (page_count, current) = fp_clamp(
@@ -81,9 +81,9 @@ fn fp_update() -> (
         fp_match_count(s),
         s.pageSize,
       )
-      Some({ ..s, page: @cmp.minimum(page_count - 1, current + 1) })
+      Next({ ..s, page: @cmp.minimum(page_count - 1, current + 1) })
     }
-    _ => None
+    _ => Unhandled
   }
 }
 

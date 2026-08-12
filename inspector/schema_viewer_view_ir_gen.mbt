@@ -72,7 +72,9 @@ pub fn schema_viewer_component(
   init? : SchemaViewerState = SchemaViewerState::zero(),
   common_style? : String = schema_viewer_common_style,
   global_style? : String = schema_viewer_global_style,
-  update? : (SchemaViewerState, @component.Dispatch, &@tutuca.Ctx) -> SchemaViewerState?,
+  update? : (SchemaViewerState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaViewerState,
+  ],
   compute? : (SchemaViewerMethod) -> ((SchemaViewerState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SchemaViewerInput) -> ((
     SchemaViewerState,

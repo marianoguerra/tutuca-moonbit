@@ -299,10 +299,13 @@ pub impl @tutuca.Obj for CardObj with fn obj_handler(self, bucket, name) {
       match out.state {
         Some(next) => Some(Obj(self.successor(next)))
         // The body declined, or could not finish. Same answer either way, and
-        // the same one an `update` arm gives: no successor. It does NOT fall
-        // through to a mutator of the same name — a name is answered once, and
-        // an arm that returned nothing has answered.
-        None => None
+        // the same one an `update` arm gives with `Unchanged`: answered, no
+        // successor. It does NOT fall through to a mutator of the same name —
+        // a name is answered once, and an arm that returned nothing has
+        // answered. That is expressible in MoonBit too now, which is what
+        // `Update` was introduced for; here the block/mutator split above
+        // already carries it.
+        None => Some(Obj(self))
       }
     }),
   )

@@ -40,10 +40,13 @@ test "a schema-backed component gets a wrapper over component()" {
   assert_false(ir.contains("decode="))
   assert_false(ir.contains("schema="))
   // The handlers, typed on the state rather than on a type variable — which
-  // is what lets the call site write `(s, msg, _ctx)` with no annotation.
+  // is what lets the call site write `(s, msg, _ctx)` with no annotation. The
+  // answer is `Update[S]` and not `S?`, because "no arm claimed this" and "my
+  // arm ran and changed nothing" are different answers and only one of them
+  // falls through to a generated mutator.
   assert_true(
     ir.contains(
-      "  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> CounterState?,",
+      "  update? : (CounterState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[CounterState],",
     ),
   )
   // Keyed by a generated enum, not by a string: the author writes a match the

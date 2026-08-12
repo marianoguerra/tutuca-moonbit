@@ -111,7 +111,7 @@ site. `name`, `views`, `init` and the styles stay overridable; the codec and
 the schema are not parameters.
 `update` then pattern-matches typed messages, so adding an `@on` handler to
 the `.html` and regenerating breaks the build until it is handled, instead of
-falling into a silent `_ => None`. Handlers served by the auto-generated
+falling into a silent `_ => Unhandled`. Handlers served by the auto-generated
 field mutators return `None` and fall through to them, as before.
 The generated package must import `"marianoguerra/tutuca/core" @tutuca`,
 `"marianoguerra/tutuca/component"` and `"moonbitlang/core/debug"` — plus

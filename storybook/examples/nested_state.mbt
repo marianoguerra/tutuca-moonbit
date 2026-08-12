@@ -42,7 +42,7 @@ fn nested_state_comp() -> @component.Component {
         // The enum is exhaustive, so adding a `priority` case to the schema
         // breaks this match until it is answered.
         Some(BumpPriority) =>
-          Some({
+          Next({
             ..s,
             priority: match s.priority {
               Low => High
@@ -50,8 +50,8 @@ fn nested_state_comp() -> @component.Component {
             },
           })
         Some(ToggleLabel(key)) =>
-          Some({ ..s, labels: ns_toggle_label(s.labels, key) })
-        Some(Unknown(_, _)) | None => None
+          Next({ ..s, labels: ns_toggle_label(s.labels, key) })
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
   )

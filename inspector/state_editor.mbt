@@ -118,9 +118,9 @@ fn state_editor_row_comp() -> @component.Component {
       match msg {
         Input("edit", [v]) => {
           ctx.bubble("onEdit", [Str(s.name), v])
-          None
+          Unhandled
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )
@@ -137,17 +137,18 @@ fn state_editor_comp(insp : Inspector) -> @component.Component {
     match msg {
       Bubble("onEdit", [Str(field), v]) => {
         // The declared kind decides what shape to send...
-        guard s.target.field_info(field) is Some(info) else { return None }
+        guard s.target.field_info(field) is Some(info) else { return Unchanged }
         let next = s.target.call_field(setter_name(field), [
           coerce_edit(info.kind(), v),
         ])
         // ...and the mutator answers with the successor instance. A write
         // the component refused (a wrong shape, an unknown field) hands back
-        // something that is not an instance, and nothing changes.
-        guard next is Obj(_) else { return None }
-        Some({ ..s, target: next, rows: insp.editor_rows(next) })
+        // something that is not an instance, and nothing changes — `Unchanged`
+        // rather than `Unhandled`, because this arm DID claim `onEdit`.
+        guard next is Obj(_) else { return Unchanged }
+        Next({ ..s, target: next, rows: insp.editor_rows(next) })
       }
-      _ => None
+      _ => Unhandled
     }
   })
 }

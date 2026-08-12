@@ -83,7 +83,9 @@ pub fn item_component(
   init? : ItemState = ItemState::zero(),
   common_style? : String = item_common_style,
   global_style? : String = item_global_style,
-  update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> ItemState?,
+  update? : (ItemState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ItemState,
+  ],
   swap? : (ItemInput) -> ((ItemState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -188,7 +190,9 @@ pub fn items_component(
   init? : ItemsState = ItemsState::zero(),
   common_style? : String = items_common_style,
   global_style? : String = items_global_style,
-  update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> ItemsState?,
+  update? : (ItemsState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ItemsState,
+  ],
   swap? : (ItemsInput) -> ((ItemsState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),

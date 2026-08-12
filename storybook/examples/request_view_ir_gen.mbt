@@ -136,7 +136,9 @@ pub fn request_example_component(
   init? : RequestExampleState = RequestExampleState::zero(),
   common_style? : String = request_example_common_style,
   global_style? : String = request_example_global_style,
-  update? : (RequestExampleState, @component.Dispatch, &@tutuca.Ctx) -> RequestExampleState?,
+  update? : (RequestExampleState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    RequestExampleState,
+  ],
   swap? : (RequestExampleInput) -> ((
     RequestExampleState,
     Array[@tutuca.Value],

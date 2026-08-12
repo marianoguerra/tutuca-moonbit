@@ -198,7 +198,9 @@ pub fn schema_scalar_component(
   init? : SchemaScalarState = SchemaScalarState::zero(),
   common_style? : String = schema_scalar_common_style,
   global_style? : String = schema_scalar_global_style,
-  update? : (SchemaScalarState, @component.Dispatch, &@tutuca.Ctx) -> SchemaScalarState?,
+  update? : (SchemaScalarState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaScalarState,
+  ],
   compute? : (SchemaScalarMethod) -> ((SchemaScalarState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SchemaScalarInput) -> ((
     SchemaScalarState,
@@ -447,7 +449,9 @@ pub fn schema_object_component(
   init? : SchemaObjectState = SchemaObjectState::zero(),
   common_style? : String = schema_object_common_style,
   global_style? : String = schema_object_global_style,
-  update? : (SchemaObjectState, @component.Dispatch, &@tutuca.Ctx) -> SchemaObjectState?,
+  update? : (SchemaObjectState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaObjectState,
+  ],
   compute? : (SchemaObjectMethod) -> ((SchemaObjectState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SchemaObjectInput) -> ((
     SchemaObjectState,
@@ -696,7 +700,9 @@ pub fn schema_array_component(
   init? : SchemaArrayState = SchemaArrayState::zero(),
   common_style? : String = schema_array_common_style,
   global_style? : String = schema_array_global_style,
-  update? : (SchemaArrayState, @component.Dispatch, &@tutuca.Ctx) -> SchemaArrayState?,
+  update? : (SchemaArrayState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaArrayState,
+  ],
   compute? : (SchemaArrayMethod) -> ((SchemaArrayState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SchemaArrayInput) -> ((
     SchemaArrayState,
@@ -940,7 +946,9 @@ pub fn schema_enum_component(
   init? : SchemaEnumState = SchemaEnumState::zero(),
   common_style? : String = schema_enum_common_style,
   global_style? : String = schema_enum_global_style,
-  update? : (SchemaEnumState, @component.Dispatch, &@tutuca.Ctx) -> SchemaEnumState?,
+  update? : (SchemaEnumState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaEnumState,
+  ],
   compute? : (SchemaEnumMethod) -> ((SchemaEnumState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (SchemaEnumInput) -> ((
     SchemaEnumState,
@@ -1188,7 +1196,9 @@ pub fn schema_combinator_component(
   init? : SchemaCombinatorState = SchemaCombinatorState::zero(),
   common_style? : String = schema_combinator_common_style,
   global_style? : String = schema_combinator_global_style,
-  update? : (SchemaCombinatorState, @component.Dispatch, &@tutuca.Ctx) -> SchemaCombinatorState?,
+  update? : (SchemaCombinatorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaCombinatorState,
+  ],
   compute? : (SchemaCombinatorMethod) -> ((
     SchemaCombinatorState,
     Array[@tutuca.Value],
@@ -1310,7 +1320,9 @@ pub fn schema_const_component(
   init? : SchemaConstState = SchemaConstState::zero(),
   common_style? : String = schema_const_common_style,
   global_style? : String = schema_const_global_style,
-  update? : (SchemaConstState, @component.Dispatch, &@tutuca.Ctx) -> SchemaConstState?,
+  update? : (SchemaConstState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaConstState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1502,7 +1514,9 @@ pub fn schema_conditional_component(
   init? : SchemaConditionalState = SchemaConditionalState::zero(),
   common_style? : String = schema_conditional_common_style,
   global_style? : String = schema_conditional_global_style,
-  update? : (SchemaConditionalState, @component.Dispatch, &@tutuca.Ctx) -> SchemaConditionalState?,
+  update? : (SchemaConditionalState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaConditionalState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1573,7 +1587,9 @@ pub fn schema_not_component(
   init? : SchemaNotState = SchemaNotState::zero(),
   common_style? : String = schema_not_common_style,
   global_style? : String = schema_not_global_style,
-  update? : (SchemaNotState, @component.Dispatch, &@tutuca.Ctx) -> SchemaNotState?,
+  update? : (SchemaNotState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaNotState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -1641,7 +1657,9 @@ pub fn schema_boolean_component(
   init? : SchemaBooleanState = SchemaBooleanState::zero(),
   common_style? : String = schema_boolean_common_style,
   global_style? : String = schema_boolean_global_style,
-  update? : (SchemaBooleanState, @component.Dispatch, &@tutuca.Ctx) -> SchemaBooleanState?,
+  update? : (SchemaBooleanState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaBooleanState,
+  ],
   compute? : (SchemaBooleanMethod) -> ((
     SchemaBooleanState,
     Array[@tutuca.Value],
@@ -1718,7 +1736,9 @@ pub fn schema_ref_component(
   init? : SchemaRefState = SchemaRefState::zero(),
   common_style? : String = schema_ref_common_style,
   global_style? : String = schema_ref_global_style,
-  update? : (SchemaRefState, @component.Dispatch, &@tutuca.Ctx) -> SchemaRefState?,
+  update? : (SchemaRefState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    SchemaRefState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),

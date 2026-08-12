@@ -264,7 +264,9 @@ pub fn composability_component(
   init? : ComposabilityState = ComposabilityState::zero(),
   common_style? : String = composability_common_style,
   global_style? : String = composability_global_style,
-  update? : (ComposabilityState, @component.Dispatch, &@tutuca.Ctx) -> ComposabilityState?,
+  update? : (ComposabilityState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    ComposabilityState,
+  ],
   swap? : (ComposabilityInput) -> ((
     ComposabilityState,
     Array[@tutuca.Value],

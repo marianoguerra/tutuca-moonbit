@@ -69,9 +69,9 @@ fn counter() -> @component.Component {
     // until it is answered.
     update=(s, msg, _ctx) => {
       match CounterMsg::from_dispatch(msg) {
-        Some(Inc) => Some({ count: s.count + 1 })
-        Some(Dec) => Some({ count: s.count - 1 })
-        Some(Unknown(_, _)) | None => None
+        Some(Inc) => Next({ count: s.count + 1 })
+        Some(Dec) => Next({ count: s.count - 1 })
+        Some(Unknown(_, _)) | None => Unhandled
       }
     },
     // Every handler the views raise is answered here, `inc` included:

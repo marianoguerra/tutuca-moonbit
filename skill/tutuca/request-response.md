@@ -26,12 +26,14 @@ The `update` fn folds them all into one TEA-style pattern match:
 // nocheck: a bucket argument, not a top-level item
 update=(s : MyState, msg : @component.Dispatch, ctx : &@tutuca.Ctx) => match msg {
   ...
-  _ => None // ALWAYS needed
+  _ => Unhandled // ALWAYS needed
 },
 ```
 
-Return `Some(new_state)` to swap the new value into the dispatch path,
-or `None` for "no change" (a cheap no-op). The payloads are
+Return `Next(new_state)` to swap the new value into the dispatch path,
+`Unchanged` for "this arm ran and nothing moves", or `Unhandled` for "not
+mine" — which is the one that falls through to a generated mutator. The
+payloads are
 `(String, Array[@tutuca.Value])` — pattern-match the args array
 directly: `Receive("flash", [Str(m), ..]) => ...`. `ctx` implements the
 `@tutuca.Ctx` trait and exposes `ctx.send`, `ctx.bubble`, `ctx.request`,
@@ -61,13 +63,13 @@ update=(s : LogState, msg, ctx) => match msg {
     log.insert(0, Str("selected \{label}"))
     Some({ ..s, log, })
   }
-  _ => None
+  _ => Unhandled
 },
 ```
 
 `ctx.bubble("name", args)` emits an event that walks the dispatch path
 back toward the root. Each ancestor whose `update` matches
-`Bubble("name", …)` runs its arm (others fall through to `_ => None`
+`Bubble("name", …)` runs its arm (others fall through to `_ => Unhandled`
 and are skipped silently); bubbling stops at the root or when a handler
 calls `ctx.stop_propagation()`. Ancestors see the event *after*
 descendants have transacted, so `Bubble` arms are the place for
@@ -100,7 +102,7 @@ update=(s : ListState, msg, ctx) => match msg {
     ctx.request("loadData", [], @tutuca.RequestOpts::new())
     Some({ ..s, isLoading: true })
   }
-  _ => None
+  _ => Unhandled
 },
 ```
 
@@ -169,8 +171,8 @@ app.send_at_root(
 // nocheck: a bucket argument, not a top-level item
 // root component
 update=(s : RootState, msg, _ctx) => match msg {
-  Receive("serverPushed", [msg_val, ..]) => Some(prepend_event(s, msg_val))
-  _ => None
+  Receive("serverPushed", [msg_val, ..]) => Next(prepend_event(s, msg_val))
+  _ => Unhandled
 },
 ```
 
@@ -250,7 +252,7 @@ update=(s : QuotesState, msg, ctx) => match msg {
   // args = [res, err]
   Response("loadData", [res, _err]) =>
     Some({ ..s, isLoading: false, items: res.list() })
-  _ => None
+  _ => Unhandled
 },
 ```
 
@@ -316,7 +318,7 @@ update=(s : ItemsState, msg, ctx) => match msg {
     }
     Some({ ..s, isLoading: false, error: msg_txt })
   }
-  _ => None
+  _ => Unhandled
 },
 ```
 
@@ -346,7 +348,7 @@ in [semantics.md](./semantics.md) (*Key resolution & async races*).
 ### Fire-and-forget requests
 
 A request whose result you don't need can omit the `Response` arm
-entirely — an unmatched dispatch falls to `_ => None` and the result is
+entirely — an unmatched dispatch falls to `_ => Unhandled` and the result is
 silently dropped. Idiomatic for side-effect-only work like persisting
 state:
 
@@ -401,7 +403,7 @@ update=(s : UserState, msg, ctx) => match msg {
   }
   Response("loadUserDetails", [details, _err]) =>
     Some({ ..s, userDetails: details })
-  _ => None
+  _ => Unhandled
 },
 ```
 
@@ -410,22 +412,22 @@ update=(s : UserState, msg, ctx) => match msg {
 `update` is one pattern match, so the catch-all is just a wildcard
 pattern: `Receive(name, args) => ...` (after the specific arms) catches
 every message and binds the dispatched name directly — no separate
-registration needed. The final `_ => None` is the silent drop: an
+registration needed. The final `_ => Unhandled` is the silent drop: an
 unmatched message passes the state through unchanged. Use a name-binding
 wildcard arm for a single catch-all (logging, a generic router); rely on
-`_ => None` for fire-and-forget requests.
+`_ => Unhandled` for fire-and-forget requests.
 
 ```moonbit nocheck
 // nocheck: a bucket argument, not a top-level item
 update=(s : DebugState, msg, _ctx) => match msg {
   // specific arms first...
-  Receive(name, _args) => Some({ ..s, lastUnhandled: name })
-  _ => None
+  Receive(name, _args) => Next({ ..s, lastUnhandled: name })
+  _ => Unhandled
 },
 ```
 
 (There is no `"$unknown"` sentinel behind this. Dispatch does **one** lookup
-(`core/path_path.mbt:224-229`); a typed `update` whose match ends in `_ => None`
+(`core/path_path.mbt:224-229`); a typed `update` whose match ends in `_ => Unhandled`
 already *is* the catch-all, with the name statically bound. A name nothing
 handles is simply dropped.)
 

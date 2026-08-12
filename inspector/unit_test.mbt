@@ -213,11 +213,11 @@ fn sample_comp() -> @component.Component {
     },
     update=(s : RichState, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Some({ ..s, count: s.count + 1 })
-        Input("reset", _) => Some({ ..s, count: 0 })
+        Input("inc", _) => Next({ ..s, count: s.count + 1 })
+        Input("reset", _) => Next({ ..s, count: 0 })
         Receive("ping", _) | Bubble("onChild", _) | Response("onData", _) =>
-          Some(s)
-        _ => None
+          Next(s)
+        _ => Unhandled
       }
     },
     loop_with={
@@ -452,7 +452,7 @@ fn schema_sample_comp() -> @component.Component {
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Described",
     init=DescribedState::{ title: "", count: 0, tags: [], open: false },
-    update=(_s : DescribedState, _msg, _ctx) => None,
+    update=(_s : DescribedState, _msg, _ctx) => Unhandled,
   )
 }
 

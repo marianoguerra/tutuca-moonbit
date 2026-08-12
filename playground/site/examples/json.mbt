@@ -66,12 +66,12 @@ fn json_number_comp() -> @component.Component {
     update=(s, msg, _ctx) => match JsonNumberMsg::from_dispatch(msg) {
       Some(SetRawValue(raw)) => {
         let parsed : Double? = Some(@string.parse_double(raw)) catch { _ => None }
-        Some(match parsed {
+        Next(match parsed {
           Some(n) => { strValue: raw, value: n }
           None => { ..s, strValue: raw }
         })
       }
-      Some(Unknown(_, _)) | None => None
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }
@@ -151,17 +151,17 @@ fn json_array_comp(reg : JsonReg) -> @component.Component {
     init=JsonArrayState::{ items: [] },
     update=(s, msg, _ctx) => match JsonArrayMsg::from_dispatch(msg) {
       // add a fresh JsonSelector so the user can pick the new element's type
-      Some(AddItem) => Some({ items: s.items + [json_make_selector(reg)] })
+      Some(AddItem) => Next({ items: s.items + [json_make_selector(reg)] })
       Some(OnDropOnItem(key, drag_info)) =>
         match json_dropped_items(s.items, [key, drag_info]) {
-          Some(items) => Some({ items, })
-          None => None
+          Some(items) => Next({ items, })
+          None => Unhandled
         }
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
       // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => None
-      Some(Unknown(_, _)) | None => None
+      Some(RemoveInItemsAt(_)) => Unhandled
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }
@@ -185,18 +185,18 @@ fn json_object_comp(reg : JsonReg) -> @component.Component {
           Some(kv) => kv.make({ "value": json_make_selector(reg) })
           None => Null
         }
-        Some({ items: s.items + [row] })
+        Next({ items: s.items + [row] })
       }
       Some(OnDropOnItem(key, drag_info)) =>
         match json_dropped_items(s.items, [key, drag_info]) {
-          Some(items) => Some({ items, })
-          None => None
+          Some(items) => Next({ items, })
+          None => Unhandled
         }
       // Served by a generated mutator or another bucket: the view
       // spells these bare now, so they arrive as Inputs, and
       // returning None falls through to whatever answers them.
-      Some(RemoveInItemsAt(_)) => None
-      Some(Unknown(_, _)) | None => None
+      Some(RemoveInItemsAt(_)) => Unhandled
+      Some(Unknown(_, _)) | None => Unhandled
     },
   )
 }

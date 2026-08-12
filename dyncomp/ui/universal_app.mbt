@@ -16,9 +16,9 @@ fn UniversalUi::open_bar(
   s : UniversalAppState,
   at : @tutuca.DispatchPath,
   configure~ : Bool,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   self.asked.val = Some(at)
-  Some({
+  Next({
     ..s,
     commandBar: self.bar_for("", configure~),
     status: if configure {
@@ -33,9 +33,9 @@ fn UniversalUi::open_bar(
 fn UniversalUi::close_bar(
   self : UniversalUi,
   s : UniversalAppState,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   self.asked.val = None
-  Some({ ..s, commandBar: Null, status: "" })
+  Next({ ..s, commandBar: Null, status: "" })
 }
 
 ///|
@@ -69,16 +69,16 @@ fn UniversalUi::place_default(
   s : UniversalAppState,
   ctx : &@tutuca.Ctx,
   ref_ : @registry.ComponentRef,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   guard self.registry.describe(ref_) is Some(d) else {
-    return Some({ ..s, status: "no such component: \{ref_.to_id()}" })
+    return Next({ ..s, status: "no such component: \{ref_.to_id()}" })
   }
   match defaults_of(d) {
     // It needs something nobody has said yet. Opening the form is the answer
     // rather than an error: the person asked for this component, and the form
     // is how they get it.
     Err(_) =>
-      Some({
+      Next({
         ..s,
         commandBar: Null,
         configPanel: self.make_("ConfigPanel", {
@@ -93,12 +93,12 @@ fn UniversalUi::place_default(
       match self.build(ref_, args) {
         Some(inst) => {
           if !self.deliver(ctx, inst) {
-            return Some({ ..s, commandBar: Null, status: "nowhere to put it" })
+            return Next({ ..s, commandBar: Null, status: "nowhere to put it" })
           }
-          Some({ ..s, commandBar: Null, status: "placed \{ref_.to_id()}" })
+          Next({ ..s, commandBar: Null, status: "placed \{ref_.to_id()}" })
         }
         None =>
-          Some({
+          Next({
             ..s,
             commandBar: Null,
             status: "could not build \{ref_.to_id()}",
@@ -116,9 +116,9 @@ fn UniversalUi::place_form(
   ref_ : @registry.ComponentRef,
   init : String,
   fields : Array[@tutuca.Value],
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   guard self.registry.describe(ref_) is Some(d) else {
-    return Some({ ..s, status: "no such component: \{ref_.to_id()}" })
+    return Next({ ..s, status: "no such component: \{ref_.to_id()}" })
   }
   // A named fixture is the component's own answer to "what arguments", so the
   // blank form beside it is not consulted — but it has to be RESOLVED here, to
@@ -140,7 +140,7 @@ fn UniversalUi::place_form(
       // The fixture is gone — a bundle hot-swapped under an open panel is the
       // way that happens. Saying so beats quietly placing the defaults.
       _ =>
-        return Some({
+        return Next({
           ..s,
           status: "\{ref_.to_id()} has no fixture \"\{init}\"",
         })
@@ -158,7 +158,7 @@ fn UniversalUi::place_form(
           "showErrors",
           [Map(by_pointer)],
         )
-        return Some({ ..s, status: "check the highlighted fields" })
+        return Next({ ..s, status: "check the highlighted fields" })
       }
     }
   }
@@ -185,11 +185,11 @@ fn UniversalUi::place_form(
   match self.build(ref_, args) {
     Some(inst) => {
       if !self.deliver(ctx, inst) {
-        return Some({ ..s, configPanel: Null, status: "nowhere to put it" })
+        return Next({ ..s, configPanel: Null, status: "nowhere to put it" })
       }
-      Some({ ..s, configPanel: Null, status: "placed \{ref_.to_id()}" })
+      Next({ ..s, configPanel: Null, status: "placed \{ref_.to_id()}" })
     }
-    None => Some({ ..s, status: "could not build \{ref_.to_id()}" })
+    None => Next({ ..s, status: "could not build \{ref_.to_id()}" })
   }
 }
 
@@ -213,7 +213,7 @@ fn UniversalUi::open_config(
   s : UniversalAppState,
   ctx : &@tutuca.Ctx,
   child : @tutuca.Value,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   let at = ctx.target_path()
   guard child is Obj(_) else {
     // An empty cell has nothing to configure, so offer to fill it instead.
@@ -230,7 +230,7 @@ fn UniversalUi::open_config(
   if declares_config {
     self.configuring.val = Some(at)
     ctx.send_at_path(at, "empty", [])
-    return Some({
+    return Next({
       ..s,
       configPanel: self.make_("ConfigPanel", {
         "title": Str(title),
@@ -242,7 +242,7 @@ fn UniversalUi::open_config(
     })
   }
   guard self.describe_instance(child) is Some(d) else {
-    return Some({ ..s, status: "nothing is known about \{title}" })
+    return Next({ ..s, status: "nothing is known about \{title}" })
   }
   // The form opens on what the instance ALREADY holds, so changing one
   // property does not mean retyping the rest.
@@ -251,7 +251,7 @@ fn UniversalUi::open_config(
     values[f.name] = child.field(f.name)
   }
   self.configuring.val = Some(at)
-  Some({
+  Next({
     ..s,
     configPanel: self.make_("ConfigPanel", {
       "title": Str(d.ref_.to_id()),
@@ -275,7 +275,7 @@ fn UniversalUi::close_config(
   s : UniversalAppState,
   ctx : &@tutuca.Ctx,
   put_back? : @tutuca.Value = Null,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   let restored = if put_back is Null {
     s.configPanel.field("target")
   } else {
@@ -286,7 +286,7 @@ fn UniversalUi::close_config(
     _ => ()
   }
   self.configuring.val = None
-  Some({ ..s, configPanel: Null, status: "" })
+  Next({ ..s, configPanel: Null, status: "" })
 }
 
 // --- the app ----------------------------------------------------------------
@@ -298,7 +298,7 @@ fn UniversalUi::catalog_changed(
   self : UniversalUi,
   s : UniversalAppState,
   module_ : String,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   let bar = if s.commandBar is Obj(_) {
     self.bar_for(
       s.commandBar.field("query").str(),
@@ -307,7 +307,7 @@ fn UniversalUi::catalog_changed(
   } else {
     Null
   }
-  Some({ ..s, commandBar: bar, status: "loaded \{module_}" })
+  Next({ ..s, commandBar: bar, status: "loaded \{module_}" })
 }
 
 ///|
@@ -315,11 +315,11 @@ fn UniversalUi::catalog_changed(
 fn restore_tree(
   s : UniversalAppState,
   root : @tutuca.Value,
-) -> UniversalAppState? {
+) -> @component.Update[UniversalAppState] {
   if root is Obj(_) {
-    Some({ ..s, root, status: "restored" })
+    Next({ ..s, root, status: "restored" })
   } else {
-    Some({ ..s, status: "could not restore the last page" })
+    Next({ ..s, status: "could not restore the last page" })
   }
 }
 
@@ -357,7 +357,7 @@ fn UniversalUi::app_comp(
             configure=false,
           )
         Some(ToggleMode) =>
-          return Some({
+          return Next({
             ..s,
             mode: if s.mode == "edit" {
               "main"
@@ -381,7 +381,7 @@ fn UniversalUi::app_comp(
             "filesDropped",
             [files],
           )
-          return None
+          return Unhandled
         }
         Some(Unknown(_, _)) | None => ()
       }
@@ -403,7 +403,7 @@ fn UniversalUi::app_comp(
         }
         Bubble("queryChanged", [Str(q), ..]) => {
           ctx.stop_propagation()
-          Some({
+          Next({
             ..s,
             commandBar: self.bar_for(
               q,
@@ -429,7 +429,7 @@ fn UniversalUi::app_comp(
             // projects, with the defaults already in it.
             match self.registry.describe(ref_) {
               Some(d) =>
-                Some({
+                Next({
                   ..s,
                   commandBar: Null,
                   configPanel: self.make_("ConfigPanel", {
@@ -441,7 +441,7 @@ fn UniversalUi::app_comp(
                   status: "fill in \{d.ref_.to_id()} and place it",
                 })
               None =>
-                Some({ ..s, status: "no such component: \{ref_.to_id()}" })
+                Next({ ..s, status: "no such component: \{ref_.to_id()}" })
             }
           } else {
             self.place_default(s, ctx, ref_)
@@ -477,9 +477,9 @@ fn UniversalUi::app_comp(
             "filesDropped",
             args,
           )
-          None
+          Unhandled
         }
-        _ => None
+        _ => Unhandled
       }
     },
   )

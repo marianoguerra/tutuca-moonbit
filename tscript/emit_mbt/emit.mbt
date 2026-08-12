@@ -88,7 +88,7 @@ pub fn emit(
     )
     b.write_string("/// block, not this.\n")
     b.write_string(
-      "fn \{fn_name}(\n  s : \{state_ty},\n  msg : @component.Dispatch,\n  \{if e.uses_ctx { "ctx" } else { "_ctx" }} : &@tutuca.Ctx,\n) -> \{state_ty}? {\n",
+      "fn \{fn_name}(\n  s : \{state_ty},\n  msg : @component.Dispatch,\n  \{if e.uses_ctx { "ctx" } else { "_ctx" }} : &@tutuca.Ctx,\n) -> @component.Update[\{state_ty}] {\n",
     )
     b.write_string("  match msg {\n")
     for a in arms {
@@ -96,7 +96,7 @@ pub fn emit(
     }
     // Every other name falls through, which is the documented precedence: the
     // author's `update`, then the generated mutators.
-    b.write_string("    _ => None\n")
+    b.write_string("    _ => Unhandled\n")
     b.write_string("  }\n}\n")
     b.to_string()
   }
@@ -138,12 +138,15 @@ fn E::arm(
       // Using one where a type is wanted is refused below rather than guessed.
       _ => p.name
     }
+    // An argument of the wrong shape is `Unchanged`, not `Unhandled`: this
+    // arm DID claim the name, and letting `add 'x'` fall through to a
+    // generated mutator would apply a write the block refused.
     b.write_string(
-      "      guard args.get(\{i}) is Some(\{pat}) else { return None }\n",
+      "      guard args.get(\{i}) is Some(\{pat}) else { return Unchanged }\n",
     )
   }
   b.write_string(self.stmts(body, "      "))
-  b.write_string("      Some(s)\n")
+  b.write_string("      Next(s)\n")
   b.write_string("    }\n")
   b.to_string()
 }

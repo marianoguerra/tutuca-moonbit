@@ -78,7 +78,7 @@ fn spike_module() -> (@component.ModuleDef, Std) {
         Bubble("addRequested", _) => {
           target.val = Some(ctx.target_path())
           ctx.stop_propagation()
-          Some({ ..s, status: "asked:\{ctx.target_path().items.length()}" })
+          Next({ ..s, status: "asked:\{ctx.target_path().items.length()}" })
         }
         // A LATER dispatch, with nothing of the first one still on the stack —
         // which is the case the app is actually in when somebody picks a row
@@ -89,9 +89,9 @@ fn spike_module() -> (@component.ModuleDef, Std) {
               ctx.send_at_path(p, "hold", [
                 std.build("Text", { "text": Str("landed"), "size": Str("") }),
               ])
-              Some({ ..s, status: "placed" })
+              Next({ ..s, status: "placed" })
             }
-            None => Some({ ..s, status: "no target" })
+            None => Next({ ..s, status: "no target" })
           }
         // Put a two-cell stack in the root universal, so the next request comes
         // from a universal INSIDE a container — one more component boundary for
@@ -108,14 +108,14 @@ fn spike_module() -> (@component.ModuleDef, Std) {
               "wrap": Bool(false),
             }),
           ])
-          Some({ ..s, status: "stacked" })
+          Next({ ..s, status: "stacked" })
         }
         // Plant a tree built in MoonBit. The other tests in this package use it
         // to set up a shape without clicking their way to it — the clicking is
         // what they are testing, not what they need to arrange.
-        Receive("setRoot", [v, ..]) => Some({ ..s, root: v })
-        Receive("setMode", [Str(m), ..]) => Some({ ..s, mode: m })
-        _ => None
+        Receive("setRoot", [v, ..]) => Next({ ..s, root: v })
+        Receive("setMode", [Str(m), ..]) => Next({ ..s, mode: m })
+        _ => Unhandled
       }
     },
   )

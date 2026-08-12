@@ -42,11 +42,11 @@ update=(s : DndState, msg, _ctx) => match msg {
                 target.to_int(),
               ),
             })
-          _ => None
+          _ => Unhandled
         }
-      _ => None
+      _ => Unhandled
     }
-  _ => None
+  _ => Unhandled
 },
 ```
 

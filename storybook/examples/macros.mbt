@@ -148,8 +148,8 @@ fn macro_slots_comp() -> @component.Component {
     // no generated Msg and the arm names the dispatch directly.
     update=(s : MacroSlotsState, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Some({ count: s.count + 1 })
-        _ => None
+        Input("inc", _) => Next({ count: s.count + 1 })
+        _ => Unhandled
       }
     },
   )
@@ -212,8 +212,8 @@ fn macro_named_slots_comp() -> @component.Component {
     init=MacroNamedSlotsState::{ count: 0 },
     update=(s : MacroNamedSlotsState, msg, _ctx) => {
       match msg {
-        Input("inc", _) => Some({ count: s.count + 1 })
-        _ => None
+        Input("inc", _) => Next({ count: s.count + 1 })
+        _ => Unhandled
       }
     },
   )

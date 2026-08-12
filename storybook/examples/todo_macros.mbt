@@ -103,7 +103,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
     update=(s : TmItemsState, msg, _ctx) => {
       match msg {
         Input("onAddItem", _) =>
-          Some({
+          Next({
             items: s.items +
             [
               item.make({
@@ -112,7 +112,7 @@ fn tm_items_comp(item : @component.Component) -> @component.Component {
               }),
             ],
           })
-        _ => None
+        _ => Unhandled
       }
     },
   )

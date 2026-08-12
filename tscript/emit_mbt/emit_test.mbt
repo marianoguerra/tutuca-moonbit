@@ -110,7 +110,7 @@ test "an assignment is a copy-on-write rebinding of `s`" {
     body("on setLabel { .label = 'hi' }"),
     content=(
       #|let s = { ..s, label: "hi" }
-      #|Some(s)
+      #|Next(s)
     ),
   )
 }
@@ -124,7 +124,7 @@ test "arithmetic goes through Double and comes back at the field's type" {
     body("on bump { .count += 1 }"),
     content=(
       #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
-      #|Some(s)
+      #|Next(s)
     ),
   )
   // …and a Double field needs no conversion at all.
@@ -132,7 +132,7 @@ test "arithmetic goes through Double and comes back at the field's type" {
     body("on scale { .ratio += 0.5 }"),
     content=(
       #|let s = { ..s, ratio: (s.ratio + 0.5) }
-      #|Some(s)
+      #|Next(s)
     ),
   )
 }
@@ -142,20 +142,20 @@ test "a receive handler's parameters are typed by the schema's payload" {
   inspect(
     body("receive resetTo(n) { .count = n }"),
     content=(
-      #|guard args.get(0) is Some(Num(n)) else { return None }
+      #|guard args.get(0) is Some(Num(n)) else { return Unchanged }
       #|let s = { ..s, count: n.to_int() }
-      #|Some(s)
+      #|Next(s)
     ),
   )
   // Two payload values, two guards, each at its own type.
   inspect(
     body("receive rename(t, n) { .label = t; .count = n }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return None }
-      #|guard args.get(1) is Some(Num(n)) else { return None }
+      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
+      #|guard args.get(1) is Some(Num(n)) else { return Unchanged }
       #|let s = { ..s, label: t }
       #|let s = { ..s, count: n.to_int() }
-      #|Some(s)
+      #|Next(s)
     ),
   )
 }
@@ -168,15 +168,15 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
     body("on add1 { .history.push 1 }"),
     content=(
       #|let s = { ..s, history: (s.history + [1]) }
-      #|Some(s)
+      #|Next(s)
     ),
   )
   inspect(
     body("on dropAt(i) { .history.removeAt i }"),
     content=(
-      #|guard args.get(0) is Some(Num(i)) else { return None }
+      #|guard args.get(0) is Some(Num(i)) else { return Unchanged }
       #|let s = { ..s, history: (s.history[0:i.to_int()].to_array() + s.history[i.to_int() + 1:].to_array()) }
-      #|Some(s)
+      #|Next(s)
     ),
   )
 }
@@ -186,18 +186,18 @@ test "a set is Map-backed and copied before it is written" {
   inspect(
     body("on tag(t) { .tags.add t }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return None }
+      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
       #|let s = { ..s, tags: { let m = s.tags.copy(); m[t] = true; m } }
-      #|Some(s)
+      #|Next(s)
     ),
   )
   // Toggle reads before it writes, which is why it needs the binding.
   inspect(
     body("on flip(t) { .tags.toggle t }"),
     content=(
-      #|guard args.get(0) is Some(Str(t)) else { return None }
+      #|guard args.get(0) is Some(Str(t)) else { return Unchanged }
       #|let s = { ..s, tags: { let m = s.tags.copy(); let k = t; if m.get(k) is Some(true) { m.remove(k) } else { m[k] = true }; m } }
-      #|Some(s)
+      #|Next(s)
     ),
   )
   // A closed set takes the same three, because the two share one runtime shape.
@@ -218,7 +218,7 @@ test "an if rebinds `s` through an expression, not two statement blocks" {
       #|let s = { ..s, count: 0 }
       #|s
       #|}
-      #|Some(s)
+      #|Next(s)
     ),
   )
 }

@@ -46,8 +46,8 @@ fn card_scope() -> (@component.ComponentStack, @component.Component) raise {
     init=CardState::{ title: "" },
     update=(_s : CardState, msg, _ctx) => {
       match msg {
-        Receive("rename", [Str(t)]) => Some({ title: t })
-        _ => None
+        Receive("rename", [Str(t)]) => Next({ title: t })
+        _ => Unhandled
       }
     },
   )

@@ -24,11 +24,11 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
     update=(s, msg, ctx) => {
       match msg {
         Input("toggleView", _) =>
-          Some({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
+          Next({ ..s, view: if s.view == "main" { "edit" } else { "main" } })
         // the host dispatches this after start() — see App::send_at_root
         Receive("init", _) => {
           ctx.request("loadData", [], @tutuca.RequestOpts::new())
-          Some({ ..s, isLoading: true })
+          Next({ ..s, isLoading: true })
         }
         // the same request, routed to DIFFERENT response handlers by name
         Input("loadAnotherWay", _) => {
@@ -40,22 +40,22 @@ fn request_example_comp(entry : @component.Component) -> @component.Component {
               on_error_name="loadDataErr",
             ),
           )
-          Some({ ..s, isLoading: true })
+          Next({ ..s, isLoading: true })
         }
         // the default response handler gets BOTH the result and the error
         Response("loadData", [res, _err]) =>
-          Some(entries_from_response(s, entry, res))
+          Next(entries_from_response(s, entry, res))
         Response("loadDataOk", [res, ..]) =>
-          Some(entries_from_response(s, entry, res))
+          Next(entries_from_response(s, entry, res))
         Response("loadDataErr", args) => {
           let err = match args {
             [Str(e), ..] => e
             [_, ..] => "request failed"
             _ => "request failed"
           }
-          Some({ ..s, isLoading: false, error: Str(err) })
+          Next({ ..s, isLoading: false, error: Str(err) })
         }
-        _ => None
+        _ => Unhandled
       }
     },
     when=w => {

@@ -147,7 +147,9 @@ pub fn state_editor_row_component(
   init? : StateEditorRowState = StateEditorRowState::zero(),
   common_style? : String = state_editor_row_common_style,
   global_style? : String = state_editor_row_global_style,
-  update? : (StateEditorRowState, @component.Dispatch, &@tutuca.Ctx) -> StateEditorRowState?,
+  update? : (StateEditorRowState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StateEditorRowState,
+  ],
   swap? : (StateEditorRowInput) -> ((
     StateEditorRowState,
     Array[@tutuca.Value],
@@ -231,7 +233,9 @@ pub fn state_editor_component(
   init? : StateEditorState = StateEditorState::zero(),
   common_style? : String = state_editor_common_style,
   global_style? : String = state_editor_global_style,
-  update? : (StateEditorState, @component.Dispatch, &@tutuca.Ctx) -> StateEditorState?,
+  update? : (StateEditorState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
+    StateEditorState,
+  ],
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
