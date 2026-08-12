@@ -302,6 +302,14 @@ pub fn tasks() -> Array[Task] {
           prog: "node",
           args: ["tutucard/build/check-examples.mjs"],
         },
+        // The structured view EDITS the card by character offset, which is the
+        // one part of this page that can corrupt what an author typed. Held to
+        // its contract without a browser.
+        {
+          label: "check · card regions split and splice",
+          prog: "node",
+          args: ["tutucard/build/check-regions.mjs"],
+        },
       ],
     },
     {

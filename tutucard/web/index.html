@@ -17,6 +17,16 @@
         <span>example</span>
         <select id="example"></select>
       </label>
+      <!-- The same card, two ways to look at it. Raw is the file; structured
+           is a projection of the same string, so switching loses nothing. -->
+      <div class="modes" role="tablist" aria-label="editor mode">
+        <button id="mode-raw" class="mode on" role="tab" aria-selected="true">
+          raw
+        </button>
+        <button id="mode-structured" class="mode" role="tab" aria-selected="false">
+          structured
+        </button>
+      </div>
       <span id="status" class="status">…</span>
     </header>
 
@@ -26,7 +36,7 @@
         <!-- A plain textarea with a gutter beside it. Deliberately not an
              editor component: the point of this page is the CARD, and a
              syntax-highlighting dependency would be the largest thing on it. -->
-        <div class="editor">
+        <div id="raw" class="editor">
           <pre id="gutter" class="gutter" aria-hidden="true"></pre>
           <textarea
             id="source"
@@ -35,6 +45,29 @@
             autocapitalize="off"
             autocorrect="off"
           ></textarea>
+        </div>
+
+        <!-- The same string, one part at a time. Editing a pane splices back
+             into the raw text, so the two views cannot disagree. -->
+        <div id="structured" class="structured" hidden>
+          <div class="tabs" role="tablist" aria-label="card part">
+            <button class="tab on" data-part="state" role="tab">state</button>
+            <button class="tab" data-part="script" role="tab">handlers</button>
+            <button class="tab" data-part="views" role="tab">views</button>
+          </div>
+          <!-- The views tab has tabs of its own: a card has one state block
+               and one script block, and as many views as it likes. `main` is
+               first because it is the one every card has. -->
+          <div id="view-tabs" class="tabs views" role="tablist" hidden></div>
+          <textarea
+            id="part"
+            class="part"
+            spellcheck="false"
+            autocomplete="off"
+            autocapitalize="off"
+            autocorrect="off"
+          ></textarea>
+          <p id="part-empty" class="part-empty" hidden></p>
         </div>
       </section>
 

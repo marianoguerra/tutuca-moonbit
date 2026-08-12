@@ -1,6 +1,6 @@
 // Assemble dist/tutucard/.
 //
-// Four files copied and one built. That is the whole build, and the brevity is
+// Five files copied and one built. That is the whole build, and the brevity is
 // the point: the other playground assembles a vendored compiler, a per-target
 // `.mi`/`.core` closure and a manifest telling the shell how to drive
 // `buildPackage`/`linkCore`, because it compiles MoonBit in the browser. A card
@@ -27,7 +27,13 @@ function build() {
 function assemble() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
-  for (const name of ["index.html", "shell.js", "shell.css", "examples.js"]) {
+  for (const name of [
+    "index.html",
+    "shell.js",
+    "shell.css",
+    "examples.js",
+    "regions.js",
+  ]) {
     cpSync(join(WEB, name), join(OUT, name));
   }
   const bundle = join(

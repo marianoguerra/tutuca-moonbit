@@ -7,9 +7,9 @@
 // it is exactly the kind of thing that rots as the language moves.
 //
 // Two limits are visible here and are the language's rather than the page's.
-// **There is no record literal**, so a `list<record>` can be read, indexed and
+// **There is no record literal**, so an `Array[Struct]` can be read, indexed and
 // written through, but never APPENDED to from a card — which is why `todo`
-// below holds a `list<string>`. And a condition slot still takes `$name`
+// below holds an `Array[String]`. And a condition slot still takes `$name`
 // rather than a bare predicate application, so `@show="$anyItems"` is how a
 // `pred` is used from a template today.
 
@@ -17,12 +17,10 @@ export const EXAMPLES = [
   {
     name: "counter",
     source: `<script type="tutuca/state">
-  interface counter {
-    record state {
-      label: string,
-      count: s32,
-      history: list<s32>,
-    }
+  state Counter {
+    label   : String
+    count   : Int
+    history : Array[Int]
   }
 </script>
 
@@ -52,12 +50,10 @@ export const EXAMPLES = [
   {
     name: "todo",
     source: `<script type="tutuca/state">
-  interface todo {
-    record state {
-      draft: string,
-      items: list<string>,
-      done: text-set,
-    }
+  state Todo {
+    draft : String
+    items : Array[String]
+    done  : Set[String]
   }
 </script>
 
@@ -100,11 +96,9 @@ export const EXAMPLES = [
   {
     name: "filter",
     source: `<script type="tutuca/state">
-  interface filter {
-    record state {
-      query: string,
-      names: list<string>,
-    }
+  state Filter {
+    query : String
+    names : Array[String]
   }
 </script>
 
@@ -138,15 +132,14 @@ export const EXAMPLES = [
   {
     name: "messages",
     source: `<script type="tutuca/state">
-  interface inbox {
-    record state {
-      status: string,
-      seen: s32,
-    }
-    /// The views never write these names, so the schema is the only place
-    /// they can be declared — and the only place their payloads can be typed.
-    variant receive { note(string), bump(s32) }
+  state Inbox {
+    status : String
+    seen   : Int
   }
+
+  /// The views never write these names, so the schema is the only place
+  /// they can be declared — and the only place their payloads can be typed.
+  receive Inbox { Note(String), Bump(Int) }
 </script>
 
 <script type="tutuca/script">

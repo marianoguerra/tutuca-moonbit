@@ -74,6 +74,19 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The card playground has a structured view.** The same card, two ways to
+  look at it: `raw` is the file, and `structured` gives it a tab each for the
+  state block, the handlers and the views — with the views tab carrying tabs of
+  its own, `main` first, and a `+` that adds one (double-click a tab to rename
+  it; `main` is the one name that is not the author's to change).
+
+  The two cannot disagree, because the structured panes are not a second copy.
+  They are projections of the SAME string, sliced at recorded offsets, and a
+  structured edit splices back into it — so switching modes loses nothing and
+  there is nothing to diff. Slicing rather than parsing-and-reprinting is
+  deliberate: `viewfile` normalizes what it hands back, and running an editor's
+  buffer through it would rewrite the author's file on every keystroke.
+
 - **`dyncomp/storybook` — a storybook for dynamic components.** Every component
   every loaded bundle declares, once per configuration it declares, live and
   side by side. There is no story list anywhere: a `.tutuca.tar.gz` manifest

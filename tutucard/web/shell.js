@@ -7,6 +7,7 @@
 // mounted, and the runtime that does it is already on the page.
 
 import { EXAMPLES } from "./examples.js";
+import { addView, componentOf, parts, renameView, splice } from "./regions.js";
 
 const $ = (id) => document.getElementById(id);
 const els = {
@@ -17,7 +18,21 @@ const els = {
   activity: $("activity"),
   status: $("status"),
   example: $("example"),
+  raw: $("raw"),
+  structured: $("structured"),
+  part: $("part"),
+  partEmpty: $("part-empty"),
+  viewTabs: $("view-tabs"),
 };
+
+/**
+ * Which pane is showing, and which part of the card it is showing.
+ *
+ * The RAW textarea holds the card; the structured panes are projections of the
+ * same string. So there is one source of truth and no diffing: a structured
+ * edit splices into `els.source.value` and everything redraws from there.
+ */
+const ui = { mode: "raw", part: "state", view: 0 };
 
 /** Debounce, so a fast typist re-mounts on pauses rather than per keystroke. */
 const DEBOUNCE_MS = 180;
@@ -27,18 +42,9 @@ let markedLines = new Set();
 
 function componentName(source) {
   // The template's id names the component, when it has one. Otherwise the
-  // interface name in the state block does, and failing both we pick
-  // something — `load` only uses it as the fallback name.
-  const tpl = source.match(/<template[^>]*\bid="([A-Z][\w:]*)"/);
-  if (tpl) return tpl[1].split(":")[0];
-  const iface = source.match(/\binterface\s+([a-z][\w-]*)/);
-  if (iface) {
-    return iface[1]
-      .split("-")
-      .map((p) => p.charAt(0).toUpperCase() + p.slice(1))
-      .join("");
-  }
-  return "Card";
+  // state block's own name does, and failing both we pick something — `load`
+  // only uses it as the fallback name.
+  return componentOf(source) || "Card";
 }
 
 function drawGutter(source) {
@@ -159,13 +165,142 @@ function reload() {
 let timer = null;
 function scheduleReload() {
   clearTimeout(timer);
-  timer = setTimeout(reload, DEBOUNCE_MS);
+  timer = setTimeout(() => {
+    reload();
+    // The structured tabs follow the card, so a raw edit that adds a view
+    // makes the tab appear — on the same debounce, because retitling tabs per
+    // keystroke is the one thing more distracting than a preview that lags.
+    drawTabs();
+  }, DEBOUNCE_MS);
+}
+
+// ---------------------------------------------------------------------------
+// The structured view
+// ---------------------------------------------------------------------------
+
+/** The region the structured view is currently editing, or null. */
+function currentRegion() {
+  const p = parts(els.source.value);
+  if (ui.part === "state") return p.state;
+  if (ui.part === "script") return p.script;
+  return p.views[Math.min(ui.view, p.views.length - 1)] ?? null;
+}
+
+/** What to say when the part the tab names is not in the card yet. */
+const MISSING = {
+  state: 'no <script type="tutuca/state"> block yet — add one in the raw view',
+  script:
+    'no <script type="tutuca/script"> block yet — add one in the raw view',
+  views: "no <template> yet",
+};
+
+/** Put the current part in the pane. */
+function drawPart() {
+  const region = currentRegion();
+  els.viewTabs.hidden = ui.part !== "views";
+  if (!region) {
+    els.part.hidden = true;
+    els.partEmpty.hidden = false;
+    els.partEmpty.textContent = MISSING[ui.part];
+    return;
+  }
+  els.partEmpty.hidden = true;
+  els.part.hidden = false;
+  // Only when it CHANGED: assigning `value` moves the caret to the end, and
+  // this runs on the same debounce as the reload — so a typist would be
+  // fighting it.
+  if (els.part.value !== region.text) els.part.value = region.text;
+}
+
+/** The view tabs, `main` first. */
+function drawTabs() {
+  const p = parts(els.source.value);
+  if (ui.view >= p.views.length) ui.view = Math.max(0, p.views.length - 1);
+  els.viewTabs.replaceChildren();
+  p.views.forEach((v, i) => {
+    const b = document.createElement("button");
+    b.className = i === ui.view ? "tab on" : "tab";
+    b.textContent = v.name;
+    b.role = "tab";
+    b.addEventListener("click", () => {
+      ui.view = i;
+      drawTabs();
+      drawPart();
+    });
+    // `main` is the view every card has and the one it mounts with, so it is
+    // the only name that is not the author's to change.
+    b.addEventListener("dblclick", () => {
+      if (v.name === "main") return;
+      const name = prompt("view name", v.name);
+      if (!name || name === v.name) return;
+      els.source.value = renameView(els.source.value, p, i, name);
+      drawTabs();
+      drawGutter(els.source.value);
+      scheduleReload();
+    });
+    els.viewTabs.append(b);
+  });
+  const add = document.createElement("button");
+  add.className = "tab add";
+  add.textContent = "+";
+  add.title = "add a view";
+  add.addEventListener("click", () => {
+    const name = prompt("new view name", `view${p.views.length}`);
+    if (!name) return;
+    els.source.value = addView(els.source.value, name);
+    ui.view = parts(els.source.value).views.length - 1;
+    drawTabs();
+    drawPart();
+    drawGutter(els.source.value);
+    scheduleReload();
+  });
+  els.viewTabs.append(add);
+}
+
+/** Show one mode, hide the other. Both read the same string. */
+function setMode(mode) {
+  ui.mode = mode;
+  els.raw.hidden = mode !== "raw";
+  els.structured.hidden = mode !== "structured";
+  $("mode-raw").classList.toggle("on", mode === "raw");
+  $("mode-structured").classList.toggle("on", mode === "structured");
+  $("mode-raw").ariaSelected = String(mode === "raw");
+  $("mode-structured").ariaSelected = String(mode === "structured");
+  if (mode === "structured") {
+    drawTabs();
+    drawPart();
+  } else {
+    drawGutter(els.source.value);
+  }
+}
+
+/** Show one part of the card. */
+function setPart(part) {
+  ui.part = part;
+  for (const b of els.structured.querySelectorAll(".tabs:not(.views) .tab")) {
+    b.classList.toggle("on", b.dataset.part === part);
+  }
+  if (part === "views") drawTabs();
+  drawPart();
+}
+
+/** A structured edit, spliced back into the one string that is the card. */
+function onPartInput() {
+  const region = currentRegion();
+  if (!region) return;
+  els.source.value = splice(els.source.value, region, els.part.value);
+  scheduleReload();
 }
 
 function pickExample(name) {
   const ex = EXAMPLES.find((e) => e.name === name) ?? EXAMPLES[0];
   els.source.value = ex.source;
+  ui.view = 0;
   reload();
+  if (ui.mode === "structured") {
+    drawTabs();
+    drawPart();
+  }
 }
 
 function boot() {
@@ -177,6 +312,12 @@ function boot() {
   }
   els.example.addEventListener("change", () => pickExample(els.example.value));
   els.source.addEventListener("input", scheduleReload);
+  els.part.addEventListener("input", onPartInput);
+  $("mode-raw").addEventListener("click", () => setMode("raw"));
+  $("mode-structured").addEventListener("click", () => setMode("structured"));
+  for (const b of els.structured.querySelectorAll(".tabs:not(.views) .tab")) {
+    b.addEventListener("click", () => setPart(b.dataset.part));
+  }
   // The preview is a live app: interacting with it changes state and raises
   // dispatches, and both panels should follow. A capture-phase listener sees
   // the event before the app's delegated one, so the redraw is queued after.

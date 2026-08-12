@@ -71,6 +71,30 @@ select {
   font: inherit;
 }
 
+/* The mode switch: one card, two ways to look at it. A segmented pair rather
+   than a dropdown, because there are two and both are always available. */
+.modes {
+  display: flex;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  overflow: hidden;
+}
+
+.mode {
+  border: 0;
+  background: transparent;
+  color: var(--dim);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.7rem;
+  cursor: pointer;
+}
+
+.mode.on {
+  background: var(--line);
+  color: var(--ink);
+}
+
 .status {
   font-family: var(--mono);
   font-size: 0.8rem;
@@ -167,6 +191,73 @@ textarea {
 
 textarea:focus {
   outline: none;
+}
+
+/* `display: flex` beats the `hidden` attribute, and both editors have it —
+   so say it once, here, rather than discovering it as two panes stacked. */
+[hidden] {
+  display: none !important;
+}
+
+/* The structured view. Same height as the raw editor, so switching does not
+   move the panes beside it. */
+.structured {
+  display: flex;
+  flex-direction: column;
+  flex: 1;
+  min-height: 24rem;
+  gap: 0.4rem;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.25rem;
+  flex-wrap: wrap;
+}
+
+.tab {
+  border: 1px solid var(--line);
+  border-radius: 4px;
+  background: var(--panel);
+  color: var(--dim);
+  font: inherit;
+  font-size: 0.8rem;
+  padding: 0.2rem 0.6rem;
+  cursor: pointer;
+}
+
+.tab.on {
+  color: var(--ink);
+  border-color: var(--ink);
+}
+
+/* The view tabs sit under the part tabs and are visibly subordinate: a card
+   has one state block and one script block, and as many views as it likes. */
+.tabs.views .tab {
+  font-family: var(--mono);
+  font-size: 0.75rem;
+}
+
+.tab.add {
+  font-family: var(--mono);
+}
+
+.part {
+  flex: 1;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+}
+
+.part-empty {
+  flex: 1;
+  margin: 0;
+  padding: 0.75rem;
+  border: 1px dashed var(--line);
+  border-radius: 6px;
+  color: var(--dim);
+  font-family: var(--mono);
+  font-size: 0.8rem;
 }
 
 .preview {
