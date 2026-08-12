@@ -13,6 +13,7 @@ import { execSync } from "node:child_process";
 import { fileURLToPath } from "node:url";
 import { build as esbuild } from "esbuild";
 import { ensureCompiler, TOOLCHAIN } from "./fetch-compiler.mjs";
+import { copyScoped } from "../../scripts/scope-bundle.mjs";
 
 const REPO = join(dirname(fileURLToPath(import.meta.url)), "..", "..");
 const MOON_HOME = process.env.MOON_HOME || join(process.env.HOME, ".moon");
@@ -139,11 +140,16 @@ cpSync(join(REPO, "app/wasm/loader.mjs"), join(OUT, "app-loader.mjs"));
 
 // The view generator, compiled to js: the View tab needs it in the BROWSER
 // (it turns view HTML into MoonBit source, which then feeds the in-browser
-// compiler). moonc's js output is a plain IIFE, so it ships as an ordinary
-// classic script that publishes globalThis.__tutucaViewgen on load.
+// compiler). It ships as an ordinary classic script that publishes
+// globalThis.__tutucaViewgen on load — wrapped in a scope of its own, because
+// moonc's js output declares its symbols at top level and the landing site
+// loads a second moonc bundle (site/tutucard.js). See scripts/scope-bundle.mjs.
 console.log("building viewgen (js) ...");
 execSync("moon build --target js playground/viewgen_js", { cwd: REPO, stdio: "inherit" });
-cpSync(join(buildDir("js"), "playground/viewgen_js/viewgen_js.js"), join(OUT, "viewgen.js"));
+copyScoped(
+  join(buildDir("js"), "playground/viewgen_js/viewgen_js.js"),
+  join(OUT, "viewgen.js"),
+);
 
 // The margaui class compiler, compiled to wasm-gc: previews need it in the
 // BROWSER to turn a mounted app's class set into CSS (marianoguerra/tailwindcss

@@ -10,6 +10,7 @@ import { execSync } from "node:child_process";
 import { cpSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
+import { copyScoped } from "../../scripts/scope-bundle.mjs";
 
 const HERE = dirname(fileURLToPath(import.meta.url));
 const REPO = join(HERE, "..", "..");
@@ -50,7 +51,10 @@ function assemble() {
     "playground",
     "playground.js",
   );
-  cpSync(bundle, join(OUT, "tutucard.js"));
+  // Scoped rather than copied: the landing page loads this bundle AND the
+  // playground's viewgen.js, and two moonc bundles sharing the global scope
+  // collide on every core symbol. See scripts/scope-bundle.mjs.
+  copyScoped(bundle, join(OUT, "tutucard.js"));
   const kb = (statSync(join(OUT, "tutucard.js")).size / 1024).toFixed(0);
   console.log(`assembled ${OUT}`);
   // Printed every time, because it is the number this page exists to keep
