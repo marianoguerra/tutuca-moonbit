@@ -85,7 +85,7 @@ Which leaves the MoonBit port of the canonical counter with nothing to say:
 
 ```mbt check
 ///|
-fn counter() -> @component.Component {
+test "the generated counter is a complete component" {
   // Views call update by bare name: @on.click="dec". Both names are answered
   // in the file's `tutuca/script` block, which `gen-views` compiles and
   // composes AHEAD of the `update~` this does not pass.
@@ -93,14 +93,7 @@ fn counter() -> @component.Component {
   // Write a handler that block cannot compile — one that walks a path, or
   // builds a child component — and `gen-views` says which one, by name. That
   // one comes back here as an `update~`, and the rest stay where they are.
-  counter_component()
-}
-
-///|
-/// A ModuleDef bundles components (+ macros + request handlers + examples).
-/// One ModuleDef value drives the tests, the storybook gallery and the CLI.
-fn counter_module() -> @component.ModuleDef {
-  @component.ModuleDef::new(name="counter", components=[counter()])
+  counter_component() |> ignore
 }
 ```
 
@@ -116,5 +109,3 @@ Things to notice:
 - **What is left is what neither block can state.** A seed value, a request's
   options, a handler that reaches for a path or builds a child: those are
   arguments to `counter_component(...)`, and everything else is the file.
-
-

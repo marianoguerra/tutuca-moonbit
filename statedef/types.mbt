@@ -30,9 +30,9 @@ pub fn StateDef::field(self : StateDef, name : String) -> FieldDef? {
 }
 
 ///|
-pub fn StateDef::user_ty(self : StateDef, wit_name : String) -> UserTy? {
+pub fn StateDef::user_ty(self : StateDef, source_name : String) -> UserTy? {
   for t in self.types {
-    if t.wit_name == wit_name {
+    if t.source_name == source_name {
       return Some(t)
     }
   }
@@ -144,8 +144,8 @@ pub fn StateTy::is_renderable(self : StateTy) -> Bool {
 }
 
 ///|
-/// How to write this type in a diagnostic — the WIT spelling, because that
-/// is what the author wrote and what they will edit.
+/// How to write this type in a diagnostic, using the state-language spelling
+/// the author wrote and will edit.
 pub fn StateTy::show_source(self : StateTy) -> String {
   match self {
     TBool => "Bool"
@@ -268,7 +268,7 @@ pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
 }
 
 ///|
-/// A MoonBit string literal. Schema identifiers are WIT names, so there is
+/// A MoonBit string literal. Schema identifiers contain no quotes, so there is
 /// nothing to escape beyond the quotes themselves.
 fn quoted(s : String) -> String {
   "\"" + s + "\""
@@ -318,8 +318,8 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
     // and naming them anyway is the `unnecessary_annotation` `check` turns on.
     TEnum(n) =>
       match self.user_ty(n) {
-        // The first case is the zero: WIT enums are ordered, and an enum
-        // with no cases cannot be declared.
+        // The first case is the zero, and an enum with no cases cannot be
+        // declared.
         Some({ kind: UEnum(cs), .. }) if !cs.is_empty() => cs[0].1
         _ => "Null"
       }
@@ -360,9 +360,7 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
 ///|
 /// Where in the block the failure is.
 ///
-/// This replaces `locus`, which answered an IDENTIFIER for a caller to scan
-/// for — the best a parser with no positions could do. `viewgen/split.mbt`
-/// used to hold a whole-word scanner for it.
+/// Every state-language error carries a span directly.
 pub fn DefError::span(self : DefError) -> Span {
   match self {
     Syntax(span~, ..)

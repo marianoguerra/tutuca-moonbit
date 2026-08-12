@@ -165,14 +165,9 @@ test "an enum's zero is its first case, and a set starts EMPTY" {
   // `Low`, the case as the enum declares it. The generated codec encodes an
   // enum as `Str("Low")`, and this zero has to match what that codec produces
   // or a card and a compiled component would disagree about the same state.
-  // Under WIT the two spellings differed — an enum case mapped through
-  // `upper_name` and a flag through `camel_name` — and one enum now feeds
-  // both.
+  // The same enum spelling feeds both scalar values and closed sets.
   assert_eq(z.get("pri"), Some(Str("Low")))
-  // Empty, and it used not to be. A `flags` field began with EVERY member
-  // present, because the type carried its membership and the zero was written
-  // from the type. `Set[Visibility]` lets the CONTAINER decide the zero and
-  // the enum decide the membership, which is one idea in each place.
+  // Empty: the container decides the zero and the enum decides membership.
   assert_eq(z.get("vis"), Some(Map(Map([]))))
 }
 

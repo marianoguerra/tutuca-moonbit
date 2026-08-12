@@ -90,8 +90,8 @@ pub fn zero_of(
       }
     // A tuple's zero is its elements' zeros, for the same reason.
     TTuple(ts) => List(ts.map(t => zero_of(def, t)))
-    // An enum's zero is its FIRST case: WIT enums are ordered, and an enum
-    // with no cases cannot be declared. `TyInfo::zero` answers `Str("")`
+    // An enum's zero is its first case, and an enum with no cases cannot be
+    // declared. `TyInfo::zero` answers `Str("")`
     // because it holds only the name.
     TEnum(n) =>
       match def.user_ty(n) {

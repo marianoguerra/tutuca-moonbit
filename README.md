@@ -4,8 +4,8 @@ A [MoonBit](https://docs.moonbitlang.com) port of
 [tutuca](https://github.com/marianoguerra/tutuca), a small UI framework built
 around a reactive value language, HTML-ish templates, and a virtual DOM.
 
-A component declares its state and its views in one file, in a small subset
-of a small state language and HTML-ish templates, and both are compiled ahead of time into typed
+A component declares its state and views in one file, using a small state
+language and HTML-ish templates, and both compile ahead of time into typed
 MoonBit. Every handler is checked against the state it mutates, and so is
 every `.field` a view reads — including inside a loop. It runs on all three
 backends: **wasm-gc** (the default), **js** (the real-DOM adapter) and

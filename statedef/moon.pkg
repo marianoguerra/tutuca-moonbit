@@ -5,13 +5,9 @@
 // StateDef out, never touching the filesystem. viewgen/ threads the result
 // through view generation; cmd/main does the I/O.
 //
-// The surface used to be a subset of WIT, parsed with mizchi/wit. It is
-// tutuca's own now, with a lexer and a parser in this package, and the reason
-// is not taste: WIT cost a nesting level to say what a `<template id>` already
-// says, two constructs for one idea because a C ABI needs the distinction,
-// and — the one that showed everywhere — no per-declaration spans at all, so a
-// semantic failure could only name an identifier and let the caller scan for
-// it.
+// The surface is tutuca's own and the lexer/parser live in this package. State
+// names map directly onto view and JSON names, sum declarations cover both
+// payload-free and payload-bearing cases, and every diagnostic carries a span.
 import {
   "moonbitlang/core/debug",
   "moonbitlang/core/json",

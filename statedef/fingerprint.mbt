@@ -1,38 +1,31 @@
 // The schema's structural fingerprint.
 //
-// Over SHAPE, not over source text: renaming the WIT interface changes it,
+// Over SHAPE, not over source text: renaming the state declaration changes it,
 // reindenting the block does not. What it is for is noticing that a stored
 // state can no longer be read back — a hot swap across a fingerprint change
 // has to migrate rather than reinterpret.
 //
-// `to_wit` used to live here, writing the schema back out as a self-contained
-// WIT document with the markers lowered. Nothing consumed it: no `.wit` from
-// statedef was ever checked in, `--wit` was passed by no build, and the guest
-// trees under guests/ are hand-written against the dyncomp boundary contract
-// rather than generated from one of these. It went, and `to_guest` with it.
-// The fingerprint hashes `show_source()` rather than the document, so it is
-// unaffected.
 
 ///|
 /// A stable structural fingerprint of the whole schema.
 ///
-/// Over SHAPE, not over source text: renaming the WIT interface changes it,
+/// Over SHAPE, not over source text: renaming the state declaration changes it,
 /// reindenting the block does not. What it is for is noticing that a stored
 /// state can no longer be read back — a hot swap across a fingerprint change
 /// has to migrate rather than reinterpret.
 pub fn fingerprint(defs : Array[StateDef]) -> String {
   let sb = StringBuilder::new()
   for def in defs {
-    sb.write_string("i:\{def.wit_name};")
+    sb.write_string("i:\{def.source_name};")
     for f in def.fields {
-      sb.write_string("f:\{f.wit_name}:\{f.ty.show_source()};")
+      sb.write_string("f:\{f.name}:\{f.ty.show_source()};")
     }
     for t in def.types {
-      sb.write_string("t:\{t.wit_name}:")
+      sb.write_string("t:\{t.source_name}:")
       match t.kind {
         URecord(fs) =>
           for f in fs {
-            sb.write_string("\{f.wit_name}=\{f.ty.show_source()},")
+            sb.write_string("\{f.name}=\{f.ty.show_source()},")
           }
         UEnum(cs) =>
           for c in cs {
@@ -41,7 +34,7 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
         UVariant(cs) =>
           for c in cs {
             sb.write_string(
-              "\{c.wit_name}(\{c.payload.map(p => p.show_source()).join("|")}),",
+              "\{c.source_name}(\{c.payload.map(p => p.show_source()).join("|")}),",
             )
           }
       }
@@ -50,7 +43,7 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
     for pair in [("r", def.receive), ("b", def.bubble), ("p", def.response)] {
       for m in pair.1 {
         sb.write_string(
-          "\{pair.0}:\{m.wit_name}(\{m.payload.map(p => p.show_source()).join("|")});",
+          "\{pair.0}:\{m.source_name}(\{m.payload.map(p => p.show_source()).join("|")});",
         )
       }
     }

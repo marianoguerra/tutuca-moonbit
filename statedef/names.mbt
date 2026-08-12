@@ -1,4 +1,4 @@
-// Turning WIT vocabulary into tutuca and MoonBit identifiers.
+// Turning state-language names into tutuca and MoonBit identifiers.
 //
 // A field is written the way a view reads it, so `camel_name` is identity for
 // one already in that form and these exist for the two shapes that genuinely
@@ -74,10 +74,9 @@ pub fn upper_name(name : String) -> String {
 /// The MoonBit binding for a runtime field name: itself, or itself plus `_`
 /// when it is a keyword.
 ///
-/// A WIT field name is free to collide with a MoonBit keyword — `type` and
-/// `enum` are perfectly good field names in an IDL. The escape lands on the
-/// BINDING only: the runtime name keeps what the view and the JSON use,
-/// because renaming it would break both.
+/// A state field name is free to collide with a MoonBit keyword. The escape
+/// lands on the BINDING only: the runtime name keeps what the view and JSON
+/// use, because renaming it would break both.
 pub fn binding_name(name : String) -> String {
   match name {
     "as"
@@ -167,7 +166,7 @@ pub fn str_cmp(a : String, b : String) -> Int {
 }
 
 ///|
-/// Map WIT names onto identifiers, refusing any pair that collides.
+/// Map source names onto identifiers, refusing any pair that collides.
 ///
 /// `kind` names what is being mapped, so the error can say "two fields" or
 /// "two variants" rather than making the reader guess.

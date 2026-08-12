@@ -1,6 +1,5 @@
 // Spec for the state schema: the public data types plus `declare` stubs.
-// Implementations live in names.mbt / markers.mbt / lex.mbt / parse.mbt /
-// types.mbt.
+// Implementations live in names.mbt / lex.mbt / parse.mbt / types.mbt.
 //
 // The pipeline is two pure stages:
 //
@@ -11,24 +10,12 @@
 // views may read, the messages its update may receive, and the named types
 // those two mention.
 //
-// The SURFACE is tutuca's own, and used to be a subset of WIT. WIT was what
-// `statedef` had a parser for, and it cost three things: a whole nesting level
-// (`interface`) to say what a `<template id>` already says, two constructs
-// (`enum` and `variant`) for one idea because a C ABI needs the distinction
-// and nothing here does, and no per-declaration spans at all — which is why
-// `DefError` used to name an IDENTIFIER and let the caller scan for it.
-//
-// What did not change is this file's contract. `StateDef` is what the whole
-// generator, the card runtime and the descriptor read, and a new surface that
-// altered it would have been a rewrite rather than a parser.
+// The surface is tutuca's own: `state`, `struct`, `enum`, and the three
+// message buckets, with MoonBit-shaped type spellings and source spans on
+// every diagnostic.
 
 ///|
-/// A state field's type, after the WIT subset gate.
-///
-/// This is deliberately NOT WIT's type lattice: it is tutuca's `FieldKind`
-/// lattice with the element types WIT can carry. `TSet`, `TOMap`, `TComp`
-/// and `TAny` have no structural WIT spelling and arrive as marker names
-/// (markers.mbt); everything else is written in plain WIT.
+/// A state field's type after parsing and name resolution.
 pub(all) enum StateTy {
   TBool
   /// `s8`..`s32` / `u8`..`u32`. Width and signedness survive so decode can
@@ -43,18 +30,17 @@ pub(all) enum StateTy {
   TRecord(String)
   /// A named payload-free `enum`.
   TEnum(String)
-  /// A named `variant` with payloads.
+  /// A named sum with at least one payload-bearing case.
   TVariant(String)
-  /// A named `flags` — a set with CLOSED membership.
+  /// A set whose membership is closed by a named enum.
   TFlags(String)
-  /// The `text-set` marker — a set with OPEN membership.
+  /// A string set with open membership.
   TSet
-  /// The ordered-map marker. WIT `map` is unordered by definition, so this
-  /// is a refinement WIT cannot spell rather than a substitute for it.
+  /// A string-keyed ordered map.
   TOMap(StateTy)
-  /// A child-component slot; None for the untyped `component` marker.
+  /// A child-component slot; None for an untyped `Component`.
   TComp(String?)
-  /// The `any` marker — an arbitrary @tutuca.Value.
+  /// An arbitrary `@tutuca.Value`.
   TAny
 } derive(Eq, @debug.Debug)
 
@@ -71,15 +57,7 @@ pub(all) enum AttrValue {
 ///|
 /// One field of the state record.
 pub(all) struct FieldDef {
-  /// The name exactly as the author wrote it.
-  ///
-  /// The same string as `name` now, and kept because it is what a message
-  /// QUOTES and what the init block accepts as a key. Under WIT the two
-  /// differed — `by-key` became `byKey` — and a field had three spellings for
-  /// one idea; a name is now written the way the view reads it.
-  wit_name : String
-  /// The tutuca runtime field name — what a view's `.field` read and the JSON
-  /// encoding both use.
+  /// The one name used by the state block, views, messages, and JSON.
   name : String
   /// The MoonBit struct field name: `name`, escaped if it is a keyword.
   binding : String
@@ -95,9 +73,10 @@ pub(all) struct FieldDef {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// One case of a message `variant` (a receive / bubble / response bucket).
+/// One case of a receive, bubble, or response bucket.
 pub(all) struct MsgDef {
-  wit_name : String
+  /// The case name exactly as the author wrote it.
+  source_name : String
   /// The dispatch name raised at runtime (lowerCamel).
   name : String
   /// The MoonBit enum variant name.
@@ -109,12 +88,8 @@ pub(all) struct MsgDef {
 ///|
 /// A named type the state or its messages mention.
 ///
-/// Three kinds, where there were four. `UFlags` is gone: a closed set was a
-/// declaration form of its own, and it is an ENUM plus a container —
-/// `Set[Visibility]` — which is one idea in the place the idea belongs. The
-/// deletion also fixes the zero: a `flags` field started with EVERY member
-/// present, because the type carried its membership and the zero was written
-/// from the type. A set's zero is empty.
+/// The state language has one sum declaration. Payload-free sums become
+/// `UEnum`; a payload on any case makes the declaration a `UVariant`.
 pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
   /// Every case payload-free, so it encodes as its case name.
@@ -124,9 +99,10 @@ pub(all) enum UserTyKind {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// A named type declared in a component's interface, with its MoonBit name.
+/// A named type declared beside a component's state, with its MoonBit name.
 pub(all) struct UserTy {
-  wit_name : String
+  /// The type name exactly as the author wrote it.
+  source_name : String
   /// The generated MoonBit type name, component-prefixed (`CounterItem`).
   name : String
   kind : UserTyKind
@@ -136,8 +112,8 @@ pub(all) struct UserTy {
 ///|
 /// One component's whole data contract.
 pub(all) struct StateDef {
-  /// The interface name as written in WIT, kebab-case.
-  wit_name : String
+  /// The state declaration's name exactly as the author wrote it.
+  source_name : String
   /// The component name, as a MoonBit type prefix (`Counter`).
   component : String
   fields : Array[FieldDef]
@@ -152,12 +128,11 @@ pub(all) struct StateDef {
 /// Anything that makes a state block unusable. Rendered by `Show` into the
 /// message the CLI reports.
 ///
-/// Every out-of-subset WIT construct gets its OWN variant rather than a
-/// generic "unsupported": the whole point of a subset is that the boundary
-/// is explained where you hit it.
+/// Each invalid construct has its own variant so the boundary is explained
+/// where the author hits it.
 pub suberror DefError {
   /// The block does not parse. `span` is where in it, so a caller can point at
-  /// a COLUMN — which is what the WIT parser could never give.
+  /// a column in the state block.
   Syntax(msg~ : String, span~ : Span)
   /// A declaration kind that does not exist.
   UnknownDecl(got~ : String, span~ : Span)
@@ -198,10 +173,8 @@ declare pub fn DefError::message(self : DefError) -> String
 ///|
 /// Where in the block the failure is.
 ///
-/// This replaces `locus`, which answered an IDENTIFIER for the caller to scan
-/// for — the best a parser with no positions could do. Every declaration
-/// carries its range now, so a state block reports the way the script block
-/// beside it does.
+/// Every declaration carries its range, so state and script diagnostics point
+/// into their source blocks the same way.
 declare pub fn DefError::span(self : DefError) -> Span
 
 ///|
@@ -241,8 +214,11 @@ declare pub fn StateDef::component_name(
 declare pub fn StateDef::field(self : StateDef, name : String) -> FieldDef?
 
 ///|
-/// The named type with this WIT name, or None.
-declare pub fn StateDef::user_ty(self : StateDef, wit_name : String) -> UserTy?
+/// The named type with this source name, or None.
+declare pub fn StateDef::user_ty(
+  self : StateDef,
+  source_name : String,
+) -> UserTy?
 
 ///|
 /// The element type an `@each` over this type binds, or None when the type
@@ -259,8 +235,8 @@ declare pub fn StateDef::field_of(
 ) -> StateTy?
 
 ///|
-/// How to write this type in a diagnostic: the WIT spelling, because that is
-/// what the author wrote and what they will edit.
+/// How to write this type in a diagnostic, using the state-language spelling
+/// the author wrote and will edit.
 declare pub fn StateTy::show_source(self : StateTy) -> String
 
 ///|
@@ -310,8 +286,8 @@ declare pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String
 
 ///|
 /// Parse and validate a `<script type="tutuca/init">` block against a
-/// component's schema. WIT declares no defaults, so named initial states get
-/// a block of their own rather than a comment convention in the schema.
+/// component's schema. Named initial states live in a block of their own so
+/// the state declaration remains a type rather than a default-value format.
 declare pub fn parse_init(
   source : String,
   def : StateDef,

@@ -38,7 +38,7 @@ fn emit_bucket_enum(
     return
   }
   // Guards against a schema whose case names collapse onto one variant.
-  variants_for(msgs.map(m => m.wit_name)) |> ignore
+  variants_for(msgs.map(m => m.source_name)) |> ignore
   let ty = "\{t}\{suffix}"
   let lower = suffix.to_lower()
   out.write_string(

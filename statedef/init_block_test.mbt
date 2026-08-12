@@ -95,8 +95,8 @@ fn named() -> String {
 
 ///|
 test "a fixture names fields in schema order" {
-  // Deliberately out of JSON order. A field has ONE spelling now — the one a
-  // view reads — where WIT gave it three for one idea.
+  // Deliberately out of JSON order. A field has one spelling: the one the
+  // state block declares and the view reads.
   let out = inits(
     scalars(),
     "{ \"fresh\": { \"isOpen\": true, \"count\": 3, \"label\": \"Counter\" } }",

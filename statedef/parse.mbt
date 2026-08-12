@@ -1,20 +1,11 @@
 // The state language's parser. Implements `parse_state`.
 //
 // Three declaration forms — `state`, `struct`, `enum` — plus the three message
-// buckets, and that is the whole grammar. What it replaced had eight, and the
-// five that went were each a form for something the language already had a
-// place for:
-//
-//   interface   a nesting level saying what a `<template id>` already says
-//   enum        a payload-free sum, which is a sum
-//   flags       an enum plus a container
-//   type X = Y  an alias that resolves through and contributes no type
-//   resource    an empty declaration to make a name resolvable
-//   func        behaviour, in a block whose header says it holds none
+// buckets, and that is the whole grammar.
 //
 // Two passes, because a field may name a type declared below it: collect every
 // declaration, then resolve every type against the collection. That is the
-// same shape the WIT parser had and the reason is unchanged.
+// same shape any forward-referencing declaration language needs.
 
 ///|
 /// The parser's cursor.
@@ -231,8 +222,7 @@ fn parse_decls(p : P) -> Array[RawDecl] raise DefError {
           ("", word_span)
         }
       // A bucket is named the way a `state` is: bare for the file's single
-      // component, named when there are several. Under WIT the `interface`
-      // owned it; with that level gone, the bucket has to say whose it is.
+      // component, named when there are several.
       RBucket(_) =>
         if p.peek() is TIdent(_) {
           p.ident("the component whose messages these are")
@@ -401,8 +391,7 @@ pub fn parse_state(
   }
   // Everything that is not a `state` belongs to every component in the file.
   // One block, one set of shared types — which is what an author writing two
-  // components over one `Label` expects, and what the old per-interface
-  // scoping made impossible.
+  // components over one `Label` expects.
   let decls : Map[String, RawDecl] = Map([])
   for d in raw {
     match d.kind {
@@ -452,10 +441,10 @@ fn build(
   for _name, decl in env.decls {
     types.push(user_ty_of(decl, comp, env))
   }
-  types.sort_by((a, b) => str_cmp(a.wit_name, b.wit_name))
+  types.sort_by((a, b) => str_cmp(a.source_name, b.source_name))
   check_acyclic(types, fields, d.name_span)
   {
-    wit_name: d.name,
+    source_name: d.name,
     component: comp,
     fields,
     receive: bucket("receive"),
@@ -474,14 +463,12 @@ fn fields_of(
   env : Env,
 ) -> Array[FieldDef] raise DefError {
   let names = raw.map(f => f.name)
-  // The binding is the only mapped spelling left. A field is written the way
-  // a view reads it, so `name` and the source spelling are one string — where
-  // WIT gave a field three names for one idea.
+  // The binding is the only mapped spelling. A field is written the way a
+  // view reads it, so its source, runtime, and JSON name are one string.
   let bound = mapped(names, "field", binding_name, span_of(raw))
   let out : Array[FieldDef] = []
   for i, f in raw {
     out.push({
-      wit_name: f.name,
       name: f.name,
       binding: bound[i].1,
       ty: resolve(f.ty, env),
@@ -516,7 +503,7 @@ fn msgs_of(raw : Array[RawCase], env : Env) -> Array[MsgDef] raise DefError {
       payload.push(resolve(t, env))
     }
     out.push({
-      wit_name: c.name,
+      source_name: c.name,
       name: runtime[i].1,
       variant: variants[i].1,
       payload,
@@ -556,7 +543,7 @@ fn user_ty_of(d : RawDecl, comp : String, env : Env) -> UserTy raise DefError {
       }
     }
   }
-  { wit_name: d.name, name, kind, doc: d.doc }
+  { source_name: d.name, name, kind, doc: d.doc }
 }
 
 // ---------------------------------------------------------------------------
@@ -565,8 +552,8 @@ fn user_ty_of(d : RawDecl, comp : String, env : Env) -> UserTy raise DefError {
 ///|
 /// The builtin type names, which are reserved.
 ///
-/// Reserved for the reason the markers were: a user type called `Any` would
-/// silently change what every `Any` in the file means.
+/// Reserved because a user type called `Any` would silently change what every
+/// `Any` in the file means.
 fn is_builtin_ty(name : String) -> Bool {
   name
   is ("Bool"
@@ -782,7 +769,7 @@ fn check_acyclic(
 ) -> Unit raise DefError {
   let by_name : Map[String, Array[StateTy]] = Map([])
   for t in types {
-    by_name[t.wit_name] = match t.kind {
+    by_name[t.source_name] = match t.kind {
       URecord(fs) => fs.map(f => f.ty)
       // Every payload counts, not just the first case: a schema whose validity
       // turned on declaration order would be a trap.

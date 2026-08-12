@@ -53,7 +53,9 @@ pub(all) enum CorpusInput {
   Case33
   Case34
   Case35
+  Case36
   Case37
+  Case39
   Case4
   Case5
   Case6
@@ -82,9 +84,9 @@ pub(all) enum CorpusMsg {
   Case15
   Case16
   Case17
-  Case27
+  Case29
   Case3
-  Case37(Double)
+  Case39(Double)
   Case7
   Case9
   Unknown(String, Array[@core.Value])

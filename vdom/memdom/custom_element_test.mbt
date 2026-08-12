@@ -106,7 +106,7 @@ test "a structured value does not skip never_assign" {
     let (container, opts) = ce_container()
     let payload : Json = ["javascript:alert(1)"]
     let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
-      (name, @vdom.AttrValue::Data(payload)),
+      (name, Data(payload)),
     ])
     let tree = @vdom.h("A", attrs~)
     let _ = @vdom.render(tree, container, opts)

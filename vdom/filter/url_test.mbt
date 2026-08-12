@@ -211,7 +211,7 @@ test "reports are bounded" {
 test "a URL attribute is recognized whatever its case" {
   for name in ["href", "HREF", "Href", "hReF"] {
     let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
-      (name, @vdom.AttrValue::Str("javascript:alert(1)")),
+      (name, Str("javascript:alert(1)")),
     ])
     let (tree, reports) = filtered(el("A", attrs))
     guard tree is Node(e) else { fail("expected an element") }
@@ -240,7 +240,7 @@ test "a structured value bound to a URL attribute is dropped" {
   let payload : Json = ["javascript:alert(1)"]
   for name in ["href", "src", "action", "formaction", "srcset", "ping"] {
     let attrs : Map[String, @vdom.AttrValue] = Map::from_array([
-      (name, @vdom.AttrValue::Data(payload)),
+      (name, Data(payload)),
     ])
     let (tree, reports) = filtered(el("A", attrs))
     guard tree is Node(e) else { fail("expected an element") }

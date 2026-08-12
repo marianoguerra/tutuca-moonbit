@@ -16,9 +16,8 @@
 ///
 /// Character indices, not bytes — the same `Array[Char]` `viewfile` slices
 /// with, so a span from here and a span from the file agree for any input.
-/// This is what `DefError::locus` and `viewgen/split.mbt`'s whole-word scan
-/// existed to approximate: mizchi/wit carried no positions, so a semantic
-/// failure could only name an identifier and hope.
+/// State and script diagnostics both use character ranges, so a caller can
+/// rebase either block onto the containing view file exactly.
 pub(all) struct Span {
   start : Int
   end_ : Int
@@ -26,10 +25,10 @@ pub(all) struct Span {
 
 ///|
 /// The empty span, for a failure with no position of its own.
-pub let no_span : Span = { start: 0, end_: 0 }
+let no_span : Span = { start: 0, end_: 0 }
 
 ///|
-pub(all) enum Tok {
+priv enum Tok {
   TIdent(String)
   TStr(String)
   TNum(Double)
@@ -49,13 +48,13 @@ pub(all) enum Tok {
   TQuestion
   TEquals
   TEof
-} derive(Eq, @debug.Debug)
+} derive(Eq)
 
 ///|
-pub(all) struct Token {
+priv struct Token {
   tok : Tok
   span : Span
-} derive(Eq, @debug.Debug)
+}
 
 ///|
 fn is_ident_start(c : Char) -> Bool {
@@ -79,7 +78,7 @@ fn is_digit(c : Char) -> Bool {
 /// field at the next name, so nothing here needs a statement separator. The
 /// trailing comma a field may carry is optional and ignored, which is why the
 /// language reads the same whether an author writes MoonBit's commas or not.
-pub fn tokenize(source : String) -> Array[Token] raise DefError {
+fn tokenize(source : String) -> Array[Token] raise DefError {
   let chars : Array[Char] = source.iter().collect()
   let out : Array[Token] = []
   let n = chars.length()
@@ -208,7 +207,7 @@ pub fn tokenize(source : String) -> Array[Token] raise DefError {
 
 ///|
 /// How a token reads in a message.
-pub fn Tok::describe(self : Tok) -> String {
+fn Tok::describe(self : Tok) -> String {
   match self {
     TIdent(n) => "`\{n}`"
     TStr(_) => "a string"

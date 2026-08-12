@@ -491,7 +491,7 @@ priv struct LinksState {
 
 ///|
 impl @component.Fields for LinksState with fn encode(s) {
-  { "links": List(s.links.map(fn(x) { @tutuca.Value::Str(x) })) }
+  { "links": List(s.links.map(fn(x) { Str(x) })) }
 }
 
 ///|

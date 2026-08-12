@@ -126,7 +126,7 @@ fn emit_user_types(
           continue // a transparent alias: it named a marker, nothing more
         }
         out.write_string("///|\n")
-        emit_doc(ty.doc, "The `\{ty.wit_name}` record.", out)
+        emit_doc(ty.doc, "The `\{ty.source_name}` record.", out)
         out.write_string("pub(all) struct \{ty.name} {\n")
         for f in fields {
           out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
@@ -135,7 +135,7 @@ fn emit_user_types(
       }
       UEnum(cases) => {
         out.write_string("///|\n")
-        emit_doc(ty.doc, "The `\{ty.wit_name}` enum.", out)
+        emit_doc(ty.doc, "The `\{ty.source_name}` enum.", out)
         out.write_string("pub(all) enum \{ty.name} {\n")
         for c in cases {
           out.write_string("  \{c.1}\n")
@@ -144,7 +144,7 @@ fn emit_user_types(
       }
       UVariant(cases) => {
         out.write_string("///|\n")
-        emit_doc(ty.doc, "The `\{ty.wit_name}` variant.", out)
+        emit_doc(ty.doc, "The `\{ty.source_name}` variant.", out)
         out.write_string("pub(all) enum \{ty.name} {\n")
         for c in cases {
           if c.payload.is_empty() {

@@ -759,9 +759,7 @@ pub(all) enum BarChartLoopWith {
 pub fn BarChartLoopWith::name(Self) -> String
 
 pub(all) enum BarChartMsg {
-  AddBar
   Randomize
-  RemoveBar
   Unknown(String, Array[@core.Value])
 }
 pub fn BarChartMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -819,8 +817,6 @@ pub fn CounterInput::name(Self) -> String
 pub fn CounterInput::parse(String) -> Self?
 
 pub(all) enum CounterMsg {
-  Dec
-  Inc
   Unknown(String, Array[@core.Value])
 }
 pub fn CounterMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1511,8 +1507,6 @@ pub(all) enum PaginationMethod {
 pub fn PaginationMethod::name(Self) -> String
 
 pub(all) enum PaginationMsg {
-  Next
-  Prev
   Unknown(String, Array[@core.Value])
 }
 pub fn PaginationMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1617,7 +1611,6 @@ pub fn PushViewMethod::name(Self) -> String
 pub(all) enum PushViewMsg {
   ResetQuery
   SetQuery(String)
-  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn PushViewMsg::from_dispatch(@component.Dispatch) -> Self?
@@ -1698,10 +1691,17 @@ pub(all) enum RequestExampleMsg {
   LoadAnotherWay
   ResetQuery
   SetQuery(String)
-  ToggleView
   Unknown(String, Array[@core.Value])
 }
 pub fn RequestExampleMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RequestExampleReceive {
+  Init
+  Unknown(String, Array[@core.Value])
+}
+pub fn RequestExampleReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn RequestExampleReceive::send(Self, &@core.Ctx) -> Unit
+pub fn RequestExampleReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RequestExampleState {
   items : Array[@core.Value]
@@ -1749,6 +1749,14 @@ pub(all) enum RootMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn RootMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum RootReceive {
+  Init
+  Unknown(String, Array[@core.Value])
+}
+pub fn RootReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn RootReceive::send(Self, &@core.Ctx) -> Unit
+pub fn RootReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct RootState {
   allEntries : Array[@core.Value]
@@ -1831,6 +1839,14 @@ pub(all) enum SendReceiveMsg {
   Unknown(String, Array[@core.Value])
 }
 pub fn SendReceiveMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum SendReceiveReceive {
+  ClearDraft
+  Unknown(String, Array[@core.Value])
+}
+pub fn SendReceiveReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn SendReceiveReceive::send(Self, &@core.Ctx) -> Unit
+pub fn SendReceiveReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct SendReceiveState {
   draft : String
@@ -1933,7 +1949,6 @@ pub(all) enum ShowHideMethod {
 pub fn ShowHideMethod::name(Self) -> String
 
 pub(all) enum ShowHideMsg {
-  IncCount
   ToggleIsOpen
   Unknown(String, Array[@core.Value])
 }
@@ -1953,6 +1968,15 @@ pub fn SongState::zero() -> Self
 pub(all) struct StaticViewComponentState {
 } derive(Default)
 pub fn StaticViewComponentState::zero() -> Self
+
+pub(all) enum StatusReceive {
+  Flash(String)
+  Clear
+  Unknown(String, Array[@core.Value])
+}
+pub fn StatusReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn StatusReceive::send(Self, &@core.Ctx) -> Unit
+pub fn StatusReceive::to_dispatch(Self) -> (String, Array[@core.Value])
 
 pub(all) struct StatusState {
   message : String
@@ -2063,7 +2087,6 @@ pub(all) enum TrafficLightMethod {
 pub fn TrafficLightMethod::name(Self) -> String
 
 pub(all) enum TrafficLightMsg {
-  NextLight
   Unknown(String, Array[@core.Value])
 }
 pub fn TrafficLightMsg::from_dispatch(@component.Dispatch) -> Self?

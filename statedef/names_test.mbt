@@ -5,11 +5,8 @@
 // through the emitters, because the emitters would still pass if two of them
 // changed in compensating ways.
 //
-// The parser's own diagnostics are pinned here too, and what they assert is
-// the thing the rewrite bought: a SPAN. `DefError::locus` used to answer an
-// identifier and `viewgen/split.mbt` scanned the block for it as a whole word,
-// because mizchi/wit carried no positions — the right line, never the right
-// column.
+// The parser's diagnostics are pinned here too: they carry an exact span that
+// the view-file layer can rebase onto the source file.
 
 ///|
 /// The error a state block raises, or None when it parses.
@@ -40,9 +37,8 @@ test "the three name shapes, and where the keyword escape lands" {
   assert_eq(@statedef.upper_name("reset"), "Reset")
   assert_eq(@statedef.upper_name("high-ish"), "HighIsh")
 
-  // The keyword escape lands on the BINDING only. `type` and `enum` are
-  // perfectly good field names in an IDL, and renaming the runtime name would
-  // break both the view that reads it and the JSON that carries it.
+  // The keyword escape lands on the binding only. Renaming the runtime name
+  // would break both the view that reads it and the JSON that carries it.
   assert_eq(@statedef.binding_name("type"), "type_")
   assert_eq(@statedef.binding_name("init"), "init_")
   assert_eq(@statedef.binding_name("match"), "match_")
@@ -60,7 +56,7 @@ test "a keyword field keeps its runtime name and escapes only its binding" {
   // MoonBit keywords that are perfectly good field names — which is the whole
   // situation the escape exists for.
   let d = def_of("state { match: String, lazy: Int, guard: Bool }")
-  assert_eq(d.fields.map(f => f.wit_name), ["match", "lazy", "guard"])
+  assert_eq(d.fields.map(f => f.name), ["match", "lazy", "guard"])
   assert_eq(d.fields.map(f => f.name), ["match", "lazy", "guard"])
   assert_eq(d.fields.map(f => f.binding), ["match_", "lazy_", "guard_"])
 }
@@ -129,10 +125,6 @@ test "show_source round-trips the spelling the author wrote" {
 
 ///|
 test "a syntax error carries a span, not an identifier to go looking for" {
-  // The whole reason the parser is ours. mizchi/wit carried no positions, so
-  // `DefError::locus` answered an IDENTIFIER and `viewgen/split.mbt` scanned
-  // the block for it as a whole word to guess a line — the right line, never
-  // the right column.
   guard! def_err("state { count: }") is Some(e)
   assert_eq(e.message(), "state block: expected a type, found `}`")
   assert_eq(e.span(), { start: 15, end_: 16 })

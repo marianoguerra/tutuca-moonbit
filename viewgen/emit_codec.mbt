@@ -67,7 +67,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
       URecord(fields) => {
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` record as a `@tutuca.Value`.\n" +
+          "/// The `\{ty.source_name}` record as a `@tutuca.Value`.\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  Map({\n",
         )
@@ -79,7 +79,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string("  })\n}\n\n")
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` record back out. None on a shape mismatch.\n" +
+          "/// The `\{ty.source_name}` record back out. None on a shape mismatch.\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n" +
           "  guard v is Map(m) else { return None }\n",
         )
@@ -106,7 +106,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
       UEnum(cases) => {
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` enum as a `@tutuca.Value`: the case name.\n" +
+          "/// The `\{ty.source_name}` enum as a `@tutuca.Value`: the case name.\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
           "  match x {\n",
         )
@@ -116,7 +116,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string("  }\n}\n\n")
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` enum back out. None on an unknown case.\n" +
+          "/// The `\{ty.source_name}` enum back out. None on an unknown case.\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n" +
           "  guard v is Str(s) else { return None }\n" +
           "  match s {\n",
@@ -129,7 +129,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
       UVariant(cases) => {
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` variant as a `@tutuca.Value`: the bare case\n" +
+          "/// The `\{ty.source_name}` variant as a `@tutuca.Value`: the bare case\n" +
           "/// name when it carries nothing, else the name followed by its\n" +
           "/// payload.\n" +
           "fn \{base}_to_value(x : \{ty.name}) -> @tutuca.Value {\n" +
@@ -151,7 +151,7 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
         out.write_string("  }\n}\n\n")
         out.write_string(
           "///|\n" +
-          "/// The `\{ty.wit_name}` variant back out. None on an unknown case or\n" +
+          "/// The `\{ty.source_name}` variant back out. None on an unknown case or\n" +
           "/// a payload that does not match the declared shape.\n" +
           "fn \{base}_of_value(v : @tutuca.Value) -> \{ty.name}? {\n",
         )

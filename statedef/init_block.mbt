@@ -1,8 +1,7 @@
 // Named initial states, validated against the schema.
 //
-// WIT declares no default values, and a default is a value rather than a
-// type, so it must not be smuggled into the schema through a comment
-// convention. It gets a block of its own:
+// A default is a value rather than a type, so it must not be smuggled into the
+// schema through a comment convention. It gets a block of its own:
 //
 //   <script type="tutuca/init">
 //   { "fresh": {}, "with-history": { "count": 3, "history": [1, 2, 3] } }
@@ -88,7 +87,7 @@ pub fn parse_init(
     // In schema order, not JSON order, so the emitted record reads the same
     // way the struct does.
     for f in def.fields {
-      if fields.get(f.wit_name) is Some(v) {
+      if fields.get(f.name) is Some(v) {
         set.push((f.binding, literal(def, f, v, name)))
       } else if fields.get(f.name) is Some(v) {
         set.push((f.binding, literal(def, f, v, name)))
@@ -176,7 +175,7 @@ fn lit_of(
         Some({ name, kind: URecord(fs), .. }) => {
           let parts : Array[String] = []
           for sub in fs {
-            let jv = match o.get(sub.wit_name) {
+            let jv = match o.get(sub.name) {
               Some(x) => x
               None => o.get(sub.name).unwrap_or(Json::null())
             }
