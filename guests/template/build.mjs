@@ -15,7 +15,7 @@
 // wit-bindgen: only moon, wasm-tools, and node.
 //
 // Prereqs (version-coupled — do not mix):
-//   moon v0.10.x · wasm-tools 1.244.x · @bytecodealliance/jco 1.25.x
+//   moon v0.10.x · wasm-tools 1.244.x · @bytecodealliance/jco 1.26.x
 //
 // Install jco with `npm install` here. NOTE: the bare `jco` package on npm is a
 // dependency-confusion placeholder — the real one is `@bytecodealliance/jco`,

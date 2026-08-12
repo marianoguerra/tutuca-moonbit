@@ -62,6 +62,21 @@ if (existsSync(runtime)) {
   );
 }
 
+// The page links ./universal/ and ./dyncomp-storybook/, and neither is built by
+// `dist`: both need the component toolchain (wasm-tools + jco) that CI does not
+// have, so they are their own tasks. Say which task, rather than leaving a dead
+// link to be found by clicking it.
+for (const [dir, task] of [
+  ["universal", "universal"],
+  ["dyncomp-storybook", "dyncomp-storybook"],
+]) {
+  if (!existsSync(join(DIST, dir))) {
+    console.warn(
+      `  note: dist/${dir}/ is missing — the page links it; run the ${task} task to build it`,
+    );
+  }
+}
+
 const examples = readdirSync(join(SITE, "examples")).filter((f) => f.endsWith(".mbt"));
 const cards = readdirSync(join(SITE, "cards")).filter((f) => f.endsWith(".html"));
 console.log(

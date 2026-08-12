@@ -538,7 +538,7 @@ pub(open) trait ParseHandler {
 ///|
 impl ParseHandler with fn on_parse_issue(_self, issue, current_tag) {
   let tag = current_tag.unwrap_or("?")
-  println("tutuca parse issue in <\{tag}>: \{Repr(issue)}")
+  @tutuca.warn("tutuca parse issue in <\{tag}>: \{Repr(issue)}")
 }
 
 ///|

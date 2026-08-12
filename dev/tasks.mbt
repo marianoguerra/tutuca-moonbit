@@ -220,6 +220,14 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "check-guest-list",
+      about: "hold dev/tasks.mbt's guest list against guests/guests.mjs",
+      // `guests` runs this too, but it belongs in `ci` on its own: the guest
+      // build needs wasm-tools + jco and so can never be in CI, which is
+      // exactly how `table` stayed unbuilt. This check is plain node.
+      commands: [guest_list_check()],
+    },
+    {
       name: "check-guest-template",
       about: "scaffold a guest with the embedded template and compile it (the only coverage `tutuca new-guest` has)",
       commands: [
@@ -514,10 +522,10 @@ fn composites() -> Array[(String, String, Array[String])] {
     // runs against modules that provably match their sources.
     (
       "ci",
-      "gen-views drift + check + check-examples + check-skill + check-guest-template + test + build (build-smokes every backend & demo)",
+      "gen-views drift + check + check-examples + check-skill + check-guest-list + check-guest-template + test + build (build-smokes every backend & demo)",
       [
-        "gen-views", "check", "check-examples", "check-skill", "check-guest-template",
-        "test", "build",
+        "gen-views", "check", "check-examples", "check-skill", "check-guest-list",
+        "check-guest-template", "test", "build",
       ],
     ),
   ]
@@ -708,16 +716,34 @@ pub fn plan(name : String) -> Array[Step]? {
 /// The Rust one is separate: same WIT, but it builds through cargo rather than
 /// moon, so it keeps its own script.
 fn moonbit_guests() -> Array[String] {
-  ["counter", "todo", "todomvc", "calculator", "tictactoe", "bluesky", "slack"]
+  [
+    "counter", "table", "todo", "todomvc", "calculator", "tictactoe", "bluesky",
+    "slack",
+  ]
 }
 
 ///|
 const RUST_GUEST = "rust-tempconv"
 
 ///|
+/// Hold the list above against `guests/guests.mjs`, which owns the names
+/// `build-guest.mjs` accepts.
+///
+/// The two lists cannot become one: this package is I/O-free by design, so it
+/// cannot read the other. They can be made to disagree loudly instead. Pure
+/// node, so unlike the guest build itself it costs nothing and runs in `ci`.
+fn guest_list_check() -> Command {
+  {
+    label: "check · guest list matches guests/guests.mjs",
+    prog: "node",
+    args: ["scripts/check-guest-list.mjs", ..moonbit_guests()],
+  }
+}
+
+///|
 /// Build every guest bundle: wit-bindgen output → component → ESM.
 pub fn guest_build_steps() -> Array[Step] {
-  let out : Array[Step] = []
+  let out : Array[Step] = [Run(guest_list_check())]
   for name in moonbit_guests() {
     out.push(
       Run({

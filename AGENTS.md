@@ -173,11 +173,9 @@ about the user's code (`playground/vendor/README.md`).
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`
-repointed to sit beside the page), `dist/counter-wasm/` + `dist/universal/`
-(the **wasm-gc** demos — each a `.wasm`, a host page, and `app/wasm/loader.mjs`
-copied beside it as `app-loader.mjs`; `dist/universal/` additionally gets
-`dyncomp/host/wasm/loader.mjs` as `dyncomp-loader.mjs`, with its import of the
-first repointed, since it is the only page that loads bundles),
+repointed to sit beside the page), `dist/counter-wasm/`
+(the **wasm-gc** demo — a `.wasm`, a host page, and `app/wasm/loader.mjs`
+copied beside it as `app-loader.mjs`),
 `dist/storybook/` (the storybook
 gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
 `dist/playground/` + `dist/site/` + `dist/tutucard/` (the landing page embeds
@@ -185,7 +183,16 @@ BOTH kinds of live example: `<mb-playground>`, which compiles MoonBit in the
 browser against `dist/playground/`, and `<mb-card>`, which compiles nothing —
 `assemble-site.mjs` copies `dist/tutucard/tutucard.js` beside the page, which
 is why `dist` assembles the card runtime before the site), and
-`dist/cli/tutuca` (the native CLI binary). The wasm pages need a browser with
+`dist/cli/tutuca` (the native CLI binary).
+
+The landing page also links `./universal/` and `./dyncomp-storybook/`, and
+`dist` builds **neither**: both need the component toolchain (wasm-tools + jco)
+that the guest bundles require, which is why they are their own tasks. Run
+`universal` and `dyncomp-storybook` after `dist` to fill them in — the Pages
+workflow does exactly that, and `assemble-site.mjs` warns for each one missing
+rather than leaving a dead link to be found by clicking it.
+
+The wasm pages need a browser with
 the JS String Builtins proposal, e.g. Chrome. Serve dist with any static file
 server: `cd dist && python3 -m http.server` — or `dist/cli/tutuca storybook`
 serves `dist/storybook/` over HTTP (default port 4321). `dist/` is gitignored.
