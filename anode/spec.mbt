@@ -23,14 +23,14 @@ pub(all) enum Ns {
 ///|
 /// Where a value string failed to parse (JS onParseIssue "bad-value" roles).
 /// Anode/attr-level roles carry their slot; value-layer failures (macro vars,
-/// handler names, predicates) arrive via @tutuca.ParseCtx.issues and are
+/// handler names, predicates) arrive via @tscript.ParseCtx.issues and are
 /// wrapped as ValueIssue.
 pub(all) enum BadValueRole {
   XOp(op~ : String)
   Attr(name~ : String)
   Directive(name~ : String)
   IfDirective(name~ : String)
-  ValueIssue(@tutuca.IssueRole)
+  ValueIssue(@tscript.IssueRole)
 } derive(Debug, Eq)
 
 ///|
@@ -176,7 +176,7 @@ pub(all) struct NodeEvents {
 /// One `@on.<name>+mod+...` handler (JS NodeEvent, minus compiled modifiers).
 pub(all) struct NodeEvent {
   name : String
-  handler : @tutuca.HandlerParse
+  handler : @tscript.HandlerParse
   modifiers : Array[String]
 } derive(Debug)
 
@@ -577,7 +577,7 @@ pub struct ParseContext {
   frame : MacroFrame?
   /// Created lazily on the first value-parse call (keeps value-free parsing
   /// independent of the value layer's constructor).
-  mut val_ctx : @tutuca.ParseCtx?
+  mut val_ctx : @tscript.ParseCtx?
   mut current_tag : String?
   handler : &ParseHandler
 }

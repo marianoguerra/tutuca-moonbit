@@ -60,13 +60,13 @@ fn ParseContext::register_events(self : ParseContext) -> NodeEvents {
 ///|
 /// The value-layer parse context, created on first use with this frame's
 /// macro vars.
-fn ParseContext::value_ctx(self : ParseContext) -> @tutuca.ParseCtx {
+fn ParseContext::value_ctx(self : ParseContext) -> @tscript.ParseCtx {
   match self.val_ctx {
     Some(ctx) => ctx
     None => {
       let ctx = match self.frame {
-        Some(f) => @tutuca.ParseCtx::new(macro_vars=f.macro_vars)
-        None => @tutuca.ParseCtx::new()
+        Some(f) => @tscript.ParseCtx::new(macro_vars=f.macro_vars)
+        None => @tscript.ParseCtx::new()
       }
       self.val_ctx = Some(ctx)
       ctx
@@ -94,7 +94,7 @@ fn ParseContext::drain_value_issues(self : ParseContext) -> Unit {
 fn ParseContext::pval(
   self : ParseContext,
   s : String,
-  f : (String, @tutuca.ParseCtx) -> @tutuca.Val?,
+  f : (String, @tscript.ParseCtx) -> @tutuca.Val?,
 ) -> @tutuca.Val? {
   let r = f(s, self.value_ctx())
   self.drain_value_issues()

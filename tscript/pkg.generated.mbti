@@ -1,0 +1,80 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript"
+
+import {
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub let no_span : Span
+
+pub fn parse_alter_handler(String, ParseCtx) -> @core.Val?
+
+pub fn parse_bool(String, ParseCtx) -> @core.Val?
+
+pub fn parse_component(String, ParseCtx) -> @core.Val?
+
+pub fn parse_field(String, ParseCtx) -> @core.Val?
+
+pub fn parse_input_handler(String, ParseCtx) -> HandlerParse?
+
+pub fn parse_macro_attr(String, ParseCtx) -> @core.Val?
+
+pub fn parse_provide(String, ParseCtx) -> @core.Val?
+
+pub fn parse_sequence(String, ParseCtx) -> @core.Val?
+
+pub fn parse_text(String, ParseCtx) -> @core.Val?
+
+pub fn parse_token(String, ParseCtx) -> @core.Val?
+
+pub fn tokenize(String) -> Array[Token]
+
+// Errors
+
+// Types and methods
+pub(all) struct HandlerParse {
+  handler : @core.Val
+  args : Array[@core.Val]
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Issue {
+  kind : IssueKind
+  role : IssueRole
+  value : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+pub(all) enum IssueKind {
+  BadValue
+} derive(Eq, @debug.Debug)
+
+pub(all) enum IssueRole {
+  BadMacroVar
+  BadHandlerName
+  BadHandlerArg
+  UnknownPredicate
+  PredicateArity(name~ : String, want~ : Int)
+  BadPredicateArg
+} derive(Eq, @debug.Debug)
+
+pub struct ParseCtx {
+  macro_vars : Map[String, String]
+  issues : Array[Issue]
+}
+pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> Self
+
+pub(all) struct Span {
+  start : Int
+  end_ : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct Token {
+  text : String
+  span : Span
+} derive(Eq, @debug.Debug)
+
+// Type aliases
+
+// Traits

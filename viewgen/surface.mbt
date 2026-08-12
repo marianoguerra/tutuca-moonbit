@@ -56,7 +56,7 @@ impl @anode.MacroScope for FileMacros with fn lookup_macro(self, name) {
 }
 
 ///|
-fn value_issue_message(role : @tutuca.IssueRole) -> String {
+fn value_issue_message(role : @tscript.IssueRole) -> String {
   match role {
     BadMacroVar => "unknown macro variable"
     BadHandlerName => "not a valid handler name"

@@ -14,26 +14,6 @@ pub fn builtin_names() -> Array[String]
 
 pub fn mutator_name(String, String) -> String
 
-pub fn parse_alter_handler(String, ParseCtx) -> Val?
-
-pub fn parse_bool(String, ParseCtx) -> Val?
-
-pub fn parse_component(String, ParseCtx) -> Val?
-
-pub fn parse_field(String, ParseCtx) -> Val?
-
-pub fn parse_input_handler(String, ParseCtx) -> HandlerParse?
-
-pub fn parse_macro_attr(String, ParseCtx) -> Val?
-
-pub fn parse_provide(String, ParseCtx) -> Val?
-
-pub fn parse_sequence(String, ParseCtx) -> Val?
-
-pub fn parse_text(String, ParseCtx) -> Val?
-
-pub fn parse_token(String, ParseCtx) -> Val?
-
 pub fn size_of(Value) -> Int?
 
 pub fn step_get(Value, Step) -> Value?
@@ -41,8 +21,6 @@ pub fn step_get(Value, Step) -> Value?
 pub fn step_keys_label(Array[StepKey]) -> String
 
 pub fn step_with_key(Step, PathKey) -> Step
-
-pub fn tokenize_value(String) -> Array[String]
 
 pub fn warn(String) -> Unit
 
@@ -107,30 +85,6 @@ pub(all) enum HandlerNamespace {
   Alter
 } derive(Eq, @debug.Debug)
 
-pub(all) struct HandlerParse {
-  handler : Val
-  args : Array[Val]
-} derive(Eq, @debug.Debug)
-
-pub(all) struct Issue {
-  kind : IssueKind
-  role : IssueRole
-  value : String
-} derive(Eq, @debug.Debug)
-
-pub(all) enum IssueKind {
-  BadValue
-} derive(Eq, @debug.Debug)
-
-pub(all) enum IssueRole {
-  BadMacroVar
-  BadHandlerName
-  BadHandlerArg
-  UnknownPredicate
-  PredicateArity(name~ : String, want~ : Int)
-  BadPredicateArg
-} derive(Eq, @debug.Debug)
-
 pub(all) enum Lit {
   LNull
   LBool(Bool)
@@ -153,12 +107,6 @@ pub(all) struct ObjId {
 pub fn ObjId::next(Self) -> Self
 pub fn ObjId::of(String, Map[String, Value]) -> Self
 pub fn ObjId::to_hex(Self) -> String
-
-pub struct ParseCtx {
-  macro_vars : Map[String, String]
-  issues : Array[Issue]
-}
-pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> Self
 
 pub(all) struct Path {
   steps : Array[Step]

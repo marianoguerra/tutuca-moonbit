@@ -1,5 +1,12 @@
-// Value tokenizer (src/value.js VAL_TOKEN_RE / unescapeStr). Implements the
+// The tokenizer (src/value.js VAL_TOKEN_RE / unescapeStr). Implements the
 // declares in spec.mbt.
+//
+// Coarse on purpose. A `$'…'` template is one token however much it contains,
+// because the slot grammar is a name applied to whitespace-separated operands
+// and a finer split would have nothing to say about it. What is new here is
+// that every token carries the range it came from, which is what lets a
+// diagnostic point at the operand that was wrong instead of at the whole
+// attribute value.
 
 ///|
 fn is_val_space(c : Char) -> Bool {
@@ -28,9 +35,9 @@ fn scan_quoted(chars : Array[Char], open : Int) -> Int? {
 /// (escapes kept in the token), or a maximal non-whitespace run. Quoted
 /// alternatives win only at their start; an unterminated quote falls back to
 /// the plain run (mirrors the JS regex alternation).
-pub fn tokenize_value(s : String) -> Array[String] {
+pub fn tokenize(s : String) -> Array[Token] {
   let chars : Array[Char] = s.iter().collect()
-  let out : Array[String] = []
+  let out : Array[Token] = []
   let mut i = 0
   while i < chars.length() {
     if is_val_space(chars[i]) {
@@ -60,7 +67,7 @@ pub fn tokenize_value(s : String) -> Array[String] {
     for k in start..<end {
       buf.write_char(chars[k])
     }
-    out.push(buf.to_string())
+    out.push({ text: buf.to_string(), span: { start, end_: end } })
     i = end
   }
   out
@@ -69,6 +76,11 @@ pub fn tokenize_value(s : String) -> Array[String] {
 ///|
 /// Within a `'…'` literal only the delimiter and the escape char are
 /// escapable; every other backslash stays literal (JS unescapeStr).
+///
+/// The inverse, `escape_str_literal`, stays in `core` beside the only thing
+/// that needs it — `impl Show for Val`, which has to live where `Val` does.
+/// The two are not a pair anybody calls together, so neither follows the
+/// other across the boundary.
 fn unescape_str(s : String) -> String {
   let chars : Array[Char] = s.iter().collect()
   let buf = StringBuilder::new()
@@ -84,27 +96,5 @@ fn unescape_str(s : String) -> String {
       i = i + 1
     }
   }
-  buf.to_string()
-}
-
-///|
-/// Escape `'` and `\` into `buf` (shared by ConstVal quoting and StrTpl
-/// re-escaping in value_show).
-fn escape_str_into(buf : StringBuilder, s : String) -> Unit {
-  for c in s {
-    if c is ('\'' | '\\') {
-      buf.write_char('\\')
-    }
-    buf.write_char(c)
-  }
-}
-
-///|
-/// JS ConstVal.toString quoting: `'…'` with `'` and `\` escaped, one pass.
-fn escape_str_literal(s : String) -> String {
-  let buf = StringBuilder::new()
-  buf.write_char('\'')
-  escape_str_into(buf, s)
-  buf.write_char('\'')
   buf.to_string()
 }

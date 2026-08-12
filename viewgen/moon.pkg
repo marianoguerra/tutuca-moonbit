@@ -9,6 +9,7 @@ import {
   "marianoguerra/tutuca/core" @tutuca,
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",

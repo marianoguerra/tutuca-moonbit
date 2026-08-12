@@ -381,7 +381,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
     }
   }
   for pname, src in self.raw_provide {
-    match @tutuca.parse_provide(src, @tutuca.ParseCtx::new()) {
+    match @tscript.parse_provide(src, @tscript.ParseCtx::new()) {
       Some(val) =>
         self.provide[pname] = {
           name: pname,
@@ -395,7 +395,7 @@ pub fn Component::compile(self : Component) -> Unit raise {
     match split_source(spec.source) {
       Some((comp_name, provide_name)) => {
         let default_val : @tutuca.Val? = match spec.default {
-          Some(d) => @tutuca.parse_field(d, @tutuca.ParseCtx::new())
+          Some(d) => @tscript.parse_field(d, @tscript.ParseCtx::new())
           None => None
         }
         self.lookup[lname] = {

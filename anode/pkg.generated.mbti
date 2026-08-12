@@ -3,6 +3,7 @@ package "marianoguerra/tutuca/anode"
 
 import {
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/tscript",
   "moonbit-community/html/src",
   "moonbitlang/core/debug",
   "moonbitlang/core/set",
@@ -125,7 +126,7 @@ pub(all) enum BadValueRole {
   Attr(name~ : String)
   Directive(name~ : String)
   IfDirective(name~ : String)
-  ValueIssue(@core.IssueRole)
+  ValueIssue(@tscript.IssueRole)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum DeprecatedSyntax {
@@ -188,7 +189,7 @@ pub(all) struct MacroFrame {
 
 pub(all) struct NodeEvent {
   name : String
-  handler : @core.HandlerParse
+  handler : @tscript.HandlerParse
   modifiers : Array[String]
 } derive(@debug.Debug)
 
@@ -208,7 +209,7 @@ pub struct ParseContext {
   macro_nodes : Array[ANode]
   parent : ParseContext?
   frame : MacroFrame?
-  mut val_ctx : @core.ParseCtx?
+  mut val_ctx : @tscript.ParseCtx?
   mut current_tag : String?
   handler : &ParseHandler
 }

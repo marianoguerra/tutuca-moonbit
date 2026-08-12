@@ -122,9 +122,9 @@ fn AttrParser::parse_attr(
   parse_all? : Bool = false,
 ) -> Unit {
   let val = if parse_all {
-    self.px.pval(value, @tutuca.parse_macro_attr)
+    self.px.pval(value, @tscript.parse_macro_attr)
   } else {
-    self.px.pval(value, @tutuca.parse_text)
+    self.px.pval(value, @tscript.parse_text)
   }
   match val {
     Some(v) =>
@@ -159,7 +159,7 @@ fn AttrParser::directive_value(
   self : AttrParser,
   directive_name : String,
   s : String,
-  parser : (String, @tutuca.ParseCtx) -> @tutuca.Val?,
+  parser : (String, @tscript.ParseCtx) -> @tutuca.Val?,
 ) -> @tutuca.Val? {
   let val = self.px.pval(s, parser)
   if val is None {
@@ -176,40 +176,40 @@ fn AttrParser::parse_directive(
 ) -> Unit {
   match directive_name {
     "dangerouslysetinnerhtml" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_text)
+      let val = self.directive_value(directive_name, s, @tscript.parse_text)
       // Pushed even when the value failed to parse (JS keeps the attr with
       // the null-const sentinel).
       self.items.push(RawHtml(val~))
     }
     "setinnermd" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_text)
+      let val = self.directive_value(directive_name, s, @tscript.parse_text)
       // Same "push even on a failed parse" rule as the raw-HTML directive
       // above, so the two behave alike where they can.
       self.items.push(RawMarkdown(val~))
     }
     "push-view" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_text)
+      let val = self.directive_value(directive_name, s, @tscript.parse_text)
       self.push_wrapper(PushView, s, val) |> ignore
     }
     "text" =>
       self.text_child = self.directive_value(
-        directive_name, s, @tutuca.parse_text,
+        directive_name, s, @tscript.parse_text,
       )
     "show" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_bool)
+      let val = self.directive_value(directive_name, s, @tscript.parse_bool)
       self.push_wrapper(Show, s, val) |> ignore
     }
     "hide" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_bool)
+      let val = self.directive_value(directive_name, s, @tscript.parse_bool)
       self.push_wrapper(Hide, s, val) |> ignore
     }
     "each" => {
-      let val = self.directive_value(directive_name, s, @tutuca.parse_sequence)
+      let val = self.directive_value(directive_name, s, @tscript.parse_sequence)
       self.each_attr = Some(self.push_wrapper(Each, s, val))
     }
     "enrich-with" => {
       let val = self.directive_value(
-        directive_name, s, @tutuca.parse_alter_handler,
+        directive_name, s, @tscript.parse_alter_handler,
       )
       match self.each_attr {
         Some(ea) => ea.enrich_with_val = val
@@ -239,7 +239,7 @@ fn AttrParser::parse_directive(
 ///|
 fn AttrParser::parse_when(self : AttrParser, s : String) -> Unit {
   if self.each_attr is Some(ea) {
-    ea.when_val = self.directive_value("when", s, @tutuca.parse_alter_handler)
+    ea.when_val = self.directive_value("when", s, @tscript.parse_alter_handler)
   }
 }
 
@@ -247,7 +247,7 @@ fn AttrParser::parse_when(self : AttrParser, s : String) -> Unit {
 fn AttrParser::parse_loop_with(self : AttrParser, s : String) -> Unit {
   if self.each_attr is Some(ea) {
     ea.loop_with_val = self.directive_value(
-      "loop-with", s, @tutuca.parse_alter_handler,
+      "loop-with", s, @tscript.parse_alter_handler,
     )
   }
 }
@@ -259,7 +259,7 @@ fn AttrParser::parse_if(
   value : String,
 ) -> Unit {
   let name = directive_name[3:].to_owned()
-  match self.px.pval(value, @tutuca.parse_bool) {
+  match self.px.pval(value, @tscript.parse_bool) {
     Some(cond_val) => {
       let if_attr = IfAttr::{ name, cond_val, then_val: None, else_val: None }
       self.if_attr = Some(if_attr)
@@ -297,7 +297,7 @@ fn AttrParser::branch_val(
   branch : String,
   s : String,
 ) -> @tutuca.Val? {
-  match self.px.pval(s, @tutuca.parse_text) {
+  match self.px.pval(s, @tscript.parse_text) {
     Some(v) => Some(v)
     None => {
       self.px.issue(BadValue(role=Directive(name=branch), value=s))
@@ -319,7 +319,7 @@ fn AttrParser::parse_event(
     .collect()
   let event_name = parts[0]
   let modifiers = parts[1:].to_owned()
-  let handler = @tutuca.parse_input_handler(value, self.px.value_ctx())
+  let handler = @tscript.parse_input_handler(value, self.px.value_ctx())
   self.px.drain_value_issues()
   if handler is Some(h) {
     let events = match self.events {

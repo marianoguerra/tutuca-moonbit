@@ -1,6 +1,13 @@
-// Value parsing (src/value.js parse functions). Implements the declares in
+// Slot parsing (src/value.js parse functions). Implements the declares in
 // spec.mbt. The JS kind bitmasks become an enum plus per-group membership
 // matches; callers only see the named parse_* functions, as in JS.
+//
+// Every diagnostic now carries the span of the TOKEN it is about, which is
+// what lets `@show="empty? Foo"` point at `Foo` rather than at the attribute.
+// Spans are token-level and stop there: a failure inside a `$'…'` placeholder
+// reports the template token, because the interior is re-parsed from a
+// substring and threading a base offset through that would buy a column in
+// the one place the language has no operands to distinguish.
 
 ///|
 pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> ParseCtx {
@@ -8,8 +15,13 @@ pub fn ParseCtx::new(macro_vars? : Map[String, String]) -> ParseCtx {
 }
 
 ///|
-fn ParseCtx::issue(self : ParseCtx, role : IssueRole, value : String) -> Unit {
-  self.issues.push({ kind: BadValue, role, value })
+fn ParseCtx::issue(
+  self : ParseCtx,
+  role : IssueRole,
+  value : String,
+  span : Span,
+) -> Unit {
+  self.issues.push({ kind: BadValue, role, value, span })
 }
 
 ///|
@@ -45,7 +57,7 @@ priv enum Group {
 }
 
 ///|
-fn kind_of(val : Val) -> Kind? {
+fn kind_of(val : @tutuca.Val) -> Kind? {
   match val {
     Const(..) => Some(KConst)
     // A placeholderless, non-macro template is a literal written the long
@@ -90,7 +102,7 @@ fn in_group(kind : Kind, group : Group) -> Bool {
 }
 
 ///|
-fn val_in_group(val : Val, group : Group) -> Bool {
+fn val_in_group(val : @tutuca.Val, group : Group) -> Bool {
   match kind_of(val) {
     Some(k) => in_group(k, group)
     None => false
@@ -140,12 +152,21 @@ fn is_float_literal(s : String) -> Bool {
 }
 
 ///|
-fn const_str(s : String) -> Val {
+fn const_str(s : String) -> @tutuca.Val {
   Const(lit=LStr(s), from_macro=false)
 }
 
 ///|
-pub fn parse_token(s : String, ctx : ParseCtx) -> Val? {
+/// The public entry: a bare string with no position of its own, so anything
+/// it reports spans the whole of it.
+pub fn parse_token(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+  parse_tok({ text: s, span: { start: 0, end_: s.to_array().length() } }, ctx)
+}
+
+///|
+/// One token into the richest @tutuca.Val it can be, reporting against its span.
+fn parse_tok(tok : Token, ctx : ParseCtx) -> @tutuca.Val? {
+  let s = tok.text
   guard s.get_char(0) is Some(c0) else { return None }
   // Quoted tokens first: their brackets/braces are literal content.
   if c0 == '\'' {
@@ -181,17 +202,20 @@ pub fn parse_token(s : String, ctx : ParseCtx) -> Val? {
       let name = s[1:].to_owned()
       match ctx.macro_vars.get(name) {
         Some(new_s) => {
-          let tokens = tokenize_value(new_s.trim().to_owned())
+          let tokens = tokenize(new_s)
           if tokens.length() != 1 {
             return None
           }
-          match parse_token(tokens[0], ctx) {
+          // The expansion is parsed against THIS token's span: its own
+          // offsets index the macro's source, which is a different file
+          // position than the one the reader is looking at.
+          match parse_tok({ text: tokens[0].text, span: tok.span }, ctx) {
             Some(Const(lit~, ..)) => Some(Const(lit~, from_macro=true))
             other => other
           }
         }
         None => {
-          ctx.issue(BadMacroVar, s)
+          ctx.issue(BadMacroVar, s, tok.span)
           None
         }
       }
@@ -235,7 +259,7 @@ pub fn parse_token(s : String, ctx : ParseCtx) -> Val? {
 }
 
 ///|
-fn mk_id(name : String, make : (String) -> Val) -> Val? {
+fn mk_id(name : String, make : (String) -> @tutuca.Val) -> @tutuca.Val? {
   if is_valid_val_id(name) {
     Some(make(name))
   } else {
@@ -258,7 +282,7 @@ fn find_char(s : String, c : Char) -> Int? {
 ///|
 /// `seq[key]`: exactly one `[`, a closing `]` as the last char, both sides
 /// plain fields. Anything else (nested/unbalanced brackets) is rejected.
-fn parse_seq_access(s : String, ctx : ParseCtx) -> Val? {
+fn parse_seq_access(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   let chars : Array[Char] = s.iter().collect()
   let mut open = -1
   let mut second_open = -1
@@ -294,10 +318,10 @@ fn parse_seq_access(s : String, ctx : ParseCtx) -> Val? {
 /// between becomes constants, brace interiors parse via parse_text), then
 /// trim empty constant bookends — keeping macro-var-bound empties, which are
 /// real placeholders the linter must see.
-fn parse_str_tpl(s : String, ctx : ParseCtx) -> Val {
+fn parse_str_tpl(s : String, ctx : ParseCtx) -> @tutuca.Val {
   let interior = unescape_str(s)
   let chars : Array[Char] = interior.iter().collect()
-  let vals : Array[Val?] = []
+  let vals : Array[@tutuca.Val?] = []
   let text = StringBuilder::new()
   fn flush_text() {
     vals.push(Some(const_str(text.to_string())))
@@ -328,7 +352,7 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> Val {
   }
   flush_text()
   // Trim empty Const bookends left by the split.
-  fn trimmable(v : Val?) -> Bool {
+  fn trimmable(v : @tutuca.Val?) -> Bool {
     v is Some(Const(lit=LStr(""), from_macro=false))
   }
 
@@ -351,61 +375,64 @@ fn parse_str_tpl(s : String, ctx : ParseCtx) -> Val {
 
 ///|
 /// Parse `s` as a single value and accept it only if its kind is in `group`.
-fn parse_single(s : String, ctx : ParseCtx, group : Group) -> Val? {
-  let tokens = tokenize_value(s.trim().to_owned())
+fn parse_single(s : String, ctx : ParseCtx, group : Group) -> @tutuca.Val? {
+  // Not `s.trim()` first: the tokenizer already skips whitespace, and
+  // trimming would shift every span off the string the caller handed in.
+  let tokens = tokenize(s)
   if tokens.length() != 1 {
     return None
   }
-  match parse_token(tokens[0], ctx) {
+  match parse_tok(tokens[0], ctx) {
     Some(val) => if val_in_group(val, group) { Some(val) } else { None }
     None => None
   }
 }
 
 ///|
-pub fn parse_bool(s : String, ctx : ParseCtx) -> Val? {
-  let t = s.trim().to_owned()
-  let tokens = tokenize_value(t)
+pub fn parse_bool(s : String, ctx : ParseCtx) -> @tutuca.Val? {
+  let tokens = tokenize(s)
   if tokens.length() != 1 {
     return if tokens.length() == 0 {
       None
     } else {
-      parse_application(t, tokens, ctx)
+      // The trimmed source is what an arity message QUOTES; the spans it
+      // reports with come from the tokens, which index `s` itself.
+      parse_application(s.trim().to_owned(), tokens, ctx)
     }
   }
-  match parse_token(tokens[0], ctx) {
+  match parse_tok(tokens[0], ctx) {
     Some(val) => if val_in_group(val, GBool) { Some(val) } else { None }
     None => None
   }
 }
 
 ///|
-pub fn parse_text(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_text(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GText)
 }
 
 ///|
-pub fn parse_component(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_component(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GComponent)
 }
 
 ///|
-pub fn parse_sequence(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_sequence(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GSequence)
 }
 
 ///|
-pub fn parse_field(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_field(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GField)
 }
 
 ///|
-pub fn parse_provide(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_provide(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GProvide)
 }
 
 ///|
-pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_macro_attr(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   parse_single(s, ctx, GAll)
 }
 
@@ -415,7 +442,7 @@ pub fn parse_input_handler(s : String, ctx : ParseCtx) -> HandlerParse? {
 }
 
 ///|
-pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> Val? {
+pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> @tutuca.Val? {
   match parse_handler(s, ctx, Alter, allow_args=false, report=false) {
     Some(h) => Some(h.handler)
     None => None
@@ -428,23 +455,25 @@ pub fn parse_alter_handler(s : String, ctx : ParseCtx) -> Val? {
 fn parse_handler(
   s : String,
   ctx : ParseCtx,
-  ns : HandlerNamespace,
+  ns : @tutuca.HandlerNamespace,
   allow_args~ : Bool,
   report~ : Bool,
 ) -> HandlerParse? {
-  let tokens = tokenize_value(s.trim().to_owned())
-  let head_tok = tokens.get(0).unwrap_or("")
-  let head : Val? = if head_tok == "" {
+  let tokens = tokenize(s)
+  let head_tok : Token = tokens
+    .get(0)
+    .unwrap_or({ text: "", span: { start: 0, end_: 0 } })
+  let head : @tutuca.Val? = if head_tok.text == "" {
     None
   } else {
-    parse_token(head_tok, ctx)
+    parse_tok(head_tok, ctx)
   }
-  let handler : Val = match head {
+  let handler : @tutuca.Val = match head {
     Some(Method(_) as m) => m
     Some(Name(name)) => HandlerName(name~, ns~)
     _ => {
       if report {
-        ctx.issue(BadHandlerName, head_tok)
+        ctx.issue(BadHandlerName, head_tok.text, head_tok.span)
       }
       return None
     }
@@ -452,14 +481,14 @@ fn parse_handler(
   if !allow_args {
     return if tokens.length() == 1 { Some({ handler, args: [] }) } else { None }
   }
-  let args : Array[Val] = []
+  let args : Array[@tutuca.Val] = []
   for i in 1..<tokens.length() {
     let tok = tokens[i]
-    match parse_token(tok, ctx) {
+    match parse_tok(tok, ctx) {
       Some(val) if val_in_group(val, GValue) => args.push(val)
       _ => {
         if report {
-          ctx.issue(BadHandlerArg, tok)
+          ctx.issue(BadHandlerArg, tok.text, tok.span)
         }
         // The JS shared NULL_CONST_VAL sentinel.
         args.push(Const(lit=LNull, from_macro=false))
@@ -480,26 +509,33 @@ fn parse_handler(
 /// the expression language brings rather than arriving here by accident.
 fn parse_application(
   s : String,
-  tokens : Array[String],
+  tokens : Array[Token],
   ctx : ParseCtx,
-) -> Val? {
-  let name = tokens[0]
-  guard builtin(name) is Some(b) else {
-    ctx.issue(UnknownPredicate, name)
+) -> @tutuca.Val? {
+  let head = tokens[0]
+  let name = head.text
+  guard @tutuca.builtin(name) is Some(b) else {
+    ctx.issue(UnknownPredicate, name, head.span)
     return None
   }
   let arity = tokens.length() - 1
   if arity != b.arity {
-    ctx.issue(PredicateArity(name~, want=b.arity), s)
+    // The whole application is what is wrong, so the span runs from the name
+    // to the last argument rather than picking one of them to blame.
+    let last = tokens[tokens.length() - 1]
+    ctx.issue(PredicateArity(name~, want=b.arity), s, {
+      start: head.span.start,
+      end_: last.span.end_,
+    })
     return None
   }
-  let args : Array[Val] = []
+  let args : Array[@tutuca.Val] = []
   for i in 1..<=arity {
     let tok = tokens[i]
-    match parse_token(tok, ctx) {
+    match parse_tok(tok, ctx) {
       Some(val) if val_in_group(val, GBool) => args.push(val)
       _ => {
-        ctx.issue(BadPredicateArg, tok)
+        ctx.issue(BadPredicateArg, tok.text, tok.span)
         return None
       }
     }

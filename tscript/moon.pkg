@@ -1,0 +1,26 @@
+// tutuca script: the language a view file is written in.
+//
+// One lexer and one parser serve both halves of it. The SLOT language — what
+// an attribute value holds — is the subset that is a single expression, and it
+// is what this package answers today. The BLOCK language, `<script
+// type="tutuca/script">`, adds declarations, statements and operators over the
+// same atoms; §2.4 of the design is the promise that it invents no new way to
+// NAME a value, which is why one parser can serve both and why an author who
+// can read a view can read a handler.
+//
+// It lives above `core` rather than inside it because `core` never parses
+// anything: the only production callers of the slot parser are `anode` (every
+// directive and `<x>` op) and `component` (`provide` / `lookup`). What `core`
+// cannot give up is the parsed form — `Step::ScopeBindStep` embeds a `Val` so
+// a rebuilt render stack can replay its bindings, and that cycle is why the
+// value and path layers share one package to begin with. So the AST stays in
+// `core` and everything that produces or reports on one lives here.
+//
+// Pure and target-agnostic like `statedef` and `viewgen`: text in, typed
+// values and diagnostics out, no filesystem. It ships to the browser twice
+// over — the playground's generator and the card runtime both carry it — so
+// it takes no dependency `core` does not already have.
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "moonbitlang/core/string",
+}

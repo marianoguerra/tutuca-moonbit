@@ -36,7 +36,8 @@ The layers, bottom to top:
 | Layer | Package | Key types |
 |---|---|---|
 | dynamic values | `core` | `Value`, `Obj` |
-| the value language | `core` | `Lit`, `Val`, `Stack`, `ParseCtx` |
+| the value AST | `core` | `Lit`, `Val`, `Stack` |
+| parsing it | `tscript` | `Token`, `Span`, `ParseCtx`, `Issue` |
 | paths & dispatch | `core` | `Step`, `Path`, `DispatchPath`, `Handler`, `Ctx`, `Obj` |
 | virtual DOM | `vdom` (+ `memdom`, `browser`, `wasm`) | `Vdom`, `AttrValue`, `DomNode` |
 | templates | `anode` | `ANode`, `Attrs`, `ParseContext`, `Macro` |
@@ -119,6 +120,12 @@ pub(all) enum Val {
 }
 ```
 
+Parsing lives one package up, in `tscript` — `core` never calls it, and the
+only production callers are `anode` (every directive) and `component`
+(`provide` / `lookup`). What `core` keeps is the parsed form, because
+`Step::ScopeBindStep` embeds a `Val` so a rebuilt render stack can replay its
+bindings.
+
 The parse functions (`parse_token`, `parse_text`, `parse_field`, …) differ
 only in which forms they allow per attribute role; a `ParseCtx` collects
 issues (the linter reads them later) instead of failing:
@@ -126,15 +133,15 @@ issues (the linter reads them later) instead of failing:
 ```mbt check
 ///|
 test "parsing: one sigil, one Val variant" {
-  let px = @tutuca.ParseCtx::new()
+  let px = @tscript.ParseCtx::new()
   debug_inspect(
-    @tutuca.parse_token(".count", px),
+    @tscript.parse_token(".count", px),
     content=(
       #|Some(Field("count"))
     ),
   )
   debug_inspect(
-    @tutuca.parse_token("@key", px),
+    @tscript.parse_token("@key", px),
     content=(
       #|Some(Bind("key"))
     ),
@@ -144,13 +151,13 @@ test "parsing: one sigil, one Val variant" {
   // the NAME: `builtin` resolves it, so the vocabulary is a table rather than
   // a case of this enum.
   debug_inspect(
-    @tutuca.parse_bool("truthy? .msg", px),
+    @tscript.parse_bool("truthy? .msg", px),
     content=(
       #|Some(App(name="truthy?", args=[Field("msg")]))
     ),
   )
   debug_inspect(
-    @tutuca.parse_text("$'hi {.name}!'", px),
+    @tscript.parse_text("$'hi {.name}!'", px),
     content=(
       #|Some(
       #|  StrTpl(
@@ -202,16 +209,16 @@ impl @tutuca.Stack for FieldMap with fn lookup_field_raw(self, name) {
 
 ///|
 test "eval: a Val reads state through the Stack trait" {
-  let px = @tutuca.ParseCtx::new()
+  let px = @tscript.ParseCtx::new()
   let stack = FieldMap::{ fields: { "count": Num(3), "name": Str("ada") } }
-  guard! @tutuca.parse_token(".count", px) is Some(count)
+  guard! @tscript.parse_token(".count", px) is Some(count)
   debug_inspect(
     count.eval(stack),
     content=(
       #|RNum(3)
     ),
   )
-  guard! @tutuca.parse_text("$'hi {.name}!'", px) is Some(tpl)
+  guard! @tscript.parse_text("$'hi {.name}!'", px) is Some(tpl)
   debug_inspect(
     tpl.eval(stack),
     content=(
@@ -219,7 +226,7 @@ test "eval: a Val reads state through the Stack trait" {
     ),
   )
   // a lookup the stack does not implement falls back to Null
-  guard! @tutuca.parse_token("@missing", px) is Some(bind)
+  guard! @tscript.parse_token("@missing", px) is Some(bind)
   debug_inspect(
     bind.eval(stack),
     content=(

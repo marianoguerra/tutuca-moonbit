@@ -299,14 +299,14 @@ test "seq-access resolves through a custom collection, not only List and Map" {
       "name": Str("k"),
     },
   }
-  guard! @core.parse_field(".rows[.idx]", @core.ParseCtx::new()) is Some(v)
+  let v : @core.Val = SeqAccess(seq="rows", key="idx")
   assert_eq(v.eval(stack), Str("one"))
   // ...and the two shapes that always worked still do
-  guard! @core.parse_field(".plainList[.idx]", @core.ParseCtx::new()) is Some(l)
+  let l : @core.Val = SeqAccess(seq="plainList", key="idx")
   assert_eq(l.eval(stack), Str("b"))
-  guard! @core.parse_field(".plainMap[.name]", @core.ParseCtx::new()) is Some(m)
+  let m : @core.Val = SeqAccess(seq="plainMap", key="name")
   assert_eq(m.eval(stack), Str("v"))
   // a key that is neither an index nor a name resolves to nothing
-  guard! @core.parse_field(".rows[.missing]", @core.ParseCtx::new()) is Some(x)
+  let x : @core.Val = SeqAccess(seq="rows", key="missing")
   assert_eq(x.eval(stack), Null)
 }

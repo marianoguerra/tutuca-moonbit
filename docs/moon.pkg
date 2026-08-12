@@ -17,6 +17,8 @@ import {
   "marianoguerra/tutuca/vdom",
   "marianoguerra/tutuca/vdom/memdom",
   "marianoguerra/tutuca/render",
+  // first_principles.mbt.md parses values; the parser lives above core now
+  "marianoguerra/tutuca/tscript",
   "marianoguerra/tutuca/transactor",
   "marianoguerra/tutuca/testing/harness",
   "moonbitlang/core/json",

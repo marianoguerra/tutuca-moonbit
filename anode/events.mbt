@@ -5,7 +5,7 @@
 fn NodeEvents::add(
   self : NodeEvents,
   name : String,
-  handler : @tutuca.HandlerParse,
+  handler : @tscript.HandlerParse,
   modifiers : Array[String],
 ) -> Unit {
   self.handlers.push({ name, handler, modifiers })

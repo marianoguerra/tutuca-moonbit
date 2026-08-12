@@ -38,60 +38,65 @@ impl @core.Stack for BindStack with fn lookup_bind(self, _name) {
 }
 
 ///|
-test "predicate eval applies the function" {
-  let ctx = @core.ParseCtx::new()
+test "an application resolves its name and applies the builtin" {
+  // Built rather than parsed: the parser lives one package UP now (core
+  // cannot import it), and what this is about is evaluation anyway.
   let stack : FieldStack = { fields: { "items": List([]), "name": Str("hi") } }
-  guard! @core.parse_bool("empty? .items", ctx) is Some(v1)
-  assert_true(v1.eval(stack) is Bool(true))
-  guard! @core.parse_bool("empty? .name", ctx) is Some(v2)
-  assert_true(v2.eval(stack) is Bool(false))
-  guard! @core.parse_bool("truthy? .name", ctx) is Some(v3)
-  assert_true(v3.eval(stack) is Bool(true))
-  guard! @core.parse_bool("falsy? .items", ctx) is Some(v4)
-  assert_true(v4.eval(stack) is Bool(true))
-  guard! @core.parse_bool("null? .items", ctx) is Some(v5)
-  assert_true(v5.eval(stack) is Bool(false))
+  fn app(name : String, field : String) -> @core.Val {
+    App(name~, args=[Field(field)])
+  }
+
+  assert_true(app("empty?", "items").eval(stack) is Bool(true))
+  assert_true(app("empty?", "name").eval(stack) is Bool(false))
+  assert_true(app("truthy?", "name").eval(stack) is Bool(true))
+  assert_true(app("falsy?", "items").eval(stack) is Bool(true))
+  assert_true(app("null?", "items").eval(stack) is Bool(false))
+  // A name nothing answers evaluates to Null rather than failing: the parser
+  // refuses one, so reaching here means an App built by hand or decoded from
+  // an IR module an older generator wrote.
+  assert_true(app("present?", "items").eval(stack) is Null)
 }
 
 ///|
 test "FieldVal.eval reads the raw field without invoking" {
-  let ctx = @core.ParseCtx::new()
   let stack : FieldStack = {
     fields: { "count": Num(7), "m": Fn(_args => Str("called")) },
   }
-  guard! @core.parse_text(".count", ctx) is Some(count)
+  let count : @core.Val = Field("count")
   assert_true(count.eval(stack) is Num(7))
   // the function comes back raw, not invoked
-  guard! @core.parse_text(".m", ctx) is Some(m)
+  let m : @core.Val = Field("m")
   guard! m.eval(stack) is Fn(f)
   assert_true(f([]) is Str("called"))
 }
 
 ///|
 test "MethodVal.eval invokes the method" {
-  let ctx = @core.ParseCtx::new()
   let stack : MethodStack = { methods: { "fullName": Str("Ada L") } }
-  guard! @core.parse_text("$fullName", ctx) is Some(v)
+  let v : @core.Val = Method("fullName")
   assert_true(v.eval(stack) is Str("Ada L"))
 }
 
 ///|
 test "MethodVal.eval_as_handler hands back the raw function" {
-  let ctx = @core.ParseCtx::new()
   let stack : FieldStack = { fields: { "inc": Fn(_args => Str("inc-marker")) } }
-  guard! @core.parse_text("$inc", ctx) is Some(v)
+  let v : @core.Val = Method("inc")
   guard! v.eval_as_handler(stack) is Fn(f)
   assert_true(f([]) is Str("inc-marker"))
 }
 
 ///|
 test "equals? eval compares the field value against the literal" {
-  let ctx = @core.ParseCtx::new()
   let stack : FieldStack = { fields: { "view": Str("detail") } }
-  guard! @core.parse_bool("equals? .view 'detail'", ctx) is Some(v1)
-  assert_true(v1.eval(stack) is Bool(true))
-  guard! @core.parse_bool("equals? .view 'list'", ctx) is Some(v2)
-  assert_true(v2.eval(stack) is Bool(false))
+  fn eq(lit : String) -> @core.Val {
+    App(name="equals?", args=[
+      Field("view"),
+      Const(lit=LStr(lit), from_macro=false),
+    ])
+  }
+
+  assert_true(eq("detail").eval(stack) is Bool(true))
+  assert_true(eq("list").eval(stack) is Bool(false))
 }
 
 ///|

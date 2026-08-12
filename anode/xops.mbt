@@ -76,7 +76,7 @@ fn parse_x_op_val(
   op_name : String,
   value : String,
   px : ParseContext,
-  parser : (String, @tutuca.ParseCtx) -> @tutuca.Val?,
+  parser : (String, @tscript.ParseCtx) -> @tutuca.Val?,
 ) -> @tutuca.Val? {
   let val = px.pval(value, parser)
   if val is None {
@@ -90,7 +90,9 @@ fn parse_x_op_val(
 /// identifier (which parses as a NameVal outside the text grammar and so
 /// yields None) falls back to a literal const view name for backward compat.
 fn parse_view_name(s : String, px : ParseContext) -> @tutuca.Val {
-  px.pval(s, @tutuca.parse_text).unwrap_or(Const(lit=LStr(s), from_macro=false))
+  px
+  .pval(s, @tscript.parse_text)
+  .unwrap_or(Const(lit=LStr(s), from_macro=false))
 }
 
 ///|
@@ -116,25 +118,25 @@ fn parse_x_op(
   let node : ANode? = match op {
     Some(OpSlot) => Some(Slot({ name: value, node: maybe_fragment(childs) }))
     Some(OpText) =>
-      px.add_node_if(parse_x_op_val(name, value, px, @tutuca.parse_text), (
+      px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_text), (
         id,
         val,
       ) => RenderText({ node_id: Some(id), val }))
     Some(OpRender) =>
-      px.add_node_if(parse_x_op_val(name, value, px, @tutuca.parse_component), (
-        id,
-        val,
-      ) => Render({ node_id: id, val, view_val: as_val }))
+      px.add_node_if(
+        parse_x_op_val(name, value, px, @tscript.parse_component),
+        (id, val) => Render({ node_id: id, val, view_val: as_val }),
+      )
     Some(OpRenderIt) =>
       Some(px.add_node(id => RenderIt({ node_id: id, view_val: as_val })))
     Some(OpRenderEach) => parse_render_each(px, value, as_val, attrs)
     Some(OpShow) =>
-      px.add_node_if(parse_x_op_val(name, value, px, @tutuca.parse_bool), (
+      px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_bool), (
         id,
         val,
       ) => Show({ node_id: Some(id), val, node: maybe_fragment(childs) }))
     Some(OpHide) =>
-      px.add_node_if(parse_x_op_val(name, value, px, @tutuca.parse_bool), (
+      px.add_node_if(parse_x_op_val(name, value, px, @tscript.parse_bool), (
         id,
         val,
       ) => Hide({ node_id: Some(id), val, node: maybe_fragment(childs) }))
@@ -185,7 +187,7 @@ fn process_x_extras(
         // matching the regular directive path (AttrParser::directive_value).
         // JS drops these silently (anode.js:274 parseBool doesn't report, the
         // TODO at anode.js:317 acknowledges it); the port surfaces it instead.
-        let wrapper_val = px.pval(a_value, @tutuca.parse_bool)
+        let wrapper_val = px.pval(a_value, @tscript.parse_bool)
         if wrapper_val is None {
           px.issue(BadValue(role=Directive(name=base_name), value=a_value))
         }
@@ -225,7 +227,9 @@ fn parse_render_each(
   as_val : @tutuca.Val?,
   attrs : Array[(String, String)],
 ) -> ANode? {
-  let seq_val = parse_x_op_val("render-each", value, px, @tutuca.parse_sequence)
+  let seq_val = parse_x_op_val(
+    "render-each", value, px, @tscript.parse_sequence,
+  )
   guard seq_val is Some(_) else { return None }
   let render_it = px.add_node(id => RenderIt({ node_id: id, view_val: as_val }))
   let attr_parser = AttrParser::new(px)
