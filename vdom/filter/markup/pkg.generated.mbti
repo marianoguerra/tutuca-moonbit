@@ -17,8 +17,7 @@ pub fn html_nodes(@sanitize.Sanitizer, String, String, (String, String, String, 
 // Types and methods
 pub struct MarkupFilter {
   sanitizer : @sanitize.Sanitizer
-  reports : Array[@filter.Dropped]
-  max_reports : Int
+  log : @filter.DropLog
 }
 pub fn MarkupFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
 pub impl @filter.VdomFilter for MarkupFilter

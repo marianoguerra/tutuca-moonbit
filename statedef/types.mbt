@@ -176,8 +176,21 @@ pub fn StateTy::show_source(self : StateTy) -> String {
 
 ///|
 /// The name in `names` closest to `name`, when one is close enough to be
-/// worth suggesting. Levenshtein within a third of the length: near enough
+/// worth suggesting. Distance within a third of the length: near enough
 /// to be a typo, far enough that unrelated names stay quiet.
+///
+/// The TWIN of `lint/closest_name.mbt`, and the two must answer the same way
+/// for the same pair — a suggestion that depends on whether the typo reached
+/// `gen-views` or the linter is a suggestion nobody can trust. They are two
+/// implementations rather than one because `statedef` imports nothing but the
+/// stdlib on purpose (see the note on `ty_info_source`), so there is no
+/// package both can reach without either inventing a leaf for twenty lines or
+/// giving this one a dependency it was built to avoid.
+///
+/// What legitimately differs is the THRESHOLD, because the domains do: `lint`
+/// suggests over command and flag names, a fixed handful where 2 edits is
+/// generous; this suggests over field names, which are as long as the author
+/// made them.
 pub fn nearest(name : String, names : Array[String]) -> String? {
   let limit = 1 + name.length() / 3
   let mut best : String? = None
@@ -197,13 +210,19 @@ pub fn nearest(name : String, names : Array[String]) -> String? {
 }
 
 ///|
+/// Damerau-Levenshtein: adjacent transposition counts as ONE edit, matching
+/// `lint`'s. Plain Levenshtein scores a swap as two, which is why `.lenght`
+/// used to fall outside the limit and suggest nothing — and a swap is the
+/// typo people actually make.
 fn edit_distance(a : String, b : String) -> Int {
   let (x, y) = (a.to_array(), b.to_array())
-  let mut prev = Array::makei(y.length() + 1, i => i)
+  let n = y.length()
+  let mut prev2 = Array::make(n + 1, 0)
+  let mut prev = Array::makei(n + 1, i => i)
   for i in 1..<=x.length() {
-    let cur = Array::make(y.length() + 1, 0)
+    let cur = Array::make(n + 1, 0)
     cur[0] = i
-    for j in 1..<=y.length() {
+    for j in 1..<=n {
       let sub = prev[j - 1] + (if x[i - 1] == y[j - 1] { 0 } else { 1 })
       let del = prev[j] + 1
       let ins = cur[j - 1] + 1
@@ -214,11 +233,18 @@ fn edit_distance(a : String, b : String) -> Int {
       if ins < m {
         m = ins
       }
+      if i > 1 && j > 1 && x[i - 1] == y[j - 2] && x[i - 2] == y[j - 1] {
+        let swap = prev2[j - 2] + 1
+        if swap < m {
+          m = swap
+        }
+      }
       cur[j] = m
     }
+    prev2 = prev
     prev = cur
   }
-  prev[y.length()]
+  prev[n]
 }
 
 ///|

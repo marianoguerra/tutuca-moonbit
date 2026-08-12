@@ -672,11 +672,7 @@ fn C::method_fits(
 
 ///|
 fn assign_word(op : @tscript.AssignOp) -> String {
-  match op {
-    ASet => "="
-    AAdd => "+="
-    ASub => "-="
-  }
+  op.word()
 }
 
 ///|

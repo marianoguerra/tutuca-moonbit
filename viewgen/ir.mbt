@@ -114,12 +114,7 @@ fn strip_data_vid(node : @anode.ANode) -> Unit {
 /// A Double that reads back as the same Double. `Double::to_string` prints
 /// whole numbers without a fraction, which MoonBit would then read as an Int.
 fn double_lit(d : Double) -> String {
-  let s = d.to_string()
-  if s.contains(".") || s.contains("e") || s.contains("E") || s.contains("N") {
-    s
-  } else {
-    s + ".0"
-  }
+  @statedef.double_lit(d)
 }
 
 ///|

@@ -12,22 +12,10 @@
 // enum: a file with no `$method` calls emits no Method type at all.
 
 ///|
-/// A double-quoted MoonBit string literal.
+/// A double-quoted MoonBit string literal. `@statedef.quote`, reached through
+/// it so the generators cannot drift.
 fn quote(s : String) -> String {
-  let sb = StringBuilder::new()
-  sb.write_char('"')
-  for c in s.to_array() {
-    match c {
-      '"' => sb.write_string("\\\"")
-      '\\' => sb.write_string("\\\\")
-      '\n' => sb.write_string("\\n")
-      '\t' => sb.write_string("\\t")
-      '\r' => sb.write_string("\\r")
-      _ => sb.write_char(c)
-    }
-  }
-  sb.write_char('"')
-  sb.to_string()
+  @statedef.quote(s)
 }
 
 ///|

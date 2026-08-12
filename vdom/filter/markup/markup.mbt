@@ -30,8 +30,7 @@
 /// construct safe rather than merely dangerous.
 pub struct MarkupFilter {
   sanitizer : @sanitize.Sanitizer
-  reports : Array[@filter.Dropped]
-  max_reports : Int
+  log : @filter.DropLog
 }
 
 ///|
@@ -44,15 +43,13 @@ pub fn MarkupFilter::new(
   sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
   max_reports? : Int = 64,
 ) -> MarkupFilter {
-  { sanitizer, reports: [], max_reports }
+  { sanitizer, log: @filter.DropLog::new(max_reports~) }
 }
 
 ///|
 /// Everything dropped since the last call, and clears the log.
 pub impl @filter.VdomFilter for MarkupFilter with fn take_reports(self) {
-  let out = self.reports.copy()
-  self.reports.clear()
-  out
+  self.log.take()
 }
 
 ///|
@@ -63,9 +60,7 @@ fn MarkupFilter::record(
   value : String,
   reason : String,
 ) -> Unit {
-  if self.reports.length() < self.max_reports {
-    self.reports.push({ tag, attr, value, reason })
-  }
+  self.log.record({ tag, attr, value, reason })
 }
 
 ///|

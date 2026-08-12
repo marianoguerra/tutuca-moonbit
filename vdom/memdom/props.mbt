@@ -20,20 +20,12 @@ fn is_reflected_prop(name : String) -> Bool {
   | "min"
   | "max"
   | "step"
-  | "hidden"
-  // NEVER_ASSIGN members that are still real IDL properties — the core
-  // routes them to set_attribute, but `has_property` should stay truthful.
-  | "width"
-  | "height"
-  | "href"
-  | "list"
-  | "form"
-  | "tabIndex"
-  | "download"
-  | "rowSpan"
-  | "colSpan"
-  | "role"
-  | "popover")
+  | "hidden") ||
+  // NEVER_ASSIGN members that are still real IDL properties — the core routes
+  // them to set_attribute, but `has_property` must stay truthful or a morph
+  // and a fresh render disagree. COMPOSED from the core's list rather than
+  // repeated: this used to be a hand-kept copy of it.
+  @vdom.never_assign(name)
 }
 
 ///|
@@ -137,10 +129,7 @@ fn select_set_value(sel : MemNode, value : @vdom.AttrValue) -> Unit {
 }
 
 ///|
+/// The core's mapping, reached through it so the two cannot drift.
 fn reflected_attr_name(name : String) -> String {
-  match name {
-    "className" => "class"
-    "htmlFor" => "for"
-    _ => name
-  }
+  @vdom.prop_attr_name(name)
 }

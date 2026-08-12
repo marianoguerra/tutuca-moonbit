@@ -163,28 +163,23 @@ fn url_candidates(attr : String, value : String) -> Array[String] {
 pub struct UrlFilter {
   /// What was removed this render, oldest first. Bounded, so a component
   /// rendering a bad URL in a loop cannot grow it without limit.
-  reports : Array[Dropped]
-  max_reports : Int
+  log : DropLog
 }
 
 ///|
 pub fn UrlFilter::new(max_reports? : Int = 64) -> UrlFilter {
-  { reports: [], max_reports }
+  { log: DropLog::new(max_reports~) }
 }
 
 ///|
 /// Everything dropped since the last call, and clears the log.
 pub impl VdomFilter for UrlFilter with fn take_reports(self) {
-  let out = self.reports.copy()
-  self.reports.clear()
-  out
+  self.log.take()
 }
 
 ///|
 fn UrlFilter::record(self : UrlFilter, d : Dropped) -> Unit {
-  if self.reports.length() < self.max_reports {
-    self.reports.push(d)
-  }
+  self.log.record(d)
 }
 
 ///|

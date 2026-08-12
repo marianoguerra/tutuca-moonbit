@@ -21,8 +21,7 @@ pub fn filter_for(@sanitize.Sanitizer) -> &@filter.VdomFilter
 // Types and methods
 pub struct MdFilter {
   sanitizer : @sanitize.Sanitizer
-  reports : Array[@filter.Dropped]
-  max_reports : Int
+  log : @filter.DropLog
 }
 pub fn MdFilter::new(sanitizer? : @sanitize.Sanitizer, max_reports? : Int) -> Self
 pub impl @filter.VdomFilter for MdFilter

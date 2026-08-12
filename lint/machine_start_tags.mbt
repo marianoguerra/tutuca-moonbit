@@ -242,10 +242,7 @@ fn Machine::start_in_body(
     | "section"
     | "summary"
     | "ul") {
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name is ("h1" | "h2" | "h3" | "h4" | "h5" | "h6") {
@@ -261,10 +258,7 @@ fn Machine::start_in_body(
     return
   }
   if name is ("pre" | "listing") {
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name == "form" {
@@ -279,10 +273,7 @@ fn Machine::start_in_body(
       )
       return
     }
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name == "li" {
@@ -301,10 +292,7 @@ fn Machine::start_in_body(
         break
       }
     }
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name is ("dd" | "dt") {
@@ -323,17 +311,11 @@ fn Machine::start_in_body(
         break
       }
     }
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name == "plaintext" {
-    if self.has_in_button_scope("p") {
-      self.implicitly_close("p")
-    }
-    self.push_el(raw, NsHtml)
+    self.close_p_and_push(raw)
     return
   }
   if name == "button" {

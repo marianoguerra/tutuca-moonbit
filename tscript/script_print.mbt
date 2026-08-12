@@ -20,12 +20,20 @@ fn op_word(op : UnOp) -> String {
 }
 
 ///|
-fn assign_word(op : AssignOp) -> String {
-  match op {
+/// How an assignment operator is written. `pub` so `tscript/check` can spell a
+/// finding the same way the printer spells the source, rather than keeping its
+/// own copy of the mapping.
+pub fn AssignOp::word(self : AssignOp) -> String {
+  match self {
     ASet => "="
     AAdd => "+="
     ASub => "-="
   }
+}
+
+///|
+fn assign_word(op : AssignOp) -> String {
+  op.word()
 }
 
 ///|

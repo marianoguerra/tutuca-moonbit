@@ -241,17 +241,10 @@ fn json_src(v : Json) -> String {
 }
 
 ///|
+/// These land in generated MoonBit source, so they are MoonBit string
+/// literals like every other — `quote` is the one that spells them. The copy
+/// that used to live here escaped `"`, `\` and `\n` only, so a default
+/// carrying a tab emitted a literal tab into the module.
 fn json_quote(s : String) -> String {
-  let sb = StringBuilder::new()
-  sb.write_char('"')
-  for c in s.to_array() {
-    match c {
-      '"' => sb.write_string("\\\"")
-      '\\' => sb.write_string("\\\\")
-      '\n' => sb.write_string("\\n")
-      _ => sb.write_char(c)
-    }
-  }
-  sb.write_char('"')
-  sb.to_string()
+  quote(s)
 }

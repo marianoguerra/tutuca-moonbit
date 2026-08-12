@@ -36,6 +36,14 @@ pub struct Chain {
 pub fn Chain::new(Array[&VdomFilter]) -> Self
 pub impl VdomFilter for Chain
 
+pub struct DropLog {
+  entries : Array[Dropped]
+  max : Int
+}
+pub fn DropLog::new(max_reports? : Int) -> Self
+pub fn DropLog::record(Self, Dropped) -> Unit
+pub fn DropLog::take(Self) -> Array[Dropped]
+
 pub(all) struct Dropped {
   tag : String
   attr : String
@@ -45,15 +53,13 @@ pub(all) struct Dropped {
 pub fn Dropped::to_string(Self) -> String
 
 pub struct HandlerFilter {
-  reports : Array[Dropped]
-  max_reports : Int
+  log : DropLog
 }
 pub fn HandlerFilter::new(max_reports? : Int) -> Self
 pub impl VdomFilter for HandlerFilter
 
 pub struct UrlFilter {
-  reports : Array[Dropped]
-  max_reports : Int
+  log : DropLog
 }
 pub fn UrlFilter::new(max_reports? : Int) -> Self
 pub impl VdomFilter for UrlFilter

@@ -64,6 +64,7 @@ pub(all) enum AssignOp {
   AAdd
   ASub
 } derive(Eq, @debug.Debug)
+pub fn AssignOp::word(Self) -> String
 
 pub(all) enum Body {
   Stmts(Array[Stmt])

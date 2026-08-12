@@ -281,20 +281,32 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn component_id(self) {
 }
 
 ///|
+/// A `$`-callable by name: a `compute` first, then a `generated` one.
+///
+/// Both `obj_field` and `obj_callable` end in exactly this lookup, and each
+/// used to spell it out — five lines building the same two `Fn` wrappers, with
+/// the same `drop_this` convention to get right twice.
+fn[S] TypedInstance::callable_of(
+  self : TypedInstance[S],
+  name : String,
+) -> @tutuca.Value? {
+  match self.spec.compute.get(name) {
+    Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
+    None =>
+      match self.spec.generated.get(name) {
+        Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
+        None => None
+      }
+  }
+}
+
+///|
 impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_field(self, name) {
   match self.fields.get(name) {
     Some(v) => Some(v)
     // $-callables surface as self-pre-bound Fns (JS prototype lookup);
     // callers use the Fn convention (element 0 = this), which we drop
-    None =>
-      match self.spec.compute.get(name) {
-        Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
-        None =>
-          match self.spec.generated.get(name) {
-            Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
-            None => None
-          }
-      }
+    None => self.callable_of(name)
   }
 }
 
@@ -372,14 +384,7 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_callable(self, name, ns) {
       None => ()
     }
   }
-  match self.spec.compute.get(name) {
-    Some(f) => Some(Fn(args => f(self.state, drop_this(args))))
-    None =>
-      match self.spec.generated.get(name) {
-        Some(g) => Some(Fn(args => g(self.field_box(), drop_this(args))))
-        None => None
-      }
-  }
+  self.callable_of(name)
 }
 
 ///|

@@ -10,6 +10,8 @@ pub fn binding_name(String) -> String
 
 pub fn camel_name(String) -> String
 
+pub fn double_lit(Double) -> String
+
 pub fn fingerprint(Array[StateDef]) -> String
 
 pub fn nearest(String, Array[String]) -> String?
@@ -17,6 +19,8 @@ pub fn nearest(String, Array[String]) -> String?
 pub fn parse_init(String, StateDef) -> Array[InitState] raise InitError
 
 pub fn parse_state(String, name? : String) -> Array[StateDef] raise DefError
+
+pub fn quote(String) -> String
 
 pub fn str_cmp(String, String) -> Int
 

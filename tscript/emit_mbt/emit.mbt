@@ -981,31 +981,12 @@ fn binding_of(name : String) -> String {
 }
 
 ///|
+/// Both reached through `@statedef` for the same reason `binding_of` is.
 fn quote(s : String) -> String {
-  let b = StringBuilder::new()
-  b.write_char('"')
-  for c in s {
-    match c {
-      '"' => b.write_string("\\\"")
-      '\\' => b.write_string("\\\\")
-      '\n' => b.write_string("\\n")
-      '\t' => b.write_string("\\t")
-      '\r' => b.write_string("\\r")
-      _ => b.write_char(c)
-    }
-  }
-  b.write_char('"')
-  b.to_string()
+  @statedef.quote(s)
 }
 
 ///|
-/// A Double that reads back as the same Double. `Double::to_string` prints a
-/// whole number with no fraction, which MoonBit would then read as an Int.
 fn double_lit(d : Double) -> String {
-  let s = d.to_string()
-  if s.contains(".") || s.contains("e") || s.contains("E") || s.contains("N") {
-    s
-  } else {
-    s + ".0"
-  }
+  @statedef.double_lit(d)
 }

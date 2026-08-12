@@ -16,7 +16,11 @@ pub fn h(String, attrs? : Map[String, AttrValue], childs? : Array[Vdom], key? : 
 
 pub let html_ns : String
 
+pub fn never_assign(String) -> Bool
+
 pub fn ns_from_dom_uri(String?) -> Ns?
+
+pub fn prop_attr_name(String) -> String
 
 pub fn[N : DomNode] render(Vdom, N, RenderOpts[N], prev? : RenderResult[N]) -> RenderResult[N]
 

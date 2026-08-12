@@ -154,15 +154,11 @@ pub fn binding_name(name : String) -> String {
 /// put `sel` before `item`. That is still deterministic — which is all the
 /// drift check needs — but a generated module reads as a list a person
 /// scans, and a list ordered by length reads as unordered.
+///
+/// Named rather than inlined at the call sites because the NAME is what
+/// carries that reasoning; `lexical_compare` alone looks like a style choice.
 pub fn str_cmp(a : String, b : String) -> Int {
-  let (x, y) = (a.to_array(), b.to_array())
-  let n = if x.length() < y.length() { x.length() } else { y.length() }
-  for i in 0..<n {
-    if x[i] != y[i] {
-      return if x[i] < y[i] { -1 } else { 1 }
-    }
-  }
-  x.length() - y.length()
+  a.lexical_compare(b)
 }
 
 ///|

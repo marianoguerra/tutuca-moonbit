@@ -34,8 +34,7 @@
 /// renderer would only have produced a string for us to re-parse.
 pub struct MdFilter {
   sanitizer : @sanitize.Sanitizer
-  reports : Array[@filter.Dropped]
-  max_reports : Int
+  log : @filter.DropLog
 }
 
 ///|
@@ -48,15 +47,13 @@ pub fn MdFilter::new(
   sanitizer? : @sanitize.Sanitizer = @sanitize.Sanitizer::default(),
   max_reports? : Int = 64,
 ) -> MdFilter {
-  { sanitizer, reports: [], max_reports }
+  { sanitizer, log: @filter.DropLog::new(max_reports~) }
 }
 
 ///|
 /// Everything dropped since the last call, and clears the log.
 pub impl @filter.VdomFilter for MdFilter with fn take_reports(self) {
-  let out = self.reports.copy()
-  self.reports.clear()
-  out
+  self.log.take()
 }
 
 ///|
@@ -67,9 +64,7 @@ fn MdFilter::record(
   value : String,
   reason : String,
 ) -> Unit {
-  if self.reports.length() < self.max_reports {
-    self.reports.push({ tag, attr, value, reason })
-  }
+  self.log.record({ tag, attr, value, reason })
 }
 
 ///|

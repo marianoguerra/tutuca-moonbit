@@ -2,7 +2,13 @@
 /// Property names that exist on DOM nodes but whose setters misbehave for our
 /// purposes (mirrors preact/src/diff/props.js setProperty). Forces
 /// set_attribute.
-fn never_assign(name : String) -> Bool {
+///
+/// `pub` so `vdom/memdom` can compose it rather than re-type it. The in-memory
+/// DOM has to agree with this list exactly — `has_property` staying truthful
+/// about these names is what makes a morph and a fresh render produce the same
+/// tree — and it used to hold its own copy, so a name added here and not there
+/// broke that invariant silently.
+pub fn never_assign(name : String) -> Bool {
   name
   is ("width"
   | "height"
@@ -20,8 +26,9 @@ fn never_assign(name : String) -> Bool {
 ///|
 /// IDL property names whose reflected attribute is named differently; needed
 /// when removal goes through the property path so the attribute is dropped
-/// too.
-fn prop_attr_name(name : String) -> String {
+/// too. `pub` for the same reason as `never_assign`: `vdom/memdom` needs the
+/// same mapping and had its own `reflected_attr_name` saying it again.
+pub fn prop_attr_name(name : String) -> String {
   match name {
     "className" => "class"
     "htmlFor" => "for"

@@ -91,6 +91,21 @@ test "nearest guesses within a length-scaled budget, and otherwise not at all" {
 }
 
 ///|
+/// The property that makes this the TWIN of `lint/closest_name.mbt` rather
+/// than merely similar to it: a swapped pair is ONE edit in both, where plain
+/// Levenshtein calls it two.
+///
+/// `hsitroy` is the case that actually separates them, and finding it took
+/// measuring rather than guessing: at this length-scaled budget a SINGLE
+/// transposition is inside the limit either way (`histroy` is 2 plain, and
+/// the limit for seven characters is 3), so a one-swap example pins nothing.
+/// Two swaps is 4 plain — outside — and 2 with transpositions.
+test "nearest counts a transposition as one edit, the way lint does" {
+  let fields = ["label", "count", "history"]
+  assert_eq(@statedef.nearest("hsitroy", fields), Some("history"))
+}
+
+///|
 test "show_source round-trips the spelling the author wrote" {
   let d = def_of(
     (

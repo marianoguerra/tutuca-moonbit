@@ -65,19 +65,8 @@ pub fn builtin_names() -> Array[String] {
   for name, _ in builtin_table {
     out.push(name)
   }
-  out.sort_by((a, b) => byte_cmp(a, b))
+  out.sort_by((a, b) => a.lexical_compare(b))
   out
 }
 
-///|
-/// Byte order over two strings: -1, 0 or 1.
-fn byte_cmp(a : String, b : String) -> Int {
-  let (x, y) = (a.to_array(), b.to_array())
-  let n = if x.length() < y.length() { x.length() } else { y.length() }
-  for i in 0..<n {
-    if x[i] != y[i] {
-      return if x[i] < y[i] { -1 } else { 1 }
-    }
-  }
-  x.length() - y.length()
-}
+

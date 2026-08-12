@@ -41,28 +41,23 @@ pub fn is_event_handler_attr(name : String) -> Bool {
 /// there is no legitimate reason for a view to do that.
 pub struct HandlerFilter {
   /// What was removed this render, oldest first. Bounded, like `UrlFilter`'s.
-  reports : Array[Dropped]
-  max_reports : Int
+  log : DropLog
 }
 
 ///|
 pub fn HandlerFilter::new(max_reports? : Int = 64) -> HandlerFilter {
-  { reports: [], max_reports }
+  { log: DropLog::new(max_reports~) }
 }
 
 ///|
 /// Everything dropped since the last call, and clears the log.
 pub impl VdomFilter for HandlerFilter with fn take_reports(self) {
-  let out = self.reports.copy()
-  self.reports.clear()
-  out
+  self.log.take()
 }
 
 ///|
 fn HandlerFilter::record(self : HandlerFilter, d : Dropped) -> Unit {
-  if self.reports.length() < self.max_reports {
-    self.reports.push(d)
-  }
+  self.log.record(d)
 }
 
 ///|

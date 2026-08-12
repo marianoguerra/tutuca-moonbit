@@ -100,6 +100,41 @@ pub fn Dropped::to_string(self : Dropped) -> String {
 }
 
 ///|
+/// What a filter dropped since the host last looked, bounded.
+///
+/// Every filter needs exactly this and each used to carry its own copy: the
+/// same two fields, the same `64`, the same two methods. Four copies of a
+/// bound is four places for it to become a different bound — and the cap is
+/// the part that matters, since a page rendering a hostile view drops on
+/// every element of every render and an unbounded log is the leak.
+pub struct DropLog {
+  entries : Array[Dropped]
+  max : Int
+}
+
+///|
+pub fn DropLog::new(max_reports? : Int = 64) -> DropLog {
+  { entries: [], max: max_reports }
+}
+
+///|
+/// Record a drop, up to the bound. Silently ignored past it: the log is for a
+/// host to show someone, and the first 64 say as much as the first 6400.
+pub fn DropLog::record(self : DropLog, d : Dropped) -> Unit {
+  if self.entries.length() < self.max {
+    self.entries.push(d)
+  }
+}
+
+///|
+/// Everything recorded since the last call, and clears the log.
+pub fn DropLog::take(self : DropLog) -> Array[Dropped] {
+  let out = self.entries.copy()
+  self.entries.clear()
+  out
+}
+
+///|
 /// Several filters as one, in order.
 ///
 /// `App` holds a single filter, deliberately — a list there would make the

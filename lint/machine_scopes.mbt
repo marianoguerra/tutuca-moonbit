@@ -197,6 +197,23 @@ fn Machine::implicitly_close(self : Machine, name : String) -> Unit {
   self.pop_until_name(name)
 }
 
+///|
+/// "If the stack of open elements has a `p` element in button scope, close it;
+/// then insert an HTML element for the token" — the trailer the spec repeats
+/// verbatim for a dozen block-level start tags (`div`, `ul`, `pre`, `form`,
+/// `li`, `dd`/`dt`, …).
+///
+/// Named because it was written out six times. The tags whose rule only mostly
+/// matches this — a heading closing an open heading first, a table setting the
+/// insertion mode after — keep their own spelling rather than taking a flag,
+/// so each still reads against its clause in the spec.
+fn Machine::close_p_and_push(self : Machine, raw : String) -> Unit {
+  if self.has_in_button_scope("p") {
+    self.implicitly_close("p")
+  }
+  self.push_el(raw, NsHtml)
+}
+
 // ─── inTemplate ─────────────────────────────────────────────────────────────
 
 ///|
