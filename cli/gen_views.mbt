@@ -30,7 +30,7 @@ pub(all) struct GenPlan {
 /// compile time, and what the types cannot express is not worth a second,
 /// weaker check.
 fn view_diagnostics(
-  file : @viewgen.ViewFile,
+  file : @viewfile.ViewFile,
   fallback : String,
 ) -> Array[String] {
   let out : Array[String] = []
@@ -340,7 +340,7 @@ pub fn gen_views_all(
   let diagnostics : Array[String] = []
   // Split everything BEFORE emitting anything: the component table has to be
   // complete or a cross-file reference reads as an absence.
-  let split : Array[(GenInput, @viewgen.ViewFile)] = []
+  let split : Array[(GenInput, @viewfile.ViewFile)] = []
   let index = @viewgen.ProgramIndex::new()
   for f in files {
     let views = @viewgen.split_file(f.source) catch {

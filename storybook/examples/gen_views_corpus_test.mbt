@@ -59,7 +59,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
   let failures : Array[String] = []
   for entry in corpus_views() {
     let (cname, vname, source) = entry
-    let set : @viewgen.ViewFile = {
+    let set : @viewfile.ViewFile = {
       components: [
         {
           name: "",
@@ -71,6 +71,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       macros: [],
       state: [],
       init: [],
+      script: None,
     }
     if !@viewgen.ir_supported(set) {
       // Two things opt a view out, and both are things `gen-views` would

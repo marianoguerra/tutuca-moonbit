@@ -45,7 +45,7 @@ pub fn ProgramIndex::new() -> ProgramIndex {
 /// picking a winner keeps the table total.
 pub fn ProgramIndex::add(
   self : ProgramIndex,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   fallback : String,
 ) -> Unit {
   for def in file.state {
@@ -59,7 +59,10 @@ pub fn ProgramIndex::add(
 ///|
 /// The index for one file on its own — what `emit_module` builds when the
 /// caller supplies none.
-pub fn ProgramIndex::of(file : ViewFile, fallback : String) -> ProgramIndex {
+pub fn ProgramIndex::of(
+  file : @viewfile.ViewFile,
+  fallback : String,
+) -> ProgramIndex {
   let idx = ProgramIndex::new()
   idx.add(file, fallback)
   idx

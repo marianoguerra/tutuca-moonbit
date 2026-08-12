@@ -210,7 +210,7 @@ fn emit_alter_bucket(
 fn emit_component(
   name : String,
   source_file : String,
-  views : ViewSet,
+  views : @viewfile.ViewSet,
   surface : Surface,
   state : @statedef.StateDef?,
   inits : Array[@statedef.InitState],
@@ -387,7 +387,7 @@ fn emit_component(
 pub fn emit_module(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   debug_derive? : Bool = true,
   hints? : Array[String] = [],
   program? : ProgramIndex,
@@ -407,7 +407,7 @@ pub fn emit_module(
 pub fn emit_modules(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   include_ir? : Bool = true,
   debug_derive? : Bool = true,
   hints? : Array[String] = [],
@@ -431,7 +431,7 @@ pub fn emit_modules(
 fn emit_module_compiled(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   compiled : CompiledFile,
   debug_derive : Bool,
   hints : Array[String],
@@ -498,7 +498,10 @@ fn emit_module_compiled(
 
 ///|
 /// The component names this file gives views to.
-pub fn declared_components(file : ViewFile, name : String) -> Array[String] {
+pub fn declared_components(
+  file : @viewfile.ViewFile,
+  name : String,
+) -> Array[String] {
   let out : Array[String] = []
   for comp in file.components {
     out.push(comp.component_name(name))
@@ -514,7 +517,7 @@ pub fn declared_components(file : ViewFile, name : String) -> Array[String] {
 /// checks them instead.
 fn emit_state_only(
   def : @statedef.StateDef,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   debug_derive : Bool,
   out : StringBuilder,
 ) -> Unit raise GenError {
@@ -541,7 +544,7 @@ fn emit_state_only(
     enrich_scopes: [],
     loop_withs: [],
   }
-  let no_views : ViewSet = {
+  let no_views : @viewfile.ViewSet = {
     name: def.component,
     views: [],
     common_style: "",
@@ -552,13 +555,27 @@ fn emit_state_only(
 
 ///|
 /// The schema entry for a component, or None when the file declares none.
-fn state_for(file : ViewFile, comp : String) -> @statedef.StateDef? {
+fn state_for(file : @viewfile.ViewFile, comp : String) -> @statedef.StateDef? {
   for def in file.state {
     if def.component == comp {
       return Some(def)
     }
   }
   None
+}
+
+///|
+/// `@viewfile.split_file` in the generator's error vocabulary.
+///
+/// The splitter is a package down and raises its own `FileError`, which is
+/// right for a card runtime that never generates anything. A caller who is
+/// about to call `emit_module` wants one error type for the whole pipeline,
+/// and `File` is only constructible here — so the conversion lives here,
+/// once, instead of at every call site.
+pub fn split_file(source : String) -> @viewfile.ViewFile raise GenError {
+  @viewfile.split_file(source) catch {
+    e => raise File(e)
+  }
 }
 
 ///|

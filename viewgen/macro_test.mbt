@@ -68,3 +68,10 @@ test "the compiled macro view renders" {
   // the renderer can still resolve them by data-eid.
   assert_eq(v.name, "main")
 }
+
+///|
+/// The single component a one-component file declares. A local copy: the
+/// original lived beside the splitter, which is one package down now.
+fn only(f : @viewfile.ViewFile) -> @viewfile.ViewSet {
+  f.components[0]
+}

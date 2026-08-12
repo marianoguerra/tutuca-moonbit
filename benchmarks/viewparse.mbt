@@ -78,7 +78,7 @@ const WORKLOAD_NAME = "Bench"
 const WORKLOAD_FILE = "corpus.html"
 
 ///|
-fn split_corpus(source : String) -> @viewgen.ViewFile {
+fn split_corpus(source : String) -> @viewfile.ViewFile {
   @viewgen.split_file(source) catch {
     e => fail_stage("split", e)
   }

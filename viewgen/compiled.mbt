@@ -4,14 +4,14 @@
 
 ///|
 priv struct CompiledView {
-  raw : RawView
+  raw : @viewfile.RawView
   root : @anode.ANode
   events : Array[@anode.NodeEvents]
 }
 
 ///|
 priv struct CompiledComponent {
-  raw : ViewSet
+  raw : @viewfile.ViewSet
   views : Array[CompiledView]
   surface : Surface
 }
@@ -23,7 +23,7 @@ priv struct CompiledFile {
 
 ///|
 fn compile_view(
-  view : RawView,
+  view : @viewfile.RawView,
   scope : FileMacros,
 ) -> CompiledView raise GenError {
   let collector = IssueCollector::{ issues: [] }
@@ -45,7 +45,7 @@ fn compile_view(
 
 ///|
 fn compile_views(
-  views : Array[RawView],
+  views : Array[@viewfile.RawView],
   scope : FileMacros,
 ) -> Array[CompiledView] raise GenError {
   let out : Array[CompiledView] = []
@@ -67,7 +67,7 @@ fn surface_of(views : Array[CompiledView]) -> Surface raise GenError {
 
 ///|
 fn compile_component(
-  views : ViewSet,
+  views : @viewfile.ViewSet,
   scope : FileMacros,
 ) -> CompiledComponent raise GenError {
   let compiled = compile_views(views.views, scope)
@@ -75,7 +75,7 @@ fn compile_component(
 }
 
 ///|
-fn compile_file(file : ViewFile) -> CompiledFile raise GenError {
+fn compile_file(file : @viewfile.ViewFile) -> CompiledFile raise GenError {
   let scope = FileMacros::of(file.macros)
   let components : Array[CompiledComponent] = []
   for comp in file.components {

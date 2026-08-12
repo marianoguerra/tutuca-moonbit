@@ -34,6 +34,16 @@ const STATE_TYPE = "tutuca/state"
 const INIT_TYPE = "tutuca/init"
 
 ///|
+/// The `type=` that marks a `<script>` as the file's handlers.
+///
+/// A `<script>` for the same reason the schema is one — the language has `<`,
+/// `>` and `and`, none of which would survive being read as markup — and it
+/// buys the thing the WIT block cannot have: the block is sliced out of the
+/// original source with its offset intact, so every declaration in it carries
+/// a real span from the first commit.
+const SCRIPT_TYPE = "tutuca/script"
+
+///|
 /// A `<style>` element's span in the source, plus its extracted text.
 priv struct StyleRegion {
   start : Int // offset of '<'
@@ -47,7 +57,8 @@ priv enum StyleKind {
   SView // inside a template (or the whole file when there are none)
   SCommon // top-level <style data-common>
   SGlobal // top-level <style data-global>
-  // A `tutuca/state` or `tutuca/init` block. Not a style at all — it rides
+  // A `tutuca/state`, `tutuca/init` or `tutuca/script` block. Not a style at
+  // all — it rides
   // in this list because the list IS the set of spans lifted out of view
   // source, and a file with no templates is otherwise its own main view,
   // schema included.
@@ -240,7 +251,7 @@ fn line_at(chars : Array[Char], offset : Int) -> Int {
 }
 
 ///|
-pub fn split_file(source : String) -> ViewFile raise GenError {
+pub fn split_file(source : String) -> ViewFile raise FileError {
   let chars = source.to_array()
   let tok = @html5.Tokenizer::new(source)
   let styles : Array[StyleRegion] = []
@@ -253,6 +264,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   let mut stray : Char? = None
   let mut state_src : (String, Int)? = None
   let mut init_src : (String, Int)? = None
+  let mut script_src : (String, Int)? = None
   let mut at_eof = false
   while !at_eof {
     let before = tok.get_position().offset
@@ -291,6 +303,18 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
             let content_at = after
             let (text, end_) = read_raw(tok, "script")
             init_src = Some((text, content_at))
+            styles.push({ start: before, end_, text: "", kind: SLifted })
+          }
+          // The handlers. Lifted out unparsed: checking them needs the schema
+          // and the argument types the views imply, and neither is in hand
+          // here.
+          "script" if attr_of(attrs, "type") is Some(SCRIPT_TYPE) => {
+            let content_at = after
+            let (text, end_) = read_raw(tok, "script")
+            if script_src is Some(_) {
+              raise DuplicateScriptBlock
+            }
+            script_src = Some((text, content_at))
             styles.push({ start: before, end_, text: "", kind: SLifted })
           }
           "style" => {
@@ -334,6 +358,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   let global_style = collect_style(styles, SGlobal)
   let state = parse_state_block(chars, state_src)
   let init = parse_init_block(chars, init_src, state)
+  let script = script_block(chars, script_src)
   // No templates at all: the file IS one unnamed component's main view —
   // unless nothing is left once the schema is lifted out, which is a
   // SCHEMA-ONLY file. Those exist so a component whose views are built at
@@ -342,7 +367,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
     if is_blank(src) {
-      return { components: [], macros: [], state, init }
+      return { components: [], macros: [], state, init, script }
     }
     return {
       components: [
@@ -362,6 +387,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
       macros: [],
       state,
       init,
+      script,
     }
   }
   if stray is Some(c) {
@@ -475,7 +501,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
       },
     })
   }
-  { components, macros, state, init }
+  { components, macros, state, init, script }
 }
 
 ///|
@@ -487,7 +513,7 @@ pub fn split_file(source : String) -> ViewFile raise GenError {
 fn parse_state_block(
   chars : Array[Char],
   src : (String, Int)?,
-) -> Array[@statedef.StateDef] raise GenError {
+) -> Array[@statedef.StateDef] raise FileError {
   guard src is Some((text, at)) else { return [] }
   @statedef.parse_state(text) catch {
     e => {
@@ -520,7 +546,7 @@ fn parse_init_block(
   chars : Array[Char],
   src : (String, Int)?,
   state : Array[@statedef.StateDef],
-) -> Array[(String, @statedef.InitState)] raise GenError {
+) -> Array[(String, @statedef.InitState)] raise FileError {
   guard src is Some((text, at)) else { return [] }
   guard !state.is_empty() else {
     raise BadInitBlock(
@@ -541,6 +567,18 @@ fn parse_init_block(
     }
   }
   out
+}
+
+///|
+/// The script block as raw text plus where it started.
+///
+/// No parse and no failure: a block that does not parse is a failure of the
+/// LANGUAGE, reported by whoever type-checks it against a schema, and saying
+/// so here would mean carrying a checker into a package whose whole job is
+/// finding element boundaries.
+fn script_block(chars : Array[Char], src : (String, Int)?) -> Block? {
+  guard src is Some((text, offset)) else { return None }
+  Some({ text, offset, line: line_at(chars, offset) })
 }
 
 ///|

@@ -1,0 +1,65 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/viewfile"
+
+import {
+  "marianoguerra/tutuca/statedef",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn split_file(String) -> ViewFile raise FileError
+
+// Errors
+pub suberror FileError {
+  StrayText(String)
+  DuplicateView(String)
+  DuplicateMacro(String)
+  BadMacroName(String)
+  MixedViewIds
+  NoMainViewFor(String)
+  UnclosedTemplate(String)
+  DuplicateStateBlock
+  DuplicateScriptBlock
+  BadStateBlock(line~ : Int, message~ : String)
+  BadInitBlock(line~ : Int, message~ : String)
+}
+pub fn FileError::message(Self) -> String
+
+// Types and methods
+pub(all) struct Block {
+  text : String
+  offset : Int
+  line : Int
+} derive(Eq, @debug.Debug)
+
+pub(all) struct MacroDef {
+  name : String
+  defaults : Map[String, String]
+  source : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct RawView {
+  name : String
+  source : String
+  style : String
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ViewFile {
+  components : Array[ViewSet]
+  macros : Array[MacroDef]
+  state : Array[@statedef.StateDef]
+  init : Array[(String, @statedef.InitState)]
+  script : Block?
+} derive(Eq, @debug.Debug)
+
+pub(all) struct ViewSet {
+  name : String
+  views : Array[RawView]
+  common_style : String
+  global_style : String
+} derive(Eq, @debug.Debug)
+pub fn ViewSet::component_name(Self, String) -> String
+
+// Type aliases
+
+// Traits

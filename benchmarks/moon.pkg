@@ -10,6 +10,7 @@
 // of the published library.
 import {
   "marianoguerra/tutuca/viewgen",
+  "marianoguerra/tutuca/viewfile",
   // The render benchmarks mount the ported examples as live apps, exactly as
   // the headless tests and the storybook do.
   "marianoguerra/tutuca/core" @tutuca,

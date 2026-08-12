@@ -35,7 +35,7 @@ let q : String = "@anode."
 /// True when every view in this set can be emitted as a tree. A single
 /// view sends the whole file back to the source path, so a component never
 /// mixes the two.
-pub fn ir_supported(file : ViewFile) -> Bool {
+pub fn ir_supported(file : @viewfile.ViewFile) -> Bool {
   try compile_file(file) |> ignore catch {
     _ => return false
   }
@@ -408,7 +408,7 @@ fn events_expr(events : Array[@anode.NodeEvents], indent : String) -> String {
 pub fn emit_ir_module(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
 ) -> String raise GenError {
   emit_ir_module_compiled(name, source_file, file, compile_file(file))
 }
@@ -417,7 +417,7 @@ pub fn emit_ir_module(
 fn emit_ir_module_compiled(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   compiled : CompiledFile,
 ) -> String raise GenError {
   let out = StringBuilder::new()
@@ -443,7 +443,7 @@ fn emit_ir_module_compiled(
 pub fn emit_ir_module_opt(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
 ) -> String? {
   Some(emit_ir_module(name, source_file, file)) catch {
     _ => None
@@ -541,8 +541,8 @@ fn emit_ir_component(
 /// gen-views tests assert: render through both paths, expect the same DOM. A
 /// host that already holds the view text could use it to skip codegen too.
 pub fn build_views(
-  views : ViewSet,
-  macros? : Array[MacroDef] = [],
+  views : @viewfile.ViewSet,
+  macros? : Array[@viewfile.MacroDef] = [],
 ) -> Map[String, @anode.View] raise GenError {
   let scope = FileMacros::of(macros)
   let out : Map[String, @anode.View] = Map([])

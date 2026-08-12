@@ -1,0 +1,20 @@
+// The shape of a `.html` view file: the blocks it is made of, recovered as
+// RAW SOURCE TEXT with the offsets they came from.
+//
+// Split out of `viewgen/` because two very different consumers need it and
+// only one of them is a code generator. `viewgen` slices a file in order to
+// EMIT MoonBit; `tutucard` slices the same file in order to RUN it, in a
+// browser, with no generator anywhere in the payload. A runtime that had to
+// import an emitter to find out where the templates are would be carrying the
+// whole `emit_*` layer for the sake of a tokenizer loop.
+//
+// Pure and target-agnostic like `statedef` and `viewgen`: source text in,
+// typed blocks out, never touching the filesystem.
+//
+// It parses the state and init blocks and does NOT parse the script block,
+// and that asymmetry is deliberate rather than unfinished — see `ViewFile`.
+import {
+  "marianoguerra/tutuca/statedef",
+  "moonbit-community/html/src" @html5,
+  "moonbitlang/core/debug",
+}

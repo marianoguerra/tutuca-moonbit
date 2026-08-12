@@ -4,50 +4,42 @@ package "marianoguerra/tutuca/viewgen"
 import {
   "marianoguerra/tutuca/anode",
   "marianoguerra/tutuca/statedef",
+  "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/debug",
 }
 
 // Values
-pub fn build_views(ViewSet, macros? : Array[MacroDef]) -> Map[String, @anode.View] raise GenError
+pub fn build_views(@viewfile.ViewSet, macros? : Array[@viewfile.MacroDef]) -> Map[String, @anode.View] raise GenError
 
-pub fn declared_components(ViewFile, String) -> Array[String]
+pub fn declared_components(@viewfile.ViewFile, String) -> Array[String]
 
-pub fn emit_ir_module(String, String, ViewFile) -> String raise GenError
+pub fn emit_ir_module(String, String, @viewfile.ViewFile) -> String raise GenError
 
-pub fn emit_ir_module_opt(String, String, ViewFile) -> String?
+pub fn emit_ir_module_opt(String, String, @viewfile.ViewFile) -> String?
 
-pub fn emit_module(String, String, ViewFile, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> String raise GenError
+pub fn emit_module(String, String, @viewfile.ViewFile, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> String raise GenError
 
-pub fn emit_modules(String, String, ViewFile, include_ir? : Bool, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> GeneratedModules raise GenError
+pub fn emit_modules(String, String, @viewfile.ViewFile, include_ir? : Bool, debug_derive? : Bool, hints? : Array[String], program? : ProgramIndex) -> GeneratedModules raise GenError
 
 pub fn generate(String, name~ : String, source_file~ : String) -> String raise GenError
 
-pub fn ir_supported(ViewFile) -> Bool
+pub fn ir_supported(@viewfile.ViewFile) -> Bool
 
-pub fn split_file(String) -> ViewFile raise GenError
+pub fn split_file(String) -> @viewfile.ViewFile raise GenError
 
 pub fn variant_name(String) -> String
 
-pub fn view_surface(Array[RawView], macros? : Array[MacroDef]) -> Surface raise GenError
+pub fn view_surface(Array[@viewfile.RawView], macros? : Array[@viewfile.MacroDef]) -> Surface raise GenError
 
 // Errors
 pub suberror GenError {
-  StrayText(String)
-  DuplicateView(String)
-  DuplicateMacro(String)
-  BadMacroName(String)
-  MixedViewIds
-  NoMainViewFor(String)
-  UnclosedTemplate(String)
+  File(@viewfile.FileError)
   ViewParseIssue(view~ : String, issue~ : String)
   EmptyView(String)
   NameCollision(variant~ : String, first~ : String, second~ : String)
   BadComponentName(String)
-  BadStateBlock(line~ : Int, message~ : String)
-  DuplicateStateBlock
   NoViewsToCompile
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
-  BadInitBlock(line~ : Int, message~ : String)
   UnknownStateField(view~ : String, name~ : String, scope~ : String, suggestion~ : String?)
   IdInLoop(view~ : String, id~ : String)
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
@@ -75,25 +67,13 @@ pub(all) struct InputSig {
   sites : Array[String]
 } derive(Eq, @debug.Debug)
 
-pub(all) struct MacroDef {
-  name : String
-  defaults : Map[String, String]
-  source : String
-} derive(Eq, @debug.Debug)
-
 pub struct ProgramIndex {
   defs : Map[String, @statedef.StateDef]
   views : Map[String, Array[String]]
 }
-pub fn ProgramIndex::add(Self, ViewFile, String) -> Unit
+pub fn ProgramIndex::add(Self, @viewfile.ViewFile, String) -> Unit
 pub fn ProgramIndex::new() -> Self
-pub fn ProgramIndex::of(ViewFile, String) -> Self
-
-pub(all) struct RawView {
-  name : String
-  source : String
-  style : String
-} derive(Eq, @debug.Debug)
+pub fn ProgramIndex::of(@viewfile.ViewFile, String) -> Self
 
 pub(all) struct Surface {
   inputs : Array[InputSig]
@@ -105,21 +85,6 @@ pub(all) struct Surface {
   enrich_scopes : Array[String]
   loop_withs : Array[String]
 } derive(Eq, @debug.Debug)
-
-pub(all) struct ViewFile {
-  components : Array[ViewSet]
-  macros : Array[MacroDef]
-  state : Array[@statedef.StateDef]
-  init : Array[(String, @statedef.InitState)]
-} derive(Eq, @debug.Debug)
-
-pub(all) struct ViewSet {
-  name : String
-  views : Array[RawView]
-  common_style : String
-  global_style : String
-} derive(Eq, @debug.Debug)
-pub fn ViewSet::component_name(Self, String) -> String
 
 // Type aliases
 

@@ -186,7 +186,7 @@ test "a schema error points at the line in the HTML file" {
     #|  }
     #|</script>
   try @viewgen.split_file(html) |> ignore catch {
-    BadStateBlock(line~, message~) => {
+    File(BadStateBlock(line~, message~)) => {
       // `n: s64` is on line 6 of the file, not line 3 of the block: the
       // author has the HTML file open, not the slice we cut out of it.
       assert_eq(line, 6)

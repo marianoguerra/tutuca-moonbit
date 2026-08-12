@@ -42,7 +42,7 @@ priv struct FileMacros {
 }
 
 ///|
-fn FileMacros::of(defs : Array[MacroDef]) -> FileMacros {
+fn FileMacros::of(defs : Array[@viewfile.MacroDef]) -> FileMacros {
   let by_name : Map[String, @anode.Macro] = Map([])
   for d in defs {
     by_name[d.name] = { defaults: d.defaults, raw_view: d.source }
@@ -418,8 +418,8 @@ fn join_arg(a : ArgType, b : ArgType) -> ArgType {
 
 ///|
 pub fn view_surface(
-  views : Array[RawView],
-  macros? : Array[MacroDef] = [],
+  views : Array[@viewfile.RawView],
+  macros? : Array[@viewfile.MacroDef] = [],
 ) -> Surface raise GenError {
   let scope = FileMacros::of(macros)
   surface_of(compile_views(views, scope))

@@ -1,66 +1,15 @@
 // Spec for the view generator: the public data types plus `declare` stubs.
 // Implementations live in split.mbt / surface.mbt / names.mbt / emit.mbt.
 //
-// The pipeline is three pure stages:
+// The pipeline is three pure stages, the first of which now lives one package
+// down in `viewfile` — a runtime that mounts a view file needs to find its
+// blocks and has no use for an emitter:
 //
-//   source text --split_views--> ViewSet  (raw per-view HTML + styles)
-//               --view_surface-> Surface  (handler names, arg shapes, ids, …)
-//               --emit_module--> String   (the generated .mbt)
+//   source text  --@viewfile.split_file--> @viewfile.ViewFile (raw HTML, styles, blocks)
+//                --view_surface---------->  Surface (handler names, args, ids)
+//                --emit_module----------->   String (the generated .mbt)
 //
 // Each stage is independently testable; `generate` is the composition.
-
-///|
-/// One view recovered from the input file: its raw HTML source with any
-/// `<style>` elements lifted out.
-pub(all) struct RawView {
-  name : String
-  source : String
-  style : String
-} derive(Eq, @debug.Debug)
-
-///|
-/// A macro declared in the view file as `<template id="macro:name">`. Its
-/// `data-*` attributes are the defaults for the `^var` references in the body
-/// (values are tutuca source, so a literal string default is `'24'`).
-///
-/// Declaring macros in the view file rather than registering them from
-/// MoonBit is what lets the generator EXPAND them: a macro whose body is a
-/// runtime value could never be compiled ahead of time.
-pub(all) struct MacroDef {
-  name : String
-  defaults : Map[String, String]
-  source : String
-} derive(Eq, @debug.Debug)
-
-///|
-/// One component's views, `main` first.
-///
-/// `name` is empty for a file that declares a single unnamed component (no
-/// `Comp:` prefix on any template) — the CLI's `--name` supplies it then.
-pub(all) struct ViewSet {
-  name : String
-  views : Array[RawView]
-  common_style : String
-  global_style : String
-} derive(Eq, @debug.Debug)
-
-///|
-/// A whole view file: the components it declares plus the macros they share.
-///
-/// One file per MoonBit module rather than per component, because components
-/// cluster — the example library has files defining eight and thirteen of
-/// them, and a file each would bury the module in fragments.
-pub(all) struct ViewFile {
-  components : Array[ViewSet]
-  macros : Array[MacroDef]
-  /// The `<script type="tutuca/state">` schema, one entry per component it
-  /// declares. Empty when the file has no block — which is what keeps every
-  /// unmigrated view file generating exactly what it generated before.
-  state : Array[@statedef.StateDef]
-  /// The `<script type="tutuca/init">` fixtures, each paired with the
-  /// component whose schema it was checked against.
-  init : Array[(String, @statedef.InitState)]
-} derive(Eq, @debug.Debug)
 
 ///|
 /// What a generated payload position decodes to. `VValue` is the escape
@@ -120,21 +69,11 @@ pub(all) struct GeneratedModules {
 /// Anything that makes generation impossible. Rendered by `Show` into the
 /// message the CLI reports.
 pub suberror GenError {
-  /// Non-whitespace text outside every `<template>` in a file that has some.
-  StrayText(String)
-  /// Two `<template>` elements claim the same view name.
-  DuplicateView(String)
-  /// Two `<template id="macro:...">` elements claim the same macro name.
-  DuplicateMacro(String)
-  /// `id="macro:"` with nothing after the colon.
-  BadMacroName(String)
-  /// The file mixes `Comp:view` ids with bare ones, so a bare id could mean
-  /// either a view of the unnamed component or a component of its own.
-  MixedViewIds
-  /// A component in the file declares no `main` view.
-  NoMainViewFor(String)
-  /// A `<template>` is never closed.
-  UnclosedTemplate(String)
+  /// The file does not split: its structure is wrong, or the state or init
+  /// block it carries does not describe what it claims to. Wrapped rather
+  /// than restated, so the two layers cannot drift into two wordings of one
+  /// failure.
+  File(@viewfile.FileError)
   /// The view does not parse, or parses with issues (a view that would warn
   /// at runtime is a generation failure — the types would be built on sand).
   ViewParseIssue(view~ : String, issue~ : String)
@@ -144,20 +83,12 @@ pub suberror GenError {
   NameCollision(variant~ : String, first~ : String, second~ : String)
   /// `--name` is not usable as a MoonBit type prefix.
   BadComponentName(String)
-  /// The state block does not describe component state. `line` is the line
-  /// in the HTML file, not in the block, because that is the file the author
-  /// has open.
-  BadStateBlock(line~ : Int, message~ : String)
-  /// Two `<script type="tutuca/state">` blocks in one file.
-  DuplicateStateBlock
   /// A schema-only file has no views to compile into a tree.
   NoViewsToCompile
   /// A `$name` in an `@on` handler position. It dispatches identically to
   /// the bare name (app/app.mbt collapses both into `push_input`), so the
   /// sigil suggests a second mechanism that does not exist.
   MethodInEventPosition(view~ : String, name~ : String, site~ : String)
-  /// The init block does not fit the schema.
-  BadInitBlock(line~ : Int, message~ : String)
   /// A view reads a name the schema does not declare. THE headline check:
   /// this used to render as null in the browser.
   UnknownStateField(
@@ -189,32 +120,18 @@ pub suberror GenError {
 declare pub fn GenError::message(self : GenError) -> String
 
 ///|
-/// Split an input file into the components it declares.
-///
-/// Template `id` conventions:
-///
-///   (none)          the single unnamed component's `main` view
-///   `row`           …its `row` view
-///   `Counter:main`  the `Counter` component's `main` view
-///   `Counter`       shorthand for `Counter:main`
-///   `macro:icon`    a macro shared by every component in the file
-///
-/// A file either names its components or does not; mixing the two forms is
-/// an error, because `row` would then be ambiguous between a view of the
-/// unnamed component and a component called `row`.
-///
-/// `<style>` elements are lifted out of the emitted source: inside a template
-/// it becomes that view's style; at file level it is the first component's
-/// common style, or its global style with `data-global`.
-declare pub fn split_file(source : String) -> ViewFile raise GenError
+/// Split an input file into the components it declares — `@viewfile.split_file`
+/// with its failure wrapped as a `GenError`, so one pipeline has one error
+/// type. See `viewfile` for what the conventions are.
+declare pub fn split_file(source : String) -> @viewfile.ViewFile raise GenError
 
 ///|
 /// Compile the views and extract the typed surface. Every view is parsed into
 /// a FRESH @anode.ParseContext with a collecting handler — the same shadow
 /// discipline cli/lint_component.mbt uses, so no live component is touched.
 declare pub fn view_surface(
-  views : Array[RawView],
-  macros? : Array[MacroDef],
+  views : Array[@viewfile.RawView],
+  macros? : Array[@viewfile.MacroDef],
 ) -> Surface raise GenError
 
 ///|
@@ -226,7 +143,7 @@ declare pub fn view_surface(
 declare pub fn emit_module(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   debug_derive? : Bool,
   hints? : Array[String],
   program? : ProgramIndex,
@@ -239,7 +156,7 @@ declare pub fn emit_module(
 declare pub fn emit_modules(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   include_ir? : Bool,
   debug_derive? : Bool,
   hints? : Array[String],
@@ -250,7 +167,7 @@ declare pub fn emit_modules(
 /// True when every view can be emitted as a compiled tree. A view whose tree
 /// still holds a macro call cannot: macros are registered from MoonBit at
 /// runtime, so the generator cannot expand them.
-declare pub fn ir_supported(file : ViewFile) -> Bool
+declare pub fn ir_supported(file : @viewfile.ViewFile) -> Bool
 
 ///|
 /// Emit the companion IR module: the @anode.ANode tree and event table each
@@ -260,7 +177,7 @@ declare pub fn ir_supported(file : ViewFile) -> Bool
 declare pub fn emit_ir_module(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
 ) -> String raise GenError
 
 ///|
@@ -273,15 +190,15 @@ declare pub fn emit_ir_module(
 declare pub fn emit_ir_module_opt(
   name : String,
   source_file : String,
-  file : ViewFile,
+  file : @viewfile.ViewFile,
 ) -> String?
 
 ///|
 /// Build the compiled views directly, skipping codegen — the same value the
 /// emitted IR module reconstructs.
 declare pub fn build_views(
-  views : ViewSet,
-  macros? : Array[MacroDef],
+  views : @viewfile.ViewSet,
+  macros? : Array[@viewfile.MacroDef],
 ) -> Map[String, @anode.View] raise GenError
 
 ///|
@@ -296,14 +213,6 @@ declare pub fn generate(
 /// The component names a file gives views to. A schema interface outside
 /// this set declares state for a component whose views are built in MoonBit.
 declare pub fn declared_components(
-  file : ViewFile,
+  file : @viewfile.ViewFile,
   name : String,
 ) -> Array[String]
-
-///|
-/// The component name for a ViewSet: its own, or the fallback the CLI passes
-/// for a file that declares a single unnamed component.
-declare pub fn ViewSet::component_name(
-  self : ViewSet,
-  fallback : String,
-) -> String

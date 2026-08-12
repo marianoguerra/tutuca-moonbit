@@ -28,5 +28,6 @@ import {
   "marianoguerra/tutuca/testing/harness",
   "marianoguerra/tutuca/render",
   "marianoguerra/tutuca/viewgen",
+  "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/test",
 } for "test"

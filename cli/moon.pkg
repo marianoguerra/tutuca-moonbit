@@ -11,6 +11,7 @@ import {
   "marianoguerra/tutuca/lint",
   "marianoguerra/tutuca/statedef",
   "marianoguerra/tutuca/viewgen",
+  "marianoguerra/tutuca/viewfile",
   "moonbitlang/core/string",
 }
 

@@ -269,7 +269,7 @@ fn emit_schema(
   name : String,
   def : @statedef.StateDef,
   surface : Surface,
-  views : ViewSet,
+  views : @viewfile.ViewSet,
   inits : Array[@statedef.InitState],
   out : StringBuilder,
 ) -> Unit {
