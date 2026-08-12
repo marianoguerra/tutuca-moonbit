@@ -113,6 +113,10 @@ pub suberror GenError {
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   /// `<x render>` on something that is not a component slot.
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
+  /// The `<script type="tutuca/script">` block does not parse. `line` is the
+  /// line in the HTML file, not in the block, for the same reason a state
+  /// block's is: that is the file the author has open.
+  BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
 }
 
 ///|
@@ -123,7 +127,10 @@ declare pub fn GenError::message(self : GenError) -> String
 /// Split an input file into the components it declares — `@viewfile.split_file`
 /// with its failure wrapped as a `GenError`, so one pipeline has one error
 /// type. See `viewfile` for what the conventions are.
-declare pub fn split_file(source : String) -> @viewfile.ViewFile raise GenError
+declare pub fn split_file(
+  source : String,
+  name? : String,
+) -> @viewfile.ViewFile raise GenError
 
 ///|
 /// Compile the views and extract the typed surface. Every view is parsed into

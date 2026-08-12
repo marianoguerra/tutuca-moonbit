@@ -9,7 +9,7 @@
 // quietly coerced.
 //
 // The rejections carry most of the weight. A fixture that writes 2.5 into an
-// `s32` has said something it did not mean, and a checker that truncates it is
+// `Int` has said something it did not mean, and a checker that truncates it is
 // worse than one with no opinion — the whole reason the block is checked at
 // generation time is that nothing downstream will ever look again.
 
@@ -58,15 +58,13 @@ fn init_err(schema : String, init : String) -> String raise {
 /// One field per scalar shape the lattice has a literal for.
 fn scalars() -> String {
   (
-    #|interface counter {
-    #|  record state {
-    #|    label: string,
-    #|    count: s32,
-    #|    ratio: f64,
-    #|    is-open: bool,
-    #|    note: option<string>,
-    #|    history: list<s32>,
-    #|  }
+    #|state Counter {
+    #|  label   : String
+    #|  count   : Int
+    #|  ratio   : Double
+    #|  isOpen  : Bool
+    #|  note    : String?
+    #|  history : Array[Int]
     #|}
   )
 }
@@ -75,14 +73,12 @@ fn scalars() -> String {
 /// The map-backed shapes, plus the dynamic escape hatch.
 fn collections() -> String {
   (
-    #|interface board {
-    #|  flags visibility { done, active }
-    #|  record state {
-    #|    tags: text-set,
-    #|    vis: visibility,
-    #|    counts: text-omap,
-    #|    blob: any,
-    #|  }
+    #|enum Visibility { Done, Active }
+    #|state Board {
+    #|  tags   : Set[String]
+    #|  vis    : Set[Visibility]
+    #|  counts : Map[String, String]
+    #|  blob   : Any
     #|}
   )
 }
@@ -91,22 +87,19 @@ fn collections() -> String {
 /// The two named-type shapes a fixture can name a case or a sub-field of.
 fn named() -> String {
   (
-    #|interface post {
-    #|  enum priority { low, high-ish }
-    #|  record label { text: string, done: bool }
-    #|  record state { pri: priority, tag: label }
-    #|}
+    #|enum Priority { Low, HighIsh }
+    #|struct Label { text: String, done: Bool }
+    #|state Post { pri: Priority, tag: Label }
   )
 }
 
 ///|
-test "a fixture names fields in schema order, under either spelling" {
-  // Deliberately out of JSON order, and mixing the WIT spelling with the
-  // runtime one: both are accepted, because both are names the author
-  // legitimately has in hand.
+test "a fixture names fields in schema order" {
+  // Deliberately out of JSON order. A field has ONE spelling now — the one a
+  // view reads — where WIT gave it three for one idea.
   let out = inits(
     scalars(),
-    "{ \"fresh\": { \"is-open\": true, \"count\": 3, \"label\": \"Counter\" } }",
+    "{ \"fresh\": { \"isOpen\": true, \"count\": 3, \"label\": \"Counter\" } }",
   )
   assert_eq(out.length(), 1)
   assert_eq(out[0].name, "fresh")
@@ -150,8 +143,8 @@ test "scalars emit the literal the field's declared type wants" {
   assert_eq(lit(s, "{ \"f\": { \"isOpen\": false } }", "isOpen"), "false")
   assert_eq(lit(s, "{ \"f\": { \"count\": 3 } }", "count"), "3")
   assert_eq(lit(s, "{ \"f\": { \"count\": -7 } }", "count"), "-7")
-  // A whole f64 still emits a float literal: `3` in MoonBit source would be
-  // an Int, and the field is declared f64.
+  // A whole Double still emits a float literal: `3` in MoonBit source would
+  // be an Int, and the field is declared Double.
   assert_eq(lit(s, "{ \"f\": { \"ratio\": 3 } }", "ratio"), "3.0")
   assert_eq(lit(s, "{ \"f\": { \"ratio\": 2.5 } }", "ratio"), "2.5")
 }
@@ -190,7 +183,7 @@ test "null on a non-option field is the type's zero, not a failure" {
 
 ///|
 test "a set arrives as a member list and is stored map-backed" {
-  // Open membership (`text-set`) and closed membership (`flags`) share one
+  // Open membership (`Set[String]`) and closed (`Set[Visibility]`) share one
   // runtime representation, so they share one literal.
   let c = collections()
   assert_eq(
@@ -198,8 +191,8 @@ test "a set arrives as a member list and is stored map-backed" {
     "Map([\"a\": true, \"b\": true])",
   )
   assert_eq(
-    lit(c, "{ \"f\": { \"vis\": [\"done\"] } }", "vis"),
-    "Map([\"done\": true])",
+    lit(c, "{ \"f\": { \"vis\": [\"Done\"] } }", "vis"),
+    "Map([\"Done\": true])",
   )
   assert_eq(lit(c, "{ \"f\": { \"tags\": [] } }", "tags"), "Map([])")
 }
@@ -228,20 +221,21 @@ test "the any marker takes whatever it is given, as a Value" {
 }
 
 ///|
-test "an enum case resolves under its WIT name or its runtime name" {
+test "an enum case resolves under the name the enum declares" {
   // The MoonBit type carries the component prefix (`PostPriority`), because
   // generated types from two components share one module namespace. The
-  // *messages* below use `show_wit`, which keeps the WIT name (`priority`) —
-  // the author wrote that one, so that is the one to hand back.
+  // *messages* use `show_source`, which keeps the name the author wrote.
   let n = named()
   assert_eq(
-    lit(n, "{ \"f\": { \"pri\": \"low\" } }", "pri"),
+    lit(n, "{ \"f\": { \"pri\": \"Low\" } }", "pri"),
     "PostPriority::Low",
   )
   assert_eq(
-    lit(n, "{ \"f\": { \"pri\": \"high-ish\" } }", "pri"),
+    lit(n, "{ \"f\": { \"pri\": \"HighIsh\" } }", "pri"),
     "PostPriority::HighIsh",
   )
+  // …and the lowerCamel runtime spelling too, which is what a JSON payload
+  // from somewhere else is likely to carry.
   assert_eq(
     lit(n, "{ \"f\": { \"pri\": \"highIsh\" } }", "pri"),
     "PostPriority::HighIsh",
@@ -298,7 +292,7 @@ test "a field the schema does not declare fails, and the message guesses" {
 test "a fractional number in an integer field is refused, not truncated" {
   assert_eq(
     init_err(scalars(), "{ \"fresh\": { \"count\": 2.5 } }"),
-    "init block: state `fresh` sets `count` to 2.5, which is not a whole number, but the schema declares it s32",
+    "init block: state `fresh` sets `count` to 2.5, which is not a whole number, but the schema declares it Int",
   )
 }
 
@@ -307,19 +301,19 @@ test "a value of the wrong shape names both halves" {
   let s = scalars()
   assert_eq(
     init_err(s, "{ \"fresh\": { \"count\": \"3\" } }"),
-    "init block: state `fresh` sets `count` to a string, but the schema declares it s32",
+    "init block: state `fresh` sets `count` to a string, but the schema declares it Int",
   )
   assert_eq(
     init_err(s, "{ \"fresh\": { \"label\": 3 } }"),
-    "init block: state `fresh` sets `label` to a number, but the schema declares it string",
+    "init block: state `fresh` sets `label` to a number, but the schema declares it String",
   )
   assert_eq(
     init_err(s, "{ \"fresh\": { \"history\": 3 } }"),
-    "init block: state `fresh` sets `history` to a number, but the schema declares it list<s32>",
+    "init block: state `fresh` sets `history` to a number, but the schema declares it Array[Int]",
   )
   assert_eq(
     init_err(named(), "{ \"fresh\": { \"pri\": \"nope\" } }"),
-    "init block: state `fresh` sets `pri` to \"nope\", which is not one of its cases, but the schema declares it priority",
+    "init block: state `fresh` sets `pri` to \"nope\", which is not one of its cases, but the schema declares it Priority",
   )
 }
 
@@ -329,6 +323,6 @@ test "a nested value is blamed on the field the author wrote" {
   // author can find in the block they are looking at.
   assert_eq(
     init_err(scalars(), "{ \"fresh\": { \"history\": [1, \"two\"] } }"),
-    "init block: state `fresh` sets `history` to a string, but the schema declares it s32",
+    "init block: state `fresh` sets `history` to a string, but the schema declares it Int",
   )
 }

@@ -1,26 +1,26 @@
 <script type="tutuca/state">
-  interface activity-entry {
-    record state {
-      kind: string,
-      name: string,
-      handler-name: string,
-      matched: string,
-      path-label: string,
-      time: string,
-      before: any,
-      after: any,
-      has-after: bool,
-    }
+  state ActivityEntry {
+    kind : String
+    name : String
+    handlerName : String
+    matched : String
+    pathLabel : String
+    time : String
+    before : Any
+    after : Any
+    hasAfter : Bool
   }
-  interface activity-log {
-    record state {
-      events: values,
-      has-events: bool,
-    }
-    /// Prepends one entry and caps the list. Raised from a host's observer
-    /// subscription, never from a view, so the schema is the only place it
-    /// can be declared.
-    variant receive { append-entry(any) }
+
+  state ActivityLog {
+    events : Array[Any]
+    hasEvents : Bool
+  }
+
+  /// Prepends one entry and caps the list. Raised from a host's observer
+  /// subscription, never from a view, so the schema is the only place it
+  /// can be declared.
+  receive ActivityLog {
+    AppendEntry(Any)
   }
 </script>
 

@@ -61,18 +61,18 @@ pub(all) enum TyInfo {
 ///|
 /// How the author wrote it. The WIT spelling, because that is what is in the
 /// file and what they will edit.
-pub fn TyInfo::show_wit(self : TyInfo) -> String {
+pub fn TyInfo::show_source(self : TyInfo) -> String {
   match self {
     TyBool => "bool"
     TyInt => "s32"
     TyFloat => "f64"
     TyText => "string"
-    TyList(e) => "list<" + e.show_wit() + ">"
-    TyTuple(ts) => "tuple<" + ts.map(t => t.show_wit()).join(", ") + ">"
-    TyOption(e) => "option<" + e.show_wit() + ">"
+    TyList(e) => "list<" + e.show_source() + ">"
+    TyTuple(ts) => "tuple<" + ts.map(t => t.show_source()).join(", ") + ">"
+    TyOption(e) => "option<" + e.show_source() + ">"
     TyRecord(n) | TyEnum(n) | TyVariant(n) | TyFlags(n, _) => n
     TySet => "text-set"
-    TyOMap(v) => "an ordered map of " + v.show_wit()
+    TyOMap(v) => "an ordered map of " + v.show_source()
     TyComp(Some(c)) => "the " + c + " component"
     TyComp(None) => "component"
     TyTable => "table"
@@ -178,16 +178,14 @@ pub fn TyInfo::zero(self : TyInfo) -> Value {
     // empty Map because `{"columns": []}` is a VALID table and `{}` is not:
     // the zero of a table should decode, not fail the first check made of it.
     TyTable => Map({ "columns": List([]) })
-    // A closed set starts as its declared membership — the one thing about a
-    // set that only the schema knows, since the encoded value is just a Map.
-    TyFlags(_, ms) => {
-      let m : Map[String, Value] = Map([])
-      for name in ms {
-        m[name] = Bool(true)
-      }
-      Map(m)
-    }
-    TySet => Map(Map([]))
+    // Both sets start EMPTY, and the closed one used to not.
+    //
+    // A `flags` field began with every member present, because the type
+    // carried its membership and the zero was written from the type — so a
+    // fresh `visibility` was both `Done` and `Active`, which no author has
+    // ever meant. Spelled `Set[Visibility]` the CONTAINER decides the zero and
+    // the enum decides the membership, which is one idea in each place.
+    TyFlags(_, _) | TySet => Map(Map([]))
     // A variant's zero is its first case, which this cannot name; an option
     // is absent; a slot is filled by the registration scope at make time.
     TyVariant(_) | TyOption(_) | TyComp(_) | TyAny => Null

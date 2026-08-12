@@ -10,9 +10,9 @@
 ///|
 /// The state of the RenderWithScope component.
 ///
-/// Declared as `interface render-with-scope` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct RenderWithScopeState {
   text : String
 }
@@ -20,7 +20,8 @@ pub(all) struct RenderWithScopeState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RenderWithScopeState::zero(), label: "Counter" }
@@ -129,7 +130,7 @@ pub fn RenderWithScopeEnrichScope::name(
 impl @component.Fields for RenderWithScopeState with fn schema() {
   @component.SchemaInfo::new(
     name="RenderWithScope",
-    fingerprint="25c803b695d1cdde",
+    fingerprint="0732c2d2c9d0c008",
     fields=[@component.FieldInfo::new("text", TyText)],
     inputs=["setText"],
     view_names=["main"],
@@ -139,9 +140,9 @@ impl @component.Fields for RenderWithScopeState with fn schema() {
 ///|
 /// The state of the ListFilterEnrich component.
 ///
-/// Declared as `interface list-filter-enrich` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ListFilterEnrichState {
   items : Array[@tutuca.Value]
   query : String
@@ -150,7 +151,8 @@ pub(all) struct ListFilterEnrichState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListFilterEnrichState::zero(), label: "Counter" }
@@ -286,7 +288,7 @@ pub fn ListFilterEnrichEnrich::name(self : ListFilterEnrichEnrich) -> String {
 impl @component.Fields for ListFilterEnrichState with fn schema() {
   @component.SchemaInfo::new(
     name="ListFilterEnrich",
-    fingerprint="d9bbfb6a84864d29",
+    fingerprint="336b6945b7ecfe9c",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
@@ -299,9 +301,9 @@ impl @component.Fields for ListFilterEnrichState with fn schema() {
 ///|
 /// The state of the ListFilterEnrichWith component.
 ///
-/// Declared as `interface list-filter-enrich-with` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ListFilterEnrichWithState {
   items : Array[@tutuca.Value]
   query : String
@@ -310,7 +312,8 @@ pub(all) struct ListFilterEnrichWithState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListFilterEnrichWithState::zero(), label: "Counter" }
@@ -469,7 +472,7 @@ pub fn ListFilterEnrichWithLoopWith::name(
 impl @component.Fields for ListFilterEnrichWithState with fn schema() {
   @component.SchemaInfo::new(
     name="ListFilterEnrichWith",
-    fingerprint="4b8fcd058a698178",
+    fingerprint="bc4920870d6c5298",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),

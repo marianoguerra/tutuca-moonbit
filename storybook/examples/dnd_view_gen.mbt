@@ -10,9 +10,9 @@
 ///|
 /// The state of the DnDExample component.
 ///
-/// Declared as `interface dn-d-example` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DnDExampleState {
   items : Array[@tutuca.Value]
   query : String
@@ -21,7 +21,8 @@ pub(all) struct DnDExampleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DnDExampleState::zero(), label: "Counter" }
@@ -148,7 +149,7 @@ pub fn DnDExampleWhen::name(self : DnDExampleWhen) -> String {
 impl @component.Fields for DnDExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="DnDExample",
-    fingerprint="669b14463cd52e60",
+    fingerprint="56351ef7784eb5e1",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),

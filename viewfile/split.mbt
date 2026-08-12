@@ -251,7 +251,10 @@ fn line_at(chars : Array[Char], offset : Int) -> Int {
 }
 
 ///|
-pub fn split_file(source : String) -> ViewFile raise FileError {
+pub fn split_file(
+  source : String,
+  name? : String = "",
+) -> ViewFile raise FileError {
   let chars = source.to_array()
   let tok = @html5.Tokenizer::new(source)
   let styles : Array[StyleRegion] = []
@@ -264,7 +267,7 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
   let mut stray : Char? = None
   let mut state_src : (String, Int)? = None
   let mut init_src : (String, Int)? = None
-  let mut script_src : (String, Int)? = None
+  let script_srcs : Array[(String, String, Int)] = []
   let mut at_eof = false
   while !at_eof {
     let before = tok.get_position().offset
@@ -311,10 +314,17 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
           "script" if attr_of(attrs, "type") is Some(SCRIPT_TYPE) => {
             let content_at = after
             let (text, end_) = read_raw(tok, "script")
-            if script_src is Some(_) {
-              raise DuplicateScriptBlock
+            // `for=` names the component, the way a template id does. Absent
+            // is the file's single component, and two blocks claiming the same
+            // name is the same failure as two templates claiming one view.
+            let for_comp = match attr_of(attrs, "for") {
+              Some(c) => c
+              None => ""
             }
-            script_src = Some((text, content_at))
+            if script_srcs.iter().any(t => t.0 == for_comp) {
+              raise DuplicateScriptBlock(for_comp)
+            }
+            script_srcs.push((for_comp, text, content_at))
             styles.push({ start: before, end_, text: "", kind: SLifted })
           }
           "style" => {
@@ -356,9 +366,9 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
   }
   let common_style = collect_style(styles, SCommon)
   let global_style = collect_style(styles, SGlobal)
-  let state = parse_state_block(chars, state_src)
+  let state = parse_state_block(chars, state_src, name)
   let init = parse_init_block(chars, init_src, state)
-  let script = script_block(chars, script_src)
+  let scripts = script_blocks(chars, script_srcs)
   // No templates at all: the file IS one unnamed component's main view —
   // unless nothing is left once the schema is lifted out, which is a
   // SCHEMA-ONLY file. Those exist so a component whose views are built at
@@ -367,7 +377,7 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
   if templates.is_empty() {
     let src = slice_without_styles(chars, 0, chars.length(), styles)
     if is_blank(src) {
-      return { components: [], macros: [], state, init, script }
+      return { components: [], macros: [], state, init, scripts }
     }
     return {
       components: [
@@ -387,7 +397,7 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
       macros: [],
       state,
       init,
-      script,
+      scripts,
     }
   }
   if stray is Some(c) {
@@ -501,7 +511,7 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
       },
     })
   }
-  { components, macros, state, init, script }
+  { components, macros, state, init, scripts }
 }
 
 ///|
@@ -513,27 +523,19 @@ pub fn split_file(source : String) -> ViewFile raise FileError {
 fn parse_state_block(
   chars : Array[Char],
   src : (String, Int)?,
+  name : String,
 ) -> Array[@statedef.StateDef] raise FileError {
   guard src is Some((text, at)) else { return [] }
-  @statedef.parse_state(text) catch {
+  // The fallback names a bare `state { … }`, and the name prefixes every
+  // generated type — so it has to arrive here rather than at emit time.
+  @statedef.parse_state(text, name~) catch {
     e => {
-      let block = text.to_array()
-      // A syntax error knows its own offset. A semantic one does not — the
-      // AST carries no spans — so it names an identifier instead and we scan
-      // for it, which lands on the right line even though not the right
-      // column.
-      let within = match e {
-        WitSyntax(offset~, ..) => line_at(block, offset) - 1
-        _ =>
-          match e.locus() {
-            Some(name) =>
-              match find_word(block, name) {
-                Some(off) => line_at(block, off) - 1
-                None => 0
-              }
-            None => 0
-          }
-      }
+      // Every failure carries its own span now, so the file line is the
+      // block's start line plus the newlines before it. What this replaced was
+      // a whole-word scanner: mizchi/wit carried no positions, so a semantic
+      // error named an IDENTIFIER and this function went looking for it —
+      // landing on the right line and never the right column.
+      let within = line_at(text.to_array(), e.span().start) - 1
       raise BadStateBlock(line=line_at(chars, at) + within, message=e.message())
     }
   }
@@ -570,52 +572,20 @@ fn parse_init_block(
 }
 
 ///|
-/// The script block as raw text plus where it started.
+/// The script blocks as raw text plus where each started.
 ///
 /// No parse and no failure: a block that does not parse is a failure of the
 /// LANGUAGE, reported by whoever type-checks it against a schema, and saying
 /// so here would mean carrying a checker into a package whose whole job is
 /// finding element boundaries.
-fn script_block(chars : Array[Char], src : (String, Int)?) -> Block? {
-  guard src is Some((text, offset)) else { return None }
-  Some({ text, offset, line: line_at(chars, offset) })
-}
-
-///|
-/// The offset of `name` in `chars` as a whole word, or None.
-///
-/// Whole-word so that looking for `n` does not stop at the `n` inside
-/// `count`; WIT identifiers are letters, digits, `-` and `_`.
-fn find_word(chars : Array[Char], name : String) -> Int? {
-  let needle = name.to_array()
-  if needle.is_empty() {
-    return None
-  }
-  let n = needle.length()
-  for i in 0..<(chars.length() - n + 1) {
-    let mut hit = true
-    for j in 0..<n {
-      if chars[i + j] != needle[j] {
-        hit = false
-        break
-      }
-    }
-    if hit &&
-      (i == 0 || !is_word_char(chars[i - 1])) &&
-      (i + n >= chars.length() || !is_word_char(chars[i + n])) {
-      return Some(i)
-    }
-  }
-  None
-}
-
-///|
-fn is_word_char(c : Char) -> Bool {
-  (c >= 'a' && c <= 'z') ||
-  (c >= 'A' && c <= 'Z') ||
-  (c >= '0' && c <= '9') ||
-  c == '-' ||
-  c == '_'
+fn script_blocks(
+  chars : Array[Char],
+  srcs : Array[(String, String, Int)],
+) -> Array[ScriptBlock] {
+  srcs.map(t => {
+    comp: t.0,
+    block: { text: t.1, offset: t.2, line: line_at(chars, t.2) },
+  })
 }
 
 ///|
@@ -662,4 +632,22 @@ fn collect_style(styles : Array[StyleRegion], kind : StyleKind) -> String {
     }
   }
   parts.join("\n")
+}
+
+///|
+/// The script block for one component, or None when the file writes none.
+///
+/// A bare block answers for the file's single component: a file with one
+/// component has nothing to disambiguate, so making it write the name would be
+/// ceremony for a fact the file already states once.
+pub fn ViewFile::script_for(self : ViewFile, comp : String) -> Block? {
+  for s in self.scripts {
+    if s.comp == comp {
+      return Some(s.block)
+    }
+  }
+  if self.scripts.length() == 1 && self.scripts[0].comp == "" {
+    return Some(self.scripts[0].block)
+  }
+  None
 }

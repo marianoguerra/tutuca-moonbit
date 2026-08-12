@@ -8,14 +8,11 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state for the components in todo_macros.mbt, which build
-/// their views in MoonBit rather than here — a macro body is
-/// registered at runtime, so it cannot be compiled ahead of time.
-/// No <template>: this file declares state and nothing else.
+/// The state of the TmItem component.
 ///
-/// Declared as `interface tm-item` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TmItemState {
   completed : Bool
   text : String
@@ -24,7 +21,8 @@ pub(all) struct TmItemState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TmItemState::zero(), label: "Counter" }
@@ -60,7 +58,7 @@ impl @component.Fields for TmItemState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="cd61ed8baa3d59fd", fields=[
+  @component.SchemaInfo::new(fingerprint="897279eca641af90", fields=[
     @component.FieldInfo::new("completed", TyBool),
     @component.FieldInfo::new("text", TyText),
   ])
@@ -69,9 +67,9 @@ impl @component.Fields for TmItemState with fn schema() {
 ///|
 /// The state of the TmItems component.
 ///
-/// Declared as `interface tm-items` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TmItemsState {
   items : Array[@tutuca.Value]
 }
@@ -79,7 +77,8 @@ pub(all) struct TmItemsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TmItemsState::zero(), label: "Counter" }
@@ -120,7 +119,7 @@ impl @component.Fields for TmItemsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for TmItemsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="3e274b25537b213e", fields=[
+  @component.SchemaInfo::new(fingerprint="356ef1d990886bd6", fields=[
     @component.FieldInfo::new("items", TyList(TyAny)),
   ])
 }

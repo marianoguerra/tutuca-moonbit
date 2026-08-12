@@ -41,7 +41,11 @@ fn rich_sample_main_view_ir() -> @anode.View {
 fn rich_sample_compact_view_ir() -> @anode.View {
   @anode.View::from_ir(
     "compact",
-    @anode.h("span", [@anode.eid(0)], [@anode.dyn_text(Field("title"))]),
+    @anode.h("span", [@anode.eid(0)], [
+      @anode.h("i", [], [@anode.dyn_text(Field("title"))]),
+      @anode.h("i", [], [@anode.dyn_text(Method("label"))]),
+      @anode.h("i", [], [@anode.dyn_text(Method("double"))]),
+    ]),
     [[@anode.on("click", HandlerName(name="reset", ns=Input))]],
   )
 }

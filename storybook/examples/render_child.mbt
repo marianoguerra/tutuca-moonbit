@@ -38,14 +38,22 @@ pub fn render_child_module() -> @component.ModuleDef {
 /// `main` view and an `edit` view whose inputs two-way-bind the same fields.
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
+  // `containsText` is declared in this file's `tutuca/script` block, which is
+  // what puts it in `EntryMethod` — no view of Entry calls it. The BODY there
+  // is not emitted yet, so the implementation is still written here; when the
+  // emitter lands, this argument goes away and the block answers on its own.
   entry_component(
     init={ title: "Entry Title", description: "Entry Description" },
     compute=m => {
       match m {
         ContainsText =>
-          Some((s, args) => {
+          Some((s : EntryState, args : Array[@tutuca.Value]) => {
             match args {
-              [Str(v)] => Bool(s.title.contains(v) || s.description.contains(v))
+              [Str(v)] =>
+                Bool(
+                  s.title.to_lower().contains(v.to_lower()) ||
+                  s.description.to_lower().contains(v.to_lower()),
+                )
               _ => Bool(false)
             }
           })

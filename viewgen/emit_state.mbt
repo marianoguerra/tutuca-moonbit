@@ -159,7 +159,6 @@ fn emit_user_types(
       // A `flags` set is Map-backed at runtime like any other set, so it
       // contributes no MoonBit type — only the member list, which the specs
       // map below carries as the set's default membership.
-      UFlags(_) => ()
     }
   }
 }
@@ -185,9 +184,9 @@ fn emit_state_struct(
   emit_doc(def.doc, "The state of the \{t} component.", out)
   out.write_string(
     "///\n" +
-    "/// Declared as `interface \{def.wit_name}` in the state block. Adding a\n" +
-    "/// field there adds it here, so a view that reads it type-checks and one\n" +
-    "/// that reads a name this struct lacks fails generation.\n",
+    "/// Declared as `state` in the state block. Adding a field there adds it\n" +
+    "/// here, so a view that reads it type-checks and one that reads a name\n" +
+    "/// this struct lacks fails generation.\n",
   )
   // Child slots are declared in the schema but do NOT become struct fields:
   // the runtime creates them from the `specs~` entry through the
@@ -208,6 +207,17 @@ fn emit_state_struct(
   }
   out.write_string("pub(all) struct \{t}State {\n")
   for f in carried {
+    // A field's own doc, which the block can finally carry. `FieldDef.doc` was
+    // permanently `None` under WIT, and that absence is why
+    // `dyncomp/registry/descriptor.mbt` keeps a `field_docs` table OUTSIDE the
+    // schema: a guest had per-field docs and a host component could not.
+    match f.doc {
+      Some(d) =>
+        for line in d.split("\n") {
+          out.write_string("  /// \{line}\n")
+        }
+      None => ()
+    }
     out.write_string("  \{f.binding} : \{def.moonbit_ty(f.ty)}\n")
   }
   // No derive, and none needed for a keyword binding either. The view reads
@@ -223,7 +233,8 @@ fn emit_zero(t : String, def : @statedef.StateDef, out : StringBuilder) -> Unit 
     "///|\n" +
     "/// The zero state: every field at its type's empty value.\n" +
     "///\n" +
-    "/// WIT declares no defaults — a default is a value, not a type — so this\n" +
+    "/// The state block declares no defaults — a default is a value, not a\n" +
+    "/// type — so this\n" +
     "/// is type-directed, and `init` spreads it to name only what differs:\n" +
     "///\n" +
     "///   init={ ..\{t}State::zero(), label: \"Counter\" }\n" +
@@ -318,7 +329,7 @@ fn emit_schema(
   out.write_string(out_channel("receives", def.receive.map(m => m.name)))
   out.write_string(out_channel("bubbles", def.bubble.map(m => m.name)))
   out.write_string(out_channel("responses", def.response.map(m => m.name)))
-  out.write_string(out_channel("methods", declared_methods(surface, Some(def))))
+  out.write_string(out_channel("methods", declared_methods(surface)))
   out.write_string(out_channel("ids", surface.ids))
   out.write_string(out_channel("view_names", views.views.map(vw => vw.name)))
   out.write_string(out_channel("init_names", inits.map(st => st.name)))

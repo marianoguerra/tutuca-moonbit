@@ -1,42 +1,34 @@
 <script type="tutuca/state">
-  interface counter {
-    record state {
-    count: s32,
-    }
+  state Counter {
+    count : Int
   }
-  interface item {
-    record state {
-    completed: bool,
-    text: string,
-    }
+
+  state Item {
+    completed : Bool
+    text : String
   }
-  interface items {
-    record state {
-    items: values,
-    }
+
+  state Items {
+    items : Array[Any]
   }
-  interface tree-item {
-    record state {
-    %type: string,
-    label: string,
-    is-open: bool,
-    items: values,
-    }
+
+  state TreeItem {
+    type : String
+    label : String
+    isOpen : Bool
+    items : Array[Any]
   }
-  interface tree-root {
-    record state {
-    log: values,
-    root: tree-item,
-    }
+
+  state TreeRoot {
+    log : Array[Any]
+    root : TreeItem
   }
-  interface composability {
-    resource tree-root;
-    record state {
-    active-section: string,
-    counter: counter,
-    todo: items,
-    tree: tree-root,
-    }
+
+  state Composability {
+    activeSection : String
+    counter : Counter
+    todo : Items
+    tree : Component[TreeRoot]
   }
 </script>
 

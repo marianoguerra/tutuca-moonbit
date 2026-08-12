@@ -1,14 +1,11 @@
 <script type="tutuca/state">
-  interface item {
-    record state {
-    completed: bool,
-    text: string,
-    }
+  state Item {
+    completed : Bool
+    text : String
   }
-  interface items {
-    record state {
-    items: values,
-    }
+
+  state Items {
+    items : Array[Any]
   }
 </script>
 

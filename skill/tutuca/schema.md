@@ -1,7 +1,7 @@
 # Tutuca — The State Schema
 
 Read this file when declaring or changing a component's data contract: the
-`<script type="tutuca/state">` block, which WIT spelling a field wants, what
+`<script type="tutuca/state">` block, how a field's type is spelled, what
 mutators a field kind generates, message buckets, slots, and named initial
 states.
 
@@ -12,64 +12,60 @@ and every read of it in every view and handler is re-checked.
 
 ## The block
 
-A view file declares its component's data contract in a small subset of WIT,
-alongside the templates that read it:
-
+A view file declares its component's data contract in a small language that
+spells its types the way MoonBit does, alongside the templates that read it:
 ```html
 <script type="tutuca/state">
-  interface counter {
-    record state {
-      label: string,
-      count: s32,
-      history: list<s32>,
-    }
-    variant receive { reset-to(s32) }
-  }
+  state Counter { label: String, count: Int, history: Array[Int] }
+receive Counter { ResetTo(Int) }
 </script>
 ```
 
-One `interface` per component, named after the template id it gives views to
-(`id="Counter"` → `interface counter`), and exactly one `record state` in each.
-No `package` line: the module supplies it.
+One `state` per component, named after the template id it gives views to
+(`id="Counter"` → `state Counter`). A file whose templates are unnamed writes a
+bare `state { … }`; a file either names every component or none of them,
+exactly as its templates do.
+
+Six declaration keywords and no more — `state`, `struct`, `enum`, and the three
+message buckets `receive` / `bubble` / `response`. There is no nesting level
+above them: a `<template id>` already says which component a thing belongs to,
+so a second place to say it would be a second place to get it wrong.
 
 The schema goes in a `<script>` and not a `<template>`, because script content
-is raw text to an HTML parser and template content is markup — a `list<s32>`
-inside a template would be read as an `<s32>` element.
+is raw text to an HTML parser and template content is markup — an `Array[Int]`
+inside a template would be read as an `<Int>` element.
 
 ## Field types
 
 | you mean | you write |
 | -------- | --------- |
-| bool | `bool` |
-| int | `s8`..`s32`, `u8`..`u32` (each range-checked on decode) |
-| float | `f32` / `f64` |
-| text | `string`, `char`, or an `enum` |
-| list | `list<T>`, `tuple<A, B>` |
-| nullable | `option<T>` |
-| record / variant | `record R`, `variant V` |
-| set, closed members | `flags F` |
-| set, open members | `text-set` |
-| ordered map | `value-omap`, `text-omap` |
-| a child component | the sibling interface's name, `component`, `own<c>`/`borrow<c>`, or a `resource` |
-| anything at all | `any`, `values` |
+| bool | `Bool` |
+| int | `Int`, `Int8`, `Int16`, `UInt`, `UInt8`, `UInt16` (each range-checked on decode) |
+| float | `Double` |
+| text | `String`, or an `enum` |
+| list | `Array[T]`, `(A, B)` |
+| nullable | `T?` |
+| record / variant | `struct R { … }`, `enum V { … }` |
+| set, closed members | `Set[E]`, where `E` is an `enum` |
+| set, open members | `Set[String]` |
+| ordered map | `Map[String, V]` |
+| a child component | a sibling `state`'s name, `Component`, or `Component[Name]` |
+| anything at all | `Any`, `Array[Any]` |
 
-The last four rows are marker names rather than WIT constructs: WIT has no open
-type and no user generics, so a set with open membership, an ORDERED map (WIT's
-own `map` is unordered by definition) and a child-component slot have no
-structural spelling. The marker names are **reserved** — a user type shadowing
-`any` would silently change what every `any` in the file means.
+The builtin names are **reserved** — a user type called `Any` would silently
+change what every `Any` in the file means.
 
-`type tags = text-set` is a transparent alias: the field gets the marker's type,
-not a nominal type of its own.
+An open set and a closed one share one runtime shape (`Map[String, Bool]`) and
+one spelling: `Set[String]` says any string is a member, `Set[Visibility]` says
+the members are that enum's cases. The container decides the zero — a set starts
+EMPTY — and the enum decides the membership, which is one idea in each place.
 
-`values` is exactly `list<any>` — the spelling for a heterogeneous list, most
-often a list of component instances:
+`Array[Any]` is the spelling for a heterogeneous list, most often a list of
+component instances:
 
 ```html
 <script type="tutuca/state">
-  interface items {
-    record state { items: values }
-  }
+  state Items { items: Array[Any] }
 </script>
 ```
 
@@ -77,15 +73,19 @@ generates `items : Array[@tutuca.Value]`. Iterate it with
 `<div @each=".items"><x render-it></x></div>` and append instances with
 `Some({ items: s.items + [item.make(Map([]))] })` (the complete pairing is in
 [patterns/todo-list.md](./patterns/todo-list.md)). When every element has one
-known shape, prefer `list<T>` — the reads stay typed and the views are checked
-against the element schema. `any` is the scalar counterpart: one
+known shape, prefer `Array[T]` — the reads stay typed and the views are checked
+against the element schema. `Any` is the scalar counterpart: one
 `@tutuca.Value` field.
 
-**Out of the subset**, each with its own message: `s64`/`u64` (state travels as
-JSON, where integers past 2^53 lose precision), `result`, `future`, `stream`,
-`world`s, and a `func` declared as a **method on a resource** (a method belongs
-to the component, not to a handle). `map<K, V>` is real WIT but the parser does
-not carry it yet.
+**Refused, each with its own message**: `Int64`/`UInt64` (state travels as JSON,
+where a number is a Double and whole values above 2^53 do not survive the trip —
+carry one as a `String`), a `Map` keyed by anything but `String` (a JSON
+object's key is a string), and a type that contains itself with no `?` or
+`Array` in between (it has no size and no zero).
+
+Behaviour is not declared here. A `$`-callable no view of the component names —
+a method a PARENT calls, say — is a `pred` or a `compute` in the
+`<script type="tutuca/script">` block, beside every other callable.
 
 ## What each field kind generates
 
@@ -103,7 +103,7 @@ verbatim: `@on.click="removeInItemsAt @key"`, `@on.input="setQuery value"`,
 | any | `@tutuca.Value` | — (`Null`, instances, `Fn`s, heterogeneous data) |
 | list | `Array[...]` | `pushInX`, `insertInXAt`, `setInXAt`, `deleteInXAt`/`removeInXAt` |
 | map / omap | `Map[String, ...]` | `setInXAt`, `deleteInXAt`/`removeInXAt` |
-| set (`text-set`, `flags`) | `Map[String, Bool]` | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
+| set (`Set[String]`, `Set[Enum]`) | `Map[String, Bool]` | `addInX`, `deleteInX`/`removeInX`, `hasInX`, `toggleInX` (Map-backed: member → `Bool(true)`) |
 | comp | `@tutuca.Value` | — a slot, filled through the scope at `make()` (see [Slots](#slots)) |
 
 **Every** field additionally gets `setX`, `resetX`, and `xLen` (`Null` for
@@ -137,24 +137,20 @@ work by name (`component/component_test.mbt:418`):
 
 ```html
 <script type="tutuca/state">
-  interface board {
-    record state {
-      title: string,
-      editor: sheet,          // a sibling interface in this file
-      preview: component,     // any component, resolved by slots~
-      remote: legend,         // declared below as a resource
-    }
-    resource legend {}
+  state Board {
+    title   : String
+    editor  : Sheet             // a sibling state in this file
+    preview : Component         // a slot, resolved by `slots~`
+    remote  : Component[Legend] // a component from another module
   }
-  interface sheet {
-    record state { text: string }
-  }
+
+  state Sheet { text: String }
 </script>
 ```
 
-A method-less `resource` names a component this file does **not** declare — one
-from another module. A sibling interface is the better answer when there is one.
-`own<c>` / `borrow<c>` reach the same place as the bare name and read worse.
+`Component[Legend]` names a component this file does **not** declare — one from
+another module, resolved through the registration scope at make time. A sibling
+`state` is the better answer when there is one.
 
 The one thing no type can state is the child's **construction arguments**, and
 that is all `slot_args~` carries:
@@ -176,13 +172,12 @@ can fail to:
 
 - **the schema does not declare the field at all** — several components share one
   state type and hold different children. A view file gives each component its own
-  interface and so never needs this; a component built by hand does.
-- **the schema declares it as the bare `component` marker** — "a component slot"
-  without saying which. The usual reason is a name kebab-case cannot round-trip
-  (`DnDExample` → `d-n-d-example` → `DNDExample`), so the block cannot spell it:
+  `state` and so never needs this; a component built by hand does.
+- **the schema declares it as the bare `Component`** — "a component slot" without
+  saying which, for a child the block has no name to reach:
 
   ```html
-  record state { dnd: component }
+  state Board { dnd: Component }
   ```
   ```moonbit nocheck
   // nocheck: one bucket argument, not a compilable item
@@ -193,7 +188,7 @@ Either way the name is folded **into** the schema, so the descriptor still
 describes every field an instance has — which is what the inspector and
 structural equality read.
 
-> **A slot the schema NAMES is not overridable.** With `editor: sheet` declared,
+> **A slot the schema NAMES is not overridable.** With `editor: Sheet` declared,
 > `slots={ "editor": "Other" }` is ignored and the slot still holds a `Sheet`:
 > a caller contradicting a declared type would leave every reader of the
 > descriptor disagreeing with the block
@@ -207,12 +202,10 @@ Three optional variants declare the messages a component receives, beyond the
 
 ```html
 <script type="tutuca/state">
-  interface board {
-    record state { rows: values, loading: bool }
-    variant receive { reset, focus-row(s32) }
-    variant bubble { row-picked(s32) }
-    variant response { load-rows(values) }
-  }
+  state Board { rows: Array[Any], loading: Bool }
+  receive Board { Reset, FocusRow(Int) }
+  bubble Board { RowPicked(Int) }
+  response Board { LoadRows(Array[Any]) }
 </script>
 ```
 
@@ -222,24 +215,26 @@ simply absent. What a parent asks of a child goes through `receive` — a slot i
 a handle, not a channel. Channel semantics are in
 [request-response.md](./request-response.md).
 
-## Declared methods (`$`-callables)
+## Methods no view calls (`$`-callables)
 
-A freestanding `func` names a method the MoonBit `compute` bucket has to answer:
+The bucket enums are built from the names the views reference, so a `$`-callable
+**no view of this component calls** — a method a PARENT asks of it, say — would
+have no constructor. Name it in the script block, which is where callables live:
 
 ```html
-<script type="tutuca/state">
-  interface counter {
-    record state { count: s32 }
-    summary: func() -> string;
+<script type="tutuca/script" for="Entry">
+  /// Whether this entry matches a query, for a parent's `@when` filter.
+  pred containsText(q) {
+    ((contains (lower .title) (lower q)) or
+     (contains (lower .description) (lower q)))
   }
 </script>
 ```
 
-State is still data — this puts no behavior in the block. It names the method,
-which is the only way to type a `$`-callable **no view of this component calls**
-(the bucket enums are otherwise built from the names the views reference, so a
-method nothing calls has no constructor). Views calling `$summary` would declare
-it implicitly; declaring it here is for the callable that only code uses.
+The state block declares no behaviour at all — it used to carry `func`, which
+was the one thing that put a callable in a block whose own header says it holds
+data. `for=` names the component the way a `<template id>` does, and is needed
+only in a file that declares more than one.
 
 ## Schema without templates
 
@@ -249,10 +244,10 @@ assembled tree — still gets a generated state type: the schema lives in a view
 file, so it needs a view file even when it has no views. Such a file emits the
 state half only, and no view surface.
 
-The same applies per interface: one file may give templates to some components
-and declare state alone for others. `gen-views` reports the latter as
+The same applies per component: one file may give templates to some and declare
+state alone for others. `gen-views` reports the latter as
 `state-without-views (hint)` rather than an error, since it is also what a
-mistyped interface name looks like.
+mistyped component name looks like.
 
 A component with **no schema block** gets the view half only — no state type, no
 codec, no descriptor, and no checked reads. There is no weaker substitute; the

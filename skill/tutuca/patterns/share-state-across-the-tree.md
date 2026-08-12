@@ -15,15 +15,8 @@ you don't want to thread it through every component in between.
 
 ```html
 <script type="tutuca/state">
-  interface editor {
-    record state {
-      entries: values,
-      picker: selector,
-    }
-  }
-  interface selector {
-    record state {}
-  }
+  state Editor { entries: Array[Any], picker: Selector }
+    state Selector {  }
 </script>
 
 <template id="Editor">

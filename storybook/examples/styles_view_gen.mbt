@@ -10,15 +10,16 @@
 ///|
 /// The state of the StylesExample component.
 ///
-/// Declared as `interface styles-example` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StylesExampleState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StylesExampleState::zero(), label: "Counter" }
@@ -66,7 +67,7 @@ pub let styles_example_global_style : String = ".styles-example-global-class { c
 impl @component.Fields for StylesExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="StylesExample",
-    fingerprint="5c435ae5582bab80",
+    fingerprint="b55a4ebbe7d0a5e3",
     view_names=["main", "one", "two"],
   )
 }
@@ -74,9 +75,9 @@ impl @component.Fields for StylesExampleState with fn schema() {
 ///|
 /// The state of the StylesExampleRoot component.
 ///
-/// Declared as `interface styles-example-root` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StylesExampleRootState {
   value : @tutuca.Value
 }
@@ -84,7 +85,8 @@ pub(all) struct StylesExampleRootState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StylesExampleRootState::zero(), label: "Counter" }
@@ -129,7 +131,7 @@ pub let styles_example_root_global_style : String = ""
 impl @component.Fields for StylesExampleRootState with fn schema() {
   @component.SchemaInfo::new(
     name="StylesExampleRoot",
-    fingerprint="1f5350c9854ee343",
+    fingerprint="0ba8afbcffdbc472",
     fields=[@component.FieldInfo::new("value", TyComp(Some("StylesExample")))],
     view_names=["main"],
   )

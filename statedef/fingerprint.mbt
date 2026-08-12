@@ -10,7 +10,7 @@
 // statedef was ever checked in, `--wit` was passed by no build, and the guest
 // trees under guests/ are hand-written against the dyncomp boundary contract
 // rather than generated from one of these. It went, and `to_guest` with it.
-// The fingerprint hashes `show_wit()` rather than the document, so it is
+// The fingerprint hashes `show_source()` rather than the document, so it is
 // unaffected.
 
 ///|
@@ -25,23 +25,23 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
   for def in defs {
     sb.write_string("i:\{def.wit_name};")
     for f in def.fields {
-      sb.write_string("f:\{f.wit_name}:\{f.ty.show_wit()};")
+      sb.write_string("f:\{f.wit_name}:\{f.ty.show_source()};")
     }
     for t in def.types {
       sb.write_string("t:\{t.wit_name}:")
       match t.kind {
         URecord(fs) =>
           for f in fs {
-            sb.write_string("\{f.wit_name}=\{f.ty.show_wit()},")
+            sb.write_string("\{f.wit_name}=\{f.ty.show_source()},")
           }
-        UEnum(cs) | UFlags(cs) =>
+        UEnum(cs) =>
           for c in cs {
             sb.write_string("\{c.0},")
           }
         UVariant(cs) =>
           for c in cs {
             sb.write_string(
-              "\{c.wit_name}(\{c.payload.map(p => p.show_wit()).join("|")}),",
+              "\{c.wit_name}(\{c.payload.map(p => p.show_source()).join("|")}),",
             )
           }
       }
@@ -50,7 +50,7 @@ pub fn fingerprint(defs : Array[StateDef]) -> String {
     for pair in [("r", def.receive), ("b", def.bubble), ("p", def.response)] {
       for m in pair.1 {
         sb.write_string(
-          "\{pair.0}:\{m.wit_name}(\{m.payload.map(p => p.show_wit()).join("|")});",
+          "\{pair.0}:\{m.wit_name}(\{m.payload.map(p => p.show_source()).join("|")});",
         )
       }
     }

@@ -2,11 +2,14 @@
 //
 // Four small functions that every generated identifier and every diagnostic
 // goes through, and that nothing tested. They are pinned here rather than
-// through the emitters because the emitters would still pass if two of these
-// changed in compensating ways — and because `locus` in particular is a
-// contract with a caller in another package: `viewgen/split.mbt` scans the
-// block for the identifier this returns in order to blame a line, so a locus
-// that changes shape silently moves every semantic error to line 1.
+// through the emitters, because the emitters would still pass if two of them
+// changed in compensating ways.
+//
+// The parser's own diagnostics are pinned here too, and what they assert is
+// the thing the rewrite bought: a SPAN. `DefError::locus` used to answer an
+// identifier and `viewgen/split.mbt` scanned the block for it as a whole word,
+// because mizchi/wit carried no positions — the right line, never the right
+// column.
 
 ///|
 /// The error a state block raises, or None when it parses.
@@ -21,7 +24,9 @@ fn def_err(src : String) -> @statedef.DefError? {
 
 ///|
 test "the three name shapes, and where the keyword escape lands" {
-  // kebab -> lowerCamel: the runtime name, what a view writes and JSON carries
+  // A field is written the way a view reads it, so these two exist for the
+  // shapes that genuinely differ: a MoonBit type or variant name is
+  // UpperCamel, and a binding has to dodge the keywords.
   assert_eq(@statedef.camel_name("set-label"), "setLabel")
   assert_eq(@statedef.camel_name("reset"), "reset")
   assert_eq(@statedef.camel_name("with-history"), "withHistory")
@@ -52,14 +57,12 @@ test "the three name shapes, and where the keyword escape lands" {
 
 ///|
 test "a keyword field keeps its runtime name and escapes only its binding" {
-  // MoonBit keywords that WIT is perfectly happy with — which is the whole
+  // MoonBit keywords that are perfectly good field names — which is the whole
   // situation the escape exists for.
-  let d = def_of(
-    "interface c { record state { match: string, lazy: s32, struct: bool } }",
-  )
-  assert_eq(d.fields.map(f => f.wit_name), ["match", "lazy", "struct"])
-  assert_eq(d.fields.map(f => f.name), ["match", "lazy", "struct"])
-  assert_eq(d.fields.map(f => f.binding), ["match_", "lazy_", "struct_"])
+  let d = def_of("state { match: String, lazy: Int, guard: Bool }")
+  assert_eq(d.fields.map(f => f.wit_name), ["match", "lazy", "guard"])
+  assert_eq(d.fields.map(f => f.name), ["match", "lazy", "guard"])
+  assert_eq(d.fields.map(f => f.binding), ["match_", "lazy_", "guard_"])
 }
 
 ///|
@@ -92,97 +95,108 @@ test "nearest guesses within a length-scaled budget, and otherwise not at all" {
 }
 
 ///|
-test "show_wit round-trips the spelling the author wrote" {
+test "show_source round-trips the spelling the author wrote" {
   let d = def_of(
     (
-      #|interface counter {
-      #|  enum priority { low, high }
-      #|  record state {
-      #|    label: string,
-      #|    count: s32,
-      #|    small: u8,
-      #|    ratio: f64,
-      #|    ok: bool,
-      #|    history: list<s32>,
-      #|    pick: option<string>,
-      #|    pair: tuple<string, s32>,
-      #|    pri: priority,
-      #|    tags: text-set,
-      #|    blob: any,
-      #|  }
+      #|enum Priority { Low, High }
+      #|state {
+      #|  label   : String
+      #|  count   : Int
+      #|  small   : UInt8
+      #|  ratio   : Double
+      #|  ok      : Bool
+      #|  history : Array[Int]
+      #|  pick    : String?
+      #|  pair    : (String, Int)
+      #|  pri     : Priority
+      #|  tags    : Set[String]
+      #|  blob    : Any
       #|}
     ),
   )
-  let spellings = d.fields.map(f => f.ty.show_wit())
+  let spellings = d.fields.map(f => f.ty.show_source())
   assert_eq(spellings, [
-    "string", "s32", "u8", "f64", "bool", "list<s32>", "option<string>", "tuple<string, s32>",
-    // A named type shows the WIT name, NOT the generated MoonBit one
-    // (`CounterPriority`): this string ends up in a message about source the
-    // author wrote, so it has to be the spelling they can find.
-     "priority", "text-set", "any",
+    "String", "Int", "UInt8", "Double", "Bool", "Array[Int]", "String?", "(String, Int)",
+    // A named type shows the name the AUTHOR wrote, not the generated MoonBit
+    // one (`CounterPriority`): this string ends up in a message about source
+    // they have open, so it has to be the spelling they can find.
+     "Priority",
+    // A set spells its membership: open is `Set[String]`, and closed names
+    // the enum where the members are declared.
+     "Set[String]", "Any",
   ])
 }
 
 ///|
-test "a syntax error's offset indexes the author's text, not the parser's" {
-  // statedef prepends `package tutuca:state;` before handing the block to the
-  // WIT parser, and subtracts it back off. Without that, every syntax error
-  // in every state block in the corpus would point one line too far down.
-  guard! def_err("interface c { record state { count: s32 } }\n@@@") is Some(e)
-  guard e is WitSyntax(offset~, ..) else { fail("expected a syntax error") }
-  assert_true(offset >= 44)
-  // Nothing to point at by name — the position is exact, so there is no
-  // identifier to scan for.
-  assert_eq(e.locus(), None)
+test "a syntax error carries a span, not an identifier to go looking for" {
+  // The whole reason the parser is ours. mizchi/wit carried no positions, so
+  // `DefError::locus` answered an IDENTIFIER and `viewgen/split.mbt` scanned
+  // the block for it as a whole word to guess a line — the right line, never
+  // the right column.
+  guard! def_err("state { count: }") is Some(e)
+  assert_eq(e.message(), "state block: expected a type, found `}`")
+  assert_eq(e.span(), { start: 15, end_: 16 })
 }
 
 ///|
-test "a semantic error names the identifier a caller can scan for" {
-  // `locus` exists because mizchi/wit carries no per-declaration spans, so a
-  // semantic failure cannot report a position of its own. Naming the
-  // identifier is what lets `viewgen/split.mbt` land on the right line.
-
-  // A type outside the subset: the locus is the FIELD, the last segment of
-  // the dotted path — that is what the author can find.
-  guard! def_err("interface c { record state { big: s64 } }") is Some(e1)
+test "every failure points at the thing it is about" {
+  // A 64-bit integer is NAMED rather than left unknown: "unknown type
+  // `Int64`" would read as a spelling mistake when the answer is that state
+  // travels as JSON and a JSON number is a Double.
+  guard! def_err("state { big: Int64 }") is Some(e1)
   assert_true(e1 is UnsupportedType(_))
-  assert_eq(e1.locus(), Some("big"))
+  assert_true(e1.message().contains("2^53"))
+  assert_eq(e1.span(), { start: 13, end_: 18 })
 
-  // An unresolvable type reference, same rule.
-  guard! def_err("interface c { record state { x: nope } }") is Some(e2)
-  assert_true(e2 is UnknownTypeRef(_))
-  assert_eq(e2.locus(), Some("x"))
+  guard! def_err("state { big: Nope }") is Some(e1b)
+  assert_true(e1b is UnknownTypeRef(_))
 
-  // A by-value cycle has no representation and no zero; the locus is the type.
-  guard! def_err(
-      "interface c { record node { next: node } record state { n: node } }",
-    )
-    is Some(e3)
+  // A type application with the wrong arity.
+  guard! def_err("state { xs: Array[Int, Int] }") is Some(e2)
+  assert_true(e2 is BadTypeArgs(_))
+  assert_eq(
+    e2.message(),
+    "state block: `Array` takes 1 type argument(s), not 2",
+  )
+
+  // A by-value cycle has no representation and no zero.
+  guard! def_err("struct Node { next: Node }\nstate { n: Node }") is Some(e3)
   assert_true(e3 is CyclicType(_))
-  assert_eq(e3.locus(), Some("node"))
 
-  // A missing state record blames the interface.
-  guard! def_err("interface c { record other { x: s32 } }") is Some(e4)
-  assert_true(e4 is NoStateRecord(_))
-  assert_eq(e4.locus(), Some("c"))
+  // …and one through `Array` or `?` is fine, because both terminate.
+  assert_true(def_err("struct Node { next: Node? }\nstate { n: Node }") is None)
+  assert_true(
+    def_err("struct Node { kids: Array[Node] }\nstate { n: Node }") is None,
+  )
 
-  // Two names mapping onto one identifier: the SECOND is the one to look at,
+  // Two names collapsing onto one binding: the SECOND is the one to look at,
   // because the first was fine until the second arrived.
-  guard! def_err(
-      "interface c { record state { set-label: s32, set_label: s32 } }",
-    )
-    is Some(e5)
-  assert_true(e5 is Collision(_))
-  assert_eq(e5.locus(), Some("set_label"))
+  guard! def_err("state { match: Int, match_: Int }") is Some(e4)
+  assert_true(e4 is Collision(_))
 }
 
 ///|
-test "a block carrying its own package decl is refused before parsing" {
-  // Prepending the header to a block that already has one yields "expected
-  // interface" pointing at the author's line, so the case is caught first.
-  guard! def_err("package a:b;\ninterface c { record state { x: s32 } }")
-    is Some(e)
-  assert_true(e is UnexpectedPackage(_))
-  // Nothing useful to scan for: the offending text is a keyword, not a name.
-  assert_eq(e.locus(), None)
+test "a block with no state describes no component" {
+  guard! def_err("struct Label { text: String }") is Some(e)
+  assert_true(e is NoState(_))
+}
+
+///|
+test "a file names every component or none of them, as its templates do" {
+  // The rule the `<template>` ids already follow, applied one block up: bare
+  // means the file's single component, a name means that one.
+  assert_true(def_err("state { n: Int }") is None)
+  assert_true(def_err("state A { n: Int }\nstate B { m: Int }") is None)
+  guard! def_err("state { n: Int }\nstate B { m: Int }") is Some(e)
+  assert_true(e is MixedStateNames(_))
+  guard! def_err("state A { n: Int }\nstate A { m: Int }") is Some(dup)
+  assert_true(dup is DuplicateComponent(_))
+}
+
+///|
+test "a builtin type name cannot be declared" {
+  // Reserved for the reason the markers were: a user type called `Any` would
+  // silently change what every `Any` in the file means.
+  guard! def_err("struct Any { x: Int }\nstate { a: Int }") is Some(e)
+  assert_true(e is ReservedName(_))
 }

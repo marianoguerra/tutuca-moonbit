@@ -49,7 +49,7 @@ pub fn ProgramIndex::add(
   fallback : String,
 ) -> Unit {
   for def in file.state {
-    self.defs[def.component] = def
+    self.defs[def.component_name(fallback)] = def
   }
   for comp in file.components {
     self.views[comp.component_name(fallback)] = comp.views.map(v => v.name)

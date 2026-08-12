@@ -8,21 +8,21 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The `due` variant.
+/// The `Due` variant.
 pub(all) enum NestedStateDue {
   Unscheduled
   OnDay(Int)
 } derive(Eq, @debug.Debug)
 
 ///|
-/// The `label` record.
+/// The `Label` record.
 pub(all) struct NestedStateLabel {
   text : String
   done : Bool
 } derive(Eq, @debug.Debug)
 
 ///|
-/// The `priority` enum.
+/// The `Priority` enum.
 pub(all) enum NestedStatePriority {
   Low
   High
@@ -31,9 +31,9 @@ pub(all) enum NestedStatePriority {
 ///|
 /// The state of the NestedState component.
 ///
-/// Declared as `interface nested-state` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct NestedStateState {
   title : String
   labels : Array[NestedStateLabel]
@@ -46,7 +46,8 @@ pub(all) struct NestedStateState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NestedStateState::zero(), label: "Counter" }
@@ -62,7 +63,7 @@ pub fn NestedStateState::zero() -> NestedStateState {
 }
 
 ///|
-/// The `due` variant as a `@tutuca.Value`: the bare case
+/// The `Due` variant as a `@tutuca.Value`: the bare case
 /// name when it carries nothing, else the name followed by its
 /// payload.
 fn nested_state_due_to_value(x : NestedStateDue) -> @tutuca.Value {
@@ -73,7 +74,7 @@ fn nested_state_due_to_value(x : NestedStateDue) -> @tutuca.Value {
 }
 
 ///|
-/// The `due` variant back out. None on an unknown case or
+/// The `Due` variant back out. None on an unknown case or
 /// a payload that does not match the declared shape.
 fn nested_state_due_of_value(v : @tutuca.Value) -> NestedStateDue? {
   if v is Str(s) {
@@ -95,13 +96,13 @@ fn nested_state_due_of_value(v : @tutuca.Value) -> NestedStateDue? {
 }
 
 ///|
-/// The `label` record as a `@tutuca.Value`.
+/// The `Label` record as a `@tutuca.Value`.
 fn nested_state_label_to_value(x : NestedStateLabel) -> @tutuca.Value {
   Map({ "text": Str(x.text), "done": Bool(x.done) })
 }
 
 ///|
-/// The `label` record back out. None on a shape mismatch.
+/// The `Label` record back out. None on a shape mismatch.
 fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
   guard v is Map(m) else { return None }
   guard m.get("text") is Some(Str(f_text)) else { return None }
@@ -110,7 +111,7 @@ fn nested_state_label_of_value(v : @tutuca.Value) -> NestedStateLabel? {
 }
 
 ///|
-/// The `priority` enum as a `@tutuca.Value`: the case name.
+/// The `Priority` enum as a `@tutuca.Value`: the case name.
 fn nested_state_priority_to_value(x : NestedStatePriority) -> @tutuca.Value {
   match x {
     Low => Str("Low")
@@ -119,7 +120,7 @@ fn nested_state_priority_to_value(x : NestedStatePriority) -> @tutuca.Value {
 }
 
 ///|
-/// The `priority` enum back out. None on an unknown case.
+/// The `Priority` enum back out. None on an unknown case.
 fn nested_state_priority_of_value(v : @tutuca.Value) -> NestedStatePriority? {
   guard v is Str(s) else { return None }
   match s {
@@ -270,12 +271,12 @@ pub fn NestedStateMsg::from_dispatch(
 impl @component.Fields for NestedStateState with fn schema() {
   @component.SchemaInfo::new(
     name="NestedState",
-    fingerprint="4718555fe446ae34",
+    fingerprint="d68713c84911f05f",
     fields=[
       @component.FieldInfo::new("title", TyText),
-      @component.FieldInfo::new("labels", TyList(TyRecord("label"))),
-      @component.FieldInfo::new("priority", TyEnum("priority")),
-      @component.FieldInfo::new("due", TyVariant("due")),
+      @component.FieldInfo::new("labels", TyList(TyRecord("Label"))),
+      @component.FieldInfo::new("priority", TyEnum("Priority")),
+      @component.FieldInfo::new("due", TyVariant("Due")),
       @component.FieldInfo::new("note", TyOption(TyText)),
       @component.FieldInfo::new("size", TyTuple([TyInt, TyInt])),
     ],

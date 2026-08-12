@@ -120,7 +120,7 @@ pub fn Descriptor::summary(self : Descriptor) -> String {
   if !self.keywords.is_empty() {
     return self.keywords.join(", ")
   }
-  let fields = self.schema.fields.map(f => "\{f.name}: \{f.ty.show_wit()}")
+  let fields = self.schema.fields.map(f => "\{f.name}: \{f.ty.show_source()}")
   if fields.is_empty() {
     "no declared state"
   } else {

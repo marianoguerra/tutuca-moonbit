@@ -152,7 +152,7 @@ fn coerce_ty(
     (TyComp(_), _) => @tutuca.Value::from_json(j)
     _ => {
       errors.push(
-        err(pointer, "expected \{ty.show_wit()}, got \{json_kind(j)}"),
+        err(pointer, "expected \{ty.show_source()}, got \{json_kind(j)}"),
       )
       ty.zero()
     }

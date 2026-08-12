@@ -1,25 +1,21 @@
 <script type="tutuca/state">
-  interface instance-fields {
-    record state {
-      items: values,
-      is-expanded: bool,
-      items-per-page: s32,
-      current-page: s32,
-      type-name: string,
-    }
+  state InstanceFields {
+    items : Array[Any]
+    isExpanded : Bool
+    itemsPerPage : Int
+    currentPage : Int
+    typeName : String
   }
-  interface instance-inspector {
-    record state {
-      value: any,
-    }
+
+  state InstanceInspector {
+    value : Any
   }
-  interface instance-explorer {
-    record state {
-      active-tab: string,
-      instance-view: any,
-      component-view: any,
-      has-component: bool,
-    }
+
+  state InstanceExplorer {
+    activeTab : String
+    instanceView : Any
+    componentView : Any
+    hasComponent : Bool
   }
 </script>
 

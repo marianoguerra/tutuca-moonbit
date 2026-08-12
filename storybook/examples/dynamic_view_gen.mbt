@@ -10,9 +10,9 @@
 ///|
 /// The state of the SelectorEntry component.
 ///
-/// Declared as `interface selector-entry` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SelectorEntryState {
   value : String
   label : String
@@ -21,7 +21,8 @@ pub(all) struct SelectorEntryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SelectorEntryState::zero(), label: "Counter" }
@@ -122,7 +123,7 @@ pub fn SelectorEntryMsg::from_dispatch(
 impl @component.Fields for SelectorEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="SelectorEntry",
-    fingerprint="1324f37b25b27096",
+    fingerprint="44527a4caf85d8eb",
     fields=[
       @component.FieldInfo::new("value", TyText),
       @component.FieldInfo::new("label", TyText),
@@ -135,9 +136,9 @@ impl @component.Fields for SelectorEntryState with fn schema() {
 ///|
 /// The state of the Selector component.
 ///
-/// Declared as `interface selector` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SelectorState {
   items : Array[@tutuca.Value]
   selectedValue : @tutuca.Value
@@ -146,7 +147,8 @@ pub(all) struct SelectorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SelectorState::zero(), label: "Counter" }
@@ -248,7 +250,7 @@ pub fn SelectorMsg::from_dispatch(d : @component.Dispatch) -> SelectorMsg? {
 impl @component.Fields for SelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="Selector",
-    fingerprint="7d6e4c9774279bbb",
+    fingerprint="cd3bd82592ca418d",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("selectedValue", TyAny),
@@ -261,9 +263,9 @@ impl @component.Fields for SelectorState with fn schema() {
 ///|
 /// The state of the EntryEditorAndSelector component.
 ///
-/// Declared as `interface entry-editor-and-selector` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct EntryEditorAndSelectorState {
   items : Array[@tutuca.Value]
   selector : @tutuca.Value
@@ -272,7 +274,8 @@ pub(all) struct EntryEditorAndSelectorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EntryEditorAndSelectorState::zero(), label: "Counter" }
@@ -386,7 +389,7 @@ pub fn EntryEditorAndSelectorMsg::from_dispatch(
 impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="EntryEditorAndSelector",
-    fingerprint="8084ff0442264677",
+    fingerprint="cf139860993eb8fc",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("selector", TyComp(Some("Selector"))),
@@ -399,9 +402,9 @@ impl @component.Fields for EntryEditorAndSelectorState with fn schema() {
 ///|
 /// The state of the Sheet component.
 ///
-/// Declared as `interface sheet` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SheetState {
   title : String
 }
@@ -409,7 +412,8 @@ pub(all) struct SheetState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SheetState::zero(), label: "Counter" }
@@ -501,7 +505,7 @@ pub fn SheetMsg::from_dispatch(d : @component.Dispatch) -> SheetMsg? {
 impl @component.Fields for SheetState with fn schema() {
   @component.SchemaInfo::new(
     name="Sheet",
-    fingerprint="5ee8832621359ec0",
+    fingerprint="8f72a9bbe8472900",
     fields=[@component.FieldInfo::new("title", TyText)],
     inputs=["setTitle"],
     view_names=["main"],
@@ -511,15 +515,16 @@ impl @component.Fields for SheetState with fn schema() {
 ///|
 /// The state of the Toolbar component.
 ///
-/// Declared as `interface toolbar` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ToolbarState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ToolbarState::zero(), label: "Counter" }
@@ -561,7 +566,7 @@ pub let toolbar_global_style : String = ""
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ToolbarState with fn schema() {
-  @component.SchemaInfo::new(name="Toolbar", fingerprint="56782604789d5a5e", view_names=[
+  @component.SchemaInfo::new(name="Toolbar", fingerprint="56c198ae948445be", view_names=[
     "main",
   ])
 }
@@ -569,9 +574,9 @@ impl @component.Fields for ToolbarState with fn schema() {
 ///|
 /// The state of the Panel component.
 ///
-/// Declared as `interface panel` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PanelState {
   toolbar : @tutuca.Value
 }
@@ -579,7 +584,8 @@ pub(all) struct PanelState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PanelState::zero(), label: "Counter" }
@@ -624,7 +630,7 @@ pub let panel_global_style : String = ""
 impl @component.Fields for PanelState with fn schema() {
   @component.SchemaInfo::new(
     name="Panel",
-    fingerprint="a03c9d089c76f2f6",
+    fingerprint="8f521bd049a9ee1d",
     fields=[@component.FieldInfo::new("toolbar", TyComp(Some("Toolbar")))],
     view_names=["main"],
   )
@@ -633,9 +639,9 @@ impl @component.Fields for PanelState with fn schema() {
 ///|
 /// The state of the Workspace component.
 ///
-/// Declared as `interface workspace` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct WorkspaceState {
   sheet : @tutuca.Value
   panel : @tutuca.Value
@@ -644,7 +650,8 @@ pub(all) struct WorkspaceState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..WorkspaceState::zero(), label: "Counter" }
@@ -703,7 +710,7 @@ pub fn WorkspaceMethod::name(self : WorkspaceMethod) -> String {
 impl @component.Fields for WorkspaceState with fn schema() {
   @component.SchemaInfo::new(
     name="Workspace",
-    fingerprint="cc5f2c08d14c8218",
+    fingerprint="780031bd15062164",
     fields=[
       @component.FieldInfo::new("sheet", TyComp(Some("Sheet"))),
       @component.FieldInfo::new("panel", TyComp(Some("Panel"))),

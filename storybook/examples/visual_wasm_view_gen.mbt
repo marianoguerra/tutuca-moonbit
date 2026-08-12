@@ -8,20 +8,18 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state for the components in visual_wasm.mbt, which build
-/// their views in MoonBit rather than here — a macro body is
-/// registered at runtime, so it cannot be compiled ahead of time.
-/// No <template>: this file declares state and nothing else.
+/// The state of the VwEmpty component.
 ///
-/// Declared as `interface vw-empty` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwEmptyState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwEmptyState::zero(), label: "Counter" }
@@ -55,15 +53,15 @@ impl @component.Fields for VwEmptyState with fn decode(_f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwEmptyState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="ce4923df302b81b2")
+  @component.SchemaInfo::new(fingerprint="57d449ae33f2ab7b")
 }
 
 ///|
 /// The state of the VwImm component.
 ///
-/// Declared as `interface vw-imm` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwImmState {
   value : Int
   rawValue : String
@@ -72,7 +70,8 @@ pub(all) struct VwImmState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwImmState::zero(), label: "Counter" }
@@ -109,7 +108,7 @@ impl @component.Fields for VwImmState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwImmState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="53f3484f60b3c75c", fields=[
+  @component.SchemaInfo::new(fingerprint="38990f2ccde77a07", fields=[
     @component.FieldInfo::new("value", TyInt),
     @component.FieldInfo::new("rawValue", TyText),
   ])
@@ -118,9 +117,9 @@ impl @component.Fields for VwImmState with fn schema() {
 ///|
 /// The state of the VwTypes component.
 ///
-/// Declared as `interface vw-types` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwTypesState {
   items : Array[@tutuca.Value]
 }
@@ -128,7 +127,8 @@ pub(all) struct VwTypesState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwTypesState::zero(), label: "Counter" }
@@ -169,7 +169,7 @@ impl @component.Fields for VwTypesState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwTypesState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="dd9e67b6f8d50b55", fields=[
+  @component.SchemaInfo::new(fingerprint="e2ba6717214595df", fields=[
     @component.FieldInfo::new("items", TyList(TyAny)),
   ])
 }
@@ -177,9 +177,9 @@ impl @component.Fields for VwTypesState with fn schema() {
 ///|
 /// The state of the VwContainer component.
 ///
-/// Declared as `interface vw-container` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwContainerState {
   items : Array[@tutuca.Value]
   expanded : Bool
@@ -189,7 +189,8 @@ pub(all) struct VwContainerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwContainerState::zero(), label: "Counter" }
@@ -236,7 +237,7 @@ impl @component.Fields for VwContainerState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwContainerState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="a94df03941e4c8f4", fields=[
+  @component.SchemaInfo::new(fingerprint="186251e4bffce07e", fields=[
     @component.FieldInfo::new("items", TyList(TyAny)),
     @component.FieldInfo::new("expanded", TyBool),
     @component.FieldInfo::new("editing", TyBool),
@@ -246,9 +247,9 @@ impl @component.Fields for VwContainerState with fn schema() {
 ///|
 /// The state of the VwIf component.
 ///
-/// Declared as `interface vw-if` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwIfState {
   thn : Array[@tutuca.Value]
   else_ : Array[@tutuca.Value]
@@ -261,7 +262,8 @@ pub(all) struct VwIfState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwIfState::zero(), label: "Counter" }
@@ -334,7 +336,7 @@ impl @component.Fields for VwIfState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwIfState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="90972407f58ddfc3", fields=[
+  @component.SchemaInfo::new(fingerprint="806acbcfc51dce65", fields=[
     @component.FieldInfo::new("thn", TyList(TyAny)),
     @component.FieldInfo::new("else", TyList(TyAny)),
     @component.FieldInfo::new("expanded", TyBool),
@@ -347,9 +349,9 @@ impl @component.Fields for VwIfState with fn schema() {
 ///|
 /// The state of the VwSection component.
 ///
-/// Declared as `interface vw-section` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwSectionState {
   id : Int
   name : String
@@ -361,7 +363,8 @@ pub(all) struct VwSectionState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwSectionState::zero(), label: "Counter" }
@@ -419,7 +422,7 @@ impl @component.Fields for VwSectionState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwSectionState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="2bd9dd9147e15f1e", fields=[
+  @component.SchemaInfo::new(fingerprint="95670364407deab6", fields=[
     @component.FieldInfo::new("id", TyInt),
     @component.FieldInfo::new("name", TyText),
     @component.FieldInfo::new("items", TyList(TyAny)),
@@ -431,9 +434,9 @@ impl @component.Fields for VwSectionState with fn schema() {
 ///|
 /// The state of the VwMemory component.
 ///
-/// Declared as `interface vw-memory` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwMemoryState {
   n : Int
   m : Int
@@ -442,7 +445,8 @@ pub(all) struct VwMemoryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwMemoryState::zero(), label: "Counter" }
@@ -480,7 +484,7 @@ impl @component.Fields for VwMemoryState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwMemoryState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="5bef82ed43430e63", fields=[
+  @component.SchemaInfo::new(fingerprint="122f4a56de474a40", fields=[
     @component.FieldInfo::new("n", TyInt),
     @component.FieldInfo::new("m", TyInt),
   ])
@@ -489,9 +493,9 @@ impl @component.Fields for VwMemoryState with fn schema() {
 ///|
 /// The state of the VwPicker component.
 ///
-/// Declared as `interface vw-picker` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct VwPickerState {
   currentSection : String
   instructions : Array[@tutuca.Value]
@@ -501,7 +505,8 @@ pub(all) struct VwPickerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..VwPickerState::zero(), label: "Counter" }
@@ -554,7 +559,7 @@ impl @component.Fields for VwPickerState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for VwPickerState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="e5eda1d1115e0e30", fields=[
+  @component.SchemaInfo::new(fingerprint="3fdeef8c03b58885", fields=[
     @component.FieldInfo::new("currentSection", TyText),
     @component.FieldInfo::new("instructions", TyList(TyAny)),
     @component.FieldInfo::new("filter", TyText),

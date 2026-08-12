@@ -11,7 +11,7 @@ style, one at file level is the component's `common_style`, and one marked
 
 ```html
 <script type="tutuca/state">
-  interface styled { record state {} }
+  state Styled {  }
 </script>
 
 <!-- scoped to all views of this component -->

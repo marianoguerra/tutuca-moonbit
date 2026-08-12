@@ -13,9 +13,9 @@
 /// point is that every panel of the component inspector has something to
 /// show, which is why it declares one of everything.
 ///
-/// Declared as `interface rich-sample` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct RichSampleState {
   title : String
   count : Int
@@ -26,7 +26,8 @@ pub(all) struct RichSampleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RichSampleState::zero(), label: "Counter" }
@@ -319,7 +320,7 @@ pub fn RichSampleLoopWith::name(self : RichSampleLoopWith) -> String {
 impl @component.Fields for RichSampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RichSample",
-    fingerprint="98c5770c79268b31",
+    fingerprint="a98d8e367382fc66",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -338,9 +339,9 @@ impl @component.Fields for RichSampleState with fn schema() {
 ///|
 /// The state of the SampleCard component.
 ///
-/// Declared as `interface sample-card` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SampleCardState {
   title : String
   count : Int
@@ -351,7 +352,8 @@ pub(all) struct SampleCardState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SampleCardState::zero(), label: "Counter" }
@@ -471,7 +473,7 @@ pub fn SampleCardMethod::name(self : SampleCardMethod) -> String {
 impl @component.Fields for SampleCardState with fn schema() {
   @component.SchemaInfo::new(
     name="SampleCard",
-    fingerprint="33fd8877c57069f1",
+    fingerprint="5c60f49b28eb5d16",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("count", TyInt),

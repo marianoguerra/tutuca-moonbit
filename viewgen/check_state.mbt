@@ -164,7 +164,7 @@ fn Checker::val(
             raise UnknownStateField(
               view=self.view,
               name~,
-              scope=t.show_wit(),
+              scope=t.show_source(),
               suggestion=self.members_of(t)
                 |> fn(ns) { @statedef.nearest(name, ns) },
             )
@@ -188,7 +188,7 @@ fn Checker::val(
               raise UnknownStateField(
                 view=self.view,
                 name=prop,
-                scope="the loop item (\{t.show_wit()})",
+                scope="the loop item (\{t.show_source()})",
                 suggestion=self.members_of(t)
                   |> fn(ns) { @statedef.nearest(prop, ns) },
               )
@@ -290,7 +290,7 @@ fn Checker::boolish(
       view=self.view,
       directive~,
       expr=expr_src(val),
-      ty=t.show_wit(),
+      ty=t.show_source(),
     )
   }
 }
@@ -359,7 +359,7 @@ fn Checker::node(
             raise NotRenderable(
               view=self.view,
               expr=expr_src(d.val),
-              ty=t.show_wit(),
+              ty=t.show_source(),
             )
           }
           // `option<comp>` is renderable through its inner type, so ask the
@@ -426,7 +426,7 @@ fn Checker::node(
               raise NotIterable(
                 view=self.view,
                 expr=expr_src(it.val),
-                ty=t.show_wit(),
+                ty=t.show_source(),
               )
           }
         None => SOpaque

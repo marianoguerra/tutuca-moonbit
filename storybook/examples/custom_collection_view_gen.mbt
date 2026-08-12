@@ -10,9 +10,9 @@
 ///|
 /// The state of the Playlist component.
 ///
-/// Declared as `interface playlist` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PlaylistState {
   songs : @tutuca.Value
 }
@@ -20,7 +20,8 @@ pub(all) struct PlaylistState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PlaylistState::zero(), label: "Counter" }
@@ -112,7 +113,7 @@ pub fn PlaylistMsg::from_dispatch(d : @component.Dispatch) -> PlaylistMsg? {
 impl @component.Fields for PlaylistState with fn schema() {
   @component.SchemaInfo::new(
     name="Playlist",
-    fingerprint="cc5dc1cd9f4badee",
+    fingerprint="225a6bf21d2bb3ae",
     fields=[@component.FieldInfo::new("songs", TyAny)],
     inputs=["removeSong"],
     view_names=["main"],
@@ -122,9 +123,9 @@ impl @component.Fields for PlaylistState with fn schema() {
 ///|
 /// The state of the Song component.
 ///
-/// Declared as `interface song` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SongState {
   title : String
 }
@@ -132,7 +133,8 @@ pub(all) struct SongState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SongState::zero(), label: "Counter" }
@@ -177,7 +179,7 @@ pub let song_global_style : String = ""
 impl @component.Fields for SongState with fn schema() {
   @component.SchemaInfo::new(
     name="Song",
-    fingerprint="5d3ec9756ba331ba",
+    fingerprint="61a6c7c26ba1adba",
     fields=[@component.FieldInfo::new("title", TyText)],
     view_names=["main"],
   )

@@ -7,13 +7,7 @@ off-page items.
 
 ```html
 <script type="tutuca/state">
-  interface paged {
-    record state {
-      items: values,
-      page: s32,
-      page-size: s32,
-    }
-  }
+  state Paged { items: Array[Any], page: Int, pageSize: Int }
 </script>
 
 <template id="Paged">

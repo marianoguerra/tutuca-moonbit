@@ -82,7 +82,7 @@ pub fn SchemaInfo::shape_fingerprint(self : SchemaInfo) -> String {
   let sb = StringBuilder::new()
   sb.write_string("i:\{self.name};")
   for f in self.fields {
-    sb.write_string("f:\{f.name}:\{f.ty.show_wit()};")
+    sb.write_string("f:\{f.name}:\{f.ty.show_source()};")
     for m in f.ty.members() {
       sb.write_string("m:\{m},")
     }

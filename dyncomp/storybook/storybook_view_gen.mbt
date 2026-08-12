@@ -8,11 +8,16 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state of the StoryNav component.
+/// One line of the sidebar: a component some loaded bundle declares, and
+/// how many stories it has.
+/// 
+/// It is a component rather than a row drawn inline for the same reason
+/// `PaletteRow` is one: selection is a field on the row, so moving between
+/// two entries re-renders two rows instead of the whole list.
 ///
-/// Declared as `interface story-nav` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StoryNavState {
   module_ : String
   name : String
@@ -23,7 +28,8 @@ pub(all) struct StoryNavState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StoryNavState::zero(), label: "Counter" }
@@ -71,6 +77,8 @@ impl @component.Fields for StoryNavState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum StoryNavBubble {
+  /// (module, component). Two empty strings mean "everything", which is
+  /// what the `all` button sends.
   NavPicked(String, String)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -184,7 +192,7 @@ pub fn StoryNavMsg::from_dispatch(d : @component.Dispatch) -> StoryNavMsg? {
 impl @component.Fields for StoryNavState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryNav",
-    fingerprint="272141c23da6d46d",
+    fingerprint="8a12779dc5754fa4",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -198,26 +206,44 @@ impl @component.Fields for StoryNavState with fn schema() {
 }
 
 ///|
-/// The state of the StoryCard component.
+/// One story: a component from a bundle, built with ONE named
+/// configuration, live.
+/// 
+/// `target` is a real instance of that component — the same value the
+/// universal editor would have placed — so what the card shows is the
+/// component actually running rather than a picture of it. `args` is the
+/// JSON the manifest's `init` carried, kept beside it as text: a card that
+/// shows a component without saying what it was built from is a
+/// screenshot with extra steps.
+/// 
+/// It has TWO views. `main` is the card; `details` adds the documentation
+/// and the arguments. Which one renders is not this component's decision —
+/// the gallery pushes a view down with `@push-view`, so one switch in the
+/// bar moves every card and nothing had to be threaded through.
 ///
-/// Declared as `interface story-card` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StoryCardState {
   title : String
   doc : String
   module_ : String
   name : String
+  /// The manifest `init` this was built from, or "" for the component's
+  /// own defaults.
   init_ : String
   args : String
   target : @tutuca.Value
+  /// Why there is nothing to show, when there is nothing to show. A
+  /// constructor that refused is a story; a blank card is not one.
   error : String
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StoryCardState::zero(), label: "Counter" }
@@ -285,6 +311,9 @@ impl @component.Fields for StoryCardState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum StoryCardBubble {
+  /// (module, component, init) — build me again from scratch. The card
+  /// cannot do it itself: making an instance is the host's job, and this
+  /// package is backend-agnostic.
   RebuildCard(String, String, String)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -411,7 +440,7 @@ pub fn StoryCardMethod::name(self : StoryCardMethod) -> String {
 impl @component.Fields for StoryCardState with fn schema() {
   @component.SchemaInfo::new(
     name="StoryCard",
-    fingerprint="581345b467cdfde3",
+    fingerprint="3f7fbf54675a636b",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("doc", TyText),
@@ -430,29 +459,49 @@ impl @component.Fields for StoryCardState with fn schema() {
 }
 
 ///|
-/// The state of the DyncompStorybook component.
+/// The gallery: every component every loaded bundle declares, once per
+/// configuration it declares.
+/// 
+/// There is no story list written anywhere. A bundle's manifest already
+/// says what its components are and what named `inits` each has, and named
+/// initial states ARE the story set — which is why this works on a bundle
+/// nobody wrote for it, including one dropped on the page while it runs.
+/// 
+/// Cards are built once, when the catalog changes, and FILTERED with a
+/// `@when`: a keystroke should not tear down and rebuild a live component
+/// tree.
 ///
-/// Declared as `interface dyncomp-storybook` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DyncompStorybookState {
   cards : Array[@tutuca.Value]
   nav : Array[@tutuca.Value]
   query : String
+  /// The selected sidebar entry. Both empty means everything.
   module_ : String
   name : String
+  /// margaui theme, applied with `data-theme` on the gallery's own root, so
+  /// a component can be looked at in several without reloading.
   theme : String
+  /// One card per row instead of a grid — for the components that are a
+  /// whole page rather than a chip.
   wide : Bool
+  /// "main" | "details", pushed down to every card with `@push-view`.
   mode : String
   status : String
   emptyMessage : String
+  /// Whatever the HOST wants in the bar — loading bundles, in the wasm
+  /// shell's case. Null in every test, which is what makes the gallery
+  /// itself drivable with no browser at all.
   devTools : @tutuca.Value
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DyncompStorybookState::zero(), label: "Counter" }
@@ -544,6 +593,8 @@ impl @component.Fields for DyncompStorybookState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum DyncompStorybookReceive {
+  /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
+  /// by a host that pushes the news itself, and by every test here.
   CatalogChanged(String)
   SetStatus(String)
   /// A receive the schema does not declare, or a declared name whose
@@ -602,6 +653,11 @@ pub fn DyncompStorybookReceive::send(
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum DyncompStorybookBubble {
+  /// The same news, arriving the other way: from the loader the host put
+  /// in the bar, which is BELOW this component and therefore bubbles.
+  /// 
+  /// The loader says what it is DOING in the bar itself; this is only the
+  /// part the gallery has to act on.
   CatalogChanged(String)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -777,7 +833,7 @@ pub fn DyncompStorybookWhen::name(self : DyncompStorybookWhen) -> String {
 impl @component.Fields for DyncompStorybookState with fn schema() {
   @component.SchemaInfo::new(
     name="DyncompStorybook",
-    fingerprint="7f5ee8b21f037479",
+    fingerprint="009eeb763ad92b17",
     fields=[
       @component.FieldInfo::new("cards", TyList(TyAny)),
       @component.FieldInfo::new("nav", TyList(TyAny)),

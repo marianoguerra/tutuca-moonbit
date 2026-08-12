@@ -61,20 +61,18 @@ fn agree_def(def : @statedef.StateDef) -> Unit raise {
 test "the type projection agrees with the emitter over the whole lattice" {
   agree(
     (
-      #|interface counter {
-      #|  record state {
-      #|    label: string,
-      #|    count: s32,
-      #|    small: u8,
-      #|    ratio: f64,
-      #|    ok: bool,
-      #|    history: list<s32>,
-      #|    pick: option<string>,
-      #|    pair: tuple<string, s32>,
-      #|    tags: text-set,
-      #|    counts: text-omap,
-      #|    blob: any,
-      #|  }
+      #|state Counter {
+      #|  label   : String
+      #|  count   : Int
+      #|  small   : UInt8
+      #|  ratio   : Double
+      #|  ok      : Bool
+      #|  history : Array[Int]
+      #|  pick    : String?
+      #|  pair    : (String, Int)
+      #|  tags    : Set[String]
+      #|  counts  : Map[String, String]
+      #|  blob    : Any
       #|}
     ),
   )
@@ -84,17 +82,15 @@ test "the type projection agrees with the emitter over the whole lattice" {
 test "…including the named types, where the members are inlined" {
   agree(
     (
-      #|interface post {
-      #|  enum priority { low, high }
-      #|  flags visibility { done, active }
-      #|  record label { text: string, done: bool }
-      #|  variant due { unscheduled, on-day(s32) }
-      #|  record state {
-      #|    pri: priority,
-      #|    vis: visibility,
-      #|    tag: label,
-      #|    when_: due,
-      #|  }
+      #|enum Priority { Low, High }
+      #|enum Visibility { Done, Active }
+      #|struct Label { text: String, done: Bool }
+      #|enum Due { Unscheduled, OnDay(Int) }
+      #|state Post {
+      #|  pri  : Priority
+      #|  vis  : Set[Visibility]
+      #|  tag  : Label
+      #|  due  : Due
       #|}
     ),
   )
@@ -104,12 +100,8 @@ test "…including the named types, where the members are inlined" {
 test "…and the child-component slots, named and bare" {
   agree(
     (
-      #|interface board {
-      #|  record state { editor: sheet, preview: component }
-      #|}
-      #|interface sheet {
-      #|  record state { text: string }
-      #|}
+      #|state Board { editor: Sheet, preview: Component }
+      #|state Sheet { text: String }
     ),
   )
 }
@@ -118,17 +110,15 @@ test "…and the child-component slots, named and bare" {
 test "the zero state is what a generated zero() would build" {
   let def = one(
     (
-      #|interface counter {
-      #|  record state {
-      #|    label: string,
-      #|    count: s32,
-      #|    ratio: f64,
-      #|    ok: bool,
-      #|    history: list<s32>,
-      #|    pick: option<string>,
-      #|    tags: text-set,
-      #|    blob: any,
-      #|  }
+      #|state Counter {
+      #|  label   : String
+      #|  count   : Int
+      #|  ratio   : Double
+      #|  ok      : Bool
+      #|  history : Array[Int]
+      #|  pick    : String?
+      #|  tags    : Set[String]
+      #|  blob    : Any
       #|}
     ),
   )
@@ -151,10 +141,8 @@ test "a record's zero opens it, which its TyInfo alone cannot" {
   // hand the zero is the fields' zeros, matching what `zero_expr` writes.
   let def = one(
     (
-      #|interface post {
-      #|  record label { text: string, done: bool }
-      #|  record state { tag: label }
-      #|}
+      #|struct Label { text: String, done: Bool }
+      #|state Post { tag: Label }
     ),
   )
   assert_eq(
@@ -165,42 +153,37 @@ test "a record's zero opens it, which its TyInfo alone cannot" {
 }
 
 ///|
-test "an enum's zero is its first case, and a closed set starts full" {
+test "an enum's zero is its first case, and a set starts EMPTY" {
   let def = one(
     (
-      #|interface post {
-      #|  enum priority { low, high }
-      #|  flags visibility { done, active }
-      #|  record state { pri: priority, vis: visibility }
-      #|}
+      #|enum Priority { Low, High }
+      #|enum Visibility { Done, Active }
+      #|state Post { pri: Priority, vis: Set[Visibility] }
     ),
   )
   let z = @info.zero_value(def)
-  // `Low`, not `low` — and the asymmetry with the flags below is real rather
-  // than a slip. An enum case maps through `upper_name` and a flag through
-  // `camel_name` (`statedef/from_wit.mbt`), so the generated codec encodes an
-  // enum as `Str("Low")` while a set keys on `"done"`. This zero has to match
-  // what that codec produces or a card and a compiled component would disagree
-  // about the same state.
+  // `Low`, the case as the enum declares it. The generated codec encodes an
+  // enum as `Str("Low")`, and this zero has to match what that codec produces
+  // or a card and a compiled component would disagree about the same state.
+  // Under WIT the two spellings differed — an enum case mapped through
+  // `upper_name` and a flag through `camel_name` — and one enum now feeds
+  // both.
   assert_eq(z.get("pri"), Some(Str("Low")))
-  // A closed set starts as its declared membership: the one thing about a set
-  // that only the schema knows, since the encoded value is just a Map.
-  assert_eq(
-    z.get("vis"),
-    Some(Map({ "done": Bool(true), "active": Bool(true) })),
-  )
+  // Empty, and it used not to be. A `flags` field began with EVERY member
+  // present, because the type carried its membership and the zero was written
+  // from the type. `Set[Visibility]` lets the CONTAINER decide the zero and
+  // the enum decide the membership, which is one idea in each place.
+  assert_eq(z.get("vis"), Some(Map(Map([]))))
 }
 
 ///|
 test "the schema description carries the declaration's own channels" {
   let def = one(
     (
-      #|interface board {
-      #|  record state { rows: values, loading: bool }
-      #|  variant receive { reset, focus-row(s32) }
-      #|  variant bubble { row-picked(s32) }
-      #|  variant response { load-rows(values) }
-      #|}
+      #|state Board { rows: Array[Any], loading: Bool }
+      #|receive  Board { Reset, FocusRow(Int) }
+      #|bubble   Board { RowPicked(Int) }
+      #|response Board { LoadRows(Array[Any]) }
     ),
   )
   let si = @info.schema_info(def, name="Board")
@@ -220,7 +203,7 @@ test "the schema description carries the declaration's own channels" {
 
 ///|
 test "the description takes the views' half from its caller" {
-  let def = one("interface c { record state { n: s32 } }")
+  let def = one("state C { n: Int }")
   let si = @info.schema_info(
     def,
     name="C",

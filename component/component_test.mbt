@@ -117,8 +117,8 @@ test "set slot field: coercion + addIn/hasIn/toggleIn/deleteIn/len mutators" {
   let comp = @component.component(
     views={ "main": @anode.View::new("main", raw_view="<div></div>") },
     name="Facets",
-    // Declared, not bolted on: a closed set's members ARE its default, which
-    // is the one thing about a set only the schema knows.
+    // The state's own value, not the type's: `TyFlags` says which members are
+    // spellable, and the declaration says which ones are set to begin with.
     init=FacetsOnly::{  },
   )
   // default
@@ -949,7 +949,11 @@ impl @component.Fields for FacetsOnly with fn schema() {
 
 ///|
 impl @component.Fields for FacetsOnly with fn encode(_s) {
-  Map([])
+  // The DECLARATION carries the default, not the type. A `TyFlags` describes
+  // which members are spellable; it used to also mean "all of them, to begin
+  // with", which is why a set was the one field whose zero nobody could
+  // choose. Now the state says so, the same way every other field does.
+  Map([("sel", Map({ "a": Bool(true), "b": Bool(true) }))])
 }
 
 ///|

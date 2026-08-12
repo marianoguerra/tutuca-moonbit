@@ -59,7 +59,7 @@ fn summary_from_schema(
       "name": Str(f.name),
       // The WIT spelling the author wrote, not a label reconstructed from
       // the runtime kind: `list<card>`, not `list`.
-      "type": Str(f.ty.show_wit()),
+      "type": Str(f.ty.show_source()),
       // Its type's zero, off the SCHEMA. This used to read `Component.specs`,
       // which a holder of an instance and no registry could not get to — so
       // the column existed only for a caller that already had the component.
@@ -70,7 +70,7 @@ fn summary_from_schema(
     // slot, and answering both with one method put a meaningless `elem: any`
     // on this row for every dynamic field in the corpus.
     match f.ty.elem() {
-      Some(e) => row["elem"] = Str(e.show_wit())
+      Some(e) => row["elem"] = Str(e.show_source())
       None => ()
     }
     match f.ty.slot() {

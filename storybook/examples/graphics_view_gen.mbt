@@ -10,9 +10,9 @@
 ///|
 /// The state of the SwatchPicker component.
 ///
-/// Declared as `interface swatch-picker` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SwatchPickerState {
   color : String
   palette : Array[@tutuca.Value]
@@ -21,7 +21,8 @@ pub(all) struct SwatchPickerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SwatchPickerState::zero(), label: "Counter" }
@@ -138,7 +139,7 @@ pub fn SwatchPickerEnrich::name(self : SwatchPickerEnrich) -> String {
 impl @component.Fields for SwatchPickerState with fn schema() {
   @component.SchemaInfo::new(
     name="SwatchPicker",
-    fingerprint="30457ae742655759",
+    fingerprint="c7bdbd2cb8df5d05",
     fields=[
       @component.FieldInfo::new("color", TyText),
       @component.FieldInfo::new("palette", TyList(TyAny)),
@@ -151,9 +152,9 @@ impl @component.Fields for SwatchPickerState with fn schema() {
 ///|
 /// The state of the Quadratic component.
 ///
-/// Declared as `interface quadratic` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct QuadraticState {
   a : Int
   b : Int
@@ -163,7 +164,8 @@ pub(all) struct QuadraticState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..QuadraticState::zero(), label: "Counter" }
@@ -291,7 +293,7 @@ pub fn QuadraticMethod::name(self : QuadraticMethod) -> String {
 impl @component.Fields for QuadraticState with fn schema() {
   @component.SchemaInfo::new(
     name="Quadratic",
-    fingerprint="bb32e2a1638d9036",
+    fingerprint="e14623730b989e81",
     fields=[
       @component.FieldInfo::new("a", TyInt),
       @component.FieldInfo::new("b", TyInt),

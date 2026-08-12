@@ -1,17 +1,10 @@
 <script type="tutuca/state">
-  // The state for the components in todo_macros.mbt, which build
-  // their views in MoonBit rather than here — a macro body is
-  // registered at runtime, so it cannot be compiled ahead of time.
-  // No <template>: this file declares state and nothing else.
-  interface tm-item {
-    record state {
-      completed: bool,
-      text: string,
-    }
+  state TmItem {
+    completed : Bool
+    text : String
   }
-  interface tm-items {
-    record state {
-      items: values,
-    }
+
+  state TmItems {
+    items : Array[Any]
   }
 </script>

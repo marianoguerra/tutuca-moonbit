@@ -10,9 +10,9 @@
 ///|
 /// The state of the DseRoot component.
 ///
-/// Declared as `interface dse-root` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DseRootState {
   items : Map[String, @tutuca.Value]
   selectedKey : String
@@ -22,7 +22,8 @@ pub(all) struct DseRootState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseRootState::zero(), label: "Counter" }
@@ -132,7 +133,7 @@ pub fn DseRootMsg::from_dispatch(d : @component.Dispatch) -> DseRootMsg? {
 impl @component.Fields for DseRootState with fn schema() {
   @component.SchemaInfo::new(
     name="DseRoot",
-    fingerprint="c1417e013696790c",
+    fingerprint="7b2a32adf52625b3",
     fields=[
       @component.FieldInfo::new("items", TyOMap(TyAny)),
       @component.FieldInfo::new("selectedKey", TyText),
@@ -146,9 +147,9 @@ impl @component.Fields for DseRootState with fn schema() {
 ///|
 /// The state of the DseEditor component.
 ///
-/// Declared as `interface dse-editor` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DseEditorState {
   missing : @tutuca.Value
 }
@@ -156,7 +157,8 @@ pub(all) struct DseEditorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseEditorState::zero(), label: "Counter" }
@@ -201,7 +203,7 @@ pub let dse_editor_global_style : String = ""
 impl @component.Fields for DseEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="DseEditor",
-    fingerprint="6d6412be74f3d0b4",
+    fingerprint="294c897cc8f5e7a9",
     fields=[@component.FieldInfo::new("missing", TyAny)],
     view_names=["main"],
   )
@@ -210,9 +212,9 @@ impl @component.Fields for DseEditorState with fn schema() {
 ///|
 /// The state of the DseEntry component.
 ///
-/// Declared as `interface dse-entry` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DseEntryState {
   name : String
 }
@@ -220,7 +222,8 @@ pub(all) struct DseEntryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DseEntryState::zero(), label: "Counter" }
@@ -312,7 +315,7 @@ pub fn DseEntryMsg::from_dispatch(d : @component.Dispatch) -> DseEntryMsg? {
 impl @component.Fields for DseEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="DseEntry",
-    fingerprint="2184b70b210b0dff",
+    fingerprint="b9c226f2b409fd38",
     fields=[@component.FieldInfo::new("name", TyText)],
     inputs=["setName"],
     view_names=["main", "edit"],

@@ -8,19 +8,36 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state of the Universal component.
+/// The one component that must exist.
+/// 
+/// It is a HOLDER, not a placeholder that gets replaced: empty it draws a
+/// `+`, filled it draws what it holds and keeps holding it. That is what
+/// gives every user-placed component one uniform, host-owned home for the
+/// editing chrome — a guest component is decorated exactly like a standard
+/// one, because neither of them is asked to participate.
+/// 
+/// It is also what a container's children always are, so "insert a cell
+/// here" is "insert an empty universal at index i", with no kind to decide
+/// and no binding to invent.
+/// 
+/// Edit mode is the `edit` VIEW, not a field: the app pushes it with
+/// `@push-view` and every descendant that has one picks it up. A boolean
+/// threaded through every component would be the same fact stored once per
+/// node, and a guest — which cannot grow the field — could never join in.
 ///
-/// Declared as `interface universal` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct UniversalState {
+  /// What this holds, or null, which is what draws the `+`.
   child : @tutuca.Value
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..UniversalState::zero(), label: "Counter" }
@@ -54,8 +71,14 @@ impl @component.Fields for UniversalState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum UniversalReceive {
+  /// Hold this. The app builds the instance — it is the only one that can,
+  /// since building a guest needs the dyncomp bridge — and hands it over.
   Hold(@tutuca.Value)
+  /// Empty it again, which gives the `+` back rather than deleting a cell.
   Empty
+  /// Write these fields into what is held. The app validated them against
+  /// the schema first; this only knows that its child is the thing they
+  /// belong to, which is exactly what the app cannot know.
   ApplyConfig(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -115,7 +138,12 @@ pub fn UniversalReceive::send(
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum UniversalBubble {
+  /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
+  /// configure it" rather than "place it with its defaults".
   AddRequested(Bool)
+  /// The badge was clicked or the config pill was dropped here. Carries
+  /// what is held, because the app needs the instance and asking it to
+  /// find one by path would be a second way to name the same thing.
   ConfigRequested(@tutuca.Value)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -262,7 +290,7 @@ pub fn UniversalMethod::name(self : UniversalMethod) -> String {
 impl @component.Fields for UniversalState with fn schema() {
   @component.SchemaInfo::new(
     name="Universal",
-    fingerprint="43a2ffbd661f5918",
+    fingerprint="fc5eb602f241a431",
     fields=[@component.FieldInfo::new("child", TyComp(None))],
     inputs=["add", "dropped", "pick", "remove"],
     receives=["hold", "empty", "applyConfig"],
@@ -273,11 +301,12 @@ impl @component.Fields for UniversalState with fn schema() {
 }
 
 ///|
-/// The state of the Stack component.
+/// A row or a column. Everything about it is direction, spacing and
+/// alignment; `children` are universals and nothing else.
 ///
-/// Declared as `interface stack` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StackState {
   children : Array[@tutuca.Value]
   direction : String
@@ -291,7 +320,8 @@ pub(all) struct StackState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StackState::zero(), label: "Counter" }
@@ -442,7 +472,7 @@ pub fn StackMethod::name(self : StackMethod) -> String {
 impl @component.Fields for StackState with fn schema() {
   @component.SchemaInfo::new(
     name="Stack",
-    fingerprint="e223d74843621d2d",
+    fingerprint="d7cbde96ecc899e6",
     fields=[
       @component.FieldInfo::new("children", TyList(TyAny)),
       @component.FieldInfo::new("direction", TyText),
@@ -459,11 +489,17 @@ impl @component.Fields for StackState with fn schema() {
 }
 
 ///|
-/// The state of the Grid component.
+/// A uniform m×n grid: every cell the same size, `children` in row-major
+/// order, and `cols * rows` of them at all times.
+/// 
+/// Uniform on purpose. A grid whose tracks can each be something different
+/// is the layout that is easiest to get subtly wrong and hardest to explain
+/// to somebody adding a cell; a bento box wants a component of its own
+/// rather than a mode of this one.
 ///
-/// Declared as `interface grid` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct GridState {
   children : Array[@tutuca.Value]
   cols : Int
@@ -475,7 +511,8 @@ pub(all) struct GridState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..GridState::zero(), label: "Counter" }
@@ -624,7 +661,7 @@ pub fn GridMethod::name(self : GridMethod) -> String {
 impl @component.Fields for GridState with fn schema() {
   @component.SchemaInfo::new(
     name="Grid",
-    fingerprint="5b958e8aee9903f2",
+    fingerprint="6d673da1cff7afa5",
     fields=[
       @component.FieldInfo::new("children", TyList(TyAny)),
       @component.FieldInfo::new("cols", TyInt),
@@ -639,11 +676,15 @@ impl @component.Fields for GridState with fn schema() {
 }
 
 ///|
-/// The state of the TabPage component.
+/// One tab: a name on the strip, and whatever is under it.
+/// 
+/// `body` is a universal, so a fresh tab opens on a `+` and a person picks
+/// what goes in it. That is the notepad: a tabbed thing whose tabs hold
+/// text areas, composed rather than written.
 ///
-/// Declared as `interface tab-page` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TabPageState {
   label : String
   body : @tutuca.Value
@@ -652,7 +693,8 @@ pub(all) struct TabPageState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TabPageState::zero(), label: "Counter" }
@@ -687,7 +729,9 @@ impl @component.Fields for TabPageState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum TabPageBubble {
+  /// The name is settled — Enter, or the box lost focus.
   DoneRename
+  /// Escape: put the old name back, which only the strip still knows.
   CancelRename
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -810,7 +854,7 @@ pub fn TabPageMsg::from_dispatch(d : @component.Dispatch) -> TabPageMsg? {
 impl @component.Fields for TabPageState with fn schema() {
   @component.SchemaInfo::new(
     name="TabPage",
-    fingerprint="4a456c4434488f32",
+    fingerprint="a201dd2830fe2ea9",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("body", TyComp(None)),
@@ -822,22 +866,31 @@ impl @component.Fields for TabPageState with fn schema() {
 }
 
 ///|
-/// The state of the Tabs component.
+/// A tab strip and one page at a time. `tabs` are TabPages.
 ///
-/// Declared as `interface tabs` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TabsState {
   tabs : Array[@tutuca.Value]
   active : Int
+  /// Whether the active tab's NAME is being edited, in place on the strip.
+  /// 
+  /// Only the active one can be: ctrl/cmd-clicking a tab both selects it
+  /// and starts the edit, so "which tab is being renamed" is never a
+  /// second answer to "which tab is open".
   renaming : Bool
+  /// The name it had when the edit started, so Escape can put it back.
+  /// Typing writes straight through to the tab, because a name you cannot
+  /// see change while you type it is a name you have to guess at.
   original : String
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TabsState::zero(), label: "Counter" }
@@ -987,7 +1040,7 @@ pub fn TabsEnrich::name(self : TabsEnrich) -> String {
 impl @component.Fields for TabsState with fn schema() {
   @component.SchemaInfo::new(
     name="Tabs",
-    fingerprint="54762437e2e0f07a",
+    fingerprint="22e166e8c7151058",
     fields=[
       @component.FieldInfo::new("tabs", TyList(TyAny)),
       @component.FieldInfo::new("active", TyInt),
@@ -1000,11 +1053,11 @@ impl @component.Fields for TabsState with fn schema() {
 }
 
 ///|
-/// The state of the Text component.
+/// A leaf: a run of text.
 ///
-/// Declared as `interface text` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TextState {
   text : String
   size : String
@@ -1013,7 +1066,8 @@ pub(all) struct TextState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TextState::zero(), label: "Counter" }
@@ -1072,7 +1126,7 @@ pub fn TextMethod::name(self : TextMethod) -> String {
 impl @component.Fields for TextState with fn schema() {
   @component.SchemaInfo::new(
     name="Text",
-    fingerprint="f9fcc6e0b3018f18",
+    fingerprint="10286129779a03f8",
     fields=[
       @component.FieldInfo::new("text", TyText),
       @component.FieldInfo::new("size", TyText),
@@ -1083,11 +1137,11 @@ impl @component.Fields for TextState with fn schema() {
 }
 
 ///|
-/// The state of the Textarea component.
+/// A leaf: editable multi-line text. The other half of the notepad.
 ///
-/// Declared as `interface textarea` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TextareaState {
   text : String
   rows : Int
@@ -1097,7 +1151,8 @@ pub(all) struct TextareaState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TextareaState::zero(), label: "Counter" }
@@ -1196,7 +1251,7 @@ pub fn TextareaMsg::from_dispatch(d : @component.Dispatch) -> TextareaMsg? {
 impl @component.Fields for TextareaState with fn schema() {
   @component.SchemaInfo::new(
     name="Textarea",
-    fingerprint="31ae1c5dfceb0c5b",
+    fingerprint="2d910bf1b69d31f6",
     fields=[
       @component.FieldInfo::new("text", TyText),
       @component.FieldInfo::new("rows", TyInt),

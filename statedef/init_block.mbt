@@ -129,7 +129,7 @@ fn lit_of(
   field : String,
 ) -> String raise InitError {
   let bad = (got : String) => {
-    InitError::BadValue(state~, field~, want=ty.show_wit(), got~)
+    InitError::BadValue(state~, field~, want=ty.show_source(), got~)
   }
   match (ty, v) {
     (TBool, True) => "true"

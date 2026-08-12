@@ -71,7 +71,7 @@ test "every corpus view either compiles to a tree or is declared unsupported" {
       macros: [],
       state: [],
       init: [],
-      script: None,
+      scripts: [],
     }
     if !@viewgen.ir_supported(set) {
       // Two things opt a view out, and both are things `gen-views` would

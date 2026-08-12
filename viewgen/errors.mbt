@@ -31,5 +31,7 @@ pub fn GenError::message(self : GenError) -> String {
       "view \"\{view}\": `@each` needs a collection, but `\{expr}` is \{ty}"
     NotRenderable(view~, expr~, ty~) =>
       "view \"\{view}\": `<x render>` needs a component, but `\{expr}` is \{ty}"
+    BadScriptBlock(comp~, line~, message~) =>
+      "line \{line}: script block for \{comp}: \{message}"
   }
 }

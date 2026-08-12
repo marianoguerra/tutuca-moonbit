@@ -1,109 +1,107 @@
 <script type="tutuca/state">
-  interface story-nav {
-    /// One line of the sidebar: a component some loaded bundle declares, and
-    /// how many stories it has.
-    ///
-    /// It is a component rather than a row drawn inline for the same reason
-    /// `PaletteRow` is one: selection is a field on the row, so moving between
-    /// two entries re-renders two rows instead of the whole list.
-    record state {
-      module: string,
-      name: string,
-      count: s32,
-      selected: bool,
-    }
-    variant bubble {
-      /// (module, component). Two empty strings mean "everything", which is
-      /// what the `all` button sends.
-      nav-picked(tuple<string, string>),
-    }
+  /// One line of the sidebar: a component some loaded bundle declares, and
+  /// how many stories it has.
+  ///
+  /// It is a component rather than a row drawn inline for the same reason
+  /// `PaletteRow` is one: selection is a field on the row, so moving between
+  /// two entries re-renders two rows instead of the whole list.
+  state StoryNav {
+    module : String
+    name : String
+    count : Int
+    selected : Bool
   }
 
-  interface story-card {
-    /// One story: a component from a bundle, built with ONE named
-    /// configuration, live.
-    ///
-    /// `target` is a real instance of that component — the same value the
-    /// universal editor would have placed — so what the card shows is the
-    /// component actually running rather than a picture of it. `args` is the
-    /// JSON the manifest's `init` carried, kept beside it as text: a card that
-    /// shows a component without saying what it was built from is a
-    /// screenshot with extra steps.
-    ///
-    /// It has TWO views. `main` is the card; `details` adds the documentation
-    /// and the arguments. Which one renders is not this component's decision —
-    /// the gallery pushes a view down with `@push-view`, so one switch in the
-    /// bar moves every card and nothing had to be threaded through.
-    record state {
-      title: string,
-      doc: string,
-      module: string,
-      name: string,
-      /// The manifest `init` this was built from, or "" for the component's
-      /// own defaults.
-      init: string,
-      args: string,
-      target: component,
-      /// Why there is nothing to show, when there is nothing to show. A
-      /// constructor that refused is a story; a blank card is not one.
-      error: string,
-    }
-    variant bubble {
-      /// (module, component, init) — build me again from scratch. The card
-      /// cannot do it itself: making an instance is the host's job, and this
-      /// package is backend-agnostic.
-      rebuild-card(tuple<string, string, string>),
-    }
+  bubble StoryNav {
+    /// (module, component). Two empty strings mean "everything", which is
+    /// what the `all` button sends.
+    NavPicked(String, String)
   }
 
-  interface dyncomp-storybook {
-    /// The gallery: every component every loaded bundle declares, once per
-    /// configuration it declares.
+  /// One story: a component from a bundle, built with ONE named
+  /// configuration, live.
+  ///
+  /// `target` is a real instance of that component — the same value the
+  /// universal editor would have placed — so what the card shows is the
+  /// component actually running rather than a picture of it. `args` is the
+  /// JSON the manifest's `init` carried, kept beside it as text: a card that
+  /// shows a component without saying what it was built from is a
+  /// screenshot with extra steps.
+  ///
+  /// It has TWO views. `main` is the card; `details` adds the documentation
+  /// and the arguments. Which one renders is not this component's decision —
+  /// the gallery pushes a view down with `@push-view`, so one switch in the
+  /// bar moves every card and nothing had to be threaded through.
+  state StoryCard {
+    title : String
+    doc : String
+    module : String
+    name : String
+    /// The manifest `init` this was built from, or "" for the component's
+    /// own defaults.
+    init : String
+    args : String
+    target : Component
+    /// Why there is nothing to show, when there is nothing to show. A
+    /// constructor that refused is a story; a blank card is not one.
+    error : String
+  }
+
+  bubble StoryCard {
+    /// (module, component, init) — build me again from scratch. The card
+    /// cannot do it itself: making an instance is the host's job, and this
+    /// package is backend-agnostic.
+    RebuildCard(String, String, String)
+  }
+
+  /// The gallery: every component every loaded bundle declares, once per
+  /// configuration it declares.
+  ///
+  /// There is no story list written anywhere. A bundle's manifest already
+  /// says what its components are and what named `inits` each has, and named
+  /// initial states ARE the story set — which is why this works on a bundle
+  /// nobody wrote for it, including one dropped on the page while it runs.
+  ///
+  /// Cards are built once, when the catalog changes, and FILTERED with a
+  /// `@when`: a keystroke should not tear down and rebuild a live component
+  /// tree.
+  state DyncompStorybook {
+    cards : Array[Any]
+    nav : Array[Any]
+    query : String
+    /// The selected sidebar entry. Both empty means everything.
+    module : String
+    name : String
+    /// margaui theme, applied with `data-theme` on the gallery's own root, so
+    /// a component can be looked at in several without reloading.
+    theme : String
+    /// One card per row instead of a grid — for the components that are a
+    /// whole page rather than a chip.
+    wide : Bool
+    /// "main" | "details", pushed down to every card with `@push-view`.
+    mode : String
+    status : String
+    emptyMessage : String
+    /// Whatever the HOST wants in the bar — loading bundles, in the wasm
+    /// shell's case. Null in every test, which is what makes the gallery
+    /// itself drivable with no browser at all.
+    devTools : Component
+  }
+
+  receive DyncompStorybook {
+    /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
+    /// by a host that pushes the news itself, and by every test here.
+    CatalogChanged(String)
+    SetStatus(String)
+  }
+
+  bubble DyncompStorybook {
+    /// The same news, arriving the other way: from the loader the host put
+    /// in the bar, which is BELOW this component and therefore bubbles.
     ///
-    /// There is no story list written anywhere. A bundle's manifest already
-    /// says what its components are and what named `inits` each has, and named
-    /// initial states ARE the story set — which is why this works on a bundle
-    /// nobody wrote for it, including one dropped on the page while it runs.
-    ///
-    /// Cards are built once, when the catalog changes, and FILTERED with a
-    /// `@when`: a keystroke should not tear down and rebuild a live component
-    /// tree.
-    record state {
-      cards: values,
-      nav: values,
-      query: string,
-      /// The selected sidebar entry. Both empty means everything.
-      module: string,
-      name: string,
-      /// margaui theme, applied with `data-theme` on the gallery's own root, so
-      /// a component can be looked at in several without reloading.
-      theme: string,
-      /// One card per row instead of a grid — for the components that are a
-      /// whole page rather than a chip.
-      wide: bool,
-      /// "main" | "details", pushed down to every card with `@push-view`.
-      mode: string,
-      status: string,
-      empty-message: string,
-      /// Whatever the HOST wants in the bar — loading bundles, in the wasm
-      /// shell's case. Null in every test, which is what makes the gallery
-      /// itself drivable with no browser at all.
-      dev-tools: component,
-    }
-    variant receive {
-      /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
-      /// by a host that pushes the news itself, and by every test here.
-      catalog-changed(string),
-      set-status(string),
-    }
-    variant bubble {
-      /// The same news, arriving the other way: from the loader the host put
-      /// in the bar, which is BELOW this component and therefore bubbles.
-      ///
-      /// The loader says what it is DOING in the bar itself; this is only the
-      /// part the gallery has to act on.
-      catalog-changed(string),
-    }
+    /// The loader says what it is DOING in the bar itself; this is only the
+    /// part the gallery has to act on.
+    CatalogChanged(String)
   }
 </script>
 

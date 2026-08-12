@@ -12,33 +12,25 @@ fn defs_of(src : String) -> Array[@statedef.StateDef] raise {
 
 ///|
 test "the fingerprint tracks shape, not formatting" {
-  let a = defs_of("interface c { record state { n: s32, s: string } }")
-  let spaced = defs_of(
-    "interface c {\n\n  record state {\n    n: s32,\n    s: string,\n  }\n}",
-  )
+  let a = defs_of("state C { n: Int, s: String }")
+  let spaced = defs_of("state C {\n\n  n : Int\n\n  s : String\n}")
   assert_eq(@statedef.fingerprint(a), @statedef.fingerprint(spaced))
   // A retyped field is a different shape...
-  let retyped = defs_of("interface c { record state { n: f64, s: string } }")
+  let retyped = defs_of("state C { n: Double, s: String }")
   assert_not_eq(@statedef.fingerprint(a), @statedef.fingerprint(retyped))
   // ...as is a renamed one, an added one, and a new message case.
   assert_not_eq(
     @statedef.fingerprint(a),
-    @statedef.fingerprint(
-      defs_of("interface c { record state { m: s32, s: string } }"),
-    ),
+    @statedef.fingerprint(defs_of("state C { m: Int, s: String }")),
+  )
+  assert_not_eq(
+    @statedef.fingerprint(a),
+    @statedef.fingerprint(defs_of("state C { n: Int, s: String, x: Bool }")),
   )
   assert_not_eq(
     @statedef.fingerprint(a),
     @statedef.fingerprint(
-      defs_of("interface c { record state { n: s32, s: string, x: bool } }"),
-    ),
-  )
-  assert_not_eq(
-    @statedef.fingerprint(a),
-    @statedef.fingerprint(
-      defs_of(
-        "interface c { variant receive { tick } record state { n: s32, s: string } }",
-      ),
+      defs_of("receive C { Tick }\nstate C { n: Int, s: String }"),
     ),
   )
 }

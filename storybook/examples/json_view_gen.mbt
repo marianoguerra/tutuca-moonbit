@@ -10,15 +10,16 @@
 ///|
 /// The state of the JsonSelector component.
 ///
-/// Declared as `interface json-selector` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonSelectorState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonSelectorState::zero(), label: "Counter" }
@@ -141,7 +142,7 @@ pub fn JsonSelectorMsg::from_dispatch(
 impl @component.Fields for JsonSelectorState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonSelector",
-    fingerprint="823721696e1e4913",
+    fingerprint="1fda30c503ad8d0e",
     inputs=[
       "setToArray", "setToBool", "setToNull", "setToNumber", "setToObject", "setToString",
     ],
@@ -152,15 +153,16 @@ impl @component.Fields for JsonSelectorState with fn schema() {
 ///|
 /// The state of the JsonNull component.
 ///
-/// Declared as `interface json-null` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonNullState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonNullState::zero(), label: "Counter" }
@@ -202,7 +204,7 @@ pub let json_null_global_style : String = ""
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for JsonNullState with fn schema() {
-  @component.SchemaInfo::new(name="JsonNull", fingerprint="28cebc724be3edcf", view_names=[
+  @component.SchemaInfo::new(name="JsonNull", fingerprint="83efae9bb2c436be", view_names=[
     "main",
   ])
 }
@@ -210,9 +212,9 @@ impl @component.Fields for JsonNullState with fn schema() {
 ///|
 /// The state of the JsonBool component.
 ///
-/// Declared as `interface json-bool` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonBoolState {
   value : Bool
 }
@@ -220,7 +222,8 @@ pub(all) struct JsonBoolState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonBoolState::zero(), label: "Counter" }
@@ -312,7 +315,7 @@ pub fn JsonBoolMsg::from_dispatch(d : @component.Dispatch) -> JsonBoolMsg? {
 impl @component.Fields for JsonBoolState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonBool",
-    fingerprint="d4b8a46eb24ceada",
+    fingerprint="52537a69fb1aed35",
     fields=[@component.FieldInfo::new("value", TyBool)],
     inputs=["toggleValue"],
     view_names=["main"],
@@ -322,9 +325,9 @@ impl @component.Fields for JsonBoolState with fn schema() {
 ///|
 /// The state of the JsonString component.
 ///
-/// Declared as `interface json-string` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonStringState {
   value : String
 }
@@ -332,7 +335,8 @@ pub(all) struct JsonStringState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonStringState::zero(), label: "Counter" }
@@ -424,7 +428,7 @@ pub fn JsonStringMsg::from_dispatch(d : @component.Dispatch) -> JsonStringMsg? {
 impl @component.Fields for JsonStringState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonString",
-    fingerprint="56e6fad878f71b0c",
+    fingerprint="7e15bdab8f977d4f",
     fields=[@component.FieldInfo::new("value", TyText)],
     inputs=["setValue"],
     view_names=["main"],
@@ -434,9 +438,9 @@ impl @component.Fields for JsonStringState with fn schema() {
 ///|
 /// The state of the JsonNumber component.
 ///
-/// Declared as `interface json-number` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonNumberState {
   strValue : String
   value : Double
@@ -445,7 +449,8 @@ pub(all) struct JsonNumberState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonNumberState::zero(), label: "Counter" }
@@ -538,7 +543,7 @@ pub fn JsonNumberMsg::from_dispatch(d : @component.Dispatch) -> JsonNumberMsg? {
 impl @component.Fields for JsonNumberState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonNumber",
-    fingerprint="f0f29389d0ef3ee2",
+    fingerprint="1e55a5d219bbd073",
     fields=[
       @component.FieldInfo::new("strValue", TyText),
       @component.FieldInfo::new("value", TyFloat),
@@ -551,9 +556,9 @@ impl @component.Fields for JsonNumberState with fn schema() {
 ///|
 /// The state of the JsonArray component.
 ///
-/// Declared as `interface json-array` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonArrayState {
   items : Array[@tutuca.Value]
 }
@@ -561,7 +566,8 @@ pub(all) struct JsonArrayState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonArrayState::zero(), label: "Counter" }
@@ -671,7 +677,7 @@ pub fn JsonArrayMsg::from_dispatch(d : @component.Dispatch) -> JsonArrayMsg? {
 impl @component.Fields for JsonArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonArray",
-    fingerprint="52ac0f26bb122de2",
+    fingerprint="0de9c01b2912a1d0",
     fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],
@@ -681,9 +687,9 @@ impl @component.Fields for JsonArrayState with fn schema() {
 ///|
 /// The state of the JsonObjectKeyVal component.
 ///
-/// Declared as `interface json-object-key-val` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonObjectKeyValState {
   key : String
   value : @tutuca.Value
@@ -692,7 +698,8 @@ pub(all) struct JsonObjectKeyValState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonObjectKeyValState::zero(), label: "Counter" }
@@ -787,7 +794,7 @@ pub fn JsonObjectKeyValMsg::from_dispatch(
 impl @component.Fields for JsonObjectKeyValState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObjectKeyVal",
-    fingerprint="f20288305b90ddee",
+    fingerprint="9169a6b9e418f7eb",
     fields=[
       @component.FieldInfo::new("key", TyText),
       @component.FieldInfo::new("value", TyAny),
@@ -800,9 +807,9 @@ impl @component.Fields for JsonObjectKeyValState with fn schema() {
 ///|
 /// The state of the JsonObject component.
 ///
-/// Declared as `interface json-object` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct JsonObjectState {
   items : Array[@tutuca.Value]
 }
@@ -810,7 +817,8 @@ pub(all) struct JsonObjectState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..JsonObjectState::zero(), label: "Counter" }
@@ -920,7 +928,7 @@ pub fn JsonObjectMsg::from_dispatch(d : @component.Dispatch) -> JsonObjectMsg? {
 impl @component.Fields for JsonObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="JsonObject",
-    fingerprint="25415f50b72a94c2",
+    fingerprint="d710dac99231860a",
     fields=[@component.FieldInfo::new("items", TyList(TyAny))],
     inputs=["addItem", "onDropOnItem", "removeInItemsAt"],
     view_names=["main"],

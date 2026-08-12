@@ -14,31 +14,35 @@ pub fn fingerprint(Array[StateDef]) -> String
 
 pub fn nearest(String, Array[String]) -> String?
 
+pub let no_span : Span
+
 pub fn parse_init(String, StateDef) -> Array[InitState] raise InitError
 
-pub fn parse_state(String) -> Array[StateDef] raise DefError
+pub fn parse_state(String, name? : String) -> Array[StateDef] raise DefError
 
 pub fn str_cmp(String, String) -> Int
+
+pub fn tokenize(String) -> Array[Token] raise DefError
 
 pub fn upper_name(String) -> String
 
 // Errors
 pub suberror DefError {
-  WitSyntax(msg~ : String, offset~ : Int)
-  UnexpectedPackage(String)
-  UnsupportedItem(iface~ : String, item~ : String, why~ : String)
-  NoStateRecord(String)
-  StateNotRecord(String)
-  UnsupportedType(where_~ : String, ty~ : String, why~ : String)
-  UnknownTypeRef(where_~ : String, name~ : String)
-  CyclicType(String)
-  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String)
-  DuplicateInterface(String)
-  BadInterfaceName(String)
-  ReservedName(String)
+  Syntax(msg~ : String, span~ : Span)
+  UnknownDecl(got~ : String, span~ : Span)
+  DuplicateComponent(name~ : String, span~ : Span)
+  MixedStateNames(span~ : Span)
+  NoState(span~ : Span)
+  UnsupportedType(ty~ : String, why~ : String, span~ : Span)
+  UnknownTypeRef(name~ : String, span~ : Span)
+  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : Span)
+  CyclicType(name~ : String, span~ : Span)
+  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String, span~ : Span)
+  BadComponentName(name~ : String, span~ : Span)
+  ReservedName(name~ : String, span~ : Span)
 }
-pub fn DefError::locus(Self) -> String?
 pub fn DefError::message(Self) -> String
+pub fn DefError::span(Self) -> Span
 pub impl Show for DefError
 
 pub suberror InitError {
@@ -52,26 +56,25 @@ pub fn InitError::message(Self) -> String
 pub impl Show for InitError
 
 // Types and methods
+pub(all) enum AttrValue {
+  ANum(Double)
+  AStr(String)
+  AFlag
+} derive(Eq, @debug.Debug)
+
 pub(all) struct FieldDef {
   wit_name : String
   name : String
   binding : String
   ty : StateTy
   doc : String?
+  attrs : Array[(String, AttrValue)]
 } derive(Eq, @debug.Debug)
 
 pub(all) struct InitState {
   name : String
   ident : String
   fields : Array[(String, String)]
-} derive(Eq, @debug.Debug)
-
-pub(all) struct MethodDef {
-  wit_name : String
-  name : String
-  params : Array[StateTy]
-  result : StateTy?
-  doc : String?
 } derive(Eq, @debug.Debug)
 
 pub(all) struct MsgDef {
@@ -82,6 +85,11 @@ pub(all) struct MsgDef {
   doc : String?
 } derive(Eq, @debug.Debug)
 
+pub(all) struct Span {
+  start : Int
+  end_ : Int
+} derive(Eq, @debug.Debug)
+
 pub(all) struct StateDef {
   wit_name : String
   component : String
@@ -89,10 +97,10 @@ pub(all) struct StateDef {
   receive : Array[MsgDef]
   bubble : Array[MsgDef]
   response : Array[MsgDef]
-  methods : Array[MethodDef]
   types : Array[UserTy]
   doc : String?
 } derive(Eq, @debug.Debug)
+pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
@@ -122,7 +130,32 @@ pub fn StateTy::elem(Self) -> Self?
 pub fn StateTy::in_struct(Self) -> Bool
 pub fn StateTy::is_boolish(Self) -> Bool
 pub fn StateTy::is_renderable(Self) -> Bool
-pub fn StateTy::show_wit(Self) -> String
+pub fn StateTy::show_source(Self) -> String
+
+pub(all) enum Tok {
+  TIdent(String)
+  TStr(String)
+  TNum(Double)
+  TDoc(String)
+  TLBrace
+  TRBrace
+  TLBracket
+  TRBracket
+  TLParen
+  TRParen
+  THashBracket
+  TColon
+  TComma
+  TQuestion
+  TEquals
+  TEof
+} derive(Eq, @debug.Debug)
+pub fn Tok::describe(Self) -> String
+
+pub(all) struct Token {
+  tok : Tok
+  span : Span
+} derive(Eq, @debug.Debug)
 
 pub(all) struct UserTy {
   wit_name : String
@@ -135,7 +168,6 @@ pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
   UEnum(Array[(String, String)])
   UVariant(Array[MsgDef])
-  UFlags(Array[(String, String)])
 } derive(Eq, @debug.Debug)
 
 // Type aliases

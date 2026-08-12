@@ -10,9 +10,9 @@
 ///|
 /// The state of the IconGallery component.
 ///
-/// Declared as `interface icon-gallery` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct IconGalleryState {
   size : Int
 }
@@ -20,7 +20,8 @@ pub(all) struct IconGalleryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..IconGalleryState::zero(), label: "Counter" }
@@ -56,20 +57,17 @@ impl @component.Fields for IconGalleryState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for IconGalleryState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="17ce7599eac0af6f", fields=[
+  @component.SchemaInfo::new(fingerprint="1147465e1ad9f573", fields=[
     @component.FieldInfo::new("size", TyInt),
   ])
 }
 
 ///|
-/// BarChart's view is here; IconGallery's is not. IconGallery calls a macro
-/// whose body a MoonBit function builds per icon path and registers at run
-/// time, so there is nothing to expand ahead of time — it stays a designated
-/// escape hatch (see macros.mbt).
+/// The state of the BarChart component.
 ///
-/// Declared as `interface bar-chart` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct BarChartState {
   values : Array[@tutuca.Value]
 }
@@ -77,7 +75,8 @@ pub(all) struct BarChartState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..BarChartState::zero(), label: "Counter" }
@@ -213,7 +212,7 @@ pub fn BarChartLoopWith::name(self : BarChartLoopWith) -> String {
 impl @component.Fields for BarChartState with fn schema() {
   @component.SchemaInfo::new(
     name="BarChart",
-    fingerprint="6bab0bb9bb7de924",
+    fingerprint="b384ef4ca1a7f956",
     fields=[@component.FieldInfo::new("values", TyList(TyAny))],
     inputs=["addBar", "randomize", "removeBar"],
     view_names=["main"],

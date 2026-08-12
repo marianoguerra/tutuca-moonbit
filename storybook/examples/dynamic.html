@@ -1,41 +1,33 @@
 <script type="tutuca/state">
-  interface selector-entry {
-    record state {
-    value: string,
-    label: string,
-    }
+  state SelectorEntry {
+    value : String
+    label : String
   }
-  interface selector {
-    record state {
-    items: values,
-    selected-value: any,
-    }
+
+  state Selector {
+    items : Array[Any]
+    selectedValue : Any
   }
-  interface entry-editor-and-selector {
-    record state {
-    items: values,
-    selector: selector,
-    }
+
+  state EntryEditorAndSelector {
+    items : Array[Any]
+    selector : Selector
   }
-  interface sheet {
-    record state {
-    title: string,
-    }
+
+  state Sheet {
+    title : String
   }
-  interface toolbar {
-    record state {
-    }
+
+  state Toolbar {
   }
-  interface panel {
-    record state {
-      toolbar: toolbar,
-    }
+
+  state Panel {
+    toolbar : Toolbar
   }
-  interface workspace {
-    record state {
-    sheet: sheet,
-    panel: panel,
-    }
+
+  state Workspace {
+    sheet : Sheet
+    panel : Panel
   }
 </script>
 

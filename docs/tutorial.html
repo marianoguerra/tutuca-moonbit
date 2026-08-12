@@ -1,54 +1,63 @@
 <script type="tutuca/state">
-  interface counter {
-    record state { count: s32 }
+  state Counter {
+    count : Int
   }
-  interface profile {
-    record state {
-      name: string,
-      waving: bool,
-    }
+
+  state Profile {
+    name : String
+    waving : Bool
   }
-  interface search {
-    record state {
-      draft: string,
-      sent: string,
-    }
+
+  state Search {
+    draft : String
+    sent : String
   }
-  interface toggle {
-    record state {
-      on: bool,
-      message: any,
-    }
+
+  state Toggle {
+    on : Bool
+    message : Any
   }
-  interface fruits {
-    record state { items: list<string> }
+
+  state Fruits {
+    items : Array[String]
   }
-  interface greeting {
-    record state { name: string }
+
+  state Greeting {
+    name : String
   }
-  interface page {
-    record state { greeting: greeting }
+
+  state Page {
+    greeting : Greeting
   }
-  interface status {
-    record state { message: string }
-    variant receive { flash(string) }
+
+  state Status {
+    message : String
   }
-  interface chat {
-    record state {
-      draft: string,
-      status: status,
-    }
+
+  receive Status {
+    Flash(String)
   }
-  interface quotes {
-    record state {
-      items: list<string>,
-      is-loading: bool,
-    }
-    variant receive { init }
-    variant response { load-quotes(values) }
+
+  state Chat {
+    draft : String
+    status : Status
   }
-  interface features {
-    record state { status: string }
+
+  state Quotes {
+    items : Array[String]
+    isLoading : Bool
+  }
+
+  receive Quotes {
+    Init
+  }
+
+  response Quotes {
+    LoadQuotes(Array[Any])
+  }
+
+  state Features {
+    status : String
   }
 </script>
 

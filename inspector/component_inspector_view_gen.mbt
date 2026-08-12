@@ -10,9 +10,9 @@
 ///|
 /// The state of the CompName component.
 ///
-/// Declared as `interface comp-name` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CompNameState {
   name : String
 }
@@ -20,7 +20,8 @@ pub(all) struct CompNameState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompNameState::zero(), label: "Counter" }
@@ -65,7 +66,7 @@ pub let comp_name_global_style : String = ""
 impl @component.Fields for CompNameState with fn schema() {
   @component.SchemaInfo::new(
     name="CompName",
-    fingerprint="57b45308f862e883",
+    fingerprint="0f7bc95511eb74b8",
     fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
@@ -74,9 +75,9 @@ impl @component.Fields for CompNameState with fn schema() {
 ///|
 /// The state of the CompField component.
 ///
-/// Declared as `interface comp-field` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CompFieldState {
   name : String
   typeName : String
@@ -86,7 +87,8 @@ pub(all) struct CompFieldState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompFieldState::zero(), label: "Counter" }
@@ -133,7 +135,7 @@ pub let comp_field_global_style : String = ""
 impl @component.Fields for CompFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="CompField",
-    fingerprint="b1ab3e9e7437de19",
+    fingerprint="0f454106bd0eedb3",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("typeName", TyText),
@@ -146,9 +148,9 @@ impl @component.Fields for CompFieldState with fn schema() {
 ///|
 /// The state of the CompView component.
 ///
-/// Declared as `interface comp-view` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CompViewState {
   name : String
   rawView : String
@@ -158,7 +160,8 @@ pub(all) struct CompViewState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompViewState::zero(), label: "Counter" }
@@ -269,7 +272,7 @@ pub fn CompViewMethod::name(self : CompViewMethod) -> String {
 impl @component.Fields for CompViewState with fn schema() {
   @component.SchemaInfo::new(
     name="CompView",
-    fingerprint="a2bb4d5d672ad06a",
+    fingerprint="fcc53a8c92cd3c3f",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("rawView", TyText),
@@ -284,9 +287,9 @@ impl @component.Fields for CompViewState with fn schema() {
 ///|
 /// The state of the CompSection component.
 ///
-/// Declared as `interface comp-section` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CompSectionState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -298,7 +301,8 @@ pub(all) struct CompSectionState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CompSectionState::zero(), label: "Counter" }
@@ -468,7 +472,7 @@ pub fn CompSectionLoopWith::name(self : CompSectionLoopWith) -> String {
 impl @component.Fields for CompSectionState with fn schema() {
   @component.SchemaInfo::new(
     name="CompSection",
-    fingerprint="fac650bb4a858759",
+    fingerprint="73f419e659ceaaaf",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -488,9 +492,9 @@ impl @component.Fields for CompSectionState with fn schema() {
 ///|
 /// The state of the ComponentInspector component.
 ///
-/// Declared as `interface component-inspector` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ComponentInspectorState {
   compName : String
   compId : Int
@@ -500,7 +504,8 @@ pub(all) struct ComponentInspectorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ComponentInspectorState::zero(), label: "Counter" }
@@ -631,7 +636,7 @@ pub fn ComponentInspectorMethod::name(
 impl @component.Fields for ComponentInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="ComponentInspector",
-    fingerprint="177c6b469255fb1e",
+    fingerprint="88a34eadaa277e2d",
     fields=[
       @component.FieldInfo::new("compName", TyText),
       @component.FieldInfo::new("compId", TyInt),

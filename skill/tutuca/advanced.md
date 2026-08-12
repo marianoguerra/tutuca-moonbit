@@ -93,15 +93,8 @@ them through every component in between. **`provide`** on the producer;
 
 ```html
 <script type="tutuca/state">
-  interface theme {
-    record state {
-      color: string,
-      body: child,
-    }
-  }
-  interface child {
-    record state {}
-  }
+  state Theme { color: String, body: Child }
+    state Child {  }
 </script>
 
 <template id="Theme">

@@ -10,9 +10,9 @@
 ///|
 /// The state of the FpGreeting component.
 ///
-/// Declared as `interface fp-greeting` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct FpGreetingState {
   name : String
 }
@@ -20,7 +20,8 @@ pub(all) struct FpGreetingState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..FpGreetingState::zero(), label: "Counter" }
@@ -65,7 +66,7 @@ pub let fp_greeting_global_style : String = ""
 impl @component.Fields for FpGreetingState with fn schema() {
   @component.SchemaInfo::new(
     name="FpGreeting",
-    fingerprint="7fde5bb7d59361e6",
+    fingerprint="67ed21cbe8f52c47",
     fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
@@ -74,9 +75,9 @@ impl @component.Fields for FpGreetingState with fn schema() {
 ///|
 /// The state of the Note component.
 ///
-/// Declared as `interface note` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct NoteState {
   text : String
 }
@@ -84,7 +85,8 @@ pub(all) struct NoteState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NoteState::zero(), label: "Counter" }
@@ -179,7 +181,7 @@ pub let note_global_style : String = ""
 impl @component.Fields for NoteState with fn schema() {
   @component.SchemaInfo::new(
     name="Note",
-    fingerprint="416c7af2c341fb4c",
+    fingerprint="d75f07689595d50c",
     fields=[@component.FieldInfo::new("text", TyText)],
     receives=["write"],
     view_names=["main"],
@@ -189,9 +191,9 @@ impl @component.Fields for NoteState with fn schema() {
 ///|
 /// The state of the Mailbox component.
 ///
-/// Declared as `interface mailbox` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MailboxState {
   note : @tutuca.Value
 }
@@ -199,7 +201,8 @@ pub(all) struct MailboxState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MailboxState::zero(), label: "Counter" }
@@ -244,7 +247,7 @@ pub let mailbox_global_style : String = ""
 impl @component.Fields for MailboxState with fn schema() {
   @component.SchemaInfo::new(
     name="Mailbox",
-    fingerprint="ca33e6c0663f4af6",
+    fingerprint="a9312015ab024d47",
     fields=[@component.FieldInfo::new("note", TyComp(Some("Note")))],
     view_names=["main"],
   )

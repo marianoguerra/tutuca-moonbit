@@ -1,20 +1,16 @@
 <script type="tutuca/state">
-  interface render-with-scope {
-    record state {
-    text: string,
-    }
+  state RenderWithScope {
+    text : String
   }
-  interface list-filter-enrich {
-    record state {
-    items: values,
-    query: string,
-    }
+
+  state ListFilterEnrich {
+    items : Array[Any]
+    query : String
   }
-  interface list-filter-enrich-with {
-    record state {
-    items: values,
-    query: string,
-    }
+
+  state ListFilterEnrichWith {
+    items : Array[Any]
+    query : String
   }
 </script>
 

@@ -1,16 +1,26 @@
 <script type="tutuca/state">
-  interface nested-state {
-    record label { text: string, done: bool }
-    enum priority { low, high }
-    variant due { unscheduled, on-day(s32) }
-    record state {
-      title: string,
-      labels: list<label>,
-      priority: priority,
-      due: due,
-      note: option<string>,
-      size: tuple<s32, s32>,
-    }
+  struct Label {
+    text : String
+    done : Bool
+  }
+
+  enum Priority {
+    Low
+    High
+  }
+
+  enum Due {
+    Unscheduled
+    OnDay(Int)
+  }
+
+  state {
+    title : String
+    labels : Array[Label]
+    priority : Priority
+    due : Due
+    note : String?
+    size : (Int, Int)
   }
 </script>
 

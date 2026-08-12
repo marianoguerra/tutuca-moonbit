@@ -3,27 +3,30 @@
   /// component-inspector.dev.js). Only introspected, never rendered — its
   /// point is that every panel of the component inspector has something to
   /// show, which is why it declares one of everything.
-  interface rich-sample {
-    record state {
-      title: string,
-      count: s32,
-      tags: values,
-      open: bool,
-    }
-    variant receive { ping }
-    variant bubble { on-child }
-    variant response { on-data }
-    /// Read by the inspector's own panels, not by these views.
-    double: func() -> s32;
-    label: func() -> string;
+  state RichSample {
+    title : String
+    count : Int
+    tags : Array[Any]
+    open : Bool
   }
-  interface sample-card {
-    record state {
-      title: string,
-      count: s32,
-      tags: values,
-      open: bool,
-    }
+
+  receive RichSample {
+    Ping
+  }
+
+  bubble RichSample {
+    OnChild
+  }
+
+  response RichSample {
+    OnData
+  }
+
+  state SampleCard {
+    title : String
+    count : Int
+    tags : Array[Any]
+    open : Bool
   }
 </script>
 
@@ -34,8 +37,17 @@
   </div>
 </template>
 
+<!--
+  The methods are CALLED rather than declared: a state block used to carry
+  `double: func() -> s32`, and now a method exists exactly where a view asks
+  for one. So the inspector's Methods panel has something to show only if a
+  view of this component reads it, which is the same rule every other channel
+  already followed.
+-->
 <template id="RichSample:compact">
-  <span @text=".title" @on.click="reset"></span>
+  <span @on.click="reset">
+    <i @text=".title"></i><i @text="$label"></i><i @text="$double"></i>
+  </span>
 </template>
 
 <template id="SampleCard">

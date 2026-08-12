@@ -189,7 +189,7 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
           Some(t) if !is_numeric(t) =>
             self.say(
               "TYPE",
-              "`\{assign_word(op)}` is arithmetic, but this place is \{t.show_wit()}",
+              "`\{assign_word(op)}` is arithmetic, but this place is \{t.show_source()}",
               span,
             )
           _ => ()
@@ -248,7 +248,7 @@ fn C::condition(self : C, e : @tscript.Expr) -> Unit {
         // Obj unconditionally, so the test cannot fail.
         self.say(
           "ALWAYS_TRUE",
-          "\{t.show_wit()} is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it",
+          "\{t.show_source()} is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it",
           expr_span(e),
         )
       }
@@ -306,7 +306,7 @@ fn C::place(
               None => {
                 self.say(
                   "NO_FIELD",
-                  "`\{t.show_wit()}` has no field `\{name}`",
+                  "`\{t.show_source()}` has no field `\{name}`",
                   p.span,
                 )
                 return None
@@ -323,7 +323,7 @@ fn C::place(
               None => {
                 self.say(
                   "NOT_INDEXABLE",
-                  "`\{t.show_wit()}` is not a collection, so it has nothing to index",
+                  "`\{t.show_source()}` is not a collection, so it has nothing to index",
                   p.span,
                 )
                 return None
@@ -377,7 +377,7 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
             Some(inner) if !is_numeric(inner) =>
               self.say(
                 "TYPE",
-                "`-` negates a number, but this is \{inner.show_wit()}",
+                "`-` negates a number, but this is \{inner.show_source()}",
                 span,
               )
             _ => ()
@@ -400,7 +400,7 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
           } else {
             self.say(
               "TYPE",
-              "the two branches are \{x.show_wit()} and \{y.show_wit()}",
+              "the two branches are \{x.show_source()} and \{y.show_source()}",
               expr_span(else_),
             )
             None
@@ -498,7 +498,7 @@ fn C::chain(
           Some(ty) if !is_boolish(ty) =>
             self.say(
               "ALWAYS_TRUE",
-              "\{ty.show_wit()} is always truthy, so this operand never decides anything",
+              "\{ty.show_source()} is always truthy, so this operand never decides anything",
               expr_span(operands[i]),
             )
           _ => ()
@@ -518,7 +518,7 @@ fn C::chain(
           if !comparable(a, b) {
             self.say(
               "TYPE",
-              "\{a.show_wit()} and \{b.show_wit()} are never equal, so this comparison has one answer",
+              "\{a.show_source()} and \{b.show_source()} are never equal, so this comparison has one answer",
               span,
             )
           }
@@ -539,7 +539,7 @@ fn C::chain(
           Some(ty) if !is_numeric(ty) =>
             self.say(
               "TYPE",
-              "arithmetic needs a number, but this is \{ty.show_wit()}",
+              "arithmetic needs a number, but this is \{ty.show_source()}",
               expr_span(operands[i]),
             )
           _ => ()
@@ -637,7 +637,7 @@ fn C::assignable(
   if !ok {
     self.say(
       "TYPE",
-      "this place is \{w.show_wit()}, but the value is \{g.show_wit()}",
+      "this place is \{w.show_source()}, but the value is \{g.show_source()}",
       span,
     )
   }
@@ -662,7 +662,11 @@ fn C::method_fits(
     _ => true
   }
   if !ok {
-    self.say("NO_METHOD", "`\{call}` does not apply to \{t.show_wit()}", span)
+    self.say(
+      "NO_METHOD",
+      "`\{call}` does not apply to \{t.show_source()}",
+      span,
+    )
   }
 }
 

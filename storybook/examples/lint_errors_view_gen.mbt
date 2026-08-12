@@ -8,14 +8,11 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state for the components in lint_errors.mbt, which build
-/// their views in MoonBit rather than here — a macro body is
-/// registered at runtime, so it cannot be compiled ahead of time.
-/// No <template>: this file declares state and nothing else.
+/// The state of the LintDemo component.
 ///
-/// Declared as `interface lint-demo` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct LintDemoState {
   count : Int
   items : Array[@tutuca.Value]
@@ -27,7 +24,8 @@ pub(all) struct LintDemoState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..LintDemoState::zero(), label: "Counter" }
@@ -85,7 +83,7 @@ impl @component.Fields for LintDemoState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for LintDemoState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="61623a4912326968", fields=[
+  @component.SchemaInfo::new(fingerprint="cdce524d53b54854", fields=[
     @component.FieldInfo::new("count", TyInt),
     @component.FieldInfo::new("items", TyList(TyAny)),
     @component.FieldInfo::new("kind", TyText),
@@ -97,9 +95,9 @@ impl @component.Fields for LintDemoState with fn schema() {
 ///|
 /// The state of the HtmlLintDemo component.
 ///
-/// Declared as `interface html-lint-demo` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct HtmlLintDemoState {
   count : Int
 }
@@ -107,7 +105,8 @@ pub(all) struct HtmlLintDemoState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..HtmlLintDemoState::zero(), label: "Counter" }
@@ -143,7 +142,7 @@ impl @component.Fields for HtmlLintDemoState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for HtmlLintDemoState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="5527f190b24e5ee0", fields=[
+  @component.SchemaInfo::new(fingerprint="13676d40cf04a90b", fields=[
     @component.FieldInfo::new("count", TyInt),
   ])
 }
@@ -151,9 +150,9 @@ impl @component.Fields for HtmlLintDemoState with fn schema() {
 ///|
 /// The state of the ScopedStyleDemo component.
 ///
-/// Declared as `interface scoped-style-demo` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ScopedStyleDemoState {
   count : Int
 }
@@ -161,7 +160,8 @@ pub(all) struct ScopedStyleDemoState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ScopedStyleDemoState::zero(), label: "Counter" }
@@ -197,7 +197,7 @@ impl @component.Fields for ScopedStyleDemoState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for ScopedStyleDemoState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="86b61c5fb0f1011d", fields=[
+  @component.SchemaInfo::new(fingerprint="dd4388e1ada8a9c8", fields=[
     @component.FieldInfo::new("count", TyInt),
   ])
 }

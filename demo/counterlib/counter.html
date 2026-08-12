@@ -1,16 +1,14 @@
 <script type="tutuca/state">
-  interface counter {
-    record state {
-      label: string,
-      count: s32,
-      history: list<s32>,
-    }
+  state {
+    label : String
+    count : Int
+    history : Array[Int]
+  }
 
-    /// Messages this counter raises at itself. The views never write these
-    /// names, so the schema is the only place they can be declared.
-    variant receive {
-      reset-to(s32),
-    }
+  /// Messages this counter raises at itself. The views never write these
+  /// names, so the schema is the only place they can be declared.
+  receive {
+    ResetTo(Int)
   }
 </script>
 

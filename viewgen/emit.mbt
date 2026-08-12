@@ -144,32 +144,76 @@ fn emit_msg_arm(out : StringBuilder, sig : InputSig, variant : String) -> Unit {
 
 ///|
 /// Every `$`-callable this component answers: the ones its views call, and the
-/// ones its state block declares as `func`. Sorted and de-duplicated, so a
-/// method that is both called and declared is one enum case.
-fn declared_methods(
-  surface : Surface,
-  state : @statedef.StateDef?,
-) -> Array[String] {
+/// ones its script block declares. Sorted and de-duplicated, so a method that
+/// is both called and declared is one enum case.
+///
+/// The second source is not redundant. Most methods a view declares by calling
+/// (`$label`), but a method a PARENT calls — `containsText` on a list item,
+/// which the list's `@when` asks every child regardless of the child's own
+/// shape — appears in no view of the component that answers it. A state block
+/// used to declare those as `func`, which put behaviour in a block whose own
+/// header says it holds none; now they are `pred` and `compute` declarations,
+/// beside every other callable.
+fn declared_methods(surface : Surface) -> Array[String] {
   let seen : Map[String, Unit] = Map([])
   let out : Array[String] = []
-  let add = (n : String) => {
-    if !seen.contains(n) {
-      seen[n] = ()
-      out.push(n)
-    }
-  }
   for m in surface.methods {
-    add(m)
-  }
-  match state {
-    Some(def) =>
-      for m in def.methods {
-        add(m.name)
-      }
-    None => ()
+    if !seen.contains(m) {
+      seen[m] = ()
+      out.push(m)
+    }
   }
   out.sort_by((a, b) => a.lexical_compare(b))
   out
+}
+
+///|
+/// The component's surface with what its script block declares folded in.
+///
+/// Only the NAMES, for now: a `pred` or a `compute` in the block is a method
+/// this component answers, exactly as a `$name` at a call site is. What the
+/// bodies do is the emitter's job and it is not built yet, so an author still
+/// writes the MoonBit — but the enum a `compute` match is written over now
+/// contains the name, which is the half no call site could supply.
+fn with_script(
+  surface : Surface,
+  file : @viewfile.ViewFile,
+  comp : String,
+) -> Surface raise GenError {
+  guard file.script_for(comp) is Some(block) else { return surface }
+  let decls = @tscript.parse_script(block.text) catch {
+    e =>
+      raise BadScriptBlock(
+        comp~,
+        line=block.line + line_of(block.text, e.span().start) - 1,
+        message=e.message(),
+      )
+  }
+  let methods = surface.methods.copy()
+  for d in decls {
+    if d.kind is (DPred | DCompute) && !methods.contains(d.name) {
+      methods.push(d.name)
+    }
+  }
+  methods.sort_by((a, b) => a.lexical_compare(b))
+  { ..surface, methods, }
+}
+
+///|
+/// The 1-based line of a character offset inside the block.
+fn line_of(text : String, offset : Int) -> Int {
+  let mut line = 1
+  let mut i = 0
+  for c in text {
+    if i >= offset {
+      break
+    }
+    if c == '\n' {
+      line = line + 1
+    }
+    i = i + 1
+  }
+  line
 }
 
 ///|
@@ -313,7 +357,7 @@ fn emit_component(
   // A method a parent calls on this component appears in neither its views nor
   // its update, so the schema is the only place it can be named — and without a
   // case for it, the match the author writes could not answer it.
-  let all_methods = declared_methods(surface, state)
+  let all_methods = declared_methods(surface)
   if !all_methods.is_empty() {
     let method_variants = variants_for(all_methods)
     emit_name_enum(
@@ -461,8 +505,8 @@ fn emit_module_compiled(
   // the CLI reports it as a diagnostic (cli/gen_views.mbt) rather than
   // generating in silence.
   for def in file.state {
-    if !declared.contains(def.component) {
-      emit_state_only(def, file, debug_derive, out)
+    if !declared.contains(def.component_name(name)) {
+      emit_state_only(def, file, name, debug_derive, out)
     }
   }
   // The caller's index when there is one — that is what makes a reference to a
@@ -475,8 +519,15 @@ fn emit_module_compiled(
   for compiled_comp in compiled.components {
     let comp = compiled_comp.raw
     let cname = comp.component_name(name)
-    let state = state_for(file, cname)
-    let inits = file.init.filter(p => p.0 == cname).map(p => p.1)
+    let state = state_for(file, cname, name)
+    // A fixture is keyed by the schema's RAW component name, which is "" for
+    // a bare `state { … }` — so the key comes from the same `def` the
+    // fixtures were checked against, not from the resolved name.
+    let init_key = match state {
+      Some(d) => d.component
+      None => cname
+    }
+    let inits = file.init.filter(p => p.0 == init_key).map(p => p.1)
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
     if state is Some(def) {
@@ -486,7 +537,7 @@ fn emit_module_compiled(
       cname,
       source_file,
       comp,
-      compiled_comp.surface,
+      with_script(compiled_comp.surface, file, cname),
       state,
       inits,
       debug_derive,
@@ -518,13 +569,16 @@ pub fn declared_components(
 fn emit_state_only(
   def : @statedef.StateDef,
   file : @viewfile.ViewFile,
+  name : String,
   debug_derive : Bool,
   out : StringBuilder,
 ) -> Unit raise GenError {
-  let t = type_prefix(def.component)
-  let v = value_prefix(def.component)
+  let t = type_prefix(def.component_name(name))
+  let v = value_prefix(def.component_name(name))
   let derives = if debug_derive { "Eq, @debug.Debug" } else { "Eq" }
-  let inits = file.init.filter(p => p.0 == def.component).map(p => p.1)
+  let inits = file.init
+    .filter(p => p.0 == def.component_name(name))
+    .map(p => p.1)
   emit_state(t, v, def, inits, derives, out)
   // The schema too. Its view-derived lists — inputs, methods, ids, view names
   // — come out EMPTY, and that is the honest reading: this file declares the
@@ -545,7 +599,7 @@ fn emit_state_only(
     loop_withs: [],
   }
   let no_views : @viewfile.ViewSet = {
-    name: def.component,
+    name: def.component_name(name),
     views: [],
     common_style: "",
     global_style: "",
@@ -555,9 +609,13 @@ fn emit_state_only(
 
 ///|
 /// The schema entry for a component, or None when the file declares none.
-fn state_for(file : @viewfile.ViewFile, comp : String) -> @statedef.StateDef? {
+fn state_for(
+  file : @viewfile.ViewFile,
+  comp : String,
+  fallback : String,
+) -> @statedef.StateDef? {
   for def in file.state {
-    if def.component == comp {
+    if def.component_name(fallback) == comp {
       return Some(def)
     }
   }
@@ -572,8 +630,11 @@ fn state_for(file : @viewfile.ViewFile, comp : String) -> @statedef.StateDef? {
 /// about to call `emit_module` wants one error type for the whole pipeline,
 /// and `File` is only constructible here — so the conversion lives here,
 /// once, instead of at every call site.
-pub fn split_file(source : String) -> @viewfile.ViewFile raise GenError {
-  @viewfile.split_file(source) catch {
+pub fn split_file(
+  source : String,
+  name? : String = "",
+) -> @viewfile.ViewFile raise GenError {
+  @viewfile.split_file(source, name~) catch {
     e => raise File(e)
   }
 }
@@ -584,5 +645,5 @@ pub fn generate(
   name~ : String,
   source_file~ : String,
 ) -> String raise GenError {
-  emit_module(name, source_file, split_file(source))
+  emit_module(name, source_file, split_file(source, name~))
 }

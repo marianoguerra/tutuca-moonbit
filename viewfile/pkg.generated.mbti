@@ -7,7 +7,7 @@ import {
 }
 
 // Values
-pub fn split_file(String) -> ViewFile raise FileError
+pub fn split_file(String, name? : String) -> ViewFile raise FileError
 
 // Errors
 pub suberror FileError {
@@ -19,7 +19,7 @@ pub suberror FileError {
   NoMainViewFor(String)
   UnclosedTemplate(String)
   DuplicateStateBlock
-  DuplicateScriptBlock
+  DuplicateScriptBlock(String)
   BadStateBlock(line~ : Int, message~ : String)
   BadInitBlock(line~ : Int, message~ : String)
 }
@@ -44,13 +44,19 @@ pub(all) struct RawView {
   style : String
 } derive(Eq, @debug.Debug)
 
+pub(all) struct ScriptBlock {
+  comp : String
+  block : Block
+} derive(Eq, @debug.Debug)
+
 pub(all) struct ViewFile {
   components : Array[ViewSet]
   macros : Array[MacroDef]
   state : Array[@statedef.StateDef]
   init : Array[(String, @statedef.InitState)]
-  script : Block?
+  scripts : Array[ScriptBlock]
 } derive(Eq, @debug.Debug)
+pub fn ViewFile::script_for(Self, String) -> Block?
 
 pub(all) struct ViewSet {
   name : String

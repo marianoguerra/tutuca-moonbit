@@ -1,16 +1,13 @@
 <script type="tutuca/state">
-  interface swatch-picker {
-    record state {
-    color: string,
-    palette: values,
-    }
+  state SwatchPicker {
+    color : String
+    palette : Array[Any]
   }
-  interface quadratic {
-    record state {
-    a: s32,
-    b: s32,
-    c: s32,
-    }
+
+  state Quadratic {
+    a : Int
+    b : Int
+    c : Int
   }
 </script>
 

@@ -6,13 +6,7 @@
 ///|
 let counter_state_html : String =
   #|<script type="tutuca/state">
-  #|  interface counter {
-  #|    record state {
-  #|      label: string,
-  #|      count: s32,
-  #|      history: list<s32>,
-  #|    }
-  #|  }
+  #|  state Counter { label: String, count: Int, history: Array[Int] }
   #|</script>
   #|
   #|<template>
@@ -77,19 +71,9 @@ test "a file with no state block generates exactly what it did before" {
 test "sets, ordered maps and child slots are described in the schema" {
   let html =
     #|<script type="tutuca/state">
-    #|  interface card {
-    #|    record state { title: string }
-    #|  }
-    #|  interface board {
-    #|    flags visibility { done, active }
-    #|    record state {
-    #|      vis: visibility,
-    #|      tags: text-set,
-    #|      order: value-omap,
-    #|      lead: card,
-    #|      plain: string,
-    #|    }
-    #|  }
+    #|  enum Visibility { Done, Active }
+    #|  state Card { title: String }
+    #|  state Board { vis: Set[Visibility], tags: Set[String], order: Map[String, Any], lead: Card, plain: String }
     #|</script>
     #|
     #|<template id="Card"><p><x text=".title"></x></p></template>
@@ -107,7 +91,7 @@ test "sets, ordered maps and child slots are described in the schema" {
   // not exist at runtime; an open one has none to inline, which is a real
   // answer and a different one.
   assert_true(
-    src.contains("\"vis\", TyFlags(\"visibility\", [\"done\", \"active\"])"),
+    src.contains("\"vis\", TyFlags(\"Visibility\", [\"Done\", \"Active\"])"),
   )
   assert_true(src.contains("\"tags\", TySet"))
   assert_true(src.contains("\"order\", TyOMap(TyAny)"))
@@ -124,11 +108,9 @@ test "sets, ordered maps and child slots are described in the schema" {
 test "named types become MoonBit types, and a keyword field escapes" {
   let html =
     #|<script type="tutuca/state">
-    #|  interface editor {
-    #|    enum mode { view, edit }
-    #|    record item { title: string, done: bool }
-    #|    record state { m: mode, items: list<item>, %type: string }
-    #|  }
+    #|  enum Mode { View, Edit }
+    #|  struct Item { title: String, done: Bool }
+    #|  state Editor { m: Mode, items: Array[Item], type: String }
     #|</script>
     #|<template><p><x text=".m"></x></p></template>
   let src = @viewgen.emit_module(
@@ -161,7 +143,7 @@ test "a schema interface with no template declares state anyway" {
   // non-fatal diagnostic channel rather than failing generation.
   let html =
     #|<script type="tutuca/state">
-    #|  interface countr { record state { n: s32 } }
+    #|  state Countr { n: Int }
     #|</script>
     #|<template><p>hi</p></template>
   let file = @viewgen.split_file(html)
@@ -179,17 +161,13 @@ test "a schema error points at the line in the HTML file" {
     #|<template><p>hi</p></template>
     #|
     #|<script type="tutuca/state">
-    #|  interface counter {
-    #|    record state {
-    #|      n: s64,
-    #|    }
-    #|  }
+    #|  state Counter { n: Int64 }
     #|</script>
   try @viewgen.split_file(html) |> ignore catch {
     File(BadStateBlock(line~, message~)) => {
-      // `n: s64` is on line 6 of the file, not line 3 of the block: the
+      // `n: Int64` is on line 4 of the file, not line 2 of the block: the
       // author has the HTML file open, not the slice we cut out of it.
-      assert_eq(line, 6)
+      assert_eq(line, 4)
       assert_true(message.contains("2^53"))
     }
     e => fail("expected a state-block error, got \{e.message()}")
@@ -202,10 +180,10 @@ test "a schema error points at the line in the HTML file" {
 test "two state blocks in one file are refused" {
   let html =
     #|<script type="tutuca/state">
-    #|  interface a { record state { n: s32 } }
+    #|  state A { n: Int }
     #|</script>
     #|<script type="tutuca/state">
-    #|  interface b { record state { n: s32 } }
+    #|  state B { n: Int }
     #|</script>
     #|<template><p>hi</p></template>
   try @viewgen.split_file(html) |> ignore catch {
@@ -222,9 +200,7 @@ test "the block's angle brackets survive the HTML tokenizer" {
   // `<s32>` element and `option<string>` an `<string>` one.
   let html =
     #|<script type="tutuca/state">
-    #|  interface c {
-    #|    record state { a: list<s32>, b: option<string>, c: tuple<s32, bool> }
-    #|  }
+    #|  state C { a: Array[Int], b: String?, c: (Int, Bool) }
     #|</script>
     #|<template><p>hi</p></template>
   let file = @viewgen.split_file(html)
@@ -244,9 +220,7 @@ test "a schema-only file declares state for views built at runtime" {
   // view file even when it has no views.
   let html =
     #|<script type="tutuca/state">
-    #|  interface bar-chart {
-    #|    record state { title: string, values: values }
-    #|  }
+    #|  state BarChart { title: String, values: Array[Any] }
     #|</script>
   let file = @viewgen.split_file(html)
   assert_eq(file.components.length(), 0)
@@ -271,7 +245,7 @@ test "a schema block is lifted out of a file that is its own main view" {
   // literal <script> element in the view tree.
   let html =
     #|<script type="tutuca/state">
-    #|  interface widget { record state { n: s32 } }
+    #|  state Widget { n: Int }
     #|</script>
     #|<p><x text=".n"></x></p>
   let file = @viewgen.split_file(html)

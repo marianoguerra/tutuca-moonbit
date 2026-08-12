@@ -1,46 +1,47 @@
 <script type="tutuca/state">
-  interface json-null {
-    record state {}
+  state JsonNull {
   }
-  interface json-boolean {
-    record state { value: bool }
+
+  state JsonBoolean {
+    value : Bool
   }
-  interface json-number {
-    record state { value: f64 }
+
+  state JsonNumber {
+    value : Double
   }
-  interface json-string {
-    record state { value: string }
+
+  state JsonString {
+    value : String
   }
-  interface value-fn {
-    record state {}
+
+  state ValueFn {
   }
-  interface value-obj {
-    record state { text: string }
+
+  state ValueObj {
+    text : String
   }
-  interface json-array {
-    record state {
-      items: values,
-      is-expanded: bool,
-      items-per-page: s32,
-      current-page: s32,
-    }
+
+  state JsonArray {
+    items : Array[Any]
+    isExpanded : Bool
+    itemsPerPage : Int
+    currentPage : Int
   }
-  interface json-object {
-    record state {
-      items: values,
-      is-expanded: bool,
-      items-per-page: s32,
-      current-page: s32,
-    }
+
+  state JsonObject {
+    items : Array[Any]
+    isExpanded : Bool
+    itemsPerPage : Int
+    currentPage : Int
   }
-  interface json-property {
-    record state {
-      key: string,
-      child: any,
-    }
+
+  state JsonProperty {
+    key : String
+    child : Any
   }
-  interface data-inspector {
-    record state { value: any }
+
+  state DataInspector {
+    value : Any
   }
 </script>
 

@@ -8,9 +8,9 @@
 ///|
 fn msgs_src(bucket_decls : String) -> String raise {
   @viewgen.generate(
-    "<script type=\"tutuca/state\">\ninterface chat {\n" +
+    "<script type=\"tutuca/state\">\n" +
     bucket_decls +
-    "\nrecord state { n: s32 }\n}\n</script>\n" +
+    "\nstate Chat { n: Int }\n</script>\n" +
     "<template><p><x text=\".n\"></x></p></template>",
     name="Chat",
     source_file="chat.html",
@@ -19,7 +19,7 @@ fn msgs_src(bucket_decls : String) -> String raise {
 
 ///|
 test "a declared receive bucket gets an enum, a decode and a sender" {
-  let src = msgs_src("variant receive { init, tick, set-all(string) }")
+  let src = msgs_src("receive Chat { Init, Tick, SetAll(String) }")
   assert_true(src.contains("pub(all) enum ChatReceive {"))
   assert_true(src.contains("  Init\n"))
   assert_true(src.contains("  SetAll(String)\n"))
@@ -50,7 +50,7 @@ test "a declared receive bucket gets an enum, a decode and a sender" {
 ///|
 test "each bucket decodes only its own dispatch arm" {
   let src = msgs_src(
-    "variant receive { tick }\nvariant bubble { changed(s32) }\nvariant response { loaded(string) }",
+    "receive Chat { Tick }\nbubble Chat { Changed(Int) }\nresponse Chat { Loaded(String) }",
   )
   assert_true(src.contains("guard d is Receive(name, args)"))
   assert_true(src.contains("guard d is Bubble(name, args)"))
@@ -66,8 +66,8 @@ test "each bucket decodes only its own dispatch arm" {
 
 ///|
 test "an integer payload is range- and integrality-checked, not truncated" {
-  let src = msgs_src("variant receive { set-count(s32), set-byte(u8) }")
-  // 2.5 arriving at an s32 handler is a wrong send, and silently truncating
+  let src = msgs_src("receive Chat { SetCount(Int), SetByte(UInt8) }")
+  // 2.5 arriving at an Int handler is a wrong send, and silently truncating
   // it to 2 would hide that — so the guard drops it into Unknown instead.
   assert_true(src.contains("a0.to_int().to_double() == a0"))
   assert_true(src.contains("=> SetCount(a0.to_int())"))
@@ -78,7 +78,7 @@ test "an integer payload is range- and integrality-checked, not truncated" {
 
 ///|
 test "a multi-argument message is spelled as a tuple payload" {
-  let src = msgs_src("variant receive { move-to(tuple<s32, s32>) }")
+  let src = msgs_src("receive Chat { MoveTo(Int, Int) }")
   assert_true(src.contains("  MoveTo(Int, Int)\n"))
   assert_true(src.contains("[Num(a0), Num(a1)]"))
   assert_true(src.contains("MoveTo(a0.to_int(), a1.to_int())"))

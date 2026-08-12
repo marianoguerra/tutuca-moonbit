@@ -1,150 +1,153 @@
 <script type="tutuca/state">
-  interface palette-row {
-    /// One search hit. `why` is the ranking's reasons, joined — a search a
-    /// person cannot explain is one they stop trusting, and that is as true of
-    /// a standard component as of a loaded one.
-    record state {
-      module: string,
-      name: string,
-      summary: string,
-      why: string,
-      category: string,
-      /// Where the keyboard is. Held per row rather than as one index on the
-      /// bar so that moving the cursor touches two rows instead of redrawing
-      /// the list.
-      selected: bool,
-    }
-    variant bubble {
-      /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
-      /// its arguments" rather than "place it with its defaults".
-      component-picked(tuple<string, string, bool>),
-    }
-    variant receive { set-selected(bool) }
+  /// One search hit. `why` is the ranking's reasons, joined — a search a
+  /// person cannot explain is one they stop trusting, and that is as true of
+  /// a standard component as of a loaded one.
+  state PaletteRow {
+    module : String
+    name : String
+    summary : String
+    why : String
+    category : String
+    /// Where the keyboard is. Held per row rather than as one index on the
+    /// bar so that moving the cursor touches two rows instead of redrawing
+    /// the list.
+    selected : Bool
   }
 
-  interface command-bar {
-    /// Search the catalog, over everything else on the page.
-    ///
-    /// It knows nothing about the catalog: it reports what was typed and gets
-    /// rows back, exactly as the palette it replaces did. What is new is the
-    /// cursor, because a bar you have to reach for the mouse in is a bar that
-    /// is slower than the thing it replaced.
-    record state {
-      query: string,
-      hits: values,
-      cursor: s32,
-      /// Opened by ctrl/cmd-clicking a `+`: every pick configures.
-      configure: bool,
-      empty-message: string,
-    }
-    variant receive { set-cursor(s32) }
+  bubble PaletteRow {
+    /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
+    /// its arguments" rather than "place it with its defaults".
+    ComponentPicked(String, String, Bool)
   }
 
-  interface schema-field {
-    /// One control of the generated form.
-    ///
-    /// `kind` picks the control and comes from the field's JSON Schema type;
-    /// `hint` is what the constraint says (a range, a length, a format), which
-    /// is the half a type cannot state and the half a person needs to see
-    /// BEFORE submitting rather than in an error afterwards.
-    record state {
-      name: string,
-      kind: string,
-      hint: string,
-      doc: string,
-      required: bool,
-      text: string,
-      num: f64,
-      flag: bool,
-      choices: values,
-      error: string,
-    }
-    variant bubble { field-edited(tuple<string, string>) }
+  receive PaletteRow {
+    SetSelected(Bool)
   }
 
-  interface schema-form {
-    /// A form over a component's declared arguments, generated from the JSON
-    /// Schema the catalog projects. No per-component code, and no branch on
-    /// where the component came from: the same projection an agent's tool
-    /// reads is the one this draws, for a guest and for a standard component
-    /// alike.
-    record state {
-      module: string,
-      name: string,
-      title: string,
-      doc: string,
-      fields: values,
-      inits: values,
-      error: string,
-      /// What the button says. "Place" when this is filling an empty cell,
-      /// "Apply" when it is reconfiguring something already there.
-      submit-label: string,
-    }
-    variant receive { show-errors(any) }
+  /// Search the catalog, over everything else on the page.
+  ///
+  /// It knows nothing about the catalog: it reports what was typed and gets
+  /// rows back, exactly as the palette it replaces did. What is new is the
+  /// cursor, because a bar you have to reach for the mouse in is a bar that
+  /// is slower than the thing it replaced.
+  state CommandBar {
+    query : String
+    hits : Array[Any]
+    cursor : Int
+    /// Opened by ctrl/cmd-clicking a `+`: every pick configures.
+    configure : Bool
+    emptyMessage : String
   }
 
-  interface config-panel {
-    /// The sidebar: what the thing you pointed at can be configured with.
-    ///
-    /// Two modes, and the choice between them is made where the instance is:
-    /// a component that declares a `config` view of its own gets it rendered
-    /// live, and everything else gets the form generated from its declared
-    /// arguments. `mode` is what the templates switch on, because a null
-    /// field renders as nothing and two nulls would be two ways to say
-    /// "not this one".
-    record state {
-      title: string,
-      /// "view" | "form"
-      mode: string,
-      /// The live instance, when it renders its own config view. It is MOVED
-      /// here rather than copied: an instance rendered in two places has one
-      /// of them holding a dead handle after the first interaction.
-      target: component,
-      form: component,
-    }
-    variant bubble { close-config }
+  receive CommandBar {
+    SetCursor(Int)
   }
 
-  interface universal-app {
-    /// The universal component, from `dyncomp/ui/std`. Declared as a resource
-    /// because it lives in another module and this file cannot see its
-    /// interface — which is WIT's own word for a handle to something whose
-    /// representation you do not have.
-    resource universal;
+  /// One control of the generated form.
+  ///
+  /// `kind` picks the control and comes from the field's JSON Schema type;
+  /// `hint` is what the constraint says (a range, a length, a format), which
+  /// is the half a type cannot state and the half a person needs to see
+  /// BEFORE submitting rather than in an error afterwards.
+  state SchemaField {
+    name : String
+    kind : String
+    hint : String
+    doc : String
+    required : Bool
+    text : String
+    num : Double
+    flag : Bool
+    choices : Array[Any]
+    error : String
+  }
 
-    /// The universal app: a bar, a root, and whatever chrome is open.
+  bubble SchemaField {
+    FieldEdited(String, String)
+  }
+
+  /// A form over a component's declared arguments, generated from the JSON
+  /// Schema the catalog projects. No per-component code, and no branch on
+  /// where the component came from: the same projection an agent's tool
+  /// reads is the one this draws, for a guest and for a standard component
+  /// alike.
+  state SchemaForm {
+    module : String
+    name : String
+    title : String
+    doc : String
+    fields : Array[Any]
+    inits : Array[Any]
+    error : String
+    /// What the button says. "Place" when this is filling an empty cell,
+    /// "Apply" when it is reconfiguring something already there.
+    submitLabel : String
+  }
+
+  receive SchemaForm {
+    ShowErrors(Any)
+  }
+
+  /// The sidebar: what the thing you pointed at can be configured with.
+  ///
+  /// Two modes, and the choice between them is made where the instance is:
+  /// a component that declares a `config` view of its own gets it rendered
+  /// live, and everything else gets the form generated from its declared
+  /// arguments. `mode` is what the templates switch on, because a null
+  /// field renders as nothing and two nulls would be two ways to say
+  /// "not this one".
+  state ConfigPanel {
+    title : String
+    /// "view" | "form"
+    mode : String
+    /// The live instance, when it renders its own config view. It is MOVED
+    /// here rather than copied: an instance rendered in two places has one
+    /// of them holding a dead handle after the first interaction.
+    target : Component
+    form : Component
+  }
+
+  bubble ConfigPanel {
+    CloseConfig
+  }
+
+  /// The universal app: a bar, a root, and whatever chrome is open.
+  ///
+  /// The root is ONE component and starts as a universal, so the first thing
+  /// a person does is choose what the page is. Everything after that is the
+  /// same gesture one level in.
+  ///
+  /// There is no document beside the tree. What is on screen IS the state,
+  /// and `mode` is pushed down with `@push-view` so a component that has an
+  /// `edit` view shows its affordances and one that does not — every guest —
+  /// is simply itself.
+  state UniversalApp {
+    /// The universal component, from `dyncomp/ui/std`. Named rather than
+    /// declared, because it lives in another module and this file cannot see
+    /// it — `Component[X]` resolves through the registration scope at make
+    /// time, which is the only place the name means anything.
+    root : Component[Universal]
+    /// "edit" | "main"
+    mode : String
+    commandBar : Component
+    configPanel : Component
+    status : String
+    /// Whatever the HOST wants in the bar — loading bundles, in the wasm
+    /// shell's case. Null in every test and in any host that needs none.
     ///
-    /// The root is ONE component and starts as a universal, so the first thing
-    /// a person does is choose what the page is. Everything after that is the
-    /// same gesture one level in.
-    ///
-    /// There is no document beside the tree. What is on screen IS the state,
-    /// and `mode` is pushed down with `@push-view` so a component that has an
-    /// `edit` view shows its affordances and one that does not — every guest —
-    /// is simply itself.
-    record state {
-      root: universal,
-      /// "edit" | "main"
-      mode: string,
-      command-bar: component,
-      config-panel: component,
-      status: string,
-      /// Whatever the HOST wants in the bar — loading bundles, in the wasm
-      /// shell's case. Null in every test and in any host that needs none.
-      ///
-      /// A component rather than a list of buttons, because this package is
-      /// backend-agnostic and the things a host offers are exactly the things
-      /// it cannot be: fetching an archive, reading a dropped file. The app
-      /// gives it a place to stand and forwards what lands on the page.
-      dev-tools: component,
-    }
-    variant receive {
-      /// A bundle loaded: the catalog changed, so a bar showing results has to
-      /// say so.
-      catalog-changed(string),
-      /// A whole tree, from wherever the shell keeps them.
-      restore-tree(any),
-    }
+    /// A component rather than a list of buttons, because this package is
+    /// backend-agnostic and the things a host offers are exactly the things
+    /// it cannot be: fetching an archive, reading a dropped file. The app
+    /// gives it a place to stand and forwards what lands on the page.
+    devTools : Component
+  }
+
+  receive UniversalApp {
+    /// A bundle loaded: the catalog changed, so a bar showing results has to
+    /// say so.
+    CatalogChanged(String)
+    /// A whole tree, from wherever the shell keeps them.
+    RestoreTree(Any)
   }
 </script>
 

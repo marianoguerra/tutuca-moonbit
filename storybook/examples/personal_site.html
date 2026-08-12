@@ -1,35 +1,31 @@
 <script type="tutuca/state">
-  interface alt-url {
-    record state {
-      label: string,
-      url: string,
-    }
+  state AltUrl {
+    label : String
+    url : String
   }
-  interface ps-entry {
-    record state {
-      title: string,
-      description: string,
-      lang: string,
-      start-year: any,
-      end-year: any,
-      role: any,
-      featured: bool,
-      url: string,
-      alt-urls: values,
-      categories: values,
-    }
+
+  state PsEntry {
+    title : String
+    description : String
+    lang : String
+    startYear : Any
+    endYear : Any
+    role : Any
+    featured : Bool
+    url : String
+    altUrls : Array[Any]
+    categories : Array[Any]
   }
-  interface root {
-    record state {
-      all-entries: values,
-      all-categories: list<string>,
-      all-roles: list<string>,
-      selected-categories: text-set,
-      selected-roles: text-set,
-      featured-first: bool,
-      sort-by-end: bool,
-      sort-asc: bool,
-    }
+
+  state Root {
+    allEntries : Array[Any]
+    allCategories : Array[String]
+    allRoles : Array[String]
+    selectedCategories : Set[String]
+    selectedRoles : Set[String]
+    featuredFirst : Bool
+    sortByEnd : Bool
+    sortAsc : Bool
   }
 </script>
 

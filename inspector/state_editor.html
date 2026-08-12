@@ -1,27 +1,24 @@
 <script type="tutuca/state">
-  interface state-editor-row {
-    /// One field of the edited instance. `kind` picks the control; `text`,
-    /// `num` and `flag` are the three editable shapes, and `readonly` carries
-    /// the rendering for a field no control fits.
-    record state {
-      name: string,
-      %type: string,
-      kind: string,
-      text: string,
-      num: f64,
-      flag: bool,
-      readonly: string,
-      editable: bool,
-    }
+  /// One field of the edited instance. `kind` picks the control; `text`,
+  /// `num` and `flag` are the three editable shapes, and `readonly` carries
+  /// the rendering for a field no control fits.
+  state StateEditorRow {
+    name : String
+    type : String
+    kind : String
+    text : String
+    num : Double
+    flag : Bool
+    readonly : String
+    editable : Bool
   }
-  interface state-editor {
-    /// `target` is the instance being edited — the source of truth, replaced
-    /// wholesale by every edit. `rows` is its schema, projected.
-    record state {
-      target: any,
-      rows: values,
-      name: string,
-    }
+
+  /// `target` is the instance being edited — the source of truth, replaced
+  /// wholesale by every edit. `rows` is its schema, projected.
+  state StateEditor {
+    target : Any
+    rows : Array[Any]
+    name : String
   }
 </script>
 

@@ -5,14 +5,7 @@
 ```html
 <!-- file_picker.html -->
 <script type="tutuca/state">
-  interface file-picker {
-    record state {
-      name: string,
-      size: f64,
-      %type: string,
-      has-file: bool,
-    }
-  }
+  state FilePicker { name: String, size: Double, type: String, hasFile: Bool }
 </script>
 
 <template>

@@ -8,20 +8,18 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state for the components in macros.mbt, which build
-/// their views in MoonBit rather than here — a macro body is
-/// registered at runtime, so it cannot be compiled ahead of time.
-/// No <template>: this file declares state and nothing else.
+/// The state of the MacrosNo component.
 ///
-/// Declared as `interface macros-no` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MacrosNoState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacrosNoState::zero(), label: "Counter" }
@@ -55,15 +53,15 @@ impl @component.Fields for MacrosNoState with fn decode(_f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacrosNoState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="d913a4b9e7d1c76a")
+  @component.SchemaInfo::new(fingerprint="7ad637f7010ee33d")
 }
 
 ///|
 /// The state of the MacroParams component.
 ///
-/// Declared as `interface macro-params` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MacroParamsState {
   status : String
 }
@@ -71,7 +69,8 @@ pub(all) struct MacroParamsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroParamsState::zero(), label: "Counter" }
@@ -106,7 +105,7 @@ impl @component.Fields for MacroParamsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroParamsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="e24255b8b42d4192", fields=[
+  @component.SchemaInfo::new(fingerprint="863f668d33521257", fields=[
     @component.FieldInfo::new("status", TyText),
   ])
 }
@@ -114,9 +113,9 @@ impl @component.Fields for MacroParamsState with fn schema() {
 ///|
 /// The state of the MacroSlots component.
 ///
-/// Declared as `interface macro-slots` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MacroSlotsState {
   count : Int
 }
@@ -124,7 +123,8 @@ pub(all) struct MacroSlotsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroSlotsState::zero(), label: "Counter" }
@@ -160,7 +160,7 @@ impl @component.Fields for MacroSlotsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroSlotsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="29f5d9126343b9a9", fields=[
+  @component.SchemaInfo::new(fingerprint="3287e13083889431", fields=[
     @component.FieldInfo::new("count", TyInt),
   ])
 }
@@ -168,9 +168,9 @@ impl @component.Fields for MacroSlotsState with fn schema() {
 ///|
 /// The state of the MacroNamedSlots component.
 ///
-/// Declared as `interface macro-named-slots` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MacroNamedSlotsState {
   count : Int
 }
@@ -178,7 +178,8 @@ pub(all) struct MacroNamedSlotsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MacroNamedSlotsState::zero(), label: "Counter" }
@@ -214,7 +215,7 @@ impl @component.Fields for MacroNamedSlotsState with fn decode(f) {
 /// answers `obj_schema()` with, so a holder of a bare `@tutuca.Value`
 /// can name these fields without a component registry.
 impl @component.Fields for MacroNamedSlotsState with fn schema() {
-  @component.SchemaInfo::new(fingerprint="ef1c08d80888b3fd", fields=[
+  @component.SchemaInfo::new(fingerprint="c269b64554a12da4", fields=[
     @component.FieldInfo::new("count", TyInt),
   ])
 }

@@ -1,60 +1,47 @@
 <script type="tutuca/state">
-  // The state for the components in visual_wasm.mbt, which build
-  // their views in MoonBit rather than here — a macro body is
-  // registered at runtime, so it cannot be compiled ahead of time.
-  // No <template>: this file declares state and nothing else.
-  interface vw-empty {
-    record state {
-    }
+  state VwEmpty {
   }
-  interface vw-imm {
-    record state {
-      value: s32,
-      raw-value: string,
-    }
+
+  state VwImm {
+    value : Int
+    rawValue : String
   }
-  interface vw-types {
-    record state {
-      items: values,
-    }
+
+  state VwTypes {
+    items : Array[Any]
   }
-  interface vw-container {
-    record state {
-      items: values,
-      expanded: bool,
-      editing: bool,
-    }
+
+  state VwContainer {
+    items : Array[Any]
+    expanded : Bool
+    editing : Bool
   }
-  interface vw-if {
-    record state {
-      thn: values,
-      else: values,
-      expanded: bool,
-      editing-if: bool,
-      editing-thn: bool,
-      editing-else: bool,
-    }
+
+  state VwIf {
+    thn : Array[Any]
+    else : Array[Any]
+    expanded : Bool
+    editingIf : Bool
+    editingThn : Bool
+    editingElse : Bool
   }
-  interface vw-section {
-    record state {
-      id: s32,
-      name: string,
-      items: values,
-      expanded: bool,
-      default-item: any,
-    }
+
+  state VwSection {
+    id : Int
+    name : String
+    items : Array[Any]
+    expanded : Bool
+    defaultItem : Any
   }
-  interface vw-memory {
-    record state {
-      n: s32,
-      m: s32,
-    }
+
+  state VwMemory {
+    n : Int
+    m : Int
   }
-  interface vw-picker {
-    record state {
-      current-section: string,
-      instructions: values,
-      filter: string,
-    }
+
+  state VwPicker {
+    currentSection : String
+    instructions : Array[Any]
+    filter : String
   }
 </script>

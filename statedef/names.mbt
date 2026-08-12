@@ -1,10 +1,11 @@
 // Turning WIT vocabulary into tutuca and MoonBit identifiers.
 //
-// WIT names are canonically kebab-case; tutuca field and handler names are
-// lowerCamel (they are the names views write and JSON carries); MoonBit type
-// names are UpperCamel. Three shapes, so three functions — and a collision
-// check after every mapping, because `set-label` and `set_label` both land
-// on `setLabel` and one would silently shadow the other.
+// A field is written the way a view reads it, so `camel_name` is identity for
+// one already in that form and these exist for the two shapes that genuinely
+// differ: a MoonBit type or enum-variant name is UpperCamel, and a MoonBit
+// binding has to dodge the keywords. The collision check stays, because
+// `SetLabel` and `set_label` still both land on `setLabel` and one would
+// silently shadow the other.
 
 ///|
 fn is_alpha(c : Char) -> Bool {
@@ -174,13 +175,14 @@ fn mapped(
   names : Array[String],
   kind : String,
   f : (String) -> String,
+  span : Span,
 ) -> Array[(String, String)] raise DefError {
   let seen : Map[String, String] = Map([])
   let out : Array[(String, String)] = []
   for n in names {
     let ident = f(n)
     match seen.get(ident) {
-      Some(first) => raise Collision(kind~, ident~, first~, second=n)
+      Some(first) => raise Collision(kind~, ident~, first~, second=n, span~)
       None => {
         seen[ident] = n
         out.push((n, ident))
@@ -191,14 +193,14 @@ fn mapped(
 }
 
 ///|
-/// The component name a WIT interface names, validated as a MoonBit type
-/// prefix: it heads every generated type, so a name that is not an
-/// identifier would emit code that does not compile.
-fn component_of(iface : String) -> String raise DefError {
-  let name = upper_name(iface)
+/// A component name, validated as a MoonBit type prefix: it heads every
+/// generated type, so a name that is not an identifier would emit code that
+/// does not compile.
+fn component_of(written : String, span : Span) -> String raise DefError {
+  let name = upper_name(written)
   let chars = name.to_array()
   if chars.length() == 0 || !is_alpha(chars[0]) {
-    raise BadInterfaceName(iface)
+    raise BadComponentName(name=written, span~)
   }
   name
 }

@@ -1,32 +1,21 @@
 <script type="tutuca/state">
-  interface person {
-    record state {
-    name: string,
-    email: string,
-    active: bool,
-    }
+  state Person {
+    name : String
+    email : String
+    active : Bool
   }
-  // SharedPeople and CoupledPeople deliberately share NaivePeople's state
-  // shape — comparing three strategies over one shape is what this example
-  // teaches, and the helpers below are typed on it. One schema, three
-  // components, three templates that differ only in the @when/@loop-with
-  // pair on the row.
-  interface naive-people {
-    record state {
-      items: values,
-      query: string,
-      page: s32,
-      page-size: s32,
-    }
+
+  state NaivePeople {
+    items : Array[Any]
+    query : String
+    page : Int
+    pageSize : Int
   }
-  interface strategies {
-    resource shared-people;
-    resource coupled-people;
-    record state {
-    naive: naive-people,
-    shared: shared-people,
-    coupled: coupled-people,
-    }
+
+  state Strategies {
+    naive : NaivePeople
+    shared : Component[SharedPeople]
+    coupled : Component[CoupledPeople]
   }
 </script>
 

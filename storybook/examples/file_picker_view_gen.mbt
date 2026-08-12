@@ -10,9 +10,9 @@
 ///|
 /// The state of the FilePicker component.
 ///
-/// Declared as `interface file-picker` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct FilePickerState {
   name : String
   size : Double
@@ -24,7 +24,8 @@ pub(all) struct FilePickerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..FilePickerState::zero(), label: "Counter" }
@@ -149,7 +150,7 @@ pub fn FilePickerMethod::name(self : FilePickerMethod) -> String {
 impl @component.Fields for FilePickerState with fn schema() {
   @component.SchemaInfo::new(
     name="FilePicker",
-    fingerprint="9d3c25a65f5d9e0a",
+    fingerprint="bb612d386abab187",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("size", TyFloat),

@@ -10,9 +10,9 @@
 ///|
 /// The state of the SchemaScalar component.
 ///
-/// Declared as `interface schema-scalar` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaScalarState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -28,7 +28,8 @@ pub(all) struct SchemaScalarState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaScalarState::zero(), label: "Counter" }
@@ -226,7 +227,7 @@ pub fn SchemaScalarLoopWith::name(self : SchemaScalarLoopWith) -> String {
 impl @component.Fields for SchemaScalarState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaScalar",
-    fingerprint="d80d4b9d65fbcb82",
+    fingerprint="8bef5ed6785e6a36",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -250,9 +251,9 @@ impl @component.Fields for SchemaScalarState with fn schema() {
 ///|
 /// The state of the SchemaObject component.
 ///
-/// Declared as `interface schema-object` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaObjectState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -268,7 +269,8 @@ pub(all) struct SchemaObjectState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaObjectState::zero(), label: "Counter" }
@@ -466,7 +468,7 @@ pub fn SchemaObjectLoopWith::name(self : SchemaObjectLoopWith) -> String {
 impl @component.Fields for SchemaObjectState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaObject",
-    fingerprint="c2f51e0706da8337",
+    fingerprint="88255e054e7dac51",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -490,9 +492,9 @@ impl @component.Fields for SchemaObjectState with fn schema() {
 ///|
 /// The state of the SchemaArray component.
 ///
-/// Declared as `interface schema-array` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaArrayState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -508,7 +510,8 @@ pub(all) struct SchemaArrayState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaArrayState::zero(), label: "Counter" }
@@ -706,7 +709,7 @@ pub fn SchemaArrayLoopWith::name(self : SchemaArrayLoopWith) -> String {
 impl @component.Fields for SchemaArrayState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaArray",
-    fingerprint="796f47f63629496d",
+    fingerprint="50c9900100b521a5",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -730,9 +733,9 @@ impl @component.Fields for SchemaArrayState with fn schema() {
 ///|
 /// The state of the SchemaEnum component.
 ///
-/// Declared as `interface schema-enum` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaEnumState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -748,7 +751,8 @@ pub(all) struct SchemaEnumState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaEnumState::zero(), label: "Counter" }
@@ -944,7 +948,7 @@ pub fn SchemaEnumLoopWith::name(self : SchemaEnumLoopWith) -> String {
 impl @component.Fields for SchemaEnumState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaEnum",
-    fingerprint="ad5c6b13ee63780d",
+    fingerprint="a11accd490d076e3",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -968,9 +972,9 @@ impl @component.Fields for SchemaEnumState with fn schema() {
 ///|
 /// The state of the SchemaCombinator component.
 ///
-/// Declared as `interface schema-combinator` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaCombinatorState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -986,7 +990,8 @@ pub(all) struct SchemaCombinatorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaCombinatorState::zero(), label: "Counter" }
@@ -1186,7 +1191,7 @@ pub fn SchemaCombinatorLoopWith::name(
 impl @component.Fields for SchemaCombinatorState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaCombinator",
-    fingerprint="a1586e79655db820",
+    fingerprint="34e8e803383990d0",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -1210,9 +1215,9 @@ impl @component.Fields for SchemaCombinatorState with fn schema() {
 ///|
 /// The state of the SchemaConst component.
 ///
-/// Declared as `interface schema-const` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaConstState {
   value : @tutuca.Value
 }
@@ -1220,7 +1225,8 @@ pub(all) struct SchemaConstState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaConstState::zero(), label: "Counter" }
@@ -1265,7 +1271,7 @@ pub let schema_const_global_style : String = ""
 impl @component.Fields for SchemaConstState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaConst",
-    fingerprint="1fbdb30e4d4e6d8e",
+    fingerprint="349ebf03b9857b37",
     fields=[@component.FieldInfo::new("value", TyAny)],
     view_names=["main"],
   )
@@ -1274,9 +1280,9 @@ impl @component.Fields for SchemaConstState with fn schema() {
 ///|
 /// The state of the SchemaConditional component.
 ///
-/// Declared as `interface schema-conditional` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaConditionalState {
   ifNode : @tutuca.Value
   thenNode : @tutuca.Value
@@ -1289,7 +1295,8 @@ pub(all) struct SchemaConditionalState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaConditionalState::zero(), label: "Counter" }
@@ -1360,7 +1367,7 @@ pub let schema_conditional_global_style : String = ""
 impl @component.Fields for SchemaConditionalState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaConditional",
-    fingerprint="8c2393c520937ed2",
+    fingerprint="87bf1ff90ea9362c",
     fields=[
       @component.FieldInfo::new("ifNode", TyAny),
       @component.FieldInfo::new("thenNode", TyAny),
@@ -1376,9 +1383,9 @@ impl @component.Fields for SchemaConditionalState with fn schema() {
 ///|
 /// The state of the SchemaNot component.
 ///
-/// Declared as `interface schema-not` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaNotState {
   child : @tutuca.Value
 }
@@ -1386,7 +1393,8 @@ pub(all) struct SchemaNotState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaNotState::zero(), label: "Counter" }
@@ -1431,7 +1439,7 @@ pub let schema_not_global_style : String = ""
 impl @component.Fields for SchemaNotState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaNot",
-    fingerprint="d37d27078d9280ad",
+    fingerprint="b91c8bb46b7fce5c",
     fields=[@component.FieldInfo::new("child", TyAny)],
     view_names=["main"],
   )
@@ -1440,9 +1448,9 @@ impl @component.Fields for SchemaNotState with fn schema() {
 ///|
 /// The state of the SchemaBoolean component.
 ///
-/// Declared as `interface schema-boolean` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaBooleanState {
   value : Bool
 }
@@ -1450,7 +1458,8 @@ pub(all) struct SchemaBooleanState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaBooleanState::zero(), label: "Counter" }
@@ -1510,7 +1519,7 @@ pub fn SchemaBooleanMethod::name(self : SchemaBooleanMethod) -> String {
 impl @component.Fields for SchemaBooleanState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaBoolean",
-    fingerprint="92339a28ccc7d29d",
+    fingerprint="30d78e5ec0fc3bea",
     fields=[@component.FieldInfo::new("value", TyBool)],
     methods=["cssClass", "text"],
     view_names=["main", "_margauiClasses"],
@@ -1520,9 +1529,9 @@ impl @component.Fields for SchemaBooleanState with fn schema() {
 ///|
 /// The state of the SchemaRef component.
 ///
-/// Declared as `interface schema-ref` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaRefState {
   target : String
 }
@@ -1530,7 +1539,8 @@ pub(all) struct SchemaRefState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaRefState::zero(), label: "Counter" }
@@ -1575,7 +1585,7 @@ pub let schema_ref_global_style : String = ""
 impl @component.Fields for SchemaRefState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaRef",
-    fingerprint="372b432fc265d9c7",
+    fingerprint="bb36ff8507f91d66",
     fields=[@component.FieldInfo::new("target", TyText)],
     view_names=["main"],
   )

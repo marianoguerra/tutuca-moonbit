@@ -10,9 +10,9 @@
 ///|
 /// The state of the TableRow component.
 ///
-/// Declared as `interface table-row` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TableRowState {
   name : String
   qty : Int
@@ -22,7 +22,8 @@ pub(all) struct TableRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TableRowState::zero(), label: "Counter" }
@@ -70,7 +71,7 @@ pub let table_row_global_style : String = ""
 impl @component.Fields for TableRowState with fn schema() {
   @component.SchemaInfo::new(
     name="TableRow",
-    fingerprint="78cde2ca3599de8c",
+    fingerprint="ebda895245a140e9",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("qty", TyInt),
@@ -83,9 +84,9 @@ impl @component.Fields for TableRowState with fn schema() {
 ///|
 /// The state of the ItemTable component.
 ///
-/// Declared as `interface item-table` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ItemTableState {
   rows : Array[@tutuca.Value]
 }
@@ -93,7 +94,8 @@ pub(all) struct ItemTableState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemTableState::zero(), label: "Counter" }
@@ -144,7 +146,7 @@ pub let item_table_global_style : String = ""
 impl @component.Fields for ItemTableState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemTable",
-    fingerprint="413b1cfe818d4bc7",
+    fingerprint="bc91ea035f93f46f",
     fields=[@component.FieldInfo::new("rows", TyList(TyAny))],
     view_names=["main"],
   )
@@ -153,9 +155,9 @@ impl @component.Fields for ItemTableState with fn schema() {
 ///|
 /// The state of the SelectOption component.
 ///
-/// Declared as `interface select-option` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SelectOptionState {
   value : String
   label : String
@@ -164,7 +166,8 @@ pub(all) struct SelectOptionState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SelectOptionState::zero(), label: "Counter" }
@@ -210,7 +213,7 @@ pub let select_option_global_style : String = ""
 impl @component.Fields for SelectOptionState with fn schema() {
   @component.SchemaInfo::new(
     name="SelectOption",
-    fingerprint="07ec6c7cf74c56fc",
+    fingerprint="dc088cb0737a46b9",
     fields=[
       @component.FieldInfo::new("value", TyText),
       @component.FieldInfo::new("label", TyText),
@@ -222,9 +225,9 @@ impl @component.Fields for SelectOptionState with fn schema() {
 ///|
 /// The state of the ItemSelect component.
 ///
-/// Declared as `interface item-select` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ItemSelectState {
   options : Array[@tutuca.Value]
   current : String
@@ -233,7 +236,8 @@ pub(all) struct ItemSelectState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ItemSelectState::zero(), label: "Counter" }
@@ -335,7 +339,7 @@ pub fn ItemSelectMsg::from_dispatch(d : @component.Dispatch) -> ItemSelectMsg? {
 impl @component.Fields for ItemSelectState with fn schema() {
   @component.SchemaInfo::new(
     name="ItemSelect",
-    fingerprint="c0c9027a3ae072e5",
+    fingerprint="cdb125b62adbcd6b",
     fields=[
       @component.FieldInfo::new("options", TyList(TyAny)),
       @component.FieldInfo::new("current", TyText),
@@ -348,9 +352,9 @@ impl @component.Fields for ItemSelectState with fn schema() {
 ///|
 /// The state of the PseudoXDemo component.
 ///
-/// Declared as `interface pseudo-x-demo` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PseudoXDemoState {
   table : @tutuca.Value
   select : @tutuca.Value
@@ -359,7 +363,8 @@ pub(all) struct PseudoXDemoState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PseudoXDemoState::zero(), label: "Counter" }
@@ -405,7 +410,7 @@ pub let pseudo_x_demo_global_style : String = ""
 impl @component.Fields for PseudoXDemoState with fn schema() {
   @component.SchemaInfo::new(
     name="PseudoXDemo",
-    fingerprint="32abcf05a4118ab4",
+    fingerprint="81f8f7ee7af22e30",
     fields=[
       @component.FieldInfo::new("table", TyComp(Some("ItemTable"))),
       @component.FieldInfo::new("select", TyComp(Some("ItemSelect"))),

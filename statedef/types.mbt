@@ -5,6 +5,21 @@
 // (`moonbit_ty`, `zero_expr`, `ty_info_src`).
 
 ///|
+/// The component this schema describes: its own name, or the caller's
+/// fallback for a file whose single component is unnamed.
+///
+/// The identical rule `@viewfile.ViewSet::component_name` follows, and
+/// deliberately so — a bare `state { … }` and a bare `<template>` are the same
+/// claim about the same file, so they resolve the same way.
+pub fn StateDef::component_name(self : StateDef, fallback : String) -> String {
+  if self.component == "" {
+    upper_name(fallback)
+  } else {
+    self.component
+  }
+}
+
+///|
 pub fn StateDef::field(self : StateDef, name : String) -> FieldDef? {
   for f in self.fields {
     if f.name == name {
@@ -131,22 +146,31 @@ pub fn StateTy::is_renderable(self : StateTy) -> Bool {
 ///|
 /// How to write this type in a diagnostic — the WIT spelling, because that
 /// is what the author wrote and what they will edit.
-pub fn StateTy::show_wit(self : StateTy) -> String {
+pub fn StateTy::show_source(self : StateTy) -> String {
   match self {
-    TBool => "bool"
+    TBool => "Bool"
     TInt(width~, signed~) =>
-      (if signed { "s" } else { "u" }) + width.to_string()
-    TFloat => "f64"
-    TText => "string"
-    TList(e) => "list<" + e.show_wit() + ">"
-    TTuple(ts) => "tuple<" + ts.map(t => t.show_wit()).join(", ") + ">"
-    TOption(e) => "option<" + e.show_wit() + ">"
-    TRecord(n) | TEnum(n) | TVariant(n) | TFlags(n) => n
-    TSet => "text-set"
-    TOMap(v) => "an ordered map of " + v.show_wit()
-    TComp(Some(c)) => "the " + c + " component"
-    TComp(None) => "component"
-    TAny => "any"
+      match (width, signed) {
+        (32, true) => "Int"
+        (8, true) => "Int8"
+        (16, true) => "Int16"
+        (32, false) => "UInt"
+        (8, false) => "UInt8"
+        _ => "UInt16"
+      }
+    TFloat => "Double"
+    TText => "String"
+    TList(e) => "Array[" + e.show_source() + "]"
+    TTuple(ts) => "(" + ts.map(t => t.show_source()).join(", ") + ")"
+    TOption(e) => e.show_source() + "?"
+    TRecord(n) | TEnum(n) | TVariant(n) => n
+    // A closed set names its enum, which is where the membership is written.
+    TFlags(n) => "Set[" + n + "]"
+    TSet => "Set[String]"
+    TOMap(v) => "Map[String, " + v.show_source() + "]"
+    TComp(Some(c)) => "Component[" + c + "]"
+    TComp(None) => "Component"
+    TAny => "Any"
   }
 }
 
@@ -229,7 +253,9 @@ pub fn StateDef::ty_info_src(self : StateDef, ty : StateTy) -> String {
     TVariant(n) => "TyVariant(" + quoted(n) + ")"
     TFlags(n) => {
       let members = match self.user_ty(n) {
-        Some({ kind: UFlags(ms), .. }) => ms.map(m => quoted(m.1)).join(", ")
+        // A closed set names an ENUM now, so its membership is the enum's
+        // cases — declared once, in the place the idea belongs.
+        Some({ kind: UEnum(ms), .. }) => ms.map(m => quoted(m.1)).join(", ")
         _ => ""
       }
       "TyFlags(" + quoted(n) + ", [" + members + "])"
@@ -332,81 +358,58 @@ pub fn StateDef::zero_expr(self : StateDef, ty : StateTy) -> String {
 }
 
 ///|
-/// The identifier a caller should look for in the block to point at this
-/// error, or None when the error has no single locus.
+/// Where in the block the failure is.
 ///
-/// mizchi/wit's AST carries no per-declaration spans and its resolver
-/// reports most errors at offset 0, so a semantic failure cannot say where
-/// it happened. Naming the identifier lets the caller find it by scanning
-/// the block — coarse, but it puts the diagnostic on the right line, which
-/// is the whole difference between a usable error and a scavenger hunt.
-pub fn DefError::locus(self : DefError) -> String? {
+/// This replaces `locus`, which answered an IDENTIFIER for a caller to scan
+/// for — the best a parser with no positions could do. `viewgen/split.mbt`
+/// used to hold a whole-word scanner for it.
+pub fn DefError::span(self : DefError) -> Span {
   match self {
-    // `where_` is a dotted path (`counter.state.count`); its last segment is
-    // the field or case that actually carries the offending type.
-    UnsupportedType(where_~, ..) | UnknownTypeRef(where_~, ..) =>
-      Some(last_segment(where_))
-    UnsupportedItem(item~, ..) => Some(first_word(item))
-    NoStateRecord(i) | StateNotRecord(i) | DuplicateInterface(i) => Some(i)
-    CyclicType(n) | ReservedName(n) => Some(n)
-    Collision(second~, ..) => Some(second)
-    BadInterfaceName(_) | UnexpectedPackage(_) | WitSyntax(..) => None
-  }
-}
-
-///|
-fn last_segment(path : String) -> String {
-  let parts = path.split(".").map(p => p.to_owned()).collect()
-  if parts.is_empty() {
-    path
-  } else {
-    parts[parts.length() - 1]
-  }
-}
-
-///|
-fn first_word(s : String) -> String {
-  let sb = StringBuilder::new()
-  for c in s.to_array() {
-    if c == ' ' || c == ':' || c == '(' {
-      break
-    }
-    sb.write_char(c)
-  }
-  let w = sb.to_string()
-  if w == "" {
-    s
-  } else {
-    w
+    Syntax(span~, ..)
+    | UnknownDecl(span~, ..)
+    | DuplicateComponent(span~, ..)
+    | MixedStateNames(span~)
+    | NoState(span~)
+    | UnsupportedType(span~, ..)
+    | UnknownTypeRef(span~, ..)
+    | BadTypeArgs(span~, ..)
+    | CyclicType(span~, ..)
+    | Collision(span~, ..)
+    | BadComponentName(span~, ..)
+    | ReservedName(span~, ..) => span
   }
 }
 
 ///|
 /// The one-line message the CLI reports.
+///
+/// Kept as one readable table rather than an `impl Show`, because the CLI
+/// prints these verbatim: they are user-facing text, not debug output.
 pub fn DefError::message(self : DefError) -> String {
   match self {
-    WitSyntax(msg~, offset~) => "state block: \{msg} (at offset \{offset})"
-    UnexpectedPackage(p) =>
-      "state block declares `package \{p}`; the module supplies the package, so drop the line"
-    UnsupportedItem(iface~, item~, why~) =>
-      "state block: `\{item}` in interface `\{iface}` is not component state — \{why}"
-    NoStateRecord(i) =>
-      "state block: interface `\{i}` declares no `record state`; every component's state is one record named `state`"
-    StateNotRecord(i) =>
-      "state block: `state` in interface `\{i}` is not a record; component state is always a record of fields"
-    UnsupportedType(where_~, ty~, why~) =>
-      "state block: `\{ty}` at \{where_} is valid WIT but not valid component state — \{why}"
-    UnknownTypeRef(where_~, name~) =>
-      "state block: unknown type `\{name}` at \{where_}; declare it in this interface, name a component, or use a marker (\{marker_names().join(", ")})"
-    CyclicType(n) => "state block: type `\{n}` refers to itself"
-    Collision(kind~, ident~, first~, second~) =>
+    Syntax(msg~, ..) => "state block: \{msg}"
+    UnknownDecl(got~, ..) =>
+      "state block: `\{got}` is not a declaration — expected state, struct, enum, receive, bubble or response"
+    DuplicateComponent(name~, ..) =>
+      "state block: two `state` declarations named `\{name}`; one component declares one state"
+    MixedStateNames(..) =>
+      "state block: this file mixes `state { … }` with `state Name { … }` — name every component, or none of them, exactly as its templates do"
+    NoState(..) =>
+      "state block: nothing declares `state`; a block of types with no state describes no component"
+    UnsupportedType(ty~, why~, ..) =>
+      "state block: `\{ty}` is not something component state can carry — \{why}"
+    UnknownTypeRef(name~, ..) =>
+      "state block: unknown type `\{name}`; declare it, name a component in this file, or use a builtin (Bool, Int, Double, String, Array[T], Set[T], Map[String, V], Any, Component)"
+    BadTypeArgs(name~, want~, got~, ..) =>
+      "state block: `\{name}` takes \{want} type argument(s), not \{got}"
+    CyclicType(name~, ..) =>
+      "state block: `\{name}` contains itself with no `?` or `Array` in between, so it has no size and no zero"
+    Collision(kind~, ident~, first~, second~, ..) =>
       "state block: \{kind}s `\{first}` and `\{second}` both map to `\{ident}`"
-    DuplicateInterface(i) =>
-      "state block: two interfaces named `\{i}`; one interface per component"
-    BadInterfaceName(i) =>
-      "state block: `\{i}` cannot name a component — it must start with a letter"
-    ReservedName(n) =>
-      "state block: `\{n}` is a reserved marker name and cannot be declared as a type"
+    BadComponentName(name~, ..) =>
+      "state block: `\{name}` cannot name a component — it must start with a letter"
+    ReservedName(name~, ..) =>
+      "state block: `\{name}` is a builtin type name and cannot be declared as a type"
   }
 }
 

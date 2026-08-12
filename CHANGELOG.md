@@ -284,6 +284,39 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **The state block is no longer WIT.** `<script type="tutuca/state">` now
+  reads a small language of its own that spells its types the way MoonBit does:
+  `state Counter { count : Int, tags : Set[String] }` where the file used to
+  write `interface counter { record state { count: s32, tags: text-set } }`.
+  Six keywords and no more — `state`, `struct`, `enum`, and the buckets
+  `receive` / `bubble` / `response`. Five WIT forms went with it, each for
+  something the language already had a place for: `interface` (a nesting level
+  saying what a `<template id>` already says), `flags` (an enum plus a
+  container), `type X = Y` (an alias contributing no type), `resource` (an
+  empty declaration to make a name resolvable — now `Component[Name]`), and
+  `func` (behaviour, in a block whose header says it holds none).
+
+  A field has ONE spelling now, the one a view reads: `currentView`, not
+  `current-view` in the block and `.currentView` everywhere else. Every `.html`
+  in the tree is converted and every generated module regenerated.
+
+  Two consequences worth naming. A **closed set now starts EMPTY** — a `flags`
+  field began with every member present, because the type carried the
+  membership and the zero was written from the type; `Set[Visibility]` lets the
+  CONTAINER decide the zero and the enum decide the membership, which is one
+  idea in each place. And a **diagnostic now carries a span**: the parser is
+  ours, so "state block: expected a type, found `}`" points at a column, where
+  `DefError::locus` used to answer an identifier for `split.mbt` to go looking
+  for. `mizchi/wit` is dropped from `moon.mod`.
+
+- **A `$`-callable no view names is declared in the script block.** With `func`
+  gone from the state block, a method a PARENT asks of a component — the list
+  item's `containsText`, which a parent's `@when` calls on every child — is a
+  `pred` or a `compute` in `<script type="tutuca/script">`, and `gen-views`
+  puts its name in the component's `Method` enum. A file declaring several
+  components writes one block each, named `for="Entry"` the way a template
+  writes `id="Entry:row"`.
+
 - **`@uiw.HostToolsSample` is now `@shell.LoaderBarSample`,** and the bar itself
   moved from `dyncomp/ui/wasm` to `dyncomp/shell` so the storybook could stand
   on the same one. A page that named the old type — `demo/universal_wasm` and

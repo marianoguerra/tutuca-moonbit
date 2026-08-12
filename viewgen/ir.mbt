@@ -428,7 +428,13 @@ fn emit_ir_module_compiled(
   emit_ir_header(type_prefix(first), value_prefix(first), source_file, out)
   for comp in compiled.components {
     let cname = comp.raw.component_name(name)
-    emit_ir_component(cname, comp, state_for(file, cname), out)
+    emit_ir_component(
+      cname,
+      comp,
+      state_for(file, cname, name),
+      with_script(comp.surface, file, cname),
+      out,
+    )
   }
   out.to_string()
 }
@@ -487,6 +493,7 @@ fn emit_ir_component(
   name : String,
   compiled : CompiledComponent,
   state : @statedef.StateDef?,
+  surface : Surface,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -531,7 +538,7 @@ fn emit_ir_component(
   // together. A component with no schema has no state type to make its
   // parameters out of, and keeps calling `component()` directly.
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, compiled.surface, out)
+    emit_wrapper(name, t, v, def, surface, out)
   }
 }
 

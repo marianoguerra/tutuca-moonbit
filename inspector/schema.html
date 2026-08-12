@@ -1,17 +1,14 @@
 <script type="tutuca/state">
-  interface schema-property {
-    record state {
-      key: string,
-      child: any,
-      required: bool,
-    }
+  state SchemaProperty {
+    key : String
+    child : Any
+    required : Bool
   }
-  interface schema-branch {
-    record state {
-      label: string,
-      child: any,
-      label-class: string,
-    }
+
+  state SchemaBranch {
+    label : String
+    child : Any
+    labelClass : String
   }
 </script>
 

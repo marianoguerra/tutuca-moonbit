@@ -7,9 +7,7 @@ shows, and the active tab button is highlighted.
 
 ```html
 <script type="tutuca/state">
-  interface tabs {
-    record state { current-view: string }
-  }
+  state Tabs { currentView: String }
 </script>
 
 <template id="Tabs">
@@ -43,9 +41,9 @@ drives both the panel's `@show` and the active-tab class via `@if.class` /
 `@then` / `@else`. Tab clicks call the generated setter with a string-literal arg
 (`@on.click="setCurrentView 'pricing'"`).
 
-Note the schema spells the field `current-view` while the views read
-`.currentView`: kebab-case in WIT, camelCase everywhere else. The field name is
-yours to pick (`tab`, `currentView`, …).
+A field has ONE spelling now — the one a view reads — so the schema writes
+`currentView` and so does every read of it. The name is yours to pick (`tab`,
+`currentView`, …).
 
 This toggles **sibling panels** by predicate; to swap a *component's own*
 rendered view instead, see [Switch between views](switch-between-views.md). The

@@ -1,29 +1,23 @@
 <script type="tutuca/state">
-  interface minimum-viable-component {
-    record state {
-    }
+  state MinimumViableComponent {
   }
-  interface static-view-component {
-    record state {
-    }
+
+  state StaticViewComponent {
   }
-  interface text-directive {
-    record state {
-    str: string,
-    num: s32,
-    %bool: bool,
-    not-set: any,
-    }
+
+  state TextDirective {
+    str : String
+    num : Int
+    bool : Bool
+    notSet : Any
   }
-  interface danger-set-inner-html {
-    record state {
-    content: string,
-    }
+
+  state DangerSetInnerHtml {
+    content : String
   }
-  interface set-inner-md {
-    record state {
-    source: string,
-    }
+
+  state SetInnerMd {
+    source : String
   }
 </script>
 

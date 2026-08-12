@@ -7,18 +7,9 @@ the child land back on the owner — without forwarding events up by hand.
 
 ```html
 <script type="tutuca/state">
-  interface workspace {
-    record state {
-      sheet: sheet,
-      bar: toolbar,
-    }
-  }
-  interface sheet {
-    record state { text: string }
-  }
-  interface toolbar {
-    record state {}
-  }
+  state Workspace { sheet: Sheet, bar: Toolbar }
+    state Sheet { text: String }
+    state Toolbar {  }
 </script>
 
 <template id="Workspace">

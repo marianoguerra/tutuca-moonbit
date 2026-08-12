@@ -214,12 +214,11 @@ for (const file of markdownFiles(SKILL)) {
 // a view file worth showing does anyway.
 // The name an UNNAMED `<template>` belongs to. The real CLI takes it from
 // `--name` or the file's basename; a doc snippet has neither, but its schema
-// block names the interface — and `interface file-picker` is exactly the
+// block names the component — and `state FilePicker` is exactly the
 // `FilePicker` the prose then calls `file_picker_component`.
 function fallbackName(html, i) {
-  const m = /\binterface\s+([a-z][\w-]*)/.exec(html);
-  if (!m) return `View${i}`;
-  return m[1].split("-").map((w) => w[0].toUpperCase() + w.slice(1)).join("");
+  const m = /\bstate\s+([A-Z]\w*)\s*\{/.exec(html);
+  return m ? m[1] : `View${i}`;
 }
 
 function pushUnit(rel, block) {

@@ -1,28 +1,23 @@
 <script type="tutuca/state">
-  interface attribute-binding {
-    record state {
-    str: string,
-    num: s32,
-    %bool: bool,
-    not-set: any,
-    }
+  state AttributeBinding {
+    str : String
+    num : Int
+    bool : Bool
+    notSet : Any
   }
-  interface conditional-attributes {
-    record state {
-    is-active: bool,
-    }
+
+  state ConditionalAttributes {
+    isActive : Bool
   }
-  interface event-modifiers {
-    record state {
-    query: string,
-    last-sent-search: any,
-    }
+
+  state EventModifiers {
+    query : String
+    lastSentSearch : Any
   }
-  interface show-hide {
-    record state {
-    is-open: bool,
-    count: s32,
-    }
+
+  state ShowHide {
+    isOpen : Bool
+    count : Int
   }
 </script>
 

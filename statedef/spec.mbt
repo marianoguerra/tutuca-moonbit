@@ -1,14 +1,26 @@
 // Spec for the state schema: the public data types plus `declare` stubs.
-// Implementations live in names.mbt / markers.mbt / from_wit.mbt / emit.mbt.
+// Implementations live in names.mbt / markers.mbt / lex.mbt / parse.mbt /
+// types.mbt.
 //
 // The pipeline is two pure stages:
 //
-//   WIT source text --parse_state--> Array[StateDef]   (from_wit.mbt)
-//                   --emit_*-------> String            (emit.mbt)
+//   block text --parse_state--> Array[StateDef]   (lex.mbt + parse.mbt)
+//              --emit_*-------> String            (types.mbt)
 //
 // A StateDef is the whole data contract of one component: the fields its
 // views may read, the messages its update may receive, and the named types
 // those two mention.
+//
+// The SURFACE is tutuca's own, and used to be a subset of WIT. WIT was what
+// `statedef` had a parser for, and it cost three things: a whole nesting level
+// (`interface`) to say what a `<template id>` already says, two constructs
+// (`enum` and `variant`) for one idea because a C ABI needs the distinction
+// and nothing here does, and no per-declaration spans at all — which is why
+// `DefError` used to name an IDENTIFIER and let the caller scan for it.
+//
+// What did not change is this file's contract. `StateDef` is what the whole
+// generator, the card runtime and the descriptor read, and a new surface that
+// altered it would have been a rewrite rather than a parser.
 
 ///|
 /// A state field's type, after the WIT subset gate.
@@ -47,17 +59,39 @@ pub(all) enum StateTy {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// A value written in an attribute: `#[min = 0]`, `#[format = "email"]`,
+/// `#[required]`.
+pub(all) enum AttrValue {
+  ANum(Double)
+  AStr(String)
+  /// An attribute written with no value, which is its own assertion.
+  AFlag
+} derive(Eq, @debug.Debug)
+
+///|
 /// One field of the state record.
 pub(all) struct FieldDef {
-  /// The name as written in WIT, kebab-case.
+  /// The name exactly as the author wrote it.
+  ///
+  /// The same string as `name` now, and kept because it is what a message
+  /// QUOTES and what the init block accepts as a key. Under WIT the two
+  /// differed — `by-key` became `byKey` — and a field had three spellings for
+  /// one idea; a name is now written the way the view reads it.
   wit_name : String
-  /// The tutuca runtime field name (lowerCamel) — the name a view's
-  /// `.field` read and the JSON encoding both use.
+  /// The tutuca runtime field name — what a view's `.field` read and the JSON
+  /// encoding both use.
   name : String
   /// The MoonBit struct field name: `name`, escaped if it is a keyword.
   binding : String
   ty : StateTy
   doc : String?
+  /// `#[…]` attributes, in source order, unresolved.
+  ///
+  /// Unresolved on purpose: `statedef` knows a field carries `min = 0` and
+  /// has no opinion about what a minimum MEANS. `dyncomp/jsonschema` does,
+  /// and a parser that validated them would be the second place that decides
+  /// which bounds exist.
+  attrs : Array[(String, AttrValue)]
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -73,32 +107,20 @@ pub(all) struct MsgDef {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// A `$`-callable the component answers, declared as a WIT `func`.
-///
-/// Views declare most methods just by calling them (`$label`), and the
-/// generator reads them off the view. This is for the ones no view of THIS
-/// component names: a method a PARENT calls on it — `contains-text` on a list
-/// item, say, which the list's `@when` asks every child regardless of the
-/// child's own shape. Undeclared, such a method is a string only MoonBit knows,
-/// and the enum a handler match is written over cannot contain it.
-pub(all) struct MethodDef {
-  wit_name : String
-  /// The runtime name a `$name` call and a `Value::field` read both use.
-  name : String
-  params : Array[StateTy]
-  /// None for a `func` with no result — the value world has no Unit, so a
-  /// method that only acts is distinguishable from one that answers.
-  result : StateTy?
-  doc : String?
-} derive(Eq, @debug.Debug)
-
-///|
 /// A named type the state or its messages mention.
+///
+/// Three kinds, where there were four. `UFlags` is gone: a closed set was a
+/// declaration form of its own, and it is an ENUM plus a container —
+/// `Set[Visibility]` — which is one idea in the place the idea belongs. The
+/// deletion also fixes the zero: a `flags` field started with EVERY member
+/// present, because the type carried its membership and the zero was written
+/// from the type. A set's zero is empty.
 pub(all) enum UserTyKind {
   URecord(Array[FieldDef])
+  /// Every case payload-free, so it encodes as its case name.
   UEnum(Array[(String, String)])
+  /// At least one case carries a payload.
   UVariant(Array[MsgDef])
-  UFlags(Array[(String, String)])
 } derive(Eq, @debug.Debug)
 
 ///|
@@ -122,8 +144,6 @@ pub(all) struct StateDef {
   receive : Array[MsgDef]
   bubble : Array[MsgDef]
   response : Array[MsgDef]
-  /// `func` declarations: the `$`-callables no view of this component names.
-  methods : Array[MethodDef]
   types : Array[UserTy]
   doc : String?
 } derive(Eq, @debug.Debug)
@@ -136,31 +156,39 @@ pub(all) struct StateDef {
 /// generic "unsupported": the whole point of a subset is that the boundary
 /// is explained where you hit it.
 pub suberror DefError {
-  /// The block is not valid WIT. `offset` indexes the block's own source.
-  WitSyntax(msg~ : String, offset~ : Int)
-  /// A `package` declaration inside the block (viewgen supplies it).
-  UnexpectedPackage(String)
-  /// A `world`, or a freestanding `func` — neither describes state.
-  UnsupportedItem(iface~ : String, item~ : String, why~ : String)
-  /// The interface declares no `record state`.
-  NoStateRecord(String)
-  /// `state` is declared, but not as a record.
-  StateNotRecord(String)
-  /// A type WIT accepts but component state cannot carry.
-  UnsupportedType(where_~ : String, ty~ : String, why~ : String)
-  /// A named type the block never declares and that is not a marker or a
+  /// The block does not parse. `span` is where in it, so a caller can point at
+  /// a COLUMN — which is what the WIT parser could never give.
+  Syntax(msg~ : String, span~ : Span)
+  /// A declaration kind that does not exist.
+  UnknownDecl(got~ : String, span~ : Span)
+  /// Two `state` declarations claim the same component.
+  DuplicateComponent(name~ : String, span~ : Span)
+  /// A file mixes bare `state { … }` with named `state Counter { … }`, so a
+  /// bare one could mean either the file's single component or a nameless one.
+  MixedStateNames(span~ : Span)
+  /// The block declares types or messages and no `state` at all.
+  NoState(span~ : Span)
+  /// A type the state cannot carry, with the reason it cannot.
+  UnsupportedType(ty~ : String, why~ : String, span~ : Span)
+  /// A named type the block never declares, and that is not a builtin or a
   /// sibling component.
-  UnknownTypeRef(where_~ : String, name~ : String)
-  /// A named type that refers to itself with no `option`/`list` in between.
-  CyclicType(String)
+  UnknownTypeRef(name~ : String, span~ : Span)
+  /// A type application whose argument count is wrong: `Array[A, B]`.
+  BadTypeArgs(name~ : String, want~ : Int, got~ : Int, span~ : Span)
+  /// A named type that refers to itself with no `?` or `Array` in between.
+  CyclicType(name~ : String, span~ : Span)
   /// Two names collapse onto one MoonBit identifier.
-  Collision(kind~ : String, ident~ : String, first~ : String, second~ : String)
-  /// Two interfaces claim the same component.
-  DuplicateInterface(String)
-  /// An interface name that cannot head a MoonBit type.
-  BadInterfaceName(String)
-  /// A marker name used as a user type name.
-  ReservedName(String)
+  Collision(
+    kind~ : String,
+    ident~ : String,
+    first~ : String,
+    second~ : String,
+    span~ : Span
+  )
+  /// A component name that cannot head a MoonBit type.
+  BadComponentName(name~ : String, span~ : Span)
+  /// A builtin type name used as a user type name.
+  ReservedName(name~ : String, span~ : Span)
 }
 
 ///|
@@ -168,23 +196,45 @@ pub suberror DefError {
 declare pub fn DefError::message(self : DefError) -> String
 
 ///|
-/// The identifier to look for in the block when pointing at this error, or
-/// None when it has no single locus.
+/// Where in the block the failure is.
 ///
-/// mizchi/wit carries no per-declaration spans, so a semantic failure cannot
-/// report a position of its own; naming the identifier lets the caller find
-/// the line by scanning.
-declare pub fn DefError::locus(self : DefError) -> String?
+/// This replaces `locus`, which answered an IDENTIFIER for the caller to scan
+/// for — the best a parser with no positions could do. Every declaration
+/// carries its range now, so a state block reports the way the script block
+/// beside it does.
+declare pub fn DefError::span(self : DefError) -> Span
 
 ///|
 /// Parse a `<script type="tutuca/state">` block into one StateDef per
-/// interface it declares.
+/// component it declares.
 ///
-/// `source` is the block's text exactly as written, so a `WitSyntax` offset
-/// indexes it directly. A `package` header is neither required nor allowed:
-/// viewgen supplies one, because the package identity belongs to the module,
-/// not to the block.
-declare pub fn parse_state(source : String) -> Array[StateDef] raise DefError
+/// `source` is the block's text exactly as written, so every span indexes it
+/// directly.
+///
+/// A file's components are named the way its templates are: bare
+/// `state { … }` is the file's single component, and `state Counter { … }`
+/// names one. Mixing the two is refused for the same reason mixing template
+/// ids is — a bare one would be ambiguous.
+///
+/// `name` is what a bare `state` is called, and it matters beyond a label: the
+/// component name prefixes every generated type, so without it a bare block
+/// would emit `Sample` beside `LoaderBarState`.
+declare pub fn parse_state(
+  source : String,
+  name? : String,
+) -> Array[StateDef] raise DefError
+
+///|
+/// The component this schema describes: its own name, or the caller's
+/// fallback for a file whose single component is unnamed.
+///
+/// The identical rule `@viewfile.ViewSet::component_name` follows, and
+/// deliberately so — a bare `state { … }` and a bare `<template>` are the same
+/// claim about the same file.
+declare pub fn StateDef::component_name(
+  self : StateDef,
+  fallback : String,
+) -> String
 
 ///|
 /// The field with this runtime name, or None.
@@ -211,7 +261,7 @@ declare pub fn StateDef::field_of(
 ///|
 /// How to write this type in a diagnostic: the WIT spelling, because that is
 /// what the author wrote and what they will edit.
-declare pub fn StateTy::show_wit(self : StateTy) -> String
+declare pub fn StateTy::show_source(self : StateTy) -> String
 
 ///|
 /// The name in `names` closest to `name`, when one is close enough to be

@@ -10,9 +10,9 @@
 ///|
 /// The state of the SchemaProperty component.
 ///
-/// Declared as `interface schema-property` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaPropertyState {
   key : String
   child : @tutuca.Value
@@ -22,7 +22,8 @@ pub(all) struct SchemaPropertyState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaPropertyState::zero(), label: "Counter" }
@@ -69,7 +70,7 @@ pub let schema_property_global_style : String = ""
 impl @component.Fields for SchemaPropertyState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaProperty",
-    fingerprint="738c4fe1907764e4",
+    fingerprint="9b8d046632f59f15",
     fields=[
       @component.FieldInfo::new("key", TyText),
       @component.FieldInfo::new("child", TyAny),
@@ -82,9 +83,9 @@ impl @component.Fields for SchemaPropertyState with fn schema() {
 ///|
 /// The state of the SchemaBranch component.
 ///
-/// Declared as `interface schema-branch` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaBranchState {
   label : String
   child : @tutuca.Value
@@ -94,7 +95,8 @@ pub(all) struct SchemaBranchState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaBranchState::zero(), label: "Counter" }
@@ -154,7 +156,7 @@ pub fn SchemaBranchMethod::name(self : SchemaBranchMethod) -> String {
 impl @component.Fields for SchemaBranchState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaBranch",
-    fingerprint="b48cf0ecfc472225",
+    fingerprint="45bbfcec4d3d900d",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("child", TyAny),

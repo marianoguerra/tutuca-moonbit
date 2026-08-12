@@ -1,19 +1,15 @@
 <script type="tutuca/state">
-  interface traffic-light {
-    record state {
-    light-index: s32,
-    }
+  state TrafficLight {
+    lightIndex : Int
   }
-  interface tabbed-u-i {
-    record state {
-    tab: string,
-    }
+
+  state TabbedUI {
+    tab : String
   }
-  interface list-and-filter {
-    record state {
-    items: values,
-    query: string,
-    }
+
+  state ListAndFilter {
+    items : Array[Any]
+    query : String
   }
 </script>
 

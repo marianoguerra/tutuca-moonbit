@@ -57,6 +57,20 @@ pub(all) struct Block {
 } derive(Eq, @debug.Debug)
 
 ///|
+/// One `<script type="tutuca/script">` block and the component it answers for.
+///
+/// `comp` is the block's `for=` attribute, or "" for a file that declares a
+/// single component. It is the SAME device `<template id="Counter:row">`
+/// already uses one element over: the block language is written about one
+/// component — a `.field` means this component's state and nothing else — so
+/// a file holding four of them needs four blocks, exactly as it needs four
+/// sets of templates.
+pub(all) struct ScriptBlock {
+  comp : String
+  block : Block
+} derive(Eq, @debug.Debug)
+
+///|
 /// A whole view file: the components it declares plus the macros they share.
 ///
 /// One file per MoonBit module rather than per component, because components
@@ -80,10 +94,17 @@ pub(all) struct ViewFile {
   /// The `<script type="tutuca/init">` fixtures, each paired with the
   /// component whose schema it was checked against.
   init : Array[(String, @statedef.InitState)]
-  /// The `<script type="tutuca/script">` source, unparsed. None when the file
-  /// has no block — which is every file that predates the language.
-  script : Block?
+  /// The `<script type="tutuca/script">` blocks, unparsed, in file order.
+  /// Empty for every file that predates the language.
+  scripts : Array[ScriptBlock]
 } derive(Eq, @debug.Debug)
+
+///|
+/// The script block for one component, or None when the file writes none.
+///
+/// A bare block answers for the file's single component, so a file with one
+/// unnamed block and one component matches whatever that component is called.
+declare pub fn ViewFile::script_for(self : ViewFile, comp : String) -> Block?
 
 ///|
 /// Anything that makes a file unsplittable: its structure is wrong, or a
@@ -110,8 +131,9 @@ pub suberror FileError {
   UnclosedTemplate(String)
   /// Two `<script type="tutuca/state">` blocks in one file.
   DuplicateStateBlock
-  /// Two `<script type="tutuca/script">` blocks in one file.
-  DuplicateScriptBlock
+  /// Two `<script type="tutuca/script">` blocks answer for the same component
+  /// — the name is the `for=` attribute, or "" for an unqualified block.
+  DuplicateScriptBlock(String)
   /// The state block does not describe component state. `line` is the line in
   /// the HTML file, not in the block, because that is the file the author has
   /// open.
@@ -142,7 +164,10 @@ declare pub fn FileError::message(self : FileError) -> String
 /// `<style>` elements are lifted out of the emitted source: inside a template
 /// it becomes that view's style; at file level it is the first component's
 /// common style, or its global style with `data-global`.
-declare pub fn split_file(source : String) -> ViewFile raise FileError
+declare pub fn split_file(
+  source : String,
+  name? : String,
+) -> ViewFile raise FileError
 
 ///|
 /// The component name for a ViewSet: its own, or the caller's fallback for a

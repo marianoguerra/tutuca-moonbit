@@ -1,25 +1,17 @@
 <script type="tutuca/state">
-  // The state for the components in lint_errors.mbt, which build
-  // their views in MoonBit rather than here — a macro body is
-  // registered at runtime, so it cannot be compiled ahead of time.
-  // No <template>: this file declares state and nothing else.
-  interface lint-demo {
-    record state {
-      count: s32,
-      items: values,
-      kind: string,
-      is-open: bool,
-      child: any,
-    }
+  state LintDemo {
+    count : Int
+    items : Array[Any]
+    kind : String
+    isOpen : Bool
+    child : Any
   }
-  interface html-lint-demo {
-    record state {
-      count: s32,
-    }
+
+  state HtmlLintDemo {
+    count : Int
   }
-  interface scoped-style-demo {
-    record state {
-      count: s32,
-    }
+
+  state ScopedStyleDemo {
+    count : Int
   }
 </script>

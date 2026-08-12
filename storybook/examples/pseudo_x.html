@@ -1,33 +1,27 @@
 <script type="tutuca/state">
-  interface table-row {
-    record state {
-    name: string,
-    qty: s32,
-    price: f64,
-    }
+  state TableRow {
+    name : String
+    qty : Int
+    price : Double
   }
-  interface item-table {
-    record state {
-    rows: values,
-    }
+
+  state ItemTable {
+    rows : Array[Any]
   }
-  interface select-option {
-    record state {
-    value: string,
-    label: string,
-    }
+
+  state SelectOption {
+    value : String
+    label : String
   }
-  interface item-select {
-    record state {
-    options: values,
-    current: string,
-    }
+
+  state ItemSelect {
+    options : Array[Any]
+    current : String
   }
-  interface pseudo-x-demo {
-    record state {
-    table: item-table,
-    select: item-select,
-    }
+
+  state PseudoXDemo {
+    table : ItemTable
+    select : ItemSelect
   }
 </script>
 

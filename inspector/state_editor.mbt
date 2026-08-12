@@ -57,7 +57,7 @@ pub fn Inspector::editor_rows(
       self.make_("StateEditorRow", args={
         "name": Str(f.name),
         // the WIT spelling, so the row says `list<card>` and not `list`
-        "type": Str(f.ty.show_wit()),
+        "type": Str(f.ty.show_source()),
         "kind": Str(kind),
         "text": Str(v.str()),
         "num": Num(v.num()),

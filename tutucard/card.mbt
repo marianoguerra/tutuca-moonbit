@@ -28,7 +28,7 @@ pub fn CardError::message(self : CardError) -> String {
 
 ///|
 pub fn load(source : String, name~ : String) -> Card raise CardError {
-  let file = @viewfile.split_file(source) catch { e => raise BadFile(e) }
+  let file = @viewfile.split_file(source, name~) catch { e => raise BadFile(e) }
   guard file.components.length() <= 1 else {
     raise ManyComponents(file.components.map(c => c.component_name(name)))
   }
@@ -38,7 +38,7 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
   let issues : Array[CardIssue] = []
 
   // -- the script ----------------------------------------------------------
-  let decls : Array[@tscript.Decl] = match file.script {
+  let decls : Array[@tscript.Decl] = match file.script_for(comp_name) {
     Some(block) => {
       let ds = @tscript.parse_script(block.text) catch {
         e =>

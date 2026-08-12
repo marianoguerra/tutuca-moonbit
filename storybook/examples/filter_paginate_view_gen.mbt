@@ -10,9 +10,9 @@
 ///|
 /// The state of the Person component.
 ///
-/// Declared as `interface person` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PersonState {
   name : String
   email : String
@@ -22,7 +22,8 @@ pub(all) struct PersonState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PersonState::zero(), label: "Counter" }
@@ -128,7 +129,7 @@ pub fn PersonMsg::from_dispatch(d : @component.Dispatch) -> PersonMsg? {
 impl @component.Fields for PersonState with fn schema() {
   @component.SchemaInfo::new(
     name="Person",
-    fingerprint="e2e8301a252a8190",
+    fingerprint="28bd948e0340fdd0",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("email", TyText),
@@ -142,9 +143,9 @@ impl @component.Fields for PersonState with fn schema() {
 ///|
 /// The state of the Strategies component.
 ///
-/// Declared as `interface strategies` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StrategiesState {
   naive : @tutuca.Value
   shared : @tutuca.Value
@@ -154,7 +155,8 @@ pub(all) struct StrategiesState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StrategiesState::zero(), label: "Counter" }
@@ -201,7 +203,7 @@ pub let strategies_global_style : String = ""
 impl @component.Fields for StrategiesState with fn schema() {
   @component.SchemaInfo::new(
     name="Strategies",
-    fingerprint="f8994dd483337af3",
+    fingerprint="3cd441eb8f318f41",
     fields=[
       @component.FieldInfo::new("naive", TyComp(Some("NaivePeople"))),
       @component.FieldInfo::new("shared", TyComp(Some("SharedPeople"))),
@@ -212,15 +214,11 @@ impl @component.Fields for StrategiesState with fn schema() {
 }
 
 ///|
-/// SharedPeople and CoupledPeople deliberately share NaivePeople's state
-/// shape — comparing three strategies over one shape is what this example
-/// teaches, and the helpers below are typed on it. One schema, three
-/// components, three templates that differ only in the @when/@loop-with
-/// pair on the row.
+/// The state of the NaivePeople component.
 ///
-/// Declared as `interface naive-people` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct NaivePeopleState {
   items : Array[@tutuca.Value]
   query : String
@@ -231,7 +229,8 @@ pub(all) struct NaivePeopleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..NaivePeopleState::zero(), label: "Counter" }
@@ -398,7 +397,7 @@ pub fn NaivePeopleLoopWith::name(self : NaivePeopleLoopWith) -> String {
 impl @component.Fields for NaivePeopleState with fn schema() {
   @component.SchemaInfo::new(
     name="NaivePeople",
-    fingerprint="1a6e19dbb5fd3c45",
+    fingerprint="ff7b1edfba539bda",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),

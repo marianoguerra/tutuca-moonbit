@@ -1,17 +1,14 @@
 <script type="tutuca/state">
-  interface tree-item {
-    record state {
-    %type: string,
-    label: string,
-    is-open: bool,
-    items: values,
-    }
+  state TreeItem {
+    type : String
+    label : String
+    isOpen : Bool
+    items : Array[Any]
   }
-  interface tree-root {
-    record state {
-    log: values,
-    root: tree-item,
-    }
+
+  state TreeRoot {
+    log : Array[Any]
+    root : TreeItem
   }
 </script>
 

@@ -10,9 +10,9 @@
 ///|
 /// The state of the Greeting component.
 ///
-/// Declared as `interface greeting` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct GreetingState {
   name : String
 }
@@ -20,7 +20,8 @@ pub(all) struct GreetingState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..GreetingState::zero(), label: "Counter" }
@@ -65,7 +66,7 @@ pub let greeting_global_style : String = ""
 impl @component.Fields for GreetingState with fn schema() {
   @component.SchemaInfo::new(
     name="Greeting",
-    fingerprint="291131f40d1ed859",
+    fingerprint="aeeaa7d2aa223099",
     fields=[@component.FieldInfo::new("name", TyText)],
     view_names=["main"],
   )
@@ -74,9 +75,9 @@ impl @component.Fields for GreetingState with fn schema() {
 ///|
 /// The state of the Page component.
 ///
-/// Declared as `interface page` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PageState {
   greeting : @tutuca.Value
 }
@@ -84,7 +85,8 @@ pub(all) struct PageState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PageState::zero(), label: "Counter" }
@@ -129,7 +131,7 @@ pub let page_global_style : String = ""
 impl @component.Fields for PageState with fn schema() {
   @component.SchemaInfo::new(
     name="Page",
-    fingerprint="e030e42686ce0fa5",
+    fingerprint="e7a1401b9ddf0bfa",
     fields=[@component.FieldInfo::new("greeting", TyComp(Some("Greeting")))],
     view_names=["main"],
   )
@@ -138,9 +140,9 @@ impl @component.Fields for PageState with fn schema() {
 ///|
 /// The state of the Entry component.
 ///
-/// Declared as `interface entry` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct EntryState {
   title : String
   description : String
@@ -149,7 +151,8 @@ pub(all) struct EntryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EntryState::zero(), label: "Counter" }
@@ -261,7 +264,7 @@ pub fn EntryMethod::name(self : EntryMethod) -> String {
 impl @component.Fields for EntryState with fn schema() {
   @component.SchemaInfo::new(
     name="Entry",
-    fingerprint="e63d2a9edab89eef",
+    fingerprint="ec97eb067fbb9a4f",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
@@ -275,9 +278,9 @@ impl @component.Fields for EntryState with fn schema() {
 ///|
 /// The state of the MultipleViews component.
 ///
-/// Declared as `interface multiple-views` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MultipleViewsState {
   value : @tutuca.Value
 }
@@ -285,7 +288,8 @@ pub(all) struct MultipleViewsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MultipleViewsState::zero(), label: "Counter" }
@@ -330,7 +334,7 @@ pub let multiple_views_global_style : String = ""
 impl @component.Fields for MultipleViewsState with fn schema() {
   @component.SchemaInfo::new(
     name="MultipleViews",
-    fingerprint="5d0a354dcce454b2",
+    fingerprint="236b214364a233e8",
     fields=[@component.FieldInfo::new("value", TyComp(Some("Entry")))],
     view_names=["main"],
   )

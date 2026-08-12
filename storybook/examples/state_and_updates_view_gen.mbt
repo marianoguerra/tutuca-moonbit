@@ -10,9 +10,9 @@
 ///|
 /// The state of the AttributeBinding component.
 ///
-/// Declared as `interface attribute-binding` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct AttributeBindingState {
   str : String
   num : Int
@@ -23,7 +23,8 @@ pub(all) struct AttributeBindingState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..AttributeBindingState::zero(), label: "Counter" }
@@ -138,7 +139,7 @@ pub fn AttributeBindingMsg::from_dispatch(
 impl @component.Fields for AttributeBindingState with fn schema() {
   @component.SchemaInfo::new(
     name="AttributeBinding",
-    fingerprint="8ea3de0f9d1d7877",
+    fingerprint="1e94422931fa608c",
     fields=[
       @component.FieldInfo::new("str", TyText),
       @component.FieldInfo::new("num", TyInt),
@@ -153,9 +154,9 @@ impl @component.Fields for AttributeBindingState with fn schema() {
 ///|
 /// The state of the ConditionalAttributes component.
 ///
-/// Declared as `interface conditional-attributes` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ConditionalAttributesState {
   isActive : Bool
 }
@@ -163,7 +164,8 @@ pub(all) struct ConditionalAttributesState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ConditionalAttributesState::zero(), label: "Counter" }
@@ -261,7 +263,7 @@ pub fn ConditionalAttributesMsg::from_dispatch(
 impl @component.Fields for ConditionalAttributesState with fn schema() {
   @component.SchemaInfo::new(
     name="ConditionalAttributes",
-    fingerprint="910117f2f10fc51d",
+    fingerprint="3a518a385250bb4d",
     fields=[@component.FieldInfo::new("isActive", TyBool)],
     inputs=["toggleIsActive"],
     view_names=["main"],
@@ -271,9 +273,9 @@ impl @component.Fields for ConditionalAttributesState with fn schema() {
 ///|
 /// The state of the EventModifiers component.
 ///
-/// Declared as `interface event-modifiers` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct EventModifiersState {
   query : String
   lastSentSearch : @tutuca.Value
@@ -282,7 +284,8 @@ pub(all) struct EventModifiersState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..EventModifiersState::zero(), label: "Counter" }
@@ -389,7 +392,7 @@ pub fn EventModifiersMsg::from_dispatch(
 impl @component.Fields for EventModifiersState with fn schema() {
   @component.SchemaInfo::new(
     name="EventModifiers",
-    fingerprint="d6a42b598e90df83",
+    fingerprint="56cb6951381a404e",
     fields=[
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("lastSentSearch", TyAny),
@@ -402,9 +405,9 @@ impl @component.Fields for EventModifiersState with fn schema() {
 ///|
 /// The state of the ShowHide component.
 ///
-/// Declared as `interface show-hide` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ShowHideState {
   isOpen : Bool
   count : Int
@@ -413,7 +416,8 @@ pub(all) struct ShowHideState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ShowHideState::zero(), label: "Counter" }
@@ -526,7 +530,7 @@ pub fn ShowHideMethod::name(self : ShowHideMethod) -> String {
 impl @component.Fields for ShowHideState with fn schema() {
   @component.SchemaInfo::new(
     name="ShowHide",
-    fingerprint="3f79c6cc46a1f1b3",
+    fingerprint="330b85e924a25a8e",
     fields=[
       @component.FieldInfo::new("isOpen", TyBool),
       @component.FieldInfo::new("count", TyInt),

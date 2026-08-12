@@ -10,9 +10,9 @@
 ///|
 /// The state of the Status component.
 ///
-/// Declared as `interface status` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StatusState {
   message : String
   count : Int
@@ -21,7 +21,8 @@ pub(all) struct StatusState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StatusState::zero(), label: "Counter" }
@@ -68,7 +69,7 @@ pub let status_global_style : String = ""
 impl @component.Fields for StatusState with fn schema() {
   @component.SchemaInfo::new(
     name="Status",
-    fingerprint="818952001ae7566e",
+    fingerprint="a5b9f8a6ceb2d065",
     fields=[
       @component.FieldInfo::new("message", TyText),
       @component.FieldInfo::new("count", TyInt),
@@ -80,9 +81,9 @@ impl @component.Fields for StatusState with fn schema() {
 ///|
 /// The state of the SendReceive component.
 ///
-/// Declared as `interface send-receive` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SendReceiveState {
   draft : String
   status : @tutuca.Value
@@ -91,7 +92,8 @@ pub(all) struct SendReceiveState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SendReceiveState::zero(), label: "Counter" }
@@ -198,7 +200,7 @@ pub fn SendReceiveMsg::from_dispatch(
 impl @component.Fields for SendReceiveState with fn schema() {
   @component.SchemaInfo::new(
     name="SendReceive",
-    fingerprint="ada644a0bb9fd091",
+    fingerprint="e1869636699defad",
     fields=[
       @component.FieldInfo::new("draft", TyText),
       @component.FieldInfo::new("status", TyComp(Some("Status"))),
@@ -211,9 +213,9 @@ impl @component.Fields for SendReceiveState with fn schema() {
 ///|
 /// The state of the TreeItem component.
 ///
-/// Declared as `interface tree-item` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TreeItemState {
   type_ : String
   label : String
@@ -224,7 +226,8 @@ pub(all) struct TreeItemState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TreeItemState::zero(), label: "Counter" }
@@ -343,7 +346,7 @@ pub fn TreeItemMethod::name(self : TreeItemMethod) -> String {
 impl @component.Fields for TreeItemState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeItem",
-    fingerprint="e6692133fe7c7e9a",
+    fingerprint="1ef7221de42175fb",
     fields=[
       @component.FieldInfo::new("type", TyText),
       @component.FieldInfo::new("label", TyText),
@@ -359,9 +362,9 @@ impl @component.Fields for TreeItemState with fn schema() {
 ///|
 /// The state of the TreeRoot component.
 ///
-/// Declared as `interface tree-root` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TreeRootState {
   log : Array[@tutuca.Value]
   root : @tutuca.Value
@@ -370,7 +373,8 @@ pub(all) struct TreeRootState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TreeRootState::zero(), label: "Counter" }
@@ -422,7 +426,7 @@ pub let tree_root_global_style : String = ""
 impl @component.Fields for TreeRootState with fn schema() {
   @component.SchemaInfo::new(
     name="TreeRoot",
-    fingerprint="317de328210e1763",
+    fingerprint="259cbbf71628d31a",
     fields=[
       @component.FieldInfo::new("log", TyList(TyAny)),
       @component.FieldInfo::new("root", TyComp(Some("TreeItem"))),

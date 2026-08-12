@@ -1038,7 +1038,7 @@ test "manifest parses from the bridge's JSON projection" {
   // the flat type table rebuilds into nested TyInfo
   let fields = m.components[0].field_infos()
   debug_inspect(
-    fields.map(f => "\{f.name}:\{f.ty.show_wit()}"),
+    fields.map(f => "\{f.name}:\{f.ty.show_source()}"),
     content="[\"count:s32\", \"history:list<s32>\"]",
   )
   debug_inspect(m.components[0].methods, content="[\"label\"]")
@@ -1268,8 +1268,8 @@ test "a cyclic or out-of-range type index reads as `any`, not a hang" {
   let m = DynManifest::from_json_string(json)
   let fields = m.components[0].field_infos()
   // the guard bottoms out in `any` at its depth limit; the missing index too
-  assert_true(fields[0].ty.show_wit().has_prefix("list<"))
-  inspect(fields[1].ty.show_wit(), content="any")
+  assert_true(fields[0].ty.show_source().has_prefix("list<"))
+  inspect(fields[1].ty.show_source(), content="any")
 }
 
 ///|

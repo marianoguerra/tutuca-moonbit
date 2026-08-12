@@ -10,9 +10,9 @@
 ///|
 /// The state of the AltUrl component.
 ///
-/// Declared as `interface alt-url` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct AltUrlState {
   label : String
   url : String
@@ -21,7 +21,8 @@ pub(all) struct AltUrlState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..AltUrlState::zero(), label: "Counter" }
@@ -67,7 +68,7 @@ pub let alt_url_global_style : String = ""
 impl @component.Fields for AltUrlState with fn schema() {
   @component.SchemaInfo::new(
     name="AltUrl",
-    fingerprint="5894c82bae5b3921",
+    fingerprint="d312eadc19e0ff9c",
     fields=[
       @component.FieldInfo::new("label", TyText),
       @component.FieldInfo::new("url", TyText),
@@ -79,9 +80,9 @@ impl @component.Fields for AltUrlState with fn schema() {
 ///|
 /// The state of the PsEntry component.
 ///
-/// Declared as `interface ps-entry` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PsEntryState {
   title : String
   description : String
@@ -98,7 +99,8 @@ pub(all) struct PsEntryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PsEntryState::zero(), label: "Counter" }
@@ -227,7 +229,7 @@ pub fn PsEntryEnrich::name(self : PsEntryEnrich) -> String {
 impl @component.Fields for PsEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="PsEntry",
-    fingerprint="dbbed9cebaa1412f",
+    fingerprint="1f87343b7ff67df1",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("description", TyText),
@@ -248,9 +250,9 @@ impl @component.Fields for PsEntryState with fn schema() {
 ///|
 /// The state of the Root component.
 ///
-/// Declared as `interface root` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct RootState {
   allEntries : Array[@tutuca.Value]
   allCategories : Array[String]
@@ -265,7 +267,8 @@ pub(all) struct RootState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RootState::zero(), label: "Counter" }
@@ -506,7 +509,7 @@ pub fn RootEnrich::name(self : RootEnrich) -> String {
 impl @component.Fields for RootState with fn schema() {
   @component.SchemaInfo::new(
     name="Root",
-    fingerprint="b2600c9777dc4864",
+    fingerprint="62997c98acba3034",
     fields=[
       @component.FieldInfo::new("allEntries", TyList(TyAny)),
       @component.FieldInfo::new("allCategories", TyList(TyText)),

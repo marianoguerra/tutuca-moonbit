@@ -10,9 +10,9 @@
 ///|
 /// The state of the PushView component.
 ///
-/// Declared as `interface push-view` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PushViewState {
   items : Array[@tutuca.Value]
   query : String
@@ -22,7 +22,8 @@ pub(all) struct PushViewState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PushViewState::zero(), label: "Counter" }
@@ -164,7 +165,7 @@ pub fn PushViewWhen::name(self : PushViewWhen) -> String {
 impl @component.Fields for PushViewState with fn schema() {
   @component.SchemaInfo::new(
     name="PushView",
-    fingerprint="59de8df8ec76d36f",
+    fingerprint="e12ef7e9d8cd685f",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),
@@ -179,9 +180,9 @@ impl @component.Fields for PushViewState with fn schema() {
 ///|
 /// The state of the SeqItemAccess component.
 ///
-/// Declared as `interface seq-item-access` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SeqItemAccessState {
   byKey : Map[String, @tutuca.Value]
   byIndex : Array[@tutuca.Value]
@@ -192,7 +193,8 @@ pub(all) struct SeqItemAccessState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SeqItemAccessState::zero(), label: "Counter" }
@@ -337,7 +339,7 @@ pub fn SeqItemAccessMethod::name(self : SeqItemAccessMethod) -> String {
 impl @component.Fields for SeqItemAccessState with fn schema() {
   @component.SchemaInfo::new(
     name="SeqItemAccess",
-    fingerprint="3d8aff68ab0f9efc",
+    fingerprint="70048a35375455e8",
     fields=[
       @component.FieldInfo::new("byKey", TyOMap(TyAny)),
       @component.FieldInfo::new("byIndex", TyList(TyAny)),
@@ -353,9 +355,9 @@ impl @component.Fields for SeqItemAccessState with fn schema() {
 ///|
 /// The state of the Pagination component.
 ///
-/// Declared as `interface pagination` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PaginationState {
   items : Array[@tutuca.Value]
   page : Int
@@ -365,7 +367,8 @@ pub(all) struct PaginationState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PaginationState::zero(), label: "Counter" }
@@ -507,7 +510,7 @@ pub fn PaginationLoopWith::name(self : PaginationLoopWith) -> String {
 impl @component.Fields for PaginationState with fn schema() {
   @component.SchemaInfo::new(
     name="Pagination",
-    fingerprint="c2aa11aab6bf6478",
+    fingerprint="641548922663b3ee",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("page", TyInt),

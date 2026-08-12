@@ -108,7 +108,7 @@ test "the component takes its kinds from the schema, not the seed value" {
   // so a reader can descend rather than receive the string "s32" and stop.
   guard! si.field("history") is Some(hf)
   assert_eq(hf.ty, TyList(TyInt))
-  assert_eq(hf.ty.show_wit(), "list<s32>")
+  assert_eq(hf.ty.show_source(), "list<s32>")
   assert_true(hf.kind() is FList)
   assert_eq(hf.ty.elem(), Some(TyInt))
   // ...and the default the inspector shows is the type's zero, reachable

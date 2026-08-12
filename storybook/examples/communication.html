@@ -1,29 +1,24 @@
 <script type="tutuca/state">
-  interface status {
-    record state {
-    message: string,
-    count: s32,
-    }
+  state Status {
+    message : String
+    count : Int
   }
-  interface send-receive {
-    record state {
-    draft: string,
-    status: status,
-    }
+
+  state SendReceive {
+    draft : String
+    status : Status
   }
-  interface tree-item {
-    record state {
-    %type: string,
-    label: string,
-    is-open: bool,
-    items: values,
-    }
+
+  state TreeItem {
+    type : String
+    label : String
+    isOpen : Bool
+    items : Array[Any]
   }
-  interface tree-root {
-    record state {
-    log: values,
-    root: tree-item,
-    }
+
+  state TreeRoot {
+    log : Array[Any]
+    root : TreeItem
   }
 </script>
 

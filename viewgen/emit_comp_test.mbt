@@ -9,12 +9,7 @@
 /// Schema + template: the case the wrapper is for.
 let wrapper_html : String =
   #|<script type="tutuca/state">
-  #|  interface counter {
-  #|    record state {
-  #|      label: string,
-  #|      count: s32,
-  #|    }
-  #|  }
+  #|  state Counter { label: String, count: Int }
   #|</script>
   #|
   #|<template>
@@ -102,10 +97,8 @@ test "a nested record still gets a direct codec, named by the wrapper" {
   let f = @viewgen.split_file(
     (
       #|<script type="tutuca/state">
-      #|  interface card {
-      #|    record point { x: s32, y: s32 }
-      #|    record state { at: point }
-      #|  }
+      #|  struct Point { x: Int, y: Int }
+      #|  state Card { at: Point }
       #|</script>
       #|
       #|<template><i @text=".at"></i></template>
@@ -141,8 +134,8 @@ test "a schema-only component gets no wrapper" {
   let f = @viewgen.split_file(
     (
       #|<script type="tutuca/state">
-      #|  interface headless { record state { n: s32 } }
-      #|  interface shown { record state { n: s32 } }
+      #|  state Headless { n: Int }
+      #|    state Shown { n: Int }
       #|</script>
       #|
       #|<template id="Shown"><x text=".n"></x></template>
@@ -162,7 +155,7 @@ test "the wrapper's name default is the declared component name" {
   let f = @viewgen.split_file(
     (
       #|<script type="tutuca/state">
-      #|  interface dse-root { record state { n: s32 } }
+      #|  state DseRoot { n: Int }
       #|</script>
       #|
       #|<template id="DseRoot"><x text=".n"></x></template>

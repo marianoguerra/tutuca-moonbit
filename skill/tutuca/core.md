@@ -140,9 +140,7 @@ it. What you write is the code no generator can: the handlers.
 
 ```html
 <script type="tutuca/state">
-  interface counter {
-    record state { count: s32 }
-  }
+  state Counter { count: Int }
 </script>
 
 <template>
@@ -507,7 +505,7 @@ file's `<script type="tutuca/state">` block; `gen-views` writes the struct, and
 every handler body is compiler-checked against it — `s.cuont` is a compile
 error, not a silently-Null render.
 
-Which WIT spelling a field wants, and which camelCase mutators each kind
+How a field's type is spelled, and which camelCase mutators each kind
 generates (`pushInX`, `toggleInX`, `setInXAt`, …), is one table in
 [schema.md](./schema.md#what-each-field-kind-generates). Two consequences worth
 carrying here:
@@ -1013,8 +1011,8 @@ pub(all) enum Value {
   (`s.items.copy()` then `push`) and return a **new** struct
   (`Some({ ..s, items: next })`), never mutate in place.
 - Sets are modeled as a `Map` keyed by member (value `Bool(true)`), declared
-  `text-set` or `flags` in the schema; ordered maps are plain `Map`s, declared
-  `value-omap` / `text-omap`. See [schema.md](./schema.md#field-types).
+  `Set[String]` or `Set[Enum]` in the schema; ordered maps are plain `Map`s,
+  declared `Map[String, V]`. See [schema.md](./schema.md#field-types).
 - Custom collections implement the `@tutuca.Obj` trait (notably
   `obj_seq_entries` for `@each`) — see [iteration.md](./iteration.md)
   *Custom collections*.

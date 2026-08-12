@@ -1,43 +1,34 @@
 <script type="tutuca/state">
-  interface json-null {
-    record state {
-    }
+  state JsonNull {
   }
-  interface json-bool {
-    record state {
-    value: bool,
-    }
+
+  state JsonBool {
+    value : Bool
   }
-  interface json-string {
-    record state {
-    value: string,
-    }
+
+  state JsonString {
+    value : String
   }
-  interface json-number {
-    record state {
-    str-value: string,
-    value: f64,
-    }
+
+  state JsonNumber {
+    strValue : String
+    value : Double
   }
-  interface json-selector {
-    record state {
-    }
+
+  state JsonSelector {
   }
-  interface json-array {
-    record state {
-    items: values,
-    }
+
+  state JsonArray {
+    items : Array[Any]
   }
-  interface json-object-key-val {
-    record state {
-    key: string,
-    value: any,
-    }
+
+  state JsonObjectKeyVal {
+    key : String
+    value : Any
   }
-  interface json-object {
-    record state {
-    items: values,
-    }
+
+  state JsonObject {
+    items : Array[Any]
   }
 </script>
 

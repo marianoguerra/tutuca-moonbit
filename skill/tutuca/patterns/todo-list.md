@@ -1,7 +1,7 @@
 # Build a todo list (complete pairing)
 
 **Problem:** a known-good, complete view + code pairing for a small app:
-a list of child components over `values` (`list<any>`), `@when`
+a list of child components over `Array[Any]`, `@when`
 filtering, add / toggle / delete handlers, and controlled inputs.
 
 One view file carries the whole module — the schema for both components
@@ -10,18 +10,8 @@ and a named `<template>` per component:
 ```html
 <!-- todo.html -->
 <script type="tutuca/state">
-  interface item {
-    record state {
-      completed: bool,
-      text: string,
-    }
-  }
-  interface items {
-    record state {
-      items: values,
-      hide-completed: bool,
-    }
-  }
+  state Item { completed: Bool, text: String }
+    state Items { items: Array[Any], hideCompleted: Bool }
 </script>
 
 <template id="Item">
@@ -118,7 +108,7 @@ pub fn todo_module() -> @component.ModuleDef {
 
 Why each piece is the way it is:
 
-- **`items: values`** declares `list<any>` — the struct field is
+- **`items: Array[Any]`** — the struct field is
   `items : Array[@tutuca.Value]`, holding `Item` instances built with
   `item.make(...)`. Append immutably: `s.items + [ ... ]`.
 - **`@each` + `<x render-it>`** renders each instance as its own `Item`

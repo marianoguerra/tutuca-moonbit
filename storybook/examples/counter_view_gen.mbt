@@ -10,9 +10,9 @@
 ///|
 /// The state of the Counter component.
 ///
-/// Declared as `interface counter` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CounterState {
   count : Int
 }
@@ -20,7 +20,8 @@ pub(all) struct CounterState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CounterState::zero(), label: "Counter" }
@@ -119,7 +120,7 @@ pub fn CounterMsg::from_dispatch(d : @component.Dispatch) -> CounterMsg? {
 impl @component.Fields for CounterState with fn schema() {
   @component.SchemaInfo::new(
     name="Counter",
-    fingerprint="a0fd8e55e2e67751",
+    fingerprint="6600cf22c0b7a132",
     fields=[@component.FieldInfo::new("count", TyInt)],
     inputs=["dec", "inc"],
     view_names=["main"],

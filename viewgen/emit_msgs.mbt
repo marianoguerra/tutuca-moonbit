@@ -51,8 +51,14 @@ fn emit_bucket_enum(
     "pub(all) enum \{ty} {\n",
   )
   for m in msgs {
+    // Line by line: a doc comment is a paragraph now. `MsgDef.doc` was
+    // permanently `None` under WIT — `@wit.Field` carried no docs at all — so
+    // this wrote a single line that never had a second one in it.
     match m.doc {
-      Some(d) => out.write_string("  /// \{d}\n")
+      Some(d) =>
+        for line in d.split("\n") {
+          out.write_string("  /// \{line}\n")
+        }
       None => ()
     }
     if m.payload.is_empty() {

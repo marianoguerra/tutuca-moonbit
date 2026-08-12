@@ -299,7 +299,7 @@ fn constraint_hint(
   diagnostic_line(into, "\{def.name}.\{field}", {
     code: InertConstraint,
     level: Hint,
-    info: [("name", field), ("key", key), ("kind", ty.show_wit())],
+    info: [("name", field), ("key", key), ("kind", ty.show_source())],
     location: None,
     suggestion: None,
   })

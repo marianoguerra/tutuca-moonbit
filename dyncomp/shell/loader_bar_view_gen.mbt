@@ -16,22 +16,38 @@ pub(all) struct LoaderBarSample {
 } derive(Eq, @debug.Debug)
 
 ///|
-/// The state of the LoaderBar component.
+/// Where a bundle comes from: a button, a URL box, or a file dropped on the
+/// page. Every wasm-gc page that hosts bundles needs this and none of them
+/// need a different one, which is why it stopped being two.
+/// 
+/// It sits INSIDE a page's own bar rather than around it, because the whole
+/// viewport belongs to the page. What it cannot decide is what a load MEANS
+/// — the universal host counts it against a session being restored, the
+/// storybook rebuilds its story set — so it reports through `notify` and
+/// bubbles `catalog-changed`, and the page decides.
 ///
-/// Declared as `interface loader-bar` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct LoaderBarState {
   status : String
+  /// What is in the URL box. Kept as state rather than read off the DOM, so
+  /// pressing Enter and pressing the button are one handler.
   url : String
+  /// Whether to draw the URL box at all. A page that only offers its own
+  /// bundles has no use for it.
   showUrl : Bool
+  /// The bundles to offer, as buttons. Empty is the ordinary case and draws
+  /// nothing: a first-time visitor should not meet a row of buttons naming
+  /// archives they have never heard of.
   samples : Array[LoaderBarSample]
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..LoaderBarState::zero(), label: "Counter" }
@@ -40,13 +56,13 @@ pub fn LoaderBarState::zero() -> LoaderBarState {
 }
 
 ///|
-/// The `sample` record as a `@tutuca.Value`.
+/// The `Sample` record as a `@tutuca.Value`.
 fn loader_bar_sample_to_value(x : LoaderBarSample) -> @tutuca.Value {
   Map({ "label": Str(x.label), "url": Str(x.url) })
 }
 
 ///|
-/// The `sample` record back out. None on a shape mismatch.
+/// The `Sample` record back out. None on a shape mismatch.
 fn loader_bar_sample_of_value(v : @tutuca.Value) -> LoaderBarSample? {
   guard v is Map(m) else { return None }
   guard m.get("label") is Some(Str(f_label)) else { return None }
@@ -97,7 +113,11 @@ impl @component.Fields for LoaderBarState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum LoaderBarReceive {
+  /// Files the page forwarded — dropped anywhere on it, or on a cell that
+  /// handed back what was not its.
   FilesDropped(@tutuca.Value)
+  /// The bridge's own answers, routed here because this is the path that
+  /// asked for the load.
   DyncompLoaded(String)
   DyncompError(String)
   /// A receive the schema does not declare, or a declared name whose
@@ -158,6 +178,9 @@ pub fn LoaderBarReceive::send(
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum LoaderBarBubble {
+  /// The catalog changed. Whatever is above re-reads it — a bar showing
+  /// search results, or a gallery showing every configuration — rather than
+  /// telling a person to ask again.
   CatalogChanged(String)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -283,12 +306,12 @@ pub fn LoaderBarMsg::from_dispatch(d : @component.Dispatch) -> LoaderBarMsg? {
 impl @component.Fields for LoaderBarState with fn schema() {
   @component.SchemaInfo::new(
     name="LoaderBar",
-    fingerprint="4fc5689c35ed8485",
+    fingerprint="d90cd2f90de52646",
     fields=[
       @component.FieldInfo::new("status", TyText),
       @component.FieldInfo::new("url", TyText),
       @component.FieldInfo::new("showUrl", TyBool),
-      @component.FieldInfo::new("samples", TyList(TyRecord("sample"))),
+      @component.FieldInfo::new("samples", TyList(TyRecord("Sample"))),
     ],
     inputs=["loadSample", "loadUrl", "typeUrl"],
     receives=["filesDropped", "dyncompLoaded", "dyncompError"],

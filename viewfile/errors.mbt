@@ -16,9 +16,11 @@ pub fn FileError::message(self : FileError) -> String {
       "\{what} declares no main view: add a `main` view (id=\"Comp\" or id=\"Comp:main\")"
     UnclosedTemplate(what) => "unclosed <template\{what}>"
     DuplicateStateBlock =>
-      "two <script type=\"tutuca/state\"> blocks — one file declares one schema, with one interface per component"
-    DuplicateScriptBlock =>
-      "two <script type=\"tutuca/script\"> blocks — one file declares one script, with one set of handlers per component"
+      "two <script type=\"tutuca/state\"> blocks — one file declares one schema, with one `state` per component"
+    DuplicateScriptBlock("") =>
+      "two unqualified <script type=\"tutuca/script\"> blocks — a block is written about ONE component, so name each one with `for=\"Comp\"`"
+    DuplicateScriptBlock(comp) =>
+      "two <script type=\"tutuca/script\" for=\"\{comp}\"> blocks — one component answers one set of handlers"
     BadStateBlock(line~, message~) | BadInitBlock(line~, message~) =>
       "line \{line}: \{message}"
   }

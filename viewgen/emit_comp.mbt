@@ -45,11 +45,11 @@ fn emit_wrapper(
   name : String,
   t : String,
   v : String,
-  def : @statedef.StateDef,
+  _def : @statedef.StateDef,
   surface : Surface,
   out : StringBuilder,
 ) -> Unit raise GenError {
-  let methods = declared_methods(surface, Some(def))
+  let methods = declared_methods(surface)
   let s = "\{t}State"
   // One branch, because `has_direct_codec` answers true for the whole StateTy
   // lattice — the shape it used to discriminate was a state the generator

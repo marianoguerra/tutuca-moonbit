@@ -8,11 +8,13 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state of the StateEditorRow component.
+/// One field of the edited instance. `kind` picks the control; `text`,
+/// `num` and `flag` are the three editable shapes, and `readonly` carries
+/// the rendering for a field no control fits.
 ///
-/// Declared as `interface state-editor-row` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StateEditorRowState {
   name : String
   type_ : String
@@ -27,7 +29,8 @@ pub(all) struct StateEditorRowState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StateEditorRowState::zero(), label: "Counter" }
@@ -155,7 +158,7 @@ pub fn StateEditorRowMsg::from_dispatch(
 impl @component.Fields for StateEditorRowState with fn schema() {
   @component.SchemaInfo::new(
     name="StateEditorRow",
-    fingerprint="b3b1eecbb80cba4e",
+    fingerprint="568c32bc861ee72f",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("type", TyText),
@@ -172,11 +175,12 @@ impl @component.Fields for StateEditorRowState with fn schema() {
 }
 
 ///|
-/// The state of the StateEditor component.
+/// `target` is the instance being edited — the source of truth, replaced
+/// wholesale by every edit. `rows` is its schema, projected.
 ///
-/// Declared as `interface state-editor` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StateEditorState {
   target : @tutuca.Value
   rows : Array[@tutuca.Value]
@@ -186,7 +190,8 @@ pub(all) struct StateEditorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StateEditorState::zero(), label: "Counter" }
@@ -243,7 +248,7 @@ pub let state_editor_global_style : String = ""
 impl @component.Fields for StateEditorState with fn schema() {
   @component.SchemaInfo::new(
     name="StateEditor",
-    fingerprint="1bfad85c93f3a53d",
+    fingerprint="8f92ec0f9400c2a7",
     fields=[
       @component.FieldInfo::new("target", TyAny),
       @component.FieldInfo::new("rows", TyList(TyAny)),

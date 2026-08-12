@@ -1,17 +1,10 @@
 <script type="tutuca/state">
-  // BarChart's view is here; IconGallery's is not. IconGallery calls a macro
-  // whose body a MoonBit function builds per icon path and registers at run
-  // time, so there is nothing to expand ahead of time — it stays a designated
-  // escape hatch (see macros.mbt).
-  interface bar-chart {
-    record state {
-      values: values,
-    }
+  state BarChart {
+    values : Array[Any]
   }
-  interface icon-gallery {
-    record state {
-      size: s32,
-    }
+
+  state IconGallery {
+    size : Int
   }
 </script>
 

@@ -8,24 +8,30 @@
 //   "moonbitlang/core/debug"
 
 ///|
-/// The state of the PaletteRow component.
+/// One search hit. `why` is the ranking's reasons, joined — a search a
+/// person cannot explain is one they stop trusting, and that is as true of
+/// a standard component as of a loaded one.
 ///
-/// Declared as `interface palette-row` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct PaletteRowState {
   module_ : String
   name : String
   summary : String
   why : String
   category : String
+  /// Where the keyboard is. Held per row rather than as one index on the
+  /// bar so that moving the cursor touches two rows instead of redrawing
+  /// the list.
   selected : Bool
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..PaletteRowState::zero(), label: "Counter" }
@@ -133,6 +139,8 @@ pub fn PaletteRowReceive::send(
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum PaletteRowBubble {
+  /// (module, name, configure). `configure` is ctrl/cmd — "let me fill in
+  /// its arguments" rather than "place it with its defaults".
   ComponentPicked(String, String, Bool)
   /// A bubble the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -248,7 +256,7 @@ pub fn PaletteRowMsg::from_dispatch(d : @component.Dispatch) -> PaletteRowMsg? {
 impl @component.Fields for PaletteRowState with fn schema() {
   @component.SchemaInfo::new(
     name="PaletteRow",
-    fingerprint="6e98eaa98da6eb5c",
+    fingerprint="c2b7bcfd82824d3b",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -265,15 +273,21 @@ impl @component.Fields for PaletteRowState with fn schema() {
 }
 
 ///|
-/// The state of the CommandBar component.
+/// Search the catalog, over everything else on the page.
+/// 
+/// It knows nothing about the catalog: it reports what was typed and gets
+/// rows back, exactly as the palette it replaces did. What is new is the
+/// cursor, because a bar you have to reach for the mouse in is a bar that
+/// is slower than the thing it replaced.
 ///
-/// Declared as `interface command-bar` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct CommandBarState {
   query : String
   hits : Array[@tutuca.Value]
   cursor : Int
+  /// Opened by ctrl/cmd-clicking a `+`: every pick configures.
   configure : Bool
   emptyMessage : String
 }
@@ -281,7 +295,8 @@ pub(all) struct CommandBarState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..CommandBarState::zero(), label: "Counter" }
@@ -465,7 +480,7 @@ pub fn CommandBarMsg::from_dispatch(d : @component.Dispatch) -> CommandBarMsg? {
 impl @component.Fields for CommandBarState with fn schema() {
   @component.SchemaInfo::new(
     name="CommandBar",
-    fingerprint="a0304c23bbe5fd5d",
+    fingerprint="18d79774f4ac3cfd",
     fields=[
       @component.FieldInfo::new("query", TyText),
       @component.FieldInfo::new("hits", TyList(TyAny)),
@@ -480,11 +495,16 @@ impl @component.Fields for CommandBarState with fn schema() {
 }
 
 ///|
-/// The state of the SchemaField component.
+/// One control of the generated form.
+/// 
+/// `kind` picks the control and comes from the field's JSON Schema type;
+/// `hint` is what the constraint says (a range, a length, a format), which
+/// is the half a type cannot state and the half a person needs to see
+/// BEFORE submitting rather than in an error afterwards.
 ///
-/// Declared as `interface schema-field` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaFieldState {
   name : String
   kind : String
@@ -501,7 +521,8 @@ pub(all) struct SchemaFieldState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaFieldState::zero(), label: "Counter" }
@@ -698,7 +719,7 @@ pub fn SchemaFieldMsg::from_dispatch(
 impl @component.Fields for SchemaFieldState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaField",
-    fingerprint="e7d456c2683cd5e5",
+    fingerprint="582149c7effc3fdb",
     fields=[
       @component.FieldInfo::new("name", TyText),
       @component.FieldInfo::new("kind", TyText),
@@ -718,11 +739,15 @@ impl @component.Fields for SchemaFieldState with fn schema() {
 }
 
 ///|
-/// The state of the SchemaForm component.
+/// A form over a component's declared arguments, generated from the JSON
+/// Schema the catalog projects. No per-component code, and no branch on
+/// where the component came from: the same projection an agent's tool
+/// reads is the one this draws, for a guest and for a standard component
+/// alike.
 ///
-/// Declared as `interface schema-form` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaFormState {
   module_ : String
   name : String
@@ -731,13 +756,16 @@ pub(all) struct SchemaFormState {
   fields : Array[@tutuca.Value]
   inits : Array[@tutuca.Value]
   error : String
+  /// What the button says. "Place" when this is filling an empty cell,
+  /// "Apply" when it is reconfiguring something already there.
   submitLabel : String
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaFormState::zero(), label: "Counter" }
@@ -942,7 +970,7 @@ pub fn SchemaFormMsg::from_dispatch(d : @component.Dispatch) -> SchemaFormMsg? {
 impl @component.Fields for SchemaFormState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaForm",
-    fingerprint="5a89572450b645a4",
+    fingerprint="f557cf850df35d59",
     fields=[
       @component.FieldInfo::new("module", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -960,14 +988,25 @@ impl @component.Fields for SchemaFormState with fn schema() {
 }
 
 ///|
-/// The state of the ConfigPanel component.
+/// The sidebar: what the thing you pointed at can be configured with.
+/// 
+/// Two modes, and the choice between them is made where the instance is:
+/// a component that declares a `config` view of its own gets it rendered
+/// live, and everything else gets the form generated from its declared
+/// arguments. `mode` is what the templates switch on, because a null
+/// field renders as nothing and two nulls would be two ways to say
+/// "not this one".
 ///
-/// Declared as `interface config-panel` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ConfigPanelState {
   title : String
+  /// "view" | "form"
   mode : String
+  /// The live instance, when it renders its own config view. It is MOVED
+  /// here rather than copied: an instance rendered in two places has one
+  /// of them holding a dead handle after the first interaction.
   target : @tutuca.Value
   form : @tutuca.Value
 }
@@ -975,7 +1014,8 @@ pub(all) struct ConfigPanelState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ConfigPanelState::zero(), label: "Counter" }
@@ -1132,7 +1172,7 @@ pub fn ConfigPanelMsg::from_dispatch(
 impl @component.Fields for ConfigPanelState with fn schema() {
   @component.SchemaInfo::new(
     name="ConfigPanel",
-    fingerprint="4290ad85e5cbec65",
+    fingerprint="ca3bf0ce51624e89",
     fields=[
       @component.FieldInfo::new("title", TyText),
       @component.FieldInfo::new("mode", TyText),
@@ -1146,24 +1186,46 @@ impl @component.Fields for ConfigPanelState with fn schema() {
 }
 
 ///|
-/// The state of the UniversalApp component.
+/// The universal app: a bar, a root, and whatever chrome is open.
+/// 
+/// The root is ONE component and starts as a universal, so the first thing
+/// a person does is choose what the page is. Everything after that is the
+/// same gesture one level in.
+/// 
+/// There is no document beside the tree. What is on screen IS the state,
+/// and `mode` is pushed down with `@push-view` so a component that has an
+/// `edit` view shows its affordances and one that does not — every guest —
+/// is simply itself.
 ///
-/// Declared as `interface universal-app` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct UniversalAppState {
+  /// The universal component, from `dyncomp/ui/std`. Named rather than
+  /// declared, because it lives in another module and this file cannot see
+  /// it — `Component[X]` resolves through the registration scope at make
+  /// time, which is the only place the name means anything.
   root : @tutuca.Value
+  /// "edit" | "main"
   mode : String
   commandBar : @tutuca.Value
   configPanel : @tutuca.Value
   status : String
+  /// Whatever the HOST wants in the bar — loading bundles, in the wasm
+  /// shell's case. Null in every test and in any host that needs none.
+  /// 
+  /// A component rather than a list of buttons, because this package is
+  /// backend-agnostic and the things a host offers are exactly the things
+  /// it cannot be: fetching an archive, reading a dropped file. The app
+  /// gives it a place to stand and forwards what lands on the page.
   devTools : @tutuca.Value
 }
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..UniversalAppState::zero(), label: "Counter" }
@@ -1223,7 +1285,10 @@ impl @component.Fields for UniversalAppState with fn decode(f) {
 /// raised by component code rather than written in a view, so the views
 /// cannot type them — the schema is the only place they can be declared.
 pub(all) enum UniversalAppReceive {
+  /// A bundle loaded: the catalog changed, so a bar showing results has to
+  /// say so.
   CatalogChanged(String)
+  /// A whole tree, from wherever the shell keeps them.
   RestoreTree(@tutuca.Value)
   /// A receive the schema does not declare, or a declared name whose
   /// runtime arguments did not match the declared types.
@@ -1366,7 +1431,7 @@ pub fn UniversalAppMethod::name(self : UniversalAppMethod) -> String {
 impl @component.Fields for UniversalAppState with fn schema() {
   @component.SchemaInfo::new(
     name="UniversalApp",
-    fingerprint="444fe5b74f6c858a",
+    fingerprint="5c98c4d7587de605",
     fields=[
       @component.FieldInfo::new("root", TyComp(Some("Universal"))),
       @component.FieldInfo::new("mode", TyText),

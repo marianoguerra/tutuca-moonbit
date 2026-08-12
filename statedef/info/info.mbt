@@ -36,8 +36,10 @@ pub fn ty_info(
     TEnum(n) => TyEnum(n)
     TVariant(n) => TyVariant(n)
     TFlags(n) => {
+      // A closed set names an ENUM now, so its membership is the enum's
+      // cases — declared once, where the idea belongs.
       let members : Array[String] = match def.user_ty(n) {
-        Some({ kind: UFlags(ms), .. }) => ms.map(m => m.1)
+        Some({ kind: UEnum(ms), .. }) => ms.map(m => m.1)
         _ => []
       }
       TyFlags(n, members)

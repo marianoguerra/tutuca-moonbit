@@ -18,11 +18,11 @@ fn gen_err(html : String, name : String) -> String {
 }
 
 ///|
-/// A state block wrapping the given interface body for the `board` component.
+/// A state block wrapping the given declarations for the `Board` component.
 fn board(state : String, view : String) -> String {
-  "<script type=\"tutuca/state\">\ninterface board {\n" +
+  "<script type=\"tutuca/state\">\n" +
   state +
-  "\n}\n</script>\n<template>" +
+  "\n</script>\n<template>" +
   view +
   "</template>"
 }
@@ -31,7 +31,7 @@ fn board(state : String, view : String) -> String {
 test "a misspelt root field fails generation and suggests the right name" {
   let msg = gen_err(
     board(
-      "record state { label: string, count: s32 }", "<p><x text=\".labelx\"></x></p>",
+      "state Board { label: String, count: Int }", "<p><x text=\".labelx\"></x></p>",
     ),
     "Board",
   )
@@ -43,7 +43,7 @@ test "a misspelt root field fails generation and suggests the right name" {
 test "a field with no near miss is told where to declare it" {
   let msg = gen_err(
     board(
-      "record state { label: string }", "<p><x text=\".somethingElse\"></x></p>",
+      "state Board { label: String }", "<p><x text=\".somethingElse\"></x></p>",
     ),
     "Board",
   )
@@ -58,12 +58,12 @@ test "reads inside an @each are checked against the ELEMENT type" {
   // it was not even looked at.
   let msg = gen_err(
     board(
-      "record card { title: string, done: bool }\nrecord state { cards: list<card> }",
+      "struct Card { title: String, done: Bool }\nstate Board { cards: Array[Card] }",
       "<ul><li @each=\".cards\"><x text=\".titel\"></x></li></ul>",
     ),
     "Board",
   )
-  assert_true(msg.contains("`.titel` is not a field of card"))
+  assert_true(msg.contains("`.titel` is not a field of Card"))
   assert_true(msg.contains("did you mean `.title`?"))
 }
 
@@ -71,11 +71,11 @@ test "reads inside an @each are checked against the ELEMENT type" {
 test "@value.member inside a loop is checked too" {
   let msg = gen_err(
     board(
-      "record card { title: string }\nrecord state { cards: list<card> }", "<ul><li @each=\".cards\"><x text=\"@value.titel\"></x></li></ul>",
+      "struct Card { title: String }\nstate Board { cards: Array[Card] }", "<ul><li @each=\".cards\"><x text=\"@value.titel\"></x></li></ul>",
     ),
     "Board",
   )
-  assert_true(msg.contains("not a field of the loop item (card)"))
+  assert_true(msg.contains("not a field of the loop item (Card)"))
   assert_true(msg.contains("did you mean `.title`?"))
 }
 
@@ -84,7 +84,7 @@ test "a correct loop body generates cleanly" {
   assert_eq(
     gen_err(
       board(
-        "record card { title: string, done: bool }\nrecord state { cards: list<card> }",
+        "struct Card { title: String, done: Bool }\nstate Board { cards: Array[Card] }",
         "<ul><li @each=\".cards\"><x text=\".title\"></x><x text=\"@value.done\"></x></li></ul>",
       ),
       "Board",
@@ -96,20 +96,20 @@ test "a correct loop body generates cleanly" {
 ///|
 test "@each over a scalar is refused" {
   let msg = gen_err(
-    board("record state { count: s32 }", "<ul><li @each=\".count\">x</li></ul>"),
+    board("state Board { count: Int }", "<ul><li @each=\".count\">x</li></ul>"),
     "Board",
   )
   assert_true(msg.contains("`@each` needs a collection"))
-  assert_true(msg.contains("`.count` is s32"))
+  assert_true(msg.contains("`.count` is Int"))
 }
 
 ///|
 test "@each over a set, a list or an ordered map is fine" {
   for
     expr in [
-      ("record state { tags: text-set }", ".tags"),
-      ("record state { xs: list<s32> }", ".xs"),
-      ("record state { m: value-omap }", ".m"),
+      ("state Board { tags: Set[String] }", ".tags"),
+      ("state Board { xs: Array[Int] }", ".xs"),
+      ("state Board { m: Map[String, Any] }", ".m"),
     ] {
     let (state, path) = expr
     assert_eq(
@@ -123,19 +123,19 @@ test "@each over a set, a list or an ordered map is fine" {
 test "<x render> on a non-component is refused" {
   let msg = gen_err(
     board(
-      "record state { label: string }", "<div><x render=\".label\"></x></div>",
+      "state Board { label: String }", "<div><x render=\".label\"></x></div>",
     ),
     "Board",
   )
   assert_true(msg.contains("`<x render>` needs a component"))
-  assert_true(msg.contains("`.label` is string"))
+  assert_true(msg.contains("`.label` is String"))
 }
 
 ///|
 test "<x render> on a declared child slot is fine" {
   let html = "<script type=\"tutuca/state\">\n" +
-    "interface card { record state { title: string } }\n" +
-    "interface board { record state { lead: card } }\n" +
+    "state Card { title: String }\n" +
+    "state Board { lead: Card }\n" +
     "</script>\n" +
     "<template id=\"Card\"><p><x text=\".title\"></x></p></template>\n" +
     "<template id=\"Board\"><div><x render=\".lead\"></x></div></template>"
@@ -150,7 +150,7 @@ test "an opaque scope silences the checks inside it" {
   assert_eq(
     gen_err(
       board(
-        "record state { detail: any, slot: component, rows: values }",
+        "state Board { detail: Any, slot: Component, rows: Array[Any] }",
         "<div><x render=\".slot\"></x>" +
         "<ul><li @each=\".rows\"><x text=\".whatever\"></x></li></ul>" +
         "</div>",
@@ -177,7 +177,7 @@ test "a file with no state block is checked exactly as before" {
 test "the counter demo's own view passes its schema" {
   // The migrated reference example, checked here as well as by compiling.
   let html = "<script type=\"tutuca/state\">\n" +
-    "interface counter { record state { label: string, count: s32, history: list<s32> } }\n" +
+    "state Counter { label: String, count: Int, history: Array[Int] }\n" +
     "</script>\n" +
     "<template>\n" +
     "  <h1><x text=\".label\"></x>: <x text=\".count\"></x></h1>\n" +
@@ -190,16 +190,16 @@ test "the counter demo's own view passes its schema" {
 test "a nested record two levels down is still checked" {
   let msg = gen_err(
     board(
-      "record inner { deep: string }\n" +
-      "record outer { inner: inner }\n" +
-      "record state { o: outer }",
+      "struct Inner { deep: String }" +
+      "struct Outer { inner: Inner }" +
+      "state Board { o: Outer }",
       "<p><x text=\".o\"></x><span @each=\".o\">x</span></p>",
     ),
     "Board",
   )
   // `.o` is a record, which is not iterable.
   assert_true(msg.contains("`@each` needs a collection"))
-  assert_true(msg.contains("outer"))
+  assert_true(msg.contains("Outer"))
 }
 
 ///|
@@ -211,7 +211,7 @@ test "@push-view and @enrich-with keep the state scope" {
   assert_eq(
     gen_err(
       board(
-        "record state { items: values, view: string, q: string }",
+        "state Board { items: Array[Any], view: String, q: String }",
         "<div @push-view=\".view\"><x render-each=\".items\"></x>" +
         "<p><x text=\".q\"></x></p></div>",
       ),
@@ -223,7 +223,7 @@ test "@push-view and @enrich-with keep the state scope" {
   // if the scope went opaque.
   let msg = gen_err(
     board(
-      "record state { items: values, view: string, q: string }", "<div @push-view=\".view\"><p><x text=\".qq\"></x></p></div>",
+      "state Board { items: Array[Any], view: String, q: String }", "<div @push-view=\".view\"><p><x text=\".qq\"></x></p></div>",
     ),
     "Board",
   )
@@ -237,7 +237,7 @@ test "a container in @show is a test that cannot fail" {
   // EMPTY list too. It reads as a guard and is not one.
   let msg = gen_err(
     board(
-      "record state { alts: list<string> }", "<div @show=\".alts\">alternatives</div>",
+      "state Board { alts: Array[String] }", "<div @show=\".alts\">alternatives</div>",
     ),
     "Board",
   )
@@ -246,7 +246,7 @@ test "a container in @show is a test that cannot fail" {
   // A record is the same story, and so is `@hide`.
   let rec = gen_err(
     board(
-      "record card { title: string }\nrecord state { c: card }", "<div @hide=\".c\">x</div>",
+      "struct Card { title: String }\nstate Board { c: Card }", "<div @hide=\".c\">x</div>",
     ),
     "Board",
   )
@@ -261,7 +261,7 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "record state { alts: list<string> }", "<div @show=\"empty? .alts\">none</div>",
+        "state Board { alts: Array[String] }", "<div @show=\"empty? .alts\">none</div>",
       ),
       "Board",
     ),
@@ -273,7 +273,7 @@ test "a truthiness test that can decide something is left alone" {
   assert_eq(
     gen_err(
       board(
-        "record state { role: string, count: s32, note: option<string>, on: bool }",
+        "state Board { role: String, count: Int, note: String?, on: Bool }",
         "<p @show=\".role\">r</p><p @show=\".count\">c</p>" +
         "<p @show=\".note\">n</p><p @hide=\".on\">o</p>",
       ),
@@ -284,9 +284,7 @@ test "a truthiness test that can decide something is left alone" {
   // An unknown type still checks nothing: unknown is not wrong.
   assert_eq(
     gen_err(
-      board(
-        "record state { anything: any }", "<div @show=\".anything\">x</div>",
-      ),
+      board("state Board { anything: Any }", "<div @show=\".anything\">x</div>"),
       "Board",
     ),
     "",
@@ -300,7 +298,7 @@ test "a constant id inside a loop is not an id" {
   // not visible to an HTML linter reading the source.
   let msg = gen_err(
     board(
-      "record state { items: values }", "<ul><li @each=\".items\" id=\"row\"><x text=\"@value\"></x></li></ul>",
+      "state Board { items: Array[Any] }", "<ul><li @each=\".items\" id=\"row\"><x text=\"@value\"></x></li></ul>",
     ),
     "Board",
   )
@@ -310,7 +308,7 @@ test "a constant id inside a loop is not an id" {
   assert_true(
     gen_err(
       board(
-        "record state { items: values }", "<ul><li @each=\".items\"><span id=\"cell\">x</span></li></ul>",
+        "state Board { items: Array[Any] }", "<ul><li @each=\".items\"><span id=\"cell\">x</span></li></ul>",
       ),
       "Board",
     ).contains("`id=\"cell\"`"),
@@ -322,7 +320,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "record state { items: values }",
+        "state Board { items: Array[Any] }",
         "<ul id=\"list\"><li @each=\".items\" :id=\"$'row-{@key}'\">" +
         "<x text=\"@value\"></x></li></ul>",
       ),
@@ -335,7 +333,7 @@ test "an id outside the loop, and a per-item id, are both fine" {
   assert_eq(
     gen_err(
       board(
-        "record state { items: values }", "<div id=\"pane\"><x render-each=\".items\"></x></div>",
+        "state Board { items: Array[Any] }", "<div id=\"pane\"><x render-each=\".items\"></x></div>",
       ),
       "Board",
     ),
@@ -361,8 +359,8 @@ fn gen_hints(html : String, name : String) -> Array[String] {
 /// Two components in one file: a Page holding a list of Rows.
 fn page_and_row(page_view : String, row_views : String) -> String {
   "<script type=\"tutuca/state\">\n" +
-  "interface page { record state { rows: list<row>, sel: row } }\n" +
-  "interface row { record state { title: string } }\n" +
+  "state Page { rows: Array[Row], sel: Row }\n" +
+  "state Row { title: String }\n" +
   "</script>\n" +
   "<template id=\"Page\">" +
   page_view +
@@ -372,7 +370,7 @@ fn page_and_row(page_view : String, row_views : String) -> String {
 
 ///|
 test "a read inside a loop over CHILD components is checked against that child" {
-  // `list<row>` names a sibling interface, so the element type is the Row
+  // `Array[Row]` names a sibling state, so the element type is the Row
   // component — a thing one StateDef could never answer, which is why the
   // loop body used to go opaque and this typo rendered as null.
   let msg = gen_err(
@@ -461,7 +459,7 @@ test "a view name that does resolve, or cannot be known, is reported by nothing"
   // the hints channel as much as in the fatal one.
   assert_eq(
     gen_hints(
-      "<script type=\"tutuca/state\">\ninterface page { record state { sel: component } }\n</script>" +
+      "<script type=\"tutuca/state\">\nstate Page { sel: Component }\n</script>" +
       "<template id=\"Page\"><x render=\".sel\" as=\"edit\"></x></template>",
       "Page",
     ).length(),

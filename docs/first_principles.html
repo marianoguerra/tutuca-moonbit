@@ -1,13 +1,18 @@
 <script type="tutuca/state">
-  interface fp-greeting {
-    record state { name: string }
+  state FpGreeting {
+    name : String
   }
-  interface note {
-    record state { text: string }
-    variant receive { write(string) }
+
+  state Note {
+    text : String
   }
-  interface mailbox {
-    record state { note: note }
+
+  receive Note {
+    Write(String)
+  }
+
+  state Mailbox {
+    note : Note
   }
 </script>
 

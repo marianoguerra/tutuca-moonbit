@@ -15,14 +15,12 @@
 fn counter_card() -> String {
   (
     #|<script type="tutuca/state">
-    #|  interface counter {
-    #|    record state {
-    #|      label: string,
-    #|      count: s32,
-    #|      history: list<s32>,
-    #|    }
-    #|    variant receive { reset-to(s32) }
+    #|  state {
+    #|    label   : String
+    #|    count   : Int
+    #|    history : Array[Int]
     #|  }
+    #|  receive { ResetTo(Int) }
     #|</script>
     #|
     #|<script type="tutuca/script">
@@ -150,9 +148,7 @@ fn load_err(source : String) -> String {
 ///|
 test "a card is one component, and needs a view" {
   assert_eq(
-    load_err(
-      "<script type=\"tutuca/state\">interface c { record state { n: s32 } }</script>",
-    ),
+    load_err("<script type=\"tutuca/state\">state { n : Int }</script>"),
     "a card needs at least one <template>: state and script describe a component, and a view is what makes one visible",
   )
   assert_eq(
@@ -182,7 +178,7 @@ test "a type error is reported and the card still mounts" {
   // until everything is right is what makes a live editor unusable.
   let src =
     #|<script type="tutuca/state">
-    #|  interface c { record state { note: s32 } }
+    #|  state { note : Int }
     #|</script>
     #|<script type="tutuca/script">
     #|  on x { .noet = 1 }

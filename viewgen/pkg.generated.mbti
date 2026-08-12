@@ -25,7 +25,7 @@ pub fn generate(String, name~ : String, source_file~ : String) -> String raise G
 
 pub fn ir_supported(@viewfile.ViewFile) -> Bool
 
-pub fn split_file(String) -> @viewfile.ViewFile raise GenError
+pub fn split_file(String, name? : String) -> @viewfile.ViewFile raise GenError
 
 pub fn variant_name(String) -> String
 
@@ -45,6 +45,7 @@ pub suberror GenError {
   AlwaysTruthy(view~ : String, directive~ : String, expr~ : String, ty~ : String)
   NotIterable(view~ : String, expr~ : String, ty~ : String)
   NotRenderable(view~ : String, expr~ : String, ty~ : String)
+  BadScriptBlock(comp~ : String, line~ : Int, message~ : String)
 }
 pub fn GenError::message(Self) -> String
 

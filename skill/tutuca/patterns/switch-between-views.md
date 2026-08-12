@@ -8,7 +8,7 @@ one with no suffix.
 
 ```html
 <script type="tutuca/state">
-  interface note { record state { title: string } }
+  state Note { title: String }
 </script>
 
 <template id="Note"><p @text=".title"></p></template>

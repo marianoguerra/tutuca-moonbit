@@ -11,11 +11,11 @@ what differs.
 A playground runs the **same view generator** `tutuca gen-views` does,
 in the browser, on every run — so every generated name documented in
 [cli.md](./cli.md) applies verbatim. Naming derives from the template /
-interface ids in the view source:
+component names in the view source:
 
 | In the view file | Generated |
 | ---------------- | --------- |
-| `<template id="Items">` / `interface items` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
+| `<template id="Items">` / `state Items` | `items_views()`, `ItemsState`, `ItemsState::zero()`, `items_component(...)` |
 | the `@on` names the templates use | `ItemsMsg` + `ItemsMsg::from_dispatch` (payload types per the table in [core.md](./core.md) *Generated `Msg` payload types*) |
 | the `$`-callables / `@when` / `@enrich-with` names | `ItemsMethod`, `ItemsWhen`, … — the closed bucket enums |
 

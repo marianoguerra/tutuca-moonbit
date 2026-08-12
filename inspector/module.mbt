@@ -157,13 +157,11 @@ fn instance_args(v : @tutuca.Value) -> Map[String, @tutuca.Value] {
 /// A sample descriptor exercising every summary channel (RichSample in
 /// component-inspector.dev.js). Only introspected, never registered/rendered.
 fn rich_sample_comp() -> @component.Component {
+  // The two `$`-callables this sample used to declare — `label` and `double`
+  // — were `func` declarations in the state block, and `func` is gone: a
+  // callable belongs in the script block with every other callable. No view
+  // here calls them, so nothing is left to answer.
   rich_sample_component(
-    compute=m => {
-      match m {
-        Label => Some((s, _args) => Str(s.title))
-        Double => Some((s, _args) => Num((s.count * 2).to_double()))
-      }
-    },
     update=(s, msg, _ctx) => {
       match msg {
         Input("inc", _) => Some({ ..s, count: s.count + 1 })

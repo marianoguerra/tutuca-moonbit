@@ -10,9 +10,9 @@
 ///|
 /// The state of the TrafficLight component.
 ///
-/// Declared as `interface traffic-light` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TrafficLightState {
   lightIndex : Int
 }
@@ -20,7 +20,8 @@ pub(all) struct TrafficLightState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TrafficLightState::zero(), label: "Counter" }
@@ -128,7 +129,7 @@ pub fn TrafficLightMethod::name(self : TrafficLightMethod) -> String {
 impl @component.Fields for TrafficLightState with fn schema() {
   @component.SchemaInfo::new(
     name="TrafficLight",
-    fingerprint="641f8260005d94a3",
+    fingerprint="081e8d53fd59b34a",
     fields=[@component.FieldInfo::new("lightIndex", TyInt)],
     inputs=["nextLight"],
     methods=["light"],
@@ -139,9 +140,9 @@ impl @component.Fields for TrafficLightState with fn schema() {
 ///|
 /// The state of the TabbedUI component.
 ///
-/// Declared as `interface tabbed-u-i` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TabbedUIState {
   tab : String
 }
@@ -149,7 +150,8 @@ pub(all) struct TabbedUIState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TabbedUIState::zero(), label: "Counter" }
@@ -241,7 +243,7 @@ pub fn TabbedUIMsg::from_dispatch(d : @component.Dispatch) -> TabbedUIMsg? {
 impl @component.Fields for TabbedUIState with fn schema() {
   @component.SchemaInfo::new(
     name="TabbedUI",
-    fingerprint="91f1c8c673117b38",
+    fingerprint="e232ce34c046543a",
     fields=[@component.FieldInfo::new("tab", TyText)],
     inputs=["setTab"],
     ids=["t-features", "t-overview", "t-pricing"],
@@ -252,9 +254,9 @@ impl @component.Fields for TabbedUIState with fn schema() {
 ///|
 /// The state of the ListAndFilter component.
 ///
-/// Declared as `interface list-and-filter` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ListAndFilterState {
   items : Array[@tutuca.Value]
   query : String
@@ -263,7 +265,8 @@ pub(all) struct ListAndFilterState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ListAndFilterState::zero(), label: "Counter" }
@@ -386,7 +389,7 @@ pub fn ListAndFilterWhen::name(self : ListAndFilterWhen) -> String {
 impl @component.Fields for ListAndFilterState with fn schema() {
   @component.SchemaInfo::new(
     name="ListAndFilter",
-    fingerprint="80f3b6c5cd0e5b4d",
+    fingerprint="6eb593b5f1869080",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),

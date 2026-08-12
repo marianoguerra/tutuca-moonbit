@@ -7,15 +7,8 @@ Declare the field with the child's interface name — that makes it a **slot**:
 
 ```html
 <script type="tutuca/state">
-  interface card {
-    record state {
-      mode: string,
-      greeting: greeting,
-    }
-  }
-  interface greeting {
-    record state { name: string }
-  }
+  state Card { mode: String, greeting: Greeting }
+    state Greeting { name: String }
 </script>
 
 <template id="Card">

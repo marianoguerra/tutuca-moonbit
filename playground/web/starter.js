@@ -19,15 +19,13 @@ const EXAMPLES = {
      names it declares. Adding an @on handler here breaks the match below
      until you handle it — that is the point. -->
 
-<!-- The state is declared here too, in a WIT subset: CounterState, its
-     zero(), and its @component.Fields impl (schema + codec) are generated
-     from this block, so the component tab never writes a codec by hand. -->
+<!-- The state is declared here too: CounterState, its zero(), and its
+     @component.Fields impl (schema + codec) are generated from this block,
+     so the component tab never writes a codec by hand. -->
 <script type="tutuca/state">
-  interface counter {
-    record state {
-      count: s32,
-      label: string,
-    }
+  state Counter {
+    count : Int
+    label : String
   }
 </script>
 
@@ -73,10 +71,8 @@ fn build() -> @component.ModuleDef {
   // all, and no update. The View tab still compiles ahead of time.
   Toggle: {
     view: `<script type="tutuca/state">
-  interface panel {
-    record state {
-      open: bool,
-    }
+  state Panel {
+    open : Bool
   }
 </script>
 
@@ -113,10 +109,8 @@ fn build() -> @component.ModuleDef {
   // generated $setName mutator. @text mirrors it live. No handlers needed.
   "Text input": {
     view: `<script type="tutuca/state">
-  interface greeter {
-    record state {
-      name: string,
-    }
+  state Greeter {
+    name : String
   }
 </script>
 

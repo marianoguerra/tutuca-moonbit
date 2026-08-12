@@ -27,7 +27,7 @@ and formal `spec.mbt`. From the bottom up:
 | **Virtual DOM** | `vdom/` (+ `vdom/memdom`, `vdom/browser`, `vdom/wasm`) | Builds and incrementally morphs a VDOM against any DOM implementing the `DomNode` trait. |
 | **Render** | `render/` | Turns a parsed view + a value stack into a `@vdom.Vdom` tree (loops, scopes, event-path metas, teleport). |
 | **Components / App** | `component/`, `app/` (+ `app/browser`, `app/wasm`), `transactor/` | Typed-state component definitions (a plain struct + one `Dispatch` update match), the app runtime, and the transactor that routes events at the root and settles state. |
-| **Tooling** | `lint/`, `inspector/`, `statedef/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the WIT-subset state schema, the ahead-of-time view compiler, and the native `tutuca` CLI. |
+| **Tooling** | `lint/`, `inspector/`, `statedef/`, `viewgen/`, `cli/` | The linter (parse-issue rules + a WHATWG-tokenizer structural HTML linter), a schema inspector, the state schema language, the ahead-of-time view compiler, and the native `tutuca` CLI. |
 | **Testing** | `testing/harness` | A reusable harness to mount and drive a `ModuleDef` on the in-memory DOM. |
 | **Universal core** | `dyncomp/` — `wit/` (the `tutuca:component` contract), `host/` (+ `host/wasm`), `policy/`, `registry/`, `jsonschema/`, `persist/` (+ `persist/wasm`) | Loading a WebAssembly component from anywhere into a *running* app: the contract it implements, the host that wraps it as an ordinary `&Obj`, what a bundle from a stranger is allowed to do, the searchable catalog of everything loaded, and the schema ⇄ JSON Schema projection both a form and an agent's tool read. See [`dyncomp/DESIGN.md`](dyncomp/DESIGN.md). |
 | **Universal UI** | `dyncomp/ui/` (+ `dyncomp/ui/std`, `dyncomp/ui/wasm`) | The page a person arranges out of that catalog. The component tree IS the layout — `Universal`, `Stack`, `Grid`, `Tabs` are ordinary tutuca components, and a loaded guest is decorated exactly like a standard one. The editor is backend-agnostic, so `moon test` drives the whole thing on the in-memory DOM; `ui/wasm` is the half that cannot be — the bundle bridge, the session store, and `mount()`. See [`docs/dynamic-components.md`](docs/dynamic-components.md). |
@@ -93,15 +93,13 @@ The package it lands in must import
 `"marianoguerra/tutuca/core" @tutuca`, `"marianoguerra/tutuca/component"` and
 `"moonbitlang/core/debug"`.
 
-A view file may also declare its component's data contract, in a small
-subset of WIT, next to the templates that read it:
+A view file may also declare its component's data contract, in a small language
+that spells its types the way MoonBit does, next to the templates that read it:
 
 ```html
 <script type="tutuca/state">
-  interface counter {
-    record state { label: string, count: s32, history: list<s32> }
-    variant receive { reset-to(s32) }
-  }
+  state Counter { label: String, count: Int, history: Array[Int] }
+  receive Counter { ResetTo(Int) }
 </script>
 ```
 

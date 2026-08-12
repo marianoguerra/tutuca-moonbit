@@ -155,7 +155,7 @@ test "the script block is lifted out unparsed, with where it came from" {
   let vs = @viewfile.split_file(
     (
       #|<script type="tutuca/state">
-      #|  interface counter { record state { count: s32 } }
+      #|  state Counter { count: Int }
       #|</script>
       #|
       #|<script type="tutuca/script">
@@ -165,7 +165,7 @@ test "the script block is lifted out unparsed, with where it came from" {
       #|<template><button @on.click="add 1">+1</button></template>
     ),
   )
-  guard! vs.script is Some(block)
+  guard! vs.script_for("") is Some(block)
   // Raw text, exactly as written. Nothing here knows what a declaration is —
   // checking one needs the schema and the views' call sites, and neither is
   // in hand at split time.
@@ -179,11 +179,11 @@ test "the script block is lifted out unparsed, with where it came from" {
   )
   // The block starts on line 5 (1-based): the state block is lines 1-3, then
   // a blank, then the opening tag. The offset is the character just past that
-  // tag's `>` — line 5 begins at 92 and `<script type="tutuca/script">` is 29
+  // tag's `>` — line 5 begins at 71 and `<script type="tutuca/script">` is 29
   // characters — so a span inside the block rebases onto the file exactly,
   // column included.
   assert_eq(block.line, 5)
-  assert_eq(block.offset, 121)
+  assert_eq(block.offset, 100)
   // …and it is NOT part of any view, the same way the schema is not.
   assert_eq(only(vs).views[0].source, "<button @on.click=\"add 1\">+1</button>")
 }
@@ -193,19 +193,46 @@ test "a file with no script block says so, rather than carrying an empty one" {
   // Which is every view file that predates the language, and is why the field
   // is an option rather than a String that happens to be blank.
   let vs = @viewfile.split_file("<template><b>hi</b></template>")
-  assert_true(vs.script is None)
+  assert_true(vs.script_for("") is None)
 }
 
 ///|
-test "two script blocks are refused" {
+test "one script block per component, named the way a template id is" {
+  // A block is written about ONE component — `.title` means that component's
+  // state and nothing else — so a file declaring four of them needs four
+  // blocks. `for=` is the same device `<template id="Counter:row">` already
+  // uses one element over.
   inspect(
     split_error(
       "<script type=\"tutuca/script\">on a {}</script>" +
       "<script type=\"tutuca/script\">on b {}</script>" +
       "<template><b>hi</b></template>",
     ),
-    content="two <script type=\"tutuca/script\"> blocks — one file declares one script, with one set of handlers per component",
+    content="two unqualified <script type=\"tutuca/script\"> blocks — a block is written about ONE component, so name each one with `for=\"Comp\"`",
   )
+  inspect(
+    split_error(
+      "<script type=\"tutuca/script\" for=\"Row\">on a {}</script>" +
+      "<script type=\"tutuca/script\" for=\"Row\">on b {}</script>" +
+      "<template id=\"Row\"><b>hi</b></template>",
+    ),
+    content="two <script type=\"tutuca/script\" for=\"Row\"> blocks — one component answers one set of handlers",
+  )
+  // Named blocks, one each: both are kept, and each answers for its own.
+  let vs = @viewfile.split_file(
+    "<script type=\"tutuca/script\" for=\"Row\">on a {}</script>" +
+    "<script type=\"tutuca/script\" for=\"Cell\">on b {}</script>" +
+    "<template id=\"Row\"><b>hi</b></template>" +
+    "<template id=\"Cell\"><i>c</i></template>",
+  )
+  assert_eq(vs.scripts.length(), 2)
+  guard! vs.script_for("Row") is Some(row)
+  assert_eq(row.text, "on a {}")
+  guard! vs.script_for("Cell") is Some(cell)
+  assert_eq(cell.text, "on b {}")
+  // …and a component with no block of its own has none, rather than the
+  // other component's.
+  assert_true(vs.script_for("Nobody") is None)
 }
 
 ///|
@@ -216,7 +243,7 @@ test "a script block does not make a schema-only file into a view" {
   let vs = @viewfile.split_file(
     (
       #|<script type="tutuca/state">
-      #|  interface counter { record state { count: s32 } }
+      #|  state Counter { count: Int }
       #|</script>
       #|<script type="tutuca/script">
       #|  on add(d) { .count += d }
@@ -225,5 +252,5 @@ test "a script block does not make a schema-only file into a view" {
   )
   assert_eq(vs.components.length(), 0)
   assert_eq(vs.state.length(), 1)
-  assert_true(vs.script is Some(_))
+  assert_true(vs.script_for("") is Some(_))
 }

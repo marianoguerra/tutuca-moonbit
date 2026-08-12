@@ -10,9 +10,9 @@
 ///|
 /// The state of the RequestExample component.
 ///
-/// Declared as `interface request-example` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct RequestExampleState {
   items : Array[@tutuca.Value]
   query : String
@@ -24,7 +24,8 @@ pub(all) struct RequestExampleState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..RequestExampleState::zero(), label: "Counter" }
@@ -171,7 +172,7 @@ pub fn RequestExampleWhen::name(self : RequestExampleWhen) -> String {
 impl @component.Fields for RequestExampleState with fn schema() {
   @component.SchemaInfo::new(
     name="RequestExample",
-    fingerprint="fb42c79b675f798e",
+    fingerprint="7e70c0faef442b04",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("query", TyText),

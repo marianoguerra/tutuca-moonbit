@@ -10,15 +10,16 @@
 ///|
 /// The state of the MinimumViableComponent component.
 ///
-/// Declared as `interface minimum-viable-component` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct MinimumViableComponentState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..MinimumViableComponentState::zero(), label: "Counter" }
@@ -62,7 +63,7 @@ pub let minimum_viable_component_global_style : String = ""
 impl @component.Fields for MinimumViableComponentState with fn schema() {
   @component.SchemaInfo::new(
     name="MinimumViableComponent",
-    fingerprint="0f2138963e0265a7",
+    fingerprint="ecc47909bcda35e3",
     view_names=["main"],
   )
 }
@@ -70,15 +71,16 @@ impl @component.Fields for MinimumViableComponentState with fn schema() {
 ///|
 /// The state of the StaticViewComponent component.
 ///
-/// Declared as `interface static-view-component` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct StaticViewComponentState {} derive(Default)
 
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..StaticViewComponentState::zero(), label: "Counter" }
@@ -122,7 +124,7 @@ pub let static_view_component_global_style : String = ""
 impl @component.Fields for StaticViewComponentState with fn schema() {
   @component.SchemaInfo::new(
     name="StaticViewComponent",
-    fingerprint="a2006cc55bf0a041",
+    fingerprint="47dd7f8ad000b12d",
     view_names=["main"],
   )
 }
@@ -130,9 +132,9 @@ impl @component.Fields for StaticViewComponentState with fn schema() {
 ///|
 /// The state of the TextDirective component.
 ///
-/// Declared as `interface text-directive` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct TextDirectiveState {
   str : String
   num : Int
@@ -143,7 +145,8 @@ pub(all) struct TextDirectiveState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..TextDirectiveState::zero(), label: "Counter" }
@@ -210,7 +213,7 @@ pub fn TextDirectiveMethod::name(self : TextDirectiveMethod) -> String {
 impl @component.Fields for TextDirectiveState with fn schema() {
   @component.SchemaInfo::new(
     name="TextDirective",
-    fingerprint="f6fb027d2388083c",
+    fingerprint="ee16bc73dceecdbf",
     fields=[
       @component.FieldInfo::new("str", TyText),
       @component.FieldInfo::new("num", TyInt),
@@ -225,9 +228,9 @@ impl @component.Fields for TextDirectiveState with fn schema() {
 ///|
 /// The state of the DangerSetInnerHtml component.
 ///
-/// Declared as `interface danger-set-inner-html` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct DangerSetInnerHtmlState {
   content : String
 }
@@ -235,7 +238,8 @@ pub(all) struct DangerSetInnerHtmlState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..DangerSetInnerHtmlState::zero(), label: "Counter" }
@@ -280,7 +284,7 @@ pub let danger_set_inner_html_global_style : String = ""
 impl @component.Fields for DangerSetInnerHtmlState with fn schema() {
   @component.SchemaInfo::new(
     name="DangerSetInnerHtml",
-    fingerprint="20e28deaad6a8c77",
+    fingerprint="9eb2c5ca83a8d5b2",
     fields=[@component.FieldInfo::new("content", TyText)],
     view_names=["main"],
   )
@@ -289,9 +293,9 @@ impl @component.Fields for DangerSetInnerHtmlState with fn schema() {
 ///|
 /// The state of the SetInnerMd component.
 ///
-/// Declared as `interface set-inner-md` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SetInnerMdState {
   source : String
 }
@@ -299,7 +303,8 @@ pub(all) struct SetInnerMdState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SetInnerMdState::zero(), label: "Counter" }
@@ -344,7 +349,7 @@ pub let set_inner_md_global_style : String = ""
 impl @component.Fields for SetInnerMdState with fn schema() {
   @component.SchemaInfo::new(
     name="SetInnerMd",
-    fingerprint="5b10907b40caa045",
+    fingerprint="e514037557942521",
     fields=[@component.FieldInfo::new("source", TyText)],
     view_names=["main"],
   )

@@ -39,9 +39,9 @@ fn view_diagnostics(
   // interface name looks like — so it is reported, not generated in silence.
   let declared = @viewgen.declared_components(file, fallback)
   for def in file.state {
-    if !declared.contains(def.component) {
+    if !declared.contains(def.component_name(fallback)) {
       out.push(
-        "state-without-views (hint) \{def.component}: the schema declares it but no <template> here gives it views" +
+        "state-without-views (hint) \{def.component_name(fallback)}: the schema declares it but no <template> here gives it views" +
         (if declared.is_empty() {
           ""
         } else {
@@ -343,7 +343,7 @@ pub fn gen_views_all(
   let split : Array[(GenInput, @viewfile.ViewFile)] = []
   let index = @viewgen.ProgramIndex::new()
   for f in files {
-    let views = @viewgen.split_file(f.source) catch {
+    let views = @viewgen.split_file(f.source, name=f.name) catch {
       e =>
         return Err(
           err(

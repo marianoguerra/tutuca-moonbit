@@ -17,24 +17,22 @@ fn def_of(src : String) -> @statedef.StateDef raise {
 /// A schema with one field of most shapes, so a case can pick what it needs.
 fn schema() -> String {
   (
-    #|interface counter {
-    #|  enum priority { low, high }
-    #|  record label { text: string, done: bool }
-    #|  record state {
-    #|    name: string,
-    #|    count: s32,
-    #|    ratio: f64,
-    #|    ok: bool,
-    #|    items: list<string>,
-    #|    labels: list<label>,
-    #|    tags: text-set,
-    #|    by-key: text-omap,
-    #|    pri: priority,
-    #|    blob: any,
-    #|  }
-    #|  variant receive { reset-to(s32), rename(tuple<string, s32>) }
-    #|  variant bubble { row-picked(s32) }
+    #|enum Priority { Low, High }
+    #|struct Label { text: String, done: Bool }
+    #|state Counter {
+    #|  name   : String
+    #|  count  : Int
+    #|  ratio  : Double
+    #|  ok     : Bool
+    #|  items  : Array[String]
+    #|  labels : Array[Label]
+    #|  tags   : Set[String]
+    #|  byKey  : Map[String, String]
+    #|  pri    : Priority
+    #|  blob   : Any
     #|}
+    #|receive Counter { ResetTo(Int), Rename(String, Int) }
+    #|bubble  Counter { RowPicked(Int) }
   )
 }
 
@@ -69,10 +67,10 @@ test "an unknown field is named, and the message guesses" {
 test "a nested read is checked all the way down" {
   assert_eq(codes("on x { .labels[0].done = true }"), [])
   assert_eq(messages("on x { .labels[0].dnoe = true }"), [
-    "`label` has no field `dnoe`",
+    "`Label` has no field `dnoe`",
   ])
   assert_eq(messages("compute a { .count[0] }"), [
-    "`s32` is not a collection, so it has nothing to index",
+    "`Int` is not a collection, so it has nothing to index",
   ])
 }
 
@@ -85,7 +83,7 @@ test "assignment types have to fit, and the numeric surface is one" {
   // shape — narrowing is a range check at run time, not a type error here.
   assert_eq(codes("on x { .count = .ratio }"), [])
   assert_eq(messages("on x { .count = 'hi' }"), [
-    "this place is s32, but the value is string",
+    "this place is Int, but the value is String",
   ])
   // `any` takes anything, which is what it is for.
   assert_eq(codes("on x { .blob = 'hi' }"), [])
@@ -97,7 +95,7 @@ test "assignment types have to fit, and the numeric surface is one" {
 test "compound assignment is arithmetic" {
   assert_eq(codes("on x { .count += 1 }"), [])
   assert_eq(messages("on x { .name += 'x' }"), [
-    "`+=` is arithmetic, but this place is string",
+    "`+=` is arithmetic, but this place is String",
   ])
 }
 
@@ -112,7 +110,7 @@ test "a message handler's parameters come from the schema, exactly" {
   // …and the parameter really is typed by the payload, so misusing it is
   // caught rather than passing as opaque.
   assert_eq(messages("receive rename(s, n) { .count = s }"), [
-    "this place is s32, but the value is string",
+    "this place is Int, but the value is String",
   ])
 }
 
@@ -153,7 +151,7 @@ test "a builtin's arity is checked, and its result type is known" {
   assert_eq(codes("on x { .count = len .items }"), [])
   // …and `trim` answers text, so it does not.
   assert_eq(messages("on x { .count = trim .name }"), [
-    "this place is s32, but the value is string",
+    "this place is Int, but the value is String",
   ])
 }
 
@@ -171,7 +169,7 @@ test "a container never decides a condition" {
   // The same finding `AlwaysTruthy` makes about `@show` over a list: a List,
   // a Map and an Obj are truthy unconditionally.
   assert_eq(messages("pred p { .items }"), [
-    "list<string> is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it",
+    "Array[String] is always truthy, so this condition never decides anything — test `empty?` of it, or a field of it",
   ])
   assert_eq(codes("pred p { empty? .items }"), [])
   // A string and a number stay boolish on purpose: `@show=".name"` beside
@@ -200,10 +198,10 @@ test "arithmetic needs numbers, and + concatenates two strings" {
   assert_eq(codes("compute n { .count + 1 }"), [])
   assert_eq(codes("compute s { .name + 'x' }"), [])
   assert_eq(messages("compute n { .count + .name }"), [
-    "arithmetic needs a number, but this is string",
+    "arithmetic needs a number, but this is String",
   ])
   assert_eq(messages("compute n { .name * 2 }"), [
-    "arithmetic needs a number, but this is string",
+    "arithmetic needs a number, but this is String",
   ])
 }
 
@@ -212,7 +210,7 @@ test "a comparison that can only answer one way is reported" {
   assert_eq(codes("pred p { .count is 2 }"), [])
   assert_eq(codes("pred p { .name is 'x' }"), [])
   assert_eq(messages("pred p { .name is 2 }"), [
-    "string and f64 are never equal, so this comparison has one answer",
+    "String and Double are never equal, so this comparison has one answer",
   ])
 }
 
@@ -224,10 +222,10 @@ test "a collection method has to fit its receiver" {
   assert_eq(codes("on x(v) { .tags.add v }"), [])
   assert_eq(codes("on x(k, v) { .byKey.setAt k v }"), [])
   assert_eq(messages("on x(v) { .items.add v }"), [
-    "`add` does not apply to list<string>",
+    "`add` does not apply to Array[String]",
   ])
   assert_eq(messages("on x(v) { .byKey.push v }"), [
-    "`push` does not apply to an ordered map of string",
+    "`push` does not apply to Map[String, String]",
   ])
 }
 
@@ -284,7 +282,7 @@ test "an on handler's argument types come from the views' call sites" {
   let surface : @check.Surface = { inputs: { "add": [Some(TFloat)] } }
   assert_eq(
     @check.check(decls, def_of(schema()), surface~).map(f => f.message),
-    ["this place is string, but the value is f64"],
+    ["this place is String, but the value is Double"],
   )
 }
 

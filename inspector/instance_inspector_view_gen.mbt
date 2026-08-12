@@ -10,9 +10,9 @@
 ///|
 /// The state of the InstanceFields component.
 ///
-/// Declared as `interface instance-fields` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct InstanceFieldsState {
   items : Array[@tutuca.Value]
   isExpanded : Bool
@@ -24,7 +24,8 @@ pub(all) struct InstanceFieldsState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceFieldsState::zero(), label: "Counter" }
@@ -200,7 +201,7 @@ pub fn InstanceFieldsLoopWith::name(self : InstanceFieldsLoopWith) -> String {
 impl @component.Fields for InstanceFieldsState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceFields",
-    fingerprint="b02c70c78c681361",
+    fingerprint="250e84a7d398d710",
     fields=[
       @component.FieldInfo::new("items", TyList(TyAny)),
       @component.FieldInfo::new("isExpanded", TyBool),
@@ -220,9 +221,9 @@ impl @component.Fields for InstanceFieldsState with fn schema() {
 ///|
 /// The state of the InstanceInspector component.
 ///
-/// Declared as `interface instance-inspector` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct InstanceInspectorState {
   value : @tutuca.Value
 }
@@ -230,7 +231,8 @@ pub(all) struct InstanceInspectorState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceInspectorState::zero(), label: "Counter" }
@@ -275,7 +277,7 @@ pub let instance_inspector_global_style : String = ""
 impl @component.Fields for InstanceInspectorState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceInspector",
-    fingerprint="dc6d2f180419a084",
+    fingerprint="7671eca5ec353551",
     fields=[@component.FieldInfo::new("value", TyAny)],
     view_names=["main"],
   )
@@ -284,9 +286,9 @@ impl @component.Fields for InstanceInspectorState with fn schema() {
 ///|
 /// The state of the InstanceExplorer component.
 ///
-/// Declared as `interface instance-explorer` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct InstanceExplorerState {
   activeTab : String
   instanceView : @tutuca.Value
@@ -297,7 +299,8 @@ pub(all) struct InstanceExplorerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..InstanceExplorerState::zero(), label: "Counter" }
@@ -409,7 +412,7 @@ pub fn InstanceExplorerMsg::from_dispatch(
 impl @component.Fields for InstanceExplorerState with fn schema() {
   @component.SchemaInfo::new(
     name="InstanceExplorer",
-    fingerprint="7b0fa55820264791",
+    fingerprint="eef9b127adea0340",
     fields=[
       @component.FieldInfo::new("activeTab", TyText),
       @component.FieldInfo::new("instanceView", TyAny),

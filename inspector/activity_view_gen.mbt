@@ -10,9 +10,9 @@
 ///|
 /// The state of the ActivityEntry component.
 ///
-/// Declared as `interface activity-entry` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ActivityEntryState {
   kind : String
   name : String
@@ -28,7 +28,8 @@ pub(all) struct ActivityEntryState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ActivityEntryState::zero(), label: "Counter" }
@@ -111,7 +112,7 @@ pub let activity_entry_global_style : String = ""
 impl @component.Fields for ActivityEntryState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityEntry",
-    fingerprint="d3dd8d6a5a69b8b2",
+    fingerprint="adea2931e42acf62",
     fields=[
       @component.FieldInfo::new("kind", TyText),
       @component.FieldInfo::new("name", TyText),
@@ -130,9 +131,9 @@ impl @component.Fields for ActivityEntryState with fn schema() {
 ///|
 /// The state of the ActivityLog component.
 ///
-/// Declared as `interface activity-log` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct ActivityLogState {
   events : Array[@tutuca.Value]
   hasEvents : Bool
@@ -141,7 +142,8 @@ pub(all) struct ActivityLogState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..ActivityLogState::zero(), label: "Counter" }
@@ -251,7 +253,7 @@ pub let activity_log_global_style : String = ""
 impl @component.Fields for ActivityLogState with fn schema() {
   @component.SchemaInfo::new(
     name="ActivityLog",
-    fingerprint="f3de3a72eae2fe61",
+    fingerprint="f21618b58255b88b",
     fields=[
       @component.FieldInfo::new("events", TyList(TyAny)),
       @component.FieldInfo::new("hasEvents", TyBool),

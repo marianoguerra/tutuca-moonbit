@@ -10,9 +10,9 @@
 ///|
 /// The state of the SchemaViewer component.
 ///
-/// Declared as `interface schema-viewer` in the state block. Adding a
-/// field there adds it here, so a view that reads it type-checks and one
-/// that reads a name this struct lacks fails generation.
+/// Declared as `state` in the state block. Adding a field there adds it
+/// here, so a view that reads it type-checks and one that reads a name
+/// this struct lacks fails generation.
 pub(all) struct SchemaViewerState {
   value : @tutuca.Value
   raw : @tutuca.Value
@@ -23,7 +23,8 @@ pub(all) struct SchemaViewerState {
 ///|
 /// The zero state: every field at its type's empty value.
 ///
-/// WIT declares no defaults — a default is a value, not a type — so this
+/// The state block declares no defaults — a default is a value, not a
+/// type — so this
 /// is type-directed, and `init` spreads it to name only what differs:
 ///
 ///   init={ ..SchemaViewerState::zero(), label: "Counter" }
@@ -143,7 +144,7 @@ pub fn SchemaViewerMethod::name(self : SchemaViewerMethod) -> String {
 impl @component.Fields for SchemaViewerState with fn schema() {
   @component.SchemaInfo::new(
     name="SchemaViewer",
-    fingerprint="ec51fa7271aa7a98",
+    fingerprint="9eb9d2df4c5e78de",
     fields=[
       @component.FieldInfo::new("value", TyAny),
       @component.FieldInfo::new("raw", TyAny),

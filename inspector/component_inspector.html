@@ -1,42 +1,39 @@
 <script type="tutuca/state">
-  interface comp-name {
-    record state { name: string }
+  state CompName {
+    name : String
   }
-  interface comp-field {
-    record state {
-      name: string,
-      type-name: string,
-      child: any,
-    }
+
+  state CompField {
+    name : String
+    typeName : String
+    child : Any
   }
-  interface comp-view {
-    record state {
-      name: string,
-      raw-view: string,
-      is-expanded: bool,
-    }
+
+  state CompView {
+    name : String
+    rawView : String
+    isExpanded : Bool
   }
-  interface comp-section {
-    record state {
-      items: values,
-      is-expanded: bool,
-      items-per-page: s32,
-      current-page: s32,
-      label: string,
-    }
+
+  state CompSection {
+    items : Array[Any]
+    isExpanded : Bool
+    itemsPerPage : Int
+    currentPage : Int
+    label : String
   }
-  interface component-inspector {
-    record state {
-      comp-name: string,
-      comp-id: s32,
-      sections: values,
-    }
-    /// Raised by a CompSection / CompView on a ctrl-click, so it arrives here
-    /// as a Bubble. No view of this component declares it.
-    variant bubble {
-      toggle-all-sections(bool),
-      toggle-all-views(bool),
-    }
+
+  state ComponentInspector {
+    compName : String
+    compId : Int
+    sections : Array[Any]
+  }
+
+  /// Raised by a CompSection / CompView on a ctrl-click, so it arrives here
+  /// as a Bubble. No view of this component declares it.
+  bubble ComponentInspector {
+    ToggleAllSections(Bool)
+    ToggleAllViews(Bool)
   }
 </script>
 

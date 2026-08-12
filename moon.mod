@@ -25,7 +25,6 @@ import {
   "moonbitlang/async@0.20.3",
   "moonbit-community/html@0.1.2",
   "mizchi/fswatch@0.2.1",
-  "mizchi/wit@0.3.1",
   "marianoguerra/tailwindcss@0.2.0",
   "moonbitlang/x@0.4.47",
 }

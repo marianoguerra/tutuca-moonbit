@@ -1,129 +1,118 @@
 <script type="tutuca/state">
-  interface universal {
-    /// The one component that must exist.
+  /// The one component that must exist.
+  ///
+  /// It is a HOLDER, not a placeholder that gets replaced: empty it draws a
+  /// `+`, filled it draws what it holds and keeps holding it. That is what
+  /// gives every user-placed component one uniform, host-owned home for the
+  /// editing chrome — a guest component is decorated exactly like a standard
+  /// one, because neither of them is asked to participate.
+  ///
+  /// It is also what a container's children always are, so "insert a cell
+  /// here" is "insert an empty universal at index i", with no kind to decide
+  /// and no binding to invent.
+  ///
+  /// Edit mode is the `edit` VIEW, not a field: the app pushes it with
+  /// `@push-view` and every descendant that has one picks it up. A boolean
+  /// threaded through every component would be the same fact stored once per
+  /// node, and a guest — which cannot grow the field — could never join in.
+  state Universal {
+    /// What this holds, or null, which is what draws the `+`.
+    child : Component
+  }
+
+  bubble Universal {
+    /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
+    /// configure it" rather than "place it with its defaults".
+    AddRequested(Bool)
+    /// The badge was clicked or the config pill was dropped here. Carries
+    /// what is held, because the app needs the instance and asking it to
+    /// find one by path would be a second way to name the same thing.
+    ConfigRequested(Any)
+  }
+
+  receive Universal {
+    /// Hold this. The app builds the instance — it is the only one that can,
+    /// since building a guest needs the dyncomp bridge — and hands it over.
+    Hold(Any)
+    /// Empty it again, which gives the `+` back rather than deleting a cell.
+    Empty
+    /// Write these fields into what is held. The app validated them against
+    /// the schema first; this only knows that its child is the thing they
+    /// belong to, which is exactly what the app cannot know.
+    ApplyConfig(Any)
+  }
+
+  /// A row or a column. Everything about it is direction, spacing and
+  /// alignment; `children` are universals and nothing else.
+  state Stack {
+    children : Array[Any]
+    direction : String
+    justify : String
+    align : String
+    gap : Int
+    padding : Int
+    wrap : Bool
+  }
+
+  /// A uniform m×n grid: every cell the same size, `children` in row-major
+  /// order, and `cols * rows` of them at all times.
+  ///
+  /// Uniform on purpose. A grid whose tracks can each be something different
+  /// is the layout that is easiest to get subtly wrong and hardest to explain
+  /// to somebody adding a cell; a bento box wants a component of its own
+  /// rather than a mode of this one.
+  state Grid {
+    children : Array[Any]
+    cols : Int
+    rows : Int
+    gap : Int
+    padding : Int
+  }
+
+  /// One tab: a name on the strip, and whatever is under it.
+  ///
+  /// `body` is a universal, so a fresh tab opens on a `+` and a person picks
+  /// what goes in it. That is the notepad: a tabbed thing whose tabs hold
+  /// text areas, composed rather than written.
+  state TabPage {
+    label : String
+    body : Component
+  }
+
+  bubble TabPage {
+    /// The name is settled — Enter, or the box lost focus.
+    DoneRename
+    /// Escape: put the old name back, which only the strip still knows.
+    CancelRename
+  }
+
+  /// A tab strip and one page at a time. `tabs` are TabPages.
+  state Tabs {
+    tabs : Array[Any]
+    active : Int
+    /// Whether the active tab's NAME is being edited, in place on the strip.
     ///
-    /// It is a HOLDER, not a placeholder that gets replaced: empty it draws a
-    /// `+`, filled it draws what it holds and keeps holding it. That is what
-    /// gives every user-placed component one uniform, host-owned home for the
-    /// editing chrome — a guest component is decorated exactly like a standard
-    /// one, because neither of them is asked to participate.
-    ///
-    /// It is also what a container's children always are, so "insert a cell
-    /// here" is "insert an empty universal at index i", with no kind to decide
-    /// and no binding to invent.
-    ///
-    /// Edit mode is the `edit` VIEW, not a field: the app pushes it with
-    /// `@push-view` and every descendant that has one picks it up. A boolean
-    /// threaded through every component would be the same fact stored once per
-    /// node, and a guest — which cannot grow the field — could never join in.
-    record state {
-      /// What this holds, or null, which is what draws the `+`.
-      child: component,
-    }
-    variant bubble {
-      /// The `+` was clicked. True when ctrl/cmd was held, which means "let me
-      /// configure it" rather than "place it with its defaults".
-      add-requested(bool),
-      /// The badge was clicked or the config pill was dropped here. Carries
-      /// what is held, because the app needs the instance and asking it to
-      /// find one by path would be a second way to name the same thing.
-      config-requested(any),
-    }
-    variant receive {
-      /// Hold this. The app builds the instance — it is the only one that can,
-      /// since building a guest needs the dyncomp bridge — and hands it over.
-      hold(any),
-      /// Empty it again, which gives the `+` back rather than deleting a cell.
-      empty,
-      /// Write these fields into what is held. The app validated them against
-      /// the schema first; this only knows that its child is the thing they
-      /// belong to, which is exactly what the app cannot know.
-      apply-config(any),
-    }
+    /// Only the active one can be: ctrl/cmd-clicking a tab both selects it
+    /// and starts the edit, so "which tab is being renamed" is never a
+    /// second answer to "which tab is open".
+    renaming : Bool
+    /// The name it had when the edit started, so Escape can put it back.
+    /// Typing writes straight through to the tab, because a name you cannot
+    /// see change while you type it is a name you have to guess at.
+    original : String
   }
 
-  interface stack {
-    /// A row or a column. Everything about it is direction, spacing and
-    /// alignment; `children` are universals and nothing else.
-    record state {
-      children: values,
-      direction: string,
-      justify: string,
-      align: string,
-      gap: s32,
-      padding: s32,
-      wrap: bool,
-    }
+  /// A leaf: a run of text.
+  state Text {
+    text : String
+    size : String
   }
 
-  interface grid {
-    /// A uniform m×n grid: every cell the same size, `children` in row-major
-    /// order, and `cols * rows` of them at all times.
-    ///
-    /// Uniform on purpose. A grid whose tracks can each be something different
-    /// is the layout that is easiest to get subtly wrong and hardest to explain
-    /// to somebody adding a cell; a bento box wants a component of its own
-    /// rather than a mode of this one.
-    record state {
-      children: values,
-      cols: s32,
-      rows: s32,
-      gap: s32,
-      padding: s32,
-    }
-  }
-
-  interface tab-page {
-    /// One tab: a name on the strip, and whatever is under it.
-    ///
-    /// `body` is a universal, so a fresh tab opens on a `+` and a person picks
-    /// what goes in it. That is the notepad: a tabbed thing whose tabs hold
-    /// text areas, composed rather than written.
-    record state {
-      label: string,
-      body: component,
-    }
-    variant bubble {
-      /// The name is settled — Enter, or the box lost focus.
-      done-rename,
-      /// Escape: put the old name back, which only the strip still knows.
-      cancel-rename,
-    }
-  }
-
-  interface tabs {
-    /// A tab strip and one page at a time. `tabs` are TabPages.
-    record state {
-      tabs: values,
-      active: s32,
-      /// Whether the active tab's NAME is being edited, in place on the strip.
-      ///
-      /// Only the active one can be: ctrl/cmd-clicking a tab both selects it
-      /// and starts the edit, so "which tab is being renamed" is never a
-      /// second answer to "which tab is open".
-      renaming: bool,
-      /// The name it had when the edit started, so Escape can put it back.
-      /// Typing writes straight through to the tab, because a name you cannot
-      /// see change while you type it is a name you have to guess at.
-      original: string,
-    }
-  }
-
-  interface text {
-    /// A leaf: a run of text.
-    record state {
-      text: string,
-      size: string,
-    }
-  }
-
-  interface textarea {
-    /// A leaf: editable multi-line text. The other half of the notepad.
-    record state {
-      text: string,
-      rows: s32,
-      placeholder: string,
-    }
+  /// A leaf: editable multi-line text. The other half of the notepad.
+  state Textarea {
+    text : String
+    rows : Int
+    placeholder : String
   }
 </script>
 

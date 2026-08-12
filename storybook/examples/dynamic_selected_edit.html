@@ -1,21 +1,16 @@
 <script type="tutuca/state">
-  interface dse-entry {
-    record state {
-    name: string,
-    }
+  state DseEntry {
+    name : String
   }
-  interface dse-editor {
-    record state {
-    missing: any,
-    }
+
+  state DseEditor {
+    missing : Any
   }
-  interface dse-root {
-    resource editor;
-    record state {
-    items: value-omap,
-    selected-key: string,
-    editor: editor,
-    }
+
+  state DseRoot {
+    items : Map[String, Any]
+    selectedKey : String
+    editor : Component[Editor]
   }
 </script>
 

@@ -58,20 +58,18 @@ pub fn show_effect(name : String, args : Array[@tutuca.Value]) -> String {
 /// A schema most cases can share.
 fn counter_schema() -> String {
   (
-    #|interface c {
-    #|  record label { text: string, done: bool }
-    #|  record state {
-    #|    name: string,
-    #|    count: s32,
-    #|    ratio: f64,
-    #|    ok: bool,
-    #|    items: list<string>,
-    #|    labels: list<label>,
-    #|    tags: text-set,
-    #|    page: s32,
-    #|  }
-    #|  variant receive { reset-to(s32) }
+    #|struct Label { text: String, done: Bool }
+    #|state C {
+    #|  name   : String
+    #|  count  : Int
+    #|  ratio  : Double
+    #|  ok     : Bool
+    #|  items  : Array[String]
+    #|  labels : Array[Label]
+    #|  tags   : Set[String]
+    #|  page   : Int
     #|}
+    #|receive C { ResetTo(Int) }
   )
 }
 

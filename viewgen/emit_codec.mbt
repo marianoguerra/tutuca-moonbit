@@ -187,7 +187,6 @@ fn emit_user_codecs(def : @statedef.StateDef, out : StringBuilder) -> Unit {
       // A `flags` set is Map-backed at runtime like any other set, so it
       // needs no converter of its own — the structural TSet/TFlags arms
       // below carry it.
-      UFlags(_) => ()
     }
   }
 }
