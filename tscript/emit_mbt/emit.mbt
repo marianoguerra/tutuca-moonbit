@@ -22,6 +22,14 @@ priv struct E {
   def : @statedef.StateDef
   /// Parameter name -> its language type, or None for a raw `@tutuca.Value`.
   mut params : Map[String, @statedef.StateTy?]
+  /// Statements the current one needs FIRST — a bounds check, a divisor
+  /// test. They answer `Unchanged`, which is what "the arm claimed the name
+  /// and there was nothing to do" means, and it is the answer the interpreter
+  /// gives for the same input.
+  ///
+  /// Collected on the way down and flushed by `stmt`, because a guard is a
+  /// statement and the thing that needs it is an expression.
+  mut prelude : Array[String]
   /// Whether any arm that SURVIVED reached for `ctx`. A block of pure state
   /// transitions names the parameter `_ctx`, because a generated file must not
   /// be the thing that warns.
@@ -36,7 +44,7 @@ pub fn emit(
   fn_name~ : String,
   surface? : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
-  let e = E::{ def, params: Map([]), uses_ctx: false }
+  let e = E::{ def, params: Map([]), prelude: [], uses_ctx: false }
   let arms : Array[String] = []
   let refusals : Array[Refusal] = []
   let answers : Map[String, Array[String]] = {
@@ -122,21 +130,35 @@ fn E::arm(
     raise Cannot("a value body is not a transition")
   }
   let b = StringBuilder::new()
-  b.write_string("    \{bucket}(\{quote(d.name)}, args) => {\n")
+  // `_args` when the declaration takes none: a generated file must not be the
+  // thing that warns.
+  let args_binder = if d.params.is_empty() { "_args" } else { "args" }
+  b.write_string("    \{bucket}(\{quote(d.name)}, \{args_binder}) => {\n")
   // Parameters, decoded from the dispatch arguments by their declared or
   // inferred type. A shape that does not match is `None` — the same answer
   // every generated mutator gives when handed something it cannot use.
+  // The effect queue, when the body has any. Effects go out ONLY when the
+  // body FINISHED: half a transition — nothing moved but a message went out —
+  // is the one outcome nobody can reason about afterwards, and it is what the
+  // interpreter's `Outcome` already says by dropping them with the state. A
+  // `guard … else { return Unchanged }` anywhere below leaves the queue
+  // unflushed, which is the whole point of it being a queue.
   let types = self.param_types(d, surface)
   for i, p in d.params {
     let ty = types.get(i).unwrap_or(None)
     self.params[p.name] = ty
+    // Bound only when the body reads it. The SHAPE is still checked either
+    // way — a `setLabel 3` must refuse whether or not the body looks at the
+    // argument — but a binding nobody uses is a warning, and a generated file
+    // must not be the thing that warns.
+    let binder = if uses_name(body, p.name) { p.name } else { "_" }
     let pat = match ty {
-      Some(TInt(..)) | Some(TFloat) => "Num(\{p.name})"
-      Some(TText) => "Str(\{p.name})"
-      Some(TBool) => "Bool(\{p.name})"
+      Some(TInt(..)) | Some(TFloat) => "Num(\{binder})"
+      Some(TText) => "Str(\{binder})"
+      Some(TBool) => "Bool(\{binder})"
       // Unknown, or a shape with no pattern worth writing: the raw value.
       // Using one where a type is wanted is refused below rather than guessed.
-      _ => p.name
+      _ => binder
     }
     // An argument of the wrong shape is `Unchanged`, not `Unhandled`: this
     // arm DID claim the name, and letting `add 'x'` fall through to a
@@ -145,10 +167,70 @@ fn E::arm(
       "      guard args.get(\{i}) is Some(\{pat}) else { return Unchanged }\n",
     )
   }
-  b.write_string(self.stmts(body, "      "))
+  let stmts = self.stmts(body, "      ")
+  if stmts.contains("effects.push(") {
+    b.write_string("      let effects : Array[() -> Unit] = []\n")
+    b.write_string(stmts)
+    b.write_string("      for f in effects {\n        f()\n      }\n")
+  } else {
+    b.write_string(stmts)
+  }
   b.write_string("      Next(s)\n")
   b.write_string("    }\n")
   b.to_string()
+}
+
+///|
+/// Whether `name` is read anywhere in a body.
+///
+/// A parameter the body ignores is bound to `_`, so the arity and the shape
+/// are still checked and nothing is named that nobody reads.
+fn uses_name(body : Array[@tscript.Stmt], name : String) -> Bool {
+  for st in body {
+    if stmt_uses(st, name) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn stmt_uses(s : @tscript.Stmt, name : String) -> Bool {
+  match s {
+    SAssign(place~, value~, ..) =>
+      place_uses(place, name) || expr_uses(value, name)
+    SMethod(place~, args~, ..) =>
+      place_uses(place, name) || args.iter().any(a => expr_uses(a, name))
+    SEffect(args~, ..) => args.iter().any(a => expr_uses(a, name))
+    SIf(cond~, then_~, else_~, ..) =>
+      expr_uses(cond, name) || uses_name(then_, name) || uses_name(else_, name)
+  }
+}
+
+///|
+fn place_uses(p : @tscript.Place, name : String) -> Bool {
+  for st in p.steps {
+    if st is PIndex(e) && expr_uses(e, name) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+fn expr_uses(e : @tscript.Expr, name : String) -> Bool {
+  match e {
+    EName(name=n, ..) => n == name
+    ERead(place~, ..) | ERef(place~, ..) => place_uses(place, name)
+    ELit(..) | EMethod(..) | EDyn(..) => false
+    ETpl(parts~, ..) =>
+      parts.iter().any(p => p is TExpr(inner) && expr_uses(inner, name))
+    EUnary(operand~, ..) => expr_uses(operand, name)
+    EChain(operands~, ..) => operands.iter().any(o => expr_uses(o, name))
+    EApp(args~, ..) => args.iter().any(a => expr_uses(a, name))
+    EIf(cond~, then_~, else_~, ..) =>
+      expr_uses(cond, name) || expr_uses(then_, name) || expr_uses(else_, name)
+  }
 }
 
 ///|
@@ -199,6 +281,19 @@ fn E::stmts(
 
 ///|
 fn E::stmt(self : E, s : @tscript.Stmt, pad : String) -> String raise NoWay {
+  self.prelude = []
+  let body = self.stmt_body(s, pad)
+  let head = self.prelude.map(g => "\{pad}\{g}\n").join("")
+  self.prelude = []
+  head + body
+}
+
+///|
+fn E::stmt_body(
+  self : E,
+  s : @tscript.Stmt,
+  pad : String,
+) -> String raise NoWay {
   match s {
     SAssign(place~, op~, value~, ..) => {
       let (field, ty) = self.root_field(place)
@@ -315,18 +410,31 @@ fn E::collection_call(
       arity(2)
       let i = self.at(args[0], TInt(width=32, signed=true))
       let v = self.at(args[1], elem)
-      "(\{recv}[0:\{i}].to_array() + [\{v}] + \{recv}[\{i}:].to_array())"
+      // `<=` because inserting AT the length appends, which is a real answer.
+      let at = self.hoist("at", i)
+      self.prelude.push(
+        "guard \{at} >= 0 && \{at} <= \{recv}.length() else { return Unchanged }",
+      )
+      "(\{recv}[0:\{at}].to_owned() + [\{v}] + \{recv}[\{at}:].to_owned())"
     }
     ("removeAt", TList(_)) | ("deleteAt", TList(_)) => {
       arity(1)
       let i = self.at(args[0], TInt(width=32, signed=true))
-      "(\{recv}[0:\{i}].to_array() + \{recv}[\{i} + 1:].to_array())"
+      let at = self.hoist("at", i)
+      self.prelude.push(
+        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return Unchanged }",
+      )
+      "(\{recv}[0:\{at}].to_owned() + \{recv}[\{at} + 1:].to_owned())"
     }
     ("setAt", TList(elem)) => {
       arity(2)
       let i = self.at(args[0], TInt(width=32, signed=true))
       let v = self.at(args[1], elem)
-      "{ let a = \{recv}.copy(); a[\{i}] = \{v}; a }"
+      let at = self.hoist("at", i)
+      self.prelude.push(
+        "guard \{at} >= 0 && \{at} < \{recv}.length() else { return Unchanged }",
+      )
+      "{ let a = \{recv}.copy(); a[\{at}] = \{v}; a }"
     }
     ("clear", TList(elem)) => {
       arity(0)
@@ -370,6 +478,37 @@ fn E::collection_call(
 }
 
 ///|
+/// Bind an expression once when it is not already a simple name.
+///
+/// A guard tests it and the code after reads it again; evaluating a call twice
+/// would be wrong the moment it stopped being pure, and unreadable either way.
+fn E::hoist(self : E, name : String, expr : String) -> String {
+  if is_simple(expr) {
+    return expr
+  }
+  self.prelude.push("let \{name} = \{expr}")
+  name
+}
+
+///|
+/// Whether an expression is a bare name or an integer literal.
+fn is_simple(e : String) -> Bool {
+  let cs = e.to_array()
+  if cs.is_empty() {
+    return false
+  }
+  for c in cs {
+    if !((c >= 'a' && c <= 'z') ||
+      (c >= 'A' && c <= 'Z') ||
+      (c >= '0' && c <= '9') ||
+      c == '_') {
+      return false
+    }
+  }
+  true
+}
+
+///|
 /// The MoonBit spelling of a list's element type, for the one place an empty
 /// literal has to be annotated.
 fn elem_ty_name(t : @statedef.StateTy) -> String raise NoWay {
@@ -396,7 +535,7 @@ fn E::effect(
 ) -> String raise NoWay {
   self.uses_ctx = true
   if name == "stop" {
-    return "\{pad}ctx.stop_propagation()\n"
+    return "\{pad}effects.push(() => ctx.stop_propagation())\n"
   }
   guard args.get(0) is Some(ELit(lit=LStr(msg), ..)) else {
     raise Cannot("`\{name}` needs a literal message name")
@@ -410,10 +549,11 @@ fn E::effect(
   }
   let payload = "[" + rest.join(", ") + "]"
   match name {
-    "send" => "\{pad}ctx.send(\{quote(msg)}, \{payload})\n"
-    "bubble" => "\{pad}ctx.bubble(\{quote(msg)}, \{payload})\n"
+    "send" => "\{pad}effects.push(() => ctx.send(\{quote(msg)}, \{payload}))\n"
+    "bubble" =>
+      "\{pad}effects.push(() => ctx.bubble(\{quote(msg)}, \{payload}))\n"
     "request" =>
-      "\{pad}ctx.request(\{quote(msg)}, \{payload}, @tutuca.RequestOpts::new())\n"
+      "\{pad}effects.push(() => ctx.request(\{quote(msg)}, \{payload}, @tutuca.RequestOpts::new()))\n"
     _ =>
       raise Cannot(
         "`\{name}` addresses a position, which this backend does not emit yet — write the handler in MoonBit",
@@ -427,23 +567,26 @@ fn E::effect(
 ///|
 /// Emit an expression at a wanted type.
 ///
-/// A numeric LITERAL is spelled at the wanted type directly rather than
+/// A WHOLE numeric literal is spelled at the wanted type directly rather than
 /// converted into it. `.count = 1` reads `1`, not `1.0.to_int()`, and the two
 /// are the same number — the conversion exists for values whose type is only
-/// known at run time, and a literal's is known here. A fractional literal in
-/// an integer field is refused rather than silently truncated, which is the
-/// rule the init block already follows.
+/// known at run time, and a literal's is known here.
+///
+/// A FRACTIONAL one is not refused. It goes through the ordinary `.to_int()`,
+/// which truncates, because that is what the interpreter does with the same
+/// expression — `Value` has one number and the generated codec's decode
+/// truncates too. Refusing it here would make `.count = 2.7` an error while
+/// `.count = .ratio` quietly truncated, which is two rules for one idea.
+/// Whether a fractional literal in an integer place deserves a DIAGNOSTIC is
+/// the checker's question, not the emitter's.
 fn E::at(
   self : E,
   e : @tscript.Expr,
   want : @statedef.StateTy,
 ) -> String raise NoWay {
-  if e is ELit(lit=LNum(n), ..) && want is TInt(..) {
-    guard n == n.to_int().to_double() else {
-      raise Cannot(
-        "\{double_lit(n)} is not a whole number, but this place is \{want.show_source()}",
-      )
-    }
+  if e is ELit(lit=LNum(n), ..) &&
+    want is TInt(..) &&
+    n == n.to_int().to_double() {
     return n.to_int().to_string()
   }
   let (src, got) = self.expr(e)
@@ -477,14 +620,16 @@ fn E::as_value(self : E, e : @tscript.Expr) -> String raise NoWay {
 
 ///|
 fn E::value_of(self : E, src : String, ty : @statedef.StateTy) -> String {
-  let _ = self
+  // The schema's own projection, which the generated codec is written from
+  // too. A set, a list of records and a tuple all need real conversion, and
+  // this used to pass them through as if they were already Values — which
+  // compiled for the four scalars and for nothing else.
+  let e = self.def.to_value_src(ty, src)
+  // Annotated for the scalars, whose constructors are ambiguous in an
+  // argument position; the compound forms carry their own annotation.
   match ty {
-    TBool => "@tutuca.Value::Bool(\{src})"
-    TText => "@tutuca.Value::Str(\{src})"
-    TInt(..) => "@tutuca.Value::Num(\{src}.to_double())"
-    TFloat => "@tutuca.Value::Num(\{src})"
-    // Anything else is already a Value, or has no other spelling.
-    _ => src
+    TBool | TText | TInt(..) | TFloat => "(\{e} : @tutuca.Value)"
+    _ => e
   }
 }
 
@@ -702,7 +847,17 @@ fn E::chain(
       let b = StringBuilder::new()
       b.write_string("(\{self.to_ty(first, tf, TFloat)}")
       for i, op in ops {
-        let rhs = self.at_num(operands[i + 1])
+        // A zero divisor is "no change", which is what the interpreter
+        // answers. MoonBit's Double division answers Infinity instead, and
+        // `.to_int()` then saturates to 2^31-1 — a number, silently, where the
+        // other backend said the transition did not happen.
+        let rhs = if op == "/" || op == "mod" {
+          let d = self.hoist("d\{i}", self.at_num(operands[i + 1]))
+          self.prelude.push("guard \{d} != 0.0 else { return Unchanged }")
+          d
+        } else {
+          self.at_num(operands[i + 1])
+        }
         match op {
           // MoonBit has no `%` on Double, and the language's `mod` is over
           // whole numbers anyway — the interpreter truncates both sides too.

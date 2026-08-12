@@ -284,6 +284,29 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Changed
 
+- **A `<script type="tutuca/script">` block compiles to MoonBit.** `gen-views`
+  emits `<comp>_inline_update` — one match over `@component.Dispatch` in the
+  shape a hand-written arm takes — and the generated wrapper composes it ahead
+  of the author's `update~`. `demo/counterlib`'s component definition is now
+  `counter_component(init=CounterState::fresh())`, with `add` and `resetTo` in
+  the file's script block.
+
+  A name the block answers is DROPPED from the `Msg` enum: `update` is
+  consulted only for a dispatch the block did not claim, so an arm for one
+  could never run, and making the author write it would move the noise rather
+  than remove it. The `Input` enum keeps it — that one keys `swap`, which wins
+  over `update` and replaces the node rather than the state.
+
+  What the backend cannot compile it REFUSES by name, with the reason, as a
+  `script-refusal` hint. A block with one handler that reaches for a spine
+  rebuild still has five that compile.
+
+  Both backends are now held to the conformance corpus, and it earned its
+  keep immediately: it caught the emitted code SATURATING on `1 / 0` where the
+  interpreter answers "no change", letting an effect escape from a transition
+  that then failed, and ABORTING on a list index past the end where a slice
+  would. All three are fixed and pinned.
+
 - **`update` answers an enum, not an `Option`.** `(S, Dispatch, &Ctx) -> S?`
   became `-> Update[S]`, with three cases:
 

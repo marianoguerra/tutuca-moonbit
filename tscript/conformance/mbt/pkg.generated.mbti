@@ -1,0 +1,122 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/tscript/conformance/mbt"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn case_name(Int) -> String?
+
+pub let corpus_common_style : String
+
+pub fn corpus_component(name? : String, views? : Map[String, @anode.View], init? : CorpusState, common_style? : String, global_style? : String, update? : (CorpusState, @component.Dispatch, &@core.Ctx) -> @component.Update[CorpusState], compute? : (CorpusMethod) -> ((CorpusState, Array[@core.Value]) -> @core.Value)?, swap? : (CorpusInput) -> ((CorpusState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let corpus_global_style : String
+
+pub fn corpus_views() -> Map[String, @anode.View]
+
+// Errors
+
+// Types and methods
+pub(all) enum CorpusInput {
+  Case0
+  Case1
+  Case10
+  Case11
+  Case12
+  Case13
+  Case14
+  Case15
+  Case16
+  Case17
+  Case18
+  Case19
+  Case2
+  Case20
+  Case21
+  Case22
+  Case23
+  Case24
+  Case25
+  Case26
+  Case27
+  Case28
+  Case29
+  Case3
+  Case30
+  Case31
+  Case32
+  Case33
+  Case34
+  Case35
+  Case37
+  Case4
+  Case5
+  Case6
+  Case7
+  Case8
+  Case9
+} derive(Eq, @debug.Debug)
+pub fn CorpusInput::name(Self) -> String
+pub fn CorpusInput::parse(String) -> Self?
+
+pub(all) struct CorpusLabel {
+  text : String
+  done : Bool
+} derive(Eq, @debug.Debug)
+
+pub(all) enum CorpusMethod {
+  Long
+} derive(Eq, @debug.Debug)
+pub fn CorpusMethod::name(Self) -> String
+
+pub(all) enum CorpusMsg {
+  Case10
+  Case12(Double)
+  Case13(Double)
+  Case14
+  Case15
+  Case16
+  Case17
+  Case27
+  Case3
+  Case37(Double)
+  Case7
+  Case9
+  Unknown(String, Array[@core.Value])
+}
+pub fn CorpusMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum CorpusReceive {
+  ResetTo(Int)
+  Unknown(String, Array[@core.Value])
+}
+pub fn CorpusReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn CorpusReceive::send(Self, &@core.Ctx) -> Unit
+pub fn CorpusReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct CorpusState {
+  name : String
+  count : Int
+  ratio : Double
+  ok : Bool
+  items : Array[String]
+  labels : Array[CorpusLabel]
+  tags : Map[String, Bool]
+  page : Int
+}
+pub fn CorpusState::zero() -> Self
+
+pub(all) struct Recorder {
+  seen : Array[String]
+}
+pub fn Recorder::new() -> Self
+pub impl @core.Ctx for Recorder
+
+// Type aliases
+
+// Traits

@@ -171,11 +171,16 @@ test "a list method answers a fresh array, never a mutation of the receiver" {
       #|Next(s)
     ),
   )
+  // An index out of range is `Unchanged`, not a crash. A MoonBit slice
+  // ABORTS past the end where the interpreter answers "no change", and this is
+  // the whole reason both backends are held to one corpus.
   inspect(
     body("on dropAt(i) { .history.removeAt i }"),
     content=(
       #|guard args.get(0) is Some(Num(i)) else { return Unchanged }
-      #|let s = { ..s, history: (s.history[0:i.to_int()].to_array() + s.history[i.to_int() + 1:].to_array()) }
+      #|let at = i.to_int()
+      #|guard at >= 0 && at < s.history.length() else { return Unchanged }
+      #|let s = { ..s, history: (s.history[0:at].to_owned() + s.history[at + 1:].to_owned()) }
       #|Next(s)
     ),
   )
@@ -278,9 +283,9 @@ test "one refusal does not cost the block its other handlers" {
   )
   assert_eq(e.answers_input, ["bump", "reset"])
   assert_eq(e.refusals.map(r => r.name), ["deep"])
-  assert_true(e.source.contains("Input(\"bump\", args)"))
-  assert_true(e.source.contains("Input(\"reset\", args)"))
-  assert_false(e.source.contains("Input(\"deep\", args)"))
+  assert_true(e.source.contains("Input(\"bump\", _args)"))
+  assert_true(e.source.contains("Input(\"reset\", _args)"))
+  assert_false(e.source.contains("Input(\"deep\", "))
 }
 
 ///|

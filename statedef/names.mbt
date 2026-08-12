@@ -204,3 +204,90 @@ fn component_of(written : String, span : Span) -> String raise DefError {
   }
   name
 }
+
+///|
+/// "Counter" -> "counter", "TodoList" -> "todo_list".
+///
+/// The value-namespace spelling of a type name, which is what every generated
+/// FUNCTION over a named type is called (`counter_label_to_value`). It lives
+/// here rather than in one emitter because two emitters now write calls to
+/// those functions, and a name they disagreed about would be a link error
+/// nobody could read.
+pub fn value_prefix(name : String) -> String {
+  let sb = StringBuilder::new()
+  let mut prev_alnum = false
+  for i, c in name.to_array() {
+    if !is_alnum(c) {
+      if prev_alnum {
+        sb.write_char('_')
+      }
+      prev_alnum = false
+      continue
+    }
+    let is_upper = c >= 'A' && c <= 'Z'
+    if is_upper && i > 0 && prev_alnum {
+      sb.write_char('_')
+    }
+    sb.write_char(lower_char(c))
+    prev_alnum = true
+  }
+  sb.to_string()
+}
+
+///|
+fn lower_char(c : Char) -> Char {
+  if c >= 'A' && c <= 'Z' {
+    (c.to_int() + 32).unsafe_to_char()
+  } else {
+    c
+  }
+}
+
+///|
+/// A MoonBit expression of type `@tutuca.Value` for `e`, which has type `ty`.
+///
+/// The one projection from the typed world back into the dynamic one, and the
+/// reason it is HERE: the codec emitter writes it for every state field, and
+/// the script backend writes it wherever a typed expression meets a builtin or
+/// a channel payload. Two implementations would disagree about a set or a
+/// nested record long before anyone noticed.
+///
+/// `Any` and a component slot pass through, because they already ARE a Value —
+/// which is the case the JSON path could never do at all.
+pub fn StateDef::to_value_src(
+  self : StateDef,
+  ty : StateTy,
+  e : String,
+) -> String {
+  match ty {
+    TBool => "Bool(\{e})"
+    TInt(..) => "Num(\{e}.to_double())"
+    TFloat => "Num(\{e})"
+    TText => "Str(\{e})"
+    TAny | TComp(_) => e
+    TList(inner) =>
+      "(List(\{e}.map(x => \{self.to_value_src(inner, "x")})) : @tutuca.Value)"
+    TSet | TFlags(_) =>
+      "{ let m : Map[String, @tutuca.Value] = Map([]); for k, b in \{e} { m[k] = Bool(b) }; (Map(m) : @tutuca.Value) }"
+    TOMap(inner) =>
+      "{ let m : Map[String, @tutuca.Value] = Map([]); for k, x in \{e} { m[k] = \{self.to_value_src(inner, "x")} }; (Map(m) : @tutuca.Value) }"
+    // Nested (inside a list, a map, a record): there is no key to omit here,
+    // so None becomes Null. The key-omitting form is at the state level.
+    TOption(inner) =>
+      "(match \{e} { Some(x) => \{self.to_value_src(inner, "x")}; None => Null })"
+    TTuple(ts) => {
+      let parts = ts
+        .mapi((i, t) => self.to_value_src(t, "\{e}.\{i}"))
+        .join(", ")
+      "(List([\{parts}]) : @tutuca.Value)"
+    }
+    TRecord(n) | TEnum(n) | TVariant(n) =>
+      match self.user_ty(n) {
+        Some({ kind: URecord(fs), .. }) if fs.is_empty() => e
+        Some(ut) => "\{value_prefix(ut.name)}_to_value(\{e})"
+        // Unresolved: `moonbit_ty` made it a @tutuca.Value, so it already is
+        // one.
+        None => e
+      }
+  }
+}

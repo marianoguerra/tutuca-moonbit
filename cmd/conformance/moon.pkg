@@ -1,0 +1,22 @@
+// Dev-only native tool: write the conformance corpus out as a view file, so
+// the MoonBit backend is held to the same table the interpreter is.
+//
+// The corpus is DATA (`tscript/conformance`), and the interpreter reads it
+// directly. The MoonBit backend cannot — its answers only exist once `moonc`
+// has compiled them — so the corpus is projected into one `.html` that
+// `gen-views` compiles like any other, and a whitebox test drives the emitted
+// functions case by case.
+//
+// Run via: moon run --target native cmd/dev -- gen-conformance
+// (which then runs `gen-views` over the file it writes).
+import {
+  "marianoguerra/tutuca/tscript",
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/tscript/conformance" @corpus,
+  "moonbitlang/x/fs",
+  "moonbitlang/core/env",
+}
+
+supported_targets = "native"
+
+pkgtype(kind: "executable")

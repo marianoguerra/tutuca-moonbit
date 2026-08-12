@@ -135,6 +135,11 @@ pub fn tasks() -> Array[Task] {
       commands: gen_views_commands(),
     },
     {
+      name: "gen-conformance",
+      about: "project the conformance corpus into the view file the MoonBit backend is compiled from",
+      commands: gen_conformance_commands(),
+    },
+    {
       name: "gen-guest-bindings",
       about: "regenerate the checked-in guest bindings from dyncomp/wit, then drift-check them",
       commands: gen_guest_bindings_commands(),
@@ -326,6 +331,24 @@ pub fn tasks() -> Array[Task] {
 }
 
 ///|
+/// The corpus, projected and then compiled.
+///
+/// Two steps because the second is `gen-views`: the corpus is DATA and the
+/// interpreter reads it directly, but the MoonBit backend's answers only exist
+/// once `moonc` has compiled them — so the corpus becomes a view file and
+/// takes the ordinary path from there. `gen-views` already lists corpus.html,
+/// so `ci` re-runs and drift-checks the second half on its own; this task is
+/// what to run after ADDING a case.
+fn gen_conformance_commands() -> Array[Command] {
+  [
+    moon("conformance · project the corpus", [
+      "run", "--target", "native", "cmd/conformance",
+    ]),
+    ..gen_views_commands(),
+  ]
+}
+
+///|
 /// One entry per repo-owned view file. Run after editing an .html view; it ends
 /// in its own `git diff --exit-code`, which is what lets `ci` include it to
 /// catch a generated module that has drifted from its source. A file whose
@@ -338,6 +361,7 @@ fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
+    ("tscript/conformance/mbt/corpus.html", Some("Corpus")),
     ("dyncomp/shell/loader_bar.html", Some("LoaderBar")),
     ("dyncomp/ui/app.html", Some("UniversalApp")),
     ("dyncomp/ui/std/std.html", None),

@@ -217,6 +217,17 @@ fn line_of(text : String, offset : Int) -> Int {
 }
 
 ///|
+/// The MoonBit variant for a source name, from the pairs `variants_for` built.
+fn variant_of(pairs : Array[(String, String)], name : String) -> String {
+  for p in pairs {
+    if p.0 == name {
+      return p.1
+    }
+  }
+  name
+}
+
+///|
 /// One render-time directive bucket: the enum naming its handlers.
 ///
 /// Nothing is emitted when the views name no handler for it, on the same rule
@@ -259,6 +270,15 @@ fn emit_component(
   state : @statedef.StateDef?,
   inits : Array[@statedef.InitState],
   debug_derive : Bool,
+  /// The `@on` names the file's script block ANSWERS. They are dropped from
+  /// the `Msg` enum, because the author's `update` is only ever consulted for
+  /// a name the block did not answer — so an arm for one is unreachable, and
+  /// making the author write it would move the noise rather than remove it.
+  ///
+  /// The `Input` enum keeps them: it keys `swap`, which wins over `update`
+  /// and replaces the NODE rather than the state — something the block cannot
+  /// say, so answering a name in the block must not take swapping it away.
+  answered_inputs : Array[String],
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -299,6 +319,9 @@ fn emit_component(
 
   // -- inputs --------------------------------------------------------------
   if !surface.inputs.is_empty() {
+    let unanswered = surface.inputs.filter(i => {
+      !answered_inputs.contains(i.name)
+    })
     let input_variants = variants_for(surface.inputs.map(i => i.name))
     emit_name_enum(
       out,
@@ -317,16 +340,25 @@ fn emit_component(
     out.write_string("    _ => None\n  }\n}\n\n")
 
     // The typed decode: this is the point of the whole generator.
+    let answered_note = if answered_inputs.is_empty() {
+      ""
+    } else {
+      "///\n" +
+      "/// Absent, because the script block answers them: \{answered_inputs.join(", ")}.\n" +
+      "/// `update` is consulted only for a dispatch the block did not claim, so\n" +
+      "/// an arm for one of these could never run.\n"
+    }
     out.write_string(
       "///|\n" +
       "/// The Input arm of @component.Dispatch, decoded. Payload types are\n" +
       "/// inferred from the argument shapes written at the call sites, so a\n" +
       "/// handler added to \{source_file} breaks every `match` over this type\n" +
       "/// until it is handled.\n" +
+      answered_note +
       "pub(all) enum \{t}Msg {\n",
     )
-    for i, sig in surface.inputs {
-      emit_msg_variant(out, sig, input_variants[i].1)
+    for sig in unanswered {
+      emit_msg_variant(out, sig, variant_of(input_variants, sig.name))
     }
     out.write_string(
       "  /// An Input dispatch the views do not declare, or a declared name\n" +
@@ -345,9 +377,9 @@ fn emit_component(
       "  Some(\n" +
       "    match (name, args) {\n",
     )
-    for i, sig in surface.inputs {
+    for sig in unanswered {
       out.write_string("  ")
-      emit_msg_arm(out, sig, input_variants[i].1)
+      emit_msg_arm(out, sig, variant_of(input_variants, sig.name))
     }
     out.write_string("      _ => Unknown(name, args)\n    },\n  )\n}\n\n")
   }
@@ -531,12 +563,9 @@ fn emit_module_compiled(
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
     let surface = with_script(compiled_comp.surface, file, cname)
+    let answered : Array[String] = []
     if state is Some(def) {
       check_views(compiled_comp.views, def, prog, hints)
-      // A declaration the MoonBit backend will not compile is not an error —
-      // the design reserves the hardest sixth of the corpus for hand-written
-      // MoonBit — but it IS something the author has to read, or they will
-      // wonder why the handler they wrote in the block does nothing.
       if inline_emit(
           file,
           cname,
@@ -546,15 +575,22 @@ fn emit_module_compiled(
           "\{type_prefix(cname)}State",
         )
         is Some(e) {
+        // A declaration the MoonBit backend will not compile is not an error —
+        // the design reserves the hardest sixth of the corpus for hand-written
+        // MoonBit — but it IS something the author has to read, or they will
+        // wonder why the handler they wrote in the block does nothing.
         for r in e.refusals {
           hints.push(
             "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)",
           )
         }
+        for n in e.answers_input {
+          answered.push(n)
+        }
       }
     }
     emit_component(
-      cname, source_file, comp, surface, state, inits, debug_derive, out,
+      cname, source_file, comp, surface, state, inits, debug_derive, answered, out,
     )
   }
   out.to_string()

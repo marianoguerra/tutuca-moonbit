@@ -93,3 +93,56 @@ test "a component with no declared buckets emits none of this" {
   // ...but the Input bucket the views DO type is untouched.
   assert_true(src.contains("pub(all) struct ChatState {"))
 }
+
+///|
+/// A file whose script block answers some of its `@on` names.
+fn answered_src(script : String) -> String raise {
+  @viewgen.generate(
+    "<script type=\"tutuca/state\">\nstate Chat { n: Int }\n</script>\n" +
+    "<script type=\"tutuca/script\">\n" +
+    script +
+    "\n</script>\n" +
+    "<template><p><x text=\".n\"></x>" +
+    "<button @on.click=\"bump 1\">+</button>" +
+    "<button @on.click=\"reset\">0</button></p></template>",
+    name="Chat",
+    source_file="chat.html",
+  )
+}
+
+///|
+test "a name the script block answers is dropped from the Msg enum" {
+  // A5. `update` is composed BEHIND the block, so it is only ever consulted
+  // for a dispatch the block did not claim — an arm for `bump` could not run,
+  // and making the author write `Some(Bump(_)) => Unhandled` would move the
+  // noise rather than remove it.
+  let src = answered_src("on bump(d) { .n += d }")
+  assert_false(src.contains("  Bump(Double)\n"))
+  assert_true(src.contains("  Reset\n"))
+  assert_true(
+    src.contains("Absent, because the script block answers them: bump."),
+  )
+  // …and the INPUT enum keeps it. That one keys `swap`, which wins over
+  // `update` and replaces the node rather than the state — something the
+  // block cannot say, so answering a name must not take swapping it away.
+  assert_true(src.contains("pub(all) enum ChatInput {"))
+  assert_true(src.contains("  Bump\n"))
+}
+
+///|
+test "a block that answers nothing leaves the enum exactly as it was" {
+  let src = answered_src("compute label { .n }")
+  assert_true(src.contains("  Bump(Double)\n"))
+  assert_true(src.contains("  Reset\n"))
+  assert_false(src.contains("Absent, because the script block answers"))
+}
+
+///|
+test "a declaration the backend refuses is NOT counted as answered" {
+  // The arm was not emitted, so `update` still sees the dispatch and still
+  // needs a case for it. Reporting it as answered would delete the only place
+  // the author could handle it.
+  let src = answered_src("on bump(d) { .n[0] = d }")
+  assert_true(src.contains("  Bump(Double)\n"))
+  assert_false(src.contains("Absent, because the script block answers"))
+}

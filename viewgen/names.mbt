@@ -25,15 +25,6 @@ fn upper(c : Char) -> Char {
 }
 
 ///|
-fn lower(c : Char) -> Char {
-  if c >= 'A' && c <= 'Z' {
-    Int::unsafe_to_char(c.to_int() + 32)
-  } else {
-    c
-  }
-}
-
-///|
 /// "setLabel" / "set-label" / "set_label" -> "SetLabel". Separators and any
 /// other non-alphanumeric characters are dropped, capitalizing what follows.
 ///
@@ -49,24 +40,7 @@ pub fn variant_name(name : String) -> String {
 ///|
 /// "Counter" -> "counter", "TodoList" -> "todo_list".
 fn value_prefix(name : String) -> String {
-  let sb = StringBuilder::new()
-  let mut prev_alnum = false
-  for i, c in name.to_array() {
-    if !is_alnum(c) {
-      if prev_alnum {
-        sb.write_char('_')
-      }
-      prev_alnum = false
-      continue
-    }
-    let is_upper = c >= 'A' && c <= 'Z'
-    if is_upper && i > 0 && prev_alnum {
-      sb.write_char('_')
-    }
-    sb.write_char(lower(c))
-    prev_alnum = true
-  }
-  sb.to_string()
+  @statedef.value_prefix(name)
 }
 
 ///|

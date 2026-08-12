@@ -296,41 +296,17 @@ fn emit_codec(
 
 ///|
 /// A field as a `@tutuca.Value`.
+///
+/// One line, because the projection is `statedef`'s: the script backend writes
+/// the same conversion wherever a typed expression meets a builtin or a
+/// channel payload, and two implementations would disagree about a set or a
+/// nested record long before anyone noticed.
 fn enc_expr(
   def : @statedef.StateDef,
   ty : @statedef.StateTy,
   e : String,
 ) -> String {
-  match ty {
-    TBool => "Bool(\{e})"
-    TInt(..) => "Num(\{e}.to_double())"
-    TFloat => "Num(\{e})"
-    TText => "Str(\{e})"
-    // Already a Value. This is the case the JSON path cannot do at all
-    // without the stash.
-    TAny | TComp(_) => e
-    TList(inner) =>
-      "(List(\{e}.map(x => \{enc_expr(def, inner, "x")})) : @tutuca.Value)"
-    TSet | TFlags(_) =>
-      "{ let m : Map[String, @tutuca.Value] = Map([]); for k, b in \{e} { m[k] = Bool(b) }; (Map(m) : @tutuca.Value) }"
-    TOMap(inner) =>
-      "{ let m : Map[String, @tutuca.Value] = Map([]); for k, x in \{e} { m[k] = \{enc_expr(def, inner, "x")} }; (Map(m) : @tutuca.Value) }"
-    // Nested (inside a list, a map, a record): there is no key to omit here,
-    // so None becomes Null. The key-omitting form is at the state level.
-    TOption(inner) =>
-      "(match \{e} { Some(x) => \{enc_expr(def, inner, "x")}; None => Null })"
-    TTuple(ts) => {
-      let parts = ts.mapi((i, t) => enc_expr(def, t, "\{e}.\{i}")).join(", ")
-      "(List([\{parts}]) : @tutuca.Value)"
-    }
-    TRecord(n) | TEnum(n) | TVariant(n) =>
-      match def.user_ty(n) {
-        Some({ kind: URecord(fs), .. }) if fs.is_empty() => e
-        Some(ut) => "\{uty_fn(ut)}_to_value(\{e})"
-        // unresolved: moonbit_ty made it a @tutuca.Value, so it already is one
-        None => e
-      }
-  }
+  def.to_value_src(ty, e)
 }
 
 // ---------------------------------------------------------------------------

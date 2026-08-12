@@ -26,6 +26,8 @@ pub fn tokenize(String) -> Array[Token] raise DefError
 
 pub fn upper_name(String) -> String
 
+pub fn value_prefix(String) -> String
+
 // Errors
 pub suberror DefError {
   Syntax(msg~ : String, span~ : Span)
@@ -104,6 +106,7 @@ pub fn StateDef::component_name(Self, String) -> String
 pub fn StateDef::field(Self, String) -> FieldDef?
 pub fn StateDef::field_of(Self, StateTy, String) -> StateTy?
 pub fn StateDef::moonbit_ty(Self, StateTy) -> String
+pub fn StateDef::to_value_src(Self, StateTy, String) -> String
 pub fn StateDef::ty_info_src(Self, StateTy) -> String
 pub fn StateDef::user_ty(Self, String) -> UserTy?
 pub fn StateDef::zero_expr(Self, StateTy) -> String
