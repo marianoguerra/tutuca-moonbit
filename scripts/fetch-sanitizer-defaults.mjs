@@ -17,10 +17,17 @@
 // together with the regenerated file. Read the diff — this is an allow-list,
 // and both directions of change matter.
 //
-// Run:  node scripts/fetch-sanitizer-defaults.mjs [--check]
+// Run:  node scripts/fetch-sanitizer-defaults.mjs
 //
-// `--check` regenerates into memory and exits non-zero if the committed file
-// differs, which is what CI would run.
+// `--check` regenerates into memory and compares, but note what it can and
+// cannot tell you: this script emits UNFORMATTED MoonBit, and the committed
+// file has been through `moon fmt`, so a byte comparison reports "stale" on a
+// file whose content is identical. It answers "did the SPEC change" only if
+// the committed file happens not to have been formatted since.
+//
+// The honest check is the `sanitizer-defaults` task: regenerate, `moon fmt`,
+// then `git diff --exit-code` — the same shape `skill-embed` and `gen-views`
+// use, and the one that compares like with like.
 import { readFileSync, writeFileSync } from "node:fs";
 import { join, dirname } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -176,7 +183,12 @@ const out = await generate();
 if (process.argv.includes("--check")) {
   const have = readFileSync(OUT, "utf8");
   if (have !== out) {
-    console.error(`error: ${OUT} is stale — run node scripts/fetch-sanitizer-defaults.mjs`);
+    console.error(
+      `error: ${OUT} differs from freshly generated output.\n` +
+        `NOTE: this compares unformatted output against a formatted file, so a\n` +
+        `difference here is not proof the spec changed. Run the sanitizer-defaults\n` +
+        `task instead — it formats before comparing.`,
+    );
     process.exit(1);
   }
   console.log("sanitizer defaults are up to date");

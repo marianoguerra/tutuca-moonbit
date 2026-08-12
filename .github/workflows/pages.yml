@@ -88,6 +88,13 @@ jobs:
       - name: Build universal demo
         run: moon run --target native cmd/dev -- universal
 
+      # The gallery of every component every sample bundle declares, once per
+      # named `init`. Same toolchain as the step above and reusing its built
+      # guests, so it is nearly free here — and the landing page links it, which
+      # until now was a link to nothing on the deployed site.
+      - name: Build dyncomp storybook
+        run: moon run --target native cmd/dev -- dyncomp-storybook
+
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3
         with:

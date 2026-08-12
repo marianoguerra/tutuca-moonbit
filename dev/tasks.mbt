@@ -220,6 +220,52 @@ pub fn tasks() -> Array[Task] {
       ],
     },
     {
+      name: "guest-harness",
+      about: "build the guest bundles, then run the node harnesses over them (needs wasm-tools + jco)",
+      // The only RUNTIME coverage the guest ABI, the table codec and the
+      // bluesky/slack/rust guests have — eight node test files whose only
+      // invocation instruction was a sentence in CONTRIBUTING.md. It cannot be
+      // in `ci` (building a guest needs wasm-tools and jco, which CI has not
+      // got), but it can at least be one command like everything else.
+      commands: [
+        guest_list_check(),
+        {
+          label: "build · every guest bundle (see the `guests` task)",
+          prog: "node",
+          args: ["scripts/run-guest-harnesses.mjs"],
+        },
+      ],
+    },
+    {
+      name: "sanitizer-defaults",
+      about: "regenerate anode/sanitize/spec_default_gen.mbt from the WHATWG spec's built-in config, then drift-check (needs network)",
+      // The one generated-from-upstream file with no task: the CSS bundles have
+      // `css-bundle` and the guest bindings have their own, while this was a
+      // bare `node scripts/…` in two docs.
+      //
+      // Regenerate → fmt → drift-check, the same shape `skill-embed` and
+      // `gen-views` use, rather than the script's own `--check`. That flag
+      // compares the generator's RAW output against the committed file, which
+      // `moon fmt` has since reformatted — so it reported "stale" on a file
+      // whose content was byte-identical. Formatting first is what makes the
+      // comparison mean what it says.
+      commands: [
+        {
+          label: "regenerate · sanitizer defaults from the spec's builtins",
+          prog: "node",
+          args: ["scripts/fetch-sanitizer-defaults.mjs"],
+        },
+        moon("fmt", ["fmt"]),
+        {
+          label: "drift check · sanitizer defaults match the spec",
+          prog: "git",
+          args: [
+            "diff", "--exit-code", "HEAD", "--", "anode/sanitize/spec_default_gen.mbt",
+          ],
+        },
+      ],
+    },
+    {
       name: "check-guest-list",
       about: "hold dev/tasks.mbt's guest list against guests/guests.mjs",
       // `guests` runs this too, but it belongs in `ci` on its own: the guest
@@ -558,11 +604,18 @@ fn composites() -> Array[(String, String, Array[String])] {
     // so a stale one type-checks and tests green while no longer describing the
     // .html beside it. Catching that before `check` also means the rest of CI
     // runs against modules that provably match their sources.
+    //
+    // `skill-embed` is here for exactly the same reason, and was not for a
+    // long time: `cli/skill_assets_gen.mbt` is checked in, compiles whatever it
+    // holds, and ships inside the binary — so a skill doc edited without
+    // re-embedding is invisible until somebody runs `tutuca install-skill` and
+    // reads the wrong thing. It runs AFTER `gen-views`, because that task ends
+    // in `moon fmt` over everything.
     (
       "ci",
-      "gen-views drift + check + check-examples + check-skill + check-guest-list + check-guest-template + test + build (build-smokes every backend & demo)",
+      "gen-views drift + skill-embed drift + check + the example/skill/guest checks + test + build (build-smokes every backend & demo)",
       [
-        "gen-views", "check", "check-examples", "check-skill", "check-guest-list",
+        "gen-views", "skill-embed", "check", "check-examples", "check-skill", "check-guest-list",
         "check-guest-template", "test", "build",
       ],
     ),
@@ -928,6 +981,21 @@ pub fn skill_embed_steps() -> Array[Step] {
   [
     GenSkillAssets(src_dir="skill/tutuca", to="cli/skill_assets_gen.mbt"),
     Run(moon("fmt", ["fmt"])),
+    // The drift check the other two generators have always had, and this one
+    // never did. It is the same `HEAD --` form as `gen-views`: compare against
+    // the commit, not the index, so a `git add` of a stale module cannot walk
+    // past. Safe to run only because the fmt above leaves this file alone —
+    // AGENTS.md used to claim otherwise, and it was checked.
+    //
+    // What it would have caught: `skill/tutuca/cli.md` lost two sections and
+    // every paragraph blank line, and the broken text was embedded and shipped
+    // inside the CLI binary — which is what `tutuca install-skill` writes out,
+    // and the first thing an agent reads before writing any tutuca code.
+    Run({
+      label: "drift check · cli/skill_assets_gen.mbt matches skill/tutuca/",
+      prog: "git",
+      args: ["diff", "--exit-code", "HEAD", "--", "cli/skill_assets_gen.mbt"],
+    }),
   ]
 }
 

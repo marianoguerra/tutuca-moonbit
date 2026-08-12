@@ -117,12 +117,15 @@ binary inside the `_build` they delete.
 | `build`    | `moon build` for wasm-gc, native CLI, and js                     |
 | `coverage` | `moon coverage analyze`                                           |
 | `setup`    | `npm install` (happy-dom for js tests) + enable the git hooks    |
-| `ci`       | `gen-views` drift check, then `check`, the example/skill/guest-template checks, `test` and `build` |
+| `ci`       | `gen-views` + `skill-embed` drift checks, then `check`, the example/skill/guest checks, `test` and `build` |
 | `dist`     | build all targets and assemble a self-contained runnable `dist/` |
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-conformance` | project `tscript/conformance`'s corpus into `tscript/conformance/mbt/corpus.html`, then run `gen-views` over it — the MoonBit backend cannot read the corpus directly, since its answers only exist once `moonc` has compiled them. Run after ADDING a case; `ci` re-runs and drift-checks the compiled half on its own |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
-| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+| `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first), format, then drift-check — in `ci`, because the embed ships inside the binary and a skill edited without re-embedding is invisible until somebody installs it and reads the wrong thing |
+| `check-guest-list` | hold `dev/tasks.mbt`'s guest list against `guests/guests.mjs`. Plain node, so unlike the guest BUILD it runs in `ci` — which is how `guests/table` sat in one list and not the other, built by nothing |
+| `guest-harness` | build every guest bundle, then run the node harnesses in `dyncomp/test/` over them — the only runtime coverage the guest ABI and the table codec have. Not in `ci`: needs wasm-tools + jco |
+| `sanitizer-defaults` | regenerate `anode/sanitize/spec_default_gen.mbt` from the pinned WHATWG spec commit, format, then drift-check (needs network) |
 | `dyncomp-storybook` | assemble `dist/dyncomp-storybook/` — the gallery of every component every loaded bundle declares, once per named `init` — with every sample bundle beside it. Out of `dist` for the same reason `universal` is: the guests need wasm-tools + jco |
 | `guest-template-embed` | regenerate `cli/guest_template_gen.mbt` — the guest tree `tutuca new-guest` writes out — from `guests/counter` (bindings + SDK) + `dyncomp/wit` (the contract) + `guests/template` (the overlay that carries the `{{name}}` placeholders); `dist` runs it beside `skill-embed` |
 | `check-guest-template` | scaffold a guest with that embed and `moon check --deny-warn` it; part of `ci`, and the only coverage `new-guest` has (CI never builds a real guest — `guests` needs wasm-tools and jco) |
@@ -261,8 +264,11 @@ A third generated-from-upstream file lives elsewhere and follows the same rule:
 - `anode/sanitize/spec_default_gen.mbt` — the WHATWG Sanitizer API's built-in
   default configuration, from the **machine-readable `builtins/` in the spec
   repo** at the commit pinned in `scripts/fetch-sanitizer-defaults.mjs`.
-  Regenerate with `node scripts/fetch-sanitizer-defaults.mjs`;
-  `--check` fails if the committed file is stale.
+  Regenerate and verify with the `sanitizer-defaults` task, which does what
+  `skill-embed` and `gen-views` do — regenerate, `moon fmt`, then
+  `git diff --exit-code`. Prefer it to the script's own `--check`: that flag
+  compares the generator's UNFORMATTED output against a file `moon fmt` has
+  reformatted, so it reports "stale" on content that is byte-identical.
 
 A fourth vendored-from-upstream tree follows the same rule from the other end —
 it is copied rather than generated, but it is equally not ours to edit:
