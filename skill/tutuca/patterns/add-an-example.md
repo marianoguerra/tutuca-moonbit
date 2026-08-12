@@ -40,10 +40,9 @@ A gallery built from a compiled registry has more steps, and skipping any of the
 is **silent** rather than broken — the example appears, just unlabeled or in the
 wrong place:
 
-1. **Register the module** in the registry the gallery reads (in this repo,
-   `storybook/examples/examples.mbt`).
+1. **Register the module** in the registry the gallery reads.
 2. **Give its name a section.** Sidebar grouping is a curated
-   `name -> section` map (`storybook/stories.mbt`), not derived from the module.
+   `name -> section` map, not derived from the module.
    An unlisted name falls into **"Other"**, appended last. A section you add
    that is not in `section_order` still renders, but after all the ordered ones.
 3. **Give it a title and description**, in the same file's `name -> (title,

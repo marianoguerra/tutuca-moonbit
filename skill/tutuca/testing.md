@@ -28,7 +28,7 @@ import {
 Import `core` under the `@tutuca` alias, not the module root. The root package
 re-exports only four names (`Value`, `RequestOpts`, `Ctx`, `Obj`), so
 `@tutuca.NullCtx` — needed to call an `update` fn directly — resolves only
-through `core`. Every package in this repo that does so imports it this way.
+through `core`, and that is the spelling to use wherever it is needed.
 
 Author tests as plain `test "..." { ... }` blocks in `*_test.mbt` files:
 

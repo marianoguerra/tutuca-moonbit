@@ -38,10 +38,12 @@ You can browse and install extra skills here:
   `cli/skill_assets_gen.mbt` from `skill/tutuca/`). `moon fmt` owns the layout
   of the `*_view_gen.mbt` pair, so the `gen-views` task formats after
   generating — run the task, not the CLI directly, and the checked-in files
-  stay reproducible. (`cli/skill_assets_gen.mbt` is the exception: it is NOT
-  fmt-stable, so revert it after a `moon fmt` and regenerate through
-  `skill-embed`. Since `gen-views` and `fmt` both end in `moon fmt`, run
-  `skill-embed` after either of them before checking for drift.)
+  stay reproducible. `cli/skill_assets_gen.mbt` works the same way: its task
+  ends in `moon fmt` too, so what is checked in is already what fmt produces
+  and a later `moon fmt` leaves it alone. (This paragraph used to say the
+  opposite — that the file was not fmt-stable and had to be reverted after a
+  `moon fmt` — while `dev/tasks.mbt` said the trailing fmt was there precisely
+  so it would be. The task was right; it was checked by running both.)
 
 - `dyncomp/` has four documents, and they divide as: `DESIGN.md` is the
   contract and how it maps onto tutuca; `SECURITY.md` is what a loaded bundle
@@ -51,9 +53,9 @@ You can browse and install extra skills here:
   Changing the WIT means checking `SECURITY.md`'s "What to check when changing
   this" — two of its three findings were fields nobody thought were a channel.
 
-- The guest binding trees under `guests/counter/` and `guests/todo/` are
-  generated and checked in the same way, by `gen-guest-bindings`, from the ONE
-  WIT in the repo (`dyncomp/wit/tutuca-component.wit` — no guest keeps a copy,
+- The guest binding trees under `guests/*` — every name in `guests/guests.mjs`
+  — are generated and checked in the same way, by `gen-guest-bindings`, from
+  the ONE WIT in the repo (`dyncomp/wit/tutuca-component.wit` — no guest keeps a copy,
   and the Rust guest's `generate!` macro reads it too). `wit-bindgen`'s raw
   output has to be normalized before it can be checked in meaningfully: it
   emits its FFI shims in HASH order, which differs between two runs on the
@@ -97,6 +99,15 @@ list; `cmd/dev` is the native shell that runs it):
 ```
 moon run --target native cmd/dev -- <task>
 ```
+
+There is also a `justfile`, and it is the ergonomic front door rather than a
+second task list: every recipe is a one-line wrapper over the task of the same
+name (`just check`, `just ci`, `just dist`), `just dev <task>` reaches anything
+without a recipe, and `just cli <args>` runs the CLI. Prefer adding a task and
+letting the recipe stay one line — a recipe that grows a second command has
+started being a task in the wrong place. The two `clean` recipes are the
+deliberate exception, and say why in the file: the task runner is a native
+binary inside the `_build` they delete.
 
 | Task       | Does                                                              |
 |------------|------------------------------------------------------------------|
@@ -318,7 +329,8 @@ The raw `moon` commands below still work and are what the tasks run underneath.
 - Targets: the module's `preferred_target` is `wasm-gc`, so a bare
   `moon check` / `moon test` covers only the target-agnostic packages. Full
   coverage needs all three: `moon test` (wasm-gc), `moon test --target js`
-  (vdom/browser, app/browser, demo/counter — happy-dom based)
+  (vdom/browser, app/browser — happy-dom based; those two packages are what
+  the `test` task passes, and the only ones with js-target tests)
   and `moon test --target native` (the cli shell: cmd/main).
   Run `moon check --target js` and `--target native` too before handing off —
   each target surfaces warnings the others don't.

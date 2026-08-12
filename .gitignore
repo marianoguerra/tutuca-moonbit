@@ -2,9 +2,10 @@
 .DS_Store
 
 # MoonBit build output and fetched dependencies
+# `target/` is the Rust guest's (guests/rust-tempconv); the directory form is
+# deliberate — a bare `target` would also ignore any FILE with that name.
 _build/
 target/
-target
 .mooncakes/
 .moonagent/
 
@@ -20,6 +21,10 @@ playground/vendor/moonc-web.cjs
 
 # Playwright-MCP browser session dumps
 .playwright-mcp/
+
+# Per-machine agent settings. Not `.claude/` wholesale: a project may want to
+# check in shared skills or settings, and only this file is personal.
+.claude/settings.local.json
 
 # Throwaway scaffold used by scripts/check-playground-examples.mjs
 playground/_examples_check/

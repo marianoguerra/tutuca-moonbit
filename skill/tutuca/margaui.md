@@ -85,9 +85,9 @@ any palette link appended later.
 
 ## Compile in MoonBit (what the demos do)
 
-The wasm demos (`demo/storybook_wasm`, `demo/universal_wasm`) compile margaui
-**in MoonBit** via `marianoguerra/tailwindcss`, so there is no CDN import and
-styling works offline. The moving parts, all in-repo:
+A wasm-gc host compiles margaui **in MoonBit** via
+`marianoguerra/tailwindcss`, so there is no CDN import and styling works
+offline. The moving parts:
 
 - **The bundles.** `cmd/css-bundle` (a dev tool) runs the tailwindcss `bundle`
   graph walk (`@tw.collect_imports`) over each entry in `css/assets/` and emits
@@ -95,9 +95,8 @@ styling works offline. The moving parts, all in-repo:
   `css/margaui_bundle_gen.mbt`, each an `@import` map as an
   `Array[(String, String)]` plus its entry string. Regenerate both with:
 
-  ```sh
-  moon run --target native cmd/dev -- css-bundle
-  ```
+  (regenerated from the pinned upstream releases by the tutuca repo's
+  `css-bundle` task — not something a consuming project runs)
 
   The task clones margaui from GitHub at the ref pinned in
   `scripts/fetch-margaui.mjs` into the gitignored `_build/margaui`, and downloads
@@ -182,8 +181,7 @@ forward to `--entry` / `--classes`; pass them if your build does.
 The integration is three steps, all on the MoonBit side: after mounting,
 **collect** the class set, **compile** it, **inject** the CSS.
 
-**wasm-gc target** (the `demo/*_wasm` pattern): `mount()` compiles + injects in
-MoonBit; the page only pre-places an empty `<style id="margaui-css">` in
+**wasm-gc target**: `mount()` compiles + injects in MoonBit; the page only pre-places an empty `<style id="margaui-css">` in
 `<head>` (so injection keeps a stable, early cascade position — palette links
 appended later still win) and calls `exports.mount()`:
 

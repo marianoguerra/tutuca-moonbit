@@ -146,7 +146,7 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "bench-views",
-      about: "regenerate benchmarks/all_views.{html,_gen.mbt} — every repo view concatenated, names prefixed",
+      about: "regenerate the benchmark view corpus (all_views.html, one_big_view.html, corpus_gen.mbt)",
       commands: [
         {
           label: "build · benchmark view corpus",

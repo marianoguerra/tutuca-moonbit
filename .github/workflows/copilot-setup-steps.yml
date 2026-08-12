@@ -26,16 +26,28 @@ jobs:
     # You can define any steps you want, and they will run before the agent starts.
     # If you do not check out your code, Copilot will do this for you.
     steps:
+      # Kept in step with ci.yml's setup, which is the environment the tasks
+      # actually expect: several of them (check-examples, check-skill,
+      # check-guest-template, the playground assembly) are node scripts, so an
+      # agent with only MoonBit installed can run `moon check` and nothing else.
       - name: Checkout code
         uses: actions/checkout@v5
+
+      - name: Set up Node (happy-dom for js-target tests, and the node-driven checks)
+        uses: actions/setup-node@v4
+        with:
+          node-version: "24"
 
       - name: Set up MoonBit
         run: |
           curl -fsSL https://cli.moonbitlang.com/install/unix.sh | bash
-          echo "$HOME/.moon/bin" >> $GITHUB_PATH
+          echo "$HOME/.moon/bin" >> "$GITHUB_PATH"
 
       - name: Update MoonBit dependencies
         run: |
-            moon version --all
-            moon update
-            
+          moon version --all
+          moon update
+
+      - name: Install npm dev dependencies
+        run: npm install
+

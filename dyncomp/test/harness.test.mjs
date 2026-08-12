@@ -1,6 +1,6 @@
 // Node harness for the tutuca:component contract, driven against the
 // counter guest (guests/counter). Build it first:
-//   node guests/counter/build.mjs
+//   node guests/build-guest.mjs counter
 // then:
 //   node --test 'dyncomp/test/*.test.mjs'
 //

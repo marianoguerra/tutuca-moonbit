@@ -1,12 +1,17 @@
 // tutuca script: the language a view file is written in.
 //
-// One lexer and one parser serve both halves of it. The SLOT language — what
-// an attribute value holds — is the subset that is a single expression, and it
-// is what this package answers today. The BLOCK language, `<script
+// It has two halves. The SLOT language — what an attribute value holds — is
+// the subset that is a single expression. The BLOCK language, `<script
 // type="tutuca/script">`, adds declarations, statements and operators over the
 // same atoms; §2.4 of the design is the promise that it invents no new way to
-// NAME a value, which is why one parser can serve both and why an author who
-// can read a view can read a handler.
+// NAME a value, which is why an author who can read a view can read a handler.
+//
+// Each half currently has its OWN tokenizer and parser (`lex.mbt`/`parse.mbt`
+// for slots, `script_lex.mbt`/`script_parse.mbt` for blocks). That is a
+// staging decision rather than a design one, and `script_lex.mbt`'s header
+// states the condition for undoing it: the two become one once the block
+// grammar has proven itself. Until then this comment describes two, because
+// claiming one and shipping two is the kind of thing a reader trusts once.
 //
 // It lives above `core` rather than inside it because `core` never parses
 // anything: the only production callers of the slot parser are `anode` (every

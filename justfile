@@ -59,9 +59,14 @@ ci:
 cli *ARGS:
     {{cli}} {{ARGS}}
 
-# compile a view file into its typed MoonBit module
-gen-views *ARGS:
-    {{cli}} gen-views {{ARGS}}
+# regenerate every checked-in *_view_gen.mbt, then drift-check them
+#
+# The same job `cmd/dev -- gen-views` does, because the name has to mean one
+# thing: this used to run the CLI over ONE file while `just dev gen-views`
+# regenerated the repo. For a single file, use the passthrough above:
+#   just cli gen-views path/to/counter.html --name Counter
+gen-views:
+    {{dev}} gen-views
 
 # compile a project's view classes into CSS (stock Tailwind)
 gen-tailwind-css *ARGS:
@@ -102,7 +107,7 @@ guests:
     {{dev}} guests
 
 # regenerate the guests' MoonBit bindings from dyncomp/wit, then drift-check
-guest-bindings:
+gen-guest-bindings:
     {{dev}} gen-guest-bindings
 
 # dry-run package the module for mooncakes.io

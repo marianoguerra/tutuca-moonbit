@@ -128,7 +128,7 @@ so the worker can check a served compiler against it.
 ```sh
 moon run --target native cmd/dev -- dist       # or: -- playground, then assemble-site.mjs
 moon run --target native cmd/dev -- npm-pack   # stages + packs into _build/npm/
-tar tzf _build/npm/marianoguerra-tutuca-playground-0.8.1.tgz   # review what ships
+tar tzf _build/npm/marianoguerra-tutuca-playground-<version>.tgz  # review what ships
 npm publish _build/npm/<file>.tgz --access public              # scoped: public on first release
 ```
 

@@ -4,10 +4,10 @@
 //
 // Emits two checked-in artifacts:
 //
-//   benchmarks/all_views.html   — the concatenation, readable/debuggable
-//   benchmarks/all_views_gen.mbt — the same text as a MoonBit string, so the
-//                                  bench runs on every backend (wasm-gc has
-//                                  no filesystem)
+//   benchmarks/all_views.html    — the concatenation, readable/debuggable
+//   benchmarks/one_big_view.html — the same views inside one root
+//   benchmarks/corpus_gen.mbt    — both as MoonBit strings, so the bench runs
+//                                  on every backend (wasm-gc has no filesystem)
 //
 // Run through the task runner so the .mbt gets formatted:
 //   moon run --target native cmd/dev -- bench-views

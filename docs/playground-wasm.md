@@ -1,6 +1,13 @@
 # Playground wasm-gc target — how it works
 
-_Blocker cleared 2026-07-29 (investigated 2026-07-16)._
+How the in-browser playground compiles and runs on both backends: the string
+ABI both halves must agree on, the worker-per-target rule, the realm the linked
+module lives in, and how to verify a change to any of it.
+
+This began as a blocker report (2026-07-16, cleared 2026-07-29) under the name
+`playground/WASM_TARGET_STATUS.md`, which is why the CHANGELOG mentions it. The
+investigation is over; what survived it is reference material, so it reads and
+is named as reference material.
 
 ## TL;DR
 
@@ -64,8 +71,10 @@ array.new_fixed[0] expected type externref, found local.get of type (ref 1)
 
 That was the long-standing blocker: `@moonbit/moonc-worker`'s `linkCore` used to
 expose no string-ABI knob at all, so the playground could not ask for a
-consistent link. The pin at `0.1.202607282` does expose it
-(`playground/vendor/moonc-web.d.ts`), which is what cleared this.
+consistent link. The compiler pinned in `playground/build/toolchain.json` — the
+ONE toolchain pin, which is where to look for the current version rather than
+here — does expose it (`playground/vendor/moonc-web.d.ts`), which is what
+cleared this.
 
 ## One worker, many callers: the target travels with each compile
 

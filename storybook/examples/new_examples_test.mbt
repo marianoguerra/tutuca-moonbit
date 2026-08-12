@@ -1,7 +1,8 @@
 // Interaction tests for the last batch of ported examples:
 // custom-collection, dynamic-selected-edit, file-picker,
-// web-component-custom-event and composability (lint-errors has its own
-// fixture test in lint_errors_test.mbt).
+// web-component-custom-event and composability. lint-errors has no test: it
+// is a fixture whose views are DELIBERATELY invalid, so stories.mbt marks it
+// `renderable: false` and the lint panel is what reads it.
 
 ///|
 test "custom-collection: @each iterates the keyed list in insertion order" {

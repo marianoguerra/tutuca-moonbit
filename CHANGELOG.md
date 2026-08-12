@@ -6,6 +6,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+> **Why this section is so long, and why it was not split retroactively.**
+>
+> Fifteen versions were published between 0.9.3 and 0.12.2 (0.9.4 … 0.9.13,
+> 0.10.0, 0.11.0, 0.12.0 … 0.12.2, tagged and dated in git) without moving
+> these entries under version headings, so everything since 0.9.3 accumulated
+> here. Splitting it after the fact was attempted and abandoned: entries were
+> not merely appended, they were REVISED in place across later releases, so
+> reconstructing "what shipped in 0.10.0" from the history yields a block that
+> overlaps its neighbours rather than a clean cut. A changelog that confidently
+> attributes a change to the wrong release is worse than one that says a range
+> of releases share a section, so this says the latter.
+>
+> `git log v0.9.3..` and the tags are the record for anything in between. Going
+> forward, follow CONTRIBUTING.md: move these under the new version heading as
+> part of the release, while the boundary is still known.
+
 ### Removed
 
 - **Five public functions nothing called.** Each was reachable, documented and

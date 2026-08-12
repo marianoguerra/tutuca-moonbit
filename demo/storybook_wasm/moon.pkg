@@ -1,6 +1,5 @@
-// wasm-gc host for the storybook gallery: the wasm twin of demo/examples_wasm,
-// but instead of mounting one example by ?name= it mounts the whole grouped
-// gallery (storybook/ui) as a single live app. Lint text for each pane comes
+// wasm-gc host for the storybook gallery: it mounts the whole grouped gallery
+// (storybook/ui) over the entire example registry as a single live app. Lint text for each pane comes
 // from the CLI's check_component, injected as the mount() lint callback.
 // Build: moon build --target wasm-gc demo/storybook_wasm
 import {

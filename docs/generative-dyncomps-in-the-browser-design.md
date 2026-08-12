@@ -1,5 +1,10 @@
 # Generative dyncomps in the browser
 
+> **Status: a design, not a description.** This is a PLAN — what it would take
+> to produce a bundle client-side, written before the work. Read it for the
+> reasoning and the constraints; do not read it as a description of what the
+> code does today. Everything else in `docs/` documents shipped behaviour.
+
 Producing a `tutuca:component@0.6.0` bundle entirely client-side, with no server
 and no native toolchain.
 

@@ -31,10 +31,11 @@
 //   tuple    [1, "a"]
 //
 // Adopting the direct codec was gated on a measurement, because a second
-// encoder has to be kept in step with the derived one:
-// benchmarks/codec_bench_test.mbt puts encode at ~2x and decode at ~5x,
-// decode gaining most because the JSON path rebuilds a whole `Json` object
-// just to hand it to `from_json`.
+// encoder has to be kept in step with the derived one: encode came out ~2x and
+// decode ~5x, decode gaining most because the JSON path rebuilt a whole `Json`
+// object just to hand it to `from_json`. The benchmark that measured it went
+// with the bridge it was A/B-ing against — see benchmarks/OPTIMIZATIONS.md,
+// "The state <-> Value codec, retired", which is where those numbers live now.
 
 // ---------------------------------------------------------------------------
 // Converters for the named types, emitted once each

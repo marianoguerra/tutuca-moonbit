@@ -21,7 +21,7 @@
 // (`new WebAssembly.Module`), because its one link-time flag is invisible
 // everywhere else: the payload's cores use the JS-String-Builtins ABI, and a
 // link that does not ask for it emits a module that compiles, links, reports no
-// diagnostics, and then will not load in a browser. See WASM_TARGET_STATUS.md.
+// diagnostics, and then will not load in a browser. See docs/playground-wasm.md.
 //
 // Run after `node playground/build/assemble.mjs`:
 //   node playground/build/check-viewgen-tab.mjs

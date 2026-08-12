@@ -3,9 +3,6 @@ name: tutuca
 description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
 ---
 
-<!-- The MoonBit tutuca skill lives at skill/tutuca/ in this repo and is
-     embedded into the CLI binary by the dev `dist` tooling — edit here. -->
-
 # Tutuca (MoonBit port)
 
 Tutuca is an immutable-state SPA framework. This skill covers the MoonBit

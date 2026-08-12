@@ -82,9 +82,9 @@ jobs:
       - name: Add Rust wasm target
         run: rustup target add wasm32-unknown-unknown
 
-      # universal drag-and-drop demo: the wasm-gc drop shell + sample single-file
-      # bundles (counter, todo, and the Rust rust-notepad, in
-      # dist/universal/examples/). Builds the guest bundles it packs.
+      # universal drag-and-drop demo: the wasm-gc drop shell + every sample
+      # single-file bundle (the MoonBit guests in guests/guests.mjs plus the Rust
+      # rust-tempconv, into dist/universal/examples/). Builds the guests it packs.
       - name: Build universal demo
         run: moon run --target native cmd/dev -- universal
 

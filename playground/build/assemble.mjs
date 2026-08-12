@@ -181,7 +181,7 @@ const manifest = {
   targets: {},
 };
 // By default assemble BOTH backends so the shipped playground offers a working
-// wasm-gc toggle (see WASM_TARGET_STATUS.md for what the two backends do
+// wasm-gc toggle (see docs/playground-wasm.md for what the two backends do
 // differently). Set JS_ONLY=1 to assemble the js backend only.
 const TARGETS = process.env.JS_ONLY
   ? [["js", "demo/counter", "playground/host"]]

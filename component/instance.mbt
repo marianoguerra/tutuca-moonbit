@@ -29,7 +29,7 @@ priv struct TypedSpec[S] {
   /// back, inside a process-global stash, because `Obj` and `Fn` cannot
   /// survive JSON at all. It was the fallback for a component with no declared
   /// schema to generate a codec from, and measured ~2x slower on encode and
-  /// ~5x on decode (benchmarks/codec_bench_test.mbt). Every component declares
+  /// ~5x on decode. Every component declares
   /// one now, so there is nothing left to fall back to and the bridge is gone.
   encode : (S) -> Map[String, @tutuca.Value]
   decode : (Map[String, @tutuca.Value]) -> S?

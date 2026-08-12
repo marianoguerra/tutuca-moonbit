@@ -777,13 +777,18 @@ In the view pipeline:
 
 ## The state <-> Value codec, retired
 
-`codec_bench_test.mbt` A/B'd the JSON bridge (`S -> Json -> Value` and back,
+A now-retired `codec_bench_test.mbt` A/B'd the JSON bridge (`S -> Json -> Value` and back,
 inside a process-global stash because `Obj`/`Fn` cannot survive JSON) against a
 direct field-by-field codec generated from the schema. On the shape the corpus
 has — scalars, a list and a dynamic field — encode came out ~2x and decode ~5x,
 decode gaining most because the JSON path rebuilt a whole `Json` object just to
 hand it to `from_json`. That measurement is what justified generating a second
 encoder at all.
+
+The benchmark is gone because its other arm is: with no JSON bridge left there
+is nothing to A/B against, and a benchmark timing only the surviving path
+measures nothing anyone can act on. The numbers above are the record, and this
+paragraph is why they cannot be re-run as written.
 
 The bench is gone because its comparison is: `component()` requires a codec
 now, the bridge and the stash are deleted, and there is no second path to
