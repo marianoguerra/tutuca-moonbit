@@ -24,7 +24,7 @@ fn main {
 /// The one bundle this page ships with — `../dice`, built and packed beside it
 /// by `../build.mjs`. It is offered as a button; dropping any other
 /// `.tutuca.tar.gz` on the page works too, and needs no entry here.
-fn samples() -> Array[@uiw.HostToolsSample] {
+fn samples() -> Array[@shell.LoaderBarSample] {
   [{ label: "dice (built here)", url: "./examples/dice.tutuca.tar.gz" }]
 }
 

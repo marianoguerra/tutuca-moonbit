@@ -61,7 +61,7 @@ fn has_test_param() -> Bool {
 /// The bundles `cmd/dev -- universal` packs beside this page. Behind `?test`
 /// because they are for working on the demo rather than for using it; dropping
 /// a bundle is not gated, because that is what the page is for.
-fn samples() -> Array[@uiw.HostToolsSample] {
+fn samples() -> Array[@shell.LoaderBarSample] {
   if !dev_mode {
     return []
   }
@@ -71,6 +71,8 @@ fn samples() -> Array[@uiw.HostToolsSample] {
     { label: "todomvc", url: "./examples/todomvc.tutuca.tar.gz" },
     { label: "calculator", url: "./examples/calculator.tutuca.tar.gz" },
     { label: "tic-tac-toe", url: "./examples/tictactoe.tutuca.tar.gz" },
+    { label: "bluesky", url: "./examples/bluesky.tutuca.tar.gz" },
+    { label: "slack", url: "./examples/slack.tutuca.tar.gz" },
     { label: "rust temp", url: "./examples/rust-tempconv.tutuca.tar.gz" },
   ]
 }

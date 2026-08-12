@@ -1,0 +1,38 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/storybook/wasm"
+
+import {
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/dyncomp/policy",
+  "marianoguerra/tutuca/dyncomp/shell",
+  "marianoguerra/tutuca/dyncomp/storybook",
+  "mizchi/js/core",
+}
+
+// Values
+pub fn dyncomp_on_load_error(Int, String) -> Unit
+
+pub fn dyncomp_on_loaded(Int, Int, String) -> Unit
+
+pub fn mount(samples? : Array[@shell.LoaderBarSample], autoload? : Bool, requests? : Map[String, @component.RequestFn], policy? : @policy.Policy) -> StorybookHost?
+
+pub fn on_event(@core.Any) -> Unit
+
+pub fn refresh_margaui() -> Unit
+
+pub fn state_json() -> String
+
+pub fn storybook_module(samples? : Array[@shell.LoaderBarSample], requests? : Map[String, @component.RequestFn]) -> (@component.ModuleDef, @storybook.Gallery)
+
+// Errors
+
+// Types and methods
+pub struct StorybookHost {
+  app : @app.App[@marianoguerra/tutuca/vdom/wasm.WasmNode]
+  gallery : @storybook.Gallery
+}
+
+// Type aliases
+
+// Traits

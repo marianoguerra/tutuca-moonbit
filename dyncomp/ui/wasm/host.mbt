@@ -17,12 +17,12 @@
 /// be a dependency's job, because an export list is per-package link
 /// configuration. See `demo/universal_wasm` for the ~90 lines that does it.
 
-// One bundle a host offers to load by URL is a `HostToolsSample`
-// (`{ label, url }`), generated from the record `host_tools.html` declares.
-// There is deliberately no friendlier alias for it: a public struct beside the
-// view-facing one is two definitions that can disagree, and the alias syntax
-// that would rename it in place is deprecated in favour of an attribute on the
-// declaration — which is generated, and not ours to annotate.
+// One bundle a host offers to load by URL is a `@shell.LoaderBarSample`
+// (`{ label, url }`), generated from the record `dyncomp/shell`'s loader bar
+// declares. There is deliberately no friendlier alias for it: a public struct
+// beside the view-facing one is two definitions that can disagree, and the alias
+// syntax that would rename it in place is deprecated in favour of an attribute
+// on the declaration — which is generated, and not ours to annotate.
 //
 // A published host knows no bundle's name. A page that ships with its own
 // components, or a demo, passes them in; that is why they are a value rather
@@ -299,107 +299,47 @@ fn restored_tree() -> @tutuca.Value? {
 // --- the bridge -------------------------------------------------------------
 
 ///|
-/// Build a guest instance for the app to place.
+/// The bar a bundle arrives through, with the bookkeeping a SESSION needs.
 ///
-/// The one thing `dyncomp/ui` cannot do for itself: a named fixture goes
-/// through `make_init`, everything else through the bare constructor with the
-/// arguments the form validated. Standard components never reach here — they
-/// are compiled in, and the app builds them directly.
-pub fn make_instance(
-  ref_ : @registry.ComponentRef,
-  init : String,
-  args : Map[String, @tutuca.Value],
-) -> @tutuca.Value? {
-  if init == "" {
-    @dhw.make_instance(ref_.module_, ref_.name, args~)
-  } else {
-    @dhw.make_init(ref_.module_, ref_.name, init)
-  }
-}
-
-///|
-/// The bar tools: fetch a bundle by URL, or take a dropped file.
-///
-/// The bridge answers at the path that ASKED for a load, which is this
-/// component's — so it hears its own results and tells the app the catalog
-/// changed. Nothing above it has to know what a bundle is.
-fn host_tools_comp(samples : Array[HostToolsSample]) -> @component.Component {
-  host_tools_component(
-    init={
-      status: if samples.is_empty() {
-        "drop a .tutuca.tar.gz to add its components"
-      } else {
-        "drop a .tutuca.tar.gz, or load a sample"
-      },
-      samples,
+/// The loading itself is `dyncomp/shell`, shared with the storybook because both
+/// pages need exactly it. What is here is the half that is this host's: a URL
+/// worth writing down, a count of loads still in flight, and the moment the last
+/// of them lands — which is when a saved page can finally be put back.
+fn host_tools_comp(
+  samples : Array[@shell.LoaderBarSample],
+) -> @component.Component {
+  @shell.loader_bar_comp(
+    samples~,
+    status=if samples.is_empty() {
+      "drop a .tutuca.tar.gz to add its components"
+    } else {
+      "drop a .tutuca.tar.gz, or load a sample"
     },
-    update=(s, msg, ctx) => {
-      match HostToolsMsg::from_dispatch(msg) {
-        // The payload is a `Value` rather than a `String` because the button
-        // reads `@value.url` out of the loop rather than naming a literal —
-        // the generator types a loop-sourced argument as `any`, which is the
-        // honest answer for something the schema cannot see through.
-        Some(LoadSample(Str(url))) => {
-          match live.val {
-            Some(host) =>
-              if !host.loaded_urls.contains(url) {
-                host.loaded_urls.push(url)
-              }
-            None => ()
+    notify=(ev, ctx) => {
+      guard live.val is Some(host) else { return }
+      match ev {
+        // Only URLs: a dropped file has no name the page can fetch, so its
+        // components come back only if the same bundle is dropped again.
+        Started(url) =>
+          if url != "" && !host.loaded_urls.contains(url) {
+            host.loaded_urls.push(url)
           }
-          @dhw.load_url(ctx.path(), url) |> ignore
-          return Some({ ..s, status: "loading \{url}…" })
-        }
-        Some(LoadSample(_)) => return None
-        Some(Unknown(_, _)) | None => ()
-      }
-      match HostToolsReceive::from_dispatch(msg) {
-        // A dropped file: the payload is the list of descriptors the drop
-        // event carried, and the id names the file the browser still holds. No
-        // page-level JS is involved — this is an ordinary handler.
-        Some(FilesDropped(files)) => {
-          guard files is List(items) else { return None }
-          for f in items {
-            match f.field("id") {
-              Num(id) => @dhw.load_dropped(ctx.path(), id.to_int()) |> ignore
-              _ => ()
+        // The last of the resumed loads is what makes a restore possible:
+        // every bundle the saved page names is now here.
+        Loaded(_) =>
+          if host.pending.val > 0 {
+            host.pending.val = host.pending.val - 1
+            if host.pending.val == 0 {
+              match restored_tree() {
+                Some(root) => ctx.bubble("restoreTree", [root])
+                None => ()
+              }
             }
           }
-          Some({ ..s, status: "loading…" })
-        }
-        Some(DyncompLoaded(module_name)) => {
-          HostToolsBubble::CatalogChanged(module_name).bubble(ctx)
-          // The last of the resumed loads is what makes a restore possible:
-          // every bundle the saved page names is now here.
-          match live.val {
-            Some(host) =>
-              if host.pending.val > 0 {
-                host.pending.val = host.pending.val - 1
-                if host.pending.val == 0 {
-                  match restored_tree() {
-                    Some(root) => ctx.bubble("restoreTree", [root])
-                    None => ()
-                  }
-                }
-              }
-            None => ()
+        Failed(_) =>
+          if host.pending.val > 0 {
+            host.pending.val = host.pending.val - 1
           }
-          Some({ ..s, status: "loaded \{module_name}" })
-        }
-        // The refusal's own words: "this host takes no CSS from a bundle",
-        // "no such component". A generic sentence here would throw away the
-        // one thing a person can act on.
-        Some(DyncompError(why)) => {
-          match live.val {
-            Some(host) =>
-              if host.pending.val > 0 {
-                host.pending.val = host.pending.val - 1
-              }
-            None => ()
-          }
-          Some({ ..s, status: why })
-        }
-        Some(Unknown(_, _)) | None => None
       }
     },
   )
@@ -414,13 +354,13 @@ fn host_tools_comp(samples : Array[HostToolsSample]) -> @component.Component {
 /// this HOST offers to whatever it hosts; a bundle that serves a request of the
 /// same name answers its own components first.
 pub fn universal_module(
-  samples? : Array[HostToolsSample] = [],
+  samples? : Array[@shell.LoaderBarSample] = [],
   requests? : Map[String, @component.RequestFn] = {},
 ) -> (@component.ModuleDef, @ui.UniversalUi) {
   let (module_, ui) = @ui.seeded_app(
     @dhw.registry(),
-    make_instance,
-    dev_tools="HostTools",
+    @shell.make_instance,
+    dev_tools="LoaderBar",
   )
   (
     @component.ModuleDef::new(
@@ -435,31 +375,12 @@ pub fn universal_module(
 // --- margaui class publishing -------------------------------------------
 
 ///|
-/// Compile the app's utility-class set to CSS in MoonBit (via the
-/// marianoguerra/tailwindcss port) and inject it as <style id="margaui-css">.
-/// Called at mount and again after a bundle loads, so guest-view classes get
-/// compiled too. The page should pre-place an empty <style id="margaui-css">
-/// early in <head> so the upsert keeps it ahead of any lazily-loaded palette
-/// <link>.
-pub fn UniversalHost::apply_margaui(self : UniversalHost) -> Unit {
-  let css = @css.compile_margaui(self.app.scope.comps.collect_classes()) catch {
-    err => {
-      @tutuca.warn("margaui compile failed: \{err}")
-      return
-    }
-  }
-  @wglue.inject_style(@wglue.document(), "margaui-css", css)
-}
-
-///|
 /// Recompile + reinject margaui CSS after a guest bundle registers new views
 /// (and thus new utility classes). A host exports this for its loader to call
-/// post-load.
+/// post-load. One implementation, in `dyncomp/shell`, because getting it wrong
+/// looks identical on both pages: the guest renders completely unstyled.
 pub fn refresh_margaui() -> Unit {
-  match live.val {
-    Some(host) => host.apply_margaui()
-    None => ()
-  }
+  @shell.refresh_margaui()
 }
 
 // --- lifecycle ------------------------------------------------------------
@@ -485,7 +406,7 @@ pub fn refresh_margaui() -> Unit {
 /// had no `#app` to mount into.
 pub fn mount(
   session? : Session? = None,
-  samples? : Array[HostToolsSample] = [],
+  samples? : Array[@shell.LoaderBarSample] = [],
   requests? : Map[String, @component.RequestFn] = {},
   policy? : @policy.Policy = @policy.Policy::untrusted(),
 ) -> UniversalHost? {
@@ -507,8 +428,9 @@ pub fn mount(
   // can be a handle the host has already collected — and a snapshot taken
   // through one is not a snapshot at all.
   app.transactor.on_drained(save_session)
+  @shell.set_live_app(app)
   @dhw.set_app(app, @wglue.document(), policy~)
-  host.apply_margaui()
+  @shell.refresh_margaui()
   // The bar tools are where a load's answers arrive, so that is the path a
   // resume asks from.
   resume_session(host, @tutuca.DispatchPath::of_steps([FieldStep("devTools")]))

@@ -1,0 +1,4 @@
+<button @if.class=".reacted"
+        @then="'badge badge-sm gap-1 cursor-pointer badge-primary reaction reacted'"
+        @else="'badge badge-sm gap-1 cursor-pointer badge-ghost reaction'"
+        @on.click="toggle"><x text=".emoji"></x><span class="opacity-70 count" @text=".count"></span></button>

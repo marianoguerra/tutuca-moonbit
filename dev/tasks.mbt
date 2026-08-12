@@ -316,9 +316,10 @@ fn gen_views_commands() -> Array[Command] {
   // (relative .html path, --name override or None)
   let files : Array[(String, String?)] = [
     ("demo/counterlib/counter.html", Some("Counter")),
-    ("dyncomp/ui/wasm/host_tools.html", Some("HostTools")),
+    ("dyncomp/shell/loader_bar.html", Some("LoaderBar")),
     ("dyncomp/ui/app.html", Some("UniversalApp")),
     ("dyncomp/ui/std/std.html", None),
+    ("dyncomp/storybook/storybook.html", Some("DyncompStorybook")),
     ("inspector/activity.html", None),
     ("inspector/json.html", None),
     ("inspector/component_inspector.html", None),
@@ -620,6 +621,9 @@ pub fn plan(name : String) -> Array[Step]? {
   if name == "universal" {
     return Some(universal_steps())
   }
+  if name == "dyncomp-storybook" {
+    return Some(dyncomp_storybook_steps())
+  }
   if name == "guests" {
     return Some(guest_build_steps())
   }
@@ -639,7 +643,7 @@ pub fn plan(name : String) -> Array[Step]? {
 /// The Rust one is separate: same WIT, but it builds through cargo rather than
 /// moon, so it keeps its own script.
 fn moonbit_guests() -> Array[String] {
-  ["counter", "todo", "todomvc", "calculator", "tictactoe"]
+  ["counter", "todo", "todomvc", "calculator", "tictactoe", "bluesky", "slack"]
 }
 
 ///|
@@ -671,19 +675,25 @@ pub fn guest_build_steps() -> Array[Step] {
 }
 
 ///|
-/// Pack each guest's core wasm + static assets into one droppable `.tutuca.tar.gz`, into the
-/// universal demo's examples/.
-pub fn guest_pack_steps() -> Array[Step] {
+/// Pack each guest's core wasm + static assets into one droppable
+/// `.tutuca.tar.gz`, into a page's examples/.
+///
+/// `into` is a parameter rather than a constant because two pages want the same
+/// archives beside them — the universal host, where they are things to place,
+/// and the dyncomp storybook, where they are the story set. Packing twice into
+/// one directory and symlinking would tie the two pages' assembly together for
+/// no gain; they are a few hundred KB.
+pub fn guest_pack_steps(into~ : String) -> Array[Step] {
   let out : Array[Step] = []
   for name in [..moonbit_guests(), RUST_GUEST] {
     out.push(
       Run({
-        label: "pack · \{name} bundle → examples/\{name}.tutuca.tar.gz",
+        label: "pack · \{name} bundle → \{into}/\{name}.tutuca.tar.gz",
         prog: "node",
         args: [
           "scripts/pack-bundle.mjs",
           "guests/\{name}/dist/js",
-          "\{DIST}/universal/examples/\{name}.tutuca.tar.gz",
+          "\{into}/\{name}.tutuca.tar.gz",
         ],
       }),
     )
@@ -729,12 +739,81 @@ pub fn universal_steps() -> Array[Step] {
       old_src="../../../app/wasm/loader.mjs",
       new_src="./app-loader.mjs",
     ),
+    // The THIRD file, and the one easiest to forget: `dyncomp-loader.mjs`
+    // `import()`s it lazily, only when an archive is actually being unpacked —
+    // so a page missing it mounts, draws, and fails on the first bundle with a
+    // message about a module nobody mentioned. It is the canonical ABI, which
+    // moved host-side in 0.12.0 (dyncomp/host/wasm/abi.mjs), and it has no
+    // imports of its own, so it is copied verbatim.
+    Copy(from="dyncomp/host/wasm/abi.mjs", to="\{DIST}/universal/abi.mjs"),
     Copy(
       from="demo/universal_wasm/index.html",
       to="\{DIST}/universal/index.html",
     ),
     // pack each guest's core wasm + static assets into one droppable archive
-    ..guest_pack_steps(),
+    ..guest_pack_steps(into="\{DIST}/universal/examples"),
+  ]
+}
+
+///|
+const DYNCOMP_STORYBOOK_WASM = "_build/wasm-gc/release/build/demo/dyncomp_storybook_wasm/dyncomp_storybook_wasm.wasm"
+
+///|
+/// Assemble the dyncomp storybook into dist/dyncomp-storybook: the wasm-gc
+/// gallery, its two loaders, and every sample bundle beside it — which this
+/// page FETCHES at mount rather than offering as buttons to press, because a
+/// gallery that opens empty is a gallery with an extra step.
+///
+/// Kept out of `dist` for the same reason `universal` is: the guest bundles
+/// need the component toolchain (wasm-tools + @bytecodealliance/jco), which CI
+/// does not have.
+///
+/// This is the second page that hosts runtime-loaded bundles, and the split
+/// between them is what each one is FOR: the universal host is a blank page a
+/// person builds on, and this shows everything a bundle declares without
+/// anybody building anything.
+pub fn dyncomp_storybook_steps() -> Array[Step] {
+  [
+    Run(
+      moon("build · wasm-gc dyncomp storybook (release)", [
+        "build", "--target", "wasm-gc", "--release", "demo/dyncomp_storybook_wasm",
+      ]),
+    ),
+    ..guest_build_steps(),
+    Mkdir("\{DIST}/dyncomp-storybook"),
+    Mkdir("\{DIST}/dyncomp-storybook/examples"),
+    Copy(
+      from=DYNCOMP_STORYBOOK_WASM,
+      to="\{DIST}/dyncomp-storybook/dyncomp_storybook_wasm.wasm",
+    ),
+    Run(wasm_opt("\{DIST}/dyncomp-storybook/dyncomp_storybook_wasm.wasm")),
+    Copy(
+      from="demo/dyncomp_storybook_wasm/loader.mjs",
+      to="\{DIST}/dyncomp-storybook/loader.mjs",
+    ),
+    Copy(
+      from="app/wasm/loader.mjs",
+      to="\{DIST}/dyncomp-storybook/app-loader.mjs",
+    ),
+    // The dyncomp bridge imports the app one; in dist the two land flat beside
+    // the page, so repoint it. Same rewrite the universal page's copy gets.
+    WriteRewritten(
+      from="dyncomp/host/wasm/loader.mjs",
+      to="\{DIST}/dyncomp-storybook/dyncomp-loader.mjs",
+      old_src="../../../app/wasm/loader.mjs",
+      new_src="./app-loader.mjs",
+    ),
+    // The canonical ABI, `import()`ed lazily by the loader above when an
+    // archive is unpacked. See the note in `universal_steps`.
+    Copy(
+      from="dyncomp/host/wasm/abi.mjs",
+      to="\{DIST}/dyncomp-storybook/abi.mjs",
+    ),
+    Copy(
+      from="demo/dyncomp_storybook_wasm/index.html",
+      to="\{DIST}/dyncomp-storybook/index.html",
+    ),
+    ..guest_pack_steps(into="\{DIST}/dyncomp-storybook/examples"),
   ]
 }
 
@@ -884,6 +963,9 @@ pub fn help_text() -> String {
   )
   line(
     "universal", "assemble the drag-and-drop universal wasm demo + a sample .tutuca.tar.gz into dist/universal",
+  )
+  line(
+    "dyncomp-storybook", "assemble the dyncomp storybook + every sample .tutuca.tar.gz into dist/dyncomp-storybook",
   )
   line(
     "css-bundle", "regenerate css/{tailwind,margaui}_bundle_gen.mbt from the pinned tailwind npm release + margaui clone (needs network)",

@@ -1,0 +1,33 @@
+// The wasm-gc half of the dyncomp storybook: a mountable gallery.
+//
+// `dyncomp/storybook` is the gallery and is backend-agnostic on purpose, which
+// is what lets `moon test` drive the whole thing on the in-memory DOM. It names
+// what it therefore cannot do: fetch an archive, read a dropped file, or build
+// a real guest instance. This package is that half, and nothing else — the
+// bridge to `dyncomp/host/wasm`, and which module this page mounts. The loader
+// bar, `make_instance` and the margaui refresh are `dyncomp/shell`, shared with
+// the universal host.
+//
+// It is a LIBRARY, not a page. A host writes an executable that calls `mount`
+// and re-exports the five wasm-gc entry points, because a wasm-gc export list
+// is per-package link configuration and cannot come from a dependency;
+// `demo/dyncomp_storybook_wasm` is that executable.
+// Check: moon check --target wasm-gc dyncomp/storybook/wasm
+import {
+  "marianoguerra/tutuca/core" @tutuca,
+  "marianoguerra/tutuca/app",
+  "marianoguerra/tutuca/app/wasm" @wglue,
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/vdom/wasm" @wdom,
+  "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  // `mount`'s `policy` argument: what this page accepts from a bundle
+  "marianoguerra/tutuca/dyncomp/policy",
+  "marianoguerra/tutuca/dyncomp/storybook" @sb,
+  // the floor every bundle-hosting page stands on: the loader bar,
+  // make_instance, and the margaui refresh
+  "marianoguerra/tutuca/dyncomp/shell",
+  // @core.Any: the DOM event the exported on_event receives from JS
+  "mizchi/js/core",
+}
+
+supported_targets = "wasm-gc"

@@ -1,0 +1,202 @@
+// Generated using `moon info`, DON'T EDIT IT
+package "marianoguerra/tutuca/dyncomp/storybook"
+
+import {
+  "marianoguerra/tutuca/anode",
+  "marianoguerra/tutuca/component",
+  "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/registry",
+  "moonbitlang/core/debug",
+}
+
+// Values
+pub fn args_json(Map[String, @core.Value]) -> String
+
+pub let dyncomp_storybook_common_style : String
+
+pub fn dyncomp_storybook_component(name? : String, views? : Map[String, @anode.View], init? : DyncompStorybookState, common_style? : String, global_style? : String, update? : (DyncompStorybookState, @component.Dispatch, &@core.Ctx) -> DyncompStorybookState?, compute? : (DyncompStorybookMethod) -> ((DyncompStorybookState, Array[@core.Value]) -> @core.Value)?, swap? : (DyncompStorybookInput) -> ((DyncompStorybookState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, when? : (DyncompStorybookWhen) -> ((DyncompStorybookState, @core.Value, @core.Value, @core.Value) -> Bool)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let dyncomp_storybook_global_style : String
+
+pub fn dyncomp_storybook_views() -> Map[String, @anode.View]
+
+pub fn gallery_module(@registry.Registry, (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?, dev_tools? : String) -> (@component.ModuleDef, Gallery)
+
+pub fn nav_of(Array[Story]) -> Array[NavEntry]
+
+pub fn stories_of(@registry.Registry) -> Array[Story]
+
+pub let story_card_common_style : String
+
+pub fn story_card_component(name? : String, views? : Map[String, @anode.View], init? : StoryCardState, common_style? : String, global_style? : String, update? : (StoryCardState, @component.Dispatch, &@core.Ctx) -> StoryCardState?, compute? : (StoryCardMethod) -> ((StoryCardState, Array[@core.Value]) -> @core.Value)?, swap? : (StoryCardInput) -> ((StoryCardState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let story_card_global_style : String
+
+pub fn story_card_views() -> Map[String, @anode.View]
+
+pub let story_nav_common_style : String
+
+pub fn story_nav_component(name? : String, views? : Map[String, @anode.View], init? : StoryNavState, common_style? : String, global_style? : String, update? : (StoryNavState, @component.Dispatch, &@core.Ctx) -> StoryNavState?, swap? : (StoryNavInput) -> ((StoryNavState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+
+pub let story_nav_global_style : String
+
+pub fn story_nav_views() -> Map[String, @anode.View]
+
+// Errors
+
+// Types and methods
+pub(all) enum DyncompStorybookBubble {
+  CatalogChanged(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DyncompStorybookBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn DyncompStorybookBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn DyncompStorybookBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum DyncompStorybookInput {
+  ChooseTheme
+  FilesDropped
+  SetQuery
+  ShowAll
+  ToggleDetails
+  ToggleWide
+} derive(Eq, @debug.Debug)
+pub fn DyncompStorybookInput::name(Self) -> String
+pub fn DyncompStorybookInput::parse(String) -> Self?
+
+pub(all) enum DyncompStorybookMethod {
+  DetailsLabel
+  IsEmpty
+  LayoutLabel
+} derive(Eq, @debug.Debug)
+pub fn DyncompStorybookMethod::name(Self) -> String
+
+pub(all) enum DyncompStorybookMsg {
+  ChooseTheme(String)
+  FilesDropped(String)
+  SetQuery(String)
+  ShowAll
+  ToggleDetails
+  ToggleWide
+  Unknown(String, Array[@core.Value])
+}
+pub fn DyncompStorybookMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) enum DyncompStorybookReceive {
+  CatalogChanged(String)
+  SetStatus(String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn DyncompStorybookReceive::from_dispatch(@component.Dispatch) -> Self?
+pub fn DyncompStorybookReceive::send(Self, &@core.Ctx) -> Unit
+pub fn DyncompStorybookReceive::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) struct DyncompStorybookState {
+  cards : Array[@core.Value]
+  nav : Array[@core.Value]
+  query : String
+  module_ : String
+  name : String
+  theme : String
+  wide : Bool
+  mode : String
+  status : String
+  emptyMessage : String
+  devTools : @core.Value
+}
+pub fn DyncompStorybookState::zero() -> Self
+
+pub(all) enum DyncompStorybookWhen {
+  Matches
+} derive(Eq, @debug.Debug)
+pub fn DyncompStorybookWhen::name(Self) -> String
+
+pub struct Gallery {
+  registry : @registry.Registry
+  make : (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
+  comps : Map[String, @component.Component]
+}
+pub fn Gallery::refresh(Self, DyncompStorybookState) -> DyncompStorybookState
+
+pub(all) struct NavEntry {
+  ref_ : @registry.ComponentRef
+  count : Int
+} derive(Eq)
+
+pub(all) struct Story {
+  ref_ : @registry.ComponentRef
+  init : String
+  title : String
+  doc : String
+  args : String
+} derive(Eq)
+
+pub(all) enum StoryCardBubble {
+  RebuildCard(String, String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryCardBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn StoryCardBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryCardBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum StoryCardInput {
+  Rebuild
+} derive(Eq, @debug.Debug)
+pub fn StoryCardInput::name(Self) -> String
+pub fn StoryCardInput::parse(String) -> Self?
+
+pub(all) enum StoryCardMethod {
+  RefLabel
+} derive(Eq, @debug.Debug)
+pub fn StoryCardMethod::name(Self) -> String
+
+pub(all) enum StoryCardMsg {
+  Rebuild
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryCardMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct StoryCardState {
+  title : String
+  doc : String
+  module_ : String
+  name : String
+  init_ : String
+  args : String
+  target : @core.Value
+  error : String
+}
+pub fn StoryCardState::zero() -> Self
+
+pub(all) enum StoryNavBubble {
+  NavPicked(String, String)
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryNavBubble::bubble(Self, &@core.Ctx) -> Unit
+pub fn StoryNavBubble::from_dispatch(@component.Dispatch) -> Self?
+pub fn StoryNavBubble::to_dispatch(Self) -> (String, Array[@core.Value])
+
+pub(all) enum StoryNavInput {
+  Pick
+} derive(Eq, @debug.Debug)
+pub fn StoryNavInput::name(Self) -> String
+pub fn StoryNavInput::parse(String) -> Self?
+
+pub(all) enum StoryNavMsg {
+  Pick
+  Unknown(String, Array[@core.Value])
+}
+pub fn StoryNavMsg::from_dispatch(@component.Dispatch) -> Self?
+
+pub(all) struct StoryNavState {
+  module_ : String
+  name : String
+  count : Int
+  selected : Bool
+}
+pub fn StoryNavState::zero() -> Self
+
+// Type aliases
+pub type MakeInstance = (@registry.ComponentRef, String, Map[String, @core.Value]) -> @core.Value?
+
+// Traits

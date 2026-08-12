@@ -10,9 +10,11 @@ pub fn assets_source(Array[(String, String)], var_~ : String, banner~ : String) 
 
 pub fn css_bundle_steps() -> Array[Step]
 
+pub fn dyncomp_storybook_steps() -> Array[Step]
+
 pub fn guest_build_steps() -> Array[Step]
 
-pub fn guest_pack_steps() -> Array[Step]
+pub fn guest_pack_steps(into~ : String) -> Array[Step]
 
 pub fn guest_template_embed_steps() -> Array[Step]
 

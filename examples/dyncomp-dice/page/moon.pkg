@@ -12,6 +12,8 @@
 import {
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/dyncomp/ui/wasm" @uiw,
+  // `LoaderBarSample`: the bundles this page offers as buttons
+  "marianoguerra/tutuca/dyncomp/shell" @shell,
   // only for `mount`'s `policy` argument, which this page states rather than
   // defaults — see the comment on `mount` in main.mbt
   "marianoguerra/tutuca/dyncomp/policy",

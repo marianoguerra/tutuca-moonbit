@@ -13,6 +13,8 @@ import {
 }
 
 // Values
+pub fn child_json(@core.Value) -> Json
+
 pub fn collect_superseded() -> Unit
 
 pub let handle_field : String

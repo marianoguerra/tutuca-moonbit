@@ -74,6 +74,86 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`dyncomp/storybook` — a storybook for dynamic components.** Every component
+  every loaded bundle declares, once per configuration it declares, live and
+  side by side. There is no story list anywhere: a `.tutuca.tar.gz` manifest
+  already says what its components are and what named `inits` each ships, and a
+  named initial state IS a story — so this works on a bundle nobody wrote it
+  for, including one dropped on the page while it is running.
+
+  Backend-agnostic, the same way `dyncomp/ui` is and for the same payoff:
+  `moon test` drives the whole gallery — a bundle loading, cards appearing, the
+  filter, the sidebar, reset, details — on the in-memory DOM with a fake guest.
+  `dyncomp/storybook/wasm` adds only what cannot be done without a browser, and
+  `demo/dyncomp_storybook_wasm` is the page: `cmd/dev -- dyncomp-storybook`,
+  then `/dyncomp-storybook/`.
+
+  It is not a second universal host. `demo/universal_wasm` is a blank page a
+  person builds on, so it starts empty and hides its samples behind `?test`;
+  this is a gallery, so it fetches every sample at mount. Per-card `reset`, a
+  margaui theme picker and a grid/one-per-row switch vary what a manifest
+  cannot: a component gets looked at in several themes without a reload.
+
+- **`dyncomp/shell` — the floor under any wasm-gc page that hosts bundles.**
+  The loader bar a bundle arrives through, `make_instance`, and the margaui
+  refresh. There are two such pages and they are not variants of one thing —
+  an editor and a gallery — but underneath they need exactly this and neither
+  needs a different one, so it stopped being two copies.
+
+  The bar reports through a `notify` hook rather than knowing what a load means:
+  the universal host counts it against a session being restored, the storybook
+  recompiles the stylesheet. It is deliberately NOT in `dyncomp/host/wasm` —
+  the bridge should not have to depend on a CSS compiler and a view parser to
+  answer `get-field`.
+
+- **`guests/slack` — a chat conversation as a `tutuca:component` bundle: one
+  message, a thread, and a channel's history.** Ported from the
+  Feeling-of-Computing conversations reader (`at-foc/src/components.js`), and
+  the guest where nesting goes DEEP: `ChannelHistory` → `Thread` → `Message` →
+  `RichText` → `Segment`, all five levels built by `control.make-instance` from
+  plain JSON in one `init`. `dyncomp/test/slack-harness.test.mjs` implements the
+  bridge's pending-children protocol against a fake host, so that recursion has
+  a test that needs no browser.
+
+  It asks for no capability: the timestamps are data the messages arrived with,
+  and `timeLabel` slices a string it already holds. Two places the policy said
+  no are visible in the output — a link segment cannot navigate (`href` is a
+  network sink), so it emits `openLink` and the channel decides what that means;
+  and the original's replies/reactions/channel toggles are not ported, because
+  they were three `globalStyle` rules and there is no field for global CSS on
+  purpose.
+
+  Its thirty `inits` are the storybook: `dyncomp/storybook` draws one card per
+  configuration straight from the manifest, so adding an `init` here adds a card
+  there.
+
+- **`guests/bluesky` — an ATProto reader as a `tutuca:component` bundle:
+  a message, a conversation and an account.** Ported from the JS
+  `tutuca-components/src/atproto` module group and styled after
+  [atproto-wc.com](https://atproto-wc.com), light and dark. It asks for no
+  capability, so a stock `Policy::untrusted()` page loads it — and that is what
+  makes it the guest where the policy boundary is visible in the output: with
+  no `src`, no `href` and no `style` to reach for, an avatar is the author's
+  initials, an image is its alt text on a chip, a link is its text with the
+  target as the tooltip, and a permalink is text you can select. A reply's
+  depth arrives in the view as a `rail` list to draw rather than as a margin.
+
+  Two things fell out of building it and are written up in
+  [`guests/bluesky/README.md`](guests/bluesky/README.md):
+
+  - A view cannot iterate a value it found inside another iteration (`@each`
+    takes a field path, not a loop binding), so a message's rich text can only
+    be a loop in the component that owns the message. `Thread` and `Profile`
+    therefore make one child `Post` per message through
+    `control.make-instance` — the only shape in which a reply keeps its links.
+  - A row's like / repost / fold is kept by the thread, keyed by uri, and the
+    row is rebuilt with the new flag — the thread is the only thing that can
+    answer a fold, so it is where the rest belongs too. It is also the shape
+    that survived the `with_field` marker asymmetry `child_json` fixes in this
+    same release: before it, a successor a child returned could not travel back
+    into a parent's LIST field, and a like inside a thread counted up in the
+    guest and not on the screen.
+
 - **`dyncomp/host/wasm/abi.mjs` — the canonical ABI for `tutuca:component`,
   written once instead of shipped in every bundle.** A guest archive can now
   carry its core module and a four-field descriptor:
@@ -196,6 +276,51 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   arrives as `Autolink(url="span")`. The builder renders an autolink as a link
   only when the URL has a real scheme, and as literal text otherwise —
   without that, an ordinary comment body would fill with stray relative links.
+
+### Changed
+
+- **`@uiw.HostToolsSample` is now `@shell.LoaderBarSample`,** and the bar itself
+  moved from `dyncomp/ui/wasm` to `dyncomp/shell` so the storybook could stand
+  on the same one. A page that named the old type — `demo/universal_wasm` and
+  `examples/dyncomp-dice` — imports `marianoguerra/tutuca/dyncomp/shell` and
+  renames it; nothing else about a host page changes, and `mount`, `on_event`
+  and the other entry points stay exactly where a page already reaches for them.
+
+  The universal page looks the same: the URL box the storybook draws is behind
+  `show_url`, which defaults off.
+
+### Fixed
+
+- **The dyncomp storybook lent no host services to what it hosted.** Its module
+  was built without a `requests` map at all, so a guest that asked the page for
+  something it cannot compute got nothing — the sample counter's `double` button
+  was dead on every card while its `triple`, served by its own bundle, worked. A
+  card whose button does nothing is a card that lies about the component.
+  `mount` takes `requests` now, and the demo page lends the same `double` the
+  universal demo does.
+
+- **A guest child inside a LIST field can now be written back.**
+  `WasmGuest::with_field` encoded a nested-child instance as its `$dyn` marker
+  only at the TOP level of the written value, while `json_to_value` already
+  decoded markers at any depth. A scalar `comp` field therefore worked (the
+  sample counter's `Pair`) and a list did not: a child that returned a successor
+  had the parent's whole list written back, that list arrived as plain data, the
+  guest's `with-field` refused it, and the interaction silently did nothing —
+  the guest counted and the screen did not.
+
+  The encoder is now recursive and lives in `dyncomp/host` as `child_json`,
+  beside `handle_field` and where a test can reach it. That is the write half of
+  DESIGN.md's "host → guest encoding of an instance nested inside a compound
+  value"; the read half — inspecting a child through the token that names it —
+  stays open, and is why `guests/slack`'s channel keeps the text it built each
+  thread from in order to filter them.
+
+- **`cmd/dev -- universal` did not copy `dyncomp/host/wasm/abi.mjs`** beside the
+  page. `dyncomp-loader.mjs` `import()`s it lazily, only while an archive is
+  being unpacked, so `dist/universal/` mounted and drew and then failed on the
+  first bundle with a message about a module nobody mentions. Both dyncomp pages
+  copy it now, and `docs/dynamic-components.md` lists three JavaScript files
+  rather than two.
 
 ### Changed
 

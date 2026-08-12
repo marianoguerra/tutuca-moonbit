@@ -58,6 +58,45 @@ pub struct DynObj {
 pub let handle_field : String = "__dyncomp_handle"
 
 ///|
+/// A value on its way INTO a guest, with every nested-child instance in it
+/// encoded as the `{"$dyn": {"handle": n}}` marker `loader.mjs`'s `jsonToGuest`
+/// turns back into an instance token.
+///
+/// `Value::to_json` cannot do this: an `Obj` has no JSON form, so it projects
+/// the object's FIELDS — which for a guest instance is a copy of its state
+/// under a name that no longer refers to it. What crosses has to be the handle.
+///
+/// It recurses, and that is the whole point. The single top-level `Obj` this
+/// used to special-case covers a scalar `comp` field (the sample counter's
+/// `Pair` holds two that way), and misses every guest whose children sit in a
+/// LIST — where a child that returns a successor is written back as the parent's
+/// whole list, one element of which is the new instance. Without the recursion
+/// that list arrives as plain data, the guest's `with-field` refuses it, and the
+/// interaction silently does nothing: a reaction inside a message counts up in
+/// the guest and not on the screen.
+pub fn child_json(v : @tutuca.Value) -> Json {
+  match v {
+    Obj(o) =>
+      match o.obj_field(handle_field) {
+        Some(Num(h)) =>
+          Json::object({ "$dyn": Json::object({ "handle": Json::number(h) }) })
+        // An object that is not a guest instance — a host component, say.
+        // Nothing can be done for it here, so it projects as before.
+        _ => v.to_json()
+      }
+    List(items) => Json::array(items.map(child_json))
+    Map(entries) => {
+      let obj : Map[String, Json] = Map([])
+      for k, item in entries {
+        obj[k] = child_json(item)
+      }
+      Json::object(obj)
+    }
+    _ => v.to_json()
+  }
+}
+
+///|
 pub fn DynObj::new(
   comp_id : Int,
   def : DynComponentDef,

@@ -18,8 +18,6 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/app/wasm" @wglue,
   "marianoguerra/tutuca/component",
-  "marianoguerra/tutuca/anode",
-  "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
   "marianoguerra/tutuca/dyncomp/persist",
@@ -27,14 +25,13 @@ import {
   "marianoguerra/tutuca/dyncomp/persist/wasm" @pwasm,
   // `mount`'s `policy` argument: what this page accepts from a bundle
   "marianoguerra/tutuca/dyncomp/policy",
-  "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/dyncomp/ui",
+  // the floor every bundle-hosting page stands on: the loader bar,
+  // make_instance, and the margaui refresh — shared with dyncomp/storybook/wasm
+  "marianoguerra/tutuca/dyncomp/shell",
   "moonbitlang/core/json",
   // @core.Any: the DOM event the exported on_event receives from JS
   "mizchi/js/core",
-  // the generated *_view_gen.mbt modules derive @debug.Debug on their
-  // vocabulary enums
-  "moonbitlang/core/debug",
 }
 
 supported_targets = "wasm-gc"

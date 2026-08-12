@@ -1,0 +1,842 @@
+{
+  "manifestVersion": 1,
+  "apiVersion": 6,
+  "moduleName": "slacklib",
+  "doc": "Slack-style conversation components: a message, a thread, and a channel's history.",
+  "version": "0.1.0",
+  "homepage": "",
+  "authors": [],
+  "capabilities": [],
+  "stringEncoding": "utf16",
+  "components": [
+    {
+      "name": "Segment",
+      "doc": "One styled run of a message body: plain, bold, italic, struck, code, a mention, a channel reference or a link.",
+      "keywords": [
+        "segment",
+        "run",
+        "rich text",
+        "span",
+        "style",
+        "slack"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "open",
+          "doc": "Report this segment's URL upwards; a link segment cannot navigate by itself."
+        },
+        {
+          "name": "segClass",
+          "doc": "The utility classes this run's flags add up to."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Segment.main.html"
+        },
+        {
+          "name": "margauiClasses",
+          "src": "views/Segment.margauiClasses.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "text",
+          "ty": 0,
+          "doc": "The literal text of the run.",
+          "required": false
+        },
+        {
+          "name": "bold",
+          "ty": 1,
+          "doc": "Render bold.",
+          "required": false
+        },
+        {
+          "name": "italic",
+          "ty": 1,
+          "doc": "Render italic.",
+          "required": false
+        },
+        {
+          "name": "strike",
+          "ty": 1,
+          "doc": "Render struck through.",
+          "required": false
+        },
+        {
+          "name": "code",
+          "ty": 1,
+          "doc": "Render as inline code.",
+          "required": false
+        },
+        {
+          "name": "mention",
+          "ty": 1,
+          "doc": "This run names a person.",
+          "required": false
+        },
+        {
+          "name": "channel",
+          "ty": 1,
+          "doc": "This run names a channel.",
+          "required": false
+        },
+        {
+          "name": "link",
+          "ty": 1,
+          "doc": "This run is a link; clicking it emits openLink.",
+          "required": false
+        },
+        {
+          "name": "url",
+          "ty": 0,
+          "doc": "Where the link points. Reported, never followed.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "segClass"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "plain",
+          "argsJson": "{\"text\":\"plain text\"}",
+          "doc": "An unstyled run."
+        },
+        {
+          "name": "bold",
+          "argsJson": "{\"text\":\"bold\",\"bold\":true}",
+          "doc": "Bold."
+        },
+        {
+          "name": "italic",
+          "argsJson": "{\"text\":\"italic\",\"italic\":true}",
+          "doc": "Italic."
+        },
+        {
+          "name": "strikethrough",
+          "argsJson": "{\"text\":\"struck\",\"strike\":true}",
+          "doc": "Struck through."
+        },
+        {
+          "name": "code",
+          "argsJson": "{\"text\":\"inline()\",\"code\":true}",
+          "doc": "Inline code."
+        },
+        {
+          "name": "mention",
+          "argsJson": "{\"text\":\"@Tom Larkworthy\",\"mention\":true}",
+          "doc": "A person."
+        },
+        {
+          "name": "channel",
+          "argsJson": "{\"text\":\"#of-ai\",\"channel\":true}",
+          "doc": "A channel reference."
+        },
+        {
+          "name": "link",
+          "argsJson": "{\"text\":\"ultorg.com\",\"link\":true,\"url\":\"https://www.ultorg.com/\"}",
+          "doc": "A link — clicking it emits openLink rather than navigating."
+        },
+        {
+          "name": "combined",
+          "argsJson": "{\"text\":\"bold italic code\",\"bold\":true,\"italic\":true,\"code\":true}",
+          "doc": "Several flags at once."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "RichText",
+      "doc": "A message body: a flat list of styled segments, rendered as one run of text.",
+      "keywords": [
+        "rich text",
+        "body",
+        "message",
+        "formatting",
+        "slack"
+      ],
+      "category": "display",
+      "messageDocs": [],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/RichText.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Segment",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "segments",
+          "ty": 1,
+          "doc": "The runs that make up this body, in order.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "mixed",
+          "argsJson": "{\"segments\":[{\"text\":\"Mixed: \"},{\"text\":\"bold\",\"bold\":true},{\"text\":\", \"},{\"text\":\"italic\",\"italic\":true},{\"text\":\", \"},{\"text\":\"struck\",\"strike\":true},{\"text\":\", \"},{\"text\":\"inline()\",\"code\":true},{\"text\":\", \"},{\"text\":\"@Tom Larkworthy\",\"mention\":true},{\"text\":\", \"},{\"text\":\"#of-ai\",\"channel\":true},{\"text\":\" and a \"},{\"text\":\"link\",\"link\":true,\"url\":\"https://example.com\"},{\"text\":\".\"}]}",
+          "doc": "Every segment style in one body."
+        },
+        {
+          "name": "plain",
+          "argsJson": "{\"segments\":[{\"text\":\"Just a sentence, no formatting.\"}]}",
+          "doc": "One unstyled run."
+        },
+        {
+          "name": "empty",
+          "argsJson": "{\"segments\":[]}",
+          "doc": "No runs at all."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "Reaction",
+      "doc": "One emoji reaction with its count. Clicking it toggles your own and tells whoever is above.",
+      "keywords": [
+        "reaction",
+        "emoji",
+        "vote",
+        "slack"
+      ],
+      "category": "input",
+      "messageDocs": [
+        {
+          "name": "toggle",
+          "doc": "Add or take back your reaction, and report it upwards."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Reaction.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "emoji",
+          "ty": 0,
+          "doc": "The emoji.",
+          "required": false
+        },
+        {
+          "name": "count",
+          "ty": 1,
+          "doc": "How many people reacted.",
+          "required": false,
+          "constraint": {
+            "min": 0,
+            "max": 9999,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        },
+        {
+          "name": "reacted",
+          "ty": 2,
+          "doc": "Whether you are one of them.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "single",
+          "argsJson": "{\"emoji\":\"👀\",\"count\":1}",
+          "doc": "One person."
+        },
+        {
+          "name": "many",
+          "argsJson": "{\"emoji\":\"❤️\",\"count\":12}",
+          "doc": "A popular one."
+        },
+        {
+          "name": "mine",
+          "argsJson": "{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}",
+          "doc": "One you are already part of."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "Message",
+      "doc": "A single message: who wrote it, when, its rich-text body and its reactions. Compact styling is what a threaded reply uses.",
+      "keywords": [
+        "message",
+        "chat",
+        "post",
+        "slack",
+        "conversation"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "authorLabel",
+          "doc": "The author as @name."
+        },
+        {
+          "name": "channelLabel",
+          "doc": "The channel as #name."
+        },
+        {
+          "name": "hasChannel",
+          "doc": "Whether to show the channel badge — a reply never does."
+        },
+        {
+          "name": "timeLabel",
+          "doc": "The clock time, sliced out of createdAt."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Message.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "RichText",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Reaction",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 2,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "id",
+          "ty": 0,
+          "doc": "Stable id of the message.",
+          "required": false
+        },
+        {
+          "name": "author",
+          "ty": 0,
+          "doc": "Who wrote it.",
+          "required": false
+        },
+        {
+          "name": "channelName",
+          "ty": 0,
+          "doc": "The channel it was posted in.",
+          "required": false
+        },
+        {
+          "name": "createdAt",
+          "ty": 0,
+          "doc": "ISO 8601 timestamp, as it arrived. No clock is read.",
+          "required": false,
+          "constraint": {
+            "min": 0,
+            "max": 0,
+            "pattern": "",
+            "format": "date-time",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        },
+        {
+          "name": "body",
+          "ty": 1,
+          "doc": "The rich-text body. Accepts a RichText object or a bare segment list.",
+          "required": false
+        },
+        {
+          "name": "reactions",
+          "ty": 3,
+          "doc": "The reactions on this message.",
+          "required": false
+        },
+        {
+          "name": "compact",
+          "ty": 4,
+          "doc": "Reply styling: tighter, and no channel badge.",
+          "required": false
+        },
+        {
+          "name": "edited",
+          "ty": 4,
+          "doc": "Show the (edited) marker.",
+          "required": false
+        },
+        {
+          "name": "pinned",
+          "ty": 4,
+          "doc": "Show the pinned badge.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "authorLabel",
+        "channelLabel",
+        "hasChannel",
+        "timeLabel"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "root",
+          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]}",
+          "doc": "A root message with reactions."
+        },
+        {
+          "name": "reply",
+          "argsJson": "{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[],\"compact\":true}",
+          "doc": "The same message as a threaded reply: compact, no channel badge."
+        },
+        {
+          "name": "plain",
+          "argsJson": "{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]}",
+          "doc": "No reactions, no badges."
+        },
+        {
+          "name": "edited-and-pinned",
+          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}],\"edited\":true,\"pinned\":true}",
+          "doc": "Both markers at once."
+        },
+        {
+          "name": "empty",
+          "argsJson": "{}",
+          "doc": "Nobody, nothing — what an unfilled placeholder looks like."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "Thread",
+      "doc": "A root message and its replies, with the replies foldable.",
+      "keywords": [
+        "thread",
+        "replies",
+        "conversation",
+        "slack"
+      ],
+      "category": "display",
+      "messageDocs": [
+        {
+          "name": "toggle",
+          "doc": "Fold or unfold the replies."
+        },
+        {
+          "name": "setExpanded",
+          "doc": "Fold or unfold from outside — what a channel's expand-all sends."
+        },
+        {
+          "name": "hasReplies",
+          "doc": "Whether there are any replies."
+        },
+        {
+          "name": "replyLabel",
+          "doc": "The fold button's caret and count."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/Thread.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Message",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 0,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "root",
+          "ty": 0,
+          "doc": "The message the thread hangs off.",
+          "required": true
+        },
+        {
+          "name": "replies",
+          "ty": 1,
+          "doc": "The replies, oldest first. Each is forced compact.",
+          "required": false
+        },
+        {
+          "name": "expanded",
+          "ty": 2,
+          "doc": "Whether the replies are showing.",
+          "required": false
+        },
+        {
+          "name": "replyCount",
+          "ty": 3,
+          "doc": "How many replies there are.",
+          "required": false
+        }
+      ],
+      "receives": [
+        "setExpanded"
+      ],
+      "bubbles": [],
+      "responses": [],
+      "methods": [
+        "hasReplies",
+        "replyLabel"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "expanded",
+          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]}",
+          "doc": "A thread with its replies showing."
+        },
+        {
+          "name": "collapsed",
+          "argsJson": "{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]}",
+          "doc": "The same thread, folded."
+        },
+        {
+          "name": "no-replies",
+          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}",
+          "doc": "A root message nobody answered."
+        }
+      ],
+      "style": ""
+    },
+    {
+      "name": "ChannelHistory",
+      "doc": "One channel's conversations: a header, a filter box, an ordering toggle and the threads themselves.",
+      "keywords": [
+        "channel",
+        "history",
+        "conversations",
+        "slack",
+        "feed",
+        "stream"
+      ],
+      "category": "layout",
+      "messageDocs": [
+        {
+          "name": "setQuery",
+          "doc": "Narrow the stream to threads whose text contains this."
+        },
+        {
+          "name": "toggleOrder",
+          "doc": "Flip between newest-first and oldest-first."
+        },
+        {
+          "name": "expandAll",
+          "doc": "Unfold every thread currently shown."
+        },
+        {
+          "name": "collapseAll",
+          "doc": "Fold every thread currently shown."
+        },
+        {
+          "name": "openLink",
+          "doc": "A segment somewhere below asked for a URL to be opened."
+        },
+        {
+          "name": "reacted",
+          "doc": "A reaction somewhere below was toggled."
+        },
+        {
+          "name": "channelLabel",
+          "doc": "The channel as #name."
+        },
+        {
+          "name": "memberLabel",
+          "doc": "The member count as a sentence."
+        },
+        {
+          "name": "orderLabel",
+          "doc": "The ordering toggle's label."
+        },
+        {
+          "name": "countLabel",
+          "doc": "How many threads are shown, of how many."
+        },
+        {
+          "name": "hasError",
+          "doc": "Whether the error banner shows."
+        },
+        {
+          "name": "isEmpty",
+          "doc": "Whether the empty-state line shows."
+        }
+      ],
+      "views": [
+        {
+          "name": "main",
+          "src": "views/ChannelHistory.main.html"
+        }
+      ],
+      "types": [
+        {
+          "kind": "ty-text",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-int",
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-comp",
+          "items": [],
+          "name": "Thread",
+          "members": []
+        },
+        {
+          "kind": "ty-list",
+          "elem": 2,
+          "items": [],
+          "name": "",
+          "members": []
+        },
+        {
+          "kind": "ty-bool",
+          "items": [],
+          "name": "",
+          "members": []
+        }
+      ],
+      "fields": [
+        {
+          "name": "channel",
+          "ty": 0,
+          "doc": "The channel name, without the #.",
+          "required": false
+        },
+        {
+          "name": "topic",
+          "ty": 0,
+          "doc": "The channel topic.",
+          "required": false
+        },
+        {
+          "name": "memberCount",
+          "ty": 1,
+          "doc": "How many people are in it.",
+          "required": false,
+          "constraint": {
+            "min": 0,
+            "max": 1000000,
+            "pattern": "",
+            "format": "",
+            "enumJson": "",
+            "defaultJson": ""
+          }
+        },
+        {
+          "name": "threads",
+          "ty": 3,
+          "doc": "The conversations currently shown — filtered and ordered.",
+          "required": false
+        },
+        {
+          "name": "query",
+          "ty": 0,
+          "doc": "The filter text. Empty shows everything.",
+          "required": false
+        },
+        {
+          "name": "newestFirst",
+          "ty": 4,
+          "doc": "Order by root timestamp, newest first.",
+          "required": false
+        },
+        {
+          "name": "loading",
+          "ty": 4,
+          "doc": "Show the loading banner.",
+          "required": false
+        },
+        {
+          "name": "error",
+          "ty": 0,
+          "doc": "Show this as an error banner. Empty shows none.",
+          "required": false
+        },
+        {
+          "name": "lastAction",
+          "ty": 0,
+          "doc": "The last thing a child reported, shown in the footer.",
+          "required": false
+        }
+      ],
+      "receives": [],
+      "bubbles": [
+        "openLink",
+        "reacted"
+      ],
+      "responses": [],
+      "methods": [
+        "channelLabel",
+        "memberLabel",
+        "orderLabel",
+        "countLabel",
+        "hasError",
+        "isEmpty"
+      ],
+      "whens": [],
+      "requests": [],
+      "inits": [
+        {
+          "name": "general",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}]}",
+          "doc": "A morning in #general: three conversations, newest first."
+        },
+        {
+          "name": "filtered",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}],\"query\":\"compiler\"}",
+          "doc": "The same channel with the filter box already narrowing it."
+        },
+        {
+          "name": "oldest-first",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}],\"newestFirst\":false}",
+          "doc": "The same channel, ordered the other way."
+        },
+        {
+          "name": "collapsed",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":false,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}]}",
+          "doc": "The same channel with every thread folded."
+        },
+        {
+          "name": "empty",
+          "argsJson": "{\"channel\":\"random\",\"topic\":\"Anything goes\",\"memberCount\":12,\"threads\":[]}",
+          "doc": "A channel nobody has posted in."
+        },
+        {
+          "name": "loading",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[],\"loading\":true}",
+          "doc": "History still on its way."
+        },
+        {
+          "name": "error",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[],\"error\":\"channel history unavailable (HTTP 503)\"}",
+          "doc": "The history could not be fetched."
+        }
+      ],
+      "style": ""
+    }
+  ]
+}

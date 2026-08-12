@@ -1,0 +1,205 @@
+<script type="tutuca/state">
+  interface story-nav {
+    /// One line of the sidebar: a component some loaded bundle declares, and
+    /// how many stories it has.
+    ///
+    /// It is a component rather than a row drawn inline for the same reason
+    /// `PaletteRow` is one: selection is a field on the row, so moving between
+    /// two entries re-renders two rows instead of the whole list.
+    record state {
+      module: string,
+      name: string,
+      count: s32,
+      selected: bool,
+    }
+    variant bubble {
+      /// (module, component). Two empty strings mean "everything", which is
+      /// what the `all` button sends.
+      nav-picked(tuple<string, string>),
+    }
+  }
+
+  interface story-card {
+    /// One story: a component from a bundle, built with ONE named
+    /// configuration, live.
+    ///
+    /// `target` is a real instance of that component — the same value the
+    /// universal editor would have placed — so what the card shows is the
+    /// component actually running rather than a picture of it. `args` is the
+    /// JSON the manifest's `init` carried, kept beside it as text: a card that
+    /// shows a component without saying what it was built from is a
+    /// screenshot with extra steps.
+    ///
+    /// It has TWO views. `main` is the card; `details` adds the documentation
+    /// and the arguments. Which one renders is not this component's decision —
+    /// the gallery pushes a view down with `@push-view`, so one switch in the
+    /// bar moves every card and nothing had to be threaded through.
+    record state {
+      title: string,
+      doc: string,
+      module: string,
+      name: string,
+      /// The manifest `init` this was built from, or "" for the component's
+      /// own defaults.
+      init: string,
+      args: string,
+      target: component,
+      /// Why there is nothing to show, when there is nothing to show. A
+      /// constructor that refused is a story; a blank card is not one.
+      error: string,
+    }
+    variant bubble {
+      /// (module, component, init) — build me again from scratch. The card
+      /// cannot do it itself: making an instance is the host's job, and this
+      /// package is backend-agnostic.
+      rebuild-card(tuple<string, string, string>),
+    }
+  }
+
+  interface dyncomp-storybook {
+    /// The gallery: every component every loaded bundle declares, once per
+    /// configuration it declares.
+    ///
+    /// There is no story list written anywhere. A bundle's manifest already
+    /// says what its components are and what named `inits` each has, and named
+    /// initial states ARE the story set — which is why this works on a bundle
+    /// nobody wrote for it, including one dropped on the page while it runs.
+    ///
+    /// Cards are built once, when the catalog changes, and FILTERED with a
+    /// `@when`: a keystroke should not tear down and rebuild a live component
+    /// tree.
+    record state {
+      cards: values,
+      nav: values,
+      query: string,
+      /// The selected sidebar entry. Both empty means everything.
+      module: string,
+      name: string,
+      /// margaui theme, applied with `data-theme` on the gallery's own root, so
+      /// a component can be looked at in several without reloading.
+      theme: string,
+      /// One card per row instead of a grid — for the components that are a
+      /// whole page rather than a chip.
+      wide: bool,
+      /// "main" | "details", pushed down to every card with `@push-view`.
+      mode: string,
+      status: string,
+      empty-message: string,
+      /// Whatever the HOST wants in the bar — loading bundles, in the wasm
+      /// shell's case. Null in every test, which is what makes the gallery
+      /// itself drivable with no browser at all.
+      dev-tools: component,
+    }
+    variant receive {
+      /// A bundle loaded (or hot-swapped): rebuild the whole story set. Sent
+      /// by a host that pushes the news itself, and by every test here.
+      catalog-changed(string),
+      set-status(string),
+    }
+    variant bubble {
+      /// The same news, arriving the other way: from the loader the host put
+      /// in the bar, which is BELOW this component and therefore bubbles.
+      ///
+      /// The loader says what it is DOING in the bar itself; this is only the
+      /// part the gallery has to act on.
+      catalog-changed(string),
+    }
+  }
+</script>
+
+<template id="StoryNav">
+  <li @if.class=".selected"
+      @then="'story-nav nav-selected flex items-baseline gap-2 px-2 py-1 rounded cursor-pointer bg-base-300'"
+      @else="'story-nav flex items-baseline gap-2 px-2 py-1 rounded cursor-pointer hover:bg-base-200'"
+      @on.click="pick">
+    <span class="font-mono text-sm grow nav-name" @text=".name"></span>
+    <span class="text-[0.65rem] opacity-50 nav-module" @text=".module"></span>
+    <span class="badge badge-xs badge-ghost nav-count" @text=".count"></span>
+  </li>
+</template>
+
+<!-- StoryCard. The stage holds the live component, so no comment may sit
+     inside it: a comment where the renderer expects its boundary meta ends the
+     chain dispatch walks, and a click inside the component would stop reaching
+     the component drawing it. (Same reason ConfigPanel says so.) -->
+<template id="StoryCard">
+  <figure class="story-card card bg-base-100 border border-base-300 shadow-sm flex flex-col overflow-hidden">
+    <figcaption class="flex items-baseline gap-2 flex-wrap px-3 py-2 border-b border-base-300 bg-base-200">
+      <span class="font-mono text-sm font-semibold card-name" @text=".title"></span>
+      <span class="badge badge-xs badge-ghost card-init" @show="truthy? .init" @text=".init"></span>
+      <span class="text-[0.65rem] opacity-50 grow card-ref" @text="$refLabel"></span>
+      <button class="btn btn-xs btn-ghost card-rebuild" @on.click="rebuild">reset</button>
+    </figcaption>
+    <div class="p-3 grow bg-base-200 card-stage" @hide="truthy? .error"><x render=".target"></x></div>
+    <p class="alert alert-error m-3 text-xs card-error" @show="truthy? .error" @text=".error"></p>
+  </figure>
+</template>
+
+<template id="StoryCard:details">
+  <figure class="story-card card bg-base-100 border border-base-300 shadow-sm flex flex-col overflow-hidden">
+    <figcaption class="flex items-baseline gap-2 flex-wrap px-3 py-2 border-b border-base-300 bg-base-200">
+      <span class="font-mono text-sm font-semibold card-name" @text=".title"></span>
+      <span class="badge badge-xs badge-ghost card-init" @show="truthy? .init" @text=".init"></span>
+      <span class="text-[0.65rem] opacity-50 grow card-ref" @text="$refLabel"></span>
+      <button class="btn btn-xs btn-ghost card-rebuild" @on.click="rebuild">reset</button>
+    </figcaption>
+    <div class="px-3 py-2 flex flex-col gap-2 border-b border-base-300 card-detail">
+      <p class="text-xs opacity-70 card-doc" @show="truthy? .doc" @text=".doc"></p>
+      <pre class="text-[0.65rem] bg-base-200 rounded p-2 overflow-x-auto card-args" @show="truthy? .args" @text=".args"></pre>
+    </div>
+    <div class="p-3 grow bg-base-200 card-stage" @hide="truthy? .error"><x render=".target"></x></div>
+    <p class="alert alert-error m-3 text-xs card-error" @show="truthy? .error" @text=".error"></p>
+  </figure>
+</template>
+
+<!-- DyncompStorybook. The whole viewport: a bar of the things that vary for
+     every card at once, a sidebar of what is loaded, and the cards.
+
+     `:data-theme` is on this element rather than on <html> deliberately —
+     margaui's theme rules are bare attribute selectors, so a theme applies to
+     any subtree, and a gallery that owns its own is one that does not fight
+     the page it is embedded in. -->
+<template id="DyncompStorybook">
+  <div class="dyncomp-storybook min-h-screen flex flex-col bg-base-200 text-base-content"
+       :data-theme=".theme"
+       data-droptarget="tutuca-host-drop" @on.drop="filesDropped value">
+    <header class="sb-bar flex items-center gap-2 flex-wrap px-3 py-1 border-b border-base-300 bg-base-100">
+      <span class="font-semibold text-sm">dyncomp storybook</span>
+      <input type="search" class="input input-xs input-bordered sb-search"
+             placeholder="filter stories…" :value=".query" @on.input="setQuery value">
+      <button class="btn btn-xs btn-ghost sb-all" @on.click="showAll">all</button>
+      <label class="text-xs flex items-center gap-1">theme
+        <select class="select select-xs select-bordered sb-theme" :value=".theme" @on.input="chooseTheme value">
+          <option value="light">light</option>
+          <option value="dark">dark</option>
+          <option value="corporate">corporate</option>
+          <option value="dracula">dracula</option>
+          <option value="nord">nord</option>
+          <option value="retro">retro</option>
+          <option value="winter">winter</option>
+        </select>
+      </label>
+      <button class="btn btn-xs btn-ghost sb-layout" @on.click="toggleWide" @text="$layoutLabel"></button>
+      <button class="btn btn-xs btn-ghost sb-details" @on.click="toggleDetails" @text="$detailsLabel"></button>
+      <x render=".devTools"></x>
+      <span class="text-xs opacity-70 grow sb-status" @text=".status"></span>
+    </header>
+    <div class="flex grow min-h-0">
+      <aside class="sb-nav w-64 shrink-0 border-r border-base-300 bg-base-100 overflow-y-auto p-2">
+        <ul class="flex flex-col gap-0.5"><x render-each=".nav"></x></ul>
+        <p class="text-xs opacity-50 italic p-2 sb-nav-empty" @show="empty? .nav">
+          Nothing loaded yet — drop a .tutuca.tar.gz on the page.
+        </p>
+      </aside>
+      <main class="sb-main grow overflow-auto p-4 flex flex-col gap-4">
+        <div @push-view=".mode"
+             @if.class=".wide"
+             @then="'sb-cards flex flex-col gap-4'"
+             @else="'sb-cards grid grid-cols-1 xl:grid-cols-2 gap-4 items-start'">
+          <x render-each=".cards" @when="matches"></x>
+        </div>
+        <p class="text-sm opacity-60 italic sb-empty" @show="$isEmpty" @text=".emptyMessage"></p>
+      </main>
+    </div>
+  </div>
+</template>

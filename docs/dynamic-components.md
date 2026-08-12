@@ -99,9 +99,11 @@ The host is assembled from published packages:
 | `dyncomp/jsonschema` | the declared schema as JSON Schema and back, collecting every validation error with a JSON Pointer rather than stopping at the first |
 | `dyncomp/persist` | a component that has to outlive the page (`dyncomp/persist/wasm` stores it in `localStorage`) |
 | `dyncomp/ui` + `dyncomp/ui/std` | the universal UI: a person searches the catalog, fills in a generated form, and arranges what they placed. Backend-agnostic, so `moon test` drives the whole editor on the in-memory DOM. |
-| `dyncomp/ui/wasm` | the wasm-gc half the above cannot have: the bridge that turns an archive into registered components, the store that keeps what was built, and the bar a bundle is loaded from. `mount()` is the whole host. |
+| `dyncomp/ui/wasm` | the wasm-gc half the above cannot have: the bridge that turns an archive into registered components and the store that keeps what was built. `mount()` is the whole host. |
+| `dyncomp/shell` | the floor under any wasm-gc page that hosts bundles, whatever it does with them: the loader bar a bundle arrives through, `make_instance`, and the margaui refresh. Both pages below stand on it, so there is one loader rather than two that can answer differently. |
+| `dyncomp/storybook` + `dyncomp/storybook/wasm` | the OTHER thing to do with a catalog: show all of it. One card per component per named `init`, live, filterable, in any theme — and no story list anywhere, because a manifest already declares both halves. `cmd/dev -- dyncomp-storybook`. |
 
-Two JavaScript files come with them, because a wasm-gc module cannot reach the
+Three JavaScript files come with them, because a wasm-gc module cannot reach the
 DOM by itself:
 
 - **`app/wasm/loader.mjs`** — `jscore` and `tdom` (the import namespaces
@@ -111,6 +113,12 @@ DOM by itself:
   arena, the bundle unpacker) and `tkv` (`localStorage`). Linked through
   `instantiate`'s `makeExtra` hook, so a page that loads no bundles carries
   none of it.
+- **`dyncomp/host/wasm/abi.mjs`** — the canonical ABI for the world, written
+  once host-side (it is what an archive used to ship a copy of). The file above
+  `import()`s it lazily, only while an archive is actually being unpacked, so a
+  page that forgets to serve it beside the other two MOUNTS AND DRAWS and then
+  fails on the first bundle with a message about a module nobody mentioned. If
+  bundles load nowhere and everything else works, check for this one first.
 
 ```js
 import { instantiate } from "marianoguerra/tutuca/app/wasm/loader.mjs";
@@ -187,7 +195,7 @@ no filesystem, no network, no sockets, no environment, no subprocess, and no
 clock or entropy beyond what a capability grant supplies. The default tier is
 the one the design is *for* — a bundle there can still declare components, ship
 views, hold state, handle events, nest children and serve its own requests, and
-all six sample guests run under it unchanged.
+every sample guest runs under it unchanged.
 
 Autonomous custom elements remain available to untrusted views, including
 structured property bindings. The host page owns their JavaScript, though: a
@@ -201,11 +209,16 @@ you host untrusted bundles today, they are what to think about.
 
 ## The sample guests
 
-Six of them, in [`../guests/`](../guests/), each covering a part of the contract
-that is easy to get wrong:
+In [`../guests/`](../guests/), each covering a part of the contract that is
+easy to get wrong (a count is left out on purpose — the list grows, and a
+number in prose is the half that stops being true):
 
 - **counter** — the reference: a scalar, a list the host iterates, a view
   method, a request round trip, and nested same-bundle children
+- **slack** — a chat conversation, and the DEEP end of the same nesting:
+  `ChannelHistory` → `Thread` → `Message` → `RichText` → `Segment`, all built
+  from one `init`. Also the two refusals seen from a guest's side — no `href`
+  for a link, no global CSS for a display toggle
 - **todo**, **todomvc**, **tictactoe** — collections
 - **calculator** — state the declared fields do not name
 - **rust-tempconv** — the polyglot proof: the same WIT, no tutuca code at all,

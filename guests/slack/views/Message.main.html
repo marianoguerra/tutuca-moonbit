@@ -1,0 +1,13 @@
+<article @if.class=".compact"
+         @then="'msg msg-compact text-sm py-1'"
+         @else="'msg card bg-base-100 shadow-sm p-3'">
+  <div class="msg-head flex items-center gap-2 flex-wrap">
+    <span class="msg-author font-semibold text-primary" @text="$authorLabel"></span>
+    <span class="msg-channel badge badge-ghost badge-sm" @show="$hasChannel" @text="$channelLabel"></span>
+    <span class="msg-time text-xs opacity-60" @text="$timeLabel"></span>
+    <span class="msg-edited text-xs opacity-50 italic" @show=".edited">(edited)</span>
+    <span class="msg-pinned badge badge-ghost badge-sm" @show=".pinned">pinned</span>
+  </div>
+  <div class="msg-body mt-1"><x render=".body"></x></div>
+  <div class="msg-reactions flex gap-1 flex-wrap mt-2" @hide="empty? .reactions"><x render-each=".reactions"></x></div>
+</article>

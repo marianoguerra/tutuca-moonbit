@@ -14,16 +14,22 @@ cannot do, checked against the code — and [`ARCHITECTURE.md`](ARCHITECTURE.md)
 - Guests: [`../guests/counter/`](../guests/counter/README.md),
   [`../guests/todo/`](../guests/todo/README.md), `../guests/todomvc/`,
   [`../guests/calculator/`](../guests/calculator/README.md) and
-  [`../guests/tictactoe/`](../guests/tictactoe/README.md) (MoonBit),
+  [`../guests/tictactoe/`](../guests/tictactoe/README.md),
+  [`../guests/slack/`](../guests/slack/README.md) (MoonBit),
   [`../guests/rust-tempconv/`](../guests/rust-tempconv/) (Rust — the polyglot
   proof). One WIT, no copies: a guest cannot implement a different contract
   than the host expects. Between them they cover each half of the contract
   that is easy to get wrong: a scalar (counter), a collection the host
-  iterates (todo, tictactoe), state the declared fields do NOT name
-  (calculator, tempconv), and both answers to `persist` — bytes, and silence.
-- Demo: `demo/universal_wasm` — the ONE page that hosts runtime-loaded
-  bundles. `moon run --target native cmd/dev -- universal`, serve `dist/`,
-  open `/universal/`. Drop a `.tutuca.tar.gz` on it, or load one by URL.
+  iterates (todo, tictactoe), a tree of them five levels deep (slack), state the
+  declared fields do NOT name (calculator, tempconv), and both answers to
+  `persist` — bytes, and silence.
+- Demos, two pages that host runtime-loaded bundles, and the split between
+  them is what each is FOR. `demo/universal_wasm` is a blank page a person
+  builds on: `cmd/dev -- universal`, serve `dist/`, open `/universal/`, and drop
+  a `.tutuca.tar.gz` on it or load one by URL. `demo/dyncomp_storybook_wasm`
+  shows everything a bundle declares without anybody building anything — one
+  card per component per named `init` (`dyncomp/storybook`): `cmd/dev --
+  dyncomp-storybook`, open `/dyncomp-storybook/`.
 - Contract harnesses: `node --test 'dyncomp/test/*.test.mjs'` (the MoonBit
   counter, TodoMVC, and the Rust converter); `test/browser-smoke.html` served
   from the repo root.
@@ -238,8 +244,12 @@ JavaScript at page authority and a warning was not an isolation boundary.
 
 ## Still open
 
-- Host → guest encoding of an instance nested inside a compound value
-  (`with-field` covers the write path that exists).
+- Reading a child back OUT of the token that names it. A guest holds bridge
+  handles, not pointers, so a parent cannot inspect its own children — which is
+  why `guests/slack`'s channel keeps the text it built each thread from,
+  parallel to the tokens, in order to filter them. (The write direction is
+  closed: `child_json` encodes an instance at any depth inside a list or map,
+  so a child in a LIST that returns a successor gets written back.)
 - A render-generation sweep as an alternative to explicit `destroy` for
   instances a host seeded and dropped.
 - Playground emission of dyncomp bundles (needs in-browser componentize).

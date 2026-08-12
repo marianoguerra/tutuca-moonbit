@@ -357,16 +357,12 @@ pub impl @dyncomp.Guest for WasmGuest with fn call_method(
 
 ///|
 pub impl @dyncomp.Guest for WasmGuest with fn with_field(self, handle, name, v) {
-  // a nested-child value encodes as a marker (Value::to_json drops Obj)
-  let encoded = match v {
-    Obj(o) =>
-      match o.obj_field(@dyncomp.handle_field) {
-        Some(Num(h)) => "{\"$dyn\": {\"handle\": \{h.to_int()}}}"
-        _ => v.to_json().stringify()
-      }
-    _ => v.to_json().stringify()
-  }
-  let next = tcomp_with_field(self.bundle, handle, name, encoded)
+  let next = tcomp_with_field(
+    self.bundle,
+    handle,
+    name,
+    @dyncomp.child_json(v).stringify(),
+  )
   if next < 0 {
     None
   } else {

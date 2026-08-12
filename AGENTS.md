@@ -111,6 +111,7 @@ moon run --target native cmd/dev -- <task>
 | `gen-views` | regenerate the checked-in `*_view_gen.mbt` from their `.html` sources (`viewgen/`); formats after generating, then drift-checks the generated modules — a stale one type-checks and tests green, so this is what catches it |
 | `gen-guest-bindings` | regenerate the checked-in MoonBit guest bindings (every guest in `guests/guests.mjs`) from the ONE WIT (`dyncomp/wit/tutuca-component.wit`), copy in the ONE SDK (`guests/sdk.mbt`), then drift-check them |
 | `skill-embed` | regenerate `cli/skill_assets_gen.mbt` from `skill/tutuca/` (the embedded assets `tutuca install-skill` writes out; `dist` runs it first) |
+| `dyncomp-storybook` | assemble `dist/dyncomp-storybook/` — the gallery of every component every loaded bundle declares, once per named `init` — with every sample bundle beside it. Out of `dist` for the same reason `universal` is: the guests need wasm-tools + jco |
 | `guest-template-embed` | regenerate `cli/guest_template_gen.mbt` — the guest tree `tutuca new-guest` writes out — from `guests/counter` (bindings + SDK) + `dyncomp/wit` (the contract) + `guests/template` (the overlay that carries the `{{name}}` placeholders); `dist` runs it beside `skill-embed` |
 | `check-guest-template` | scaffold a guest with that embed and `moon check --deny-warn` it; part of `ci`, and the only coverage `new-guest` has (CI never builds a real guest — `guests` needs wasm-tools and jco) |
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
@@ -189,13 +190,28 @@ twins of `vdom/browser` + `app/browser`): the DOM is reached from wasm-gc
 through mizchi/js's `@core.Any` plus a small `tdom` FFI, and — since MoonBit
 closures can't cross into JS on wasm-gc — JS calls the exported `on_event` on
 each DOM event instead of receiving a closure. `demo/counter_wasm`,
-`demo/universal_wasm`, and `demo/storybook_wasm` are the wasm-gc hosts
+`demo/universal_wasm`, `demo/storybook_wasm` and `demo/dyncomp_storybook_wasm`
+are the wasm-gc hosts
 (`demo/counter_wasm` is the twin of the js `demo/counter`; `storybook_wasm`
 mounts the `storybook/ui` gallery over the whole example registry, and
 `universal_wasm` hosts the dyncomp guest bundles — though almost nothing is left
 in it, since the host itself is the published `dyncomp/ui/wasm` and the page is
 the ~90 lines that call `mount` and re-export the entry points, an export list
-being per-package `link` config that cannot come from a dependency). margaui styling is compiled
+being per-package `link` config that cannot come from a dependency;
+`dyncomp_storybook_wasm` is that same shape over `dyncomp/storybook/wasm`).
+Both host packages stand on `dyncomp/shell`, which is the floor under any page
+that hosts bundles — the loader bar, `make_instance`, the margaui refresh. It is
+deliberately not in `dyncomp/host/wasm`: the bridge should not have to depend on
+a CSS compiler and a view parser to answer `get-field`.
+
+The two dyncomp pages are not variants of one thing, and the difference is what
+each is FOR. `universal_wasm` is a blank page a person builds on, so it starts
+empty and hides its sample buttons behind `?test`; `dyncomp_storybook_wasm` is a
+gallery, so it fetches every sample at mount and draws one card per component
+per named `init`. A storybook that opens empty and asks you to press a button
+first is a storybook with an extra step; a blank page that opens with seven
+buttons naming archives nobody has heard of is the wrong first impression the
+other way. margaui styling is compiled
 in MoonBit: the host's `mount()` hands `collect_classes()` to `css`'s
 `compile_margaui` (the `marianoguerra/tailwindcss` port + embedded stylesheet
 bundles) and injects the resulting `<style id="margaui-css">`, re-running it from
