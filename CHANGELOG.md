@@ -52,6 +52,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **Nine examples migrated into the card playground's selector.** It had four
+  starters; it has thirteen cards now, and the nine are the repo's own demos
+  rather than new ones — `traffic-light`, `tabs`, `show-hide`, `attributes`,
+  `modifiers`, `scope`, `list-enrich`, `list-iteration` and `markdown`, taken
+  from `storybook/examples/` and `playground/site/examples/` with their MoonBit
+  `update` arms moved into the block and their `compute` entries into `compute`
+  declarations. Every one is loaded by `check-examples` on each build and was
+  driven in a browser.
+
+  Two of the nine could not say in the block exactly what the MoonBit said, and
+  both are one-line gaps rather than design questions: the reading vocabulary
+  has `lower` and no `upper`, and a string literal has `\'` and `\\` and no
+  `\n`. `docs/cards-from-examples.md` records what the whole corpus would take
+  — 31 more components need only the porting work, and 49 need child
+  components.
+
 - **The conformance corpus covers value bodies.** It held transitions only —
   a dispatch, a before, an after — which is why the two backends could disagree
   about every `compute` and `pred` in the language without a test noticing. It

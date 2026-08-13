@@ -49,6 +49,70 @@ because the handler language is too small, which is worth saying plainly: the
 `tutuca/script` instead of MoonBit, and every one of those handlers is
 expressible today.
 
+## What was migrated
+
+Nine examples are in the card playground's selector now, beside the four
+starters it already had — `tutucard/web/examples.js`, which
+`check-examples.mjs` loads through the real loader on every build, and which I
+drove in a browser one by one:
+
+| card | from | what the migration cost |
+| --- | --- | --- |
+| `traffic-light` | `conditionals/TrafficLight` | `$light` indexed a MoonBit array; the card spells the same mapping as nested `if`s |
+| `tabs` | `conditionals/TabbedUI` | nothing — every handler was already a generated mutator |
+| `show-hide` | `state_and_updates/ShowHide` | `$label` moved from MoonBit into a `compute` |
+| `attributes` | `state_and_updates/AttributeBinding` | the number input takes `valueAsInt` instead of a handler that parsed the string |
+| `modifiers` | `state_and_updates/EventModifiers` | nothing — `+send` and `+cancel` are guards, and all three handlers are mutators |
+| `scope` | `collections/RenderWithScope` | `@upper` became `@lower`: the reading vocabulary has `lower` and no `upper` |
+| `list-enrich` | `collections/ListFilterEnrich` | `when` and `enrich` became a `pred` and an `enrich`, unchanged in substance |
+| `list-iteration` | `list_iteration` | seeded by `receive init`, since a card starts at the schema's zero |
+| `markdown` | `playground/site/examples/markdown` | the seed is one line: a block string literal has `\'` and `\\` and no `\n` |
+
+Two of those rows are the only places a card could not say what the MoonBit
+said — `upper`, and a multi-line string — and both are one-line additions to
+the language rather than design questions.
+
+## The rest, grouped
+
+### Easy: nothing is missing, the handlers just have to be written
+
+31 components. Each is a single component whose whole behaviour the block
+language can express; what stands between them and the selector is someone
+porting an `update` arm, which is the work the nine above show the shape of.
+
+`basics/`: MinimumViableComponent, StaticViewComponent, TextDirective,
+DangerSetInnerHtml, SetInnerMd · `communication/Status` ·
+`conditionals/ListAndFilter` · `state_and_updates/ConditionalAttributes` ·
+`custom_collection/Song` · `dynamic/`: SelectorEntry, Selector, Sheet ·
+`dynamic_selected_edit/DseEntry` · `file_picker` ·
+`filter_paginate/Person` · `graphics/`: SwatchPicker, Quadratic · `json/`:
+JsonSelector, JsonNull, JsonBool, JsonString, JsonNumber ·
+`personal_site/AltUrl` · `pseudo_x/`: TableRow, ItemTable, SelectOption,
+ItemSelect · `render_child/`: Greeting, Entry · `styles/StylesExample` ·
+`todo/Item` · site: `counter`, `text_input`, `toggle`
+
+Worth saying about two of them: the five `json/` leaves and
+`render_child/Entry` are the *children* of demos that a card cannot assemble —
+each is a perfectly good card on its own, and the tree above it is not.
+
+### Hard: blocked on a feature
+
+| what it needs | components | examples |
+| --- | --- | --- |
+| **child components** | 49 | `json` (the tree), `todo/Items`, `tree`, `composability`, `dynamic` (Panel, Workspace, EntryEditorAndSelector), `dynamic_selected_edit` (DseRoot, DseEditor), `personal_site` (Root, PsEntry), `filter_paginate` (NaivePeople, Shared, Coupled, Strategies), `pseudo_x/PseudoXDemo`, `render_child` (Page, MultipleViews), `rendering` (PushView, SeqItemAccess), `custom_collection/Playlist`, `communication` (TreeRoot, TreeItem), `styles/StylesExampleRoot`, `request` |
+| **a record literal** — `new` is landing in the tree as I write this | 4 | `nested_state` (its `Array[Label]` cannot be seeded), `todo/Item` when it is the list that grows it, `filter_paginate/Person`, `custom_collection` |
+| **`@loop-with`** | 4 | `rendering/Pagination`, `svg_more/BarChart`, `collections/ListFilterEnrichWith`, `filter_paginate`'s three strategies |
+| **macros in a card** | 2 files | `macros`, `todo_macros` — both are macro libraries with no template of their own |
+| **calling a function a value carries** | 1 | `dnd`: the drop handler reads `dragInfo.lookupBind` and CALLS it, and the block language has no way to apply an `Fn` it did not name |
+| **host-registered requests** | 1 | `request` — it loads today and shows the error path, which is honest but is not the demo |
+| **nothing; a card is the wrong shape** | 2 | `visual_wasm` builds its views at run time, `lint_errors` is a fixture of deliberately broken ones |
+
+Two small language gaps surfaced by the migration itself, neither blocking
+anything: **no `upper`** beside `lower` in the reading vocabulary, and **no
+`\n`** in a string literal (the two escapes are `\'` and `\\`, matching a slot
+literal — a multi-line spelling would be the thing to add rather than a third
+escape vocabulary).
+
 ## What each blocked group needs
 
 ### 1. A card that is more than one component — by far the biggest win
