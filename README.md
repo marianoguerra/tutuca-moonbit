@@ -48,10 +48,6 @@ component — is REFUSED by name, with the reason, and comes back as an
   counter up, also executable.
 - **[docs/first_principles.mbt.md](docs/first_principles.mbt.md)** — the same
   framework rebuilt layer by layer, if you want to know *why* it works.
-- **[docs/cards-from-examples.md](docs/cards-from-examples.md)** — what
-  happens when every example in this repo is run as a card instead of
-  compiled: 60 of 109 components would stand alone today, 49 are blocked by
-  one missing feature, and what each of the five gaps would take.
 - **[docs/dynamic-components.md](docs/dynamic-components.md)** — the part that
   is *not* decided before the program runs: a WebAssembly component fetched at
   runtime, from someone you have no reason to trust, mounted into a page that

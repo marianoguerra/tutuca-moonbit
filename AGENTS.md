@@ -45,11 +45,13 @@ You can browse and install extra skills here:
   `moon fmt` — while `dev/tasks.mbt` said the trailing fmt was there precisely
   so it would be. The task was right; it was checked by running both.)
 
-- `dyncomp/` has four documents, and they divide as: `DESIGN.md` is the
+- `dyncomp/` has three documents, and they divide as: `DESIGN.md` is the
   contract and how it maps onto tutuca; `SECURITY.md` is what a loaded bundle
-  can and cannot do, with the file/line evidence for each claim; `ARCHITECTURE.md`
-  is the plan for the universal UI and the agent runtime on top; and
-  `docs/agent-runtime.md` is the tool surface a language model addresses.
+  can and cannot do, with the file/line evidence for each claim; and
+  `ARCHITECTURE.md` is the plan for the universal UI and the agent runtime on
+  top. The agent tool surface has no document: the one it had was specified
+  against the `Surface` document that no longer exists, and it was deleted
+  rather than left to mislead.
   Changing the WIT means checking `SECURITY.md`'s "What to check when changing
   this" — two of its three findings were fields nobody thought were a channel.
 

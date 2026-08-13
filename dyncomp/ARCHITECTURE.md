@@ -245,11 +245,10 @@ number three ways at once, and a half-typed one that is not a number at all.
 
 ## Layer 2 — the agent runtime
 
-A new `agent/` tree driving the *same* core. See
-[`../docs/agent-runtime.md`](../docs/agent-runtime.md) for the tool surface and
-the protocol mapping — but read it knowing that its `ui_apply` was specified in
-terms of `SurfaceOp`s that no longer exist, so the tool surface **needs
-redesigning** before any of it is built. In outline:
+A new `agent/` tree driving the *same* core. The tool surface **needs designing**
+before any of it is built: the document that once specified it described an
+`ui_apply` over `SurfaceOp`s that no longer exist, and has been deleted. In
+outline:
 
 - `agent/tools` — stable tools whose `parameters` schemas come from
   `dyncomp/jsonschema`, which is unchanged and still the right seam.
@@ -302,8 +301,10 @@ What is left, in order:
    but `control.after` still has no host implementation (it needs a timer the
    transactor owns), and the bridge supplies `env` unconditionally rather than
    per grant.
-4. **Redesign the agent tool surface**, since `docs/agent-runtime.md` is
-   specified against a document that no longer exists. Then Layer 2.
+4. **Design the agent tool surface** from what the tree actually offers —
+   address a component by path, send it a message, read its declared fields
+   back — rather than from the document it used to be specified against. Then
+   Layer 2.
 
 ## Known gaps in what is built
 

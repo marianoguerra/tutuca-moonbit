@@ -270,10 +270,10 @@ rung needs new infrastructure.
   an agent would need — is unsolved and larger than this design.
 - **Where compilation lives.** Playground origin vs. universal host page (see
   Security consequences). Affects nothing structural, but it is a real choice.
-- **Agent tool surface.** `docs/agent-runtime.md`'s `ui_apply` was specified over
-  `SurfaceOp`s that no longer exist and needs redesigning regardless. "Compile
-  and register a component" is a natural tool once that redesign happens; it
-  should not be bolted onto the current surface.
+- **Agent tool surface.** There isn't one yet: the design that existed was
+  specified over `SurfaceOp`s that no longer exist, and was deleted rather than
+  redesigned in place. "Compile and register a component" is a natural tool once
+  that design happens; it should not be bolted onto anything before then.
 
 ## Cost
 

@@ -23,8 +23,9 @@
 // Most of these are MIGRATED from `storybook/examples/` and
 // `playground/site/examples/` — the same demos the compiled gallery shows,
 // with their `update` arms moved into the block and their MoonBit `compute`
-// entries into `compute` declarations. What each migration cost, and which of
-// the corpus is still out of reach, is in `docs/cards-from-examples.md`.
+// entries into `compute` declarations. `node tutucard/build/check-examples.mjs`
+// runs the real loader over every card that ships; for one that has NOT been
+// migrated, `__tutucard.check(source, name)` on its file says what refuses it.
 //
 // One limit is visible here and is the language's rather than the page's: a
 // condition slot still takes `$name` rather than a bare predicate application,

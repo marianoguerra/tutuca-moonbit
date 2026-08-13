@@ -1,11 +1,13 @@
 # Sanitizing an anode view
 
-A design, not an implementation. It exists because `dyncomp/` compiles view text
-it did not write into the host's own page, and because `dyncomp/SECURITY.md` §3
-promises a port of the [WHATWG Sanitizer
+The design, and what became of it. It exists because `dyncomp/` compiles view
+text it did not write into the host's own page, and because
+`dyncomp/SECURITY.md` §3 promises a port of the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
 without saying what "port" means for a tree that is half description and half
-expression. This says it.
+expression. This says it. Most of it is now built — `anode/sanitize` and
+`vdom/filter` — and each section says which parts shipped and which are still
+only argued for.
 
 ## What the spec gives, and what it does not
 
