@@ -26,8 +26,12 @@
   }
 
   /// PRECONDITIONS — what each handler asks before it moves anything.
-  pred canPush { .here > 0 }
-  pred canPull { .there > 0 }
+  ///
+  /// The `format` is what each one SAYS when it declines. Press a button with
+  /// nothing left on that side and the console gets the sentence rather than
+  /// silence.
+  pred canPush format 'nothing left here to push' { .here > 0 }
+  pred canPull format 'nothing over there to pull back' { .there > 0 }
 
   /// The guard has a NAME and sits in the header, so a reader knows when the
   /// handler applies without reading the body. It still needs no rollback: a

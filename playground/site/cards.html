@@ -415,14 +415,38 @@
           <strong>A refusal is reported, not swallowed.</strong> Press
           <em>cheat</em>: the numbers do not move, and the console says
           <code>contract: `cheat` was abandoned — it broke the invariant
-          `conserved`</code>. That report is the point of attaching a rule at
-          all. "The transition did not happen" is already the framework's
-          answer to everything, and it is <em>invisible</em> — a state that did
-          not move looks exactly like a state that had nothing to move. A
-          contract is you saying which of those silences is a bug, and the
-          report is where that reaches a host, through the same
-          <code>warn_hook</code> the runtime uses for every other quiet
-          failure.
+          `conserved`: 8 + 1 is not 8 — a token came from nowhere</code>. That
+          report is the point of attaching a rule at all. "The transition did
+          not happen" is already the framework's answer to everything, and it is
+          <em>invisible</em> — a state that did not move looks exactly like a
+          state that had nothing to move. A contract is you saying which of
+          those silences is a bug, and the report is where that reaches a host.
+        </p>
+        <p>
+          The half after the colon is the rule's own <code>format</code>: the
+          sentence it says when it does <em>not</em> hold, written above the
+          body and evaluated against the state that was rejected — so the
+          numbers in it are the ones that broke the rule. The <code>///</code>
+          comment and the <code>format</code> do different jobs, which is why a
+          rule wants both: the comment says what the rule <em>is</em>,
+          statically, and the format says what went wrong <em>this time</em>. It
+          is an ordinary <code>$'…'</code> template, so there is no second
+          interpolation syntax to learn, and it describes the false case,
+          because a predicate is true when things are fine.
+        </p>
+        <p>
+          A host that wants more than a line asks for the record.
+          <code>@tutuca.on_refusal</code> switches on a channel that carries the
+          code (<code>PRECONDITION</code>, <code>INVARIANT</code>,
+          <code>NO_HANDLER</code>, …), what was asked for, which rule said no,
+          that sentence — and the state that was rejected, which is the thing
+          you actually want to look at. It is off until somebody asks, a
+          declining handler is <em>not</em> a refusal (the generated setter
+          behind it is the design), and one dispatch produces at most one
+          record. In a test, <code>@harness.no_refusals(…)</code> turns the
+          channel into a failure, which is what makes a test about a guarded
+          button mean something: clicking one that correctly declines and
+          clicking one whose selector is a typo both pass today.
         </p>
         <p>
           The rule stays readable from everywhere it was before: an

@@ -139,6 +139,8 @@ fn bar_chart_inline_update(
         @tutuca.precondition_failed(
           handler="addBar",
           pred="hasRoom",
+          sentence="nine bars is the cap, and there are already " +
+            (Num(s.values.length().to_double()) : @tutuca.Value).to_display_string(),
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
@@ -163,6 +165,7 @@ fn bar_chart_inline_update(
         @tutuca.precondition_failed(
           handler="removeBar",
           pred="hasSpare",
+          sentence="one bar has to stay, or there is no chart left to look at",
           state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
         )
         return Unchanged
