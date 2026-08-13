@@ -88,6 +88,15 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   card test pins it: the runtime had a test for an invariant refusing a handler
   that never mentions it, and none for a handler that asks and promises at once.
 
+  Step 4's prose is the third gap, and the one the sweep got wrong first. It
+  teaches `new Song` / `.songs.push @cur` beside a card whose `songs` is an
+  `Array[String]` — a snippet that is a type error against the schema the
+  reader is looking at. It says it is hypothetical now, and points at
+  `nested-state`, the starter card where all of it runs. That card is also what
+  the sweep missed: it read `.html` and `.md`, and the starter deck is JS
+  string literals, so "no runnable example" was a fact about the search and not
+  about the tree.
+
 - **The skill documents `new` / `@cur`.** `skill/tutuca/schema.md` carried the
   contracts from the day they shipped and nothing at all about building a
   value, so an agent reading the skill could not write a record. The new

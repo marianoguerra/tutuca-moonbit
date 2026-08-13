@@ -228,7 +228,11 @@
           has no literals to write one with: <code>new &lt;Type&gt;</code>
           builds a value at its type's zero and makes it the
           <strong>active target</strong>, which the statements under it fill in
-          through <code>@cur</code>. Then it is pushed like anything else.
+          through <code>@cur</code>. Then it is pushed like anything else. This
+          card's <code>songs</code> is an <code>Array[String]</code> and needs
+          none of it; had the schema declared
+          <code>struct Song { title : String, plays : Int }</code> and
+          <code>songs : Array[Song]</code>, a row would be built like this:
         </p>
         <pre><code>receive init {
   new Song
@@ -247,6 +251,15 @@
           the handler that built it: it is gone when the handler ends, and it
           never reaches a view, so a template that reads <code>@cur</code> reads
           nothing.
+        </p>
+        <p>
+          The <code>nested-state</code> card in
+          <a href="./tutucard/">the card playground</a> is that, running: an
+          <code>Array[Label]</code> seeded and grown with <code>new</code>, and
+          a nested write —
+          <code>.labels[key].done = not .labels[key].done</code> — which is the
+          other half of what a record buys and the one pair a view slot cannot
+          spell.
         </p>
       </section>
 
