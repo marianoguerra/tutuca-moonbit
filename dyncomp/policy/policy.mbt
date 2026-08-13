@@ -78,6 +78,14 @@ pub(all) struct Policy {
   /// `check_view` where the only options would be raising or silently falling
   /// back.
   sanitizer : @sanitize.Sanitizer
+  /// The origins an untrusted view may pin a `<img src>` / `<a href>` to, each
+  /// normalized to `scheme://authority`. Only consulted when `CapExternalUrls`
+  /// is granted; empty then means any `https://` origin.
+  ///
+  /// Set through `allowing_external_urls`, which is also what adds the grant:
+  /// the list and the capability are one decision and a policy holding one
+  /// without the other would be a policy nobody meant to write.
+  external_origins : Array[String]
 }
 
 ///|
@@ -92,6 +100,7 @@ pub fn Policy::untrusted() -> Policy {
     grants: [],
     allow_custom_css: false,
     sanitizer: @sanitize.Sanitizer::default(),
+    external_origins: [],
   }
 }
 
@@ -99,13 +108,20 @@ pub fn Policy::untrusted() -> Policy {
 /// A person said yes: the clock and ids, and CSS the validator has looked at.
 /// Still no timer — a bundle that wants to wake itself up is asking for
 /// something a person cannot meaningfully consent to in one dialog.
+///
+/// `CapExternalUrls` is in the list because these tiers already keep the whole
+/// URL surface (`check_untrusted_view_authority` returns early above
+/// Untrusted). A bundle that DECLARES the capability so an untrusted host can
+/// judge it must not be refused by a host that was going to allow more than it
+/// anyway, which is what leaving it out would do.
 pub fn Policy::granted() -> Policy {
   {
     tier: Granted,
     quotas: Quotas::default(),
-    grants: [CapClock, CapRandom],
+    grants: [CapClock, CapRandom, CapExternalUrls],
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
+    external_origins: [],
   }
 }
 
@@ -115,9 +131,10 @@ pub fn Policy::system() -> Policy {
   {
     tier: System,
     quotas: Quotas::default(),
-    grants: [CapClock, CapRandom, CapTimer],
+    grants: [CapClock, CapRandom, CapTimer, CapExternalUrls],
     allow_custom_css: true,
     sanitizer: @sanitize.Sanitizer::default(),
+    external_origins: [],
   }
 }
 

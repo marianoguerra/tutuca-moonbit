@@ -31,6 +31,16 @@ policy boundary shows up in the OUTPUT rather than in a doc:
   chip, a link is its text with the target as the tooltip, and the permalink is
   text you can select. Nothing is hidden — every facet target is on the page —
   and nothing here can make the page fetch.
+
+  A page that WANTS the pictures can say so:
+  `Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])` grants
+  `cap-external-urls`, which reopens `src` on `<img>` and `href` on `<a>` for
+  URLs whose origin is a literal in the view — `<img :src="$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'">`
+  is allowed, `<img :src=".avatar">` still is not, because the second one lets
+  this bundle pick the origin. This viewer does not use it: it is the guest that
+  shows what the strict tier looks like, and a reader that draws initials is the
+  point rather than a limitation to route around. What the capability costs is
+  in `dyncomp/SECURITY.md` §3.
 - **No indentation attribute either**, which is why a row's `depth` arrives in
   the view as a `rail` list: that many spacer elements to draw, since a
   `style="margin-left:…"` is exactly the sink the rule refuses.

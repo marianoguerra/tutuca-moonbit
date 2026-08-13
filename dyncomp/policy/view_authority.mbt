@@ -5,6 +5,11 @@
 /// guest a browser-managed route out of its wasm sandbox. Values may be
 /// dynamic, so sink attributes are refused by name instead of trying to
 /// validate only the literals visible now.
+///
+/// The one place that generalizes is `cap-external-urls`, and it does not
+/// break the rule so much as find the part of a value that IS static: a URL's
+/// origin, when the view writes it as a literal. `external_url.mbt` owns that
+/// rule; this file owns where it applies.
 
 ///|
 fn untrusted_sink_attr(name : String) -> Bool {
@@ -44,6 +49,20 @@ fn untrusted_sink_attr(name : String) -> Bool {
     | "style" => true
     _ => false
   }
+}
+
+///|
+/// The two places a URL is worth the argument, and the only two
+/// `cap-external-urls` reopens: a picture and a link.
+///
+/// Everything else on `untrusted_sink_attr` stays refused with the capability
+/// granted, and the list is short for a reason rather than for tidiness. An
+/// `<iframe src>` is a document with its own script; a `<form action>` sends
+/// what a person typed; `srcset` is a list, which is a rule with a parser in
+/// it; the CSS sinks are a stylesheet's worth of surface behind one attribute.
+/// A host that wants any of those wants a tier, not a capability.
+fn external_url_attr(tag : String, attr : String) -> Bool {
+  (tag == "img" && attr == "src") || (tag == "a" && attr == "href")
 }
 
 ///|
@@ -91,9 +110,15 @@ fn check_untrusted_attrs(
   where_ : String,
   d : @anode.DomData,
   out : Array[Refusal],
-  sanitizer_allows_raw_markup : Bool,
+  policy : Policy,
 ) -> Unit {
-  fn check_name(name : String) {
+  let tag = d.tag.to_lower()
+  // `vals` is what the attribute would set — one expression usually, two for
+  // an `@if.` attribute, and a `None` for a branch that sets nothing. The sink
+  // rule never needed them (a name is a name); `cap-external-urls` does, being
+  // a rule about where the value POINTS, read off the literal part of it. See
+  // external_url.mbt.
+  fn check_name(name : String, vals : Array[@tutuca.Val?]) {
     let lower = name.to_lower()
     if lower == "is" {
       out.push(
@@ -103,12 +128,26 @@ fn check_untrusted_attrs(
         ),
       )
     } else if untrusted_sink_attr(lower) {
-      out.push(
-        refusal(
-          where_,
-          "untrusted views may not use network/CSS sink attribute '\{name}' on <\{d.tag}>",
-        ),
-      )
+      if external_url_attr(tag, lower) {
+        for val in vals {
+          guard val is Some(v) else { continue }
+          if policy.external_url_refusal(v) is Some(why) {
+            out.push(
+              refusal(
+                where_,
+                "untrusted views may not use '\{name}' on <\{d.tag}>: \{why}",
+              ),
+            )
+          }
+        }
+      } else {
+        out.push(
+          refusal(
+            where_,
+            "untrusted views may not use network/CSS sink attribute '\{name}' on <\{d.tag}>",
+          ),
+        )
+      }
     }
   }
 
@@ -125,7 +164,10 @@ fn check_untrusted_attrs(
   match d.attrs {
     ConstAttrs(attrs) =>
       for name, lit in attrs {
-        check_name(name)
+        // A constant attribute IS a pinned value, which is the case
+        // `cap-external-urls` is friendliest to; it reaches the same rule as
+        // the dynamic one by wearing the shape the rule reads.
+        check_name(name, [Some(Const(lit~, from_macro=false))])
         if name.to_lower() == "class" && class_lit_has_arbitrary_css(lit) {
           out.push(
             refusal(
@@ -138,13 +180,15 @@ fn check_untrusted_attrs(
       for item in items {
         match item {
           Plain(name~, val~) | ConstA(name~, val~) => {
-            check_name(name)
+            check_name(name, [Some(val)])
             if name.to_lower() == "class" {
               check_class(val)
             }
           }
           If(attr) => {
-            check_name(attr.name)
+            // Both branches are the attribute, so both have to be a URL this
+            // host would allow; an unset branch sets nothing.
+            check_name(attr.name, [attr.then_val, attr.else_val])
             if attr.name.to_lower() == "class" {
               match attr.then_val {
                 Some(val) => check_class(val)
@@ -166,7 +210,7 @@ fn check_untrusted_attrs(
           // loosens that sanitizer, Untrusted still cannot use the construct:
           // its dynamic payload could synthesize every sink checked here.
           RawHtml(_) =>
-            if sanitizer_allows_raw_markup {
+            if policy.sanitizer.raw_markup {
               out.push(
                 refusal(
                   where_, "untrusted views may not render runtime HTML because it can synthesize network-bearing elements",
@@ -183,7 +227,7 @@ fn visit_untrusted_view(
   where_ : String,
   node : @anode.ANode,
   out : Array[Refusal],
-  sanitizer_allows_raw_markup : Bool,
+  policy : Policy,
 ) -> Unit {
   match node {
     Dom(d) => {
@@ -195,28 +239,44 @@ fn visit_untrusted_view(
           ),
         )
       }
-      check_untrusted_attrs(where_, d, out, sanitizer_allows_raw_markup)
+      check_untrusted_attrs(where_, d, out, policy)
       for child in d.childs {
-        visit_untrusted_view(where_, child, out, sanitizer_allows_raw_markup)
+        visit_untrusted_view(where_, child, out, policy)
       }
     }
     Fragment(d) =>
       for child in d.childs {
-        visit_untrusted_view(where_, child, out, sanitizer_allows_raw_markup)
+        visit_untrusted_view(where_, child, out, policy)
       }
     Show(d) | Hide(d) | PushView(d) | Scope(d) =>
-      visit_untrusted_view(where_, d.node, out, sanitizer_allows_raw_markup)
-    Slot(d) =>
-      visit_untrusted_view(where_, d.node, out, sanitizer_allows_raw_markup)
-    Each(d) =>
-      visit_untrusted_view(where_, d.node, out, sanitizer_allows_raw_markup)
-    // The macro body belongs to its host-side definition. Slots belong to the
-    // guest call site and must be checked even though the generic child walker
-    // deliberately does not traverse them.
-    MacroCall(d) =>
-      for _, slot in d.slots {
-        visit_untrusted_view(where_, slot, out, sanitizer_allows_raw_markup)
+      visit_untrusted_view(where_, d.node, out, policy)
+    Slot(d) => visit_untrusted_view(where_, d.node, out, policy)
+    Each(d) => visit_untrusted_view(where_, d.node, out, policy)
+    // The macro body belongs to its host-side definition, and this walk keeps
+    // its hands off it: the body is the host's own markup, and a host that
+    // registered a macro vouched for what is in it.
+    //
+    // What the GUEST supplies to that body is a different thing, and both
+    // halves of it are here. Slots are subtrees and are checked as any other
+    // guest markup would be, even though the generic child walker deliberately
+    // does not traverse them. Arguments are strings the body substitutes
+    // wherever `^name` appears — a sink included — so each is judged for the
+    // worst place it could land.
+    MacroCall(d) => {
+      for name, raw in d.attrs {
+        if policy.macro_arg_refusal(raw) is Some(why) {
+          out.push(
+            refusal(
+              where_,
+              "untrusted views may not pass '\{name}' to <x:\{d.name}>: \{why}",
+            ),
+          )
+        }
       }
+      for _, slot in d.slots {
+        visit_untrusted_view(where_, slot, out, policy)
+      }
+    }
     Text(_) | Comment(_) | RenderText(_) | Render(_) | RenderIt(_) => ()
   }
 }
@@ -231,6 +291,6 @@ fn Policy::check_untrusted_view_authority(
     return []
   }
   let out : Array[Refusal] = []
-  visit_untrusted_view(where_, tree, out, self.sanitizer.raw_markup)
+  visit_untrusted_view(where_, tree, out, self)
   out
 }

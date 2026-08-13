@@ -6,6 +6,47 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`cap-external-urls`: a picture an untrusted bundle chose, from an origin
+  the host did.** The Bluesky reader draws an avatar as the author's initials
+  in a circle, and its README explains why: the untrusted view-authority rule
+  refuses `src` and `href` by NAME, because what `:src=".avatar"` will hold is
+  unknowable when the view is registered. That rule is right and the conclusion
+  drawn from it was too strong. What cannot be known ahead of time is the
+  VALUE; what can be known is the ORIGIN, whenever the view states it as a
+  literal.
+
+  So the fourth capability. `Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])`
+  grants it and names the origins in one call, because they are one decision —
+  a list with no grant permits nothing and a grant with no list permits every
+  `https://` origin there is, and both of those are policies somebody writes by
+  accident. It reopens exactly two attributes, `src` on `<img>` and `href` on
+  `<a>`, and only for a value whose literal head runs through the `/` that ends
+  the authority: `<img :src="$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'">`
+  is allowed, `<img :src=".avatar">` is not, and neither is a relative URL —
+  `/logout` is a request to the HOST's origin with the host's cookies on it,
+  which is a different grant from "may load pictures from a CDN".
+
+  Decidable at registration for the same reason the sink-name rule is, and
+  fussy in the two places that decide whether it means anything: `origin_of`
+  refuses userinfo, so `https://cdn.bsky.app@attacker.test/` does not read as
+  the CDN to a prefix comparison the way it does to every string-matching
+  allowlist that has shipped this bug, and it refuses a backslash, a control
+  character or a space in the authority, where the browser's own normalization
+  would move the boundary after the check.
+
+  What it does not pretend: an image is a GET the guest chose and the path is
+  still the guest's to write, so an allowed origin is an origin that can be
+  told things. Naming origins is what turns "this bundle can talk to anyone"
+  into "this bundle can talk to the CDN its pictures are on"; the empty list
+  means any `https://` origin and is the form to justify before using.
+  `dyncomp/SECURITY.md` §3 carries the rest of the limits, including why
+  `<iframe src>`, `<form action>`, `srcset` and the CSS sinks stay refused with
+  it granted. The Bluesky reader still draws initials — it is the guest that
+  shows what the strict tier looks like — and its README now says what a page
+  that wants the pictures would say instead.
+
 ### Changed
 
 - **The landing page's counter card is styled by class name.** It was the one
@@ -16,6 +57,42 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `index.html` asks for `margaui`, and the CSS the page compiles is the class
   set the card actually used. The `<style>` block is still the other way to do
   it, and `cards.html` still documents both.
+
+### Fixed
+
+- **A macro call has two guest-controlled halves, and only one was being
+  checked.** `visit_untrusted_view` descends a `MacroCall`'s SLOTS — the
+  caller's subtrees — and deliberately does not descend its body, which is the
+  host's own text. Its ARGUMENTS are the guest's too: `MacroData.attrs` are the
+  caller's strings, substituted wherever `^name` appears in that body. Nothing
+  read them. A host macro whose body places `^icon` in an `<img src>` therefore
+  handed an untrusted bundle the sink the same bundle is refused by name two
+  lines away — contingent on the host having macros, which is why it is a gap
+  in the walk rather than a hole under everyone.
+
+  Each argument is judged now for the worst position it could land in: a sink,
+  so a URL in it is a request the guest chose, and a `class`, so brackets in it
+  are guest-authored CSS. Arguments arrive as value SOURCE — `to_macro_vars`
+  stringifies the parsed `Val`, so a constant arrives quoted and a template as
+  `$'…{…}'` — and the two shapes that state text are read back and held to the
+  same origin rule as an attribute. `/logout`, `//attacker.test/pixel` and
+  `java{tab}script:alert(1)` are refused; `title="Ratio 1/2"` is not, because a
+  macro takes ordinary strings and a rule that made that awkward would be
+  traded away.
+
+  The residual is stated rather than papered over, in `SECURITY.md` §3: an
+  argument that is an EXPRESSION has no text until it renders, so a host macro
+  that pipes a parameter into a URL sink still extends that sink to whoever can
+  call it. That is authority the host granted by writing the macro.
+
+  Two neighbouring claims in that document were stale and are corrected. The
+  slot case it said "passes `check_view` with no refusal" has not for some
+  time: both walks descend slots and both have tests. `ANode::for_each_child`
+  still does not reach slots, and that is the contract rather than the bug — it
+  is the walk over *structural* children, so an expanded call yields its body
+  once instead of its slots twice, which is why `has_raw_html` and
+  `collect_classes` both document "call on COMPILED views" and why no policy
+  decision stands on either.
 
 ## [0.15.0] - 2026-08-13
 

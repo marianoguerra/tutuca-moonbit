@@ -99,6 +99,10 @@ let grants = [];
  * Capabilities (`cap-clock`, `cap-random`, `cap-timer`) that descriptor
  * bundles loaded from now on may import. Applies at LOAD, like the policy it
  * mirrors: narrowing it does not retract a bundle already registered.
+ *
+ * `cap-external-urls` gates no import — it is about what a guest's VIEW may
+ * name — so it belongs on the MoonBit policy (`allowing_external_urls`) and
+ * passing it here changes nothing either way.
  */
 export function setGrants(caps) {
   grants = [...caps];

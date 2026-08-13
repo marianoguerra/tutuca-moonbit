@@ -185,7 +185,7 @@ states each claim's actual strength:
 | --- | --- | --- |
 | wasm imports (`values`, `control`) | nothing ambient | safe by construction |
 | `env` — clock, randomness, ids | weakened, host-supplied answers | gated; refused by default |
-| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks and runtime markup; trusted tiers retain filtered URLs |
+| guest views | your DOM/network | untrusted refuses direct URL/CSS sinks, URL-bearing macro arguments and runtime markup; `<img src>`/`<a href>` reopen only with `cap-external-urls`; trusted tiers retain filtered URLs |
 | guest CSS | your stylesheet | refused outright for an untrusted bundle |
 | `control.request` → host handlers | your own services | **open** — needs caller-aware authorization |
 | a runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -203,6 +203,20 @@ registered element's constructor or setter can exercise page authority. The
 default policy removes `is=` and browser-native network/CSS sinks, but a host
 that exposes effectful custom elements should use a sanitizer allow-list to
 narrow which tags and properties an untrusted bundle may invoke.
+
+A page that wants an untrusted bundle to show pictures grants
+`cap-external-urls` and names the origins in the same call:
+
+```moonbit
+@policy.Policy::untrusted().allowing_external_urls(["https://cdn.example"])
+```
+
+That reopens `src` on `<img>` and `href` on `<a>`, and only for a URL whose
+ORIGIN is a literal in the view — `<img :src="$'https://cdn.example/a/{.id}.png'">`
+is allowed, `<img :src=".avatar">` is not. It is a network grant: the path is
+still the bundle's to write, so grant the origins you meant and read
+`SECURITY.md` §3 before passing an empty list, which means any `https://`
+origin.
 
 The two open rows are open on purpose and are marked as such in the code. If
 you host untrusted bundles today, they are what to think about.

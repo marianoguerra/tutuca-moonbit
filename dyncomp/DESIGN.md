@@ -216,7 +216,7 @@ JavaScript at page authority and a warning was not an isolation boundary.
 | `methods` and `whens` (`@when` filters) | — |
 | `requests` it serves, and named `inits` | which HOST requests it may reach — the host decides that per call, from the requester's path |
 | what it is, in sentences: `doc`, `keywords`, `category`, `message-docs`, per-field `doc` and `constraint` | anything that resolves — the metadata is advisory, and a bundle's identity is the hash of its archive |
-| the capabilities it needs (`cap-clock` / `cap-random` / `cap-timer`) | whether it gets them |
+| the capabilities it needs (`cap-clock` / `cap-random` / `cap-timer` / `cap-external-urls`) | whether it gets them — nor, for `cap-external-urls`, WHICH origins it gets |
 | a SCOPED style, or none | any global CSS — there is no field for it, deliberately |
 
 ## Trade-offs accepted

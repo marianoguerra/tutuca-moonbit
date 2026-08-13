@@ -18,6 +18,20 @@ pub(all) enum Capability {
   CapRandom
   /// control.after
   CapTimer
+  /// `src` on `<img>` and `href` on `<a>`, pointing at an absolute URL whose
+  /// ORIGIN is a literal in the view (`Policy::allowing_external_urls`).
+  ///
+  /// The one capability that is about the view rather than about an import,
+  /// and the only one a guest cannot detect the absence of by calling
+  /// something: an untrusted bundle without it is refused at registration
+  /// rather than served a lie at runtime, which is the same bargain the
+  /// others make.
+  ///
+  /// It is a NETWORK grant and reads as one: an image the guest chooses is a
+  /// request the guest chooses, to an origin that learns the page loaded it.
+  /// Pinning the origin in the view is what keeps that origin the host's
+  /// decision instead of the guest's — see SECURITY.md §3.
+  CapExternalUrls
   /// A name this host does not know. Kept rather than dropped so a refusal can
   /// SAY which one: a dropped name would make a bundle asking for something
   /// unrecognized look like a bundle asking for nothing.
@@ -30,6 +44,7 @@ pub fn Capability::to_string(self : Capability) -> String {
     CapClock => "cap-clock"
     CapRandom => "cap-random"
     CapTimer => "cap-timer"
+    CapExternalUrls => "cap-external-urls"
     CapUnknown(s) => s
   }
 }
@@ -40,6 +55,7 @@ pub fn Capability::parse(s : String) -> Capability {
     "cap-clock" => CapClock
     "cap-random" => CapRandom
     "cap-timer" => CapTimer
+    "cap-external-urls" => CapExternalUrls
     other => CapUnknown(other)
   }
 }

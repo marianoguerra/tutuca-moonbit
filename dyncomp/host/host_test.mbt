@@ -1115,6 +1115,64 @@ test "untrusted registration blocks DOM egress but keeps custom elements" {
 }
 
 ///|
+/// The same seam, with the one capability that is about the view rather than
+/// about an import. A page grants the origins it means to allow, and the
+/// bundle's own views are what get held against them.
+test "cap-external-urls lets a registered guest view name a pinned image" {
+  let register_view = (html : String, policy : @policy.Policy) => {
+    let h = @harness.mount(shell_module(), "Shell")
+    let base = counter_manifest()
+    let manifest : DynManifest = {
+      ..base,
+      module_name: "avatar-policy",
+      components: [
+        { ..base.components[0], style: "", views: [{ name: "main", html }] },
+      ],
+    }
+    let mut ok = true
+    try
+      register_bundle(h.app.scope, FakeGuest::new(), manifest, policy~)
+      |> ignore
+    catch {
+      _ => ok = false
+    }
+    ok
+  }
+  let strict = @policy.Policy::untrusted()
+  let cdn = strict.allowing_external_urls(["https://cdn.example"])
+  let pinned = "<img :src=\"$'https://cdn.example/a/{.count}.png'\" />"
+  // The picture the report asked for: allowed once a page has said which CDN,
+  // and refused by the same page for any other origin or a computed one.
+  assert_true(register_view(pinned, cdn))
+  assert_false(register_view(pinned, strict))
+  assert_false(register_view("<img :src=\".count\" />", cdn))
+  assert_false(
+    register_view("<img src=\"https://elsewhere.test/a.png\" />", cdn),
+  )
+  // A bundle that ASKS for it is refused by a page that has not decided, which
+  // is the same bargain every other capability makes.
+  let h = @harness.mount(shell_module(), "Shell")
+  let base = counter_manifest()
+  let asking : DynManifest = {
+    ..base,
+    module_name: "asking",
+    components: [
+      {
+        ..base.components[0],
+        style: "",
+        views: [{ name: "main", html: pinned }],
+      },
+    ],
+    capabilities: [{ cap: CapExternalUrls, reason: "shows avatars" }],
+  }
+  let mut refused = false
+  try register_bundle(h.app.scope, FakeGuest::new(), asking) |> ignore catch {
+    _ => refused = true
+  }
+  assert_true(refused)
+}
+
+///|
 /// The one view construct a host cannot inspect before it runs, and therefore
 /// the one it refuses. Note WHERE the refusal lands: nothing of a refused
 /// bundle reaches the shared component registry, so its markup never

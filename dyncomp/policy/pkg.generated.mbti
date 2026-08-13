@@ -10,6 +10,10 @@ import {
 // Values
 
 // Errors
+pub suberror InvalidOrigin {
+  InvalidOrigin(Array[String])
+}
+pub fn InvalidOrigin::to_string(Self) -> String
 
 // Types and methods
 pub(all) struct BundleFacts {
@@ -24,6 +28,7 @@ pub(all) enum Capability {
   CapClock
   CapRandom
   CapTimer
+  CapExternalUrls
   CapUnknown(String)
 } derive(Eq, @debug.Debug)
 pub fn Capability::parse(String) -> Self
@@ -40,7 +45,9 @@ pub(all) struct Policy {
   grants : Array[Capability]
   allow_custom_css : Bool
   sanitizer : @sanitize.Sanitizer
+  external_origins : Array[String]
 }
+pub fn Policy::allowing_external_urls(Self, Array[String]) -> Self raise InvalidOrigin
 pub fn Policy::allows_raw_markup(Self) -> Bool
 pub fn Policy::check_capabilities(Self, Array[CapabilityReq]) -> Array[Refusal]
 pub fn Policy::check_quotas(Self, BundleFacts) -> Array[Refusal]

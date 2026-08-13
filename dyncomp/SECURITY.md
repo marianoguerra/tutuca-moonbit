@@ -16,7 +16,7 @@ Where a claim is weaker than it sounds, it says so.
 | archive parsing | page responsiveness/memory | **bounded** — compressed, expanded, entry and file-count limits; checked tar arithmetic and headers |
 | wasm imports (`values`, `control`) | nothing ambient | **safe by construction** |
 | `env` (clock, randomness, ids) | weakened, host-supplied answers | **gated** — capability-granted, refused by default |
-| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown and guest-authored arbitrary utility CSS are refused; autonomous custom elements remain a host-code trust boundary |
+| guest views (tutuca templates) | the host's DOM/network | **handled for untrusted bundles** — unsafe names, direct network/CSS sinks, raw markup/Markdown, guest-authored arbitrary utility CSS and URL-bearing macro arguments are refused; `<img src>`/`<a href>` reopen only with `cap-external-urls`, and only to an origin the view states literally; autonomous custom elements remain a host-code trust boundary |
 | guest CSS (static manifest `style`) | the host's stylesheet | **partly handled** — refused outright for an untrusted bundle; unvalidated above that |
 | `control.request` → host handlers | the host's own services | **open** — needs caller-aware authorization |
 | a hung or runaway guest call | the page's responsiveness | **open** — needs worker isolation |
@@ -85,7 +85,10 @@ them that way (`dyncomp/host/wasm/loader.mjs`):
   cancel what it does not own.
 
 Each is gated by a capability the static manifest requests (`cap-clock`,
-`cap-random`, `cap-timer`) and the host grants. For v0.6 descriptor bundles,
+`cap-random`, `cap-timer`) and the host grants. `cap-external-urls` (§3) is the
+fourth name in that vocabulary and the one that gates no import at all: it is
+about what a guest's VIEW may name, so it is checked at registration and the
+module's import section has nothing to say about it. For v0.6 descriptor bundles,
 the host-owned ABI also checks the core module's actual import section before
 the first guest instruction runs: omitting a capability from metadata cannot
 hide an import. An ungranted capability **refuses the bundle**
@@ -163,7 +166,7 @@ Two details matter about that refusal:
   already in the shared registry, contributing event names and CSS classes to
   the page that turned them down. There is a test for exactly that.
 
-**Where the refusal is weaker than it sounds.** `has_raw_html`
+**Where the refusal used to be weaker than it sounds.** `has_raw_html`
 (`anode/classes.mbt`) walks `ANode::for_each_child`, and that walk has two blind
 spots on an unexpanded tree. A `MacroCall`'s `node` is `None` until
 `ParseContext::compile` expands it, so a macro BODY is never visited; and
@@ -171,13 +174,38 @@ spots on an unexpanded tree. A `MacroCall`'s `node` is `None` until
 (`parse_context.mbt`, `new_macro_node`) — is not in `for_each_child` at all, so
 a slot's content is never visited either, expanded or not.
 
-The second one is reachable from a guest: `<x:card><div
-@dangerouslysetinnerhtml=".payload"></div></x:card>` passes `check_view` with no
-refusal. It only RENDERS if the host registered a macro named `card` whose body
-places the slot — guest views compile against the host's `ComponentStack`
-(`component/scope.mbt`, `lookup_macro`), so this is contingent on the host having
-macros rather than unconditional. It is still the walk being wrong rather than
-the policy being right, and the sanitizer walk below must not inherit it.
+The second one was reachable from a guest, and this document used to say that
+`<x:card><div @dangerouslysetinnerhtml=".payload"></div></x:card>` passed
+`check_view` with no refusal. It does not: both walks `check_view` runs —
+`@sanitize.Sanitizer::visit` (`anode/sanitize/sanitize.mbt`) and
+`visit_untrusted_view` (`policy/view_authority.mbt`) — descend `MacroData.slots`
+explicitly, and each has a test standing on that (`policy_test.mbt`,
+"untrusted network checks reach macro slots"). What is still true is the
+sentence about `for_each_child`, which is a walk over *structural* children and
+visits an expanded call's body once rather than its slots twice — the reason
+both `has_raw_html` and `collect_classes` document "call on COMPILED views", and
+the reason neither is what a policy decision stands on.
+
+**The half of a macro call that nothing was looking at: the arguments.** A
+macro's body is the HOST's text and is deliberately not visited — a host that
+registered a macro vouched for what is in it. Its arguments are the guest's
+(`MacroData.attrs`, the caller's strings, substituted wherever `^name` appears
+in that body), and no walk read them. A host macro whose body places `^icon` in
+an `<img src>` therefore handed an untrusted guest the sink the same guest is
+refused by name two lines away.
+
+`visit_untrusted_view` now judges each argument for the worst position it could
+land in: a sink, so a URL in it is a request the guest chose, and a `class`, so
+brackets in it are guest-authored CSS. Arguments arrive as value SOURCE
+(`Attrs::to_macro_vars` stringifies the parsed `Val`), so `macro_arg_text`
+reads back the two shapes that state text — a quoted constant and the literal
+head of a `$'…{…}'` template — and judges those.
+
+The residual is stated rather than papered over: an argument that is an
+EXPRESSION (`.avatar`, `$url`) has no text until it renders, so a host macro
+that pipes a parameter into a URL sink still extends that sink to whoever can
+call it. That is authority the host granted by writing the macro, and the fix
+for it is the macro, not this walk.
 
 **The port landed** — the [WHATWG Sanitizer
 API](https://html.spec.whatwg.org/multipage/dynamic-markup-insertion.html#sanitizer)
@@ -261,10 +289,75 @@ bracketed arbitrary utility classes. Literal host-provided utility names such as
 render-time URL scheme filter and the richer view surface.
 
 This intentionally means an untrusted component cannot even render a relative
-link or image directly. If it needs one, it asks the host through a deliberately
-authorized channel and the host renders or supplies the safe result; there is
-no value-level distinction between “a useful fetch” and “an exfiltration fetch”
-that the guest cannot choose dynamically.
+link or image directly. There is no value-level distinction between “a useful
+fetch” and “an exfiltration fetch” that the guest cannot choose dynamically —
+so the decision a host CAN make is not about the value, it is about the origin.
+
+**`cap-external-urls`: the origin is the host's decision, written in the view.**
+The rule above says a component that needs a picture "asks the host through a
+deliberately authorized channel". This is that channel, and it is a capability
+like the others: requested by the static manifest, granted per host, and
+refusing the bundle when it is not granted rather than degrading it.
+
+```moonbit
+// The list and the grant are one call, because they are one decision.
+@policy.Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])
+```
+
+What it reopens is exactly two attributes — `src` on `<img>`, `href` on `<a>`
+(`external_url_attr`) — and what it charges for them is that the ORIGIN is a
+literal in the view:
+
+- `<img src="https://cdn.bsky.app/img/avatar/plain/x@jpeg">` — a constant.
+- `<img :src="$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'">` —
+  literal through the `/` that ends the authority, dynamic from there.
+- `<img :src=".avatar">` — refused. The origin is a value, so nothing about
+  where this points was settled when the host looked at it.
+
+That is decidable at registration for the same reason the sink-name rule is:
+`StrTpl`'s first part is a literal or it is not, and a URL whose authority is
+already closed by a `/` cannot be re-pointed by anything interpolated after it
+(`policy/external_url.mbt`). `origin_of` refuses userinfo outright —
+`https://cdn.example@attacker.test/` is `attacker.test` to a browser and
+`cdn.example` to a prefix comparison — and refuses a backslash, a control
+character or a space in the authority, where the browser's own normalization
+would move the boundary after the check.
+
+The honest limits, in the order they matter:
+
+- **It is a network grant.** An image the guest chooses is a GET the guest
+  chose, and the path is still the guest's to write, so an allowed origin is an
+  origin that can be told things. Naming the origins is what turns "this bundle
+  can talk to anyone" into "this bundle can talk to the CDN its pictures are
+  on"; an empty list means any `https://` origin and should be justified before
+  it is used.
+- **A path in an entry is dropped, not honored.** `https://cdn.example/public/`
+  is not a boundary — `/public/../private/key` is a URL to `/private/key` — so
+  an entry normalizes to its origin rather than pretending to be narrower.
+- **A relative URL stays refused with the capability granted**, which is not an
+  oversight: `/logout` is a request to the HOST's origin carrying the host's
+  cookies, and that is a different grant from "may load pictures from a CDN".
+- **`<a href>` navigates.** A link the guest wrote is a link a person can click
+  to an origin the host allowed; `target`/`rel` are the page's own concern and
+  this capability says nothing about them.
+- Everything else on the sink list stays refused with it granted — `<iframe
+  src>` is a document with its own script, `<form action>` sends what a person
+  typed, `srcset` is a list with a parser in it, and the CSS sinks are a
+  stylesheet's worth of surface behind one attribute. A host that wants those
+  wants a tier, not a capability.
+
+`Granted` and `System` list the capability too, so a bundle that declares it is
+not refused by the host that trusts it most; above `Untrusted` the whole URL
+surface is theirs anyway and the check returns early.
+
+The GATE is the registration check, not the manifest — same split as §2, where
+the module's import section is the gate and the declared capability is what a
+consent dialog can show. A bundle that declares `cap-external-urls` at a host
+that does not grant it is refused whole (`check_capabilities`), which is the
+right answer for a component whose pictures are the point. A bundle that uses
+`<img src>` without declaring it is decided by the same rule as one that did:
+the host either grants those origins to bundles it loads or it does not, and a
+declaration cannot widen that.
 
 **Custom elements are not banned, but they cannot be made an isolation
 boundary.** Autonomous tags such as `<x-picker :items=".items">` and ordinary
@@ -491,6 +584,13 @@ next step, and signing is a step after that.
   fetch directly, accept CSS `url()`, mutate another attribute after filters,
   or invoke a host custom-element setter? Update the untrusted authority walk
   and its macro-slot tests if so.
+- Adding a way for a guest to hand the host a string that ends up in markup —
+  a macro argument was one, and had nothing reading it for four releases. Ask
+  where the string can LAND, not what it is called at the call site.
+- Widening `cap-external-urls`: every attribute added to `external_url_attr`
+  has to survive the question the two on it already answered — can the
+  registration-time check see the whole origin, and is what the attribute does
+  with that origin a fetch rather than a document, a form or a stylesheet?
 - Adding a WIT export: is it runtime behavior that genuinely cannot be static
   bundle data? Metadata in wasm executes code merely to describe code and
   expands the canonical ABI attack surface.

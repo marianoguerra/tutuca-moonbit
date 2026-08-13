@@ -77,8 +77,13 @@ test "untrusted views cannot name direct browser network or CSS sinks" {
   let p = Policy::untrusted()
   for
     pair in [
-      ("<a href=\"/leave\">go</a>", "attribute 'href'"),
-      ("<img :src=\".avatar\" />", "attribute 'src'"),
+      // The two `cap-external-urls` would reopen say which capability they
+      // want; every other sink names no capability, because none of them has
+      // one.
+      ("<a href=\"/leave\">go</a>", "'href' on <a>: this host does not grant"),
+      ("<img :src=\".avatar\" />", "'src' on <img>: this host does not grant"),
+      ("<iframe src=\"https://x.test/\"></iframe>", "attribute 'src'"),
+      ("<form action=\"/pay\"></form>", "attribute 'action'"),
       (
         "<svg><circle fill=\"url(https://attacker.test/pixel)\"></circle></svg>",
         "attribute 'fill'",
@@ -111,7 +116,182 @@ test "untrusted network checks reach macro slots" {
       parsed("<x:card><a href=\"https://attacker.test\">go</a></x:card>"),
     ),
   )
-  assert_true(refusals.any(message => message.contains("attribute 'href'")))
+  assert_true(refusals.any(message => message.contains("'href' on <a>")))
+}
+
+///|
+/// The other half of a macro call, and the half that had nothing looking at
+/// it: the ARGUMENTS. A body is host text, but `^name` in that body is the
+/// caller's string, and the caller is the guest — so an argument reaches a
+/// sink through markup this check never sees.
+///
+/// A host with no macros is not exposed to this at all: `<x:card>` renders
+/// nothing unless a macro named `card` is in scope. That is what makes it a
+/// gap in the walk rather than a hole under everyone.
+test "untrusted macro arguments cannot carry a URL or arbitrary CSS" {
+  let p = Policy::untrusted()
+  for
+    pair in [
+      (
+        "<x:card icon=\"https://attacker.test/pixel.png\"></x:card>", "may not pass 'icon' to <x:card>",
+      ),
+      ("<x:card go=\"/logout\"></x:card>", "may not pass 'go' to <x:card>"),
+      (
+        "<x:card go=\"//attacker.test/pixel\"></x:card>", "may not pass 'go' to <x:card>",
+      ),
+      (
+        "<x:card go=\"java\tscript:alert(1)\"></x:card>", "may not pass 'go' to <x:card>",
+      ),
+      (
+        "<x:card cls=\"bg-[url(https://attacker.test/p)]\"></x:card>", "bracketed arbitrary utility classes",
+      ),
+    ] {
+    let (view, needle) = pair
+    let messages = shown(p.check_view("Guest/main", parsed(view)))
+    assert_true(messages.any(message => message.contains(needle)))
+  }
+  // An argument that is not a URL is not a URL: a macro takes ordinary strings
+  // and this rule is not allowed to make that awkward.
+  debug_inspect(
+    p.check_view(
+      "Guest/main",
+      parsed(
+        "<x:card title=\"Ratio 1/2\" tone=\"muted\" cls=\"flex gap-2\"></x:card>",
+      ),
+    ),
+    content="[]",
+  )
+}
+
+///|
+/// The capability a picture needs. What it buys is exactly two attributes, and
+/// what it charges for them is that the ORIGIN is in the view: a literal the
+/// host can read in the bundle in front of it, rather than a string the guest
+/// assembles once it is running.
+test "cap-external-urls opens img src and a href, with the origin pinned" {
+  let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])
+  for
+    view in [
+      // A constant, and the shape a real one has: literal through the '/' that
+      // ends the authority, dynamic from there.
+      "<img src=\"https://cdn.bsky.app/img/avatar/plain/x@jpeg\" />", "<img :src=\"$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'\" />",
+      "<a :href=\"$'https://cdn.bsky.app/profile/{.handle}'\">profile</a>",
+      // A trailing slash on the host's entry, or none, is the same origin.
+       "<img src=\"https://CDN.BSKY.APP/img/x.png\" />",
+    ] {
+    debug_inspect(p.check_view("Guest/main", parsed(view)), content="[]")
+  }
+  for
+    pair in [
+      // The origin is the guest's to choose: the whole thing it may not be.
+      ("<img :src=\".avatar\" />", "must BEGIN with a literal absolute URL"),
+      ("<img :src=\"$'https://{.host}/x.png'\" />", "does not pin an origin"),
+      // Literal, but it stops before the authority is over, so an
+      // interpolation is still choosing the host.
+      (
+        "<img :src=\"$'https://cdn.bsky.app{.path}'\" />", "does not pin an origin",
+      ),
+      // Userinfo: `cdn.bsky.app` to a prefix comparison, `attacker.test` to a
+      // browser.
+      (
+        "<img src=\"https://cdn.bsky.app@attacker.test/p.png\" />", "does not pin an origin",
+      ),
+      // Pinned, and pinned somewhere this host did not agree to.
+      (
+        "<img src=\"https://attacker.test/p.png\" />", "is not an origin this host allows",
+      ),
+      // Same-origin is not "external" and is not what was granted: a relative
+      // URL is a request to the HOST, with the host's cookies on it.
+      ("<a href=\"/logout\">out</a>", "'/logout' does not pin an origin"),
+      // The capability is two attributes on two elements. It is not a mood.
+      ("<iframe src=\"https://cdn.bsky.app/x\"></iframe>", "attribute 'src'"),
+      ("<img srcset=\"https://cdn.bsky.app/x 1x\" />", "attribute 'srcset'"),
+      ("<a ping=\"https://cdn.bsky.app/x\">go</a>", "attribute 'ping'"),
+      (
+        "<div style=\"background:url(https://cdn.bsky.app/x)\"></div>", "attribute 'style'",
+      ),
+    ] {
+    let (view, needle) = pair
+    let messages = shown(p.check_view("Guest/main", parsed(view)))
+    assert_true(messages.any(message => message.contains(needle)))
+  }
+}
+
+///|
+/// The list and the grant are one decision, so one call makes both — and a
+/// bundle asking for the capability at a host that never made that call is
+/// refused like any other ungranted one.
+test "cap-external-urls is a grant a host makes deliberately" {
+  let asked : Array[CapabilityReq] = [
+    { cap: CapExternalUrls, reason: "shows avatars from the Bluesky CDN" },
+  ]
+  assert_false(Policy::untrusted().grants_all(asked))
+  debug_inspect(
+    shown(Policy::untrusted().check_capabilities(asked)),
+    content=(
+      #|["this host does not grant cap-external-urls (asked for it to: shows avatars from the Bluesky CDN)"]
+    ),
+  )
+  let p = Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app/"])
+  assert_true(p.grants_all(asked))
+  debug_inspect(
+    p.external_origins,
+    content=(
+      #|["https://cdn.bsky.app"]
+    ),
+  )
+  // The tiers that already keep the whole URL surface grant it too, so a
+  // bundle that declares it is not refused by the host that trusts it most.
+  assert_true(Policy::granted().grants_all(asked))
+  assert_true(Policy::system().grants_all(asked))
+  // Everything else about the policy is untouched.
+  debug_inspect(p.tier, content="Untrusted")
+  assert_false(p.allow_custom_css)
+}
+
+///|
+/// An empty list is the widest form the capability has: any `https://` origin,
+/// and still no origin the guest computes.
+test "cap-external-urls with no origins still refuses http and a computed host" {
+  let p = Policy::untrusted().allowing_external_urls([])
+  debug_inspect(
+    p.check_view(
+      "Guest/main",
+      parsed("<img :src=\"$'https://cdn.anywhere.test/{.p}'\" />"),
+    ),
+    content="[]",
+  )
+  for
+    pair in [
+      ("<img src=\"http://cdn.anywhere.test/p.png\" />", "is not https"),
+      ("<img :src=\".avatar\" />", "must BEGIN with a literal absolute URL"),
+    ] {
+    let (view, needle) = pair
+    assert_true(
+      shown(p.check_view("Guest/main", parsed(view))).any(message => {
+        message.contains(needle)
+      }),
+    )
+  }
+}
+
+///|
+/// An origin list that does not describe origins is a mistake in the HOST, and
+/// the host is the one party here who can read a message and fix it.
+test "an origin a host cannot have meant is refused loudly" {
+  for
+    bad in [
+      "cdn.bsky.app", // no scheme
+       "ftp://cdn.bsky.app", // not a fetch a page makes
+       "https://", // no authority
+       "https://cdn.bsky.app@evil.test", // userinfo
+    ] {
+    try Policy::untrusted().allowing_external_urls([bad]) catch {
+      e => assert_true(InvalidOrigin::to_string(e).contains(bad))
+    } noraise {
+      _ => fail("expected \{bad} to be refused")
+    }
+  }
 }
 
 ///|
