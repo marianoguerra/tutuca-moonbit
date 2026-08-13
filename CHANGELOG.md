@@ -8,6 +8,30 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **`<mb-card codemirror>` — the embeddable card can be a real editor.** The
+  same CodeMirror the two playgrounds use, reached through the same
+  `createEditor` seam: line numbers, an active line, history, bracket matching,
+  and highlighting that follows the reader's light/dark. Opt-in per element,
+  like margaui, because the bundle is ~330 KB — a textarea is a perfectly good
+  place to change three characters and watch what happens, and highlighting
+  earns its weight on a page someone is meant to READ code on. The landing
+  page's card and all nine tutorial cards ask for it.
+
+  It is an UPGRADE of the textarea rather than a replacement for it: the card
+  is already loaded and rendering when the import starts, so a page that ships
+  the element without the bundle gets a working card and a line in the console.
+  Everything the element does with the source — reload, reset, and selecting
+  the characters a diagnostic is about — now goes through one accessor pair, so
+  there is no second copy of the element's logic behind the flag.
+
+  **The view mode learned the block language.** It knew tutuca's templates —
+  which attributes are directives, where a value expression sits — and treated
+  a `<script type="tutuca/script">` block as text, which for a card is its
+  middle greyed out. It now tokenizes what is inside one: the declaration
+  keywords, the statements and effects, `.field` / `@bind` / `$method` / `*dyn`
+  spelled exactly as the templates spell them. The playground's View tab shows
+  the same file format, so it gained this too.
+
 - **Cards can be styled with margaui, and every card that ships now is.** The
   card runtime always collected the class names a mounted card uses — nothing
   ever compiled them, so a card saying `class="btn btn-primary"` rendered as an

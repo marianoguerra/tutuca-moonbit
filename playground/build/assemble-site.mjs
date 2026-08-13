@@ -18,6 +18,7 @@
 //   dist/site/card-embed.js   ← the <mb-card> custom element (+ regions.js)
 //   dist/site/tutucard.js     ← the card runtime, which is the whole payload
 //   dist/site/margaui.{js,wasm} ← the class compiler <mb-card margaui> fetches
+//   dist/site/editor.bundle.js ← the CodeMirror <mb-card codemirror> fetches
 //   dist/site/cards/*.html    ← the editable card sources
 //
 // Prereq: assemble.mjs and tutucard/build/assemble.mjs have run. Run:
@@ -65,6 +66,7 @@ cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
 for (const [name, why] of [
   ["tutucard.js", "the <mb-card> embeds"],
   ["margaui.wasm", "an <mb-card margaui> to have any CSS"],
+  ["editor.bundle.js", "an <mb-card codemirror> to be more than a textarea"],
 ]) {
   const from = join(DIST, "tutucard", name);
   if (existsSync(from)) {

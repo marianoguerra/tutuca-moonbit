@@ -18,6 +18,13 @@
 // activity panels (a reader wants to see the thing work, and the panels are
 // what you open when you are debugging one).
 //
+// Two things it CAN be asked for, per element, because each is a download and
+// most cards need neither: `margaui` compiles the card's class names into CSS
+// (see styleClasses), and `codemirror` swaps the textarea for the editor the
+// other playgrounds use (see upgradeEditor). Both are upgrades of something
+// that already works, so a page that ships the element without the files gets
+// a plain, working card and a line in the console.
+//
 // LIGHT DOM, not a shadow root, and that is load-bearing rather than lazy. A
 // card's `<style>` blocks are installed into the document by the framework and
 // scoped there, so a shadow root would cut every card off from its own styles;
@@ -52,6 +59,8 @@ let seq = 0;
  * free from `:host`, which page rules already outrank.
  */
 const STYLE = `
+/* NO BACKTICKS BELOW THIS LINE — this is a template literal, and a backtick in
+   a CSS comment ends it mid-file. It has happened three times. */
 :where(mb-card) {
   display: block;
   /* Border inside the width a page gives it, so a card capped at the same
@@ -89,10 +98,9 @@ mb-card .mbc-grid {
   grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
 }
 /* The height comes from the rows attribute this element sets per card (see
-   fitRows below; no backticks in here — this block is a template literal).
-   The bounds are the two cases that would otherwise read badly: a six-line
-   card given a fixed 18rem box of empty space, and a two-hundred-line one
-   given a page of scrollbar. */
+   fitRows below). The bounds are the two cases that would otherwise read
+   badly: a six-line card given a fixed 18rem box of empty space, and a
+   two-hundred-line one given a page of scrollbar. */
 mb-card .mbc-source {
   display: block; width: 100%; box-sizing: border-box;
   min-height: 6rem; max-height: 32rem; resize: vertical;
@@ -102,6 +110,16 @@ mb-card .mbc-source {
   tab-size: 2;
 }
 mb-card .mbc-source:focus { outline: none; }
+/* display:block above outranks the UA's [hidden] { display: none }, so the
+   textarea CodeMirror replaced would otherwise stay on the page above it,
+   holding a stale copy of the card. */
+mb-card .mbc-source[hidden] { display: none; }
+/* The editor pane. It holds the textarea by default and a CodeMirror after an
+   mb-card with the codemirror attribute upgrades it. The bounds are the same
+   either way, so a card does not change size when the bundle lands. */
+mb-card .mbc-edit { min-width: 0; }
+mb-card .mbc-cm .cm-editor { height: auto; max-height: 32rem; }
+mb-card .mbc-cm .cm-scroller { overflow: auto; }
 mb-card .mbc-right {
   border-left: 1px solid var(--border-color, #898ea4);
   background: var(--bg, #fff);
@@ -156,13 +174,16 @@ class MbCard extends HTMLElement {
         <span class="mbc-note">edit the card — it re-mounts as you type</span>
       </div>
       <div class="mbc-grid">
-        <textarea class="mbc-source" spellcheck="false" autocomplete="off"
-          autocapitalize="off" autocorrect="off" aria-label="card source"></textarea>
+        <div class="mbc-edit">
+          <textarea class="mbc-source" spellcheck="false" autocomplete="off"
+            autocapitalize="off" autocorrect="off" aria-label="card source"></textarea>
+        </div>
         <div class="mbc-right">
           <div class="mbc-preview" id="${this.previewId}"></div>
           <ul class="mbc-issues"></ul>
         </div>
       </div>`;
+    this.editEl = this.querySelector(".mbc-edit");
     this.sourceEl = this.querySelector(".mbc-source");
     this.previewEl = this.querySelector(".mbc-preview");
     this.issuesEl = this.querySelector(".mbc-issues");
@@ -173,6 +194,9 @@ class MbCard extends HTMLElement {
     this.resetEl.addEventListener("click", () => this.reset());
 
     this.loadSource().then(() => {
+      // The editor is an upgrade of what is already there, so a failed import
+      // leaves a working card rather than an empty box.
+      this.upgradeEditor();
       // Mount the first time this element scrolls into view. A card is cheap
       // — no compiler, nothing fetched — but a page of them still does nothing
       // until it is looked at, and a reader who never scrolls down pays for
@@ -194,6 +218,10 @@ class MbCard extends HTMLElement {
   disconnectedCallback() {
     this._io?.disconnect();
     clearTimeout(this._timer);
+    // CodeMirror holds a matchMedia listener for the light/dark swap, which
+    // outlives the DOM node otherwise.
+    this.cm?.destroy();
+    this.cm = null;
     // The app holds transactor subscriptions and delegated DOM listeners, and
     // nothing else will ever call for them again: this element is the only
     // thing that knows its mount point.
@@ -227,7 +255,7 @@ class MbCard extends HTMLElement {
    */
   setSource(text) {
     this.original = text;
-    this.sourceEl.value = text;
+    this.setText(text);
     this.fitRows();
     this.syncReset();
   }
@@ -236,14 +264,44 @@ class MbCard extends HTMLElement {
   reset() {
     if (this.original == null) return;
     clearTimeout(this._timer);
-    this.sourceEl.value = this.original;
+    this.setText(this.original);
     this.fitRows();
     this.syncReset();
     this.reload();
   }
 
+  /**
+   * The card being edited, and the one place that knows where it lives.
+   *
+   * Everything below reads and writes the source through these three, so the
+   * CodeMirror upgrade is a swap of one field rather than a second copy of the
+   * element's logic.
+   */
+  text() {
+    return this.cm ? this.cm.getValue() : this.sourceEl.value;
+  }
+
+  setText(value) {
+    if (this.cm) this.cm.setValue(value);
+    else this.sourceEl.value = value;
+  }
+
+  /** Select the characters an issue is about, and show them. */
+  selectRange(from, to) {
+    if (this.cm) {
+      this.cm.view.dispatch({
+        selection: { anchor: from, head: to },
+        scrollIntoView: true,
+      });
+      this.cm.focus();
+      return;
+    }
+    this.sourceEl.focus();
+    this.sourceEl.setSelectionRange(from, to);
+  }
+
   syncReset() {
-    this.resetEl.hidden = this.sourceEl.value === this.original;
+    this.resetEl.hidden = this.text() === this.original;
   }
 
   /**
@@ -255,6 +313,9 @@ class MbCard extends HTMLElement {
    * from being a slit and a long one from being the whole scroll.
    */
   fitRows() {
+    // CodeMirror grows with its document and stops at the CSS max-height, so
+    // this is the textarea's problem only.
+    if (this.cm) return;
     const lines = this.sourceEl.value.split("\n").length;
     this.sourceEl.rows = Math.max(8, Math.min(lines + 1, 24));
   }
@@ -279,7 +340,7 @@ class MbCard extends HTMLElement {
       this.setStatus("runtime did not load", "bad");
       return;
     }
-    const source = this.sourceEl.value;
+    const source = this.text();
     const report = JSON.parse(
       globalThis.__tutucard.mount(
         this.previewId,
@@ -312,6 +373,42 @@ class MbCard extends HTMLElement {
       n === 0 ? "good" : "warn",
     );
     this.drawIssues(report.issues);
+  }
+
+  /**
+   * Swap the textarea for CodeMirror, for `<mb-card codemirror>`.
+   *
+   * OPT-IN, and for the same reason margaui is: the bundle is ~330 KB, which
+   * is more than the rest of this element and its runtime's front end put
+   * together. A textarea is a perfectly good place to change three characters
+   * and watch what happens, which is what most embedded examples are for;
+   * highlighting earns its weight on a page someone is meant to READ code on.
+   *
+   * An upgrade rather than a construction: the textarea already holds the
+   * card, so an import that fails (a page that shipped the element without the
+   * bundle) leaves a working editor and a line in the console. It is the same
+   * editor the two playgrounds use — one seam, one MoonBit mode, one view mode
+   * — reached through `./editor.bundle.js`, which sits beside this file.
+   */
+  async upgradeEditor() {
+    if (!this.hasAttribute("codemirror") || this.cm) return;
+    let createEditor;
+    try {
+      ({ createEditor } = await import("./editor.bundle.js"));
+    } catch (e) {
+      console.warn(`[mb-card] CodeMirror unavailable: ${e.message}`);
+      return;
+    }
+    // The element may have left the document while the bundle was in flight.
+    if (!this.previewId) return;
+    this.cm = createEditor({
+      parent: this.editEl,
+      doc: this.sourceEl.value,
+      lang: "html",
+      onChange: () => this.scheduleReload(),
+    });
+    this.sourceEl.hidden = true;
+    this.editEl.classList.add("mbc-cm");
   }
 
   /**
@@ -360,10 +457,9 @@ class MbCard extends HTMLElement {
       // The span is in FILE coordinates, which is what the script block's
       // recorded offset is for: clicking a diagnostic selects the exact
       // characters it is about.
-      where.addEventListener("click", () => {
-        this.sourceEl.focus();
-        this.sourceEl.setSelectionRange(issue.start, issue.end);
-      });
+      where.addEventListener("click", () =>
+        this.selectRange(issue.start, issue.end),
+      );
       const code = document.createElement("code");
       code.textContent = issue.code ?? "";
       const msg = document.createElement("span");

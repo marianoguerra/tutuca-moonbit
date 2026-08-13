@@ -338,14 +338,16 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "tutucard-playground",
-      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host and the margaui class compiler, copy the shell, then check every starter card loads",
+      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host, the margaui class compiler and the CodeMirror bundle, copy the shell, then check every starter card loads",
       commands: [
         // No MoonBit compiler, no worker, no prebuilt .mi/.core closure and no
         // toolchain pin — a card is parsed and mounted, so what ships is the
-        // runtime and the page, plus margaui.wasm: the starter cards are
-        // written in margaui classes and the page compiles them in the browser
-        // (fetched lazily, so a card with no classes never pays for it).
-        // assemble.mjs runs both builds itself.
+        // runtime and the page, plus the two things a card can ask for:
+        // margaui.wasm (the starter cards are written in margaui classes and
+        // the page compiles them in the browser) and editor.bundle.js (the
+        // CodeMirror an `<mb-card codemirror>` upgrades to). Both are fetched
+        // lazily, so a card that asks for neither pays for neither.
+        // assemble.mjs runs all three builds itself.
         {
           label: "assemble dist/tutucard",
           prog: "node",

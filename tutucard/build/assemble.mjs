@@ -6,13 +6,15 @@
 // `buildPackage`/`linkCore`, because it compiles MoonBit in the browser. A card
 // is parsed and mounted, so what ships is the runtime and the page.
 //
-// The second built thing is `margaui.wasm`, the CSS class compiler — the same
-// wasm-gc build of `@css.compile_margaui` the other playground ships, because
-// there is one of it. It is what turns a card's `class="btn btn-primary"` into
-// a button; without it the starter cards render as unstyled markup. It is
-// fetched lazily by the page, so a card with no classes never pays for it.
+// The two built things are the compilers a card can ask for, and neither is
+// new: `margaui.wasm` is the wasm-gc build of `@css.compile_margaui` the other
+// playground ships — what turns a card's `class="btn btn-primary"` into a
+// button — and `editor.bundle.js` is the shared CodeMirror the two playgrounds
+// already edit MoonBit and view files in. Both are fetched lazily by the page,
+// so a card that asks for neither pays for neither.
 
 import { execSync } from "node:child_process";
+import { build as esbuild } from "esbuild";
 import { cpSync, mkdirSync, rmSync, statSync } from "node:fs";
 import { dirname, join } from "node:path";
 import { fileURLToPath } from "node:url";
@@ -85,7 +87,29 @@ function buildMargaui(out) {
   return statSync(out).size;
 }
 
-function assemble() {
+/**
+ * Bundle the shared CodeMirror editor into `out`.
+ *
+ * Bundled here rather than copied from `dist/playground/`, which has an
+ * identical file: this directory is meant to stand on its own — a host that
+ * has it has everything `<mb-card>` needs — and depending on the compiler
+ * payload's build for a text editor would undo that for 330 KB.
+ */
+async function buildEditor(out) {
+  console.log("bundling editor (esbuild, esm) ...");
+  await esbuild({
+    entryPoints: [join(REPO, "playground/editor/editor.js")],
+    outfile: out,
+    bundle: true,
+    format: "esm",
+    minify: true,
+    target: "es2020",
+    logLevel: "warning",
+  });
+  return statSync(out).size;
+}
+
+async function assemble() {
   rmSync(OUT, { recursive: true, force: true });
   mkdirSync(OUT, { recursive: true });
   for (const name of WEB_FILES) {
@@ -107,12 +131,16 @@ function assemble() {
   copyScoped(bundle, join(OUT, "tutucard.js"));
   const kb = (statSync(join(OUT, "tutucard.js")).size / 1024).toFixed(0);
   const css = (buildMargaui(join(OUT, "margaui.wasm")) / 1024).toFixed(0);
+  const ed = (
+    (await buildEditor(join(OUT, "editor.bundle.js"))) / 1024
+  ).toFixed(0);
   console.log(`assembled ${OUT}`);
   // Printed every time, because it is the number this page exists to keep
   // small: the other playground's compiler payload alone is ~5.5 MB.
   console.log(`  runtime: ${kb} KB (no compiler, no worker, no payload)`);
   console.log(`  margaui: ${css} KB (fetched only by a card with classes)`);
+  console.log(`  editor:  ${ed} KB (fetched only by an <mb-card codemirror>)`);
 }
 
 build();
-assemble();
+await assemble();

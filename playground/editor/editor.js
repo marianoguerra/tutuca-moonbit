@@ -1,8 +1,11 @@
 // Shared CodeMirror 6 editor for the tutuca-mb playgrounds. Exposes one
-// createEditor() factory used by both the full playground (playground/web/
-// driver.js) and the embeddable <mb-playground> element (playground/site/
-// embed.js), so there is a single seam for the editor behind both. Bundled to
-// dist/playground/editor.bundle.js by playground/build/assemble.mjs (esbuild).
+// createEditor() factory used by the full playground (playground/web/
+// driver.js), the embeddable <mb-playground> element (playground/site/
+// embed.js) and <mb-card codemirror> (tutucard/web/card-embed.js), so there is
+// a single seam for the editor behind all three. Bundled by esbuild to
+// dist/playground/editor.bundle.js (playground/build/assemble.mjs) and to
+// dist/tutucard/editor.bundle.js (tutucard/build/assemble.mjs) — the card
+// payload stands on its own, so it bundles rather than borrows.
 //
 // Highlighting uses a lightweight StreamLanguage MoonBit mode — no external
 // grammar and no onig.wasm, unlike moonpad's Monaco+TextMate path. StreamLanguage
@@ -98,6 +101,59 @@ const moonbitMode = StreamLanguage.define({
   languageData: { commentTokens: { line: "//" } },
 });
 
+// --- tutuca block language --------------------------------------------------
+// What a <script type="tutuca/state"> or "tutuca/script" block holds. It is
+// not HTML and it is not MoonBit — it is the small language `tscript` parses,
+// and its atoms are the view's atoms (`.field`, `@bind`, `$method`, `*dyn`,
+// `'text'`), which is exactly why they are coloured the same here.
+//
+// A card is mostly these blocks, so a view file highlighted without them is a
+// file with its middle greyed out.
+
+const BLOCK_KEYWORDS = new Set([
+  // declarations
+  "on", "receive", "bubble", "response", "compute", "pred", "enrich",
+  "enrichScope",
+  // the schema's own
+  "state", "struct", "enum",
+  // statements and effects
+  "if", "else", "send", "request", "sendAt", "stop",
+  // operators that are words
+  "and", "or", "not", "is", "implies", "mod",
+]);
+
+function blockToken(stream, state) {
+  // The closing tag ends the block and hands the stream back to the tag
+  // tokenizer, which is mid-tag by the time it sees `>`.
+  if (stream.match(/^<\/script/i)) {
+    state.tokenize = null;
+    state.inTag = true;
+    return "tagName";
+  }
+  if (stream.eatSpace()) return null;
+  if (stream.match(/^\/\/.*/)) return "comment";
+  // `$'…{expr}…'` and `'…'` are one token: the interpolations inside a
+  // template are expressions, but colouring them apart buys less than it
+  // costs in a mode this size.
+  if (stream.match(/^\$?'(?:[^'\\]|\\.)*'?/)) return "string";
+  // A place or a binding, with `&` for the reference form `sendAt` takes.
+  if (stream.match(/^&?[.@$*][\w-]+/)) return "variableName";
+  if (stream.match(/^-?\d+(?:\.\d+)?/)) return "number";
+  const word = stream.match(/^[A-Za-z_][\w?]*/);
+  if (word) {
+    const w = word[0];
+    if (w === "true" || w === "false") return "bool";
+    if (BLOCK_KEYWORDS.has(w)) return "keyword";
+    // `empty?`, `len`, `clamp` — the closed reading vocabulary, and the
+    // schema's type names, both of which read as names rather than syntax.
+    if (/^[A-Z]/.test(w)) return "typeName";
+    return null;
+  }
+  if (stream.match(/^(?:\+=|-=|[=+\-*/<>]|is not)/)) return "operator";
+  stream.next();
+  return null;
+}
+
 // --- tutuca view mode ------------------------------------------------------
 // The View tab holds tutuca's HTML-ish template syntax, so plain HTML
 // highlighting would miss what actually matters: which attributes are
@@ -106,7 +162,7 @@ const moonbitMode = StreamLanguage.define({
 // the MoonBit mode — token() returns @lezer/highlight tag names directly.
 const viewMode = StreamLanguage.define({
   name: "tutuca-view",
-  startState: () => ({ inTag: false, tokenize: null }),
+  startState: () => ({ inTag: false, tokenize: null, script: false }),
   token(stream, state) {
     if (state.tokenize) return state.tokenize(stream, state);
     if (stream.eatSpace()) return null;
@@ -119,14 +175,31 @@ const viewMode = StreamLanguage.define({
       return state.tokenize(stream, state);
     }
     if (!state.inTag) {
-      if (stream.match(/^<\/?[A-Za-z][\w:.-]*/)) { state.inTag = true; return "tagName"; }
+      const open = stream.match(/^<\/?[A-Za-z][\w:.-]*/);
+      if (open) {
+        state.inTag = true;
+        // Remembered rather than acted on: what follows the tag name is still
+        // attributes, and the block only starts at the `>`.
+        state.script = /^<script$/i.test(open[0]);
+        return "tagName";
+      }
       if (stream.match(/^&[#\w]+;/)) return "string";
       stream.next();
       stream.eatWhile((c) => c !== "<" && c !== "&");
       return null;
     }
     // inside a tag
-    if (stream.match(/^\/?>/)) { state.inTag = false; return "tagName"; }
+    const close = stream.match(/^\/?>/);
+    if (close) {
+      state.inTag = false;
+      // `<script … />` closes itself and holds nothing, so only a plain `>`
+      // opens a block.
+      if (state.script && close[0] === ">") {
+        state.tokenize = blockToken;
+      }
+      state.script = false;
+      return "tagName";
+    }
     // directive (@on.click, @each, @if.class, @text) or dynamic bind (:value)
     if (stream.match(/^[@:][\w.+-]+/)) return "keyword";
     if (stream.match(/^[A-Za-z][\w:.-]*/)) return "propertyName";
