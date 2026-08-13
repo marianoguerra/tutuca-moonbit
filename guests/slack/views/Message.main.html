@@ -2,6 +2,10 @@
          @then="'msg msg-compact text-sm py-1'"
          @else="'msg card bg-base-100 shadow-sm p-3'">
   <div class="msg-head flex items-center gap-2 flex-wrap">
+    <span @if.class=".compact"
+          @then="'msg-avatar size-5 shrink-0 rounded-full bg-base-300 flex items-center justify-center text-xs font-semibold text-base-content/70'"
+          @else="'msg-avatar size-8 shrink-0 rounded-full bg-base-300 flex items-center justify-center text-sm font-semibold text-base-content/70'"
+          @text="$initials"></span>
     <span class="msg-author font-semibold text-primary" @text="$authorLabel"></span>
     <span class="msg-channel badge badge-ghost badge-sm" @show="$hasChannel" @text="$channelLabel"></span>
     <span class="msg-time text-xs opacity-60" @text="$timeLabel"></span>

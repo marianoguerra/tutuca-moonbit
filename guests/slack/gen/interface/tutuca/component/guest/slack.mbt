@@ -434,8 +434,58 @@ impl DynComponent for Message with fn get_field(self, name) {
 }
 
 ///|
+/// The avatar, in the only form an untrusted bundle can draw one: up to two
+/// initials off whatever name the message arrived with.
+///
+/// A bundle may not name an image source (`dyncomp/policy/view_authority.mbt`),
+/// so there is no photograph to be had here and there never will be. That is a
+/// smaller loss than it sounds: what a reader uses an avatar for is telling one
+/// speaker's run of messages from the next one's at a glance, and a disc with
+/// two letters in it does that. `bluesky/Post` draws the same thing for the same
+/// reason, and this is its twin rather than its cousin.
+///
+/// One initial per word, so `Ada Lovelace` is `AL` and a one-word name is one
+/// letter — the convention a reader already knows, and the same rule `bluesky`
+/// applies, so a host drawing both does not draw two different kinds of disc.
+fn initials_of(author : String) -> String {
+  let buf = StringBuilder::new()
+  let mut taken = 0
+  let mut fresh = true
+  for c in author.iter() {
+    if c == ' ' || c == '.' || c == '-' || c == '_' || c == '@' {
+      fresh = true
+      continue
+    }
+    if fresh && taken < 2 {
+      buf.write_char(upper_char(c))
+      taken = taken + 1
+    }
+    fresh = false
+  }
+  let text = buf.to_string()
+  if text == "" {
+    "?"
+  } else {
+    text
+  }
+}
+
+///|
+/// ASCII only, deliberately: full Unicode upper-casing needs a table this bundle
+/// has no reason to carry, and a letter outside ASCII is drawn as written rather
+/// than mangled.
+fn upper_char(c : Char) -> Char {
+  if c >= 'a' && c <= 'z' {
+    Char::from_int(c.to_int() - 32)
+  } else {
+    c
+  }
+}
+
+///|
 impl DynComponent for Message with fn call_method(self, name, _args) {
   match name {
+    "initials" => @values.Value::Text(initials_of(self.author))
     "authorLabel" =>
       @values.Value::Text(
         if self.author == "" {

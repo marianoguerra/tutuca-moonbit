@@ -234,6 +234,32 @@ test('a message builds its body out of segments and reads its own timestamp', { 
   assert.deepEqual(blank.callMethod('timeLabel', []), text(''));
 });
 
+test('a message draws the only avatar an untrusted bundle can', { skip: !built }, () => {
+  // Two initials off the display name. A bundle may not name an image source, so
+  // there is no photograph to be had and the disc is the whole avatar.
+  const m = make('Message', initArgs('Message', 'root'));
+  assert.deepEqual(m.callMethod('initials', []), text('AL'));
+
+  // One initial per word, which is the rule `bluesky/Post` uses: a host drawing
+  // a Slack card beside a Bluesky one must not draw two kinds of disc. A
+  // one-word name is therefore one letter, including an unresolved Slack id.
+  for (const [name, want] of [
+    ['ada.lovelace', 'AL'],
+    ['mariano-guerra', 'MG'],
+    ['@bot_name', 'BN'],
+    ['Cher', 'C'],
+    ['U0123ABCD', 'U'],
+  ]) {
+    assert.deepEqual(
+      make('Message', { author: name }).callMethod('initials', []),
+      text(want), name);
+  }
+
+  // Nothing to take initials from is drawn as a placeholder rather than as an
+  // empty circle, which would read as a rendering bug.
+  assert.deepEqual(make('Message').callMethod('initials', []), text('?'));
+});
+
 test('a thread forces its replies compact and folds them', { skip: !built }, () => {
   const t = make('Thread', initArgs('Thread', 'expanded'));
   assert.deepEqual(t.getField('expanded'), bool(true));

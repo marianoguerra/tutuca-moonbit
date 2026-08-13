@@ -51,6 +51,12 @@ and neither can the component that made it.
 here `ChannelHistory` catches it, stops the bubble, and says so in its footer. A
 real host would open it, or ask first.
 
+**No avatar image.** The same rule that forbids `href` forbids naming an image
+source, so `Message` draws the avatar the only way an untrusted bundle can: up
+to two initials on a coloured disc, one letter per word. `bluesky/Post` does the
+same thing by the same rule, and the two deliberately agree — a host drawing a
+Slack card beside a Bluesky one must not draw two different kinds of disc.
+
 **No global CSS.** The original hides replies, reactions and channel badges with
 three `globalStyle` rules (`.hide-replies .msg-foot { display: none }`). There is
 no field for global CSS in the manifest, deliberately, so those three toggles are
