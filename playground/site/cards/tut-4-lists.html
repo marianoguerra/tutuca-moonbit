@@ -1,0 +1,84 @@
+<!-- Step 4 — a list, and the mutators that come with one.
+
+     `@each` binds `@key` and `@value` for the row. Removing one
+     needs no handler at all: `removeInSongsAt` is one of the four
+     mutators the `Array[String]` field generated. -->
+
+<script type="tutuca/state">
+  state Playlist {
+    draft : String
+    songs : Array[String]
+  }
+
+  receive Playlist {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .songs.push 'Ramble On'
+    .songs.push 'Pyramid Song'
+    .songs.push 'Teardrop'
+  }
+
+  /// The guard is the whole handler: appending and clearing the box
+  /// are both mutators, and refusing an empty draft is the part that
+  /// belongs to this component.
+  on add {
+    if (trim .draft) is not '' {
+      .songs.push (trim .draft)
+      .draft = ''
+    }
+  }
+
+  /// Moving a row is two writes at two positions, which is exactly
+  /// the shape no single mutator has.
+  on up(i) {
+    if i > 0 {
+      .songs.insertAt (i - 1) .songs[i]
+      .songs.deleteAt (i + 1)
+    }
+  }
+
+  pred any {
+    not (empty? .songs)
+  }
+
+  compute caption {
+    $'{(len .songs)} song(s)'
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .row input { flex: 1; font: inherit; padding: .3rem; }
+    ol { margin: 0; padding-left: 1.4rem; display: grid; gap: .3rem; }
+    li { display: flex; gap: .4rem; align-items: center; }
+    li x { flex: 1; }
+    .caption { margin: 0; opacity: .7;
+               font: .8rem ui-monospace, monospace; }
+  </style>
+  <div>
+    <p class="row">
+      <input placeholder="add a song" :value=".draft"
+             @on.input="setDraft value" @on.keydown+send="add">
+      <button @on.click="add">add</button>
+    </p>
+    <ol @show="$any">
+      <li @each=".songs">
+        <x text="@value"></x>
+        <button @on.click="up @key" title="move up">↑</button>
+        <button @on.click="removeInSongsAt @key"
+                title="remove">×</button>
+      </li>
+    </ol>
+    <p @hide="$any"><em>nothing queued — press Enter to add</em></p>
+    <p class="caption"><x text="$caption"></x></p>
+  </div>
+</template>

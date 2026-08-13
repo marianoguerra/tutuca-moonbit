@@ -1,0 +1,86 @@
+<!-- Step 2 — the script block: what no mutator could be.
+
+     Two fields moving together, an argument clamped before it lands,
+     and a branch. -->
+
+<script type="tutuca/state">
+  state Steps {
+    count : Int
+    step  : Int
+    trail : Array[Int]
+  }
+
+  /// The views never write `init`: the host dispatches it once, at
+  /// mount, so the schema is the only place it can be declared.
+  receive Steps {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  /// A card starts at the schema's zero, and an Int zeroes to 0 —
+  /// which would make every press below move by nothing at all.
+  receive init {
+    .step = 1
+  }
+
+  /// Move one step in `dir`, remembering where it landed.
+  ///
+  /// `.count` on the second line reads what the first one wrote: a
+  /// statement rebinds the state, so the trail records where the
+  /// counter ENDED rather than where it started.
+  on step(dir) {
+    .count += dir * .step
+    .trail.push .count
+  }
+
+  /// `n` is whatever the call site wrote — `pickStep valueAsInt`
+  /// below — so its type comes from there, not from an annotation.
+  on pickStep(n) {
+    .step = clamp n 1 10
+  }
+
+  /// The last entry is a place like any other: `.trail[expr]` reads
+  /// it and `.trail.deleteAt` drops it.
+  on undo {
+    if (len .trail) > 0 {
+      .trail.deleteAt ((len .trail) - 1)
+      .count = 0
+      if (len .trail) > 0 {
+        .count = .trail[(len .trail) - 1]
+      }
+    }
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .now { margin: 0; font-size: 2rem;
+           font-variant-numeric: tabular-nums; }
+    .trail { display: flex; flex-wrap: wrap; gap: .3rem;
+             list-style: none; margin: 0; padding: 0; }
+    .trail li { font: .75rem ui-monospace, monospace; opacity: .7; }
+  </style>
+  <div>
+    <p class="now" @text=".count"></p>
+    <p class="row">
+      <button @on.click="step 1">+</button>
+      <button @on.click="step -1">−</button>
+      <button @on.click="undo">undo</button>
+    </p>
+    <label class="row">
+      step
+      <input type="range" min="1" max="10" :value=".step"
+             @on.input="pickStep valueAsInt">
+      <x text=".step"></x>
+    </label>
+    <ul class="trail">
+      <li @each=".trail"><x text="@value"></x></li>
+    </ul>
+  </div>
+</template>

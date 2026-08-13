@@ -1,0 +1,89 @@
+<!-- Step 6 — messages, and why the schema declares them.
+
+     An `on` handler is named by a view, so the views are where its
+     arguments come from. A `receive` case is named by nobody the
+     checker can see, so the schema is the only place it can be
+     declared — and the only place its payload can be typed. -->
+
+<script type="tutuca/state">
+  state Thermostat {
+    target : Int
+    mode   : String
+    log    : Array[String]
+  }
+
+  receive Thermostat {
+    Init
+    Nudge(Int)
+    SetMode(String)
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .target = 20
+    .mode = 'auto'
+    .log.push 'mounted'
+  }
+
+  receive nudge(by) {
+    .target = clamp (.target + by) 5 30
+    .log.push $'target → {.target}'
+  }
+
+  receive setMode(m) {
+    .mode = m
+    .log.push $'mode → {m}'
+  }
+
+  /// Four buttons, two bodies. A handler that raises a message at
+  /// itself is how two call sites share one transition, and the
+  /// dispatch goes through the transactor exactly as a parent's
+  /// would.
+  ///
+  /// `(-1)` is parenthesised because `-` is an OPERATOR here, not
+  /// part of the number — unlike a view slot, where `step -1` is a
+  /// literal.
+  on warmer { send 'nudge' 1 }
+  on cooler { send 'nudge' (-1) }
+  on away   { send 'setMode' 'away' }
+  on home   { send 'setMode' 'auto' }
+
+  pred isAway {
+    .mode is 'away'
+  }
+
+  compute reading {
+    if isAway { $'{.target}° away' } else { $'{.target}° {.mode}' }
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .reading { margin: 0; font-size: 1.6rem;
+               font-variant-numeric: tabular-nums; }
+    .reading.away { opacity: .55; }
+    .log { list-style: none; margin: 0; padding: 0;
+           max-height: 6rem; overflow: auto;
+           font: .75rem ui-monospace, monospace; opacity: .7; }
+  </style>
+  <div>
+    <p @if.class="$isAway" @then="'reading away'" @else="'reading'">
+      <x text="$reading"></x>
+    </p>
+    <p class="row">
+      <button @on.click="cooler">−</button>
+      <button @on.click="warmer">+</button>
+      <button @on.click="away" @hide="$isAway">away</button>
+      <button @on.click="home" @show="$isAway">home</button>
+    </p>
+    <ul class="log">
+      <li @each=".log"><x text="@value"></x></li>
+    </ul>
+  </div>
+</template>

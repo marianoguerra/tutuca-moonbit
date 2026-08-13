@@ -70,13 +70,31 @@ mb-card .mbc-bar {
 }
 mb-card .mbc-bar .mbc-name { font-weight: 600; }
 mb-card .mbc-bar .mbc-note { margin-left: auto; opacity: 0.55; font-size: 0.7rem; }
+mb-card .mbc-bar .mbc-reset {
+  font: inherit; cursor: pointer; padding: 0 0.4rem;
+  border: 1px solid var(--border-color, #898ea4); border-radius: 3px;
+  background: transparent; color: inherit;
+}
+/* Hidden rather than disabled while the card is untouched: a control that has
+   never had anything to undo is noise on a page of eight examples. */
+mb-card .mbc-bar .mbc-reset[hidden] { display: none; }
 mb-card .mbc-status.good { color: #2a7; }
 mb-card .mbc-status.warn { color: #b58900; }
 mb-card .mbc-status.bad { color: #c33; }
-mb-card .mbc-grid { display: grid; grid-template-columns: 1fr 1fr; }
+/* The source gets the larger share: it is the thing being read, its lines are
+   as long as its author wrote them, and a preview is usually a few controls. */
+mb-card .mbc-grid {
+  display: grid;
+  grid-template-columns: minmax(0, 1.15fr) minmax(0, 1fr);
+}
+/* The height comes from the rows attribute this element sets per card (see
+   fitRows below; no backticks in here — this block is a template literal).
+   The bounds are the two cases that would otherwise read badly: a six-line
+   card given a fixed 18rem box of empty space, and a two-hundred-line one
+   given a page of scrollbar. */
 mb-card .mbc-source {
   display: block; width: 100%; box-sizing: border-box;
-  min-height: 18rem; max-height: 32rem; resize: vertical;
+  min-height: 6rem; max-height: 32rem; resize: vertical;
   border: 0; padding: 0.6rem;
   background: transparent; color: inherit;
   font-family: ui-monospace, monospace; font-size: 0.75rem; line-height: 1.5;
@@ -133,11 +151,12 @@ class MbCard extends HTMLElement {
       <div class="mbc-bar">
         <span class="mbc-name"></span>
         <span class="mbc-status">…</span>
+        <button class="mbc-reset" type="button" hidden>reset</button>
         <span class="mbc-note">edit the card — it re-mounts as you type</span>
       </div>
       <div class="mbc-grid">
         <textarea class="mbc-source" spellcheck="false" autocomplete="off"
-          autocapitalize="off" autocorrect="off"></textarea>
+          autocapitalize="off" autocorrect="off" aria-label="card source"></textarea>
         <div class="mbc-right">
           <div class="mbc-preview" id="${this.previewId}"></div>
           <ul class="mbc-issues"></ul>
@@ -148,7 +167,9 @@ class MbCard extends HTMLElement {
     this.issuesEl = this.querySelector(".mbc-issues");
     this.statusEl = this.querySelector(".mbc-status");
     this.nameEl = this.querySelector(".mbc-name");
+    this.resetEl = this.querySelector(".mbc-reset");
     this.sourceEl.addEventListener("input", () => this.scheduleReload());
+    this.resetEl.addEventListener("click", () => this.reset());
 
     this.loadSource().then(() => {
       // Mount the first time this element scrolls into view. A card is cheap
@@ -183,19 +204,65 @@ class MbCard extends HTMLElement {
   async loadSource() {
     const src = this.getAttribute("src");
     if (!src) {
-      this.sourceEl.value = "<!-- <mb-card> needs a src -->";
+      this.setSource("<!-- <mb-card> needs a src -->");
       return;
     }
     try {
       const resp = await fetch(src);
       if (!resp.ok) throw new Error(`HTTP ${resp.status}`);
-      this.sourceEl.value = await resp.text();
+      this.setSource(await resp.text());
     } catch (e) {
-      this.sourceEl.value = `<!-- failed to load ${src}: ${e.message} -->`;
+      this.setSource(`<!-- failed to load ${src}: ${e.message} -->`);
     }
   }
 
+  /**
+   * Put a card in the editor and remember it as the one to go back to.
+   *
+   * The fetched text is the ONLY thing `reset` restores: an embedded example
+   * is an invitation to break it, and the way back has to be the file the page
+   * meant to show rather than whatever the last successful parse happened to
+   * be.
+   */
+  setSource(text) {
+    this.original = text;
+    this.sourceEl.value = text;
+    this.fitRows();
+    this.syncReset();
+  }
+
+  /** Put the fetched card back, and mount it. */
+  reset() {
+    if (this.original == null) return;
+    clearTimeout(this._timer);
+    this.sourceEl.value = this.original;
+    this.fitRows();
+    this.syncReset();
+    this.reload();
+  }
+
+  syncReset() {
+    this.resetEl.hidden = this.sourceEl.value === this.original;
+  }
+
+  /**
+   * Size the editor to the card it holds.
+   *
+   * A page of examples is a page of DIFFERENT LENGTHS — the shortest card here
+   * is a schema and a template, the longest is four handlers and a stylesheet
+   * — and one fixed height serves neither. The bounds keep a one-line card
+   * from being a slit and a long one from being the whole scroll.
+   */
+  fitRows() {
+    const lines = this.sourceEl.value.split("\n").length;
+    this.sourceEl.rows = Math.max(8, Math.min(lines + 1, 24));
+  }
+
   scheduleReload() {
+    // Immediately, not on the debounce: the button offers a way back from the
+    // edit that is being typed, and appearing a fifth of a second late reads
+    // as the page lagging.
+    this.syncReset();
     clearTimeout(this._timer);
     this._timer = setTimeout(() => this.reload(), DEBOUNCE_MS);
   }

@@ -255,6 +255,11 @@ pre code {
   color: var(--text);
   background: none;
   padding: 0;
+  /* `code` above is nowrap so an INLINE snippet never breaks mid-token. A
+     block of code is the opposite case: its newlines are the layout, and
+     inheriting nowrap collapsed every multi-line block into one long line
+     with a scrollbar. `pre` already scrolls what overflows. */
+  white-space: pre;
 }
 
 section {

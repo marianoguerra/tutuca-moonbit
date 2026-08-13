@@ -1,0 +1,77 @@
+<!-- Step 5 — the two things a loop asks the block.
+
+     `@when` keeps a row or drops it. `@enrich-with` answers a
+     question ABOUT the row and binds the answer as `@picked`, which
+     is how a template reads what no field holds. -->
+
+<script type="tutuca/state">
+  state Crew {
+    query  : String
+    names  : Array[String]
+    picked : Set[String]
+  }
+
+  receive Crew {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .names.push 'Ada Lovelace'
+    .names.push 'Grace Hopper'
+    .names.push 'Alan Turing'
+    .names.push 'Barbara Liskov'
+    .names.push 'Edsger Dijkstra'
+  }
+
+  /// A row survives when the query is empty or its text contains it,
+  /// folded on both sides so the filter is not a spelling test.
+  ///
+  /// `@when` takes this bare — an iteration filter has always been
+  /// a name.
+  pred matches {
+    (empty? .query) or (contains (lower @value) (lower .query))
+  }
+
+  /// Per-row bindings. The renderer hands an enricher the row's key
+  /// and value; what it writes is in scope for that row and nowhere
+  /// else.
+  enrich row {
+    @picked = has .picked @value
+  }
+
+  compute caption {
+    $'{(len .picked)} picked of {(len .names)}'
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    input[type=search] { font: inherit; padding: .3rem; }
+    ul { list-style: none; margin: 0; padding: 0;
+         display: grid; gap: .2rem; }
+    label { display: flex; gap: .4rem; align-items: center; }
+    .on { font-weight: 600; }
+    .caption { margin: 0; opacity: .7;
+               font: .8rem ui-monospace, monospace; }
+  </style>
+  <div>
+    <input type="search" placeholder="filter" :value=".query"
+           @on.input="setQuery value">
+    <ul>
+      <li @each=".names" @when="matches" @enrich-with="row">
+        <label @if.class="@picked" @then="'on'" @else="''">
+          <input type="checkbox" :checked="@picked"
+                 @on.click="toggleInPicked @value">
+          <x text="@value"></x>
+        </label>
+      </li>
+    </ul>
+    <p class="caption"><x text="$caption"></x></p>
+  </div>
+</template>

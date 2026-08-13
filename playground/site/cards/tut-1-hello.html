@@ -1,0 +1,41 @@
+<!-- Step 1 — the schema on its own.
+
+     No <script type="tutuca/script"> in this file, and the card still
+     answers three events: the STATE block generated every name the
+     view calls. -->
+
+<script type="tutuca/state">
+  state Greeter {
+    name : String
+    loud : Bool
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    label { display: flex; gap: .4rem; align-items: center; }
+    .say { margin: 0; font-size: 1.3rem; }
+    .shout { text-transform: uppercase; letter-spacing: .05em; }
+  </style>
+  <div>
+    <label>
+      your name
+      <input :value=".name" @on.input="setName value"
+             placeholder="type here">
+    </label>
+    <label>
+      <input type="checkbox" :checked=".loud" @on.click="toggleLoud">
+      shout it
+    </label>
+    <p @if.class=".loud" @then="'say shout'" @else="'say'">
+      hello, <x text=".name"></x>
+    </p>
+    <p @show="empty? .name">
+      <em>the greeting follows what you type</em>
+    </p>
+  </div>
+</template>

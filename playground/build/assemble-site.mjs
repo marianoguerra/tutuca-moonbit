@@ -11,6 +11,7 @@
 //
 // Layout produced:
 //   dist/index.html           ← the landing page (site becomes the dist root)
+//   dist/cards.html           ← the card tutorial, which is <mb-card> all the way down
 //   dist/styles/site.css      ← page styling (self-contained light/dark palette)
 //   dist/site/embed.js        ← the <mb-playground> custom element
 //   dist/site/examples/*.mbt  ← the editable example sources
@@ -29,8 +30,12 @@ const SITE = join(REPO, "playground/site");
 const CARDWEB = join(REPO, "tutucard/web");
 const DIST = join(REPO, "dist");
 
-// the landing page is the dist root
-cpSync(join(SITE, "index.html"), join(DIST, "index.html"));
+// The landing page is the dist root; every other page sits beside it, so the
+// `./site/…` and `./styles/…` links in all of them mean the same thing.
+const PAGES = ["index.html", "cards.html"];
+for (const page of PAGES) {
+  cpSync(join(SITE, page), join(DIST, page));
+}
 
 // page styles
 mkdirSync(join(DIST, "styles"), { recursive: true });
@@ -80,6 +85,6 @@ for (const [dir, task] of [
 const examples = readdirSync(join(SITE, "examples")).filter((f) => f.endsWith(".mbt"));
 const cards = readdirSync(join(SITE, "cards")).filter((f) => f.endsWith(".html"));
 console.log(
-  `done -> ${DIST}\n  index.html + styles/ + site/embed.js + ${examples.length} examples` +
+  `done -> ${DIST}\n  ${PAGES.join(" + ")} + styles/ + site/embed.js + ${examples.length} examples` +
     ` + site/card-embed.js + ${cards.length} card${cards.length === 1 ? "" : "s"}`,
 );

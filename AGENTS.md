@@ -186,6 +186,9 @@ and the compiler are one pair, and a mismatch otherwise surfaces as nonsense
 about the user's code (`playground/vendor/README.md`).
 
 `dist` produces `dist/index.html` (a landing page with run instructions),
+`dist/cards.html` (the card tutorial — six `<mb-card>` embeds and the block
+language in one page; its cards are `playground/site/cards/*.html`, which
+`tutucard-playground` loads through the real loader),
 `dist/counter/` (the **js** counter demo with its bundle, `<script src>`
 repointed to sit beside the page), `dist/counter-wasm/`
 (the **wasm-gc** demo — a `.wasm`, a host page, and `app/wasm/loader.mjs`

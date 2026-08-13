@@ -166,12 +166,20 @@ pub impl @tutuca.Obj for CardObj with fn obj_with_field(self, name, v) {
 pub impl @tutuca.Obj for CardObj with fn obj_callable(self, name, ns) {
   // The render-time namespace: `@when` resolves a predicate here, and
   // `@enrich-with` / `@loop-with` their own declarations.
+  //
+  // BOTH through `alter_fn`, including the `pred` an `@when` names: the
+  // renderer calls a filter with the row's `(key, value, iterData)`, and those
+  // reach a body as the BINDS `@key` / `@value` / `@iter` rather than as
+  // parameters — a filter is written `pred matches { … @value … }` with no
+  // parameter list, which is what the language's own docs promise and what
+  // `callable_fn` (which binds by parameter name and nothing else) silently
+  // read as Null. A card whose filter kept every row is what that looked like.
   if ns is Alter {
     if self.deck.alters.get(name) is Some(d) {
       return Some(self.alter_fn(d))
     }
     if self.deck.callables.get(name) is Some(d) {
-      return Some(self.callable_fn(d))
+      return Some(self.alter_fn(d))
     }
     return None
   }
@@ -188,22 +196,32 @@ pub impl @tutuca.Obj for CardObj with fn obj_callable(self, name, ns) {
 /// An `enrich` / `enrichScope` declaration, in the shape the renderer calls.
 ///
 /// The renderer passes `(this, binds, key, value, iterData)` for the in-loop
-/// form and `(this)` for the scope form, and both come back as the binds map
-/// — which is what the scope form returns and what the in-loop form mutates.
-/// A card returns a fresh map in both cases and lets the caller merge, since
-/// mutating an argument is a MoonBit convenience an interpreter has no need
-/// of.
+/// form and `(this)` for the scope form, and the two read their answer in
+/// different places: the scope form takes the RETURNED map, and the in-loop
+/// form reads back the map it passed in. So this does both — it returns the
+/// binds and, when it was handed a map, writes them into that one as well.
+///
+/// Writing into an argument is not a MoonBit convenience here, it is the
+/// contract: `render/render.mbt` discards what an enricher returns. A card
+/// that only returned a map was an `@enrich-with` whose `@name` was never
+/// bound, which reads on the page as a blank where a value should be.
+///
+/// A `@when` predicate arrives here too, with `(this, key, value, iterData)`
+/// and no map — same binding, no write-back, and its answer is the value it
+/// returns.
 fn CardObj::alter_fn(self : CardObj, d : @tscript.Decl) -> @tutuca.Value {
   Fn(args => {
     let given = drop_this(args)
     let binds : Map[String, @tutuca.Value] = Map([])
     // The in-loop form is handed the binds map it is to extend, then the
     // iteration values. The scope form is handed nothing.
+    let mut target : Map[String, @tutuca.Value]? = None
     let rest = match given.get(0) {
       Some(Map(m)) => {
         for k, v in m {
           binds[k] = v
         }
+        target = Some(m)
         given[1:].to_owned()
       }
       _ => given
@@ -224,30 +242,31 @@ fn CardObj::alter_fn(self : CardObj, d : @tscript.Decl) -> @tutuca.Value {
           Some(v) => v
           None => Null
         }
-      Stmts(ss) =>
-        match @interp.run(ss, env).state {
+      Stmts(ss) => {
+        let out = @interp.run(ss, env)
+        match out.state {
           // A statement body over binds writes THEM, not state — the
           // interpreter threads both, and this is the half the renderer wants.
-          Some(_) => Map(run_binds(ss, env))
+          Some(_) => {
+            if target is Some(m) {
+              for k, v in out.binds {
+                // `key`, `value` and `iter` belong to the LOOP: the renderer
+                // restores the first two right after this call, and the third
+                // it never puts in the map at all. Writing them back would be
+                // a card binding a name a compiled component does not.
+                if k != "key" && k != "value" && k != "iter" {
+                  m[k] = v
+                }
+              }
+            }
+            Map(out.binds)
+          }
+          // Nothing finished, so the row keeps what it arrived with.
           None => Map(binds)
         }
+      }
     }
   })
-}
-
-///|
-/// The bindings a statement body produced.
-fn run_binds(
-  ss : Array[@tscript.Stmt],
-  env : @interp.Env,
-) -> Map[String, @tutuca.Value] {
-  let binds : Map[String, @tutuca.Value] = Map([])
-  for k, v in env.binds {
-    binds[k] = v
-  }
-  let scoped : @interp.Env = { ..env, binds, }
-  @interp.run(ss, scoped) |> ignore
-  binds
 }
 
 ///|

@@ -19,7 +19,7 @@ pub fn Env::of_state(
 
 ///|
 pub fn Outcome::nothing() -> Outcome {
-  { state: None, effects: [] }
+  { state: None, effects: [], binds: Map([]) }
 }
 
 ///|

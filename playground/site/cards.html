@@ -1,0 +1,445 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Cards — the tutuca script tutorial</title>
+    <meta
+      name="description"
+      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Every example on the page is live and editable."
+    />
+    <meta name="author" content="Mariano Guerra" />
+    <meta name="theme-color" content="#0d47a1" />
+    <link rel="stylesheet" href="./styles/site.css" />
+    <style>
+      /* Same cap as the landing page's embeds, so a card lines up with the
+         prose that introduces it rather than with the window. */
+      /* Wider than the landing page's, where a card sits beside the
+         playgrounds and has to line up with them. Here the source IS the
+         page, so it gets the room. */
+      mb-card { max-width: 68rem; margin: 1.5rem auto; }
+      /* ONE column for everything that is read as prose. The stylesheet caps
+         paragraphs and tables at different widths, which on a page that
+         alternates the two reads as a ragged left edge. */
+      main > section > p,
+      main > section > ul,
+      main > section > ol,
+      main > section > pre,
+      main > section > table {
+        max-width: 48rem;
+        margin-inline: auto;
+      }
+      /* The step number, in the margin of its heading where it does not have
+         to be part of the sentence. */
+      .step { color: var(--text-light); font-size: 0.8em; display: block; }
+      .lede { font-size: 1.05rem; }
+    </style>
+    <!-- The card runtime is a classic script that installs `__tutucard`; the
+         element is a module, and a module runs after a classic one, so the
+         order below is the whole of the wiring. No compiler, no worker, no
+         payload — a card is parsed and mounted. -->
+    <script src="./site/tutucard.js"></script>
+    <script type="module" src="./site/card-embed.js"></script>
+  </head>
+  <body>
+    <nav>
+      <a href="./">Home</a>
+      <a href="#start">Start</a>
+      <a href="#reference">Reference</a>
+      <a href="#limits">Where a card stops</a>
+      <a href="./tutucard/">Card Playground</a>
+      <a href="https://github.com/marianoguerra/tutuca-moonbit">GitHub</a>
+    </nav>
+    <header>
+      <h1>Cards</h1>
+      <h2>A whole component in one file, with no compiler in the room</h2>
+      <p class="hero-tagline">
+        Six steps, six live examples. Edit any of them and it re-mounts as you
+        type.
+      </p>
+    </header>
+    <main>
+      <section id="start">
+        <h2>What a card is</h2>
+        <p class="lede">
+          A <strong>card</strong> is a tutuca view file — a state schema, a
+          script block and one or more templates — <em>interpreted</em> instead
+          of compiled. The page you are reading parsed the first example below
+          and mounted it, in your browser, with nothing between the two: no
+          MoonBit compiler, no worker, no build step, no server.
+        </p>
+        <p>
+          It is the same framework the rest of this site is about, with the
+          compiler taken out. The schema still generates mutators, the checker
+          still reads the script block and reports the same diagnostics with
+          the same line and column, and the views are the views. What changes
+          is <em>when</em> — a card is read at mount rather than at build — and
+          what you give up for it is the subject of
+          <a href="#limits">the last section</a>.
+        </p>
+        <p>The file has three kinds of block, and only the last is required:</p>
+        <pre><code>&lt;script type="tutuca/state"&gt;   fields, types, payloads
+&lt;script type="tutuca/script"&gt;  handlers, derived values
+&lt;template&gt;                     the views</code></pre>
+        <p>
+          Every example below is one such file, whole and runnable. The bar
+          above each one shows the component's name and what the checker made
+          of it — <code>ok</code>, or the number of issues, each with a button
+          that selects the exact characters it is about. Break one on purpose:
+          that report is the point, and <strong>reset</strong> puts the
+          original back.
+        </p>
+      </section>
+
+      <section id="schema">
+        <h3><span class="step">Step 1</span> The schema, on its own</h3>
+        <p>
+          This card has no script block at all, and still answers three events.
+          Every field a <code>state</code> declares comes with mutators named
+          after it — <code>setName</code>, <code>resetName</code>,
+          <code>nameLen</code> for any field, plus <code>toggleLoud</code>
+          because <code>loud</code> is a <code>Bool</code>. A view calling one
+          is a component that needed no handler.
+        </p>
+        <mb-card src="./site/cards/tut-1-hello.html"></mb-card>
+        <p>
+          The field's <strong>kind</strong> decides what it generates, and the
+          kind is the declared type rather than a choice at the call site:
+        </p>
+        <table>
+          <thead>
+            <tr><th>Declared</th><th>What comes with it</th></tr>
+          </thead>
+          <tbody>
+            <tr><td><code>Bool</code></td><td><code>toggleX</code></td></tr>
+            <tr>
+              <td><code>Array[T]</code></td>
+              <td><code>pushInX</code>, <code>insertInXAt</code>, <code>setInXAt</code>, <code>removeInXAt</code></td>
+            </tr>
+            <tr>
+              <td><code>Map[String, T]</code></td>
+              <td><code>setInXAt</code>, <code>removeInXAt</code></td>
+            </tr>
+            <tr>
+              <td><code>Set[String]</code></td>
+              <td><code>addInX</code>, <code>removeInX</code>, <code>hasInX</code>, <code>toggleInX</code></td>
+            </tr>
+            <tr><td>any field</td><td><code>setX</code>, <code>resetX</code>, <code>xLen</code></td></tr>
+          </tbody>
+        </table>
+        <p>
+          Two spellings in that card are worth naming now, because they are the
+          two halves of every view. <code>:value=".name"</code> is a
+          <em>value</em> slot: it reads. <code>@on.input="setName value"</code>
+          is a <em>handler</em> slot: the first word is the message to dispatch
+          and the rest are arguments, resolved from the event —
+          <code>value</code>, <code>valueAsInt</code>, <code>key</code>,
+          <code>isAlt</code> and a handful more.
+        </p>
+      </section>
+
+      <section id="handlers">
+        <h3><span class="step">Step 2</span> The script block</h3>
+        <p>
+          An <code>on</code> handler answers a name the views write. You reach
+          for one when no mutator is the transition you mean: two fields moving
+          together, an argument that has to be clamped before it lands, a
+          branch.
+        </p>
+        <p>
+          Statements end at a newline or a <code>;</code>, and the state they
+          write is rebound as they go — the second line of <code>step</code>
+          below reads what the first one wrote, so the trail records where the
+          counter <em>ended</em>.
+        </p>
+        <mb-card src="./site/cards/tut-2-handlers.html"></mb-card>
+        <p>
+          That card also answers <code>init</code>. A card starts at the
+          schema's zero — an <code>Int</code> is 0, an <code>Array</code> is
+          empty — because there is no MoonBit here to pass a seed in. tutuca
+          has no lifecycle either: nothing in the framework calls an
+          initialiser, the <strong>host</strong> dispatches <code>init</code>
+          at mount, and a card that wants to start somewhere else answers it
+          like any other message. Every card after this one seeds itself that
+          way.
+        </p>
+        <p>
+          Note what <code>step</code> does <em>not</em> say: nowhere is
+          <code>dir</code> annotated. An <code>on</code> handler's argument
+          types are inferred from what the templates write at the call site, so
+          <code>@on.click="step 1"</code> is what makes it a number — and a
+          call site that disagrees with the body is a reported issue, not a
+          silent coercion.
+        </p>
+      </section>
+
+      <section id="derived">
+        <h3><span class="step">Step 3</span> Values the state does not hold</h3>
+        <p>
+          A <code>compute</code> is one expression with a name, called from a
+          template as <code>$name</code>. A <code>pred</code> is the same
+          construct with its answer declared a boolean, which is what lets a
+          condition slot be checked rather than merely evaluated. Neither can
+          assign, so neither can be the reason a render is wrong.
+        </p>
+        <mb-card src="./site/cards/tut-3-derived.html"></mb-card>
+        <p>
+          <code>if</code> appears twice in this language and means two things.
+          In a statement body it is a branch and the <code>else</code> is
+          optional. In a value position — a <code>compute</code>, a
+          <code>pred</code>, an interpolation — both arms are required, because
+          an expression has to have a value.
+        </p>
+        <p>
+          The <code>$'…'</code> in <code>status</code> is a string template:
+          single quotes with a leading <code>$</code>, and
+          <code>{…}</code> holding any expression. A bare
+          <code>'…'</code> is a plain string literal. Nothing else in a view or
+          a body interpolates — an unquoted <code>{.x}</code> in an attribute
+          is not a template, it is text.
+        </p>
+      </section>
+
+      <section id="lists">
+        <h3><span class="step">Step 4</span> Lists</h3>
+        <p>
+          <code>@each</code> walks a field and binds <code>@key</code> and
+          <code>@value</code> for the row. In this card the remove button calls
+          <code>removeInSongsAt @key</code> — a generated mutator, straight
+          from the view, with no handler in between — while moving a row is an
+          <code>on</code> handler, because two writes at two positions is
+          exactly the shape no single mutator has.
+        </p>
+        <mb-card src="./site/cards/tut-4-lists.html"></mb-card>
+        <p>
+          Inside a body, a collection is written through its receiver:
+          <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>, with
+          the infix dropped because the receiver is written out. The methods
+          are <code>push</code>, <code>insertAt</code>, <code>setAt</code>,
+          <code>deleteAt</code>/<code>removeAt</code>, <code>clear</code> for
+          sequences and maps, and <code>add</code>,
+          <code>remove</code>/<code>delete</code>, <code>toggle</code>,
+          <code>set</code> for sets and maps.
+        </p>
+      </section>
+
+      <section id="loops">
+        <h3><span class="step">Step 5</span> What a loop asks the block</h3>
+        <p>
+          Two directives on an <code>@each</code> element hand work back to the
+          script. <code>@when</code> names a <code>pred</code> that keeps a row
+          or drops it. <code>@enrich-with</code> names an <code>enrich</code>
+          that answers a question <em>about</em> the row and binds the answer
+          for the template to read.
+        </p>
+        <mb-card src="./site/cards/tut-5-filter.html"></mb-card>
+        <p>
+          The reason the checkbox reads <code>@picked</code> rather than
+          calling a predicate is a scoping rule worth carrying with you: a
+          <code>compute</code> or a <code>pred</code> called from a
+          <em>value</em> slot is handed the state and its own arguments, and
+          nothing else — <code>@value</code> is not in scope inside one.
+          <code>@when</code> and <code>@enrich-with</code> resolve through the
+          loop instead, so those two <em>are</em> handed the row.
+        </p>
+        <p>
+          Which is also why the two directives spell their argument
+          differently. <code>@when="matches"</code> names a predicate bare; it
+          is a name the loop resolves. <code>@show="$any"</code> reads a
+          <em>value</em>, so it carries the <code>$</code> that says a callable
+          answers it.
+        </p>
+      </section>
+
+      <section id="messages">
+        <h3><span class="step">Step 6</span> Messages</h3>
+        <p>
+          An <code>on</code> handler is named by a view, so the views are where
+          its arguments come from. A <code>receive</code> case is named by
+          nobody the checker can see — it is raised by another handler, by a
+          parent, or by the host at mount — so the schema is the only place it
+          can be declared, and the only place its payload can be typed.
+        </p>
+        <mb-card src="./site/cards/tut-6-messages.html"></mb-card>
+        <p>
+          <code>send</code> is one of five effects a body may perform. They are
+          the vocabulary a dynamic WebAssembly component already answers with,
+          which is not a coincidence: an interpreted card and a compiled
+          component hand the host the same list, and neither knows what it will
+          do with them.
+        </p>
+        <ul>
+          <li><code>send 'name' args…</code> — at this component.</li>
+          <li><code>bubble 'name' args…</code> — up the path the event was raised on. A card mounted on its own is the root, so a bubble from one has nowhere to go.</li>
+          <li><code>request 'name'</code> — resolved through the host's registry; a page that registers no handler answers nothing.</li>
+          <li><code>sendAt &amp;.rows[k] 'name' args…</code> — at a <em>position</em>. <code>&amp;.rows[k]</code> is the position; <code>.rows[k]</code> is what is there, and the difference is what makes a late answer land on the row that asked for it.</li>
+          <li><code>stop</code> — stop propagation.</li>
+        </ul>
+        <p>
+          Effects go out only if the body finished. A statement that cannot run
+          — a missing key, an index past the end, a value of the wrong shape —
+          drops the whole transition, effects included, because half a
+          transition is the one outcome nobody can reason about afterwards.
+        </p>
+      </section>
+
+      <section id="reference">
+        <h2>The whole language, on one screen</h2>
+        <p>
+          It is small on purpose, and the two ideas below carry the grammar:
+          <strong>application is juxtaposition</strong>
+          (<code>clamp n 1 10</code>, no commas, no parentheses around the
+          call), and <strong>parentheses are required wherever precedence
+          would otherwise be implicit</strong>. There is no precedence table to
+          remember and none to get wrong.
+        </p>
+        <h4>Declarations</h4>
+        <table>
+          <thead><tr><th>Keyword</th><th>Body</th><th>Answers</th></tr></thead>
+          <tbody>
+            <tr><td><code>on name(a, b)</code></td><td>statements</td><td>an <code>@on</code> name a view writes</td></tr>
+            <tr><td><code>receive name(a)</code></td><td>statements</td><td>a case of the schema's <code>receive</code></td></tr>
+            <tr><td><code>bubble name(a)</code></td><td>statements</td><td>a case of the schema's <code>bubble</code></td></tr>
+            <tr><td><code>response name(a)</code></td><td>statements</td><td>a case of the schema's <code>response</code></td></tr>
+            <tr><td><code>compute name</code></td><td>one expression</td><td><code>$name</code> in a value slot</td></tr>
+            <tr><td><code>pred name</code></td><td>one expression</td><td>a condition slot, or <code>@when</code></td></tr>
+            <tr><td><code>enrich name</code></td><td>statements over <code>@binds</code></td><td><code>@enrich-with</code> inside a loop</td></tr>
+            <tr><td><code>enrichScope name</code></td><td>statements over <code>@binds</code></td><td><code>@enrich-with</code> on a scope</td></tr>
+          </tbody>
+        </table>
+        <p>
+          A <code>///</code> comment above a declaration is its documentation
+          and travels with it. There is no <code>when</code> keyword: a filter
+          and a boolean <code>compute</code> are the same construct, so
+          <code>@when</code> is a <em>use</em> of a <code>pred</code>.
+        </p>
+        <h4>Statements</h4>
+        <pre><code>.count = 0                  assign
+.count += d   .count -= d   add, subtract
+@tag = $'{@value}'          bind (in an enrich)
+.items.push v               a collection method,
+.items.deleteAt i           receiver first
+.byId.set k v
+send 'flash' .msg           an effect
+bubble 'picked' @key
+sendAt &amp;.rows[k] 'done' 1
+request 'load'    stop
+if cond { … } else { … }    a branch, else optional</code></pre>
+        <p>
+          A place can be nested — <code>.a.b</code> and <code>.a[k].b</code>
+          are exactly what a view slot cannot spell, and the reason the block
+          language exists at all.
+        </p>
+        <h4>Expressions</h4>
+        <table>
+          <thead><tr><th>Family</th><th>Operators</th><th>Chaining</th></tr></thead>
+          <tbody>
+            <tr><td>logic</td><td><code>and</code> <code>or</code></td><td>free</td></tr>
+            <tr><td>compare</td><td><code>is</code> <code>is not</code> <code>&lt;</code> <code>&lt;=</code> <code>&gt;</code> <code>&gt;=</code></td><td>exactly two operands</td></tr>
+            <tr><td>implies</td><td><code>implies</code></td><td>exactly two operands</td></tr>
+            <tr><td>add</td><td><code>+</code> <code>-</code></td><td>free</td></tr>
+            <tr><td>multiply</td><td><code>*</code> <code>/</code> <code>mod</code></td><td>free</td></tr>
+          </tbody>
+        </table>
+        <p>
+          Mixing two families in one unparenthesized chain is a
+          <em>parse</em> error, and the message names the parentheses to add.
+          So <code>a and b and c</code> is fine, <code>a + b * c</code> is
+          refused, and <code>a &lt; b &lt; c</code> is refused too. Prefix
+          <code>not</code> and <code>-</code> negate; a negative literal in an
+          argument list wants its own parentheses
+          (<code>send 'nudge' (-1)</code>), because <code>-</code> is an
+          operator here rather than part of the number.
+        </p>
+        <p>
+          The atoms are the view's atoms, spelled identically:
+          <code>.field</code>, <code>@bind</code>, <code>$method</code>,
+          <code>*dyn</code>, <code>'text'</code>, <code>$'…{expr}…'</code>,
+          numbers and booleans. That is deliberate — what is new in a body is
+          operators, statements and nesting, so someone who can read a tutuca
+          view can read a handler without learning a second vocabulary.
+        </p>
+        <h4>The reading vocabulary</h4>
+        <p>
+          Closed, and closed on purpose: the language is total because it
+          cannot call anything the runtime did not put here.
+        </p>
+        <pre><code>empty? x    truthy? x   falsy? x    null? x
+len xs      has xs k    contains s sub
+min a b     max a b     clamp x lo hi     int x    num x
+str x       lower s     trim s</code></pre>
+      </section>
+
+      <section id="limits">
+        <h2>Where a card stops</h2>
+        <p>
+          The line is one sentence long: <strong>a card cannot name a MoonBit
+          value.</strong> Everything below follows from it.
+        </p>
+        <ul>
+          <li>
+            <strong>No imports, no closures, no components built at run
+            time.</strong> A handler that walks a dispatch path or constructs a
+            child is a handler the compiler was for.
+          </li>
+          <li>
+            <strong>No record literal.</strong> An <code>Array[Struct]</code>
+            can be read, indexed and written through, but never appended to
+            from a card — which is why the list here holds
+            <code>Array[String]</code>.
+          </li>
+          <li>
+            <strong>One component per file.</strong> A file declaring several
+            is refused by name: a card is one component, and several want
+            <code>tutuca gen-views</code> and a module.
+          </li>
+          <li>
+            <strong>No <code>&lt;template&gt;</code>, no card.</strong> State
+            and script describe a component; a view is what makes one visible.
+          </li>
+          <li>
+            <strong>The views are not checked.</strong> The report above each
+            preview is the <em>script</em> block judged against the schema.
+            <code>gen-views</code> checks the templates too — every
+            <code>.field</code> a slot reads, including inside a loop — and a
+            card cannot, because its views are parsed at mount rather than
+            compiled. Misspell one in a template here and it reads
+            <code>Null</code> and renders nothing, quietly.
+          </li>
+        </ul>
+        <p>
+          Reach past any of those and you are writing a component. Nothing is
+          thrown away in the move: the same file gains a
+          <code>tutuca gen-views</code> step, which reads these same three
+          blocks and emits typed MoonBit — the state struct, the codec, the
+          descriptor, the message enums and the compiled view tree — and every
+          handler the block could compile stays exactly as written. The ones it
+          cannot are refused <em>by name</em>, with the reason, and come back
+          as an <code>update~</code> argument.
+        </p>
+        <p>
+          The other direction is worth knowing too. Because a card needs no
+          toolchain, checking one needs no browser: the same runtime this page
+          loads exposes <code>__tutucard.check(source, name)</code>, which
+          answers the report you see above the previews — the component's name
+          and every issue, with lines and character ranges — and mounts
+          nothing. A build step over a directory of cards, or an agent that
+          just generated one, validates with that call and no DOM. It is what
+          keeps every example on this page loading.
+        </p>
+        <h3>Keep going</h3>
+        <ul>
+          <li><a href="./tutucard/">The card playground</a> — the same loader with more panels: the state tree, the dispatch log, and a structured editor that shows one block of the file at a time.</li>
+          <li><a href="./">The landing page</a> — the same framework with the compiler in, compiling MoonBit in your browser.</li>
+          <li><a href="./storybook/">Storybook</a> — every ported example, compiled ahead of time, with a Lint panel per story.</li>
+          <li><a href="https://github.com/marianoguerra/tutuca-moonbit">Source</a> — the loader is <code>tutucard/</code>, the language is <code>tscript/</code>.</li>
+        </ul>
+      </section>
+    </main>
+    <footer>
+      <a href="https://github.com/marianoguerra/tutuca-moonbit">🧑‍💻️ github.com/marianoguerra/tutuca-moonbit</a>
+      <a href="https://bsky.app/profile/marianoguerra.org">🦋️ @marianoguerra.org</a>
+      <a href="https://hachyderm.io/@marianoguerra">🐘️ @marianoguerra@hachyderm.io</a>
+    </footer>
+  </body>
+</html>

@@ -1,0 +1,83 @@
+<!-- Step 3 — values the state does not hold.
+
+     A `compute` is one expression with a name; a `pred` is the same
+     construct with its answer declared a boolean. Neither can
+     assign, so neither can be the reason a render is wrong. -->
+
+<script type="tutuca/state">
+  state Draft {
+    text  : String
+    limit : Int
+  }
+
+  receive Draft {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .limit = 80
+  }
+
+  /// `$left` is how a template calls this, and this is the only
+  /// place the subtraction is written.
+  compute left {
+    .limit - (len .text)
+  }
+
+  /// A named boolean. `@show`, `@hide` and `@if.<attr>` take one.
+  pred over {
+    (len .text) > .limit
+  }
+
+  /// The bar's width, as a whole style declaration.
+  ///
+  /// Computed HERE rather than interpolated into the attribute, and
+  /// that is a rule rather than a preference: a view slot names
+  /// things, it does not call them, so `{(len .text)}` written in an
+  /// attribute has nothing to interpolate. A body is where an
+  /// expression may be written.
+  compute bar {
+    $'width: {(min (len .text) 100)}%'
+  }
+
+  /// One declaration calling two others, and `if` in a value
+  /// position — where both arms are required, because an expression
+  /// has to have a value.
+  ///
+  /// `over` and `left` are written BARE. The `$` spelling belongs to
+  /// a template, where the render stack answers it; inside a body it
+  /// names nothing, and the compiler refuses it in so many words.
+  compute status {
+    if over { $'{0 - left} over' } else { $'{left} to spare' }
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    input { width: 100%; box-sizing: border-box;
+            font: inherit; padding: .4rem; }
+    .meter { height: .4rem; border-radius: .2rem; background: #2a7; }
+    .meter.over { background: #c33; }
+    .count { margin: 0; font: .8rem ui-monospace, monospace; }
+    .count.over { color: #c33; }
+  </style>
+  <div>
+    <input :value=".text" @on.input="setText value"
+           placeholder="write something and watch the numbers move">
+    <div @if.class="$over" @then="'meter over'" @else="'meter'"
+         :style="$bar"></div>
+    <p @if.class="$over" @then="'count over'" @else="'count'">
+      <x text="$status"></x>
+    </p>
+    <p @show="$over">
+      <strong>trim it</strong> — the same predicate hid this line
+      a moment ago
+    </p>
+  </div>
+</template>

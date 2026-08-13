@@ -100,9 +100,20 @@ export const EXAMPLES = [
     query : String
     names : Array[String]
   }
+
+  /// The views never write init: the host dispatches it at mount, which
+  /// is the only way a card starts anywhere but the schema's zero.
+  receive Filter { Init }
 </script>
 
 <script type="tutuca/script">
+  receive init {
+    .names.push 'Ada Lovelace'
+    .names.push 'Grace Hopper'
+    .names.push 'Alan Turing'
+    .names.push 'Barbara Liskov'
+  }
+
   /// A row survives when the query is empty or its text contains it.
   /// Case-folded on both sides, so the filter is not a spelling test.
   ///

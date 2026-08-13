@@ -39,6 +39,7 @@ pub fn Env::of_state(Map[String, @core.Value], callables? : Map[String, @tscript
 pub(all) struct Outcome {
   state : Map[String, @core.Value]?
   effects : Array[Effect]
+  binds : Map[String, @core.Value]
 } derive(Eq, @debug.Debug)
 pub fn Outcome::nothing() -> Self
 

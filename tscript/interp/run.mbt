@@ -48,7 +48,7 @@ pub fn run(body : Array[@tscript.Stmt], env : Env) -> Outcome {
   let effects : Array[Effect] = []
   let cur : Env = { ..env, state, binds }
   if exec(body, cur, effects, 0) {
-    { state: Some(state), effects }
+    { state: Some(state), effects, binds }
   } else {
     Outcome::nothing()
   }

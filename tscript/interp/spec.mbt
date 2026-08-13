@@ -74,6 +74,15 @@ declare pub fn Env::of_state(
 pub(all) struct Outcome {
   state : Map[String, @tutuca.Value]?
   effects : Array[Effect]
+  /// The BINDINGS the body ended with: what it was handed, plus every `@name`
+  /// it assigned.
+  ///
+  /// Here rather than mutated in place, for the same reason `state` is. A body
+  /// runs against copies so that abandoning it costs nothing, which means an
+  /// `enrich` — whose whole output is the binds it wrote — has no other way to
+  /// hand them back. A caller that passed no binds and a body that wrote none
+  /// both get an empty map.
+  binds : Map[String, @tutuca.Value]
 } derive(Debug, Eq)
 
 ///|

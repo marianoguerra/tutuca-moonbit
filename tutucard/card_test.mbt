@@ -133,6 +133,52 @@ test "a card's instance answers the schema, so an inspector can read it" {
   h.destroy()
 }
 
+///|
+/// A list card whose loop asks the block two questions about every row.
+fn crew_card() -> String {
+  (
+    #|<script type="tutuca/state">
+    #|  state { query : String, names : Array[String] }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init { .names.push 'Ada'; .names.push 'Grace'; .names.push 'Alan' }
+    #|  pred matches {
+    #|    (empty? .query) or (contains (lower @value) (lower .query))
+    #|  }
+    #|  enrich row { @tag = $'{@key}:{@value}' }
+    #|</script>
+    #|
+    #|<template>
+    #|  <div>
+    #|    <input id="q" :value=".query" @on.input="setQuery value">
+    #|    <ul><li @each=".names" @when="matches" @enrich-with="row"><x text="@tag"></x></li></ul>
+    #|  </div>
+    #|</template>
+  )
+}
+
+///|
+test "a @when predicate and an @enrich-with both see the row" {
+  // The two are one claim: the renderer hands a filter and an enricher the
+  // row's (key, value, iterData), and a card body reads those as the BINDS
+  // `@key` / `@value` — not as parameters, which is why neither declares any.
+  // A `pred` reached as a plain callable instead read `@value` as Null, and a
+  // filter that keeps every row is the quietest possible failure.
+  let h = mount_card(crew_card(), name="Crew")
+  h.send_at_root("init")
+  assert_eq(h.texts("li"), ["0:Ada", "1:Grace", "2:Alan"])
+  h.type_into("#q", "al")
+  // The key is the ORIGINAL index, so identity survives the filter.
+  assert_eq(h.texts("li"), ["2:Alan"])
+  h.type_into("#q", "a")
+  assert_eq(h.texts("li"), ["0:Ada", "1:Grace", "2:Alan"])
+  h.type_into("#q", "zz")
+  assert_eq(h.texts("li"), [])
+  h.destroy()
+}
+
 // -- what a card refuses ----------------------------------------------------
 
 ///|

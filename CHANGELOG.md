@@ -59,6 +59,33 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A card's `@when` filter never saw the row it was judging.** A `pred` reached
+  through the Alter namespace was built as a plain callable, which binds a
+  declaration's PARAMETERS and nothing else — and a filter is written
+  `pred matches { … @value … }` with no parameters, exactly as the shipped
+  `filter` starter card and the language's own docs write it. So `@value` read
+  `Null`, `contains` said no on every row, and the filter kept everything. It
+  now goes through the same path `@enrich-with` does, where the renderer's
+  `(key, value, iterData)` arrive as the binds `@key` / `@value` / `@iter`.
+
+  The `filter` starter card also seeds itself with a `receive init` now. It had
+  no names in it, so the one card whose subject is filtering had nothing to
+  filter, and the bug above could not have been seen there anyway.
+
+- **A card's `@enrich-with` bound nothing.** An enricher hands its binds over
+  BY REFERENCE — `render/render.mbt` discards what the handler returns and
+  reads back the map it passed in — and the card runtime only returned a fresh
+  map. Every `@name` an `enrich` wrote was therefore unbound at the template,
+  which renders as a blank where a value should be. The interpreter's `Outcome`
+  now carries the binds a body ended with (it runs against copies, so there was
+  no other way to hand them back), and the card writes them into the map it was
+  given. Both are pinned by a mounted-and-driven test in `tutucard`.
+
+- **Multi-line `<pre><code>` on the site rendered as one long line.** The
+  stylesheet's `code` rule is `white-space: nowrap`, which is right for an
+  inline snippet and destroys a block: every newline collapsed and the block
+  became a horizontal scrollbar. `pre code` now restores `pre`.
+
 - **`anode`'s default parse-issue handler bypassed the warning hook.** It used
   `println` directly, two lines below a doc comment promising it warns, so a
   host that redirected `@tutuca.warn` into an error pane or the browser console
@@ -132,6 +159,28 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   could not observe it.
 
 ### Added
+
+- **A card tutorial on the landing site (`dist/cards.html`).** Six steps, six
+  live `<mb-card>` examples, each a whole file the page parses and mounts:
+  the schema on its own and the mutators it generates, the `tutuca/script`
+  block, `compute` / `pred`, lists, what a loop asks the block (`@when` and
+  `@enrich-with`), and messages. It ends with the grammar on one screen — the
+  eight declaration keywords, the statements, the five operator families and
+  the closed reading vocabulary — and with the line past which a card is a
+  component: it cannot name a MoonBit value.
+
+  The cards live in `playground/site/cards/`, so
+  `tutucard/build/check-examples.mjs` already loads every one of them through
+  the real loader and fails the build if any reports an issue. Two of the six
+  are there because writing them found bugs (see Fixed).
+
+- **`<mb-card>` sizes itself to its card, and offers a way back.** The editor
+  took a fixed 18rem whatever it held, which a page of eight examples of
+  different lengths reads badly; it now sets `rows` from the source, bounded at
+  both ends, and gives the source the larger share of the split. A **reset**
+  button appears in the bar the moment the source differs from the file that
+  was fetched, and puts that file back — an embedded example is an invitation
+  to break it, and the way back should not be a page reload.
 
 - **The card playground has a structured view.** The same card, two ways to
   look at it: `raw` is the file, and `structured` gives it a tab each for the
