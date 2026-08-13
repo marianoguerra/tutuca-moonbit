@@ -21,6 +21,8 @@ priv struct C {
   /// Which declarations the block itself makes, by name: predicates and
   /// computes are callable, and everything else is not.
   callable : Map[String, Int]
+  /// The callables a `requires` / `ensures` may name, by name and arity.
+  predicate : Map[String, Int]
   /// True inside `enrich` / `enrich_scope`, the only kinds that may assign a
   /// binding.
   mut binds_assignable : Bool
@@ -64,9 +66,17 @@ pub fn check(
   // Declaration order is only a termination proof for predicates calling
   // predicates, which is a rule for a later pass; nothing here needs order.
   let callable : Map[String, Int] = Map([])
+  // The subset a contract may name. Separate rather than a flag on the map
+  // above, because the two questions are different: "can a body apply this" is
+  // answered by every value body, and "is this a rule" only by the two kinds
+  // that declare their answer to be a yes or a no.
+  let predicate : Map[String, Int] = Map([])
   for d in decls {
-    if d.kind is (DPred | DCompute) {
+    if d.kind is (DPred | DCompute | DInvariant) {
       callable[d.name] = d.params.length()
+    }
+    if @tscript.is_predicate(d.kind) {
+      predicate[d.name] = d.params.length()
     }
   }
   let c = C::{
@@ -75,6 +85,7 @@ pub fn check(
     out: [],
     params: Map([]),
     callable,
+    predicate,
     binds_assignable: false,
     target: TUnset,
   }
@@ -126,6 +137,17 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
         self.params[p.name] = None
       }
   }
+  self.contract(d, d.requires_, "requires")
+  self.contract(d, d.ensures_, "ensures")
+  // An invariant is asked after every transition, and no two transitions carry
+  // the same arguments. There is nothing that could be passed.
+  if d.kind is DInvariant && !d.params.is_empty() {
+    self.say(
+      "INVARIANT_ARGS",
+      "an `invariant` is asked after every transition, so there is nothing to pass it — drop the parameter(s), or make it a `pred` a slot calls",
+      d.name_span,
+    )
+  }
   match d.body {
     Stmts(ss) => self.stmts(ss)
     // A `pred` answers yes or no, so its body is a CONDITION and is judged by
@@ -134,11 +156,54 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
     // is idiomatic — and a `pred` that invented a narrower rule than `@show`
     // follows would be a second truthiness to learn.
     Value(e) =>
-      if d.kind is DPred {
+      if @tscript.is_predicate(d.kind) {
         self.condition(e)
       } else {
         self.expr(e) |> ignore
       }
+  }
+}
+
+///|
+/// One contract clause: the `pred` it names has to exist, be a predicate, and
+/// take nothing.
+///
+/// Nothing to pass is the rule, not an omission. A contract is a statement
+/// about the component's STATE — what has to be true for a transition to
+/// happen, and what has to be true where it landed — and the arguments a
+/// handler was called with are already checked by the schema and by the arm's
+/// own guards. A rule that needed one of them is a rule about this dispatch
+/// rather than about the component, and `if` is where that is written.
+fn C::contract(
+  self : C,
+  d : @tscript.Decl,
+  clause : @tscript.Attach?,
+  word : String,
+) -> Unit {
+  guard clause is Some(c) else { return }
+  guard self.predicate.get(c.name) is Some(arity) else {
+    self.say(
+      "NO_PRED",
+      "`\{word} \{c.name}` names no `pred` this block declares" +
+      (match @statedef.nearest(c.name, self.predicate.keys().collect()) {
+        Some(s) => " — did you mean `\{s}`?"
+        None =>
+          if self.callable.contains(c.name) {
+            "; `\{c.name}` is a `compute`, and a contract names a `pred`, whose answer is declared to be a yes or a no"
+          } else {
+            "; declare `pred \{c.name} { … }` above `\{d.name}`"
+          }
+      }),
+      c.span,
+    )
+    return
+  }
+  if arity != 0 {
+    self.say(
+      "CONTRACT_ARGS",
+      "`\{c.name}` takes \{arity} parameter(s), and a contract is asked with none — a rule that needs an argument is about this dispatch rather than about the component, so guard it with `if` instead",
+      c.span,
+    )
   }
 }
 

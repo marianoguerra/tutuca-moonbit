@@ -264,7 +264,7 @@ fn with_script(
   }
   let methods = surface.methods.copy()
   for d in decls {
-    if d.kind is (DPred | DCompute) && !methods.contains(d.name) {
+    if d.kind is (DPred | DCompute | DInvariant) && !methods.contains(d.name) {
       methods.push(d.name)
     }
   }

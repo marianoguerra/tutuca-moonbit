@@ -1,9 +1,10 @@
-<!-- Step 8 — rules with names.
+<!-- Step 8 — rules with names, and a runtime that keeps them.
 
-     One construct covers all three: a `pred` guarding a body is a
-     PRECONDITION, a `pred` that must hold after every handler is an
-     INVARIANT, and a `pred` about one transition is a POSTCONDITION.
-     The badges below read the same two predicates the handlers do. -->
+     A `pred` names a rule. Where it ATTACHES says which of the three it is:
+     `requires` before a transition is a PRECONDITION, `ensures` after one is a
+     POSTCONDITION, and `invariant` — declared once, checked after every
+     handler — is what the component keeps. The badges below read the same
+     names the handlers do. -->
 
 <script type="tutuca/state">
   state Ledger {
@@ -28,41 +29,40 @@
   pred canPush { .here > 0 }
   pred canPull { .there > 0 }
 
-  /// The guard IS the precondition, and it needs no rollback: a body
-  /// that declines leaves the state exactly as it found it, effects
-  /// included. There is no half-move to clean up.
-  on push {
-    if canPush {
-      .here -= 1
-      .there += 1
-      .moves += 1
-    }
+  /// The guard has a NAME and sits in the header, so a reader knows when the
+  /// handler applies without reading the body. It still needs no rollback: a
+  /// precondition is asked before anything has moved.
+  on push requires canPush {
+    .here -= 1
+    .there += 1
+    .moves += 1
   }
 
-  on pull {
-    if canPull {
-      .there -= 1
-      .here += 1
-      .moves += 1
-    }
+  on pull requires canPull {
+    .there -= 1
+    .here += 1
+    .moves += 1
   }
 
-  /// INVARIANT — true before every handler and after every handler.
-  /// Nothing checks it for you; the badge below is what checks it, and
-  /// a test would assert the same name after every dispatch.
-  pred conserved {
+  /// THE INVARIANT — the component keeps this, so it is checked after every
+  /// handler above and every handler added later, including the ones that
+  /// never mention it.
+  invariant conserved {
     (.here + .there) is .total
   }
 
-  /// A cross-field rule, in the shape `implies` is here for: exactly
-  /// two operands, so there is no precedence to get wrong.
+  /// A cross-field rule, in the shape `implies` is here for: exactly two
+  /// operands, so there is no precedence to get wrong. Left as a plain `pred`
+  /// — it is read by the badge below and by nothing else, which is what a
+  /// rule looks like before you decide it is worth enforcing.
   pred emptyMeansMoved {
     (.here is 0) implies (.moves > 0)
   }
 
-  /// The button that breaks the invariant, on purpose. Nothing in the
-  /// language stops it — which is precisely why the badge is worth
-  /// having.
+  /// The button that tries to mint one out of nothing. It is refused — by a
+  /// rule it does not mention — and the refusal is reported rather than
+  /// silent. Open the console: `contract: cheat was abandoned — it broke the
+  /// invariant conserved`.
   on cheat {
     .there += 1
   }
@@ -95,7 +95,7 @@
           </button>
         </div>
         <button class="btn btn-sm btn-soft btn-error" @on.click="cheat"
-                title="mint one out of nothing">cheat</button>
+                title="refused by the invariant, and reported">cheat</button>
       </div>
       <ul class="flex flex-col gap-1 font-mono text-xs">
         <li class="flex gap-2 items-center">

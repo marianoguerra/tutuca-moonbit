@@ -177,6 +177,7 @@ pub fn kind_word(k : DeclKind) -> String {
     DResponse => "response"
     DCompute => "compute"
     DPred => "pred"
+    DInvariant => "invariant"
     DEnrich => "enrich"
     DEnrichScope => "enrichScope"
   }
@@ -191,6 +192,7 @@ fn kind_of_word(w : String) -> DeclKind? {
     "response" => Some(DResponse)
     "compute" => Some(DCompute)
     "pred" => Some(DPred)
+    "invariant" => Some(DInvariant)
     "enrich" => Some(DEnrich)
     "enrichScope" => Some(DEnrichScope)
     _ => None
@@ -201,9 +203,23 @@ fn kind_of_word(w : String) -> DeclKind? {
 /// True when a declaration's body holds statements rather than one expression.
 fn kind_takes_stmts(k : DeclKind) -> Bool {
   match k {
-    DCompute | DPred => false
+    DCompute | DPred | DInvariant => false
     _ => true
   }
+}
+
+///|
+pub fn is_transition(k : DeclKind) -> Bool {
+  k is (DOn | DReceive | DBubble | DResponse)
+}
+
+///|
+/// The kinds a `requires` or an `ensures` may name: a `pred`, and an
+/// `invariant`, which IS a pred with a role. A `compute` is not one — nothing
+/// declares that its answer is a yes or a no, and a contract whose rule might
+/// be the string "ok" is a contract that holds by accident.
+pub fn is_predicate(k : DeclKind) -> Bool {
+  k is (DPred | DInvariant)
 }
 
 ///|
@@ -282,7 +298,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     }
     _ =>
       p.fail(
-        "a declaration: on, receive, bubble, response, compute, pred, enrich or enrichScope",
+        "a declaration: on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope",
       )
   }
   guard kind_of_word(word) is Some(kind) else {
@@ -305,8 +321,78 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     }
     p.expect(TRParen, "`)` closing the parameter list")
   }
+  let (requires_, ensures_) = parse_contracts(p, kind)
   let body = parse_body(p, stmts=kind_takes_stmts(kind))
-  { kind, name, params, body, doc, span: p.since(from), name_span }
+  {
+    kind,
+    name,
+    params,
+    requires_,
+    ensures_,
+    body,
+    doc,
+    span: p.since(from),
+    name_span,
+  }
+}
+
+///|
+/// The contract clauses between a transition's name and its body.
+///
+/// Unambiguous with no lookahead into anything: what follows a declaration's
+/// name is `(`, `{`, or a clause word, and a bare name could never have been
+/// any of the other two.
+///
+/// Either order is accepted and the printer writes one — `requires` then
+/// `ensures`, the order they happen in — because a canonical form is what makes
+/// the round-trip test mean something. At most one of each: two `requires` on
+/// one handler is two rules with no name for their conjunction, and `pred
+/// canMove { canPush and notBusy }` is the spelling that gives it one.
+fn parse_contracts(
+  p : P,
+  kind : DeclKind,
+) -> (Attach?, Attach?) raise ScriptError {
+  let mut requires_ : Attach? = None
+  let mut ensures_ : Attach? = None
+  for ;; {
+    guard p.peek() is TIdent(word) && (word == "requires" || word == "ensures") else {
+      break
+    }
+    let at = p.span()
+    p.bump() |> ignore
+    // A contract states when a TRANSITION may happen and where it may land.
+    // The other kinds have no transition to state it about: an `enrich` writes
+    // bindings, and a value body is not a moment.
+    guard is_transition(kind) else {
+      raise Unexpected(
+        got="`\{word}` on `\{kind_word(kind)}`",
+        want="a contract on a transition — `on`, `receive`, `bubble` or `response`",
+        span=at,
+      )
+    }
+    let (n, ns) = p.ident("the `pred` `\{word}` names")
+    let clause : Attach = { name: n, span: ns }
+    if word == "requires" {
+      guard requires_ is None else {
+        raise Unexpected(
+          got="a second `requires`",
+          want="one `requires` — two rules become one by naming their `and` in a `pred`",
+          span=at,
+        )
+      }
+      requires_ = Some(clause)
+    } else {
+      guard ensures_ is None else {
+        raise Unexpected(
+          got="a second `ensures`",
+          want="one `ensures` — two rules become one by naming their `and` in a `pred`",
+          span=at,
+        )
+      }
+      ensures_ = Some(clause)
+    }
+  }
+  (requires_, ensures_)
 }
 
 ///|
@@ -826,7 +912,7 @@ pub fn ScriptError::message(self : ScriptError) -> String {
       "`&` names a POSITION and is legal in exactly one place: the first argument of `sendAt`"
     BadPlace(why~, ..) => why
     UnknownKind(got~, ..) =>
-      "`\{got}` is not a declaration kind — expected on, receive, bubble, response, compute, pred, enrich or enrichScope"
+      "`\{got}` is not a declaration kind — expected on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope"
     DuplicateDecl(name~, ..) =>
       "`\{name}` is declared twice in this bucket; a name is answered once, by exact match, with nothing behind it"
   }

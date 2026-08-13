@@ -280,6 +280,36 @@
     .count = n
   }
 
+  pred enoughA { .count >= 0 }
+
+  /// case 45: a precondition that holds is not in the way
+  on case45 requires enoughA {
+    .count += 1
+  }
+
+  pred enoughB { .count > 0 }
+
+  /// case 46: a precondition that does not hold declines the transition
+  on case46 requires enoughB {
+    .count += 1
+  }
+
+  pred smallA { .count > 5 }
+
+  /// case 47: a postcondition abandons the successor, and the effects with it
+  on case47 ensures smallA {
+    .count += 1
+    send 'bumped' .count
+  }
+
+  pred smallB { .count < 5 }
+
+  /// case 48: a postcondition that holds lets the effects out
+  on case48 ensures smallB {
+    .count += 1
+    send 'bumped' .count
+  }
+
   compute v0_summary { $'{.name}: {.count}' }
 
   compute v1_left { .count - (len .items) }
@@ -372,6 +402,10 @@
   <button @on.click="case41">case41</button>
   <button @on.click="case42 3">case42</button>
   <button @on.click="case44 4">case44</button>
+  <button @on.click="case45">case45</button>
+  <button @on.click="case46">case46</button>
+  <button @on.click="case47">case47</button>
+  <button @on.click="case48">case48</button>
   <ul><li @each=".items" @when="v5_named"></li></ul>
   <ul><li @each=".items" @when="v10_matches"></li></ul>
   <ul><li @each=".items" @when="v11_matches"></li></ul>

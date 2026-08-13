@@ -43,7 +43,7 @@ fn script_err(source : String) -> String {
 // -- declarations -----------------------------------------------------------
 
 ///|
-test "the eight declaration kinds" {
+test "the nine declaration kinds" {
   assert_eq(trip("on reset { .count = 0 }"), "on reset {\n  .count = 0\n}")
   assert_eq(
     trip("receive resetTo(n) { .count = n }"),
@@ -61,6 +61,10 @@ test "the eight declaration kinds" {
   assert_eq(
     trip("pred unfinished { not @value.completed }"),
     "pred unfinished { not @value.completed }",
+  )
+  assert_eq(
+    trip("invariant conserved { (.here + .there) is .total }"),
+    "invariant conserved { (.here + .there) is .total }",
   )
   assert_eq(
     trip("enrich rowInfo { @cls = 'row' }"),
@@ -96,10 +100,10 @@ test "a doc comment attaches to the declaration under it" {
 test "`when` is not a declaration kind" {
   // It is the same construct as a boolean `compute` — a name, one expression,
   // no statements — so a `pred` used in a `@when` slot says everything a
-  // `when` could. The kind list is eight rather than nine.
+  // `when` could. The kind list is nine rather than ten.
   assert_eq(
     script_err("when unfinished { not @value.completed }"),
-    "`when` is not a declaration kind — expected on, receive, bubble, response, compute, pred, enrich or enrichScope",
+    "`when` is not a declaration kind — expected on, receive, bubble, response, compute, pred, invariant, enrich or enrichScope",
   )
 }
 
@@ -520,4 +524,62 @@ test "a literal with an escape round-trips through the printer" {
   assert_eq(trip("compute v { 'a\\nb' }"), "compute v { 'a\\nb' }")
   assert_eq(trip("compute v { 'a\nb' }"), "compute v { 'a\\nb' }")
   assert_eq(trip("compute v { 'it\\'s' }"), "compute v { 'it\\'s' }")
+}
+
+// -- contracts --------------------------------------------------------------
+
+///|
+test "a contract sits between the name and the body" {
+  assert_eq(
+    trip("on push requires canPush { .here -= 1 }"),
+    "on push requires canPush {\n  .here -= 1\n}",
+  )
+  assert_eq(
+    trip("on push ensures moved { .here -= 1 }"),
+    "on push ensures moved {\n  .here -= 1\n}",
+  )
+  // Both, and with parameters, which is where the clause has to be told apart
+  // from a body: what follows a name is `(`, `{`, or a clause word.
+  assert_eq(
+    trip("receive setTo(n) requires open ensures small { .count = n }"),
+    "receive setTo(n) requires open ensures small {\n  .count = n\n}",
+  )
+  // Written in the other order, printed in the order they happen. Canonical
+  // rather than faithful, exactly as the parentheses are.
+  assert_eq(
+    trip("on push ensures moved requires canPush { .here -= 1 }"),
+    "on push requires canPush ensures moved {\n  .here -= 1\n}",
+  )
+}
+
+///|
+test "a contract attaches to a transition and to nothing else" {
+  // An `enrich` writes bindings rather than state, so there is no transition
+  // for a rule to be about — and a `compute` is a value, not a moment.
+  assert_eq(
+    script_err("enrich rowInfo requires ok { @cls = 'row' }"),
+    "expected a contract on a transition — `on`, `receive`, `bubble` or `response`, found `requires` on `enrich`",
+  )
+  assert_eq(
+    script_err("invariant conserved requires ok { .a is .b }"),
+    "expected a contract on a transition — `on`, `receive`, `bubble` or `response`, found `requires` on `invariant`",
+  )
+}
+
+///|
+test "one clause of each kind, and two rules become one by being named" {
+  assert_eq(
+    script_err("on push requires canPush requires notBusy { .here -= 1 }"),
+    "expected one `requires` — two rules become one by naming their `and` in a `pred`, found a second `requires`",
+  )
+  assert_eq(
+    script_err("on push ensures a ensures b { .here -= 1 }"),
+    "expected one `ensures` — two rules become one by naming their `and` in a `pred`, found a second `ensures`",
+  )
+  // The clause takes a NAME and not an expression: a rule spelled inline is an
+  // `if` with a second spelling, and the point of a contract is the name.
+  assert_eq(
+    script_err("on push requires (.here > 0) { .here -= 1 }"),
+    "expected the `pred` `requires` names, found `(`",
+  )
 }

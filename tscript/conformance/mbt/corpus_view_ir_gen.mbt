@@ -113,6 +113,14 @@ fn corpus_main_view_ir() -> @anode.View {
       @anode.text(" "),
       @anode.h("button", [@anode.eid(43)], [@anode.text("case44")]),
       @anode.text(" "),
+      @anode.h("button", [@anode.eid(44)], [@anode.text("case45")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(45)], [@anode.text("case46")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(46)], [@anode.text("case47")]),
+      @anode.text(" "),
+      @anode.h("button", [@anode.eid(47)], [@anode.text("case48")]),
+      @anode.text(" "),
       @anode.h("ul", [], [
         @anode.each(
           1,
@@ -250,6 +258,10 @@ fn corpus_main_view_ir() -> @anode.View {
           @anode.const_num(4.0),
         ]),
       ],
+      [@anode.on("click", HandlerName(name="case45", ns=Input))],
+      [@anode.on("click", HandlerName(name="case46", ns=Input))],
+      [@anode.on("click", HandlerName(name="case47", ns=Input))],
+      [@anode.on("click", HandlerName(name="case48", ns=Input))],
     ],
   )
 }
@@ -564,8 +576,94 @@ fn corpus_inline_update(
       let s = { ..s, count: n.to_int() }
       Next(s)
     }
+    Input("case45", _args) => {
+      guard s.count.to_double() >= 0.0 else {
+        @tutuca.precondition_failed(handler="case45", pred="enoughA")
+        return Unchanged
+      }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      Next(s)
+    }
+    Input("case46", _args) => {
+      guard s.count.to_double() > 0.0 else {
+        @tutuca.precondition_failed(handler="case46", pred="enoughB")
+        return Unchanged
+      }
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      Next(s)
+    }
+    Input("case47", _args) => {
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => {
+        ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
+      })
+      guard s.count.to_double() > 5.0 else {
+        @tutuca.postcondition_failed(handler="case47", pred="smallA")
+        return Unchanged
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
+    Input("case48", _args) => {
+      let effects : Array[() -> Unit] = []
+      let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      effects.push(() => {
+        ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
+      })
+      guard s.count.to_double() < 5.0 else {
+        @tutuca.postcondition_failed(handler="case48", pred="smallB")
+        return Unchanged
+      }
+      for f in effects {
+        f()
+      }
+      Next(s)
+    }
     _ => Unhandled
   }
+}
+
+///|
+/// `pred enoughA` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_enoughA(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() >= 0.0) : @tutuca.Value)
+}
+
+///|
+/// `pred enoughB` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_enoughB(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// `pred smallA` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_smallA(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() > 5.0) : @tutuca.Value)
+}
+
+///|
+/// `pred smallB` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_smallB(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() < 5.0) : @tutuca.Value)
 }
 
 ///|
@@ -812,6 +910,10 @@ fn corpus_inline_compute() -> Map[
   (CorpusState, Array[@tutuca.Value]) -> @tutuca.Value,
 ] {
   {
+    "enoughA": corpus_compute_enoughA,
+    "enoughB": corpus_compute_enoughB,
+    "smallA": corpus_compute_smallA,
+    "smallB": corpus_compute_smallB,
     "v0_summary": corpus_compute_v0_summary,
     "v1_left": corpus_compute_v1_left,
     "v2_over": corpus_compute_v2_over,
@@ -971,6 +1073,10 @@ pub fn corpus_component(
               Case41,
               Case42,
               Case44,
+              Case45,
+              Case46,
+              Case47,
+              Case48,
               Case5,
               Case6,
               Case7,

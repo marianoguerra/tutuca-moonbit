@@ -20,12 +20,75 @@ pub fn dispatch(
   for i, p in d.params {
     params[p.name] = args.get(i).unwrap_or(Null)
   }
-  match d.body {
-    Stmts(ss) => run(ss, { ..env, params, })
-    // A `compute` or a `pred` reached through a dispatch changes nothing; it
-    // is a value, and asking it a question is not a transition.
-    Value(_) => Outcome::nothing()
+  guard d.body is Stmts(ss) else {
+    // A `compute`, a `pred` or an `invariant` reached through a dispatch
+    // changes nothing; it is a value, and asking it a question is not a
+    // transition.
+    return Outcome::nothing()
   }
+  // THE PRECONDITION, against the state as it arrived. Nothing has moved yet,
+  // so there is nothing to undo — which is the whole reason a guard is the
+  // cheap half of a contract.
+  if d.requires_ is Some(c) && !holds(c.name, env.state, env) {
+    @tutuca.precondition_failed(handler=d.name, pred=c.name)
+    return Outcome::nothing()
+  }
+  let out = run(ss, { ..env, params, })
+  // A body that did not finish has already answered nothing, and asking a rule
+  // about a state that was never reached would report a second failure for one
+  // cause.
+  guard out.state is Some(next) else { return out }
+  // THE POSTCONDITION and THE INVARIANTS, against the successor. Abandoning
+  // here costs exactly what abandoning anywhere else in a body costs, because
+  // the successor is a fresh map and the effects are still a queue: the caller
+  // holds the state it passed in, and no `send` has gone out.
+  if d.ensures_ is Some(c) && !holds(c.name, next, env) {
+    @tutuca.postcondition_failed(handler=d.name, pred=c.name)
+    return Outcome::nothing()
+  }
+  for inv in invariants(env) {
+    if !holds(inv, next, env) {
+      @tutuca.invariant_failed(handler=d.name, pred=inv)
+      return Outcome::nothing()
+    }
+  }
+  out
+}
+
+///|
+/// The invariants the block declares, in a fixed order.
+///
+/// Read off the callables rather than passed in beside them, so a host that
+/// hands the interpreter what a block declares cannot hand it half. Sorted
+/// because a map has no order and WHICH rule broke is part of the answer: two
+/// backends that report different names for the same broken state are two
+/// backends that disagree.
+fn invariants(env : Env) -> Array[String] {
+  let names : Array[String] = []
+  for name, d in env.callables {
+    if d.kind is DInvariant {
+      names.push(name)
+    }
+  }
+  names.sort()
+  names
+}
+
+///|
+/// Whether a named rule holds over a state.
+///
+/// A name that resolves to nothing, a body that cannot finish, and a body that
+/// answers a falsy value are one answer: it does not hold. That is the
+/// conservative reading and the only one that keeps the guarantee — a contract
+/// nobody could evaluate has not been kept, and letting the transition through
+/// would make an unevaluable rule weaker than no rule at all.
+fn holds(name : String, state : Map[String, @tutuca.Value], env : Env) -> Bool {
+  guard env.callables.get(name) is Some(d) else { return false }
+  // No parameters and no bindings: a contract is a statement about state, and
+  // the checker has already said so where an author wrote otherwise.
+  let scope : Env = { ..env, state, params: Map([]), binds: Map([]) }
+  guard call(d, scope) is Some(v) else { return false }
+  v.is_truthy()
 }
 
 ///|

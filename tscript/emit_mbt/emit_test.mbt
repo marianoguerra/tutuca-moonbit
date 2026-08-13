@@ -600,3 +600,98 @@ test "an index into the target is refused, as one into the state is" {
     "writing through an index into `@cur` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
   ])
 }
+
+// -- contracts --------------------------------------------------------------
+
+///|
+test "a contract compiles into the arm, at the moment it is about" {
+  let src = body(
+    (
+      #|on bump requires enough ensures small {
+      #|  .count += 1
+      #|  send 'bumped' .count
+      #|}
+      #|pred enough { .count > 0 }
+      #|pred small { .count < 10 }
+    ),
+  )
+  // The precondition reads the state the arm arrived with, the postcondition
+  // the successor — and both are `s`, because every write rebinds it. Nothing
+  // else had to be arranged for that: the two checks are simply written at the
+  // two points where `s` already means the right thing.
+  inspect(
+    src,
+    content=(
+      #|guard (s.count.to_double() > 0.0) else {
+      #|@tutuca.precondition_failed(handler="bump", pred="enough")
+      #|return Unchanged
+      #|}
+      #|let effects : Array[() -> Unit] = []
+      #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      #|effects.push(() => ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)]))
+      #|guard (s.count.to_double() < 10.0) else {
+      #|@tutuca.postcondition_failed(handler="bump", pred="small")
+      #|return Unchanged
+      #|}
+      #|for f in effects {
+      #|f()
+      #|}
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+test "an invariant is written into every arm the block declares" {
+  let e = out(
+    (
+      #|on bump { .count += 1 }
+      #|on tag(t) { .label = t }
+      #|invariant sane { .count >= 0 }
+    ),
+  )
+  // Two arms, two checks, one rule. The `guard` is what makes it after-only:
+  // an invariant that held before the body ran held because the transition
+  // before this one was made to keep it.
+  assert_eq(
+    e.source.split("@tutuca.invariant_failed(handler=").collect().length() - 1,
+    2,
+  )
+  assert_true(
+    e.source.contains(
+      "@tutuca.invariant_failed(handler=\"bump\", pred=\"sane\")",
+    ),
+  )
+  assert_true(
+    e.source.contains(
+      "@tutuca.invariant_failed(handler=\"tag\", pred=\"sane\")",
+    ),
+  )
+  assert_eq(e.refusals.map(r => r.name), [])
+}
+
+///|
+test "an invariant is a pred with a role, and compiles as one too" {
+  // The badge in a view and the guard in an arm read the SAME declaration, so
+  // a card whose badge is green and whose handler was refused is not a state
+  // the two can be in.
+  let e = out_values(
+    (
+      #|on bump { .count += 1 }
+      #|invariant sane { .count >= 0 }
+    ),
+    methods=["sane"],
+  )
+  assert_eq(e.answers_methods, ["sane"])
+  assert_true(e.source.contains("fn counter_compute_sane("))
+}
+
+///|
+test "a contract naming a rule the block does not declare refuses its arm" {
+  // Not a silently-dropped check: the arm is refused, with the reason the
+  // author reads. A generated file that quietly kept the handler and dropped
+  // its guarantee is the outcome worth refusing over.
+  assert_eq(whys("on bump requires enough { .count += 1 }"), [
+    "`enough` is not a `pred` this block declares, so there is no rule to check",
+  ])
+}

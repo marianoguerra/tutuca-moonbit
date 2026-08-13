@@ -57,6 +57,16 @@ priv struct E {
   /// This is what lets one body call another: `compute status { if over { … } }`
   /// is a call, and a bare name is where the reader expects one.
   callables : Map[String, String]
+  /// The block's rules, name -> the one expression a `pred` or an `invariant`
+  /// is. What a `requires` / `ensures` clause resolves to, and what an arm
+  /// inlines at the two moments a contract is kept.
+  rules : Map[String, @tscript.Expr]
+  /// The `invariant` names, every one of them checked after every transition.
+  /// Sorted, because WHICH rule broke is part of the answer and the
+  /// interpreter — which reads them off a map and has no declaration order to
+  /// read — sorts too. Two backends reporting different names for the same
+  /// broken state are two backends that disagree.
+  invariants : Array[String]
   /// The temporary the active `new` bound, and its type — what `@cur` reads
   /// and writes here. None until a `new` runs, and again after a branch whose
   /// arm bound one, because a `let` inside the branch expression does not
@@ -87,6 +97,8 @@ pub fn emit(
     fail: "",
     tmp: 0,
     guards: Map([]),
+    rules: Map([]),
+    invariants: [],
     callables: Map([]),
     target: None,
     target_n: 0,
@@ -103,10 +115,24 @@ pub fn emit(
   // before the walk because declaration order is not call order: `compute
   // status { if over { … } }` may sit above the `pred` it asks.
   for d in decls {
-    if d.kind is (DPred | DCompute) && prefix != "" {
+    if d.kind is (DPred | DCompute | DInvariant) && prefix != "" {
       e.callables[d.name] = value_fn_name(prefix, RMethod, d.name)
     }
+    // The rules, by name, as EXPRESSIONS rather than as calls. A contract is
+    // compiled INTO the arm that carries it: the same `pred` asked before a
+    // body reads the state it arrived with and asked after it reads the
+    // successor, and `s` is already both of those at the two points where the
+    // check goes. Routing through the generated method instead would mean
+    // emitting a function the views never asked for, and refusing the arm when
+    // that function turned out not to compile.
+    if @tscript.is_predicate(d.kind) && d.body is Value(rule) {
+      e.rules[d.name] = rule
+      if d.kind is DInvariant {
+        e.invariants.push(d.name)
+      }
+    }
   }
+  e.invariants.sort()
   for d in decls {
     let bucket = match d.kind {
       DOn => "Input"
@@ -250,9 +276,12 @@ fn E::value_bodies(
 
   for d in decls {
     match d.kind {
-      DCompute | DPred => {
+      // An `invariant` is a `pred` with a role, and every USE a `pred` has it
+      // has too: a badge reading `$conserved` and a `@when="conserved"` are
+      // asking the rule the same question the transitions ask it.
+      DCompute | DPred | DInvariant => {
         take(d, RMethod, roles.methods, out.methods)
-        if d.kind is DPred {
+        if @tscript.is_predicate(d.kind) {
           take(d, RWhen, roles.whens, out.whens)
         }
       }
@@ -502,17 +531,91 @@ fn E::arm(
       "      guard args.get(\{i}) is Some(\{pat}) else { return Unchanged }\n",
     )
   }
+  // THE PRECONDITION, over the state as the arm received it. After the
+  // argument guards, so a `setLabel 3` is refused for its shape rather than
+  // reported as a rule that did not hold.
+  if d.requires_ is Some(c) {
+    b.write_string(
+      self.contract_guard(
+        c.name,
+        "      ",
+        "@tutuca.precondition_failed(handler=\{quote(d.name)}, pred=\{quote(c.name)})",
+      ),
+    )
+  }
   let stmts = self.stmts(body, "      ")
+  // THE POSTCONDITION and THE INVARIANTS, over the successor — which is what
+  // `s` names by the time the statements are done, since each write rebinds
+  // it. Before the flush, so a rule that does not hold leaves the queue
+  // unflushed: half a transition is what the queue exists to prevent, and a
+  // contract failing is no different from a body not finishing.
+  let after = StringBuilder::new()
+  if d.ensures_ is Some(c) {
+    after.write_string(
+      self.contract_guard(
+        c.name,
+        "      ",
+        "@tutuca.postcondition_failed(handler=\{quote(d.name)}, pred=\{quote(c.name)})",
+      ),
+    )
+  }
+  for inv in self.invariants {
+    after.write_string(
+      self.contract_guard(
+        inv,
+        "      ",
+        "@tutuca.invariant_failed(handler=\{quote(d.name)}, pred=\{quote(inv)})",
+      ),
+    )
+  }
   if stmts.contains("effects.push(") {
     b.write_string("      let effects : Array[() -> Unit] = []\n")
     b.write_string(stmts)
+    b.write_string(after.to_string())
     b.write_string("      for f in effects {\n        f()\n      }\n")
   } else {
     b.write_string(stmts)
+    b.write_string(after.to_string())
   }
   b.write_string("      Next(s)\n")
   b.write_string("    }\n")
   b.to_string()
+}
+
+///|
+/// One contract check, as a guard that reports and leaves.
+///
+/// The rule is compiled HERE rather than called, so the same `pred` written
+/// before a body and after it reads the two states `s` names at those two
+/// points. Nothing else in an arm's scope is visible to it: a rule is about
+/// state, so the arm's parameters, its bindings and whatever a `new` left in
+/// `@cur` are all put away first and handed back after.
+fn E::contract_guard(
+  self : E,
+  rule : String,
+  pad : String,
+  report : String,
+) -> String raise NoWay {
+  guard self.rules.get(rule) is Some(e) else {
+    raise Cannot(
+      "`\{rule}` is not a `pred` this block declares, so there is no rule to check",
+    )
+  }
+  let params = self.params
+  let binds = self.binds
+  let target = self.target
+  self.params = Map([])
+  self.binds = Map([])
+  self.target = None
+  // Nothing is put back on the way out of a refusal, and nothing needs to be:
+  // a refused arm is not emitted, and the next declaration is handed fresh
+  // parameters and no target before it starts.
+  let cond = self.at_bool(e)
+  let prelude = self.flush(pad)
+  self.params = params
+  self.binds = binds
+  self.target = target
+  "\{prelude}\{pad}guard \{cond} else {\n\{pad}  \{report}\n\{pad}  return Unchanged\n\{pad}}\n"
 }
 
 ///|

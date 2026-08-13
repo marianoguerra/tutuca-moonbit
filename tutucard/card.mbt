@@ -83,7 +83,9 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
         // `@on` names instead, because there the block is where the answers
         // live and here it is the script.
         inputs=names_of(decls, DOn),
-        methods=names_of(decls, DCompute) + names_of(decls, DPred),
+        methods=names_of(decls, DCompute) +
+          names_of(decls, DPred) +
+          names_of(decls, DInvariant),
         view_names=views.views.map(v => v.name),
         init_names=file.init.map(pair => pair.1.name),
       )
@@ -94,7 +96,9 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
       let bare = @tutuca.SchemaInfo::new(
         name=comp_name,
         fingerprint="",
-        methods=names_of(decls, DCompute) + names_of(decls, DPred),
+        methods=names_of(decls, DCompute) +
+          names_of(decls, DPred) +
+          names_of(decls, DInvariant),
         view_names=views.views.map(v => v.name),
       )
       // Computed from the shape rather than left blank: the fingerprint is
@@ -112,7 +116,12 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
     receives: by_kind(decls, DReceive),
     bubbles: by_kind(decls, DBubble),
     responses: by_kind(decls, DResponse),
-    callables: merge(by_kind(decls, DCompute), by_kind(decls, DPred)),
+    // An `invariant` is callable exactly as a `pred` is — a badge reading
+    // `$conserved` asks the rule the same question every transition asks it.
+    callables: merge(
+      merge(by_kind(decls, DCompute), by_kind(decls, DPred)),
+      by_kind(decls, DInvariant),
+    ),
     alters: merge(by_kind(decls, DEnrich), by_kind(decls, DEnrichScope)),
     mutators: @component.schema_mutators(schema),
     // A `new` resolves its type name against this card's own declarations, and

@@ -127,6 +127,14 @@ declare pub fn call(d : @tscript.Decl, env : Env) -> @tutuca.Value?
 /// to `Null` rather than refusing: an argument list is what a caller happened
 /// to write, and the checker is where a disagreement with the schema is
 /// reported.
+///
+/// This is where a CONTRACT is kept, because this is where a transition is:
+/// the declaration's `requires` before the body, its `ensures` and every
+/// `invariant` the block declares after it. One that does not hold answers
+/// `Outcome::nothing()` — the same nothing every other refusal answers — and
+/// reports through `@tutuca.warn`, which is the difference that matters. A
+/// state that did not move is invisible; a contract is the author saying which
+/// stillness is a bug, and the report is where that reaches a host.
 declare pub fn dispatch(
   d : @tscript.Decl,
   args : Array[@tutuca.Value],

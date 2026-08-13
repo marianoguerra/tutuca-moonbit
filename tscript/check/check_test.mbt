@@ -454,3 +454,90 @@ test "the target is not a binding an enrich can publish" {
     [],
   )
 }
+
+// -- contracts --------------------------------------------------------------
+
+///|
+test "a contract names a `pred` the block declares" {
+  assert_eq(
+    codes(
+      (
+        #|on bump requires enough { .count += 1 }
+        #|pred enough { .count > 0 }
+      ),
+    ),
+    [],
+  )
+  assert_eq(messages("on bump requires enough { .count += 1 }"), [
+    "`requires enough` names no `pred` this block declares; declare `pred enough { … }` above `bump`",
+  ])
+  // A `compute` is not a rule: nothing declares that its answer is a yes or a
+  // no, so a contract over one would hold whenever it happened to be truthy.
+  assert_eq(
+    messages(
+      (
+        #|on bump requires caption { .count += 1 }
+        #|compute caption { .name }
+      ),
+    ),
+    [
+      "`requires caption` names no `pred` this block declares; `caption` is a `compute`, and a contract names a `pred`, whose answer is declared to be a yes or a no",
+    ],
+  )
+}
+
+///|
+test "a near miss in a contract is named" {
+  assert_eq(
+    messages(
+      (
+        #|on bump requires enouhg { .count += 1 }
+        #|pred enough { .count > 0 }
+      ),
+    ),
+    [
+      "`requires enouhg` names no `pred` this block declares — did you mean `enough`?",
+    ],
+  )
+}
+
+///|
+test "a contract is asked with nothing, so its rule takes nothing" {
+  assert_eq(
+    codes(
+      (
+        #|on bump requires enough { .count += 1 }
+        #|pred enough(n) { .count > n }
+      ),
+    ),
+    ["CONTRACT_ARGS"],
+  )
+  // Same reason, from the other end: an invariant is asked after every
+  // transition, and no two transitions carry the same arguments.
+  assert_eq(codes("invariant sane(n) { .count > n }"), ["INVARIANT_ARGS"])
+}
+
+///|
+test "an invariant's body is judged as a condition, like every other rule" {
+  // `.items` is a container, and `Value::is_truthy` answers true for one
+  // unconditionally — so the rule cannot fail, which is the same finding a
+  // `@show` over a list gets.
+  assert_eq(codes("invariant sane { .items }"), ["ALWAYS_TRUE"])
+  assert_eq(codes("invariant sane { .count > 0 }"), [])
+}
+
+///|
+test "an invariant is callable, exactly as a pred is" {
+  // The badge in a view and the guard in an arm read one declaration. A block
+  // where the rule is reachable from a handler but not from a slot would be a
+  // block whose badge and whose behaviour could disagree.
+  assert_eq(
+    codes(
+      (
+        #|invariant conserved { (.count + 1) is .count }
+        #|compute status { if conserved { 'ok' } else { 'broken' } }
+      ),
+    ),
+    [],
+  )
+}

@@ -47,6 +47,54 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   shows what the strict tier looks like — and its README now says what a page
   that wants the pictures would say instead.
 
+- **Contracts: `requires`, `ensures` and `invariant`, kept by the runtime.**
+  The block language could already NAME a rule — a `pred` is the subset of
+  `compute` whose answer is declared a boolean — and `script_spec.mbt` said an
+  invariant would attach to one "later". Nothing did. So a precondition was an
+  `if` at the top of a handler, a postcondition and an invariant were a badge
+  in a view and an `assert_eq` in a test, and the tutorial step that introduced
+  all three had to end by saying nothing enforced any of them.
+
+  A rule attaches at one of three moments now, and where it attaches is what it
+  IS: `on push requires canPush { … }` is asked before the body against the
+  state as it arrived, `ensures moved` after it against the successor, and
+  `invariant conserved { … }` — the ninth declaration keyword — after every
+  transition the block declares, including the ones written later that never
+  mention it. A rule that does not hold abandons the whole transition: no
+  successor and no effects, the answer every other refusal in a body already
+  gives.
+
+  **And it reports.** That is the half that matters, and the reason this is not
+  just a tidier `if`. "The transition did not happen" is already the
+  framework's answer to everything and it is *invisible* — a state that did not
+  move looks exactly like a state that had nothing to move — so a contract is
+  the author saying which of those silences is a bug.
+  `@tutuca.precondition_failed` / `postcondition_failed` / `invariant_failed`
+  go through `warn_hook`, the same sink `mk404Handler` and the anode parse
+  issues already use, and a host redirects it into an error pane without
+  threading anything through a dispatch.
+
+  Both backends keep them, which the corpus pins: the interpreter evaluates the
+  rule and answers `Outcome::nothing()`, and `emit_mbt` compiles it INTO the
+  arm as a `guard` — before the effect queue is flushed, which is what makes
+  abandoning a postcondition cost nothing. The rule is compiled into the arm
+  rather than called as the generated method, so the same `pred` written before
+  a body and after it reads the two states `s` names at those two points.
+
+  Deliberately small, in the spirit of the rest of the grammar: a clause takes
+  a NAME (an expression there would be an `if` with a second spelling), the
+  rule it names takes no arguments (one that needs a handler's argument is
+  about that dispatch rather than about the component), one clause of each kind
+  per handler (two rules become one by naming their `and`), and there is no
+  `old` to name the state a transition started from. An `invariant` is a `pred`
+  with a role, so `$conserved` still reads from a badge and `@when` still
+  filters a row with it — and it covers what the BLOCK declares, not the
+  generated mutators a component answers by default.
+
+  Tutorial step 8 uses the syntax it introduces now, and its *cheat* button —
+  which used to exist to show a badge going red — is refused by a rule it does
+  not mention, with the reason in the console.
+
 ### Changed
 
 - **The landing page's counter card is styled by class name.** It was the one

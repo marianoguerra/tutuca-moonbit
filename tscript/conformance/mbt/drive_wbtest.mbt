@@ -56,6 +56,15 @@ fn decoded(before : Map[String, @tutuca.Value]) -> CorpusState? {
 test "the MoonBit backend agrees with the corpus" {
   let failures : Array[String] = []
   let refused : Array[String] = []
+  // A contract that does not hold reports, which is the feature and is pinned
+  // beside each backend. Here it is only noise between the rows, so the hook
+  // is held aside for the run — the generated arm calling it at all is what
+  // the emitter's own suite asserts.
+  let said = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = _ => ()
+  defer {
+    @tutuca.warn_hook.val = said
+  }
   let cases = @conformance.cases()
   for i, c in cases {
     guard case_name(i) is Some(name) else {

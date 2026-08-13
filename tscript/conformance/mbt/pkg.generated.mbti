@@ -64,6 +64,10 @@ pub(all) enum CorpusInput {
   Case41
   Case42
   Case44
+  Case45
+  Case46
+  Case47
+  Case48
   Case5
   Case6
   Case7

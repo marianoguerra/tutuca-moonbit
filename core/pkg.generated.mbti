@@ -12,7 +12,13 @@ pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
 
+pub fn invariant_failed(handler~ : String, pred~ : String) -> Unit
+
 pub fn mutator_name(String, String) -> String
+
+pub fn postcondition_failed(handler~ : String, pred~ : String) -> Unit
+
+pub fn precondition_failed(handler~ : String, pred~ : String) -> Unit
 
 pub fn size_of(Value) -> Int?
 

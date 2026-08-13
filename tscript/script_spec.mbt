@@ -18,7 +18,7 @@
 // If this block ever grows its own way to NAME a value, the design has failed.
 
 ///|
-/// The eight declaration kinds, one per bucket a component answers.
+/// The nine declaration kinds, one per bucket a component answers.
 ///
 /// `when` is deliberately absent. A `@when` filter and a boolean `compute` are
 /// the same construct — a name, one expression, no statements — and the three
@@ -38,8 +38,17 @@ pub(all) enum DeclKind {
   DCompute
   /// A named boolean. One expression, and the subset of `compute` whose
   /// return type is declared — which is what lets a condition slot be
-  /// type-checked and what an invariant would later attach to.
+  /// type-checked and what a contract attaches to.
   DPred
+  /// A `pred` the component keeps: checked after EVERY transition the block
+  /// declares, and callable from a slot like any other.
+  ///
+  /// A kind rather than a `pred` named by some ninth clause, because "after
+  /// every handler" is not a fact about a handler and has nowhere per-handler
+  /// to be written. `requires` and `ensures` attach BY NAME because what they
+  /// say is local; an invariant's attachment point is the component, so the
+  /// component's top level is where it goes.
+  DInvariant
   /// `@enrich-with` binds. Statements assigning `@name`.
   DEnrich
   DEnrichScope
@@ -55,11 +64,38 @@ pub(all) struct Param {
 } derive(Debug, Eq)
 
 ///|
-/// One declaration: a kind, a name, its parameters, and its body.
+/// A `pred` a transition attaches, by name.
+///
+/// The name and nothing else — no arguments, no expression. A clause that took
+/// an expression would be an `if` with a second spelling, and the whole value
+/// of a contract is that the rule has a NAME: the same name the badge in a view
+/// reads, the same name a test asserts, and the same name the runtime prints
+/// when the rule does not hold.
+pub(all) struct Attach {
+  name : String
+  span : Span
+} derive(Debug, Eq)
+
+///|
+/// One declaration: a kind, a name, its parameters, its contracts and its body.
 pub(all) struct Decl {
   kind : DeclKind
   name : String
   params : Array[Param]
+  /// `on push requires canPush { … }` — the `pred` asked BEFORE the body runs,
+  /// against the state as it arrived. A precondition that does not hold is a
+  /// transition that does not happen, which is the answer a declining `if`
+  /// already gives; what the clause adds is that the decline has a name, so it
+  /// can be reported instead of being another silent no-op.
+  ///
+  /// Transitions only — `on`, `receive`, `bubble`, `response`. An `enrich`
+  /// writes bindings rather than state, and a `compute` is a value.
+  requires_ : Attach?
+  /// `on push ensures moved { … }` — the `pred` asked AFTER the body ran,
+  /// against the successor. There is no way to name the state BEFORE it: a
+  /// language with no `old` is one where a postcondition is a fact about where
+  /// the transition landed, which is the half a reader can check by looking.
+  ensures_ : Attach?
   body : Body
   /// The `///` comment above it, or "".
   doc : String
@@ -76,7 +112,8 @@ pub(all) enum Body {
   /// Statements: `on` / `receive` / `bubble` / `response` / `enrich` /
   /// `enrich-scope`.
   Stmts(Array[Stmt])
-  /// One expression: `compute` / `pred`, and every body written in a slot.
+  /// One expression: `compute` / `pred` / `invariant`, and every body written
+  /// in a slot.
   Value(Expr)
 } derive(Debug, Eq)
 
@@ -292,6 +329,22 @@ declare pub fn Decl::to_source(self : Decl) -> String
 ///|
 /// Print an expression back as canonical source.
 declare pub fn Expr::to_source(self : Expr) -> String
+
+///|
+/// Whether a declaration is a TRANSITION — the four kinds that answer a
+/// dispatch by producing a successor state, and therefore the four a contract
+/// can attach to.
+///
+/// Here rather than matched separately in the checker, the interpreter and the
+/// MoonBit backend, because all three are answering the same question and a
+/// fifth kind would otherwise have to be remembered in three places.
+declare pub fn is_transition(k : DeclKind) -> Bool
+
+///|
+/// Whether a declaration is a PREDICATE — the kinds a `requires` or an
+/// `ensures` may name, and the kinds whose answer is declared to be a yes or a
+/// no.
+declare pub fn is_predicate(k : DeclKind) -> Bool
 
 ///|
 /// Print a type reference back as canonical source: `Map[String, Int]`.

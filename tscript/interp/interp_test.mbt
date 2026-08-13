@@ -30,7 +30,7 @@ fn run_one(
   let all = @tscript.parse_script(block)
   let callables : Map[String, @tscript.Decl] = Map([])
   for d in all {
-    if d.kind is (DPred | DCompute) {
+    if d.kind is (DPred | DCompute | DInvariant) {
       callables[d.name] = d
     }
   }
@@ -56,7 +56,7 @@ fn value_of(
   let all = @tscript.parse_script(block)
   let callables : Map[String, @tscript.Decl] = Map([])
   for d in all {
-    if d.kind is (DPred | DCompute) {
+    if d.kind is (DPred | DCompute | DInvariant) {
       callables[d.name] = d
     }
   }
@@ -615,4 +615,126 @@ test "the escapes a string literal carries, and the two case folds" {
   assert_eq(value_of("compute v { upper .name }", s), Some(Str("ADA LOVELACE")))
   assert_eq(value_of("compute v { lower .name }", s), Some(Str("ada lovelace")))
   assert_eq(value_of("compute v { upper 3 }", s), None)
+}
+
+// -- contracts --------------------------------------------------------------
+
+///|
+/// Run a block and answer both halves: what the transition did, and what it
+/// REPORTED. The two are one answer here — a contract that abandons a
+/// transition and says nothing would be indistinguishable from a body that had
+/// nothing to do, which is the failure the report exists to end.
+fn contracted(
+  block : String,
+  state : Map[String, @tutuca.Value],
+  args? : Array[@tutuca.Value] = [],
+) -> (Map[String, @tutuca.Value]?, Array[String]) raise {
+  let said : Array[String] = []
+  let before = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = msg => said.push(msg)
+  let out = run_one(block, state, args~)
+  @tutuca.warn_hook.val = before
+  (out.state, said)
+}
+
+///|
+test "a precondition declines the transition, and the decline has a name" {
+  let block =
+    #|on push requires canPush {
+    #|  .here -= 1
+    #|  .there += 1
+    #|}
+    #|pred canPush { .here > 0 }
+  let (moved, quiet) = contracted(block, { "here": Num(2), "there": Num(0) })
+  assert_eq(moved, Some({ "here": Num(1), "there": Num(1) }))
+  assert_eq(quiet, [])
+  // Nothing has moved yet when the rule is asked, so there is nothing to undo
+  // — and the state that comes back is the one that went in.
+  let (still, said) = contracted(block, { "here": Num(0), "there": Num(2) })
+  assert_eq(still, None)
+  assert_eq(said, [
+    "contract: `push` declined — its precondition `canPush` does not hold",
+  ])
+}
+
+///|
+test "a postcondition abandons the whole transition, effects included" {
+  let block =
+    #|on push ensures moved {
+    #|  .there += 1
+    #|  send 'moved' .there
+    #|}
+    #|pred moved { .here > .there }
+  let said : Array[String] = []
+  let before = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = msg => said.push(msg)
+  let out = run_one(block, { "here": Num(1), "there": Num(3) })
+  @tutuca.warn_hook.val = before
+  // Half a transition — nothing moved but a `send` went out — is the one
+  // outcome nobody can reason about afterwards. The queue is still a queue
+  // when the rule is asked, so the effect never leaves.
+  assert_eq(out.state, None)
+  assert_eq(out.effects.length(), 0)
+  assert_eq(said, [
+    "contract: `push` was abandoned — its postcondition `moved` does not hold after it",
+  ])
+}
+
+///|
+test "an invariant is asked after every transition the block declares" {
+  let block =
+    #|on move {
+    #|  .here -= 1
+    #|  .there += 1
+    #|}
+    #|on cheat {
+    #|  .there += 1
+    #|}
+    #|invariant conserved { (.here + .there) is .total }
+  let start : Map[String, @tutuca.Value] = {
+    "here": Num(2),
+    "there": Num(0),
+    "total": Num(2),
+  }
+  // The handler that keeps it is not asked to say so.
+  let (moved, quiet) = contracted(block, start)
+  assert_eq(moved, Some({ "here": Num(1), "there": Num(1), "total": Num(2) }))
+  assert_eq(quiet, [])
+  // The one that mints a token out of nothing is refused by a rule it never
+  // mentions — which is what "the component keeps this" means.
+  let all = @tscript.parse_script(block)
+  let callables : Map[String, @tscript.Decl] = Map([])
+  for d in all {
+    if d.kind is (DPred | DCompute | DInvariant) {
+      callables[d.name] = d
+    }
+  }
+  let said : Array[String] = []
+  let before = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = msg => said.push(msg)
+  let out = @interp.dispatch(
+    all[1],
+    [],
+    @interp.Env::of_state(start, callables~),
+  )
+  @tutuca.warn_hook.val = before
+  assert_eq(out.state, None)
+  assert_eq(said, [
+    "contract: `cheat` was abandoned — it broke the invariant `conserved`",
+  ])
+}
+
+///|
+test "a rule nobody can evaluate has not been kept" {
+  // `.missing` is not a field, so the rule answers nothing at all. Letting the
+  // transition through would make an unevaluable contract weaker than no
+  // contract, which is the one reading that cannot be right.
+  let block =
+    #|on bump requires ok {
+    #|  .count += 1
+    #|}
+    #|pred ok { .missing.deep > 0 }
+  let (state, said) = contracted(block, { "count": Num(1) })
+  assert_eq(state, None)
+  assert_eq(said.length(), 1)
 }

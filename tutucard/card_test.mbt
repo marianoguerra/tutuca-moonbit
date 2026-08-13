@@ -434,3 +434,57 @@ test "a card expands the macros its own file declares" {
   assert_eq(h.find_all("#name").length(), 1)
   h.destroy()
 }
+
+///|
+test "a card keeps its contracts, and says so when it cannot" {
+  // End to end through the real card path: the deck registers the invariant
+  // as a callable, the interpreter asks it after every transition, and the
+  // badge in the view reads the same name the runtime just refused over.
+  let card =
+    #|<script type="tutuca/state">
+    #|  state { total: Int, here: Int, there: Int }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init {
+    #|    .total = 2
+    #|    .here = 2
+    #|  }
+    #|  pred canPush { .here > 0 }
+    #|  on push requires canPush {
+    #|    .here -= 1
+    #|    .there += 1
+    #|  }
+    #|  on cheat { .there += 1 }
+    #|  invariant conserved { (.here + .there) is .total }
+    #|</script>
+    #|
+    #|<template>
+    #|  <div>
+    #|    <span id="here"><x text=".here"></x></span>
+    #|    <span id="there"><x text=".there"></x></span>
+    #|    <span id="ok"><x text="$conserved"></x></span>
+    #|    <button id="push" @on.click="push">push</button>
+    #|    <button id="cheat" @on.click="cheat">cheat</button>
+    #|  </div>
+    #|</template>
+  let said : Array[String] = []
+  let before = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = msg => said.push(msg)
+  let h = mount_card(card, name="Ledger")
+  h.send_at_root("init")
+  h.click("#push")
+  assert_eq(h.text("#here"), "1")
+  assert_eq(h.text("#there"), "1")
+  assert_eq(h.text("#ok"), "true")
+  // The handler that never mentions the rule is refused by it anyway, and the
+  // numbers say so by not moving.
+  h.click("#cheat")
+  assert_eq(h.text("#here"), "1")
+  assert_eq(h.text("#there"), "1")
+  @tutuca.warn_hook.val = before
+  assert_eq(said, [
+    "contract: `cheat` was abandoned — it broke the invariant `conserved`",
+  ])
+}

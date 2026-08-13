@@ -261,6 +261,13 @@ pub fn Decl::to_source(self : Decl) -> String {
     b.write_string(self.params.map(p => p.name).join(", "))
     b.write_char(')')
   }
+  // In the order the two moments happen, whichever order they were written in.
+  if self.requires_ is Some(c) {
+    b.write_string(" requires " + c.name)
+  }
+  if self.ensures_ is Some(c) {
+    b.write_string(" ensures " + c.name)
+  }
   match self.body {
     Value(e) => {
       b.write_string(" { ")

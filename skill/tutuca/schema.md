@@ -236,6 +236,59 @@ was the one thing that put a callable in a block whose own header says it holds
 data. `for=` names the component the way a `<template id>` does, and is needed
 only in a file that declares more than one.
 
+## Contracts (`requires` / `ensures` / `invariant`)
+
+A `pred` gives a rule about the state a **name**. Where you attach it says
+which of the three kinds of rule it is, and the runtime keeps all three:
+
+```html
+<script type="tutuca/script" for="Ledger">
+  pred canPush { .here > 0 }
+
+  /// A PRECONDITION: asked before the body, against the state as it arrived.
+  on push requires canPush {
+    .here -= 1
+    .there += 1
+  }
+
+  /// A POSTCONDITION: asked after the body, against where it landed.
+  on drain ensures empty {
+    .here = 0
+  }
+  pred empty { .here is 0 }
+
+  /// An INVARIANT: checked after EVERY transition the block declares,
+  /// including the ones written later that never mention it.
+  invariant conserved { (.here + .there) is .total }
+</script>
+```
+
+A rule that does not hold **abandons the whole transition** — no successor
+state and no effects, which is the answer every other refusal in a body already
+gives — and **reports** through `@tutuca.warn`
+(`precondition_failed` / `postcondition_failed` / `invariant_failed`). The
+report is the point: "the transition did not happen" is invisible on its own,
+and a contract is where you say which stillness is a bug. Redirect
+`@tutuca.warn_hook` to collect them in a test or route them to an error pane.
+
+Both backends keep them identically — the card interpreter evaluates the rule,
+`gen-views` compiles it into a `guard` in the generated arm, ahead of the
+effect queue's flush.
+
+Four things to know:
+
+- The clause takes a **name**, and the `pred` it names takes **no arguments**.
+  A rule that needs one of the handler's arguments is about that dispatch
+  rather than about the component; guard it with `if` inside the body.
+- At most one `requires` and one `ensures` per handler. Two rules become one by
+  naming their `and`: `pred canMove { canPush and (not .busy) }`.
+- Contracts attach to transitions only — `on`, `receive`, `bubble`,
+  `response`. An `enrich` writes bindings, and a `compute` is a value.
+- An `invariant` is a `pred` with a role, so `$conserved` still reads from a
+  view and `@when="conserved"` still filters a row. It covers the transitions
+  the **block** declares; the generated mutators a component answers by default
+  are not among them.
+
 ## Schema without templates
 
 A file may carry a schema and **no** `<template>` at all. That is how a

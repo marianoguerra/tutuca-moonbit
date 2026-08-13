@@ -240,6 +240,10 @@ pub(all) enum CorpusInput {
   Case41
   Case42
   Case44
+  Case45
+  Case46
+  Case47
+  Case48
   Case5
   Case6
   Case7
@@ -289,6 +293,10 @@ pub fn CorpusInput::name(self : CorpusInput) -> String {
     Case41 => "case41"
     Case42 => "case42"
     Case44 => "case44"
+    Case45 => "case45"
+    Case46 => "case46"
+    Case47 => "case47"
+    Case48 => "case48"
     Case5 => "case5"
     Case6 => "case6"
     Case7 => "case7"
@@ -339,6 +347,10 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
     "case41" => Some(Case41)
     "case42" => Some(Case42)
     "case44" => Some(Case44)
+    "case45" => Some(Case45)
+    "case46" => Some(Case46)
+    "case47" => Some(Case47)
+    "case48" => Some(Case48)
     "case5" => Some(Case5)
     "case6" => Some(Case6)
     "case7" => Some(Case7)
@@ -354,7 +366,7 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
 /// handler added to corpus.html breaks every `match` over this type
 /// until it is handled.
 ///
-/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case15, case16, case17, case18, case23, case24, case25, case26, case27, case28, case29, case30, case31, case32, case33, case35, case36, case37, case38, case39, case40, case41, case42.
+/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case15, case16, case17, case18, case23, case24, case25, case26, case27, case28, case29, case30, case31, case32, case33, case35, case36, case37, case38, case39, case40, case41, case42, case45, case46, case47, case48.
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum CorpusMsg {
@@ -417,7 +429,7 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
 ///|
 /// Every `$name` the views call.
 ///
-/// Absent, because the script block answers them: v0_summary, v1_left, v2_over, v3_moved, v4_named, v5_named, v6_isAda, v7_over, v7_status, v8_containsText, v9_containsText.
+/// Absent, because the script block answers them: enoughA, enoughB, smallA, smallB, v0_summary, v1_left, v2_over, v3_moved, v4_named, v5_named, v6_isAda, v7_over, v7_status, v8_containsText, v9_containsText.
 /// The block's own handlers are merged into this bucket, so an arm for one of
 /// these could never run.
 pub(all) enum CorpusMethod {
@@ -465,14 +477,15 @@ impl @component.Fields for CorpusState with fn schema() {
       "case16", "case17", "case18", "case19", "case2", "case20", "case21", "case22",
       "case23", "case24", "case25", "case26", "case27", "case28", "case29", "case3",
       "case30", "case31", "case32", "case33", "case34", "case35", "case36", "case37",
-      "case38", "case39", "case4", "case40", "case41", "case42", "case44", "case5",
-      "case6", "case7", "case8", "case9",
+      "case38", "case39", "case4", "case40", "case41", "case42", "case44", "case45",
+      "case46", "case47", "case48", "case5", "case6", "case7", "case8", "case9",
     ],
     receives=["resetTo"],
     methods=[
-      "long", "v0_summary", "v10_matches", "v11_matches", "v12_matches", "v13_firstOnly",
-      "v1_left", "v2_over", "v3_moved", "v4_named", "v5_named", "v6_isAda", "v7_over",
-      "v7_status", "v8_containsText", "v9_containsText",
+      "enoughA", "enoughB", "long", "smallA", "smallB", "v0_summary", "v10_matches",
+      "v11_matches", "v12_matches", "v13_firstOnly", "v1_left", "v2_over", "v3_moved",
+      "v4_named", "v5_named", "v6_isAda", "v7_over", "v7_status", "v8_containsText",
+      "v9_containsText",
     ],
     view_names=["main"],
   )

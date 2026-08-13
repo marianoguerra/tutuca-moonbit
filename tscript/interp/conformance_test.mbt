@@ -52,6 +52,15 @@ fn show_state(s : Map[String, @tutuca.Value]?) -> String {
 ///|
 test "the interpreter agrees with the corpus" {
   let failures : Array[String] = []
+  // The corpus exercises contracts that do not hold, and a contract that does
+  // not hold REPORTS — which is the feature. Held aside here so the rows stay
+  // readable: what a case asserts is the successor and the effects, and the
+  // wording of the report is pinned beside the interpreter instead.
+  let said = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = _ => ()
+  defer {
+    @tutuca.warn_hook.val = said
+  }
   for c in @conformance.cases() {
     let decls = @tscript.parse_script(c.script) catch {
       e => {
@@ -65,7 +74,7 @@ test "the interpreter agrees with the corpus" {
     let callables : Map[String, @tscript.Decl] = Map([])
     let mut found : @tscript.Decl? = None
     for d in decls {
-      if d.kind is (DPred | DCompute) {
+      if d.kind is (DPred | DCompute | DInvariant) {
         callables[d.name] = d
       }
       if d.kind == want_kind && d.name == c.handler {
@@ -145,7 +154,7 @@ test "the interpreter agrees with the corpus about value bodies" {
     let callables : Map[String, @tscript.Decl] = Map([])
     let mut found : @tscript.Decl? = None
     for d in decls {
-      if d.kind is (DPred | DCompute) {
+      if d.kind is (DPred | DCompute | DInvariant) {
         callables[d.name] = d
       }
       if d.name == c.callable {

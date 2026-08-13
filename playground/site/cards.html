@@ -354,34 +354,38 @@
         <h3><span class="step">Step 8</span> Invariants, pre- and postconditions</h3>
         <p>
           A <code>pred</code> is where a rule about the state gets a
-          <strong>name</strong>. That is the whole mechanism, and all three
-          kinds of rule are the same construct used at a different moment:
+          <strong>name</strong>. That is the whole mechanism, and what a rule
+          <em>is</em> depends on where you attach it:
         </p>
         <ul>
           <li>
-            <strong>Precondition</strong> — asked <em>before</em> a transition.
-            It is the <code>if</code> at the top of the handler:
-            <code>on push { if canPush { … } }</code>.
+            <strong>Precondition</strong> — <code>on push requires canPush
+            { … }</code>. Asked before the body runs, against the state as it
+            arrived. It does not hold, the transition does not happen.
           </li>
           <li>
-            <strong>Postcondition</strong> — asserted <em>after</em> one, about
-            what that particular handler was supposed to achieve.
+            <strong>Postcondition</strong> — <code>on push ensures moved
+            { … }</code>. Asked after the body ran, against where it landed.
+            About what <em>this</em> handler was supposed to achieve.
           </li>
           <li>
-            <strong>Invariant</strong> — true before <em>and</em> after every
-            handler, which is what makes it worth naming once instead of
-            restating per handler.
+            <strong>Invariant</strong> — <code>invariant conserved { … }</code>,
+            declared once at the top level, checked after <em>every</em>
+            transition the block declares, including the ones written later
+            that never mention it. That is what makes it the component's rule
+            rather than a handler's.
           </li>
         </ul>
         <mb-card src="./site/cards/tut-8-contracts.html" margaui codemirror></mb-card>
         <p>
-          The precondition needs no rollback, and that is the framework's doing
-          rather than the handler's: a body either finishes or changes nothing.
-          A statement that cannot run abandons the whole transition — the state
+          None of the three needs a rollback, and that is the framework's doing
+          rather than the contract's: a body either finishes or changes nothing.
+          A rule that does not hold abandons the whole transition — the state
           the caller passed in is still the state, and the queued effects are
-          dropped with it. So a guard that declines is indistinguishable from a
-          guard that never ran, and there is no half-move for the next handler
-          to find.
+          dropped with it, so nothing went out about a move that did not
+          happen. That is why a postcondition can be checked <em>after</em> the
+          body: by then the successor exists, but it is a fresh value nobody
+          else has seen and the <code>send</code>s are still a queue.
         </p>
         <p>
           <code>implies</code> is in the language for the shape these rules
@@ -391,20 +395,29 @@
           nobody reads the same way twice.
         </p>
         <p>
-          <strong>Be clear about what enforces them: nothing does, yet.</strong>
-          A <code>pred</code> is a name and an expression; the runtime never
-          calls one on your behalf. What you get today is that the rule is
-          written once, in the state's own vocabulary, and can be read from
-          three places — a view (the badges above are the invariant, checked on
-          every render), a handler's guard, and a test, where a card mounts on
-          the in-memory DOM through the same harness a compiled component uses
-          and the assertion after each dispatch is an ordinary
-          <code>assert_eq</code>. A <code>pred</code> is deliberately the
-          subset of <code>compute</code> whose answer is declared a boolean —
-          which is what lets a condition slot be checked, and what an invariant
-          would attach to if the language grows one. It has not; the badge is
-          the state of the art, and the <em>cheat</em> button is there to show
-          you the badge earning its place.
+          <strong>A refusal is reported, not swallowed.</strong> Press
+          <em>cheat</em>: the numbers do not move, and the console says
+          <code>contract: `cheat` was abandoned — it broke the invariant
+          `conserved`</code>. That report is the point of attaching a rule at
+          all. "The transition did not happen" is already the framework's
+          answer to everything, and it is <em>invisible</em> — a state that did
+          not move looks exactly like a state that had nothing to move. A
+          contract is you saying which of those silences is a bug, and the
+          report is where that reaches a host, through the same
+          <code>warn_hook</code> the runtime uses for every other quiet
+          failure.
+        </p>
+        <p>
+          The rule stays readable from everywhere it was before: an
+          <code>invariant</code> is a <code>pred</code> with a role, so
+          <code>$conserved</code> still works in a badge and in a
+          <code>@when</code>, and a test asserts the same name after a dispatch
+          with an ordinary <code>assert_eq</code>. Two limits worth knowing.
+          A contract takes a <em>name</em> and the rule it names takes no
+          arguments — a rule that needs one is about this dispatch rather than
+          about the component, and <code>if</code> is still where that goes.
+          And an invariant covers the transitions the <em>block</em> declares:
+          the generated setters a card answers by default are not one of them.
         </p>
       </section>
 
@@ -479,6 +492,7 @@
             <tr><td><code>response name(a)</code></td><td>statements</td><td>a case of the schema's <code>response</code></td></tr>
             <tr><td><code>compute name</code></td><td>one expression</td><td><code>$name</code> in a value slot</td></tr>
             <tr><td><code>pred name</code></td><td>one expression</td><td>a condition slot, or <code>@when</code></td></tr>
+            <tr><td><code>invariant name</code></td><td>one expression</td><td>the same, plus every transition</td></tr>
             <tr><td><code>enrich name</code></td><td>statements over <code>@binds</code></td><td><code>@enrich-with</code> inside a loop</td></tr>
             <tr><td><code>enrichScope name</code></td><td>statements over <code>@binds</code></td><td><code>@enrich-with</code> on a scope</td></tr>
           </tbody>
@@ -487,7 +501,10 @@
           A <code>///</code> comment above a declaration is its documentation
           and travels with it. There is no <code>when</code> keyword: a filter
           and a boolean <code>compute</code> are the same construct, so
-          <code>@when</code> is a <em>use</em> of a <code>pred</code>.
+          <code>@when</code> is a <em>use</em> of a <code>pred</code>. The four
+          transition kinds take contract clauses between the name and the body
+          — <code>on push requires canPush ensures moved { … }</code> — each
+          naming a <code>pred</code>, at most one of each.
         </p>
         <h4>Statements</h4>
         <pre><code>.count = 0                  assign

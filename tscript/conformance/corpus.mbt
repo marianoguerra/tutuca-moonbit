@@ -538,6 +538,57 @@ pub fn cases() -> Array[Case] {
       after: None,
       effects: [],
     },
+    // -- contracts ---------------------------------------------------------
+    //
+    // `after: None` is the whole point of these rows. A contract that does not
+    // hold produces no successor and no effects, and the two backends reach
+    // that answer by different routes — one evaluates the rule and returns
+    // `Outcome::nothing()`, the other compiled the rule into a `guard` that
+    // leaves the arm before its effect queue is flushed. A row where one of
+    // them let the transition through would be a component that behaves
+    // differently depending on how it was built, which is exactly what a
+    // corpus is for.
+    // The rule comes FIRST and the handler last, which is the projection's
+    // rule rather than the grammar's: `cmd/conformance` renames the last
+    // declaration in a case and shares the ones above it, so a rule two cases
+    // both declared under one name with two different bodies would be a clash
+    // it drops. Hence a name per case.
+    //
+    // No `invariant` row here, and the reason is the projection too: every
+    // case lands in ONE component, so a rule the component keeps would be
+    // asked after every other case's transition as well. The mechanism is the
+    // one these rows already pin — the same guard, in the same place, dropping
+    // the same queue — and that it is written into EVERY arm is pinned in
+    // `tscript/emit_mbt` and `tscript/interp` instead.
+    on_case(
+      "a precondition that holds is not in the way",
+      "pred enoughA { .count >= 0 }\non bump requires enoughA {\n  .count += 1\n}",
+      "bump",
+      after=Some(with_fields({ "count": Num(1) })),
+    ),
+    on_case(
+      "a precondition that does not hold declines the transition",
+      "pred enoughB { .count > 0 }\non bump requires enoughB {\n  .count += 1\n}",
+      "bump",
+      after=None,
+    ),
+    on_case(
+      "a postcondition abandons the successor, and the effects with it",
+      "pred smallA { .count > 5 }\non bump ensures smallA {\n  .count += 1\n  send 'bumped' .count\n}",
+      "bump",
+      after=None,
+      // Stated as none rather than omitted: the `send` is queued before the
+      // rule is asked in both backends, and a row that let it out would be
+      // half a transition.
+      effects=[],
+    ),
+    on_case(
+      "a postcondition that holds lets the effects out",
+      "pred smallB { .count < 5 }\non bump ensures smallB {\n  .count += 1\n  send 'bumped' .count\n}",
+      "bump",
+      after=Some(with_fields({ "count": Num(1) })),
+      effects=["send bumped RNum(1)"],
+    ),
   ]
 }
 
