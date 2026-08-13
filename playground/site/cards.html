@@ -101,7 +101,7 @@
           because <code>loud</code> is a <code>Bool</code>. A view calling one
           is a component that needed no handler.
         </p>
-        <mb-card src="./site/cards/tut-1-hello.html"></mb-card>
+        <mb-card src="./site/cards/tut-1-hello.html" margaui></mb-card>
         <p>
           The field's <strong>kind</strong> decides what it generates, and the
           kind is the declared type rather than a choice at the call site:
@@ -152,7 +152,7 @@
           below reads what the first one wrote, so the trail records where the
           counter <em>ended</em>.
         </p>
-        <mb-card src="./site/cards/tut-2-handlers.html"></mb-card>
+        <mb-card src="./site/cards/tut-2-handlers.html" margaui></mb-card>
         <p>
           That card also answers <code>init</code>. A card starts at the
           schema's zero — an <code>Int</code> is 0, an <code>Array</code> is
@@ -182,7 +182,7 @@
           condition slot be checked rather than merely evaluated. Neither can
           assign, so neither can be the reason a render is wrong.
         </p>
-        <mb-card src="./site/cards/tut-3-derived.html"></mb-card>
+        <mb-card src="./site/cards/tut-3-derived.html" margaui></mb-card>
         <p>
           <code>if</code> appears twice in this language and means two things.
           In a statement body it is a branch and the <code>else</code> is
@@ -210,7 +210,7 @@
           <code>on</code> handler, because two writes at two positions is
           exactly the shape no single mutator has.
         </p>
-        <mb-card src="./site/cards/tut-4-lists.html"></mb-card>
+        <mb-card src="./site/cards/tut-4-lists.html" margaui></mb-card>
         <p>
           Inside a body, a collection is written through its receiver:
           <code>.songs.push v</code> <em>is</em> <code>pushInSongs</code>, with
@@ -232,7 +232,7 @@
           that answers a question <em>about</em> the row and binds the answer
           for the template to read.
         </p>
-        <mb-card src="./site/cards/tut-5-filter.html"></mb-card>
+        <mb-card src="./site/cards/tut-5-filter.html" margaui></mb-card>
         <p>
           The reason the checkbox reads <code>@picked</code> rather than
           calling a predicate is a scoping rule worth carrying with you: a
@@ -260,7 +260,7 @@
           parent, or by the host at mount — so the schema is the only place it
           can be declared, and the only place its payload can be typed.
         </p>
-        <mb-card src="./site/cards/tut-6-messages.html"></mb-card>
+        <mb-card src="./site/cards/tut-6-messages.html" margaui></mb-card>
         <p>
           <code>send</code> is one of five effects a body may perform. They are
           the vocabulary a dynamic WebAssembly component already answers with,
@@ -300,7 +300,7 @@
           promise — <strong>a failure is a value</strong>, arriving on the same
           path as a success, at the component that asked.
         </p>
-        <mb-card src="./site/cards/tut-7-response.html"></mb-card>
+        <mb-card src="./site/cards/tut-7-response.html" margaui></mb-card>
         <p>
           That card is showing you its error path, live, with nothing mocked:
           this page registers no handler for <code>loadQuote</code>, and an
@@ -346,7 +346,7 @@
             restating per handler.
           </li>
         </ul>
-        <mb-card src="./site/cards/tut-8-contracts.html"></mb-card>
+        <mb-card src="./site/cards/tut-8-contracts.html" margaui></mb-card>
         <p>
           The precondition needs no rollback, and that is the framework's doing
           rather than the handler's: a body either finishes or changes nothing.
@@ -384,27 +384,43 @@
       <section id="styling">
         <h3>Two ways to make a card look like something</h3>
         <p>
-          Every card above carries a <code>&lt;style&gt;</code> block inside
-          its <code>&lt;template&gt;</code>. That is one of the two ways, and
-          the cheap one: the framework scopes those rules to that view, the
-          page pays nothing, and bare declarations at the top of the block
-          style the view's own root element.
-        </p>
-        <p>
-          The other way is class names. A card can use
+          Every card on this page is styled by <strong>class name</strong>.
+          None of them carries a line of CSS: the views name
           <a href="https://github.com/marianoguerra/margaui">margaui</a>'s
           component classes — <code>card</code>, <code>btn</code>,
-          <code>input</code>, <code>badge</code>, <code>join</code> — and the
-          Tailwind utilities beside them, and this element compiles them in
-          your browser: the mounted card publishes the class names its views
-          used, and a ~0.5 MB wasm build of the same compiler the CLI's
-          <code>gen-margaui-css</code> uses turns them into CSS.
+          <code>input</code>, <code>badge</code>, <code>join</code>,
+          <code>stats</code> — with Tailwind utilities beside them, and the
+          page compiles them in your browser. The mounted card publishes the
+          class names its views used, and a ~0.5 MB wasm build of the same
+          compiler the CLI's <code>gen-margaui-css</code> uses turns them into
+          CSS.
         </p>
         <mb-card src="./site/cards/tut-9-styles.html" margaui></mb-card>
         <p>
-          It is opt-in — <code>&lt;mb-card src="…" margaui&gt;</code> — because
-          a card that styles itself should not make a page fetch a compiler.
-          Two consequences worth knowing if you embed one. The CSS is
+          The other way needs nothing at all. A <code>&lt;template&gt;</code>
+          may hold a <code>&lt;style&gt;</code> block, which the framework
+          scopes to that view — so its rules cannot reach another component,
+          and bare declarations at the top of the block style the view's own
+          root element:
+        </p>
+        <pre><code>&lt;template&gt;
+  &lt;style&gt;
+    display: grid;      /* the root element */
+    gap: .6rem;
+    .row { display: flex; }
+  &lt;/style&gt;
+  &lt;div class="row"&gt;…&lt;/div&gt;
+&lt;/template&gt;</code></pre>
+        <p>
+          Which to reach for is the ordinary question: a class list buys you a
+          design system and costs a compiler, a <code>&lt;style&gt;</code>
+          block costs nothing and buys you what you write. The compiler is
+          opt-in for exactly that reason —
+          <code>&lt;mb-card src="…" margaui&gt;</code>, and a page whose cards
+          style themselves never fetches it.
+        </p>
+        <p>
+          Two things worth knowing if you embed one. The CSS is
           <strong>scoped to the preview</strong>: margaui's stylesheet carries
           Tailwind's preflight and a <code>:root</code> theme, so injected as
           written it would not style the card, it would flatten the page around

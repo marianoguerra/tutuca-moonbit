@@ -55,29 +55,21 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: grid;
-    gap: .6rem;
-
-    input { width: 100%; box-sizing: border-box;
-            font: inherit; padding: .4rem; }
-    .meter { height: .4rem; border-radius: .2rem; background: #2a7; }
-    .meter.over { background: #c33; }
-    .count { margin: 0; font: .8rem ui-monospace, monospace; }
-    .count.over { color: #c33; }
-  </style>
-  <div>
-    <input :value=".text" @on.input="setText value"
-           placeholder="write something and watch the numbers move">
-    <div @if.class="$over" @then="'meter over'" @else="'meter'"
-         :style="$bar"></div>
-    <p @if.class="$over" @then="'count over'" @else="'count'">
-      <x text="$status"></x>
-    </p>
-    <p @show="$over">
-      <strong>trim it</strong> — the same predicate hid this line
-      a moment ago
-    </p>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <input class="input input-sm w-full" :value=".text"
+             @on.input="setText value"
+             placeholder="write something and watch the numbers move">
+      <div @if.class="$over" @then="'h-2 rounded bg-error'"
+           @else="'h-2 rounded bg-success'" :style="$bar"></div>
+      <p @if.class="$over" @then="'font-mono text-sm text-error'"
+         @else="'font-mono text-sm opacity-70'">
+        <x text="$status"></x>
+      </p>
+      <div class="alert alert-warning" @show="$over">
+        <span>trim it — the same predicate hid this line
+              a moment ago</span>
+      </div>
+    </div>
   </div>
 </template>

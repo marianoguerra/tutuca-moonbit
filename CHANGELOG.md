@@ -8,12 +8,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **Cards can be styled with margaui, and the starter cards now are.** The card
-  runtime always collected the class names a mounted card uses — nothing ever
-  compiled them, so a card saying `class="btn btn-primary"` rendered as an
+- **Cards can be styled with margaui, and every card that ships now is.** The
+  card runtime always collected the class names a mounted card uses — nothing
+  ever compiled them, so a card saying `class="btn btn-primary"` rendered as an
   unstyled button and the four starter cards, written for margaui from the
   start, looked like markup. The card playground compiles them now, and an
   embedded card opts in with `<mb-card src="…" margaui>`.
+
+  The card tutorial's nine examples are written in margaui too, `<style>`
+  blocks and all replaced by class lists — `card`, `btn`, `input`, `badge`,
+  `join`, `stats`, `alert`, `range`. Its styling section keeps the other route
+  in a snippet rather than a card, because a view's own scoped `<style>` is
+  still the answer for anything a design system does not have a name for.
 
   The compiler is the one that already existed: `margaui.wasm`, the wasm-gc
   build of `@css.compile_margaui` the other playground ships, fetched lazily on

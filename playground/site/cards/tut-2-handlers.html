@@ -54,33 +54,30 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: grid;
-    gap: .6rem;
-
-    .row { display: flex; gap: .4rem; align-items: center; }
-    .now { margin: 0; font-size: 2rem;
-           font-variant-numeric: tabular-nums; }
-    .trail { display: flex; flex-wrap: wrap; gap: .3rem;
-             list-style: none; margin: 0; padding: 0; }
-    .trail li { font: .75rem ui-monospace, monospace; opacity: .7; }
-  </style>
-  <div>
-    <p class="now" @text=".count"></p>
-    <p class="row">
-      <button @on.click="step 1">+</button>
-      <button @on.click="step -1">−</button>
-      <button @on.click="undo">undo</button>
-    </p>
-    <label class="row">
-      step
-      <input type="range" min="1" max="10" :value=".step"
-             @on.input="pickStep valueAsInt">
-      <x text=".step"></x>
-    </label>
-    <ul class="trail">
-      <li @each=".trail"><x text="@value"></x></li>
-    </ul>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <p class="text-4xl tabular-nums" @text=".count"></p>
+      <div class="join">
+        <button class="btn btn-sm join-item"
+                @on.click="step 1">+</button>
+        <button class="btn btn-sm join-item"
+                @on.click="step -1">−</button>
+        <button class="btn btn-sm join-item btn-ghost"
+                @on.click="undo">undo</button>
+      </div>
+      <label class="flex gap-2 items-center">
+        <span class="opacity-70">step</span>
+        <input type="range" class="range range-sm" min="1" max="10"
+               :value=".step" @on.input="pickStep valueAsInt">
+        <span class="badge badge-sm badge-neutral">
+          <x text=".step"></x>
+        </span>
+      </label>
+      <ul class="flex gap-1 flex-wrap">
+        <li class="badge badge-sm badge-ghost" @each=".trail">
+          <x text="@value"></x>
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

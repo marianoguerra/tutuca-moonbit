@@ -69,46 +69,52 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: grid;
-    gap: .6rem;
-
-    .row { display: flex; gap: .4rem; align-items: center; }
-    .cols { display: flex; gap: 1.5rem; font-variant-numeric: tabular-nums; }
-    .cols b { font-size: 1.6rem; display: block; }
-    .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
-    .rule { display: flex; gap: .5rem; align-items: baseline;
-            font: .8rem ui-monospace, monospace; }
-    .rule .holds { padding: 0 .4rem; border-radius: .3rem;
-                   background: #e7f6ee; color: #1b7f4f; }
-    .rule .broken { padding: 0 .4rem; border-radius: .3rem;
-                    background: #fdecea; color: #b3261e; }
-  </style>
-  <div>
-    <p class="cols">
-      <span>here<b @text=".here"></b></span>
-      <span>there<b @text=".there"></b></span>
-      <span>moves<b @text=".moves"></b></span>
-    </p>
-    <p class="row">
-      <button @on.click="push">here → there</button>
-      <button @on.click="pull">there → here</button>
-      <button @on.click="cheat" title="mint one out of nothing">cheat</button>
-    </p>
-    <ul class="rules">
-      <li class="rule">
-        <span @if.class="$conserved" @then="'holds'" @else="'broken'">
-          <x text="$conserved"></x>
-        </span>
-        conserved: here + there is total
-      </li>
-      <li class="rule">
-        <span @if.class="$emptyMeansMoved" @then="'holds'" @else="'broken'">
-          <x text="$emptyMeansMoved"></x>
-        </span>
-        emptyMeansMoved: here is 0 implies moves &gt; 0
-      </li>
-    </ul>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <div class="stats bg-base-100">
+        <div class="stat">
+          <div class="stat-title">here</div>
+          <div class="stat-value text-2xl" @text=".here"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">there</div>
+          <div class="stat-value text-2xl" @text=".there"></div>
+        </div>
+        <div class="stat">
+          <div class="stat-title">moves</div>
+          <div class="stat-value text-2xl" @text=".moves"></div>
+        </div>
+      </div>
+      <div class="flex gap-2 items-center flex-wrap">
+        <div class="join">
+          <button class="btn btn-sm join-item" @on.click="push">
+            here → there
+          </button>
+          <button class="btn btn-sm join-item" @on.click="pull">
+            there → here
+          </button>
+        </div>
+        <button class="btn btn-sm btn-soft btn-error" @on.click="cheat"
+                title="mint one out of nothing">cheat</button>
+      </div>
+      <ul class="flex flex-col gap-1 font-mono text-xs">
+        <li class="flex gap-2 items-center">
+          <span @if.class="$conserved"
+                @then="'badge badge-sm badge-success'"
+                @else="'badge badge-sm badge-error'">
+            <x text="$conserved"></x>
+          </span>
+          conserved: here + there is total
+        </li>
+        <li class="flex gap-2 items-center">
+          <span @if.class="$emptyMeansMoved"
+                @then="'badge badge-sm badge-success'"
+                @else="'badge badge-sm badge-error'">
+            <x text="$emptyMeansMoved"></x>
+          </span>
+          emptyMeansMoved: here is 0 implies moves &gt; 0
+        </li>
+      </ul>
+    </div>
   </div>
 </template>

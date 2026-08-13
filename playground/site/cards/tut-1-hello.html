@@ -12,30 +12,26 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: grid;
-    gap: .6rem;
-
-    label { display: flex; gap: .4rem; align-items: center; }
-    .say { margin: 0; font-size: 1.3rem; }
-    .shout { text-transform: uppercase; letter-spacing: .05em; }
-  </style>
-  <div>
-    <label>
-      your name
-      <input :value=".name" @on.input="setName value"
-             placeholder="type here">
-    </label>
-    <label>
-      <input type="checkbox" :checked=".loud" @on.click="toggleLoud">
-      shout it
-    </label>
-    <p @if.class=".loud" @then="'say shout'" @else="'say'">
-      hello, <x text=".name"></x>
-    </p>
-    <p @show="empty? .name">
-      <em>the greeting follows what you type</em>
-    </p>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <label class="flex gap-2 items-center">
+        <span class="opacity-70">your name</span>
+        <input class="input input-sm w-full" :value=".name"
+               @on.input="setName value" placeholder="type here">
+      </label>
+      <label class="flex gap-2 items-center">
+        <input type="checkbox" class="checkbox checkbox-sm"
+               :checked=".loud" @on.click="toggleLoud">
+        <span class="opacity-70">shout it</span>
+      </label>
+      <p @if.class=".loud"
+         @then="'text-xl font-bold uppercase tracking-widest'"
+         @else="'text-xl'">
+        hello, <x text=".name"></x>
+      </p>
+      <p class="opacity-60 italic" @show="empty? .name">
+        the greeting follows what you type
+      </p>
+    </div>
   </div>
 </template>

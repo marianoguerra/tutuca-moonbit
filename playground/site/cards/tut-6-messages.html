@@ -59,31 +59,27 @@
 </script>
 
 <template>
-  <style>
-    font-family: system-ui;
-    display: grid;
-    gap: .6rem;
-
-    .row { display: flex; gap: .4rem; align-items: center; }
-    .reading { margin: 0; font-size: 1.6rem;
-               font-variant-numeric: tabular-nums; }
-    .reading.away { opacity: .55; }
-    .log { list-style: none; margin: 0; padding: 0;
-           max-height: 6rem; overflow: auto;
-           font: .75rem ui-monospace, monospace; opacity: .7; }
-  </style>
-  <div>
-    <p @if.class="$isAway" @then="'reading away'" @else="'reading'">
-      <x text="$reading"></x>
-    </p>
-    <p class="row">
-      <button @on.click="cooler">−</button>
-      <button @on.click="warmer">+</button>
-      <button @on.click="away" @hide="$isAway">away</button>
-      <button @on.click="home" @show="$isAway">home</button>
-    </p>
-    <ul class="log">
-      <li @each=".log"><x text="@value"></x></li>
-    </ul>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <p @if.class="$isAway" @then="'text-3xl tabular-nums opacity-50'"
+         @else="'text-3xl tabular-nums'">
+        <x text="$reading"></x>
+      </p>
+      <div class="flex gap-2 items-center">
+        <div class="join">
+          <button class="btn btn-sm join-item"
+                  @on.click="cooler">−</button>
+          <button class="btn btn-sm join-item"
+                  @on.click="warmer">+</button>
+        </div>
+        <button class="btn btn-sm btn-ghost" @on.click="away"
+                @hide="$isAway">away</button>
+        <button class="btn btn-sm btn-primary" @on.click="home"
+                @show="$isAway">home</button>
+      </div>
+      <ul class="max-h-24 overflow-auto font-mono text-xs opacity-70">
+        <li @each=".log"><x text="@value"></x></li>
+      </ul>
+    </div>
   </div>
 </template>
