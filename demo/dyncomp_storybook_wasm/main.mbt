@@ -30,6 +30,7 @@ fn samples() -> Array[@shell.LoaderBarSample] {
   [
     { label: "slack", url: "./examples/slack.tutuca.tar.gz" },
     { label: "bluesky", url: "./examples/bluesky.tutuca.tar.gz" },
+    { label: "mastodon", url: "./examples/mastodon.tutuca.tar.gz" },
     { label: "counter", url: "./examples/counter.tutuca.tar.gz" },
     { label: "todo", url: "./examples/todo.tutuca.tar.gz" },
     { label: "todomvc", url: "./examples/todomvc.tutuca.tar.gz" },

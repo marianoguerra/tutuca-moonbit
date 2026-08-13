@@ -6,6 +6,57 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **`guests/mastodon` — the fediverse as a `tutuca:component` bundle: one post
+  (`Status`), its poll (`Poll`), a conversation (`Thread`), a feed (`Timeline`)
+  and an account (`Profile`), styled after mastodon.social/explore.** It is
+  `guests/bluesky`'s sibling on purpose: the same job, the same policy, the
+  other big open network — and reading the two together is what shows that the
+  boundary is a shape rather than a special case, because Mastodon pushes
+  against it in three places bluesky never touches.
+
+  **The rich text has to be found before it can be cut.** ATProto hands a reader
+  facets — byte ranges with a kind — so bluesky only slices on them. Mastodon
+  hands a reader `content`, which is HTML, and no tier may emit markup. So this
+  guest scans the plain text for `#tag`, `@mention` and `https://…` itself, and
+  then links a run only when the record's own `tags` / `mentions` confirm it:
+  `@bob` links when the server resolved it, `@nobody` beside it stays text. Only
+  a server knows which of those shapes is an account rather than somebody's
+  email address, and a viewer that guessed would be inventing links into the
+  fediverse out of punctuation. A link is shortened the way Mastodon shortens
+  one — no scheme, cut at 30 with an ellipsis, which is exactly what the
+  `invisible` / `ellipsis` spans in its own HTML do — with the whole url in the
+  tooltip, because its origin belongs to whoever posted it.
+
+  **Federation turns out not to need more origins.** A federated timeline holds
+  posts from every server there is, so naming their picture hosts as literals
+  looks impossible — until you notice that an instance PROXIES what it
+  federates: a remote account's avatar is re-served from
+  `files.mastodon.social` under `/cache/`. So this bundle spends
+  `cap-external-urls` on the same two-origin shape bluesky uses
+  (`files.mastodon.social` for every picture, `mastodon.social` for every link),
+  and one host really does draw the whole timeline. The one thing proxying does
+  not fix is a remote post's permalink, which is a page on the server that holds
+  it — so that stays selectable text, exactly as a posted link does.
+  `@shell.sample_policy` grants the two, so both demo pages show it.
+
+  **And a poll share is an element rather than a stylesheet.** An untrusted view
+  has no `style`, so a bar cannot be a width. bluesky draws a reply indent as N
+  spacer elements because HTML has nothing that means "indent" — but it does
+  have something that means "a fraction of a whole", and `value` is neither a
+  network nor a CSS sink, so `<progress :value max="100">` needed nothing
+  reopened for it.
+
+  Two smaller things the harness pins because the tempting implementation gets
+  them wrong: `Timeline` builds its rows ONCE and filters among them, so a
+  favourite survives typing in the search box (rebuilding from the matching
+  records would throw away everything the reader did), and a `Poll` owns which
+  option is picked rather than letting an option own it, because one choice
+  un-picks the previous one and moves every share.
+
+  `dyncomp/test/mastodon-harness.test.mjs` drives all five over the contract.
+
 ## [0.17.0] - 2026-08-13
 
 ### Added

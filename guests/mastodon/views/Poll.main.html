@@ -1,0 +1,19 @@
+<div class="flex flex-col gap-2 rounded-lg border border-base-300 bg-base-200/40 p-3 masto-poll" :title="$summary">
+  <div class="flex flex-col gap-2 options">
+    <div class="flex flex-col gap-1 option" @each=".optionItems">
+      <button class="flex cursor-pointer items-center gap-2 text-left text-sm hover:text-indigo-500 option-button" @on.click="vote @key">
+        <span class="shrink-0 text-indigo-500 chosen" @show="truthy? @value.chosen" aria-hidden="true">✓</span>
+        <span class="shrink-0 text-base-content/40 unchosen" @hide="truthy? @value.chosen" aria-hidden="true">○</span>
+        <span class="grow font-semibold title" @show="truthy? @value.leading" @text="@value.title"></span>
+        <span class="grow title" @hide="truthy? @value.leading" @text="@value.title"></span>
+        <span class="shrink-0 tabular-nums text-xs text-base-content/60 share" @show="truthy? @value.showResults" @text="@value.shareLabel"></span>
+      </button>
+      <progress class="progress progress-primary h-1.5 w-full bar" @show="truthy? @value.showResults" :value="@value.share" max="100"></progress>
+    </div>
+  </div>
+  <div class="flex flex-wrap items-center gap-2 text-xs text-base-content/60 foot">
+    <span class="total" @show=".showResults" @text=".totalLabel"></span>
+    <span class="pick" @hide=".showResults" @text=".openLabel"></span>
+    <span class="state" @show="truthy? .stateLabel" @text=".stateLabel"></span>
+  </div>
+</div>

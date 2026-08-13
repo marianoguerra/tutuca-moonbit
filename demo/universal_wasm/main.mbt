@@ -73,6 +73,7 @@ fn samples() -> Array[@shell.LoaderBarSample] {
     { label: "calculator", url: "./examples/calculator.tutuca.tar.gz" },
     { label: "tic-tac-toe", url: "./examples/tictactoe.tutuca.tar.gz" },
     { label: "bluesky", url: "./examples/bluesky.tutuca.tar.gz" },
+    { label: "mastodon", url: "./examples/mastodon.tutuca.tar.gz" },
     { label: "slack", url: "./examples/slack.tutuca.tar.gz" },
     { label: "table", url: "./examples/table.tutuca.tar.gz" },
     { label: "rust temp", url: "./examples/rust-tempconv.tutuca.tar.gz" },

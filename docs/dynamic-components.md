@@ -219,12 +219,12 @@ still the bundle's to write, so grant the origins you meant and read
 `SECURITY.md` §3 before passing an empty list, which means any `https://`
 origin.
 
-The `bluesky` and `slack` guests are what that looks like from the other side:
-between them they name five origins — the Bluesky CDN and `bsky.app`, and the
-three hosts a Slack profile picture comes from — and both demo pages grant
-exactly those (`@shell.sample_policy`). Neither one can pick an origin at
-runtime, so the list of hosts either bundle can reach is a thing you read off
-its views.
+The `bluesky`, `mastodon` and `slack` guests are what that looks like from the
+other side: between them they name seven origins — the Bluesky CDN and
+`bsky.app`, Mastodon's media host and `mastodon.social`, and the three hosts a
+Slack profile picture comes from — and both demo pages grant exactly those
+(`@shell.sample_policy`). None of them can pick an origin at runtime, so the list
+of hosts any of these bundles can reach is a thing you read off its views.
 
 The two open rows are open on purpose and are marked as such in the code. If
 you host untrusted bundles today, they are what to think about.
@@ -245,6 +245,12 @@ number in prose is the half that stops being true):
 - **bluesky** — the same line drawn around a reader of other people's records:
   `cap-external-urls` for pictures off the Bluesky CDN and links into
   `bsky.app`, with the initials disc still underneath every avatar
+- **mastodon** — the same job on a FEDERATED network, which moves the line
+  somewhere else: the rich text has to be found in plain text and then checked
+  against the record's own `tags` / `mentions` (Mastodon's `content` is HTML, and
+  no tier may emit markup), one picture origin still covers every server because
+  an instance proxies what it federates, and a poll share is a `<progress value>`
+  rather than a width no untrusted view could set
 - **todo**, **todomvc**, **tictactoe** — collections
 - **calculator** — state the declared fields do not name
 - **rust-tempconv** — the polyglot proof: the same WIT, no tutuca code at all,

@@ -1,0 +1,11 @@
+<div class="flex max-w-xl flex-col masto-timeline">
+  <header class="flex flex-wrap items-center gap-2 rounded-t-xl border border-base-300 bg-base-100 px-4 py-3">
+    <span class="text-indigo-500" aria-hidden="true">↗</span>
+    <span class="font-bold title" @text=".title"></span>
+    <span class="text-xs text-base-content/50 count" @text="$countLabel"></span>
+    <input type="search" placeholder="Search this timeline…" class="input input-bordered input-xs ml-auto w-40 search" :value=".query" @on.input="setQuery value">
+    <button @if.class=".mediaOnly" @then="'rounded-full border border-indigo-500 px-2 text-xs cursor-pointer text-indigo-500 media-only'" @else="'rounded-full border border-base-300 px-2 text-xs cursor-pointer hover:border-indigo-500 hover:text-indigo-500 media-only'" @on.click="toggleMediaOnly" @text="$mediaLabel"></button>
+  </header>
+  <div class="divide-y divide-base-300 rounded-b-xl border-x border-b border-base-300 bg-base-100 rows" @hide=".isEmpty"><x render-each=".rows"></x></div>
+  <p class="rounded-b-xl border-x border-b border-base-300 bg-base-100 px-4 py-6 text-center text-sm italic text-base-content/60 empty" @show=".isEmpty">Nothing here.</p>
+</div>

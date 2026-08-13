@@ -801,7 +801,7 @@ pub fn plan(name : String) -> Array[Step]? {
 fn moonbit_guests() -> Array[String] {
   [
     "counter", "table", "todo", "todomvc", "calculator", "tictactoe", "bluesky",
-    "slack",
+    "mastodon", "slack",
   ]
 }
 

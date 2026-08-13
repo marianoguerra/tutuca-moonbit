@@ -220,6 +220,13 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
 /// - `cdn.bsky.app` — every picture the bluesky reader draws: an avatar, a
 ///   profile banner, an attached image's thumbnail.
 /// - `bsky.app` — where its links go: a profile, a hashtag, a permalink.
+/// - `files.mastodon.social` — every picture the mastodon reader draws, and one
+///   host is enough for a FEDERATED timeline because the server proxies what it
+///   federates: a remote account's avatar is re-served from there under
+///   `/cache/`.
+/// - `mastodon.social` — where its links go: a profile (remote ones included,
+///   since that server renders them at its own address), a hashtag, and the
+///   permalink of a status that is local to it.
 /// - `ca.slack-edge.com`, `avatars.slack-edge.com`, `secure.gravatar.com` — the
 ///   three hosts a Slack profile picture actually comes from.
 ///
@@ -233,7 +240,8 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
 /// decide, per bundle, which is what the capability is for.
 pub fn sample_policy() -> @policy.Policy {
   @policy.Policy::untrusted().allowing_external_urls([
-    "https://cdn.bsky.app", "https://bsky.app", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
+    "https://cdn.bsky.app", "https://bsky.app", "https://files.mastodon.social",
+    "https://mastodon.social", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
     "https://secure.gravatar.com",
   ]) catch {
     // Unreachable: every entry above is a literal origin. Refusing to grant is
