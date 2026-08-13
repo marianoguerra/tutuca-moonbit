@@ -9,15 +9,29 @@
 /// Two things make this port different from the JS one, and both come from the
 /// bundle being UNTRUSTED wasm rather than app code:
 ///
-///   1. **No `src`, no `href`, no `style`.** An untrusted bundle's views may
-///      not name a browser network or CSS sink (`dyncomp/policy`'s view
-///      authority rule), because what a dynamic attribute will hold is
-///      unknowable when the view is registered. So an avatar is the author's
-///      initials in a circle, an image is its alt text on a chip, and a link
-///      is its text with the target in the tooltip. Nothing is hidden — the
-///      permalink and every facet target are on the page as text — but nothing
-///      here can make the page fetch, either. That is the whole trade, and it
-///      is why this bundle loads on a stock host with no policy decision.
+///   1. **Two origins, and they are written in the views.** An untrusted
+///      bundle's views may not name a browser network or CSS sink
+///      (`dyncomp/policy`'s view authority rule), because what a dynamic
+///      attribute will hold is unknowable when the view is registered. What CAN
+///      be known is the ORIGIN, when the view states it as a literal — so this
+///      bundle asks for `cap-external-urls` and spends it on exactly two:
+///      `cdn.bsky.app` for the pictures and `bsky.app` for the links. Both are
+///      literals in the markup and neither is ever a value, which is why a host
+///      can read this bundle's whole network reach off its views.
+///
+///      What the guest supplies is only the PATH. An avatar, a banner and a
+///      thumbnail arrive as the full urls the API hands out and are read back
+///      through `cdn_path`, which keeps the part after the CDN and refuses
+///      everything else: a picture hosted anywhere but that CDN is not drawn,
+///      and the initials underneath it are what shows. The same split decides
+///      the links — a mention, a hashtag and the permalink are `bsky.app` paths
+///      and navigate, while a link somebody POSTED points wherever they chose,
+///      so it stays text with its target in the tooltip. An image is still its
+///      alt text when the record carries no thumbnail.
+///
+///      A host that does not grant the capability refuses this bundle whole
+///      rather than loading a degraded one, which is the bargain every
+///      capability here makes. `dyncomp/SECURITY.md` §3 is the rest of it.
 ///   2. **No clock.** `env.now-ms` needs `cap-clock`, and a bundle that asks
 ///      for a capability is refused by every page that has not thought about
 ///      the question (see `examples/dyncomp-dice`). A timestamp is therefore
@@ -49,6 +63,18 @@ priv struct Facet {
 }
 
 ///|
+/// One attached image: what it says it is, and where its thumbnail lives.
+///
+/// Both halves are kept because both get drawn: the thumbnail when the CDN in
+/// the view serves it, the alt text on a chip when it does not.
+priv struct Img {
+  alt : String
+  /// The record's `thumb`, as it arrived — a full url. `cdn_path` is what
+  /// decides whether any of it can be drawn.
+  thumb : String
+}
+
+///|
 /// One message. `Post` holds one of these, `Thread` a flattened tree of them
 /// and `Profile` the account's recent ones, so the projection helpers below
 /// are written once and used by all three.
@@ -58,14 +84,40 @@ priv struct Msg {
   handle : String
   text : String
   created_at : String
+  /// The author's picture, as the full url the API hands out.
+  avatar : String
   facets : Array[Facet]
-  /// Alt texts — the only half of an image this bundle is allowed to show.
-  images : Array[String]
+  images : Array[Img]
   replies : Int
   reposts : Int
   likes : Int
   /// Reply depth in a thread; 0 for a message standing on its own.
   depth : Int
+}
+
+///|
+/// The one origin this bundle's pictures come from, with the `/` that ends it.
+///
+/// The trailing slash is the whole check rather than a tidiness: without it
+/// `https://cdn.bsky.app.attacker.test/x` and `https://cdn.bsky.app@attacker.test/x`
+/// both pass a prefix test, and both are somebody else's host. It is the same
+/// boundary the host insists on when it reads the origin off the view
+/// (`dyncomp/policy/external_url.mbt`), spelled here so the two agree.
+const CDN = "https://cdn.bsky.app/"
+
+///|
+/// What is left of a url once the CDN is taken off the front, or `""` for a
+/// url anywhere else — including a relative one, which is a request to the
+/// HOST's origin and not this bundle's to make.
+///
+/// This is the guest's half of `cap-external-urls`: the view names the origin,
+/// this decides that the record's url is actually ON it, and what crosses
+/// between them is a path. A picture that fails the test is not drawn at all,
+/// and drawing nothing is a state the views already have — it is what a record
+/// with no picture gets.
+fn cdn_path(url : String) -> String {
+  guard url.has_prefix(CDN) else { return "" }
+  url[CDN.length():].to_owned()
 }
 
 // ── reading the host's values ────────────────────────────────────────────────
@@ -119,16 +171,40 @@ fn facets_of(items : Array[@values.Value]) -> Array[Facet] {
 }
 
 ///|
-fn alts_of(items : Array[@values.Value]) -> Array[String] {
-  let out : Array[String] = []
+/// The attached images. A bare string is an alt text and no picture, which is
+/// the shape the fixtures were written in before there was a picture to have.
+fn images_of(items : Array[@values.Value]) -> Array[Img] {
+  let out : Array[Img] = []
   for v in items {
     match v {
-      @values.Value::Text(s) => out.push(s)
-      @values.Value::Map(m) => out.push(str_at(m, "alt"))
+      @values.Value::Text(s) => out.push({ alt: s, thumb: "" })
+      @values.Value::Map(m) =>
+        out.push({ alt: str_at(m, "alt"), thumb: str_at(m, "thumb") })
       _ => ()
     }
   }
   out
+}
+
+///|
+/// The images as they arrived, which is what a host reads back when it
+/// projects the field.
+fn images_value(images : Array[Img]) -> @values.Value {
+  vlist(
+    images.map(i => vmap([("alt", vtext(i.alt)), ("thumb", vtext(i.thumb))])),
+  )
+}
+
+///|
+/// The images as a VIEW reads them: the alt text, and the path the thumbnail
+/// is at on the CDN the view names — empty for a record that carries none, or
+/// one whose picture is somewhere this bundle cannot reach.
+fn image_items_value(images : Array[Img]) -> @values.Value {
+  vlist(
+    images.map(i => {
+      vmap([("alt", vtext(i.alt)), ("path", vtext(cdn_path(i.thumb)))])
+    }),
+  )
 }
 
 ///|
@@ -142,8 +218,9 @@ fn msg_of(m : UInt64, depth? : Int = 0) -> Msg {
     handle: str_at(m, "handle"),
     text: str_at(m, "text"),
     created_at: str_at(m, "createdAt"),
+    avatar: str_at(m, "avatar"),
     facets: facets_of(items_at(m, "facets")),
-    images: alts_of(items_at(m, "images")),
+    images: images_of(items_at(m, "images")),
     replies: int_at(m, "replyCount"),
     reposts: int_at(m, "repostCount"),
     likes: int_at(m, "likeCount"),
@@ -197,11 +274,6 @@ fn vlist(items : Array[@values.Value]) -> @values.Value {
 }
 
 ///|
-fn vtexts(items : Array[String]) -> @values.Value {
-  vlist(items.map(vtext))
-}
-
-///|
 /// A message back in the shape it arrived in — what the host reads when it
 /// projects a declared list field to JSON, and what it hands back on a
 /// hot-swap migration. The inverse of `msg_of`.
@@ -212,6 +284,7 @@ fn msg_value(m : Msg) -> @values.Value {
     ("handle", vtext(m.handle)),
     ("text", vtext(m.text)),
     ("createdAt", vtext(m.created_at)),
+    ("avatar", vtext(m.avatar)),
     (
       "facets",
       vlist(
@@ -225,7 +298,7 @@ fn msg_value(m : Msg) -> @values.Value {
         }),
       ),
     ),
-    ("images", vlist(m.images.map(a => vmap([("alt", vtext(a))])))),
+    ("images", images_value(m.images)),
     ("replyCount", vnum(m.replies)),
     ("repostCount", vnum(m.reposts)),
     ("likeCount", vnum(m.likes)),
@@ -255,9 +328,14 @@ fn utf8_len(c : Char) -> Int {
 /// One run of the message text: plain, or the visible half of a facet.
 priv struct Seg {
   text : String
-  /// Where the facet points, as text. Nothing here can turn it into an
-  /// `href` (see the module doc), so it is shown as the run's tooltip.
+  /// Where the facet points, as text — the run's tooltip either way, and all a
+  /// segment that cannot navigate has.
   target : String
+  /// The bsky.app PATH this run points at, for the two kinds whose target is
+  /// on bsky.app: a mention and a hashtag. `""` for a link, whose origin is
+  /// whatever the person who posted it typed, so the view has no literal to
+  /// pin it to.
+  path : String
   /// "text" | "link" | "mention" | "tag"
   kind : String
 }
@@ -302,13 +380,26 @@ fn slice(chars : Array[Char], from : Int, to : Int) -> String {
 }
 
 ///|
-/// Where a facet points, spelled the way bsky.app spells it. Not a link —
-/// text, and the tooltip of the run it belongs to.
+/// Where a facet points, spelled the way bsky.app spells it. The tooltip of
+/// the run it belongs to, and for a link the only thing it has: the origin
+/// belongs to whoever posted it, so no view can name it.
 fn facet_target(kind : String, value : String) -> String {
   match kind {
     "link" => value
     "mention" => "bsky.app/profile/\{value}"
     "tag" => "bsky.app/hashtag/\{value}"
+    _ => ""
+  }
+}
+
+///|
+/// The same target as a bsky.app path, which is the half a view can turn into
+/// a link. A link facet has none, deliberately.
+fn facet_path(kind : String, value : String) -> String {
+  guard value != "" else { return "" }
+  match kind {
+    "mention" => "profile/\{value}"
+    "tag" => "hashtag/\{value}"
     _ => ""
   }
 }
@@ -347,11 +438,17 @@ fn segments_of(text : String, facets : Array[Facet]) -> Array[Seg] {
       continue
     }
     if from > cursor {
-      segs.push({ text: slice(chars, cursor, from), target: "", kind: "text" })
+      segs.push({
+        text: slice(chars, cursor, from),
+        target: "",
+        path: "",
+        kind: "text",
+      })
     }
     segs.push({
       text: slice(chars, from, to),
       target: facet_target(f.kind, f.value),
+      path: facet_path(f.kind, f.value),
       kind: f.kind,
     })
     cursor = to
@@ -360,6 +457,7 @@ fn segments_of(text : String, facets : Array[Facet]) -> Array[Seg] {
     segs.push({
       text: slice(chars, cursor, chars.length()),
       target: "",
+      path: "",
       kind: "text",
     })
   }
@@ -367,12 +465,17 @@ fn segments_of(text : String, facets : Array[Facet]) -> Array[Seg] {
 }
 
 ///|
+/// The runs as a view reads them. `external` is the third state the two
+/// booleans a view can ask for do not cover on their own: a run that points
+/// somewhere and cannot be followed, which is a link somebody posted.
 fn segments_value(m : Msg) -> @values.Value {
   vlist(
     segments_of(m.text, m.facets).map(s => {
       vmap([
         ("text", vtext(s.text)),
         ("target", vtext(s.target)),
+        ("path", vtext(s.path)),
+        ("external", @values.Value::Boolean(s.target != "" && s.path == "")),
         ("kind", vtext(s.kind)),
       ])
     }),
@@ -530,9 +633,11 @@ fn scaled(n : Int, unit : Int, suffix : String) -> String {
 }
 
 ///|
-/// `at://did/app.bsky.feed.post/rkey` as the permalink a person can copy.
-/// Text, not a link — see the module doc.
-fn permalink_of(uri : String, handle : String) -> String {
+/// `at://did/app.bsky.feed.post/rkey` as the bsky.app PATH the record is at —
+/// `profile/<who>/post/<rkey>`, which the view puts under its own literal
+/// origin. `""` for a uri that is not a post: there is no permalink to offer,
+/// and offering one built out of a shrug would be worse than none.
+fn permalink_path_of(uri : String, handle : String) -> String {
   guard uri.has_prefix("at://") else { return "" }
   let chars : Array[Char] = uri.iter().collect()
   let parts : Array[String] = []
@@ -548,7 +653,20 @@ fn permalink_of(uri : String, handle : String) -> String {
     return ""
   }
   let who = if handle != "" { handle } else { parts[0] }
-  "bsky.app/profile/\{who}/post/\{parts[2]}"
+  "profile/\{who}/post/\{parts[2]}"
+}
+
+///|
+/// The same permalink as the text a person reads and can select, which is what
+/// the link says on the page. The origin is spelled out here because it is
+/// prose; the `href` beside it gets the origin from the view.
+fn permalink_of(uri : String, handle : String) -> String {
+  let path = permalink_path_of(uri, handle)
+  if path == "" {
+    ""
+  } else {
+    "bsky.app/\{path}"
+  }
 }
 
 ///|
@@ -611,8 +729,9 @@ impl DynComponent for Post with fn get_field(self, name) {
     "handle" => Some(vtext(m.handle))
     "text" => Some(vtext(m.text))
     "createdAt" => Some(vtext(m.created_at))
+    "avatar" => Some(vtext(m.avatar))
     "facets" => Some(facets_value(m.facets))
-    "images" => Some(vlist(m.images.map(a => vmap([("alt", vtext(a))]))))
+    "images" => Some(images_value(m.images))
     "replyCount" => Some(vnum(m.replies))
     "repostCount" => Some(vnum(m.reposts))
     "likeCount" => Some(vnum(m.likes))
@@ -628,13 +747,19 @@ impl DynComponent for Post with fn get_field(self, name) {
     "name" => Some(vtext(name_of(m)))
     "handleText" => Some(vtext(at_handle(m.handle)))
     "initials" => Some(vtext(initials_of(m.display_name, m.handle)))
+    // The picture's path on the CDN the view names, and "" for an author with
+    // no picture or one hosted somewhere else. The view draws the initials
+    // UNDER the image rather than instead of it, so both of those, and a fetch
+    // that fails after all of this, land on the same disc.
+    "avatarPath" => Some(vtext(cdn_path(m.avatar)))
     "time" => Some(vtext(time_label(m.created_at)))
     "segments" => Some(segments_value(m))
-    "imageAlts" => Some(vtexts(m.images))
+    "imageItems" => Some(image_items_value(m.images))
     "replies" => Some(vtext(count_label(m.replies)))
     "reposts" => Some(vtext(count_label(m.reposts + bump(self.reposted))))
     "likes" => Some(vtext(count_label(m.likes + bump(self.liked))))
     "permalink" => Some(vtext(permalink_of(m.uri, m.handle)))
+    "permalinkPath" => Some(vtext(permalink_path_of(m.uri, m.handle)))
     // The indent, as a list of that many things to draw. An untrusted view has
     // no `style` attribute to put a margin in — so the depth arrives as rails
     // the view iterates, which needs no CSS the guest wrote.
@@ -733,6 +858,8 @@ impl DynComponent for Post with fn with_field(self, name, v) {
       Some({ ..self, msg: { ..m, text: s } } as &DynComponent)
     ("createdAt", @values.Value::Text(s)) =>
       Some({ ..self, msg: { ..m, created_at: s } } as &DynComponent)
+    ("avatar", @values.Value::Text(s)) =>
+      Some({ ..self, msg: { ..m, avatar: s } } as &DynComponent)
     ("facets", @values.Value::List(h)) =>
       Some(
         { ..self, msg: { ..m, facets: facets_of(list_items(h)) } }
@@ -740,7 +867,7 @@ impl DynComponent for Post with fn with_field(self, name, v) {
       )
     ("images", @values.Value::List(h)) =>
       Some(
-        { ..self, msg: { ..m, images: alts_of(list_items(h)) } }
+        { ..self, msg: { ..m, images: images_of(list_items(h)) } }
         as &DynComponent,
       )
     ("replyCount", @values.Value::Number(n)) =>
@@ -775,6 +902,7 @@ fn empty_msg() -> Msg {
     handle: "",
     text: "",
     created_at: "",
+    avatar: "",
     facets: [],
     images: [],
     replies: 0,
@@ -802,10 +930,11 @@ fn make_post(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("handle", @values.Value::Text(s)) => msg = { ..msg, handle: s }
       ("text", @values.Value::Text(s)) => msg = { ..msg, text: s }
       ("createdAt", @values.Value::Text(s)) => msg = { ..msg, created_at: s }
+      ("avatar", @values.Value::Text(s)) => msg = { ..msg, avatar: s }
       ("facets", @values.Value::List(h)) =>
         msg = { ..msg, facets: facets_of(list_items(h)) }
       ("images", @values.Value::List(h)) =>
-        msg = { ..msg, images: alts_of(list_items(h)) }
+        msg = { ..msg, images: images_of(list_items(h)) }
       ("replyCount", @values.Value::Number(n)) =>
         msg = { ..msg, replies: n.to_int() }
       ("repostCount", @values.Value::Number(n)) =>
@@ -844,8 +973,9 @@ fn child_args(
     ("handle", vtext(m.handle)),
     ("text", vtext(m.text)),
     ("createdAt", vtext(m.created_at)),
+    ("avatar", vtext(m.avatar)),
     ("facets", facets_value(m.facets)),
-    ("images", vlist(m.images.map(a => vmap([("alt", vtext(a))])))),
+    ("images", images_value(m.images)),
     ("replyCount", vnum(m.replies)),
     ("repostCount", vnum(m.reposts)),
     ("likeCount", vnum(m.likes)),
@@ -1152,6 +1282,12 @@ priv struct Profile {
   display_name : String
   handle : String
   description : String
+  /// The account's picture and the strip behind it, as the full urls the API
+  /// hands out. Both are read back through `cdn_path`, and both fall back to
+  /// what was drawn before there were pictures: the initials, and a flat band
+  /// of `base-200`.
+  avatar : String
+  banner : String
   followers : Int
   follows : Int
   posts_count : Int
@@ -1186,6 +1322,8 @@ impl DynComponent for Profile with fn get_field(self, name) {
     "displayName" => Some(vtext(self.display_name))
     "handle" => Some(vtext(self.handle))
     "description" => Some(vtext(self.description))
+    "avatar" => Some(vtext(self.avatar))
+    "banner" => Some(vtext(self.banner))
     "followersCount" => Some(vnum(self.followers))
     "followsCount" => Some(vnum(self.follows))
     "postsCount" => Some(vnum(self.posts_count))
@@ -1195,6 +1333,8 @@ impl DynComponent for Profile with fn get_field(self, name) {
     "name" => Some(vtext(display_name_or(self.display_name, self.handle)))
     "handleText" => Some(vtext(at_handle(self.handle)))
     "initials" => Some(vtext(initials_of(self.display_name, self.handle)))
+    "avatarPath" => Some(vtext(cdn_path(self.avatar)))
+    "bannerPath" => Some(vtext(cdn_path(self.banner)))
     "followersLabel" =>
       Some(vtext(count_label(self.followers + bump(self.following))))
     "followsLabel" => Some(vtext(count_label(self.follows)))
@@ -1245,6 +1385,10 @@ impl DynComponent for Profile with fn with_field(self, name, v) {
       Some({ ..self, handle: s } as &DynComponent)
     ("description", @values.Value::Text(s)) =>
       Some({ ..self, description: s } as &DynComponent)
+    ("avatar", @values.Value::Text(s)) =>
+      Some({ ..self, avatar: s } as &DynComponent)
+    ("banner", @values.Value::Text(s)) =>
+      Some({ ..self, banner: s } as &DynComponent)
     ("followersCount", @values.Value::Number(n)) =>
       Some({ ..self, followers: n.to_int() } as &DynComponent)
     ("followsCount", @values.Value::Number(n)) =>
@@ -1276,6 +1420,8 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
   let mut display_name = ""
   let mut handle = ""
   let mut description = ""
+  let mut avatar = ""
+  let mut banner = ""
   let mut followers = 0
   let mut follows = 0
   let mut posts_count = 0
@@ -1287,6 +1433,8 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       ("displayName", @values.Value::Text(s)) => display_name = s
       ("handle", @values.Value::Text(s)) => handle = s
       ("description", @values.Value::Text(s)) => description = s
+      ("avatar", @values.Value::Text(s)) => avatar = s
+      ("banner", @values.Value::Text(s)) => banner = s
       ("followersCount", @values.Value::Number(n)) => followers = n.to_int()
       ("followsCount", @values.Value::Number(n)) => follows = n.to_int()
       ("postsCount", @values.Value::Number(n)) => posts_count = n.to_int()
@@ -1300,6 +1448,8 @@ fn make_profile(args : Array[(String, @values.Value)]) -> &DynComponent {
       display_name,
       handle,
       description,
+      avatar,
+      banner,
       followers,
       follows,
       posts_count,

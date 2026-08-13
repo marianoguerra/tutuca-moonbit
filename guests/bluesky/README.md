@@ -24,23 +24,41 @@ node --test dyncomp/test/bluesky-harness.test.mjs
 This is a viewer for someone else's records, which makes it the guest where the
 policy boundary shows up in the OUTPUT rather than in a doc:
 
-- **No `src`, `href` or `style`.** `dyncomp/policy`'s view-authority rule refuses
-  those attribute names outright for an Untrusted bundle, because what a dynamic
-  attribute will hold is unknowable when the view is registered. So an avatar is
-  the author's initials in a circle, an attached image is its alt text on a
-  chip, a link is its text with the target as the tooltip, and the permalink is
-  text you can select. Nothing is hidden — every facet target is on the page —
-  and nothing here can make the page fetch.
+- **Two origins, and they are written in the views.** `dyncomp/policy`'s
+  view-authority rule refuses `src`, `href` and `style` outright for an
+  Untrusted bundle, because what a dynamic attribute will hold is unknowable
+  when the view is registered. What CAN be known is the ORIGIN, when the view
+  states it as a literal — so this bundle asks for `cap-external-urls` and
+  spends it on exactly two: `cdn.bsky.app` for the pictures, `bsky.app` for the
+  links.
 
-  A page that WANTS the pictures can say so:
-  `Policy::untrusted().allowing_external_urls(["https://cdn.bsky.app"])` grants
-  `cap-external-urls`, which reopens `src` on `<img>` and `href` on `<a>` for
-  URLs whose origin is a literal in the view — `<img :src="$'https://cdn.bsky.app/img/avatar/plain/{.did}/{.cid}@jpeg'">`
-  is allowed, `<img :src=".avatar">` still is not, because the second one lets
-  this bundle pick the origin. This viewer does not use it: it is the guest that
-  shows what the strict tier looks like, and a reader that draws initials is the
-  point rather than a limitation to route around. What the capability costs is
-  in `dyncomp/SECURITY.md` §3.
+  ```html
+  <!-- allowed: the origin is settled before anything runs -->
+  <img :src="$'https://cdn.bsky.app/{.avatarPath}'" alt="">
+  <!-- refused: this bundle would be picking the origin -->
+  <img :src=".avatar">
+  ```
+
+  What crosses from the guest is therefore only a PATH. An avatar, a banner and
+  a thumbnail arrive as the full urls the API hands out and are read back
+  through `cdn_path`, which keeps what follows the CDN and refuses everything
+  else — so a picture hosted anywhere but that CDN is not drawn. The links split
+  the same way and for the same reason: a mention, a hashtag and the permalink
+  are `bsky.app` paths and navigate, while a link somebody POSTED points
+  wherever they chose, so it stays styled text with its target in the tooltip.
+  An image with no thumbnail is still its alt text on a chip.
+
+  **The fallback is a layer, not a branch.** The `<img>` sits over the initials
+  disc rather than replacing it, so an author with no picture, a picture on an
+  origin no view names, and a fetch that fails anyway all show the same two
+  letters. An untrusted view has no `onerror` to write and does not need one.
+
+  A host that does not grant the capability refuses this bundle whole rather
+  than loading a version of it that draws half of itself — the bargain every
+  capability here makes, and the reason the manifest states its reason. Both
+  demo pages grant exactly the origins above (`@shell.sample_policy`). What the
+  grant costs — an image is a GET the guest chose, so an allowed origin is an
+  origin that can be told things — is in `dyncomp/SECURITY.md` §3.
 - **No indentation attribute either**, which is why a row's `depth` arrives in
   the view as a `rail` list: that many spacer elements to draw, since a
   `style="margin-left:…"` is exactly the sink the rule refuses.
@@ -50,18 +68,22 @@ policy boundary shows up in the OUTPUT rather than in a doc:
   `data-theme`, which is what makes the light and dark variants free — plus a
   fixed `sky-500` for links and the focal ring, since atproto-wc keeps its
   accent the same in both themes.
-- **No clock.** `env.now-ms` needs `cap-clock`, and a bundle that asks for a
-  capability is refused by every page that has not decided about it (the
-  reasoning is written out in `examples/dyncomp-dice`). A timestamp is therefore
-  formatted from the record's own `createdAt` — "11 Aug 2026, 14:03" — instead
-  of the "2h ago" nobody here can compute.
+- **No clock**, and the difference from the pictures is the point. `env.now-ms`
+  needs `cap-clock`, and what a clock buys a reader is "2h ago" instead of a
+  date it already has — a second capability for a nicer phrasing of something
+  it can already say. A timestamp is therefore formatted from the record's own
+  `createdAt`, "11 Aug 2026, 14:03", and the one capability this bundle does
+  ask for is the one whose absence it cannot work around.
 - **No writes.** Liking, reposting and following move a flag locally and `emit`
   a bubble (`liked`, `reposted`, `followed`, …). Whoever holds the component is
   the one that can turn that into an `app.bsky.feed.like` record; the counts
   stay split, so the number the record arrived with is never edited.
 
-The result asks for nothing, so a stock host loads it with no policy decision
-from anybody — which is the trade this guest exists to show.
+The result asks for one capability, spends it on two origins a host can read off
+the views, and does without everything else. That is the trade this guest exists
+to show: not that an untrusted bundle needs nothing — this one draws other
+people's pictures, so it does — but that what it needs can be small enough to
+check by looking.
 
 ## The three components
 

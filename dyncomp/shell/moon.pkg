@@ -25,6 +25,7 @@ import {
   "marianoguerra/tutuca/css",
   "marianoguerra/tutuca/vdom/wasm" @wdom,
   "marianoguerra/tutuca/dyncomp/host/wasm" @dhw,
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/registry",
   // the generated *_view_gen.mbt modules derive @debug.Debug on their
   // vocabulary enums

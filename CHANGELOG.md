@@ -8,6 +8,53 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **The two readers spend `cap-external-urls`, and the capability stops being
+  theoretical.** 0.16 shipped it with the guest that motivated it still drawing
+  initials — the reasoning was that a reader which cannot fetch is the point,
+  and that was the right call for a capability nobody had used yet. It has been
+  used now, by the two bundles whose whole subject is other people's records,
+  and what it looks like in practice is smaller than the doc made it sound.
+
+  `bluesky` names two origins: `cdn.bsky.app` for an avatar, a profile banner
+  and an attached image's thumbnail, and `bsky.app` for the links — a mention, a
+  hashtag, a permalink. `slack` names the three a profile picture actually comes
+  from (`ca.slack-edge.com`, `avatars.slack-edge.com`, `secure.gravatar.com`),
+  one `<img>` each, because a bundle that named only the first would draw
+  initials for half a real channel. Every one of the five is a literal in a
+  view, so the list of hosts either bundle can reach is a thing you read rather
+  than a thing you trust.
+
+  The guests supply only the PATH. An avatar arrives as the full url the API
+  hands out and goes through `cdn_path` / `avatar_path`, which keep what follows
+  a known origin and refuse everything else — including, deliberately,
+  `https://cdn.bsky.app.attacker.test/…` and `https://cdn.bsky.app@attacker.test/…`,
+  the two that pass a prefix test written without the trailing slash. A picture
+  anywhere else is simply not drawn.
+
+  **And the fallback is a layer rather than a branch.** The `<img>` sits over
+  the initials disc instead of replacing it, so a record with no picture, one
+  hosted where no view points, and one whose fetch fails after all of that land
+  on the same two letters. An untrusted view has no `onerror` to write and turns
+  out not to need one — which is the sort of thing that only shows up once
+  somebody uses the capability for real.
+
+  What did NOT change is the line the guests draw around it. A link somebody
+  POSTED still cannot be an `href` in either bundle: its origin was chosen by
+  whoever wrote the message, so no view can name it, and it stays styled text
+  with its target in the tooltip (slack keeps emitting `openLink`). That is the
+  same rule as the avatar, not an exception to it — the difference is who picked
+  the origin.
+
+  Both demo pages grant exactly those five origins through the new
+  `@shell.sample_policy`, beside `sample_host_requests` and for the same reason:
+  two pages ship the same archives, so two copies of an answer about the network
+  are two copies that can drift. The tier is untouched — still `untrusted`, no
+  clock, no timer, no entropy, no bundle CSS — and the doc comment says what a
+  DROPPED bundle gets out of the grant, because it gets it too. Verified in a
+  browser rather than by reading: 22 of 28 message avatars load, the six that do
+  not show initials, and the bluesky cards draw a banner, an avatar and a
+  thumbnail off the CDN with the permalink a working link.
+
 - **Three more starter cards: `file-picker`, `styles` and `contracts`.** Two of
   them exist because 0.16 made them possible and one because the selector had a
   hole in it.

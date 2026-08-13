@@ -10,7 +10,7 @@ reader ([`at-foc/src/components.js`][foc]) onto the dynamic-component contract
 The shared reference for how a MoonBit guest is laid out, built and packed is
 [`../counter/README.md`](../counter/README.md); this one differs only in what it
 computes. What is worth reading here is the part of the contract it exists to
-exercise, and the two places the contract said no.
+exercise, and what the policy boundary did to the rest.
 
 | component | what it is |
 | --- | --- |
@@ -43,7 +43,7 @@ and `times`, parallel to the tokens — and filters and orders those. That is th
 opaque-state model seen from the inside: the host cannot look into an instance,
 and neither can the component that made it.
 
-## Two places the contract said no
+## Where the contract said no, and the one place it said "name it first"
 
 **No `href`.** An untrusted bundle may not use a network sink attribute
 (`dyncomp/policy/view_authority.mbt`), so a link segment is styled text that
@@ -51,11 +51,32 @@ and neither can the component that made it.
 here `ChannelHistory` catches it, stops the bubble, and says so in its footer. A
 real host would open it, or ask first.
 
-**No avatar image.** The same rule that forbids `href` forbids naming an image
-source, so `Message` draws the avatar the only way an untrusted bundle can: up
-to two initials on a coloured disc, one letter per word. `bluesky/Post` does the
-same thing by the same rule, and the two deliberately agree — a host drawing a
-Slack card beside a Bluesky one must not draw two different kinds of disc.
+**An avatar, from three named origins.** The same rule refuses `src` too — but
+what it cannot know ahead of time is the VALUE, not the ORIGIN, and a view that
+writes its origin as a literal has settled that much before anything runs. So
+`Message` asks for `cap-external-urls` and spends it on the three hosts a Slack
+profile picture actually comes from: `ca.slack-edge.com`, `avatars.slack-edge.com`
+and `secure.gravatar.com`, one `<img>` each, all three readable in
+`views/Message.main.html`. `avatar_path` keeps only what follows one of them, so
+a picture hosted anywhere else is not drawn.
+
+That is not a contradiction of the `href` case above, it is the other side of
+it. What a message LINKS to was chosen by whoever wrote it, and no view can
+name it; what it loads as an avatar was chosen by Slack, and a view can. The
+capability is exactly the difference.
+
+The initials stay: the `<img>` is drawn OVER the disc rather than instead of
+it, so a message with no picture, one hosted somewhere the view does not name,
+and one whose fetch fails all show the same two letters — up to two, one per
+word. An untrusted view has no `onerror` to write and does not need one.
+`bluesky/Post` layers the same way and takes its initials by the same rule, and
+the two deliberately agree: a host drawing a Slack card beside a Bluesky one
+must not draw two different kinds of disc.
+
+A page that does not grant the capability refuses this bundle whole rather than
+loading one that draws half of itself. Both demo pages grant those three origins
+plus the bluesky reader's two (`@shell.sample_policy`); what a grant costs is in
+`dyncomp/SECURITY.md` §3.
 
 **No global CSS.** The original hides replies, reactions and channel badges with
 three `globalStyle` rules (`.hide-replies .msg-foot { display: none }`). There is
@@ -64,9 +85,11 @@ not ported. Doing it inside the contract means pushing the flags down with
 `control.send-at`, the way `expandAll` already does — which is a real
 implementation rather than a workaround, just a bigger one than three CSS rules.
 
-**No clock.** `capabilities` is empty. Timestamps are data the message arrived
-with, and `timeLabel` slices `"…T09:12:00Z"` down to `"09:12"` — reading a string
-you already hold is not a fact about the world.
+**No clock.** `capabilities` asks for the pictures and nothing else. Timestamps
+are data the message arrived with, and `timeLabel` slices `"…T09:12:00Z"` down
+to `"09:12"` — reading a string you already hold is not a fact about the world,
+and a capability that only bought a nicer phrasing would not be worth asking a
+host for.
 
 ## The `margauiClasses` view
 

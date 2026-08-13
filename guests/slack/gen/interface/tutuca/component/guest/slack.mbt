@@ -24,7 +24,13 @@
 ///      (`dyncomp/policy/view_authority.mbt`), so a link segment is styled
 ///      text that EMITS `openLink` instead of navigating. Whoever is above
 ///      decides what a URL means; here `ChannelHistory` catches it and says so
-///      in its footer.
+///      in its footer. That is still true of a POSTED link, and it is why the
+///      avatar is a different case rather than the same one: what a message
+///      links to is chosen by whoever wrote it, and what an avatar loads is
+///      chosen by Slack. So this bundle asks for `cap-external-urls` and spends
+///      it on the three origins Slack actually serves a profile picture from,
+///      each written as a literal in `Message`'s view — see `avatar_path` and
+///      the README.
 ///
 /// The declaration and views live in manifest.json and views/; sdk.mbt handles
 /// the generated ABI declarations.
@@ -396,6 +402,10 @@ fn make_reaction(args : Array[(String, @values.Value)]) -> &DynComponent {
 priv struct Message {
   id : String
   author : String
+  /// The author's picture, as the full url a Slack profile carries in
+  /// `image_48` / `image_72`. Kept as it arrived; `avatar_path` is what
+  /// decides whether any of it can be drawn.
+  avatar : String
   channel_name : String
   created_at : String
   body : UInt64
@@ -422,6 +432,7 @@ impl DynComponent for Message with fn get_field(self, name) {
   match name {
     "id" => Some(@values.Value::Text(self.id))
     "author" => Some(@values.Value::Text(self.author))
+    "avatar" => Some(@values.Value::Text(self.avatar))
     "channelName" => Some(@values.Value::Text(self.channel_name))
     "createdAt" => Some(@values.Value::Text(self.created_at))
     "body" => Some(@values.Value::Instance(self.body))
@@ -434,15 +445,56 @@ impl DynComponent for Message with fn get_field(self, name) {
 }
 
 ///|
-/// The avatar, in the only form an untrusted bundle can draw one: up to two
-/// initials off whatever name the message arrived with.
+/// The three origins Slack serves a profile picture from, each of which is
+/// also written out as a literal in `views/Message.main.html`.
 ///
-/// A bundle may not name an image source (`dyncomp/policy/view_authority.mbt`),
-/// so there is no photograph to be had here and there never will be. That is a
-/// smaller loss than it sounds: what a reader uses an avatar for is telling one
-/// speaker's run of messages from the next one's at a glance, and a disc with
-/// two letters in it does that. `bluesky/Post` draws the same thing for the same
-/// reason, and this is its twin rather than its cousin.
+/// Three rather than one because Slack really does use three: a workspace
+/// upload comes back on `avatars.slack-edge.com`, the same file reached through
+/// the workspace CDN on `ca.slack-edge.com`, and an account that never uploaded
+/// one gets its default from `secure.gravatar.com`. A bundle that named only
+/// the first would draw initials for half a real channel.
+///
+/// The trailing slash on each is the whole check, not punctuation: without it
+/// `https://ca.slack-edge.com.attacker.test/x` and
+/// `https://ca.slack-edge.com@attacker.test/x` both pass a prefix test and both
+/// are somebody else's host. It is the same boundary the host insists on when
+/// it reads the origin off the view (`dyncomp/policy/external_url.mbt`).
+const SLACK_CDN = "https://ca.slack-edge.com/"
+
+///|
+const SLACK_AVATARS = "https://avatars.slack-edge.com/"
+
+///|
+const GRAVATAR = "https://secure.gravatar.com/"
+
+///|
+/// What is left of the message's avatar url once `origin` is taken off the
+/// front, or `""` when the picture is somewhere else — including a relative
+/// url, which is a request to the HOST's origin and not this bundle's to make.
+///
+/// This is the guest's half of `cap-external-urls`: the view names the origin,
+/// this decides that the profile's url is actually ON it, and what crosses
+/// between them is a path. A picture that fails all three tests is not drawn,
+/// and the initials underneath it are what shows — which is what every message
+/// showed before this bundle could load a picture at all.
+fn avatar_path(avatar : String, origin : String) -> String {
+  guard avatar.has_prefix(origin) else { return "" }
+  avatar[origin.length():].to_owned()
+}
+
+///|
+/// The avatar under the picture: up to two initials off whatever name the
+/// message arrived with.
+///
+/// Not the fallback in the sense of a branch — the view draws the image OVER
+/// this disc, so a message with no picture, a picture on an origin no view
+/// names, and a fetch that fails anyway all land on the same two letters. An
+/// untrusted view has no `onerror` to write, and does not need one.
+///
+/// What a reader uses an avatar for is telling one speaker's run of messages
+/// from the next one's at a glance, and a disc with two letters in it does that
+/// on its own. `bluesky/Post` draws the same thing for the same reason, and
+/// this is its twin rather than its cousin.
 ///
 /// One initial per word, so `Ada Lovelace` is `AL` and a one-word name is one
 /// letter — the convention a reader already knows, and the same rule `bluesky`
@@ -486,6 +538,13 @@ fn upper_char(c : Char) -> Char {
 impl DynComponent for Message with fn call_method(self, name, _args) {
   match name {
     "initials" => @values.Value::Text(initials_of(self.author))
+    // One per origin the view names, and only one of them is ever non-empty:
+    // the view shows the image whose path it got, and nothing at all when it
+    // got none.
+    "slackCdnPath" => @values.Value::Text(avatar_path(self.avatar, SLACK_CDN))
+    "slackAvatarsPath" =>
+      @values.Value::Text(avatar_path(self.avatar, SLACK_AVATARS))
+    "gravatarPath" => @values.Value::Text(avatar_path(self.avatar, GRAVATAR))
     "authorLabel" =>
       @values.Value::Text(
         if self.author == "" {
@@ -509,6 +568,7 @@ impl DynComponent for Message with fn with_field(self, name, v) {
   let next : Message? = match (name, v) {
     ("id", @values.Value::Text(s)) => Some({ ..self, id: s })
     ("author", @values.Value::Text(s)) => Some({ ..self, author: s })
+    ("avatar", @values.Value::Text(s)) => Some({ ..self, avatar: s })
     ("channelName", @values.Value::Text(s)) => Some({ ..self, channel_name: s })
     ("createdAt", @values.Value::Text(s)) => Some({ ..self, created_at: s })
     ("compact", @values.Value::Boolean(b)) => Some({ ..self, compact: b })
@@ -535,6 +595,7 @@ fn make_message(args : Array[(String, @values.Value)]) -> &DynComponent {
   let m : Message = {
     id: as_text(arg(args, "id")),
     author: as_text(arg(args, "author")),
+    avatar: as_text(arg(args, "avatar")),
     channel_name: as_text(arg(args, "channelName")),
     created_at: as_text(arg(args, "createdAt")),
     body: child("RichText", body_args(arg(args, "body"))),

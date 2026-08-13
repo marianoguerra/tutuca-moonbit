@@ -44,14 +44,23 @@ fn samples() -> Array[@shell.LoaderBarSample] {
 
 ///|
 pub fn mount() -> Unit {
-  // `untrusted` is the default and this page keeps it deliberately: a
-  // storybook is where an unfamiliar bundle gets opened, so it is the last
-  // place to relax what a bundle may reach. Every sample above runs under it
-  // unchanged.
+  // `untrusted` and one grant, which is `@shell.sample_policy`: no clock, no
+  // timer, no entropy, no CSS of a bundle's own, and `cap-external-urls` for
+  // the five origins the bundles above load a picture or point a link at. A
+  // storybook is where an unfamiliar bundle gets opened, so the tier stays
+  // where it was — what changed is that this page ships two readers whose
+  // subject is other people's pictures, and it can name where those come from
+  // rather than making them draw initials forever.
+  //
+  // A DROPPED bundle gets the same answer, which is the part to be deliberate
+  // about: it may pin an `<img src>` at those five origins too. What it may
+  // not do is choose an origin, so what that buys an unknown bundle is the
+  // ability to tell one of five hosts that this page loaded something.
   @sbw.mount(
     samples=samples(),
     autoload=true,
     requests=@shell.sample_host_requests(),
+    policy=@shell.sample_policy(),
   )
   |> ignore
 }

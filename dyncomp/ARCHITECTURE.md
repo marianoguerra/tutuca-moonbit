@@ -138,7 +138,9 @@ An ungranted capability **refuses the bundle** rather than degrading it: a guest
 reading a frozen zero from an ungranted clock cannot tell that from midnight.
 The untrusted tier is the one this design is *for*, and a bundle there can still
 declare components, ship views, hold state, handle events, nest children and
-serve its own requests — all three sample guests run under it unchanged.
+serve its own requests — most sample guests run under it unchanged, and the two
+that display other people's records ask for `cap-external-urls` and name the
+origins they spend it on (`guests/bluesky`, `guests/slack`).
 
 Also here: the Sanitizer-API config over the ANode tree (`anode/sanitize`, run by
 `check_view`), the untrusted authority walk that refuses direct network/CSS

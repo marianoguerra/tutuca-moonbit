@@ -2,11 +2,16 @@
   "manifestVersion": 1,
   "apiVersion": 6,
   "moduleName": "blueskylib",
-  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data \u2014 no network, no clock, no capabilities.",
+  "doc": "Bluesky / ATProto content, read-only: one message, a conversation, an account. Renders from plain ATProto-shaped data \u2014 no network of its own and no clock; the pictures it draws and the links it offers are the two origins its views name.",
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
-  "capabilities": [],
+  "capabilities": [
+    {
+      "cap": "cap-external-urls",
+      "reason": "avatars, banners and image thumbnails from cdn.bsky.app, and profile / hashtag / permalink links to bsky.app. Both origins are literals in the views; the records only ever supply the path."
+    }
+  ],
   "stringEncoding": "utf16",
   "components": [
     {
@@ -162,6 +167,12 @@
           }
         },
         {
+          "name": "avatar",
+          "ty": 0,
+          "doc": "The author's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app \u2014 the origin the view names \u2014 and the initials show through when it is not.",
+          "required": false
+        },
+        {
           "name": "facets",
           "ty": 2,
           "doc": "Rich-text ranges: { byteStart, byteEnd, kind: link|mention|tag, value }. The offsets are UTF-8 byte offsets, as on the wire.",
@@ -170,7 +181,7 @@
         {
           "name": "images",
           "ty": 4,
-          "doc": "Attached images as { alt }. Only the alt text is rendered \u2014 an untrusted bundle may not name an image source.",
+          "doc": "Attached images as { alt, thumb }. The thumbnail is drawn when it is on cdn.bsky.app; an image without one is its alt text on a chip, which is what every image was before this bundle could load any.",
           "required": false
         },
         {
@@ -255,6 +266,11 @@
           "name": "announcement",
           "argsJson": "{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime. write-up at tutuca.dev/dyncomp, thanks @bob.bsky.social for the review #wasm\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"facets\": [{\"byteStart\": 95, \"byteEnd\": 113, \"kind\": \"link\", \"value\": \"https://tutuca.dev/dyncomp\"}, {\"byteStart\": 122, \"byteEnd\": 138, \"kind\": \"mention\", \"value\": \"bob.bsky.social\"}, {\"byteStart\": 154, \"byteEnd\": 159, \"kind\": \"tag\", \"value\": \"wasm\"}], \"images\": [{\"alt\": \"a terminal running moon build\"}], \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}",
           "doc": "A message with all three facet kinds, an image and real counts."
+        },
+        {
+          "name": "with pictures",
+          "argsJson": "{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}",
+          "doc": "A real public record, fetched from the app.bsky API: an avatar and an image thumbnail, both on cdn.bsky.app, plus a permalink that goes somewhere."
         }
       ],
       "style": ""
@@ -332,7 +348,7 @@
         {
           "name": "posts",
           "ty": 1,
-          "doc": "The conversation in reading order, each message { uri, displayName, handle, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } \u2014 depth being how deep in the reply tree it sits.",
+          "doc": "The conversation in reading order, each message { uri, displayName, handle, avatar, text, createdAt, facets, images, replyCount, repostCount, likeCount, depth } \u2014 depth being how deep in the reply tree it sits.",
           "required": false
         },
         {
@@ -478,6 +494,18 @@
           }
         },
         {
+          "name": "avatar",
+          "ty": 0,
+          "doc": "The account's picture, as the full url the record carries. Drawn when it is on cdn.bsky.app; the initials show through when it is not.",
+          "required": false
+        },
+        {
+          "name": "banner",
+          "ty": 0,
+          "doc": "The strip behind the picture, as the full url the record carries. Same rule as the avatar, and a flat band of base-200 when there is none.",
+          "required": false
+        },
+        {
           "name": "followersCount",
           "ty": 1,
           "doc": "How many accounts follow it.",
@@ -529,6 +557,11 @@
           "name": "alice",
           "argsJson": "{\"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"description\": \"builds small runtimes. wasm, moonbit, and whatever the compiler will let me get away with.\", \"followersCount\": 12400, \"followsCount\": 312, \"postsCount\": 2870, \"posts\": [{\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kaaa\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"shipped the thing: dynamic components that register into a running app at runtime\", \"createdAt\": \"2026-08-11T14:03:00Z\", \"replyCount\": 12, \"repostCount\": 34, \"likeCount\": 1280}, {\"uri\": \"at://did:plc:alice000000000000000000/app.bsky.feed.post/3kzzz\", \"displayName\": \"Alice Alpha\", \"handle\": \"alice.bsky.social\", \"text\": \"a component that cannot fetch is a component you can read the code of once and stop worrying about #wasm\", \"createdAt\": \"2026-08-09T09:15:00Z\", \"facets\": [{\"byteStart\": 99, \"byteEnd\": 104, \"kind\": \"tag\", \"value\": \"wasm\"}], \"replyCount\": 4, \"repostCount\": 9, \"likeCount\": 210}]}",
           "doc": "An account with a description, six-figure counts and two recent messages."
+        },
+        {
+          "name": "with pictures",
+          "argsJson": "{\"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"description\": \"official Bluesky account (check username\ud83d\udc46)\\n\\nBugs, feature requests, feedback: support@bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"banner\": \"https://cdn.bsky.app/img/banner/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreichzyovokfzmymz36p5jibbjrhsur6n7hjnzxrpbt5jaydp2szvna\", \"followersCount\": 34504327, \"followsCount\": 11, \"postsCount\": 806, \"posts\": [{\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3msqpuobiwk2t\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"v1.130 is live!\\n\\nWant to follow someone for their posts but not their reposts? Now you can \u2014 turn on \\\"Hide reposts in feeds\\\" for any account you follow.\", \"createdAt\": \"2026-08-10T18:23:59.962Z\", \"images\": [{\"alt\": \"A screenshot demonstrating how to hide reposts from an individual user: go to their profile, tap the three-dot icon at top right, and select \\\"Hide reposts in feeds\\\" from the drop-down menu.\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreig2hq7svgwj4bppizprcv5t3dlg4zbu3a6pvbebftlavbocibuud4\"}], \"replyCount\": 472, \"repostCount\": 2358, \"likeCount\": 9275}, {\"uri\": \"at://did:plc:z72i7hdynmk6r22z27h6tvur/app.bsky.feed.post/3mpok7nkjtc2o\", \"displayName\": \"Bluesky\", \"handle\": \"bsky.app\", \"avatar\": \"https://cdn.bsky.app/img/avatar/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihwihm6kpd6zuwhhlro75p5qks5qtrcu55jp3gddbfjsieiv7wuka\", \"text\": \"wait a minute\", \"createdAt\": \"2026-07-02T17:21:51.498Z\", \"images\": [{\"alt\": \"two spidermen pointing at each other\", \"thumb\": \"https://cdn.bsky.app/img/feed_thumbnail/plain/did:plc:z72i7hdynmk6r22z27h6tvur/bafkreihlfz7eeyynraq3zqhozs4q3l3wabewbjevjb5jgophbtcjj7eijm\"}], \"replyCount\": 5, \"repostCount\": 3, \"likeCount\": 48}]}",
+          "doc": "The same account the message came from, with its banner and its two most recent messages \u2014 the picture path end to end."
         }
       ],
       "style": ""

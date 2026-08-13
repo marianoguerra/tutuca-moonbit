@@ -359,6 +359,13 @@ right answer for a component whose pictures are the point. A bundle that uses
 the host either grants those origins to bundles it loads or it does not, and a
 declaration cannot widen that.
 
+`guests/bluesky` and `guests/slack` are the worked example on the guest side:
+five origins between them, each a literal in a view, each paired with a path the
+guest computes and nothing more, and an initials disc drawn UNDER every avatar
+so a refused, missing or failed picture lands somewhere. `@shell.sample_policy`
+is the matching host half, and it is a list rather than the empty one for the
+reason above.
+
 **Custom elements are not banned, but they cannot be made an isolation
 boundary.** Autonomous tags such as `<x-picker :items=".items">` and ordinary
 scalar/structured properties remain allowed. The `is` attribute is refused for

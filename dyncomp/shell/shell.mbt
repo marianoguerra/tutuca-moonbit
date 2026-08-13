@@ -204,3 +204,41 @@ pub fn sample_host_requests() -> Map[String, @component.RequestFn] {
     }),
   }
 }
+
+///|
+/// The origins a demo page lets the bundles it SHIPS load a picture from.
+///
+/// Still `untrusted` — no clock, no timer, no entropy, no CSS of the bundle's
+/// own — plus `cap-external-urls` for these five hosts and nothing else. It is
+/// here beside `sample_host_requests` and for the same reason: both pages ship
+/// the same archives, so both have to answer the same question, and two copies
+/// of an answer about the network are two copies that can drift apart.
+///
+/// Why each one is on the list, since a list nobody can read back is a list
+/// nobody can shorten:
+///
+/// - `cdn.bsky.app` — every picture the bluesky reader draws: an avatar, a
+///   profile banner, an attached image's thumbnail.
+/// - `bsky.app` — where its links go: a profile, a hashtag, a permalink.
+/// - `ca.slack-edge.com`, `avatars.slack-edge.com`, `secure.gravatar.com` — the
+///   three hosts a Slack profile picture actually comes from.
+///
+/// What granting them costs is written out in `dyncomp/SECURITY.md` §3, and the
+/// short version is that an image is a GET the guest chose: an allowed origin
+/// is an origin that can be told this page loaded something. That is why the
+/// list is origins a person can check against the views rather than the empty
+/// list, which would mean every `https://` origin there is.
+///
+/// A page that hosts bundles it did NOT ship should not copy this. It should
+/// decide, per bundle, which is what the capability is for.
+pub fn sample_policy() -> @policy.Policy {
+  @policy.Policy::untrusted().allowing_external_urls([
+    "https://cdn.bsky.app", "https://bsky.app", "https://ca.slack-edge.com", "https://avatars.slack-edge.com",
+    "https://secure.gravatar.com",
+  ]) catch {
+    // Unreachable: every entry above is a literal origin. Refusing to grant is
+    // the safe half of the answer anyway — the bundles that wanted it stop
+    // loading, and they say why.
+    _ => @policy.Policy::untrusted()
+  }
+}

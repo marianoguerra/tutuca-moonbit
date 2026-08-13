@@ -91,10 +91,17 @@ pub fn mount() -> Unit {
   } else {
     None
   }
+  // The policy is `untrusted` plus the origins the sample bundles draw their
+  // pictures from (`@shell.sample_policy`, which says why each one is on the
+  // list). It applies to a DROPPED bundle as well, and that is the decision
+  // being made here rather than a side effect: this page will let anything it
+  // loads point an `<img src>` at those five hosts — never at an origin the
+  // bundle picks, which is what `cap-external-urls` refuses.
   @uiw.mount(
     session~,
     samples=samples(),
     requests=@shell.sample_host_requests(),
+    policy=@shell.sample_policy(),
   )
   |> ignore
 }

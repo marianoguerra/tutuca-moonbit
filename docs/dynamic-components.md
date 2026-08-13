@@ -194,8 +194,9 @@ The world imports no WASI. That is not a packaging accident, it is the sandbox:
 no filesystem, no network, no sockets, no environment, no subprocess, and no
 clock or entropy beyond what a capability grant supplies. The default tier is
 the one the design is *for* — a bundle there can still declare components, ship
-views, hold state, handle events, nest children and serve its own requests, and
-every sample guest runs under it unchanged.
+views, hold state, handle events, nest children and serve its own requests. Most
+sample guests run under it unchanged; the two that display other people's
+records ask for one capability, and what it buys them is below.
 
 Autonomous custom elements remain available to untrusted views, including
 structured property bindings. The host page owns their JavaScript, though: a
@@ -218,6 +219,13 @@ still the bundle's to write, so grant the origins you meant and read
 `SECURITY.md` §3 before passing an empty list, which means any `https://`
 origin.
 
+The `bluesky` and `slack` guests are what that looks like from the other side:
+between them they name five origins — the Bluesky CDN and `bsky.app`, and the
+three hosts a Slack profile picture comes from — and both demo pages grant
+exactly those (`@shell.sample_policy`). Neither one can pick an origin at
+runtime, so the list of hosts either bundle can reach is a thing you read off
+its views.
+
 The two open rows are open on purpose and are marked as such in the code. If
 you host untrusted bundles today, they are what to think about.
 
@@ -231,8 +239,12 @@ number in prose is the half that stops being true):
   method, a request round trip, and nested same-bundle children
 - **slack** — a chat conversation, and the DEEP end of the same nesting:
   `ChannelHistory` → `Thread` → `Message` → `RichText` → `Segment`, all built
-  from one `init`. Also the two refusals seen from a guest's side — no `href`
-  for a link, no global CSS for a display toggle
+  from one `init`. Also the policy line seen from a guest's side: no `href` for
+  a link somebody posted, no global CSS for a display toggle, and an avatar
+  from three origins its view names outright
+- **bluesky** — the same line drawn around a reader of other people's records:
+  `cap-external-urls` for pictures off the Bluesky CDN and links into
+  `bsky.app`, with the initials disc still underneath every avatar
 - **todo**, **todomvc**, **tictactoe** — collections
 - **calculator** — state the declared fields do not name
 - **rust-tempconv** — the polyglot proof: the same WIT, no tutuca code at all,

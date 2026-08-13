@@ -184,18 +184,21 @@ before(async () => {
   };
 });
 
-test('the static manifest declares three components and asks for nothing', { skip: !built }, () => {
+test('the static manifest declares three components and asks for one capability', { skip: !built }, () => {
   const m = manifest;
   assert.equal(m.apiVersion, 6);
   assert.equal(m.moduleName, 'blueskylib');
-  // the whole point of this bundle: no capability, so a stock host loads it
-  // without anyone having to decide anything
-  assert.deepEqual(m.capabilities, []);
+  // the one thing this bundle asks a host for, and it asks with a reason: the
+  // origins its views name are the whole of its network reach, and a host that
+  // will not grant them refuses it rather than loading a version that draws
+  // half of itself
+  assert.deepEqual(m.capabilities.map((c) => c.cap), ['cap-external-urls']);
+  assert.match(m.capabilities[0].reason, /cdn\.bsky\.app/);
   assert.deepEqual(m.components.map((c) => c.name), ['Post', 'Thread', 'Profile']);
 
   const [post, thread, profile] = m.components;
   assert.deepEqual(post.fields.map((f) => f.name), [
-    'uri', 'displayName', 'handle', 'text', 'createdAt', 'facets', 'images',
+    'uri', 'displayName', 'handle', 'text', 'createdAt', 'avatar', 'facets', 'images',
     'replyCount', 'repostCount', 'likeCount', 'liked', 'reposted',
     'depth', 'focus', 'foldable', 'folded', 'owned',
   ]);
@@ -205,9 +208,17 @@ test('the static manifest declares three components and asks for nothing', { ski
   assert.deepEqual(thread.bubbles, ['folded', 'unfolded', 'liked', 'unliked', 'reposted', 'unreposted']);
   assert.deepEqual(profile.bubbles, ['followed', 'unfollowed', 'liked', 'unliked', 'reposted', 'unreposted']);
   // every component ships a fixture, so dropping the bundle shows something
-  for (const c of m.components) assert.equal(c.inits.length, 1);
+  for (const c of m.components) assert.ok(c.inits.length >= 1);
   // and every fixture is JSON the host can actually read
-  for (const c of m.components) JSON.parse(c.inits[0].argsJson);
+  for (const c of m.components) for (const i of c.inits) JSON.parse(i.argsJson);
+  // the two fixtures with pictures point at the origin the views name, so the
+  // gallery shows the loaded state and not only the fallback
+  for (const name of ['Post', 'Profile']) {
+    const args = JSON.parse(
+      m.components.find((c) => c.name === name).inits.find((i) => i.name === 'with pictures').argsJson,
+    );
+    assert.ok(args.avatar.startsWith('https://cdn.bsky.app/'));
+  }
 });
 
 test('a post cuts its text on the facets UTF-8 byte offsets', { skip: !built }, () => {
@@ -222,13 +233,16 @@ test('a post cuts its text on the facets UTF-8 byte offsets', { skip: !built }, 
       map(facetValue(facetOf(body, '#wasm', 'tag', 'wasm'))),
     ])],
   ]);
+  // `path` is the half a view can turn into a link, and only a mention and a
+  // hashtag have one: a link somebody POSTED points at an origin no view can
+  // name, so it stays `external` — text, with its target in the tooltip
   assert.deepEqual(field(p, 'segments'), [
-    { text: '🚀 shipped it — ', target: '', kind: 'text' },
-    { text: 'tutuca.dev/dyncomp', target: 'https://tutuca.dev/dyncomp', kind: 'link' },
-    { text: ', thanks ', target: '', kind: 'text' },
-    { text: '@bob.bsky.social', target: 'bsky.app/profile/bob.bsky.social', kind: 'mention' },
-    { text: ' ', target: '', kind: 'text' },
-    { text: '#wasm', target: 'bsky.app/hashtag/wasm', kind: 'tag' },
+    { text: '🚀 shipped it — ', target: '', path: '', external: false, kind: 'text' },
+    { text: 'tutuca.dev/dyncomp', target: 'https://tutuca.dev/dyncomp', path: '', external: true, kind: 'link' },
+    { text: ', thanks ', target: '', path: '', external: false, kind: 'text' },
+    { text: '@bob.bsky.social', target: 'bsky.app/profile/bob.bsky.social', path: 'profile/bob.bsky.social', external: false, kind: 'mention' },
+    { text: ' ', target: '', path: '', external: false, kind: 'text' },
+    { text: '#wasm', target: 'bsky.app/hashtag/wasm', path: 'hashtag/wasm', external: false, kind: 'tag' },
   ]);
   // the runs put back together are the message, which matters more than any
   // single boundary
@@ -249,8 +263,8 @@ test('a facet that is out of order, overlapping or mid-character is dropped', { 
     ])],
   ]);
   assert.deepEqual(field(p, 'segments'), [
-    { text: 'héllo ', target: '', kind: 'text' },
-    { text: 'world', target: 'https://example.com', kind: 'link' },
+    { text: 'héllo ', target: '', path: '', external: false, kind: 'text' },
+    { text: 'world', target: 'https://example.com', path: '', external: true, kind: 'link' },
   ]);
 });
 
@@ -273,6 +287,9 @@ test('the projections a view reads: name, initials, time, counts, permalink', { 
   assert.equal(field(p, 'reposts'), '1.2K');
   assert.equal(field(p, 'likes'), '2.4M');
   assert.equal(field(p, 'permalink'), 'bsky.app/profile/alice.bsky.social/post/3kaaa');
+  // the same permalink split the way the view uses it: the origin is the
+  // view's literal, and this is only ever the path under it
+  assert.equal(field(p, 'permalinkPath'), 'profile/alice.bsky.social/post/3kaaa');
   // standing on its own: no rails to draw and no fold button
   assert.deepEqual(field(p, 'rail'), []);
   assert.equal(field(p, 'foldable'), 0);
@@ -287,6 +304,53 @@ test('the projections a view reads: name, initials, time, counts, permalink', { 
   // an at:// uri that is not a post has no post permalink to give
   const profileUri = instance('Post', [['uri', text('at://did:plc:x/app.bsky.actor.profile/self')]]);
   assert.equal(field(profileUri, 'permalink'), '');
+  assert.equal(field(profileUri, 'permalinkPath'), '');
+});
+
+test('a picture is a path under the one origin the views name', { skip: !built }, () => {
+  const cdn = 'https://cdn.bsky.app';
+  const shown = instance('Post', [
+    ['displayName', text('Alice Alpha')],
+    ['avatar', text(`${cdn}/img/avatar/plain/did:plc:alice/bafkreiavatar@jpeg`)],
+    ['images', list([
+      map({ alt: text('a terminal'), thumb: text(`${cdn}/img/feed_thumbnail/plain/did:plc:alice/bafkreithumb@jpeg`) }),
+      map({ alt: text('no picture came with this one') }),
+    ])],
+  ]);
+  // what crosses to the view is the PATH; the origin is the view's literal, so
+  // nothing this bundle computes can move it
+  assert.equal(field(shown, 'avatarPath'), 'img/avatar/plain/did:plc:alice/bafkreiavatar@jpeg');
+  assert.deepEqual(field(shown, 'imageItems'), [
+    { alt: 'a terminal', path: 'img/feed_thumbnail/plain/did:plc:alice/bafkreithumb@jpeg' },
+    { alt: 'no picture came with this one', path: '' },
+  ]);
+  // and the record keeps the url it arrived with, so a host projecting the
+  // field back gets what it wrote
+  assert.equal(field(shown, 'avatar'), `${cdn}/img/avatar/plain/did:plc:alice/bafkreiavatar@jpeg`);
+
+  // Everything else is no picture at all — which is the state the initials
+  // under it were already drawing. A host that reads this bundle's views knows
+  // its whole reach; a record cannot add to it.
+  for (const elsewhere of [
+    'https://cdn.bsky.app.attacker.test/img/avatar/plain/x@jpeg',
+    'https://cdn.bsky.app@attacker.test/img/avatar/plain/x@jpeg',
+    'http://cdn.bsky.app/img/avatar/plain/x@jpeg',
+    '/img/avatar/plain/x@jpeg',
+    'data:image/svg+xml,<svg/>',
+    'javascript:alert(1)',
+  ]) {
+    const p = instance('Post', [['avatar', text(elsewhere)]]);
+    assert.equal(field(p, 'avatarPath'), '', elsewhere);
+  }
+
+  // a profile carries two of them, and neither is drawn from anywhere else
+  const prof = instance('Profile', [
+    ['handle', text('bsky.app')],
+    ['avatar', text(`${cdn}/img/avatar/plain/did:plc:bsky/bafkreiavatar@jpeg`)],
+    ['banner', text('https://elsewhere.test/banner.jpg')],
+  ]);
+  assert.equal(field(prof, 'avatarPath'), 'img/avatar/plain/did:plc:bsky/bafkreiavatar@jpeg');
+  assert.equal(field(prof, 'bannerPath'), '');
 });
 
 test('liking is optimistic and announced, and leaves the record count alone', { skip: !built }, () => {

@@ -142,8 +142,10 @@ before(async () => {
 test('the static manifest declares six nesting components', { skip: !built }, () => {
   assert.equal(manifest.apiVersion, 6);
   assert.equal(manifest.moduleName, 'slacklib');
-  // nothing ambient: no clock for the timestamps, no entropy for the ids
-  assert.deepEqual(manifest.capabilities, []);
+  // nothing ambient — no clock for the timestamps, no entropy for the ids —
+  // and one capability, for the pictures, which names its origins in its reason
+  assert.deepEqual(manifest.capabilities.map((c) => c.cap), ['cap-external-urls']);
+  assert.match(manifest.capabilities[0].reason, /slack-edge\.com/);
   assert.deepEqual(manifest.components.map((c) => c.name), [
     'Segment', 'RichText', 'Reaction', 'Message', 'Thread', 'ChannelHistory',
   ]);
@@ -160,6 +162,13 @@ test('the static manifest declares six nesting components', { skip: !built }, ()
   const declared = manifest.components.find((c) => c.name === 'ChannelHistory');
   assert.deepEqual(declared.methods, [
     'channelLabel', 'memberLabel', 'orderLabel', 'countLabel', 'hasError', 'isEmpty',
+  ]);
+  // including the three the avatar is drawn from: an undeclared one resolves to
+  // Null, which hides the image and leaves the initials looking correct — the
+  // exact bug this assertion exists to catch
+  assert.deepEqual(manifest.components.find((c) => c.name === 'Message').methods, [
+    'initials', 'slackCdnPath', 'slackAvatarsPath', 'gravatarPath',
+    'authorLabel', 'channelLabel', 'hasChannel', 'timeLabel',
   ]);
 });
 
@@ -234,9 +243,10 @@ test('a message builds its body out of segments and reads its own timestamp', { 
   assert.deepEqual(blank.callMethod('timeLabel', []), text(''));
 });
 
-test('a message draws the only avatar an untrusted bundle can', { skip: !built }, () => {
-  // Two initials off the display name. A bundle may not name an image source, so
-  // there is no photograph to be had and the disc is the whole avatar.
+test('a message draws its picture over the initials it always has', { skip: !built }, () => {
+  // Two initials off the display name. The picture is drawn OVER this disc, so
+  // it is what shows for a message that has none — and for one whose fetch
+  // fails, which an untrusted view has no `onerror` to notice.
   const m = make('Message', initArgs('Message', 'root'));
   assert.deepEqual(m.callMethod('initials', []), text('AL'));
 
@@ -258,6 +268,46 @@ test('a message draws the only avatar an untrusted bundle can', { skip: !built }
   // Nothing to take initials from is drawn as a placeholder rather than as an
   // empty circle, which would read as a rendering bug.
   assert.deepEqual(make('Message').callMethod('initials', []), text('?'));
+});
+
+test('a picture is a path under one of the three origins the view names', { skip: !built }, () => {
+  const paths = (avatar) => {
+    const m = make('Message', { author: 'Ada Lovelace', avatar });
+    return ['slackCdnPath', 'slackAvatarsPath', 'gravatarPath']
+      .map((name) => m.callMethod(name, []).val);
+  };
+  // Each origin is paired with the path it gets, and only ever one of them:
+  // what crosses to the view is the path, and the origin is the view's own
+  // literal, so nothing a profile carries can move it.
+  assert.deepEqual(
+    paths('https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512'),
+    ['T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512', '', '']);
+  assert.deepEqual(
+    paths('https://avatars.slack-edge.com/2026-06-23/ada_512.png'),
+    ['', '2026-06-23/ada_512.png', '']);
+  assert.deepEqual(
+    paths('https://secure.gravatar.com/avatar/abc123?s=96&d=identicon'),
+    ['', '', 'avatar/abc123?s=96&d=identicon']);
+
+  // Anything else is no picture at all, which is the state the initials under
+  // it were already drawing. A host that reads this view knows the bundle's
+  // whole reach; a profile cannot add to it.
+  for (const elsewhere of [
+    'https://ca.slack-edge.com.attacker.test/x-512',
+    'https://ca.slack-edge.com@attacker.test/x-512',
+    'http://ca.slack-edge.com/x-512',
+    'https://files.slack.com/x-512',
+    '/x-512',
+    'javascript:alert(1)',
+    '',
+  ]) {
+    assert.deepEqual(paths(elsewhere), ['', '', ''], elsewhere);
+  }
+
+  // and the message keeps the url it arrived with, so a host projecting the
+  // field back gets what it wrote
+  const url = 'https://secure.gravatar.com/avatar/abc123?s=96&d=identicon';
+  assert.deepEqual(make('Message', { avatar: url }).getField('avatar'), text(url));
 });
 
 test('a thread forces its replies compact and folds them', { skip: !built }, () => {

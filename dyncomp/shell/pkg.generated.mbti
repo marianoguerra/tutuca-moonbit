@@ -6,6 +6,7 @@ import {
   "marianoguerra/tutuca/app",
   "marianoguerra/tutuca/component",
   "marianoguerra/tutuca/core",
+  "marianoguerra/tutuca/dyncomp/policy",
   "marianoguerra/tutuca/dyncomp/registry",
   "marianoguerra/tutuca/vdom/wasm",
   "moonbitlang/core/debug",
@@ -27,6 +28,8 @@ pub fn make_instance(@registry.ComponentRef, String, Map[String, @core.Value]) -
 pub fn refresh_margaui() -> Unit
 
 pub fn sample_host_requests() -> Map[String, @component.RequestFn]
+
+pub fn sample_policy() -> @policy.Policy
 
 pub fn set_live_app(@app.App[@wasm.WasmNode]) -> Unit
 

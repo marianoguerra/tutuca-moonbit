@@ -6,7 +6,12 @@
   "version": "0.1.0",
   "homepage": "",
   "authors": [],
-  "capabilities": [],
+  "capabilities": [
+    {
+      "cap": "cap-external-urls",
+      "reason": "profile pictures from the three origins Slack serves them on \u2014 ca.slack-edge.com, avatars.slack-edge.com and secure.gravatar.com. All three are literals in Message's view; a profile only ever supplies the path, and a picture anywhere else is not drawn."
+    }
+  ],
   "stringEncoding": "utf16",
   "components": [
     {
@@ -158,7 +163,7 @@
         {
           "name": "link",
           "argsJson": "{\"text\":\"ultorg.com\",\"link\":true,\"url\":\"https://www.ultorg.com/\"}",
-          "doc": "A link — clicking it emits openLink rather than navigating."
+          "doc": "A link \u2014 clicking it emits openLink rather than navigating."
         },
         {
           "name": "combined",
@@ -309,17 +314,17 @@
       "inits": [
         {
           "name": "single",
-          "argsJson": "{\"emoji\":\"👀\",\"count\":1}",
+          "argsJson": "{\"emoji\":\"\ud83d\udc40\",\"count\":1}",
           "doc": "One person."
         },
         {
           "name": "many",
-          "argsJson": "{\"emoji\":\"❤️\",\"count\":12}",
+          "argsJson": "{\"emoji\":\"\u2764\ufe0f\",\"count\":12}",
           "doc": "A popular one."
         },
         {
           "name": "mine",
-          "argsJson": "{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}",
+          "argsJson": "{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}",
           "doc": "One you are already part of."
         }
       ],
@@ -339,7 +344,19 @@
       "messageDocs": [
         {
           "name": "initials",
-          "doc": "Up to two initials for the avatar disc. A bundle may not name an image source, so this is the only avatar there is."
+          "doc": "Up to two initials for the avatar disc. The picture is drawn OVER it, so this is what a message with no picture \u2014 or one a fetch fails on \u2014 shows."
+        },
+        {
+          "name": "slackCdnPath",
+          "doc": "The avatar's path on ca.slack-edge.com, or empty. One of these three is non-empty at most, and the view pairs each with the origin it named."
+        },
+        {
+          "name": "slackAvatarsPath",
+          "doc": "The same for avatars.slack-edge.com."
+        },
+        {
+          "name": "gravatarPath",
+          "doc": "The same for secure.gravatar.com, which is where Slack's default pictures live."
         },
         {
           "name": "authorLabel",
@@ -351,7 +368,7 @@
         },
         {
           "name": "hasChannel",
-          "doc": "Whether to show the channel badge — a reply never does."
+          "doc": "Whether to show the channel badge \u2014 a reply never does."
         },
         {
           "name": "timeLabel",
@@ -411,6 +428,12 @@
           "required": false
         },
         {
+          "name": "avatar",
+          "ty": 0,
+          "doc": "The author's picture, as the full url a Slack profile carries. Drawn when it is on one of the three origins the view names; the initials show through when it is not, and when there is none.",
+          "required": false
+        },
+        {
           "name": "channelName",
           "ty": 0,
           "doc": "The channel it was posted in.",
@@ -461,6 +484,9 @@
       "responses": [],
       "methods": [
         "initials",
+        "slackCdnPath",
+        "slackAvatarsPath",
+        "gravatarPath",
         "authorLabel",
         "channelLabel",
         "hasChannel",
@@ -471,28 +497,28 @@
       "inits": [
         {
           "name": "root",
-          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]}",
+          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]}",
           "doc": "A root message with reactions."
         },
         {
           "name": "reply",
-          "argsJson": "{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[],\"compact\":true}",
+          "argsJson": "{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[],\"compact\":true}",
           "doc": "The same message as a threaded reply: compact, no channel badge."
         },
         {
           "name": "plain",
-          "argsJson": "{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]}",
+          "argsJson": "{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]}",
           "doc": "No reactions, no badges."
         },
         {
           "name": "edited-and-pinned",
-          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}],\"edited\":true,\"pinned\":true}",
+          "argsJson": "{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}],\"edited\":true,\"pinned\":true}",
           "doc": "Both markers at once."
         },
         {
           "name": "empty",
           "argsJson": "{}",
-          "doc": "Nobody, nothing — what an unfilled placeholder looks like."
+          "doc": "Nobody, nothing \u2014 what an unfilled placeholder looks like."
         }
       ],
       "style": ""
@@ -514,7 +540,7 @@
         },
         {
           "name": "setExpanded",
-          "doc": "Fold or unfold from outside — what a channel's expand-all sends."
+          "doc": "Fold or unfold from outside \u2014 what a channel's expand-all sends."
         },
         {
           "name": "hasReplies",
@@ -598,17 +624,17 @@
       "inits": [
         {
           "name": "expanded",
-          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]}",
+          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]}",
           "doc": "A thread with its replies showing."
         },
         {
           "name": "collapsed",
-          "argsJson": "{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]}",
+          "argsJson": "{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]}",
           "doc": "The same thread, folded."
         },
         {
           "name": "no-replies",
-          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}",
+          "argsJson": "{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}",
           "doc": "A root message nobody answered."
         }
       ],
@@ -741,7 +767,7 @@
         {
           "name": "threads",
           "ty": 3,
-          "doc": "The conversations currently shown — filtered and ordered.",
+          "doc": "The conversations currently shown \u2014 filtered and ordered.",
           "required": false
         },
         {
@@ -794,22 +820,22 @@
       "inits": [
         {
           "name": "general",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}]}",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}]}",
           "doc": "A morning in #general: three conversations, newest first."
         },
         {
           "name": "filtered",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}],\"query\":\"compiler\"}",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}],\"query\":\"compiler\"}",
           "doc": "The same channel with the filter box already narrowing it."
         },
         {
           "name": "oldest-first",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}],\"newestFirst\":false}",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":true,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":true,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}],\"newestFirst\":false}",
           "doc": "The same channel, ordered the other way."
         },
         {
           "name": "collapsed",
-          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out — notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"🎉\",\"count\":4},{\"emoji\":\"👀\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did — \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"🙏\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"✅\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":false,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" — feedback welcome.\"}],\"reactions\":[{\"emoji\":\"📚\",\"count\":3}]},\"replies\":[]}]}",
+          "argsJson": "{\"channel\":\"general\",\"topic\":\"Announcements and anything that does not have a channel yet\",\"memberCount\":214,\"threads\":[{\"expanded\":false,\"root\":{\"id\":\"m1\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T09:12:00Z\",\"body\":[{\"text\":\"Morning! The \"},{\"text\":\"analytical-engine\",\"code\":true},{\"text\":\" deploy is out \u2014 notes are in \"},{\"text\":\"#releases\",\"channel\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\ud83c\udf89\",\"count\":4},{\"emoji\":\"\ud83d\udc40\",\"count\":2}]},\"replies\":[{\"id\":\"m1r1\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"createdAt\":\"2026-06-23T09:20:00Z\",\"body\":[{\"text\":\"Nice. Did the \"},{\"text\":\"compiler\",\"bold\":true},{\"text\":\" step land too?\"}],\"reactions\":[]},{\"id\":\"m1r2\",\"author\":\"Ada Lovelace\",\"avatar\":\"https://ca.slack-edge.com/T024BE7LD-U024BE7LH-g4c4f4f4f4f4-512\",\"createdAt\":\"2026-06-23T09:22:00Z\",\"edited\":true,\"body\":[{\"text\":\"It did \u2014 \"},{\"text\":\"@Grace Hopper\",\"mention\":true},{\"text\":\" I pushed the changelog with it.\"}],\"reactions\":[{\"emoji\":\"\ud83d\ude4f\",\"count\":1}]}]},{\"expanded\":false,\"root\":{\"id\":\"m2\",\"author\":\"Alan Turing\",\"channelName\":\"general\",\"createdAt\":\"2026-06-23T11:05:00Z\",\"pinned\":true,\"body\":[{\"text\":\"Reminder: the design review moved to \"},{\"text\":\"Thursday\",\"bold\":true},{\"text\":\". The old invite is \"},{\"text\":\"cancelled\",\"strike\":true},{\"text\":\".\"}],\"reactions\":[{\"emoji\":\"\u2705\",\"count\":7,\"reacted\":true}]},\"replies\":[{\"id\":\"m2r1\",\"author\":\"Katherine Johnson\",\"avatar\":\"https://secure.gravatar.com/avatar/5bab360fd9b69edbb70338db6d7d7a78?s=96&d=identicon\",\"createdAt\":\"2026-06-23T11:31:00Z\",\"body\":[{\"text\":\"Calendar updated, thanks.\"}],\"reactions\":[]}]},{\"expanded\":false,\"root\":{\"id\":\"m3\",\"author\":\"Grace Hopper\",\"avatar\":\"https://secure.gravatar.com/avatar/a4ca67716af128ba14bae35f0cc1a6f7?s=96&d=identicon\",\"channelName\":\"general\",\"createdAt\":\"2026-06-22T16:40:00Z\",\"body\":[{\"text\":\"Docs for the new API are up at \"},{\"text\":\"docs.example.com/api\",\"link\":true,\"url\":\"https://docs.example.com/api\"},{\"text\":\" \u2014 feedback welcome.\"}],\"reactions\":[{\"emoji\":\"\ud83d\udcda\",\"count\":3}]},\"replies\":[]}]}",
           "doc": "The same channel with every thread folded."
         },
         {
