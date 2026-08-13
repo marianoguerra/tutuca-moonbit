@@ -9,7 +9,9 @@ import {
 }
 
 // Values
-pub fn emit(Array[@tscript.Decl], @statedef.StateDef, state_ty~ : String, fn_name~ : String, surface? : @check.Surface) -> Emitted
+pub fn emit(Array[@tscript.Decl], @statedef.StateDef, state_ty~ : String, fn_name~ : String, prefix? : String, roles? : Roles, surface? : @check.Surface) -> Emitted
+
+pub fn value_fn_name(String, Role, String) -> String
 
 // Errors
 
@@ -20,6 +22,10 @@ pub(all) struct Emitted {
   answers_receive : Array[String]
   answers_bubble : Array[String]
   answers_response : Array[String]
+  answers_methods : Array[String]
+  answers_whens : Array[String]
+  answers_enriches : Array[String]
+  answers_enrich_scopes : Array[String]
   refusals : Array[Refusal]
 } derive(Eq, @debug.Debug)
 
@@ -28,6 +34,21 @@ pub(all) struct Refusal {
   why : String
   span : @tscript.Span
 } derive(Eq, @debug.Debug)
+
+pub(all) enum Role {
+  RMethod
+  RWhen
+  REnrich
+  REnrichScope
+} derive(Compare, Eq, Hash, @debug.Debug)
+
+pub(all) struct Roles {
+  methods : Array[String]
+  whens : Array[String]
+  enriches : Array[String]
+  enrich_scopes : Array[String]
+} derive(Eq, @debug.Debug)
+pub fn Roles::none() -> Self
 
 // Type aliases
 

@@ -45,7 +45,7 @@ fn main raise {
     index = index + 1
   }
   let cases = @corpus.cases()
-  let (html, table) = project(cases)
+  let (html, table) = project(cases, @corpus.value_cases())
   @fs.write_string_to_file(out_dir + "/corpus.html", html)
   @fs.write_string_to_file(out_dir + "/table_gen.mbt", table)
   println("conformance: \{cases.length()} case(s) -> \{out_dir}/corpus.html")
@@ -64,7 +64,10 @@ fn fn_name_of(c : @corpus.Case, i : Int) -> String {
 
 ///|
 /// The `.html` and the index table.
-fn project(cases : Array[@corpus.Case]) -> (String, String) {
+fn project(
+  cases : Array[@corpus.Case],
+  values : Array[@corpus.ValueCase],
+) -> (String, String) {
   let decls = StringBuilder::new()
   let arms = StringBuilder::new()
   let calls = StringBuilder::new()
@@ -139,6 +142,67 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
       )
     }
   }
+  // The value bodies. Renamed the same way and for the same reason, and each
+  // given the VIEW SLOT that puts it in its bucket: a `compute` is a method
+  // because the block declares it, but a `@when` and an `@enrich-with` are
+  // roles the views assign, and a projection with no slots would compile the
+  // methods and nothing else — testing its own omission again.
+  let value_arms = StringBuilder::new()
+  for i, c in values {
+    let name = "v\{i}_\{c.callable}"
+    let parsed = @tscript.parse_script(c.script) catch {
+      _ => {
+        skipped = skipped + 1
+        continue
+      }
+    }
+    // Every declaration in the case, renamed together: a body that calls a
+    // sibling names it, so the pair has to travel and be renamed as one.
+    let renamed : Map[String, String] = Map([])
+    for d in parsed {
+      renamed[d.name] = "v\{i}_\{d.name}"
+    }
+    let mut clash = false
+    for d in parsed {
+      let src = rename_calls(d, renamed)
+      match shared.get(renamed.get(d.name).unwrap()) {
+        Some(prev) => if prev != src { clash = true }
+        None => shared[renamed.get(d.name).unwrap()] = src
+      }
+    }
+    if clash {
+      skipped = skipped + 1
+      continue
+    }
+    for d in parsed {
+      let key = renamed.get(d.name).unwrap()
+      decls.write_string(
+        "  " +
+        shared
+        .get(key)
+        .unwrap()
+        .split("\n")
+        .map(l => l.to_owned())
+        .collect()
+        .join("\n  ") +
+        "\n\n",
+      )
+    }
+    match c.role {
+      VMethod => ()
+      VWhen =>
+        calls.write_string(
+          "  <ul><li @each=\".items\" @when=\{quote(name)}></li></ul>\n",
+        )
+      VEnrich =>
+        calls.write_string(
+          "  <ul><li @each=\".items\" @enrich-with=\{quote(name)}></li></ul>\n",
+        )
+      VEnrichScope =>
+        calls.write_string("  <div @enrich-with=\{quote(name)}></div>\n")
+    }
+    value_arms.write_string("    \{i} => Some(\{quote(name)})\n")
+  }
   if skipped > 0 {
     println("conformance: \{skipped} case(s) could not be projected")
   }
@@ -174,8 +238,81 @@ fn project(cases : Array[@corpus.Case]) -> (String, String) {
     arms.to_string() +
     "    _ => None\n" +
     "  }\n" +
+    "}\n" +
+    "\n" +
+    "///|\n" +
+    "/// The same, for the value cases — which are renamed per case rather than\n" +
+    "/// per bucket, since two of them declare the same `matches` differently.\n" +
+    "pub fn value_case_name(i : Int) -> String? {\n" +
+    "  match i {\n" +
+    value_arms.to_string() +
+    "    _ => None\n" +
+    "  }\n" +
     "}\n"
   (html, table)
+}
+
+///|
+/// One declaration's source, with every call to a renamed sibling renamed too.
+///
+/// Through the AST rather than the text. A word-boundary replace over the
+/// printed source is nearly right and wrong exactly once: it renamed the
+/// STRING `'over'` inside `if over { 'over' }`, because a string literal is
+/// made of the same characters a name is.
+fn rename_calls(d : @tscript.Decl, renamed : Map[String, String]) -> String {
+  let body = match d.body {
+    Value(e) => @tscript.Body::Value(rename_expr(e, renamed))
+    Stmts(ss) => Stmts(ss.map(st => rename_stmt(st, renamed)))
+  }
+  { ..d, name: renamed.get(d.name).unwrap(), body }.to_source()
+}
+
+///|
+fn rename_expr(e : @tscript.Expr, m : Map[String, String]) -> @tscript.Expr {
+  fn go(x : @tscript.Expr) -> @tscript.Expr {
+    rename_expr(x, m)
+  }
+
+  match e {
+    EName(name~, span~) => EName(name=m.get(name).unwrap_or(name), span~)
+    EApp(name~, args~, span~) =>
+      EApp(name=m.get(name).unwrap_or(name), args=args.map(go), span~)
+    ETpl(parts~, span~) =>
+      ETpl(
+        parts=parts.map(p => {
+          match p {
+            TExpr(inner) => TExpr(go(inner))
+            TText(t) => TText(t)
+          }
+        }),
+        span~,
+      )
+    EUnary(op~, operand~, span~) => EUnary(op~, operand=go(operand), span~)
+    EChain(family~, ops~, operands~, span~) =>
+      EChain(family~, ops~, operands=operands.map(go), span~)
+    EIf(cond~, then_~, else_~, span~) =>
+      EIf(cond=go(cond), then_=go(then_), else_=go(else_), span~)
+    other => other
+  }
+}
+
+///|
+fn rename_stmt(s : @tscript.Stmt, m : Map[String, String]) -> @tscript.Stmt {
+  match s {
+    SAssign(place~, op~, value~, span~) =>
+      SAssign(place~, op~, value=rename_expr(value, m), span~)
+    SMethod(place~, call~, args~, span~) =>
+      SMethod(place~, call~, args=args.map(a => rename_expr(a, m)), span~)
+    SEffect(name~, args~, span~) =>
+      SEffect(name~, args=args.map(a => rename_expr(a, m)), span~)
+    SIf(cond~, then_~, else_~, span~) =>
+      SIf(
+        cond=rename_expr(cond, m),
+        then_=then_.map(st => rename_stmt(st, m)),
+        else_=else_.map(st => rename_stmt(st, m)),
+        span~,
+      )
+  }
 }
 
 ///|

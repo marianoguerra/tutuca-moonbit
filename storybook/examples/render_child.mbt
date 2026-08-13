@@ -39,27 +39,15 @@ pub fn render_child_module() -> @component.ModuleDef {
 /// Reused by multiple-views and push-view.
 fn entry_comp() -> @component.Component {
   // `containsText` is declared in this file's `tutuca/script` block, which is
-  // what puts it in `EntryMethod` — no view of Entry calls it. The BODY there
-  // is not emitted yet, so the implementation is still written here; when the
-  // emitter lands, this argument goes away and the block answers on its own.
-  entry_component(
-    init={ title: "Entry Title", description: "Entry Description" },
-    compute=m => {
-      match m {
-        ContainsText =>
-          Some((s : EntryState, args : Array[@tutuca.Value]) => {
-            match args {
-              [Str(v)] =>
-                Bool(
-                  s.title.to_lower().contains(v.to_lower()) ||
-                  s.description.to_lower().contains(v.to_lower()),
-                )
-              _ => Bool(false)
-            }
-          })
-      }
-    },
-  )
+  // what puts it in `EntryMethod` — no view of Entry calls it; the `@when` of
+  // a PARENT does. Its body is compiled from the block now, so there is no
+  // `compute~` argument here: this used to carry a hand-written copy of the
+  // same two `contains` calls, with the note that it would go away when the
+  // emitter landed.
+  entry_component(init={
+    title: "Entry Title",
+    description: "Entry Description",
+  })
 }
 
 ///|

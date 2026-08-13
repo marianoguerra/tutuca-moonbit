@@ -52,3 +52,29 @@ pub fn case_name(i : Int) -> String? {
     _ => None
   }
 }
+
+///|
+/// The same, for the value cases — which are renamed per case rather than
+/// per bucket, since two of them declare the same `matches` differently.
+pub fn value_case_name(i : Int) -> String? {
+  match i {
+    0 => Some("v0_summary")
+    1 => Some("v1_left")
+    2 => Some("v2_over")
+    3 => Some("v3_moved")
+    4 => Some("v4_named")
+    5 => Some("v5_named")
+    6 => Some("v6_isAda")
+    7 => Some("v7_status")
+    8 => Some("v8_containsText")
+    9 => Some("v9_containsText")
+    10 => Some("v10_matches")
+    11 => Some("v11_matches")
+    12 => Some("v12_matches")
+    13 => Some("v13_firstOnly")
+    14 => Some("v14_row")
+    15 => Some("v15_row")
+    16 => Some("v16_info")
+    _ => None
+  }
+}

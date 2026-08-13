@@ -8,6 +8,36 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **`compute`, `pred` and the two enrichers are compiled now.** The
+  ahead-of-time backend skipped every value body — `emit.mbt` mapped the four
+  dispatch kinds to buckets and `continue`d past the rest — so a block that
+  declared `pred over { .count > 3 }` contributed the NAME to the method enum
+  and nothing else. A view file that stated the rule and nothing beside it
+  produced a component whose `$over` answered Null: the flag never showed, the
+  label stayed empty, and nothing said why. The same file, run as a card, had
+  always worked. Reported from a project on the latest version, and reproduced
+  here by driving one file through both backends.
+
+  Each body is compiled into one function — `<comp>_compute_<name>`,
+  `_when_`, `_enrich_`, `_enrich_scope_` — and the generator writes the router
+  that keys them by the bucket's own enum and composes it AHEAD of the author's
+  `compute~` / `when~` / `enrich~`, exactly as it already composed `update~`.
+  One body may compile twice, because a `pred` reached by `@when` is handed the
+  row and the same `pred` read as `$name` is not; which of those exists comes
+  from the views, so the generator tells the backend and the backend does not
+  guess.
+
+  Two rules the fix turns on. A body may CALL another by name — `compute status
+  { if over { … } }` is a call, and it emits one — which is what makes a block
+  a set of definitions rather than a list of one-liners. And an opaque value
+  used at a type (a `@value`, an argument nothing declares) is GUARDED rather
+  than coerced, with the guard a port of the interpreter's own: `lower` there
+  is `guard args[0] is Str(s) else { return None }`, so a row of the wrong
+  shape answers nothing in both backends instead of being coerced in one.
+
+  `storybook/examples/render_child.mbt` loses the hand-written `compute~` it
+  carried with a note saying it would go away when this landed.
+
 - **The MoonBit backend emitted `not(x)`, which moonc deprecates.** Every
   negating form in a block — `not .ok`, `is not`, and the `(not a) or b` that
   `implies` expands to — compiled to the spelling the compiler warns about, so
@@ -19,6 +49,22 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.loading is false` instead.
 
 ### Added
+
+- **The conformance corpus covers value bodies.** It held transitions only —
+  a dispatch, a before, an after — which is why the two backends could disagree
+  about every `compute` and `pred` in the language without a test noticing. It
+  now carries `ValueCase` beside `Case`: a body, a role, the bindings the
+  renderer would hand it, and the answer. Seventeen cases, most of them lifted
+  from blocks that exist in this repo — the site's counter card, the tutorial's
+  steps, `render_child.html`'s `containsText`, the filter idiom every list
+  component grows — because the thing worth pinning is what people write.
+
+  Three adapters, as before: the interpreter's, the compiled one (which asks
+  the generated component BY NAME, so it drives the router and the bucket
+  composition too), and the projection that turns the corpus into a view file.
+  It earned its place on the first run, catching a `pred` that the new backend
+  boxed into a `Bool` where the interpreter answers the expression's own value
+  — `<x text="$named">` would have printed `true` where a card prints `ada`.
 
 - **`<mb-card codemirror>` — the embeddable card can be a real editor.** The
   same CodeMirror the two playgrounds use, reached through the same

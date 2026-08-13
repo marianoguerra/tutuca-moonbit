@@ -130,3 +130,82 @@ test "every projected case names a declaration the file actually holds" {
 fn corpus_declares(name : String) -> Bool {
   CorpusInput::parse(name) is Some(_) || name == "resetTo"
 }
+
+///|
+/// The compiled component's instance for a case's state.
+///
+/// Built through `Component::make` and asked BY NAME, which is how the
+/// renderer reaches a method, a `@when` and an `@enrich-with` — so what this
+/// drives is the whole wiring: the emitted function, the router the generator
+/// wrote, and the bucket the wrapper composed them into.
+fn instance_of(
+  state : Map[String, @tutuca.Value],
+) -> (@tutuca.Value, &@tutuca.Obj)? {
+  let v = corpus_component().make(state)
+  guard v is Obj(o) else { return None }
+  Some((v, o))
+}
+
+///|
+test "the MoonBit backend agrees with the corpus about value bodies" {
+  let failures : Array[String] = []
+  let refused : Array[String] = []
+  for i, c in @conformance.value_cases() {
+    guard value_case_name(i) is Some(name) else {
+      failures.push("\{c.name}: the projection left this case out")
+      continue
+    }
+    guard instance_of(c.state) is Some((this, o)) else {
+      failures.push("\{c.name}: the corpus's state does not fit CorpusState")
+      continue
+    }
+    // Reached the way the renderer reaches it: a method through the instance's
+    // fields, the loop's two through the Alter namespace.
+    let found = match c.role {
+      VMethod => o.obj_field(name)
+      _ => o.obj_callable(name, Alter)
+    }
+    guard found is Some(Fn(f)) else {
+      // No entry in the bucket: the backend refused this body, which is a
+      // documented outcome and not a failure.
+      refused.push(c.name)
+      continue
+    }
+    let got : @conformance.Answer = match c.role {
+      VMethod => AValue(f([this, ..c.args]))
+      VWhen => ABool(f([this, c.key, c.value, Null]).is_truthy())
+      VEnrich | VEnrichScope => {
+        let binds : Map[String, @tutuca.Value] = Map([])
+        let answer = match c.role {
+          VEnrich => f([this, Map(binds), c.key, c.value, Null])
+          _ => f([this])
+        }
+        // The in-loop form writes the map it was handed; the scope form
+        // answers one. Both are read back the same way here.
+        let wrote : Map[String, @tutuca.Value] = match answer {
+          Map(m) if c.role is VEnrichScope => m
+          _ => binds
+        }
+        let out : Map[String, @tutuca.Value] = Map([])
+        for k, v in wrote {
+          if !(k == "key" || k == "value" || k == "iter") {
+            out[k] = v
+          }
+        }
+        ABinds(out)
+      }
+    }
+    if got != c.answer {
+      failures.push("\{c.name}: expected \{c.answer}, got \{got}")
+    }
+  }
+  if !failures.is_empty() {
+    fail(failures.join("\n"))
+  }
+  // The same pin the transitions have, and currently at zero: every value body
+  // in the corpus compiles, including the filter idiom that reads `@value` at
+  // a type and the argument nothing declares. Kept as an assertion rather than
+  // deleted, because the number going UP is the regression this file exists to
+  // catch — a refused body is a `$name` that silently answers nothing.
+  @debug.assert_eq(refused.length(), 0, msg=refused.join(", "))
+}

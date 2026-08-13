@@ -50,10 +50,22 @@ fn emit_wrapper(
   /// The `<comp>_inline_update` this wrapper composes ahead of `update~`, when
   /// the file's script block compiled one.
   inline : String?,
+  /// The block's compiled VALUE bodies, which the buckets below compose the
+  /// same way — generated first, the author's consulted for what is left.
+  values : @emit_mbt.Emitted?,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let methods = declared_methods(surface)
   let s = "\{t}State"
+  // The routers first. A wrapper is one `component()` call, and the functions
+  // it names have to exist before it — so they are written here rather than
+  // interleaved into the middle of the call being built below.
+  let routers : Map[String, String] = Map([])
+  for b in wrapper_buckets(t, s, surface, methods) {
+    if bucket_router(v, b, values, out) is Some(fn_name) {
+      routers[b.param] = fn_name
+    }
+  }
   // One branch, because `has_direct_codec` answers true for the whole StateTy
   // lattice — the shape it used to discriminate was a state the generator
   // could not convert field by field, which fell back to a JSON bridge that no
@@ -132,18 +144,108 @@ fn emit_wrapper(
     update_arg,
   )
   for b in wrapper_buckets(t, s, surface, methods) {
-    out.write_string(
-      "    \{b.param}=match \{b.param} {\n" +
-      "      Some(f) =>\n" +
-      "        @component.build_bucket((\{b.all} : Array[\{b.enum_}]), \{b.enum_}::name, f)\n" +
-      "      None => Map([])\n" +
-      "    },\n",
-    )
+    // The block first, the author second — the same precedence `update~` has,
+    // for the same reason: what the file states is what runs, and the MoonBit
+    // beside it answers what the file could not.
+    match routers.get(b.param) {
+      Some(router) =>
+        out.write_string(
+          "    \{b.param}=@component.build_bucket(\n" +
+          "      (\{b.all} : Array[\{b.enum_}]),\n" +
+          "      \{b.enum_}::name,\n" +
+          "      k => match \{router}(k) {\n" +
+          "        Some(f) => Some(f)\n" +
+          "        None =>\n" +
+          "          match \{b.param} {\n" +
+          "            Some(g) => g(k)\n" +
+          "            None => None\n" +
+          "          }\n" +
+          "      },\n" +
+          "    ),\n",
+        )
+      None =>
+        out.write_string(
+          "    \{b.param}=match \{b.param} {\n" +
+          "      Some(f) =>\n" +
+          "        @component.build_bucket((\{b.all} : Array[\{b.enum_}]), \{b.enum_}::name, f)\n" +
+          "      None => Map([])\n" +
+          "    },\n",
+        )
+    }
   }
   out.write_string(
     "    slots~,\n    slot_args~,\n    provide~,\n    lookup~,\n",
   )
   out.write_string("  )\n}\n\n")
+}
+
+///|
+/// The generated router for one bucket, and the name it is emitted under —
+/// None when the block compiled nothing this bucket routes to.
+///
+/// It is a `match` over the bucket's own enum, which is why it is written here
+/// rather than by the backend: the enum and its variant spellings are this
+/// file's, and the functions it names are `emit_mbt`'s. `value_fn_name` is the
+/// one thing both sides agree on.
+fn bucket_router(
+  v : String,
+  b : WrapperBucket,
+  values : @emit_mbt.Emitted?,
+  into : StringBuilder,
+) -> String? raise GenError {
+  guard values is Some(e) else { return None }
+  let (role, answered) = match b.param {
+    "compute" => (@emit_mbt.Role::RMethod, e.answers_methods)
+    "when" => (RWhen, e.answers_whens)
+    "enrich" => (REnrich, e.answers_enriches)
+    "enrich_scope" => (REnrichScope, e.answers_enrich_scopes)
+    // `swap` and `loop_with` have no declaration in the block language, so
+    // there is nothing here to route to them.
+    _ => return None
+  }
+  if answered.is_empty() {
+    return None
+  }
+  let name = "\{v}_inline_\{b.param}"
+  let out = StringBuilder::new()
+  out.write_string("///|\n")
+  out.write_string(
+    "/// The `\{b.param}` names the `<script type=\"tutuca/script\">` block answers.\n",
+  )
+  out.write_string("/// GENERATED — edit the block, not this.\n")
+  out.write_string("fn \{name}(k : \{b.enum_}) -> (\{b.handler})? {\n")
+  out.write_string("  match k {\n")
+  let all = variants_for(answered)
+  for pair in all {
+    out.write_string(
+      "    \{pair.1} => Some(\{@emit_mbt.value_fn_name(v, role, pair.0)})\n",
+    )
+  }
+  // A wildcard only when one is reachable: the enum carries every name the
+  // views use, and a `match` that already covers them all would be warned
+  // about for the arm it cannot reach.
+  if all.length() < variants_count(b.all) {
+    out.write_string("    _ => None\n")
+  }
+  out.write_string("  }\n}\n\n")
+  into.write_string(out.to_string())
+  Some(name)
+}
+
+///|
+/// How many variants a bucket's `all` list holds — it is the array literal
+/// this file wrote, so counting its separators is exact.
+fn variants_count(all : String) -> Int {
+  if all == "[]" {
+    return 0
+  }
+  let mut n = 1
+  for c in all {
+    if c == ',' {
+      n = n + 1
+    }
+  }
+  n
 }
 
 ///|

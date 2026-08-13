@@ -243,6 +243,49 @@
     .count = n
   }
 
+  compute v0_summary { $'{.name}: {.count}' }
+
+  compute v1_left { .count - (len .items) }
+
+  pred v2_over { .count > 3 }
+
+  pred v3_moved { (len .items) > 0 }
+
+  pred v4_named { .name }
+
+  pred v5_named { .name }
+
+  pred v6_isAda { .name is 'ada' }
+
+  pred v7_over { .count > 3 }
+
+  compute v7_status { if v7_over { 'over' } else { 'under' } }
+
+  pred v8_containsText(q) { contains (lower .name) (lower q) }
+
+  pred v9_containsText(q) { contains (lower .name) (lower q) }
+
+  pred v10_matches { (empty? .name) or (contains (lower @value) (lower .name)) }
+
+  pred v11_matches { (empty? .name) or (contains (lower @value) (lower .name)) }
+
+  pred v12_matches { contains (lower @value) 'a' }
+
+  pred v13_firstOnly { @key is 0 }
+
+  enrich v14_row {
+    @tag = str @value
+  }
+
+  enrich v15_row {
+    @tag = str @value
+    @echo = str @tag
+  }
+
+  enrichScope v16_info {
+    @len = len .name
+  }
+
 </script>
 
 <template id="Corpus">
@@ -287,5 +330,13 @@
   <button @on.click="case36">case36</button>
   <button @on.click="case37 3">case37</button>
   <button @on.click="case39 4">case39</button>
+  <ul><li @each=".items" @when="v5_named"></li></ul>
+  <ul><li @each=".items" @when="v10_matches"></li></ul>
+  <ul><li @each=".items" @when="v11_matches"></li></ul>
+  <ul><li @each=".items" @when="v12_matches"></li></ul>
+  <ul><li @each=".items" @when="v13_firstOnly"></li></ul>
+  <ul><li @each=".items" @enrich-with="v14_row"></li></ul>
+  <ul><li @each=".items" @enrich-with="v15_row"></li></ul>
+  <div @enrich-with="v16_info"></div>
 </div>
 </template>

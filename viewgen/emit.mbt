@@ -158,11 +158,14 @@ fn declared_methods(surface : Surface) -> Array[String] {
 ///|
 /// The component's surface with what its script block declares folded in.
 ///
-/// Only the NAMES, for now: a `pred` or a `compute` in the block is a method
-/// this component answers, exactly as a `$name` at a call site is. What the
-/// bodies do is the emitter's job and it is not built yet, so an author still
-/// writes the MoonBit — but the enum a `compute` match is written over now
-/// contains the name, which is the half no call site could supply.
+/// A `pred` or a `compute` in the block is a method this component answers,
+/// exactly as a `$name` at a call site is — and the enum a `compute` match is
+/// written over needs the name, which is the half no call site could supply.
+///
+/// The names are also what tells the BACKEND which bodies to compile, and in
+/// which role: `emit_inline.mbt` hands this surface's methods, whens and
+/// enrichers to `emit_mbt` as its `Roles`. That is why folding them in here
+/// matters twice — once for the enum, once for the emission.
 fn with_script(
   surface : Surface,
   file : @viewfile.ViewFile,

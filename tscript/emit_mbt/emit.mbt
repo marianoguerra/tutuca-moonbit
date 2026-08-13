@@ -37,6 +37,26 @@ priv struct E {
   /// transitions names the parameter `_ctx`, because a generated file must not
   /// be the thing that warns.
   mut uses_ctx : Bool
+  /// `@name` -> the MoonBit expression that reads it, for the bodies that have
+  /// bindings at all. A `@when` gets the loop's three; an `enrich` gets those
+  /// plus whatever it has written into the binds map.
+  mut binds : Map[String, String]
+  /// The binds map's parameter name inside an `enrich`, or "" — the one body
+  /// shape that may WRITE a binding, and read one it wrote.
+  mut binds_map : String
+  /// What a value body returns when a guard does not hold — `false` for a
+  /// `@when`, `Null` for a method — or "" inside a transition, where the
+  /// existing `Unchanged` idiom already covers it and a guard on an opaque
+  /// value is still refused.
+  mut fail : String
+  /// A counter for the temporaries those guards bind, and what is already
+  /// bound: reading `q` twice is one guard, not two.
+  mut tmp : Int
+  mut guards : Map[String, String]
+  /// The block's own callables, name -> the emitted function that answers it.
+  /// This is what lets one body call another: `compute status { if over { … } }`
+  /// is a call, and a bare name is where the reader expects one.
+  callables : Map[String, String]
 }
 
 ///|
@@ -45,9 +65,23 @@ pub fn emit(
   def : @statedef.StateDef,
   state_ty~ : String,
   fn_name~ : String,
+  prefix? : String = "",
+  roles? : Roles = Roles::none(),
   surface? : @check.Surface = @check.Surface::empty(),
 ) -> Emitted {
-  let e = E::{ def, state_ty, params: Map([]), prelude: [], uses_ctx: false }
+  let e = E::{
+    def,
+    state_ty,
+    params: Map([]),
+    prelude: [],
+    uses_ctx: false,
+    binds: Map([]),
+    binds_map: "",
+    fail: "",
+    tmp: 0,
+    guards: Map([]),
+    callables: Map([]),
+  }
   let arms : Array[String] = []
   let refusals : Array[Refusal] = []
   let answers : Map[String, Array[String]] = {
@@ -56,6 +90,14 @@ pub fn emit(
     "Bubble": [],
     "Response": [],
   }
+  // Every callable the block declares, so a body can call its siblings. Filled
+  // before the walk because declaration order is not call order: `compute
+  // status { if over { … } }` may sit above the `pred` it asks.
+  for d in decls {
+    if d.kind is (DPred | DCompute) && prefix != "" {
+      e.callables[d.name] = value_fn_name(prefix, RMethod, d.name)
+    }
+  }
   for d in decls {
     let bucket = match d.kind {
       DOn => "Input"
@@ -63,9 +105,8 @@ pub fn emit(
       DBubble => "Bubble"
       DResponse => "Response"
       // A `compute`, a `pred`, an `enrich`: not a transition, so not this
-      // function's business. Answered elsewhere or not at all, and silently
-      // skipped rather than refused — refusing would report a problem where
-      // there is none.
+      // function's business. They are compiled below, into one function each,
+      // because what answers them is a different bucket rather than nothing.
       _ => continue
     }
     e.params = Map([])
@@ -111,14 +152,291 @@ pub fn emit(
     b.write_string("  }\n}\n")
     b.to_string()
   }
+  // The value bodies: `compute` and `pred` as methods, a `pred` again as a
+  // `@when` when the views use it that way, and the two enrichers. One
+  // function each, so a body that calls a sibling calls a function.
+  let values = e.value_bodies(decls, prefix, roles, refusals)
   {
-    source,
+    source: source + values.source,
     answers_input: answers.get("Input").unwrap(),
     answers_receive: answers.get("Receive").unwrap(),
     answers_bubble: answers.get("Bubble").unwrap(),
     answers_response: answers.get("Response").unwrap(),
+    answers_methods: values.methods,
+    answers_whens: values.whens,
+    answers_enriches: values.enriches,
+    answers_enrich_scopes: values.enrich_scopes,
     refusals,
   }
+}
+
+///|
+pub fn Roles::none() -> Roles {
+  { methods: [], whens: [], enriches: [], enrich_scopes: [] }
+}
+
+///|
+pub fn value_fn_name(prefix : String, role : Role, name : String) -> String {
+  let infix = match role {
+    RMethod => "compute"
+    RWhen => "when"
+    REnrich => "enrich"
+    REnrichScope => "enrich_scope"
+  }
+  "\{prefix}_\{infix}_\{name}"
+}
+
+///|
+/// What one pass over the value bodies produced.
+priv struct Values {
+  source : String
+  methods : Array[String]
+  whens : Array[String]
+  enriches : Array[String]
+  enrich_scopes : Array[String]
+}
+
+///|
+/// Compile every value body the caller asked for, in the roles it asked for.
+///
+/// A refusal is per NAME AND ROLE, because the same `pred` can compile as a
+/// `@when` — where `@value` is a parameter — and be refused as a method, where
+/// it is nothing at all. Both are true statements about the same declaration.
+fn E::value_bodies(
+  self : E,
+  decls : Array[@tscript.Decl],
+  prefix : String,
+  roles : Roles,
+  refusals : Array[Refusal],
+) -> Values {
+  let out = Values::{
+    source: "",
+    methods: [],
+    whens: [],
+    enriches: [],
+    enrich_scopes: [],
+  }
+  if prefix == "" {
+    return out
+  }
+  let b = StringBuilder::new()
+  fn take(
+    d : @tscript.Decl,
+    role : Role,
+    wanted : Array[String],
+    into : Array[String],
+  ) -> Unit {
+    if !wanted.contains(d.name) {
+      return
+    }
+    let src = self.value_body(d, role, prefix) catch {
+      Cannot(why) => {
+        refusals.push({ name: d.name, why, span: d.span })
+        return
+      }
+    }
+    b.write_string(src)
+    into.push(d.name)
+  }
+
+  for d in decls {
+    match d.kind {
+      DCompute | DPred => {
+        take(d, RMethod, roles.methods, out.methods)
+        if d.kind is DPred {
+          take(d, RWhen, roles.whens, out.whens)
+        }
+      }
+      DEnrich => take(d, REnrich, roles.enriches, out.enriches)
+      DEnrichScope =>
+        take(d, REnrichScope, roles.enrich_scopes, out.enrich_scopes)
+      _ => ()
+    }
+  }
+  { ..out, source: b.to_string() }
+}
+
+///|
+/// One value body, as a whole function.
+///
+/// The four roles differ in exactly two ways — what is in scope, and what
+/// comes back — so they share everything else, including the expression
+/// compiler that also writes the transitions. That sharing is the point: a
+/// `pred` used in a `@show` and the same `pred` used in an `@when` must answer
+/// the same question, and here they cannot drift because they are one body
+/// compiled twice.
+fn E::value_body(
+  self : E,
+  d : @tscript.Decl,
+  role : Role,
+  prefix : String,
+) -> String raise NoWay {
+  self.params = Map([])
+  self.binds = Map([])
+  self.binds_map = ""
+  self.prelude = []
+  self.tmp = 0
+  self.guards = Map([])
+  // What "this value is not that shape" answers, per role. The interpreter
+  // answers None and the caller reads it as nothing happened; these are the
+  // same statement in each signature.
+  self.fail = match role {
+    RMethod => "Null"
+    RWhen => "false"
+    // An enricher writes into a map it was handed, and the interpreter drops
+    // every write when a body cannot finish. Leaving early would keep the ones
+    // already made, so nothing here guards: an opaque value used at a type is
+    // refused instead, and the refusal names the enricher.
+    REnrich | REnrichScope => ""
+  }
+  let name = value_fn_name(prefix, role, d.name)
+  // A body that calls a sibling passes `s` to it, so it reads the state even
+  // when no `.field` appears in it.
+  let s_used = decl_reads_state(d) || self.decl_calls_sibling(d)
+  let sp = if s_used { "s" } else { "_s" }
+  let b = StringBuilder::new()
+  b.write_string("///|\n")
+  b.write_string("/// `\{@tscript.kind_word(d.kind)} \{d.name}` from the ")
+  b.write_string(
+    "`<script type=\"tutuca/script\">` block. GENERATED — edit\n",
+  )
+  b.write_string("/// the block, not this.\n")
+  match role {
+    RMethod => {
+      // The arguments a `$name` call site passes. Their types are not known
+      // here — nothing declares what a slot hands a method — so they bind raw,
+      // and a typed use of one is refused exactly as it is in an `on` handler
+      // the views call inconsistently.
+      let args_used = d.params.length() > 0 && decl_reads_params(d)
+      b.write_string(
+        "fn \{name}(\{sp} : \{self.state_ty}, \{if args_used { "args" } else { "_args" }} : Array[@tutuca.Value]) -> @tutuca.Value {\n",
+      )
+      for i, prm in d.params {
+        self.params[prm.name] = None
+        if decl_reads_name(d, prm.name) {
+          b.write_string("  let \{prm.name} = args.get(\{i}).unwrap_or(Null)\n")
+        }
+      }
+      let (src, ty) = self.value_of_body(d)
+      b.write_string(self.flush("  "))
+      b.write_string("  \{self.value_of(src, ty)}\n}\n\n")
+    }
+    RWhen => {
+      // The loop's own three, as the renderer passes them. `iterData` is the
+      // one a body reads least, and every one of them is named with the
+      // underscore when it is not read at all.
+      let (kp, vp, ip) = self.bind_params(d)
+      b.write_string(
+        "fn \{name}(\{sp} : \{self.state_ty}, \{kp} : @tutuca.Value, \{vp} : @tutuca.Value, \{ip} : @tutuca.Value) -> Bool {\n",
+      )
+      guard d.body is Value(e) else {
+        raise Cannot("a `@when` is one expression, not statements")
+      }
+      let cond = self.at_bool(e)
+      b.write_string(self.flush("  "))
+      b.write_string("  \{cond}\n}\n\n")
+    }
+    REnrich => {
+      let (kp, vp, ip) = self.bind_params(d)
+      self.binds_map = "binds"
+      b.write_string(
+        "fn \{name}(\{sp} : \{self.state_ty}, binds : Map[String, @tutuca.Value], \{kp} : @tutuca.Value, \{vp} : @tutuca.Value, \{ip} : @tutuca.Value) -> Unit {\n",
+      )
+      b.write_string(self.enrich_stmts(d, "  "))
+      b.write_string("}\n\n")
+    }
+    REnrichScope => {
+      self.binds_map = "binds"
+      b.write_string(
+        "fn \{name}(\{sp} : \{self.state_ty}) -> Map[String, @tutuca.Value] {\n",
+      )
+      b.write_string("  let binds : Map[String, @tutuca.Value] = Map([])\n")
+      b.write_string(self.enrich_stmts(d, "  "))
+      b.write_string("  binds\n}\n\n")
+    }
+  }
+  b.to_string()
+}
+
+///|
+/// The guards an expression needed, as lines, and then forgotten.
+fn E::flush(self : E, pad : String) -> String {
+  let out = self.prelude.map(g => "\{pad}\{g}\n").join("")
+  self.prelude = []
+  out
+}
+
+///|
+/// The loop's binding parameters, each named with a leading underscore when
+/// the body does not read it — a generated file must not be the thing that
+/// warns.
+fn E::bind_params(self : E, d : @tscript.Decl) -> (String, String, String) {
+  let out : Array[String] = []
+  for pair in [("key", "key"), ("value", "value"), ("iter", "iter_data")] {
+    let read = decl_reads_bind(d, pair.0)
+    let param = if read { pair.1 } else { "_" + pair.1 }
+    if read {
+      self.binds[pair.0] = param
+    }
+    out.push(param)
+  }
+  (out[0], out[1], out[2])
+}
+
+///|
+/// The one expression a `compute` or a `pred` is, with its type.
+fn E::value_of_body(
+  self : E,
+  d : @tscript.Decl,
+) -> (String, @statedef.StateTy) raise NoWay {
+  guard d.body is Value(e) else {
+    raise Cannot("a `compute` and a `pred` are one expression, not statements")
+  }
+  // NOT coerced to a Bool, even for a `pred`. The interpreter answers a
+  // `pred`'s own expression — `pred named { .name }` reads back "ada" — and
+  // the truthiness is applied by whatever ASKED: a condition slot, or the
+  // `@when` role below, which is the one place the bucket's signature makes it
+  // a Bool. Boxing it here made `<x text="$named">` print "true" in a compiled
+  // component and "ada" in a card, which the corpus caught on the first run.
+  self.expr(e)
+}
+
+///|
+/// An enricher's statements, which write bindings rather than state.
+fn E::enrich_stmts(
+  self : E,
+  d : @tscript.Decl,
+  pad : String,
+) -> String raise NoWay {
+  guard d.body is Stmts(body) else {
+    raise Cannot("an enricher is statements, not one expression")
+  }
+  let b = StringBuilder::new()
+  for st in body {
+    guard st is SAssign(place~, op~, value~, ..) else {
+      raise Cannot(
+        "an enricher may only assign bindings — `@name = …` — and this is not one",
+      )
+    }
+    guard place.root is PBind(bind) else {
+      raise Cannot("an enricher writes `@name`, not state")
+    }
+    guard place.steps.is_empty() else {
+      raise Cannot(
+        "`@\{bind}` is written whole; a path into one is not compiled",
+      )
+    }
+    guard op is ASet else {
+      raise Cannot(
+        "a binding is assigned with `=`; `+=` needs one to already be there",
+      )
+    }
+    let src = self.as_value(value)
+    b.write_string("\{pad}\{self.binds_map}[\{quote(bind)}] = \{src}\n")
+    // Written, so readable below it — the interpreter threads the same map.
+    self.binds[bind] = "\{self.binds_map}.get(\{quote(bind)}).unwrap_or(Null)"
+  }
+  b.to_string()
 }
 
 ///|
@@ -233,6 +551,99 @@ fn expr_uses(e : @tscript.Expr, name : String) -> Bool {
     EApp(args~, ..) => args.iter().any(a => expr_uses(a, name))
     EIf(cond~, then_~, else_~, ..) =>
       expr_uses(cond, name) || expr_uses(then_, name) || expr_uses(else_, name)
+  }
+}
+
+///|
+/// Whether a declaration's body reads the state at all.
+///
+/// A `compute two { 2 }` names its parameter `_s`, for the reason every other
+/// unread binder here is underscored: a generated file must not be the thing
+/// that warns.
+fn decl_reads_state(d : @tscript.Decl) -> Bool {
+  decl_any(d, e => e is ERead(place=p, ..) && p.root is PState(_))
+}
+
+///|
+/// Whether a body calls another callable this block declares.
+fn E::decl_calls_sibling(self : E, d : @tscript.Decl) -> Bool {
+  decl_any(d, e => {
+    match e {
+      EName(name~, ..) =>
+        !self.params.contains(name) && self.callables.contains(name)
+      EApp(name~, ..) => self.callables.contains(name)
+      _ => false
+    }
+  })
+}
+
+///|
+/// Whether it reads one of the loop's bindings.
+fn decl_reads_bind(d : @tscript.Decl, bind : String) -> Bool {
+  decl_any(d, e => e is ERead(place=p, ..) && p.root is PBind(b) && b == bind)
+}
+
+///|
+/// Whether it reads any of its own parameters.
+fn decl_reads_params(d : @tscript.Decl) -> Bool {
+  for prm in d.params {
+    if decl_reads_name(d, prm.name) {
+      return true
+    }
+  }
+  false
+}
+
+///|
+/// Whether it reads one name.
+fn decl_reads_name(d : @tscript.Decl, name : String) -> Bool {
+  match d.body {
+    Value(e) => expr_uses(e, name)
+    Stmts(body) => uses_name(body, name)
+  }
+}
+
+///|
+/// Every expression in a declaration, against a question.
+fn decl_any(d : @tscript.Decl, ask : (@tscript.Expr) -> Bool) -> Bool {
+  fn walk(e : @tscript.Expr) -> Bool {
+    if ask(e) {
+      return true
+    }
+    match e {
+      ETpl(parts~, ..) =>
+        parts.iter().any(p => p is TExpr(inner) && walk(inner))
+      EUnary(operand~, ..) => walk(operand)
+      EChain(operands~, ..) => operands.iter().any(o => walk(o))
+      EApp(args~, ..) => args.iter().any(a => walk(a))
+      EIf(cond~, then_~, else_~, ..) => walk(cond) || walk(then_) || walk(else_)
+      ERead(place~, ..) | ERef(place~, ..) =>
+        place.steps.iter().any(st => st is PIndex(i) && walk(i))
+      _ => false
+    }
+  }
+
+  fn walk_stmts(body : Array[@tscript.Stmt]) -> Bool {
+    for st in body {
+      let hit = match st {
+        SAssign(place~, value~, ..) =>
+          walk(ERead(place~, span=place.span)) || walk(value)
+        SMethod(place~, args~, ..) =>
+          walk(ERead(place~, span=place.span)) || args.iter().any(a => walk(a))
+        SEffect(args~, ..) => args.iter().any(a => walk(a))
+        SIf(cond~, then_~, else_~, ..) =>
+          walk(cond) || walk_stmts(then_) || walk_stmts(else_)
+      }
+      if hit {
+        return true
+      }
+    }
+    false
+  }
+
+  match d.body {
+    Value(e) => walk(e)
+    Stmts(body) => walk_stmts(body)
   }
 }
 
@@ -611,7 +1022,42 @@ fn E::at(
     return n.to_int().to_string()
   }
   let (src, got) = self.expr(e)
+  // An opaque value — a binding, a raw argument, another callable's answer —
+  // where a type is wanted. Inside a value body this GUARDS, and the guard is
+  // a port of the interpreter's own: `lower` there is
+  // `guard args[0] is Str(s) else { return None }`, so a `@value` that is not
+  // text makes the body answer nothing in both backends rather than being
+  // coerced in one of them. In a transition `fail` is empty and it is still
+  // refused, because there the answer to "not that shape" is already written.
+  if got is TAny && self.fail != "" {
+    match want {
+      TText | TFloat | TInt(..) => return self.guarded(src, want)
+      _ => ()
+    }
+  }
   self.to_ty(src, got, want)
+}
+
+///|
+/// Bind an opaque value at the wanted type, or leave the body.
+fn E::guarded(self : E, src : String, want : @statedef.StateTy) -> String {
+  let key = "\{src}|\{want.show_source()}"
+  if self.guards.get(key) is Some(bound) {
+    return bound
+  }
+  self.tmp = self.tmp + 1
+  let v = "v\{self.tmp}"
+  let pat = match want {
+    TText => "Str(\{v})"
+    _ => "Num(\{v})"
+  }
+  self.prelude.push("guard \{src} is \{pat} else { return \{self.fail} }")
+  let bound = match want {
+    TInt(..) => "\{v}.to_int()"
+    _ => v
+  }
+  self.guards[key] = bound
+  bound
 }
 
 ///|
@@ -738,10 +1184,31 @@ fn E::expr(
     }
     ERead(place~, ..) => self.read(place)
     EName(name~, ..) => {
+      // A `compute` or a `pred` the same block declares, called by name — the
+      // spelling a body uses, since `$name` belongs to the render stack. The
+      // answer is a `@tutuca.Value`, which is what a method returns.
+      if !self.params.contains(name) && self.callables.get(name) is Some(f) {
+        return ("\{f}(s, [])", TAny)
+      }
       guard self.params.get(name) is Some(ty) else {
-        raise Cannot("`\{name}` is not a parameter of this handler")
+        raise Cannot(
+          if self.callables.is_empty() {
+            "`\{name}` is not a parameter of this handler"
+          } else {
+            "`\{name}` is neither a parameter here nor a `pred` or `compute` this block declares"
+          },
+        )
       }
       guard ty is Some(t) else {
+        // Inside a value body a raw argument is opaque rather than refused:
+        // nothing declares what a `$name` call site passes, and the guard that
+        // `at` emits where a type is wanted is a port of the interpreter's own
+        // — so the two backends refuse the same argument at the same place.
+        // A transition still refuses, because there the argument's shape is
+        // what decides whether the transition happens at all.
+        if self.fail != "" {
+          return (name, TAny)
+        }
         raise Cannot(
           "`\{name}`'s type is not known from the call sites, so it arrives as a raw value — annotate it by calling the handler consistently, or write the handler in MoonBit",
         )
@@ -789,7 +1256,27 @@ fn E::read(
   p : @tscript.Place,
 ) -> (String, @statedef.StateTy) raise NoWay {
   guard p.root is PState(name) else {
-    raise Cannot("a binding is not readable from a handler")
+    guard p.root is PBind(bind) else {
+      raise Cannot("a binding is not readable from a handler")
+    }
+    // A body with bindings in scope: a `@when` has the loop's three, an
+    // enricher has those plus whatever it has already written. `Any`, because
+    // a binding is a `@tutuca.Value` and picking a type for one is the guess
+    // this backend does not make — so it reads as a condition or travels as a
+    // payload, and a typed use of it is refused below.
+    guard self.binds.get(bind) is Some(src) else {
+      raise Cannot(
+        if self.binds_map == "" && self.binds.is_empty() {
+          "`@\{bind}` is a binding, which a handler does not have — the renderer hands them to a `@when` or an `@enrich-with`"
+        } else {
+          "`@\{bind}` is not in scope here: a loop binds `@key`, `@value` and `@iter`, and an enricher may read one it wrote"
+        },
+      )
+    }
+    guard p.steps.is_empty() else {
+      raise Cannot("reading a path into `@\{bind}` is not compiled yet")
+    }
+    return (src, TAny)
   }
   guard self.def.field(name) is Some(f) else {
     raise Cannot("`.\{name}` is not a field of the state")
@@ -966,10 +1453,20 @@ fn E::app(
       let call = "(match @tutuca.builtin(\{quote(name)}) { Some(b) => (b.apply)([\{v}]).is_truthy(); None => false })"
       (call, TBool)
     }
-    _ =>
+    _ => {
+      // A sibling callable, applied. Its parameters bind raw, so the arguments
+      // travel as Values — the same list a `$name` call site passes.
+      if self.callables.get(name) is Some(f) {
+        let vals : Array[String] = []
+        for a in args {
+          vals.push(self.as_value(a))
+        }
+        return ("\{f}(s, [\{vals.join(", ")}])", TAny)
+      }
       raise Cannot(
         "`\{name}` applied to \{args.length()} argument(s) is not compiled yet — write the handler in MoonBit",
       )
+    }
   }
 }
 

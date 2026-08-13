@@ -400,12 +400,91 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
 /// Every `$name` the views call.
 pub(all) enum CorpusMethod {
   Long
+  V0Summary
+  V10Matches
+  V11Matches
+  V12Matches
+  V13FirstOnly
+  V1Left
+  V2Over
+  V3Moved
+  V4Named
+  V5Named
+  V6IsAda
+  V7Over
+  V7Status
+  V8ContainsText
+  V9ContainsText
 } derive(Eq, @debug.Debug)
 
 ///|
 pub fn CorpusMethod::name(self : CorpusMethod) -> String {
   match self {
     Long => "long"
+    V0Summary => "v0_summary"
+    V10Matches => "v10_matches"
+    V11Matches => "v11_matches"
+    V12Matches => "v12_matches"
+    V13FirstOnly => "v13_firstOnly"
+    V1Left => "v1_left"
+    V2Over => "v2_over"
+    V3Moved => "v3_moved"
+    V4Named => "v4_named"
+    V5Named => "v5_named"
+    V6IsAda => "v6_isAda"
+    V7Over => "v7_over"
+    V7Status => "v7_status"
+    V8ContainsText => "v8_containsText"
+    V9ContainsText => "v9_containsText"
+  }
+}
+
+///|
+/// Every `@when` handler the views name.
+pub(all) enum CorpusWhen {
+  V10Matches
+  V11Matches
+  V12Matches
+  V13FirstOnly
+  V5Named
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CorpusWhen::name(self : CorpusWhen) -> String {
+  match self {
+    V10Matches => "v10_matches"
+    V11Matches => "v11_matches"
+    V12Matches => "v12_matches"
+    V13FirstOnly => "v13_firstOnly"
+    V5Named => "v5_named"
+  }
+}
+
+///|
+/// Every `@enrich-with` handler named INSIDE an `@each`.
+pub(all) enum CorpusEnrich {
+  V14Row
+  V15Row
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CorpusEnrich::name(self : CorpusEnrich) -> String {
+  match self {
+    V14Row => "v14_row"
+    V15Row => "v15_row"
+  }
+}
+
+///|
+/// Every `@enrich-with` handler named with no `@each` around it.
+pub(all) enum CorpusEnrichScope {
+  V16Info
+} derive(Eq, @debug.Debug)
+
+///|
+pub fn CorpusEnrichScope::name(self : CorpusEnrichScope) -> String {
+  match self {
+    V16Info => "v16_info"
   }
 }
 
@@ -438,7 +517,11 @@ impl @component.Fields for CorpusState with fn schema() {
       "case39", "case4", "case5", "case6", "case7", "case8", "case9",
     ],
     receives=["resetTo"],
-    methods=["long"],
+    methods=[
+      "long", "v0_summary", "v10_matches", "v11_matches", "v12_matches", "v13_firstOnly",
+      "v1_left", "v2_over", "v3_moved", "v4_named", "v5_named", "v6_isAda", "v7_over",
+      "v7_status", "v8_containsText", "v9_containsText",
+    ],
     view_names=["main"],
   )
 }

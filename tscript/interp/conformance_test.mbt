@@ -118,3 +118,99 @@ test "the corpus is not empty and every case is distinct" {
     seen[c.name] = ()
   }
 }
+
+///|
+/// The bindings a role is handed, as the renderer hands them.
+fn binds_for(c : @conformance.ValueCase) -> Map[String, @tutuca.Value] {
+  match c.role {
+    VMethod | VEnrichScope => Map([])
+    VWhen | VEnrich => { "key": c.key, "value": c.value }
+  }
+}
+
+///|
+test "the interpreter agrees with the corpus about value bodies" {
+  let failures : Array[String] = []
+  for c in @conformance.value_cases() {
+    let decls = @tscript.parse_script(c.script) catch {
+      e => {
+        failures.push("\{c.name}: the script does not parse — \{e.message()}")
+        continue
+      }
+    }
+    let callables : Map[String, @tscript.Decl] = Map([])
+    let mut found : @tscript.Decl? = None
+    for d in decls {
+      if d.kind is (DPred | DCompute) {
+        callables[d.name] = d
+      }
+      if d.name == c.callable {
+        found = Some(d)
+      }
+    }
+    guard found is Some(d) else {
+      failures.push("\{c.name}: nothing declares `\{c.callable}`")
+      continue
+    }
+    let defs = @statedef.parse_state(c.schema) catch {
+      e => {
+        failures.push("\{c.name}: the schema does not parse — \{e.message()}")
+        continue
+      }
+    }
+    let schema = @info.schema_info(defs[0])
+    let params : Map[String, @tutuca.Value] = Map([])
+    for i, prm in d.params {
+      params[prm.name] = c.args.get(i).unwrap_or(Null)
+    }
+    let env : @interp.Env = {
+      ..@interp.Env::of_state(c.state, callables~, schema~),
+      params,
+      binds: binds_for(c),
+    }
+    let got : @conformance.Answer = match c.role {
+      VMethod =>
+        match @interp.call(d, env) {
+          Some(v) => AValue(v)
+          // What a SLOT reads when a body could not finish, which is what
+          // `CardObj::callable_fn` hands back for exactly this: nothing at a
+          // slot is Null.
+          None => AValue(Null)
+        }
+      VWhen =>
+        match @interp.call(d, env) {
+          Some(v) => ABool(v.is_truthy())
+          // A body that could not finish is a row that does not survive: the
+          // filter answers no rather than answering nothing.
+          None => ABool(false)
+        }
+      VEnrich | VEnrichScope =>
+        match d.body {
+          Stmts(body) => {
+            let out = @interp.run(body, env)
+            match out.state {
+              // Only what the body WROTE: the loop's own key and value are the
+              // renderer's, not the enricher's answer.
+              Some(_) => {
+                let wrote : Map[String, @tutuca.Value] = Map([])
+                for k, v in out.binds {
+                  if !(k == "key" || k == "value" || k == "iter") {
+                    wrote[k] = v
+                  }
+                }
+                ABinds(wrote)
+              }
+              None => ANothing
+            }
+          }
+          Value(_) => ANothing
+        }
+    }
+    if got != c.answer {
+      failures.push(
+        "\{c.name}: expected \{c.answer} but the interpreter answered \{got}",
+      )
+    }
+  }
+  assert_eq(failures, [])
+}

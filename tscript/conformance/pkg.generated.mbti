@@ -11,9 +11,19 @@ pub fn cases() -> Array[Case]
 
 pub fn show_effect(String, Array[@core.Value]) -> String
 
+pub fn value_cases() -> Array[ValueCase]
+
 // Errors
 
 // Types and methods
+pub(all) enum Answer {
+  AValue(@core.Value)
+  ABool(Bool)
+  ABinds(Map[String, @core.Value])
+  ANothing
+} derive(Eq, @debug.Debug)
+pub impl Show for Answer
+
 pub(all) enum Bucket {
   BInput
   BReceive
@@ -32,6 +42,26 @@ pub(all) struct Case {
   after : Map[String, @core.Value]?
   effects : Array[String]
 }
+
+pub(all) struct ValueCase {
+  name : String
+  schema : String
+  script : String
+  state : Map[String, @core.Value]
+  role : ValueRole
+  callable : String
+  args : Array[@core.Value]
+  key : @core.Value
+  value : @core.Value
+  answer : Answer
+}
+
+pub(all) enum ValueRole {
+  VMethod
+  VWhen
+  VEnrich
+  VEnrichScope
+} derive(Eq, @debug.Debug)
 
 // Type aliases
 

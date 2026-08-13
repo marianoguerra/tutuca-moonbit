@@ -213,6 +213,33 @@ pub fn entry_views() -> Map[String, @anode.View] {
 }
 
 ///|
+/// `pred containsText` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn entry_compute_containsText(
+  s : EntryState,
+  args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  let q = args.get(0).unwrap_or(Null)
+  guard q is Str(v1) else { return Null }
+  (
+    Bool(
+      s.title.to_lower().contains(v1.to_lower()) ||
+      s.description.to_lower().contains(v1.to_lower()),
+    ) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn entry_inline_compute(
+  k : EntryMethod,
+) -> ((EntryState, Array[@tutuca.Value]) -> @tutuca.Value)? {
+  match k {
+    ContainsText => Some(entry_compute_containsText)
+  }
+}
+
+///|
 /// The Entry component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `EntryState` states them
@@ -245,15 +272,20 @@ pub fn entry_component(
     common_style~,
     global_style~,
     update?,
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([ContainsText] : Array[EntryMethod]),
-          EntryMethod::name,
-          f,
-        )
-      None => Map([])
-    },
+    compute=@component.build_bucket(
+      ([ContainsText] : Array[EntryMethod]),
+      EntryMethod::name,
+      k => {
+        match entry_inline_compute(k) {
+          Some(f) => Some(f)
+          None =>
+            match compute {
+              Some(g) => g(k)
+              None => None
+            }
+        }
+      },
+    ),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

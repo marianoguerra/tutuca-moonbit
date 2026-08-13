@@ -34,6 +34,79 @@ pub(all) struct Case {
 }
 
 ///|
+/// One VALUE body, stated so that any backend can be held to it.
+///
+/// The cases above answer "what did the state become". These answer "what did
+/// the block SAY", which is the other half of a block — and the half that had
+/// no corpus while the MoonBit backend quietly compiled none of it: a `pred`
+/// read like the rule and the compiled component answered Null.
+pub(all) struct ValueCase {
+  name : String
+  schema : String
+  script : String
+  /// The state the body reads.
+  state : Map[String, @tutuca.Value]
+  /// Which callable, and in which ROLE. One `pred` is up to two functions —
+  /// the renderer hands a `@when` the row and a `$name` nothing — so the role
+  /// is part of the question, not of the answer.
+  role : ValueRole
+  callable : String
+  /// A method's arguments; empty for the other roles.
+  args : Array[@tutuca.Value]
+  /// The loop's bindings, for the roles that are given them.
+  key : @tutuca.Value
+  value : @tutuca.Value
+  /// What comes back.
+  answer : Answer
+}
+
+///|
+pub(all) enum ValueRole {
+  VMethod
+  VWhen
+  VEnrich
+  VEnrichScope
+} derive(Debug, Eq)
+
+///|
+/// A value body's answer, in the shape its role returns.
+///
+/// `ANothing` is the case worth having a corpus for, exactly as `after: None`
+/// is above: a body that cannot finish answers nothing, and the two backends
+/// have to fail at the same input rather than one of them guessing a value.
+pub(all) enum Answer {
+  AValue(@tutuca.Value)
+  ABool(Bool)
+  ABinds(Map[String, @tutuca.Value])
+  ANothing
+} derive(Debug, Eq)
+
+///|
+/// What an answer reads as in a failure message. Both adapters print one, so
+/// it lives with the type rather than twice beside it.
+pub impl Show for Answer with fn output(self, logger) {
+  logger.write_string(
+    match self {
+      AValue(v) => v.to_repr().to_string()
+      ABool(b) => if b { "true" } else { "false" }
+      ABinds(m) => {
+        let keys : Array[String] = []
+        for k, _ in m {
+          keys.push(k)
+        }
+        keys.sort()
+        "{" +
+        keys
+        .map(k => k + ": " + m.get(k).unwrap().to_repr().to_string())
+        .join(", ") +
+        "}"
+      }
+      ANothing => "(nothing)"
+    },
+  )
+}
+
+///|
 pub(all) enum Bucket {
   BInput
   BReceive
@@ -409,5 +482,194 @@ pub fn cases() -> Array[Case] {
       after: None,
       effects: [],
     },
+  ]
+}
+
+// ---------------------------------------------------------------------------
+// Value bodies
+
+///|
+/// One value case over the shared schema and state.
+fn value_case(
+  name : String,
+  script : String,
+  callable : String,
+  role? : ValueRole = VMethod,
+  args? : Array[@tutuca.Value] = [],
+  key? : @tutuca.Value = Null,
+  value? : @tutuca.Value = Null,
+  answer~ : Answer,
+) -> ValueCase {
+  {
+    name,
+    schema: counter_schema(),
+    script,
+    state: counter_state(),
+    role,
+    callable,
+    args,
+    key,
+    value,
+    answer,
+  }
+}
+
+///|
+/// Every value case, in one list.
+///
+/// Most of these are lifted from blocks that exist in this repo — the site's
+/// counter card, the tutorial's steps, `storybook/examples/render_child.html`
+/// — rather than invented, because the thing worth pinning is what people
+/// actually write. A corpus of constructed cases would have missed the filter
+/// idiom, which is the one every list component grows.
+pub fn value_cases() -> Array[ValueCase] {
+  [
+    // -- a compute is one expression ---------------------------------------
+    value_case(
+      "a compute reads state and interpolates it",
+      "compute summary { $'{.name}: {.count}' }",
+      "summary",
+      answer=AValue(Str("ada: 0")),
+    ),
+    value_case(
+      "a compute does arithmetic across two fields",
+      "compute left { .count - (len .items) }",
+      "left",
+      answer=AValue(Num(-2)),
+    ),
+    // -- a pred answers yes or no ------------------------------------------
+    value_case(
+      "a pred compares",
+      "pred over { .count > 3 }",
+      "over",
+      answer=AValue(Bool(false)),
+    ),
+    value_case(
+      "a pred over a collection's size",
+      "pred moved { (len .items) > 0 }",
+      "moved",
+      answer=AValue(Bool(true)),
+    ),
+    value_case(
+      "a pred read as a method answers its own expression",
+      // NOT a Bool: the interpreter hands back what the body evaluated to, and
+      // truthiness is applied by whoever asked. A backend that boxed this into
+      // `Bool(true)` would print "true" where a card prints "ada" — which is
+      // what happened, and what this case caught.
+      "pred named { .name }",
+      "named",
+      answer=AValue(Str("ada")),
+    ),
+    value_case(
+      "…and the same pred as a when is that value's truthiness",
+      "pred named { .name }",
+      "named",
+      role=VWhen,
+      answer=ABool(true),
+    ),
+    value_case(
+      "a string comparison, which is structural",
+      "pred isAda { .name is 'ada' }",
+      "isAda",
+      answer=AValue(Bool(true)),
+    ),
+    // -- one body calling another ------------------------------------------
+    value_case(
+      "a compute calls a pred by name, which is how a body spells one",
+      (
+        #|pred over { .count > 3 }
+        #|compute status { if over { 'over' } else { 'under' } }
+      ),
+      "status",
+      answer=AValue(Str("under")),
+    ),
+    // -- arguments ---------------------------------------------------------
+    value_case(
+      "a method reads the argument its call site passed",
+      // `storybook/examples/render_child.html`, shortened: a parent's `@when`
+      // asks every child this, and nothing declares what it is handed.
+      "pred containsText(q) { contains (lower .name) (lower q) }",
+      "containsText",
+      args=[Str("AD")],
+      answer=AValue(Bool(true)),
+    ),
+    value_case(
+      "an argument of the wrong shape answers Null, rather than guessing",
+      // Null and not `false`: a body that cannot finish answers nothing, and
+      // nothing at a slot IS Null — `CardObj::callable_fn` maps the
+      // interpreter's None onto it, and the compiled body returns it from the
+      // guard. Both backends refuse the same argument at the same place.
+      "pred containsText(q) { contains (lower .name) (lower q) }",
+      "containsText",
+      args=[Num(3)],
+      answer=AValue(Null),
+    ),
+    // -- the loop's roles --------------------------------------------------
+    value_case(
+      "a when reads the row it is judging",
+      // The filter idiom, from the tutorial's step 5 and the card
+      // playground's `filter` starter.
+      "pred matches { (empty? .name) or (contains (lower @value) (lower .name)) }",
+      "matches",
+      role=VWhen,
+      value=Str("Ada Lovelace"),
+      answer=ABool(true),
+    ),
+    value_case(
+      "…and drops the row that does not match",
+      "pred matches { (empty? .name) or (contains (lower @value) (lower .name)) }",
+      "matches",
+      role=VWhen,
+      value=Str("Grace Hopper"),
+      answer=ABool(false),
+    ),
+    value_case(
+      "a when handed a row of the wrong shape keeps nothing",
+      "pred matches { contains (lower @value) 'a' }",
+      "matches",
+      role=VWhen,
+      value=Num(7),
+      answer=ABool(false),
+    ),
+    value_case(
+      "a when may read the key instead",
+      "pred firstOnly { @key is 0 }",
+      "firstOnly",
+      role=VWhen,
+      key=Num(0),
+      value=Str("a"),
+      answer=ABool(true),
+    ),
+    // -- enrichment --------------------------------------------------------
+    value_case(
+      "an enricher binds what the row does not carry",
+      "enrich row { @tag = str @value }",
+      "row",
+      role=VEnrich,
+      key=Num(1),
+      value=Str("b"),
+      answer=ABinds({ "tag": Str("b") }),
+    ),
+    value_case(
+      "an enricher may read a binding it wrote",
+      (
+        #|enrich row {
+        #|  @tag = str @value
+        #|  @echo = str @tag
+        #|}
+      ),
+      "row",
+      role=VEnrich,
+      value=Str("b"),
+      answer=ABinds({ "tag": Str("b"), "echo": Str("b") }),
+    ),
+    value_case(
+      "a scope enricher is handed no row, and answers the map",
+      // `storybook/examples/collections.html`'s RenderWithScope, in one line.
+      "enrichScope info { @len = len .name }",
+      "info",
+      role=VEnrichScope,
+      answer=ABinds({ "len": Num(3) }),
+    ),
   ]
 }

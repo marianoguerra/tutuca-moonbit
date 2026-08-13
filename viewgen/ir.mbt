@@ -539,12 +539,21 @@ fn emit_ir_component(
     Some(e) if e.source != "" => {
       out.write_string(e.source)
       out.write_string("\n")
-      Some(inline_fn_name(v))
+      // The update function exists only if a TRANSITION compiled; a block of
+      // nothing but `compute` bodies emits value functions and no arms.
+      if e.answers_input.is_empty() &&
+        e.answers_receive.is_empty() &&
+        e.answers_bubble.is_empty() &&
+        e.answers_response.is_empty() {
+        None
+      } else {
+        Some(inline_fn_name(v))
+      }
     }
     _ => None
   }
   if state is Some(def) {
-    emit_wrapper(name, t, v, def, surface, inline_name, out)
+    emit_wrapper(name, t, v, def, surface, inline_name, inline, out)
   }
 }
 

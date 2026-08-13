@@ -65,6 +65,27 @@ fn out(block : String) -> @emit_mbt.Emitted raise {
 }
 
 ///|
+/// Compile a block with its value bodies asked for, the way the generator asks
+/// once the views have said which name is reached how.
+fn out_values(
+  block : String,
+  methods? : Array[String] = [],
+  whens? : Array[String] = [],
+  enriches? : Array[String] = [],
+  enrich_scopes? : Array[String] = [],
+) -> @emit_mbt.Emitted raise {
+  @emit_mbt.emit(
+    @tscript.parse_script(block),
+    def_of(schema()),
+    state_ty="CounterState",
+    fn_name="counter_inline_update",
+    prefix="counter",
+    roles={ methods, whens, enriches, enrich_scopes },
+    surface=views(),
+  )
+}
+
+///|
 /// The emitted body of the first arm, with its indentation, or "" when nothing
 /// compiled. What is asserted is the STATEMENTS, not the wrapper.
 fn body(block : String) -> String raise {
@@ -100,6 +121,105 @@ fn whys(block : String) -> Array[String] raise {
 }
 
 // -- what compiles ----------------------------------------------------------
+
+///|
+test "a compute and a pred compile into the functions the generator routes to" {
+  // The bug this covers: the block declared the rule, the generated module
+  // carried only its NAME, and the component answered `$over` with nothing —
+  // so the view read false forever while the file said `.count > 3`.
+  let e = out_values(
+    (
+      #|compute caption { $'{.count} left' }
+      #|pred over { .count > 3 }
+    ),
+    methods=["caption", "over"],
+  )
+  assert_eq(e.answers_methods, ["caption", "over"])
+  assert_eq(e.refusals.map(r => r.name), [])
+  assert_true(
+    e.source.contains(
+      "fn counter_compute_over(s : CounterState, _args : Array[@tutuca.Value]) -> @tutuca.Value",
+    ),
+  )
+  // A `pred` answers yes or no whatever its expression is, so the value that
+  // comes back is a Bool — the same truthiness a card gives the same body.
+  assert_true(
+    e.source.contains("(Bool((s.count.to_double() > 3.0)) : @tutuca.Value)"),
+  )
+}
+
+///|
+test "one body calls another by name, which is how a body spells a callable" {
+  let e = out_values(
+    (
+      #|pred over { .count > 3 }
+      #|compute label { if over { 'over' } else { 'under' } }
+    ),
+    methods=["over", "label"],
+  )
+  assert_eq(e.answers_methods, ["over", "label"])
+  // The call, not a second copy of the rule.
+  assert_true(e.source.contains("counter_compute_over(s, []).is_truthy()"))
+}
+
+///|
+test "a pred used as a @when is compiled again, with the row in scope" {
+  let e = out_values(
+    "pred matches { contains (lower @value) (lower .label) }",
+    methods=["matches"],
+    whens=["matches"],
+  )
+  // As a `@when` it compiles: the renderer hands it the row.
+  assert_eq(e.answers_whens, ["matches"])
+  assert_true(
+    e.source.contains(
+      "fn counter_when_matches(s : CounterState, _key : @tutuca.Value, value : @tutuca.Value, _iter_data : @tutuca.Value) -> Bool",
+    ),
+  )
+  // As a METHOD it cannot: a `$name` call site has no row to hand it, and
+  // guessing one is the thing this backend does not do.
+  assert_eq(e.answers_methods, [])
+  assert_true(e.refusals[0].why.contains("@value"))
+}
+
+///|
+test "an enricher writes bindings, and may read one it wrote" {
+  let e = out_values(
+    (
+      #|enrich row {
+      #|  @long = (len .label) > 3
+      #|  @tag = str @long
+      #|}
+    ),
+    enriches=["row"],
+  )
+  assert_eq(e.answers_enriches, ["row"])
+  assert_true(e.source.contains("binds[\"long\"] ="))
+  assert_true(e.source.contains("binds.get(\"long\").unwrap_or(Null)"))
+}
+
+///|
+test "a scope enricher answers the map, since it is handed none" {
+  let e = out_values("enrichScope info { @len = len .label }", enrich_scopes=[
+    "info",
+  ])
+  assert_eq(e.answers_enrich_scopes, ["info"])
+  assert_true(
+    e.source.contains(
+      "fn counter_enrich_scope_info(s : CounterState) -> Map[String, @tutuca.Value]",
+    ),
+  )
+  assert_true(e.source.contains("  binds\n"))
+}
+
+///|
+test "a value body nobody asks for is not written" {
+  // Roles come from the VIEWS. A `compute` no slot reads is a function nobody
+  // calls, and a generated file must not carry one.
+  let e = out_values("compute caption { 'x' }")
+  assert_eq(e.answers_methods, [])
+  assert_eq(e.source, "")
+}
 
 ///|
 test "negation is emitted as `!`, which is the spelling moonc does not deprecate" {

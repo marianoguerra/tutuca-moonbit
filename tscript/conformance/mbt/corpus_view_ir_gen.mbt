@@ -102,6 +102,69 @@ fn corpus_main_view_ir() -> @anode.View {
       @anode.h("button", [@anode.eid(37)], [@anode.text("case37")]),
       @anode.text(" "),
       @anode.h("button", [@anode.eid(38)], [@anode.text("case39")]),
+      @anode.text(" "),
+      @anode.h("ul", [], [
+        @anode.each(
+          1,
+          Field("items"),
+          @anode.h("li", [], []),
+          when_val=HandlerName(name="v5_named", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          2,
+          Field("items"),
+          @anode.h("li", [], []),
+          when_val=HandlerName(name="v10_matches", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          3,
+          Field("items"),
+          @anode.h("li", [], []),
+          when_val=HandlerName(name="v11_matches", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          4,
+          Field("items"),
+          @anode.h("li", [], []),
+          when_val=HandlerName(name="v12_matches", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          5,
+          Field("items"),
+          @anode.h("li", [], []),
+          when_val=HandlerName(name="v13_firstOnly", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          6,
+          Field("items"),
+          @anode.h("li", [], []),
+          enrich_with_val=HandlerName(name="v14_row", ns=Alter),
+        ),
+      ]),
+      @anode.h("ul", [], [
+        @anode.each(
+          7,
+          Field("items"),
+          @anode.h("li", [], []),
+          enrich_with_val=HandlerName(name="v15_row", ns=Alter),
+        ),
+      ]),
+      @anode.text(" "),
+      @anode.scope(
+        8,
+        HandlerName(name="v16_info", ns=Alter),
+        @anode.h("div", [@anode.attr_num("data-nid", 8.0)], []),
+      ),
     ]),
     [
       [@anode.on("click", HandlerName(name="case0", ns=Input))],
@@ -463,6 +526,308 @@ fn corpus_inline_update(
 }
 
 ///|
+/// `compute v0_summary` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v0_summary(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (
+    Str(
+      (Str(s.name) : @tutuca.Value).to_display_string() +
+      ": " +
+      (Num(s.count.to_double()) : @tutuca.Value).to_display_string(),
+    ) : @tutuca.Value)
+}
+
+///|
+/// `compute v1_left` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v1_left(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Num(s.count.to_double() - s.items.length().to_double()) : @tutuca.Value)
+}
+
+///|
+/// `pred v2_over` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v2_over(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() > 3.0) : @tutuca.Value)
+}
+
+///|
+/// `pred v3_moved` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v3_moved(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.items.length().to_double() > 0.0) : @tutuca.Value)
+}
+
+///|
+/// `pred v4_named` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v4_named(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Str(s.name) : @tutuca.Value)
+}
+
+///|
+/// `pred v5_named` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v5_named(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Str(s.name) : @tutuca.Value)
+}
+
+///|
+/// `pred v5_named` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_when_v5_named(
+  s : CorpusState,
+  _key : @tutuca.Value,
+  _value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Bool {
+  (Str(s.name) : @tutuca.Value).is_truthy()
+}
+
+///|
+/// `pred v6_isAda` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v6_isAda(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (
+    Bool((Str(s.name) : @tutuca.Value) == (Str("ada") : @tutuca.Value)) :
+    @tutuca.Value)
+}
+
+///|
+/// `pred v7_over` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v7_over(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.count.to_double() > 3.0) : @tutuca.Value)
+}
+
+///|
+/// `compute v7_status` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v7_status(
+  s : CorpusState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (
+    Str(
+      if corpus_compute_v7_over(s, []).is_truthy() {
+        "over"
+      } else {
+        "under"
+      },
+    ) : @tutuca.Value)
+}
+
+///|
+/// `pred v8_containsText` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v8_containsText(
+  s : CorpusState,
+  args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  let q = args.get(0).unwrap_or(Null)
+  guard q is Str(v1) else { return Null }
+  (Bool(s.name.to_lower().contains(v1.to_lower())) : @tutuca.Value)
+}
+
+///|
+/// `pred v9_containsText` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_compute_v9_containsText(
+  s : CorpusState,
+  args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  let q = args.get(0).unwrap_or(Null)
+  guard q is Str(v1) else { return Null }
+  (Bool(s.name.to_lower().contains(v1.to_lower())) : @tutuca.Value)
+}
+
+///|
+/// `pred v10_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_when_v10_matches(
+  s : CorpusState,
+  _key : @tutuca.Value,
+  value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Bool {
+  guard value is Str(v1) else { return false }
+  (
+    (Str(s.name) : @tutuca.Value) is Null ||
+    @tutuca.size_of((Str(s.name) : @tutuca.Value)) is Some(0)
+  ) ||
+  v1.to_lower().contains(s.name.to_lower())
+}
+
+///|
+/// `pred v11_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_when_v11_matches(
+  s : CorpusState,
+  _key : @tutuca.Value,
+  value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Bool {
+  guard value is Str(v1) else { return false }
+  (
+    (Str(s.name) : @tutuca.Value) is Null ||
+    @tutuca.size_of((Str(s.name) : @tutuca.Value)) is Some(0)
+  ) ||
+  v1.to_lower().contains(s.name.to_lower())
+}
+
+///|
+/// `pred v12_matches` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_when_v12_matches(
+  _s : CorpusState,
+  _key : @tutuca.Value,
+  value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Bool {
+  guard value is Str(v1) else { return false }
+  v1.to_lower().contains("a")
+}
+
+///|
+/// `pred v13_firstOnly` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_when_v13_firstOnly(
+  _s : CorpusState,
+  key : @tutuca.Value,
+  _value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Bool {
+  key == (Num(0.0) : @tutuca.Value)
+}
+
+///|
+/// `enrich v14_row` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_enrich_v14_row(
+  _s : CorpusState,
+  binds : Map[String, @tutuca.Value],
+  _key : @tutuca.Value,
+  value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Unit {
+  binds["tag"] = (Str(value.to_display_string()) : @tutuca.Value)
+}
+
+///|
+/// `enrich v15_row` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_enrich_v15_row(
+  _s : CorpusState,
+  binds : Map[String, @tutuca.Value],
+  _key : @tutuca.Value,
+  value : @tutuca.Value,
+  _iter_data : @tutuca.Value,
+) -> Unit {
+  binds["tag"] = (Str(value.to_display_string()) : @tutuca.Value)
+  binds["echo"] = (
+    Str(binds.get("tag").unwrap_or(Null).to_display_string()) : @tutuca.Value)
+}
+
+///|
+/// `enrichScope v16_info` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn corpus_enrich_scope_v16_info(s : CorpusState) -> Map[String, @tutuca.Value] {
+  let binds : Map[String, @tutuca.Value] = Map([])
+  binds["len"] = (Num(s.name.length().to_double()) : @tutuca.Value)
+  binds
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn corpus_inline_compute(
+  k : CorpusMethod,
+) -> ((CorpusState, Array[@tutuca.Value]) -> @tutuca.Value)? {
+  match k {
+    V0Summary => Some(corpus_compute_v0_summary)
+    V1Left => Some(corpus_compute_v1_left)
+    V2Over => Some(corpus_compute_v2_over)
+    V3Moved => Some(corpus_compute_v3_moved)
+    V4Named => Some(corpus_compute_v4_named)
+    V5Named => Some(corpus_compute_v5_named)
+    V6IsAda => Some(corpus_compute_v6_isAda)
+    V7Over => Some(corpus_compute_v7_over)
+    V7Status => Some(corpus_compute_v7_status)
+    V8ContainsText => Some(corpus_compute_v8_containsText)
+    V9ContainsText => Some(corpus_compute_v9_containsText)
+    _ => None
+  }
+}
+
+///|
+/// The `when` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn corpus_inline_when(
+  k : CorpusWhen,
+) -> ((CorpusState, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool)? {
+  match k {
+    V5Named => Some(corpus_when_v5_named)
+    V10Matches => Some(corpus_when_v10_matches)
+    V11Matches => Some(corpus_when_v11_matches)
+    V12Matches => Some(corpus_when_v12_matches)
+    V13FirstOnly => Some(corpus_when_v13_firstOnly)
+  }
+}
+
+///|
+/// The `enrich` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn corpus_inline_enrich(
+  k : CorpusEnrich,
+) -> ((
+  CorpusState,
+  Map[String, @tutuca.Value],
+  @tutuca.Value,
+  @tutuca.Value,
+  @tutuca.Value,
+) -> Unit)? {
+  match k {
+    V14Row => Some(corpus_enrich_v14_row)
+    V15Row => Some(corpus_enrich_v15_row)
+  }
+}
+
+///|
+/// The `enrich_scope` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn corpus_inline_enrich_scope(
+  k : CorpusEnrichScope,
+) -> ((CorpusState) -> Map[String, @tutuca.Value])? {
+  match k {
+    V16Info => Some(corpus_enrich_scope_v16_info)
+  }
+}
+
+///|
 /// The Corpus component: `component()` with everything the view file already
 /// states filled in — its name, its compiled views and its styles. The
 /// schema and the codec are not passed at all: `CorpusState` states them
@@ -483,6 +848,23 @@ pub fn corpus_component(
   ],
   compute? : (CorpusMethod) -> ((CorpusState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (CorpusInput) -> ((CorpusState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
+  when? : (CorpusWhen) -> ((
+    CorpusState,
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Bool)?,
+  enrich? : (CorpusEnrich) -> ((
+    CorpusState,
+    Map[String, @tutuca.Value],
+    @tutuca.Value,
+    @tutuca.Value,
+    @tutuca.Value,
+  ) -> Unit)?,
+  enrich_scope? : (CorpusEnrichScope) -> ((CorpusState) -> Map[
+    String,
+    @tutuca.Value,
+  ])?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
   provide? : Map[String, String] = Map([]),
@@ -504,15 +886,38 @@ pub fn corpus_component(
         answered => answered
       }
     },
-    compute=match compute {
-      Some(f) =>
-        @component.build_bucket(
-          ([Long] : Array[CorpusMethod]),
-          CorpusMethod::name,
-          f,
-        )
-      None => Map([])
-    },
+    compute=@component.build_bucket(
+      (
+        [
+          Long,
+          V0Summary,
+          V10Matches,
+          V11Matches,
+          V12Matches,
+          V13FirstOnly,
+          V1Left,
+          V2Over,
+          V3Moved,
+          V4Named,
+          V5Named,
+          V6IsAda,
+          V7Over,
+          V7Status,
+          V8ContainsText,
+          V9ContainsText,
+        ] : Array[CorpusMethod]),
+      CorpusMethod::name,
+      k => {
+        match corpus_inline_compute(k) {
+          Some(f) => Some(f)
+          None =>
+            match compute {
+              Some(g) => g(k)
+              None => None
+            }
+        }
+      },
+    ),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
@@ -563,6 +968,50 @@ pub fn corpus_component(
         )
       None => Map([])
     },
+    when=@component.build_bucket(
+      (
+        [V10Matches, V11Matches, V12Matches, V13FirstOnly, V5Named] :
+        Array[CorpusWhen]),
+      CorpusWhen::name,
+      k => {
+        match corpus_inline_when(k) {
+          Some(f) => Some(f)
+          None =>
+            match when {
+              Some(g) => g(k)
+              None => None
+            }
+        }
+      },
+    ),
+    enrich=@component.build_bucket(
+      ([V14Row, V15Row] : Array[CorpusEnrich]),
+      CorpusEnrich::name,
+      k => {
+        match corpus_inline_enrich(k) {
+          Some(f) => Some(f)
+          None =>
+            match enrich {
+              Some(g) => g(k)
+              None => None
+            }
+        }
+      },
+    ),
+    enrich_scope=@component.build_bucket(
+      ([V16Info] : Array[CorpusEnrichScope]),
+      CorpusEnrichScope::name,
+      k => {
+        match corpus_inline_enrich_scope(k) {
+          Some(f) => Some(f)
+          None =>
+            match enrich_scope {
+              Some(g) => g(k)
+              None => None
+            }
+        }
+      },
+    ),
     slots~,
     slot_args~,
     provide~,

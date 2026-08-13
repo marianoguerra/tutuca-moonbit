@@ -41,6 +41,17 @@ fn inline_emit(
       def,
       state_ty~,
       fn_name=inline_fn_name(v),
+      prefix=v,
+      // Which name is reached HOW, from the views. The backend cannot know:
+      // a `pred` read as `$name` and the same `pred` named by an `@when` are
+      // two functions with different things in scope, and only a call site
+      // says which of them exists.
+      roles={
+        methods: declared_methods(surface),
+        whens: surface.whens,
+        enriches: surface.enriches,
+        enrich_scopes: surface.enrich_scopes,
+      },
       surface=inline_surface(surface),
     ),
   )
