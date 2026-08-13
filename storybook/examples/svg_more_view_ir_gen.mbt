@@ -135,40 +135,71 @@ fn bar_chart_inline_update(
 ) -> @component.Update[BarChartState] {
   match msg {
     Input("addBar", _args) => {
-      let s = if s.values.length().to_double() < 9.0 {
-        let d0 = 90.0
-        guard d0 != 0.0 else { return Unchanged }
-        let s : BarChartState = {
-          values: s.values +
-          [
-            (
-              Num(
-                ((s.values.length().to_double() * 17.0 + 23.0).to_int() %
-                d0.to_int()).to_double() +
-                10.0,
-              ) : @tutuca.Value),
-          ],
-        }
-        s
-      } else {
-        s
+      guard s.values.length().to_double() < 9.0 else {
+        @tutuca.precondition_failed(handler="addBar", pred="hasRoom")
+        return Unchanged
+      }
+      let d0 = 90.0
+      guard d0 != 0.0 else { return Unchanged }
+      let s : BarChartState = {
+        values: s.values +
+        [
+          (
+            Num(
+              ((s.values.length().to_double() * 17.0 + 23.0).to_int() %
+              d0.to_int()).to_double() +
+              10.0,
+            ) : @tutuca.Value),
+        ],
       }
       Next(s)
     }
     Input("removeBar", _args) => {
-      let s = if s.values.length().to_double() > 1.0 {
-        let at = (s.values.length().to_double() - 1.0).to_int()
-        guard at >= 0 && at < s.values.length() else { return Unchanged }
-        let s : BarChartState = {
-          values: s.values[0:at].to_owned() + s.values[at + 1:].to_owned(),
-        }
-        s
-      } else {
-        s
+      guard s.values.length().to_double() > 1.0 else {
+        @tutuca.precondition_failed(handler="removeBar", pred="hasSpare")
+        return Unchanged
+      }
+      let at = (s.values.length().to_double() - 1.0).to_int()
+      guard at >= 0 && at < s.values.length() else { return Unchanged }
+      let s : BarChartState = {
+        values: s.values[0:at].to_owned() + s.values[at + 1:].to_owned(),
       }
       Next(s)
     }
     _ => Unhandled
+  }
+}
+
+///|
+/// `pred hasRoom` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn bar_chart_compute_hasRoom(
+  s : BarChartState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.values.length().to_double() < 9.0) : @tutuca.Value)
+}
+
+///|
+/// `pred hasSpare` from the `<script type="tutuca/script">` block. GENERATED — edit
+/// the block, not this.
+fn bar_chart_compute_hasSpare(
+  s : BarChartState,
+  _args : Array[@tutuca.Value],
+) -> @tutuca.Value {
+  (Bool(s.values.length().to_double() > 1.0) : @tutuca.Value)
+}
+
+///|
+/// The `compute` names the `<script type="tutuca/script">` block answers.
+/// GENERATED — edit the block, not this.
+fn bar_chart_inline_compute() -> Map[
+  String,
+  (BarChartState, Array[@tutuca.Value]) -> @tutuca.Value,
+] {
+  {
+    "hasRoom": bar_chart_compute_hasRoom,
+    "hasSpare": bar_chart_compute_hasSpare,
   }
 }
 
@@ -229,6 +260,7 @@ pub fn bar_chart_component(
         answered => answered
       }
     },
+    compute=bar_chart_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(

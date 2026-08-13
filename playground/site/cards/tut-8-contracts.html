@@ -44,6 +44,21 @@
     .moves += 1
   }
 
+  /// A POSTCONDITION — asked after the body, against where it landed. It is
+  /// about what THIS handler was supposed to achieve, which is the half a
+  /// reader can check by looking: `pushAll` is the handler that empties
+  /// `here`, and `hereEmpty` is that sentence written down.
+  ///
+  /// One clause of each kind is the limit, and both on one header is the shape
+  /// a transition takes when it has something to ask and something to promise.
+  pred hereEmpty { .here is 0 }
+
+  on pushAll requires canPush ensures hereEmpty {
+    .there += .here
+    .here = 0
+    .moves += 1
+  }
+
   /// THE INVARIANT — the component keeps this, so it is checked after every
   /// handler above and every handler added later, including the ones that
   /// never mention it.
@@ -92,6 +107,10 @@
           </button>
           <button class="btn btn-sm join-item" @on.click="pull">
             there → here
+          </button>
+          <button class="btn btn-sm join-item" @on.click="pushAll"
+                  title="a postcondition: it has to land with here at 0">
+            all →
           </button>
         </div>
         <button class="btn btn-sm btn-soft btn-error" @on.click="cheat"

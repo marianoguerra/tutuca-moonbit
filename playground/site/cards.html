@@ -364,9 +364,13 @@
             arrived. It does not hold, the transition does not happen.
           </li>
           <li>
-            <strong>Postcondition</strong> — <code>on push ensures moved
-            { … }</code>. Asked after the body ran, against where it landed.
-            About what <em>this</em> handler was supposed to achieve.
+            <strong>Postcondition</strong> — <code>on pushAll requires canPush
+            ensures hereEmpty { … }</code>. Asked after the body ran, against
+            where it landed: about what <em>this</em> handler was supposed to
+            achieve — the <em>all →</em> button below is the one that has to end
+            with <code>here</code> at zero. One clause of each kind is the
+            limit, and both on one header is what a transition with something to
+            ask and something to promise looks like.
           </li>
           <li>
             <strong>Invariant</strong> — <code>invariant conserved { … }</code>,

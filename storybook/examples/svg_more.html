@@ -9,24 +9,28 @@
 </script>
 
 <script type="tutuca/script" for="BarChart">
+  /// The two limits, named. A `pred` reads the state and nothing else, which
+  /// is what lets it sit in a handler's header instead of at the top of its
+  /// body.
+  pred hasRoom { (len .values) < 9 }
+  pred hasSpare { (len .values) > 1 }
+
   /// Add a bar, up to nine. The height is derived from the length rather than
   /// drawn at random, so the picture is the same on every run — a test can
   /// look at it.
   ///
-  /// An `if` with no `else` that does not fire is still an answer: the arm
-  /// claimed `addBar` and nothing moved, which is not the same as not knowing
-  /// the name.
-  on addBar {
-    if (len .values) < 9 {
-      .values.push (((((len .values) * 17) + 23) mod 90) + 10)
-    }
+  /// The cap is a PRECONDITION rather than an `if` around the whole body: both
+  /// refuse the same presses, but a refusal with a name is REPORTED — the
+  /// tenth press says `contract: addBar declined — its precondition hasRoom
+  /// does not hold` through `warn_hook`, where an `if` that did not fire looks
+  /// exactly like a chart that had nothing to add.
+  on addBar requires hasRoom {
+    .values.push (((((len .values) * 17) + 23) mod 90) + 10)
   }
 
   /// Drop the last bar, never the last one standing.
-  on removeBar {
-    if (len .values) > 1 {
-      .values.deleteAt ((len .values) - 1)
-    }
+  on removeBar requires hasSpare {
+    .values.deleteAt ((len .values) - 1)
   }
 </script>
 

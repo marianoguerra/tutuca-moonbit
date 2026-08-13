@@ -1,6 +1,6 @@
 ---
 name: tutuca
-description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
+description: Use when authoring or reviewing tutuca components in the MoonBit port — an `.html` view file with `<template>` views, `@`-directives and a `<script type="tutuca/state">` schema, compiled by `tutuca gen-views` / `tutuca watch` into a typed MoonBit module; the `<script type="tutuca/script">` handler block (`new` / `@cur` value building, `requires` / `ensures` / `invariant` contracts); the handlers beside it (`update` dispatch match, `compute`, `swap`, the render buckets), macros, styles, `ModuleDef` modules and storybook examples; `@component.component(...)` calls for views built in MoonBit; testing with `moon test` + the `@harness` package; Tailwind/margaui class compilation (`gen-margaui-css`); and authoring in the in-browser playground. Covers the post-edit `gen-views` → `moon check` → `moon test` verification recipe.
 ---
 
 # Tutuca (MoonBit port)
@@ -49,7 +49,7 @@ When authoring tutuca code, also load this if available:
 | Task                                                                                           | File                            |
 | ---------------------------------------------------------------------------------------------- | ------------------------------- |
 | Authoring views and handlers — the `.html` view file, the handler buckets (`update` / `compute` / `swap` / render), conditional display | [core.md](./core.md)           |
-| Declaring state — the `<script type="tutuca/state">` schema, field spellings (`Array[T]`, `T?`, `Set[String]`, `Array[Any]`), generated mutators, slots, message buckets, `tutuca/init` fixtures | [schema.md](./schema.md) |
+| Declaring state — the `<script type="tutuca/state">` schema, field spellings (`Array[T]`, `T?`, `Set[String]`, `Array[Any]`), generated mutators, slots, message buckets, `tutuca/init` fixtures — and the `<script type="tutuca/script">` block beside it: `$`-callables, `new` / `@cur`, `requires` / `ensures` / `invariant` | [schema.md](./schema.md) |
 | `@on.<event>` handlers — handler argument names, generated `<Comp>Msg` payload types, modifiers, custom-element events | [events.md](./events.md) |
 | Iterating lists — `@each` / `render-each`, `@when` filtering, `@enrich-with`, `@loop-with` pagination | [iteration.md](./iteration.md) |
 | Macros — `@anode.Macro` definitions, `<x:name>` calls, slots, registration | [macros.md](./macros.md) |

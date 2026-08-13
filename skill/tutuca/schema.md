@@ -236,6 +236,77 @@ was the one thing that put a callable in a block whose own header says it holds
 data. `for=` names the component the way a `<template id>` does, and is needed
 only in a file that declares more than one.
 
+## Building a value (`new <Type>` / `@cur`)
+
+The block language has **no literal for an aggregate** — no list, no map, no
+record — because a value there is built by *mutating* it, which is what every
+other statement already does. `new <Type>` puts that type's **zero** at the
+**active target**, and the statements under it fill it in through `@cur`:
+
+```html
+<script type="tutuca/state">
+  struct Song { title : String, plays : Int, moods : Array[String] }
+  state Playlist {
+    draft : String
+    songs : Array[Song]
+    tags  : Array[String]
+  }
+  receive Playlist { Init }
+</script>
+
+<script type="tutuca/script" for="Playlist">
+  receive init {
+    new Song
+    @cur.title = 'Ramble On'
+    @cur.plays = 0
+    @cur.moods.push 'rock'
+    .songs.push @cur
+  }
+
+  /// A collection is built the same way and assigned whole.
+  on reset {
+    new Array[String]
+    @cur.push 'p'
+    @cur.push 'q'
+    .tags = @cur
+  }
+</script>
+```
+
+- The type is spelled the way the **state block** spells it — `new Song`,
+  `new Array[String]`, `new Map[String, Int]` — and has to be one that block
+  declares (`struct R { … }` for a record) or a built-in. It shares the name
+  table with the state parser, so `new Int16` and `count : Int16` cannot come
+  to mean different things.
+- A field the build never touches keeps the **type's zero**, so `new Song`
+  followed straight by `.songs.push @cur` appends an empty one.
+- A `new` **resets** the target. Two records is two `new`s, and the first is
+  not disturbed once it has been pushed somewhere.
+- A **path into** the target works, so `new Song` then `@cur.moods.push 'rock'`
+  fills a list *inside* the record. That is what makes one target enough:
+  values are built outside-in.
+- `@cur` is a **workbench, never output**. It belongs to the handler that built
+  it, is gone when that handler ends, and never reaches a view — a template
+  reading `@cur` reads nothing. An `enrich` may not bind the name either
+  (`RESERVED_BIND`): an enricher's bindings *become* a view's scope, and the
+  target is not something a component may publish.
+- It is **checked**: the target's type comes from the `new`, and a path into it
+  is walked with the same machinery a state path uses, so `@cur.dnoe` reports
+  `Song has no field dnoe` and a `@cur` with no `new` above it is `NO_TARGET`.
+
+`@cur = expr` with **no path** re-points the target at a value that is already
+built, which is how you copy a row out, edit it and put it back. Note the
+backend limits below before reaching for it.
+
+Three limits belong to the **ahead-of-time backend only** (a card interpreting
+the same block has none of them): a `new` inside an `if` does not outlive the
+branch; writing or reading *through an index* into `@cur` needs a bounds check
+`gen-views` does not emit; and `@cur = expr` needs a `new` in scope above it.
+Each **refuses the arm** rather than miscompiling it — `gen-views` prints
+`<Comp>: <name> stays in MoonBit — <why> (script-refusal)` and the name falls
+through to your `update` match, so write that handler in MoonBit. Nothing
+breaks silently, but a card that runs is not proof the same block compiles.
+
 ## Contracts (`requires` / `ensures` / `invariant`)
 
 A `pred` gives a rule about the state a **name**. Where you attach it says

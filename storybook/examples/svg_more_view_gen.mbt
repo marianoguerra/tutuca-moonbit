@@ -213,6 +213,7 @@ impl @component.Fields for BarChartState with fn schema() {
     fingerprint="b384ef4ca1a7f956",
     fields=[@component.FieldInfo::new("values", TyList(TyAny))],
     inputs=["addBar", "randomize", "removeBar"],
+    methods=["hasRoom", "hasSpare"],
     view_names=["main"],
   )
 }

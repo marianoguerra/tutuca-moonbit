@@ -488,3 +488,50 @@ test "a card keeps its contracts, and says so when it cannot" {
     "contract: `cheat` was abandoned — it broke the invariant `conserved`",
   ])
 }
+
+///|
+test "a card asks and promises on the same handler" {
+  // Both clauses on one header, which is the shape the tutorial's step 8 card
+  // takes: `pushAll` has something to ask before it moves anything and
+  // something to promise about where it lands.
+  let card =
+    #|<script type="tutuca/state">
+    #|  state { here: Int, there: Int }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init { .here = 3 }
+    #|  pred canPush { .here > 0 }
+    #|  pred hereEmpty { .here is 0 }
+    #|  on pushAll requires canPush ensures hereEmpty {
+    #|    .there += .here
+    #|    .here = 0
+    #|  }
+    #|</script>
+    #|
+    #|<template>
+    #|  <div>
+    #|    <span id="here"><x text=".here"></x></span>
+    #|    <span id="there"><x text=".there"></x></span>
+    #|    <button id="all" @on.click="pushAll">all</button>
+    #|  </div>
+    #|</template>
+  let said : Array[String] = []
+  let before = @tutuca.warn_hook.val
+  @tutuca.warn_hook.val = msg => said.push(msg)
+  let h = mount_card(card, name="Ledger")
+  h.send_at_root("init")
+  // The postcondition holds, so the successor stands.
+  h.click("#all")
+  assert_eq(h.text("#here"), "0")
+  assert_eq(h.text("#there"), "3")
+  // …and the second press is declined by the precondition, before the body it
+  // would have made a no-op of.
+  h.click("#all")
+  assert_eq(h.text("#there"), "3")
+  @tutuca.warn_hook.val = before
+  assert_eq(said, [
+    "contract: `pushAll` declined — its precondition `canPush` does not hold",
+  ])
+}

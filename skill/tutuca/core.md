@@ -1082,8 +1082,10 @@ its examples never reach the storybook or a harness test.
 ## See also
 
 - [schema.md](./schema.md) — the `<script type="tutuca/state">` language: field
-  spellings, the mutators each kind generates, slots, message buckets, declared
-  `$`-callables, and `tutuca/init` fixtures.
+  spellings, the mutators each kind generates, slots, message buckets, and
+  `tutuca/init` fixtures — plus what the `<script type="tutuca/script">` block
+  beside it declares: `$`-callables, `new` / `@cur` value building, and the
+  `requires` / `ensures` / `invariant` contracts.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.
 - [iteration.md](./iteration.md) — `@each` / `render-each`, `@when`,

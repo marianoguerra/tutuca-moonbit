@@ -18,9 +18,12 @@
 ///
 /// `addBar` and `removeBar` are in the view file's
 /// `<script type="tutuca/script">` block: adding to and deleting from a list
-/// under a bound is what its collection methods are for. `randomize` stays
-/// here — it rewrites EVERY element, which is a map over the list and not a
-/// mutation of one position.
+/// under a bound is what its collection methods are for, and their caps are
+/// `requires` clauses, so a press at the limit is refused by a rule with a
+/// name rather than by an `if` nobody hears. `randomize` stays here — it
+/// rewrites EVERY element, which is a map over the list and not a mutation of
+/// one position, and being a MoonBit handler it is not one of the transitions
+/// the block's contracts cover.
 fn bar_chart_comp() -> @component.Component {
   bar_chart_component(
     init={ values: [Num(40), Num(72), Num(28), Num(90), Num(55), Num(63)] },

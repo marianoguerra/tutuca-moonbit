@@ -6,6 +6,40 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Changed
+
+- **The examples caught up with the two newest features.** `new` / `@cur` and
+  the contracts each shipped with a corpus and a reference paragraph, and an
+  audit of every `<script type="tutuca/script">` block in the tree found the
+  examples still written as though neither existed.
+
+  The storybook's bar chart is the clearest case: `addBar` and `removeBar` each
+  wrapped their whole body in an `if` over a limit, and the comment above them
+  defended the silence — an arm that claimed the name and moved nothing. They
+  ask `requires hasRoom` / `requires hasSpare` now, which refuses the same
+  presses and *says so*: the tenth press prints ``contract: `addBar` declined —
+  its precondition `hasRoom` does not hold``. `randomize` stays a MoonBit
+  handler and is therefore not one of the transitions the block's rules cover,
+  which the comment now says rather than leaving to be discovered.
+
+  Tutorial step 8 named all three kinds of rule and ran two. `pushAll` is the
+  third — `on pushAll requires canPush ensures hereEmpty`, both clauses on one
+  header, which is the shape the prose beside it describes and no card had. A
+  card test pins it: the runtime had a test for an invariant refusing a handler
+  that never mentions it, and none for a handler that asks and promises at once.
+
+- **The skill documents `new` / `@cur`.** `skill/tutuca/schema.md` carried the
+  contracts from the day they shipped and nothing at all about building a
+  value, so an agent reading the skill could not write a record. The new
+  section is the statement, the target, the six rules that follow from "a value
+  is built by mutating it", and the three limits that belong to the
+  ahead-of-time backend only — a `new` inside an `if`, an index into `@cur`,
+  and `@cur = expr` with no `new` above it — each of which refuses the arm and
+  falls through to your `update` rather than miscompiling. Every claim was
+  checked by putting the section's own example through `gen-views`, which is
+  how the third limit was found: it is not in the changelog entry that added
+  the feature.
+
 ## [0.16.0] - 2026-08-13
 
 ### Added
