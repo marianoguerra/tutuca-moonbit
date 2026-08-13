@@ -26,12 +26,13 @@
 // entries into `compute` declarations. What each migration cost, and which of
 // the corpus is still out of reach, is in `docs/cards-from-examples.md`.
 //
-// Two limits are visible here and are the language's rather than the page's.
-// **There is no record literal**, so an `Array[Struct]` can be read, indexed and
-// written through, but never APPENDED to from a card — which is why `todo`
-// below holds an `Array[String]`. And a condition slot still takes `$name`
-// rather than a bare predicate application, so `@show="$anyItems"` is how a
-// `pred` is used from a template today.
+// One limit is visible here and is the language's rather than the page's: a
+// condition slot still takes `$name` rather than a bare predicate application,
+// so `@show="$anyItems"` is how a `pred` is used from a template today.
+//
+// `todo` holds an `Array[String]` because it was written before `new` — a list
+// of RECORDS is what `nested-state` shows, where `new Label` puts the type's
+// zero at `@cur` and the statements under it fill it in.
 
 export const EXAMPLES = [
   {
@@ -410,14 +411,10 @@ export const EXAMPLES = [
   receive init { .text = 'Hello' }
 
   /// A scope enricher: handed no row, it answers the bindings the subtree
-  /// below reads as \`@len\` and \`@lower\`.
-  ///
-  /// The MoonBit original bound \`@upper\`. The reading vocabulary has
-  /// \`lower\` and no \`upper\`, so the migration lowercases instead — the one
-  /// place a card cannot follow this example word for word.
+  /// below reads as \`@len\` and \`@upper\`.
   enrichScope info {
     @len = len .text
-    @lower = lower .text
+    @upper = upper .text
   }
 </script>
 
@@ -428,7 +425,7 @@ export const EXAMPLES = [
       <div @enrich-with="info">
         <p>Text: <span @text=".text"></span></p>
         <p>Len: <span @text="@len"></span></p>
-        <p>Lower: <span @text="@lower"></span></p>
+        <p>Upper: <span @text="@upper"></span></p>
       </div>
     </div>
   </section>
@@ -526,11 +523,11 @@ export const EXAMPLES = [
 </script>
 
 <script type="tutuca/script">
-  /// One line, because a string literal in the block language has two
-  /// escapes — \\' and \\\\ — and no \\n, and no multi-line spelling. Seeding a
-  /// document means typing one, which for this example is the point anyway.
+  /// A whole document on one line: \`\\n\` is an escape a literal carries,
+  /// beside \`\\'\`, \`\\\\\`, \`\\t\` and \`\\r\`. (A literal may also span lines
+  /// as itself — either spelling means the same string.)
   receive init {
-    .source = '# Markdown — type on the left, read on the right'
+    .source = '# Markdown\\n\\nType on the left, read on the right.\\n\\n- a list\\n- of things\\n\\n> and a quote\\n'
   }
 </script>
 
@@ -542,6 +539,351 @@ export const EXAMPLES = [
          no handler, no library on the page. -->
     <div class="flex-1 p-3 bg-base-100 rounded overflow-auto"
       @setinnermd=".source"></div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "text",
+    source: `<script type="tutuca/state">
+  state TextDirective {
+    str    : String
+    num    : Int
+    bool   : Bool
+    notSet : Any
+  }
+
+  receive TextDirective { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .str = 'hello'
+    .num = 42
+    .bool = true
+  }
+
+  /// The method the last row calls. \`upper\` is the fold \`lower\` always had
+  /// a twin for.
+  compute getStrUpper {
+    upper .str
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body grid grid-cols-[auto_auto] gap-x-4 gap-y-2 items-center">
+      <span>String:</span> <span @text=".str"></span>
+      <span>Number:</span> <span @text=".num"></span>
+      <span>Boolean:</span> <x text=".bool"></x>
+      <!-- A Null renders as nothing at all, not as the word "null". -->
+      <span>notSet:</span> <span @text=".notSet"></span>
+      <span>Method call:</span> <span @text="$getStrUpper"></span>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "raw-html",
+    source: `<script type="tutuca/state">
+  state DangerSetInnerHtml {
+    content : String
+  }
+
+  receive DangerSetInnerHtml { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .content = '<b>bold</b> and <i>italic</i>, straight into the DOM'
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <!-- The escape hatch, named so nobody reaches for it by accident. -->
+      <div class="p-2 bg-base-100 rounded" @dangerouslysetinnerhtml=".content"></div>
+      <textarea class="textarea font-mono text-xs" :value=".content"
+        @on.input="setContent value"></textarea>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "conditional-attrs",
+    source: `<script type="tutuca/state">
+  state ConditionalAttributes {
+    isActive : Bool
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body">
+      <!-- Two @if on one element, so every @then/@else after the first names
+           its attribute: HTML forbids duplicate attributes, and the parser
+           would drop the second pair before tutuca saw it. -->
+      <button
+        @if.class=".isActive" @then="'btn btn-success'" @else="'btn btn-ghost'"
+        @if.title=".isActive" @then.title="'Click to disable'"
+        @else.title="'Click to enable'"
+        @on.click="toggleIsActive">
+        <span @show=".isActive">Enabled</span>
+        <span @hide=".isActive">Disabled</span>
+      </button>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "swatches",
+    source: `<script type="tutuca/state">
+  state SwatchPicker {
+    color   : String
+    palette : Array[String]
+  }
+
+  receive SwatchPicker { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .color = '#ef4444'
+    .palette.push '#ef4444'
+    .palette.push '#f59e0b'
+    .palette.push '#10b981'
+    .palette.push '#3b82f6'
+    .palette.push '#8b5cf6'
+  }
+
+  /// Lay each swatch out along the row, and ring the selected one. Both are
+  /// answers ABOUT the row, which is what an enricher is for — the loop hands
+  /// it \`@key\` and \`@value\`, and the template reads what it wrote.
+  enrich swatch {
+    @cx = 32 + (@key * 46)
+    @ring = if (@value is .color) { '#111827' } else { 'transparent' }
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-2">
+      <svg viewBox="0 0 380 130" role="img">
+        <rect x="20" y="12" width="340" height="52" rx="8" :fill=".color"></rect>
+        <circle @each=".palette" @enrich-with="swatch"
+          :cx="@cx" cy="98" r="18" :fill="@value"
+          stroke-width="3" :stroke="@ring"
+          @on.click="setColor @value"></circle>
+      </svg>
+      <p class="text-sm">Selected: <x text=".color"></x></p>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "quadratic",
+    source: `<script type="tutuca/state">
+  state Quadratic {
+    a : Int
+    b : Int
+    c : Int
+  }
+
+  receive Quadratic { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .a = 1
+    .b = -3
+    .c = 2
+  }
+
+  /// b² − 4ac, and what it says about the roots. \`classify\` calls
+  /// \`discriminant\` by name, which is how one body reaches another.
+  compute discriminant {
+    (.b * .b) - (4 * .a * .c)
+  }
+
+  compute classify {
+    if discriminant > 0 {
+      'two distinct real roots'
+    } else {
+      if discriminant is 0 { 'one repeated real root' } else { 'no real roots' }
+    }
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <div class="flex gap-3 text-sm">
+        <label class="flex items-center gap-1">a
+          <input type="number" class="input input-sm w-16" :value=".a"
+                 @on.input="setA valueAsInt"></label>
+        <label class="flex items-center gap-1">b
+          <input type="number" class="input input-sm w-16" :value=".b"
+                 @on.input="setB valueAsInt"></label>
+        <label class="flex items-center gap-1">c
+          <input type="number" class="input input-sm w-16" :value=".c"
+                 @on.input="setC valueAsInt"></label>
+      </div>
+      <!-- MathML, namespaced by the subtree it sits in — no directive needed. -->
+      <math display="block">
+        <mn @text=".a"></mn><mo>&#x2062;</mo>
+        <msup><mi>x</mi><mn>2</mn></msup><mo>+</mo>
+        <mn @text=".b"></mn><mo>&#x2062;</mo><mi>x</mi><mo>+</mo>
+        <mn @text=".c"></mn><mo>=</mo><mn>0</mn>
+      </math>
+      <p>Discriminant: <x text="$discriminant"></x> — <x text="$classify"></x></p>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "nested-state",
+    source: `<script type="tutuca/state">
+  struct Label {
+    text : String
+    done : Bool
+  }
+
+  state Nested {
+    title  : String
+    draft  : String
+    labels : Array[Label]
+  }
+
+  receive Nested { Init }
+</script>
+
+<script type="tutuca/script">
+  /// \`new\` builds the zero of a declared type and puts it at \`@cur\`; the
+  /// statements under it fill it in, and \`push\` takes it from there. This is
+  /// what a card could not do until the language had a way to NAME a value
+  /// being built — there is no record literal, and \`@cur\` is why none is
+  /// needed.
+  receive init {
+    .title = 'Nested state'
+    new Label
+    @cur.text = 'read the schema'
+    .labels.push @cur
+    new Label
+    @cur.text = 'write a handler'
+    @cur.done = true
+    .labels.push @cur
+  }
+
+  on addLabel {
+    if (trim .draft) is not '' {
+      new Label
+      @cur.text = (trim .draft)
+      .labels.push @cur
+      .draft = ''
+    }
+  }
+
+  /// A nested WRITE: \`.labels[key].done\` is the place, and the spine above it
+  /// is rebuilt. This is the pair a view slot cannot spell.
+  on toggleLabel(key) {
+    .labels[key].done = not .labels[key].done
+  }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title" @text=".title"></h2>
+      <div class="flex gap-2 items-center">
+        <input class="input input-sm w-full" placeholder="add a label"
+               :value=".draft" @on.input="setDraft value"
+               @on.keydown+send="addLabel">
+        <button class="btn btn-sm btn-primary" @on.click="addLabel">add</button>
+      </div>
+      <ul class="flex flex-col gap-1">
+        <li @each=".labels">
+          <button @if.class="@value.done"
+                  @then="'btn btn-xs btn-success'" @else="'btn btn-xs'"
+                  @on.click="toggleLabel @key">
+            <x text="@value.text"></x>
+          </button>
+        </li>
+      </ul>
+    </div>
+  </div>
+</template>
+`,
+  },
+  {
+    name: "macros",
+    source: `<script type="tutuca/state">
+  state MacroDemo {
+    count  : Int
+    status : String
+  }
+
+  receive MacroDemo { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init { .status = 'warning' }
+
+  on inc { .count += 1 }
+</script>
+
+<!-- A macro is pure template expansion: no state, no handlers, no lifecycle.
+     \`@on.click="inc"\` inside one calls \`inc\` on the COMPONENT it expanded
+     into, which is the whole difference from a child component — and the
+     reason a card can have macros while it cannot have children.
+
+     These lived in MoonBit until a card could hold one: the demo they come
+     from (storybook/examples/macros) registers them with \`macros=\` and
+     writes its views as raw strings, because the loader used to drop what the
+     file declared. -->
+<template id="macro:badge" data-label="'New'" data-kind="'neutral'">
+  <span @if.class="^kind" @then="$'badge badge-{^kind}'"
+        @else="'badge'" @text="^label"></span>
+</template>
+
+<template id="macro:panel" data-title="'Panel'">
+  <div class="card bg-base-100">
+    <div class="card-body gap-2">
+      <h3 class="card-title text-base" @text="^title"></h3>
+      <x:slot></x:slot>
+      <div class="card-actions"><x:slot name="actions"></x:slot></div>
+    </div>
+  </div>
+</template>
+
+<template id="MacroDemo">
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <!-- A parameter, a default, and a DYNAMIC one read off the state. -->
+      <p class="flex gap-2 items-center">
+        <x:badge></x:badge>
+        <x:badge label="Sale" kind="success"></x:badge>
+        <x:badge label="Live" :kind=".status"></x:badge>
+      </p>
+
+      <!-- The default slot takes the children; a named one takes the ones
+           that ask for it by name. -->
+      <x:panel title="Slots">
+        <p>This paragraph is the macro call's child.</p>
+        <!-- A named slot is asked for by an <x slot="…"> wrapper, not by an
+             attribute on the child: the wrapper is what carries the name. -->
+        <x slot="actions">
+          <button class="btn btn-sm btn-primary" @on.click="inc">+1</button>
+        </x>
+      </x:panel>
+
+      <p>Count: <x text=".count"></x></p>
+    </div>
   </div>
 </template>
 `,

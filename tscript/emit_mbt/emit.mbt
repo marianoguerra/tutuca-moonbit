@@ -57,6 +57,13 @@ priv struct E {
   /// This is what lets one body call another: `compute status { if over { … } }`
   /// is a call, and a bare name is where the reader expects one.
   callables : Map[String, String]
+  /// The temporary the active `new` bound, and its type — what `@cur` reads
+  /// and writes here. None until a `new` runs, and again after a branch whose
+  /// arm bound one, because a `let` inside the branch expression does not
+  /// outlive it.
+  mut target : (String, @statedef.StateTy)?
+  /// A counter for those temporaries, so two `new`s in one body do not shadow.
+  mut target_n : Int
 }
 
 ///|
@@ -81,6 +88,8 @@ pub fn emit(
     tmp: 0,
     guards: Map([]),
     callables: Map([]),
+    target: None,
+    target_n: 0,
   }
   let arms : Array[String] = []
   let refusals : Array[Refusal] = []
@@ -277,6 +286,8 @@ fn E::value_body(
   self.prelude = []
   self.tmp = 0
   self.guards = Map([])
+  // A target belongs to the body that built it, here as everywhere else.
+  self.target = None
   // What "this value is not that shape" answers, per role. The interpreter
   // answers None and the caller reads it as nothing happened; these are the
   // same statement in each signature.
@@ -450,6 +461,9 @@ fn E::arm(
   guard d.body is Stmts(body) else {
     raise Cannot("a value body is not a transition")
   }
+  // A target belongs to the body that built it: an arm never starts holding
+  // one the arm above it left behind.
+  self.target = None
   let b = StringBuilder::new()
   // `_args` when the declaration takes none: a generated file must not be the
   // thing that warns.
@@ -525,6 +539,8 @@ fn stmt_uses(s : @tscript.Stmt, name : String) -> Bool {
     SEffect(args~, ..) => args.iter().any(a => expr_uses(a, name))
     SIf(cond~, then_~, else_~, ..) =>
       expr_uses(cond, name) || uses_name(then_, name) || uses_name(else_, name)
+    // `new Label` names a TYPE. It reads no name, so it uses none.
+    SNew(..) => false
   }
 }
 
@@ -633,6 +649,7 @@ fn decl_any(d : @tscript.Decl, ask : (@tscript.Expr) -> Bool) -> Bool {
         SEffect(args~, ..) => args.iter().any(a => walk(a))
         SIf(cond~, then_~, else_~, ..) =>
           walk(cond) || walk_stmts(then_) || walk_stmts(else_)
+        SNew(..) => false
       }
       if hit {
         return true
@@ -727,6 +744,23 @@ fn E::stmt_body(
   pad : String,
 ) -> String raise NoWay {
   match s {
+    // The target, which is a LOCAL of known type rather than a field of the
+    // state — so writing through a path into one is a record update the
+    // generator can spell, not the spine rebuild it refuses on `s`.
+    SAssign(place~, op=ASet, value~, ..) if is_target(place) => {
+      let (name, ty) = self.target_root()
+      let rhs = self.target_update(name, ty, place.steps, 0, (t, _) => {
+        self.at(value, t)
+      })
+      "\{pad}let \{name} = \{rhs}\n"
+    }
+    SMethod(place~, call~, args~, ..) if is_target(place) => {
+      let (name, ty) = self.target_root()
+      let rhs = self.target_update(name, ty, place.steps, 0, (t, recv) => {
+        self.collection_call_at(call, recv, "@" + @tscript.target_bind, t, args)
+      })
+      "\{pad}let \{name} = \{rhs}\n"
+    }
     SAssign(place~, op~, value~, ..) => {
       let (field, ty) = self.root_field(place)
       let rhs = match op {
@@ -751,6 +785,20 @@ fn E::stmt_body(
       self.rebind(field, next, pad)
     }
     SEffect(name~, args~, ..) => self.effect(name, args, pad)
+    // `new Label` is a `let` at the type's zero. The annotation is what makes
+    // it resolve: `zero_expr` writes `{ text: "", done: false }` unqualified,
+    // because every other position it lands in already has a type wanted.
+    SNew(ty~, ..) => {
+      guard @check.resolve_ty_ref(self.def, ty) is Some(t) else {
+        raise Cannot(
+          "`\{ty.to_source()}` is not a type the state declares, so there is nothing to build",
+        )
+      }
+      let name = "cur\{self.target_n}"
+      self.target_n = self.target_n + 1
+      self.target = Some((name, t))
+      "\{pad}let \{name} : \{self.def.moonbit_ty(t)} = \{self.def.zero_expr(t)}\n"
+    }
     SIf(cond~, then_~, else_~, ..) => {
       let c = self.at_bool(cond)
       let b = StringBuilder::new()
@@ -758,15 +806,74 @@ fn E::stmt_body(
       // that answers the state — `if … { … } else { s }` — rather than in two
       // statement blocks whose bindings would not escape.
       b.write_string("\{pad}let s = if \{c} {\n")
+      // A `new` inside an arm binds a `let` inside that expression, so the
+      // target it made does not outlive the branch — and the one that was
+      // there before still does. Restoring it is what keeps a later `@cur`
+      // from naming a temporary that is out of scope: it is refused instead,
+      // which is a message rather than a generated file that will not compile.
+      let outer = self.target
       b.write_string(self.stmts(then_, pad + "  "))
       b.write_string("\{pad}  s\n")
       b.write_string("\{pad}} else {\n")
+      self.target = outer
       b.write_string(self.stmts(else_, pad + "  "))
       b.write_string("\{pad}  s\n")
       b.write_string("\{pad}}\n")
+      self.target = outer
       b.to_string()
     }
   }
+}
+
+///|
+/// Whether a place is rooted at the target `new` builds into.
+fn is_target(p : @tscript.Place) -> Bool {
+  p.root is PBind(n) && n == @tscript.target_bind
+}
+
+///|
+/// The temporary the active `new` bound, refused when there is none.
+fn E::target_root(self : E) -> (String, @statedef.StateTy) raise NoWay {
+  guard self.target is Some(t) else {
+    raise Cannot(
+      "`@\{@tscript.target_bind}` holds what a `new` built, and no `new` is in scope here — one inside a branch does not outlive it",
+    )
+  }
+  t
+}
+
+///|
+/// A write through a path into the target, as a value: `{ ..cur0, text: … }`,
+/// nested for a deeper path.
+///
+/// Expressible where the same write into `s` is not, and for one reason: the
+/// target is a local whose type is known at every step, so no bounds check and
+/// no runtime lookup stand between the path and a record literal.
+fn E::target_update(
+  self : E,
+  src : String,
+  ty : @statedef.StateTy,
+  steps : Array[@tscript.PathStep],
+  i : Int,
+  leaf : (@statedef.StateTy, String) -> String raise NoWay,
+) -> String raise NoWay {
+  guard steps.get(i) is Some(st) else { return leaf(ty, src) }
+  guard st is PField(name) else {
+    raise Cannot(
+      "writing through an index into `@\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+    )
+  }
+  guard ty is TRecord(_) else {
+    raise Cannot(
+      "`\{ty.show_source()}` is not a record, so `\{name}` is not a field to write",
+    )
+  }
+  guard self.def.field_of(ty, name) is Some(inner) else {
+    raise Cannot("`\{ty.show_source()}` has no field `\{name}`")
+  }
+  let bind = binding_of(name)
+  let next = self.target_update("\{src}.\{bind}", inner, steps, i + 1, leaf)
+  "{ ..\{src}, \{bind}: \{next} }"
 }
 
 ///|
@@ -817,7 +924,21 @@ fn E::collection_call(
   ty : @statedef.StateTy,
   args : Array[@tscript.Expr],
 ) -> String raise NoWay {
-  let recv = "s.\{binding_of(field)}"
+  self.collection_call_at(call, "s.\{binding_of(field)}", ".\{field}", ty, args)
+}
+
+///|
+/// The same, on a receiver that is not a state field: the target `new` built,
+/// or a path into one. `label` is how the receiver is written in a refusal,
+/// since a temporary's generated name means nothing to an author.
+fn E::collection_call_at(
+  self : E,
+  call : String,
+  recv : String,
+  label : String,
+  ty : @statedef.StateTy,
+  args : Array[@tscript.Expr],
+) -> String raise NoWay {
   fn arity(n : Int) -> Unit raise NoWay {
     if args.length() != n {
       raise Cannot("`\{call}` takes \{n} argument(s), not \{args.length()}")
@@ -904,7 +1025,7 @@ fn E::collection_call(
     }
     _ =>
       raise Cannot(
-        "`\{call}` does not apply to `.\{field}`, which is \{ty.show_source()} — write the handler in MoonBit",
+        "`\{call}` does not apply to `\{label}`, which is \{ty.show_source()} — write the handler in MoonBit",
       )
   }
 }
@@ -1255,6 +1376,26 @@ fn E::read(
   self : E,
   p : @tscript.Place,
 ) -> (String, @statedef.StateTy) raise NoWay {
+  // The target reads like a state path and for the same reason: it is a local
+  // whose type is known at every step, so a field of one is a field access.
+  if is_target(p) {
+    let (name, ty) = self.target_root()
+    let mut src = name
+    let mut at = ty
+    for st in p.steps {
+      guard st is PField(sub) else {
+        raise Cannot(
+          "reading through an index into `@\{@tscript.target_bind}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+        )
+      }
+      guard self.def.field_of(at, sub) is Some(inner) else {
+        raise Cannot("`\{at.show_source()}` has no field `\{sub}`")
+      }
+      src = "\{src}.\{binding_of(sub)}"
+      at = inner
+    }
+    return (src, at)
+  }
   guard p.root is PState(name) else {
     guard p.root is PBind(bind) else {
       raise Cannot("a binding is not readable from a handler")
@@ -1428,6 +1569,7 @@ fn E::app(
       ("\{self.value_of(src, ty)}.to_display_string()", TText)
     }
     ("lower", 1) => ("\{self.at(args[0], TText)}.to_lower()", TText)
+    ("upper", 1) => ("\{self.at(args[0], TText)}.to_upper()", TText)
     ("trim", 1) =>
       (
         "\{self.at(args[0], TText)}.trim(chars=\" \\t\\n\\r\").to_owned()",

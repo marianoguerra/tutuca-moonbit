@@ -13,8 +13,9 @@ pub fn Env::of_state(
   state : Map[String, @tutuca.Value],
   callables? : Map[String, @tscript.Decl] = Map([]),
   schema? : @tutuca.SchemaInfo,
+  zero? : (@tscript.TyRef) -> @tutuca.Value?,
 ) -> Env {
-  { state, params: Map([]), binds: Map([]), callables, schema }
+  { state, params: Map([]), binds: Map([]), callables, schema, zero }
 }
 
 ///|
@@ -132,7 +133,15 @@ fn read_place(p : @tscript.Place, env : Env, depth : Int) -> @tutuca.Value? {
         // to grow a field the map has not seen yet.
         None => Null
       }
-    PBind(name) => env.binds.get(name).unwrap_or(Null)
+    // A missing binding reads Null — it comes from a slot this block cannot
+    // see, and absent is a normal answer there. The target is the exception:
+    // it comes from a `new` in this very body, so its absence is a mistake and
+    // reading it as Null would bury one.
+    PBind(name) =>
+      match env.binds.get(name) {
+        Some(v) => v
+        None => if name == @tscript.target_bind { return None } else { Null }
+      }
   }
   for st in p.steps {
     match st {
@@ -379,14 +388,17 @@ fn script_builtin_apply(
         _ => None
       }
     "str" => Some(Str(args[0].to_display_string()))
-    "lower" =>
+    "lower" | "upper" =>
       match args[0] {
         Str(s) => {
+          let down = name == "lower"
           let b = StringBuilder::new()
           for c in s {
             b.write_char(
-              if c >= 'A' && c <= 'Z' {
+              if down && c >= 'A' && c <= 'Z' {
                 Int::unsafe_to_char(c.to_int() + 32)
+              } else if !down && c >= 'a' && c <= 'z' {
+                Int::unsafe_to_char(c.to_int() - 32)
               } else {
                 c
               },

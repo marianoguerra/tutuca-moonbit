@@ -41,7 +41,51 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   diagnostics whose positions the caller already holds — a card's loader answers
   in character offsets, so there is nothing to parse.
 
-## [0.14.0] - 2026-08-13
+### Added
+
+- **`new <Type>` and `@cur`: the block language can build a value now.** It had
+  no literals for any aggregate — no list, no map, no record — so a list was
+  seeded by repeating `.songs.push 'Ramble On'` in `receive init`, and a record
+  could not be made at all. `Array[Label]` could be read into and written
+  through (`.labels[i].done = true`) but never appended to, because a `Label`
+  had no spelling. The zero of a declared type was already computable
+  (`@statedef.info.zero_of`, `StateDef::zero_expr`); it was simply unspeakable.
+
+  `new Label` builds that zero and makes it the **active target**, which the
+  statements under it fill in through `@cur`:
+
+  ```
+  receive init {
+    new Label
+    @cur.text = 'Buy milk'
+    @cur.done = true
+    .labels.push @cur
+  }
+  ```
+
+  Still no literals: a value is built by mutating it, which is what the rest of
+  the language already does. The type is written the way the state block writes
+  it — `new Label`, `new Array[String]`, `new Map[String, Int]` — and resolves
+  against that block's own declarations, sharing the name table with the state
+  parser so `new Int16` and `count : Int16` cannot come to mean different
+  things. A `new` resets the target; a path into one works, so `new Label` then
+  `@cur.tags.push 'x'` fills a list inside the record, which is what makes ONE
+  target enough for building outside-in.
+
+  `@cur` is a workbench and never becomes output. An enricher's bindings BECOME
+  a view's scope — `@name` in a template, replayed on every rebuild — so
+  `@interp.run` withholds `cur` from the bindings it hands back and drops any it
+  was handed, in one place rather than in each caller. A template that reads
+  `@cur` reads nothing, and a card cannot publish a binding a compiled
+  component could not.
+
+  Both backends. The checker types the target from the `new` and walks a path
+  into it with the same machinery a state path uses, so `@cur.dnoe` reports
+  `Label has no field dnoe`, and `@cur` with no `new` above it is `NO_TARGET`.
+  The MoonBit backend emits `let cur0 : Label = { … }` and rebinds it per write
+  — which is a plain record update, not the spine rebuild it still refuses on
+  `s`, because the target is a local whose type is known at every step. Five
+  corpus cases hold the two to the same answers.
 
 ### Fixed
 
@@ -86,6 +130,34 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `.loading is false` instead.
 
 ### Added
+
+- **`upper`, and the escapes a string literal was missing.** `upper` joins
+  `lower` in the reading vocabulary — one case fold each way, with the same
+  guard — and `\n`, `\t` and `\r` join `\'` and `\\` as escapes. Both lexers
+  read ONE table, so a `'a\nb'` means the same in `@text="…"` and in a handler,
+  and the printer writes the escape back rather than a newline that would make
+  a declaration three lines tall. (A literal could always span lines as itself;
+  what was missing was the one-line spelling.) Both gaps came out of migrating
+  the examples, and both cards that had worked around them now say what they
+  meant.
+
+- **A card can hold macros.** `<template id="macro:name">` was returned by the
+  splitter and dropped by the loader, so `<x:badge>` in a card rendered as an
+  unknown element. The `Card` carries them and the host passes them to
+  `ModuleDef::new(macros~)` — the same path a generated module's take. The
+  card playground's structured view gained a **macros** tab beside views, with
+  the same add and rename its view tabs have; the two are one tab bar over two
+  lists now, since a macro belongs to the FILE and a view to the component.
+  Before this, a declared macro also showed up in the views tab as a view
+  called `field` of a component called `macro`.
+
+- **Seven more examples migrated, and two that needed `new`.** `text`,
+  `raw-html`, `conditional-attrs`, `swatches` (SVG plus an enricher that lays
+  the row out), `quadratic` (MathML, and one `compute` calling another),
+  `macros` — the four macro demos that had to live in MoonBit — and
+  `nested-state`, whose `Array[Label]` is seeded and grown with `new` / `@cur`.
+  Twenty cards in the selector now, every one loaded by `check-examples` and
+  driven in a browser.
 
 - **Nine examples migrated into the card playground's selector.** It had four
   starters; it has thirteen cards now, and the nine are the repo's own demos

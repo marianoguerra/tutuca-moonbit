@@ -213,7 +213,13 @@ fn mount(card : @tutucard.Card, id : String) -> Bool {
   // rendered has to go before this one renders into it.
   let root_node = @bdom.BrowserNode::from_element(root_el)
   root_node.replace_children()
-  let m = @component.ModuleDef::new(name="card", components=[card.component])
+  // The file's macros travel with it: `<x:name>` in a card expands against the
+  // scope the module registers, exactly as a generated module's does.
+  let m = @component.ModuleDef::new(
+    name="card",
+    components=[card.component],
+    macros=card.macros,
+  )
   let a = @app.App::from_module(
     m,
     card.component.name,

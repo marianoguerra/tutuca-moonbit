@@ -25,10 +25,17 @@
  * legitimate, and which the structured view shows as an empty pane rather than
  * hiding, because "there is no script yet" is what an author is about to fix.
  *
+ * `macros` is the `<template id="macro:name">` declarations, kept apart from
+ * `views` because they are a different kind of thing: a view belongs to the
+ * component and a macro belongs to the FILE, and a card that declares one
+ * would otherwise show it as a view called `field` of a component called
+ * `macro`.
+ *
  * @typedef {{
  *   state: Region | null,
  *   script: Region | null,
  *   views: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
+ *   macros: Array<Region & { name: string, id: string, idStart: number, idEnd: number }>,
  * }} Parts
  */
 
@@ -61,6 +68,7 @@ export function parts(source) {
     "</script>",
   );
   const views = [];
+  const macros = [];
   const tpl = /<template([^>]*)>/g;
   const OPEN = "<template".length;
   let m;
@@ -72,6 +80,7 @@ export function parts(source) {
     const id = idAttr ? idAttr[1] : "";
     // `Counter:row` is the row view of Counter; a bare id is the component's
     // main view. The tab shows the VIEW half, since a card is one component.
+    const isMacro = id.startsWith("macro:");
     const name = id.includes(":") ? id.slice(id.indexOf(":") + 1) : "main";
     // Where the id's TEXT starts, in file coordinates: past `<template`, into
     // the attributes, past `id="`. Getting this base wrong splices a rename
@@ -79,7 +88,7 @@ export function parts(source) {
     const idStart = idAttr
       ? m.index + OPEN + m[1].indexOf(idAttr[0]) + 'id="'.length
       : -1;
-    views.push({
+    (isMacro ? macros : views).push({
       name,
       id,
       text: source.slice(start, end),
@@ -90,7 +99,12 @@ export function parts(source) {
     });
     tpl.lastIndex = end;
   }
-  return { state: state && strip(state), script: script && strip(script), views };
+  return {
+    state: state && strip(state),
+    script: script && strip(script),
+    views,
+    macros,
+  };
 }
 
 /** A region without the match object the scan carried. */
@@ -229,3 +243,37 @@ export function renameView(source, p, i, name) {
   }
   return source.slice(0, v.idStart) + id + source.slice(v.idEnd);
 }
+
+/**
+ * The source with a new empty macro appended.
+ *
+ * The body carries `<x:slot>` because a macro without one drops the children
+ * of every call, which is the first thing an author writing one discovers by
+ * losing them.
+ *
+ * @param {string} source
+ * @param {string} name
+ */
+export function addMacro(source, name) {
+  const sep = source.endsWith("\n") ? "" : "\n";
+  return (
+    `${source}${sep}\n<template id="macro:${name}">\n` +
+    `  <div>\n    <x:slot></x:slot>\n  </div>\n</template>\n`
+  );
+}
+
+/**
+ * The source with macro `i` renamed. Its id always carries the `macro:`
+ * prefix — that prefix is what makes it a macro rather than a view.
+ *
+ * @param {string} source
+ * @param {Parts} p
+ * @param {number} i
+ * @param {string} name
+ */
+export function renameMacro(source, p, i, name) {
+  const m = p.macros[i];
+  if (!m || m.idStart < 0) return source;
+  return source.slice(0, m.idStart) + `macro:${name}` + source.slice(m.idEnd);
+}
+

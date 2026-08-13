@@ -9,11 +9,13 @@
 import { EXAMPLES } from "./examples.js";
 import { addClasses } from "./margaui.js";
 import {
+  addMacro,
   addView,
   componentOf,
   dedented,
   parts,
   reindented,
+  renameMacro,
   renameView,
   splice,
 } from "./regions.js";
@@ -42,7 +44,7 @@ const els = {
  * same string. So there is one source of truth and no diffing: a structured
  * edit splices into `source()` and everything redraws from there.
  */
-const ui = { mode: "raw", part: "state", view: 0 };
+const ui = { mode: "raw", part: "state", view: 0, macro: 0 };
 
 /** Debounce, so a fast typist re-mounts on pauses rather than per keystroke. */
 const DEBOUNCE_MS = 180;
@@ -133,7 +135,8 @@ function selectRange(from, to) {
 }
 
 /** Which language the part pane is holding, by which tab is showing. */
-const partLang = () => (ui.part === "views" ? "html" : "tutuca");
+const partLang = () =>
+  ui.part === "views" || ui.part === "macros" ? "html" : "tutuca";
 
 /** The mode the part editor was last reconfigured to. */
 let partLangNow = null;
@@ -418,7 +421,8 @@ function currentRegion() {
   const p = parts(source());
   if (ui.part === "state") return p.state;
   if (ui.part === "script") return p.script;
-  return p.views[Math.min(ui.view, p.views.length - 1)] ?? null;
+  const list = listOf(p);
+  return list.items[Math.min(list.index, list.items.length - 1)] ?? null;
 }
 
 /** What to say when the part the tab names is not in the card yet. */
@@ -427,12 +431,13 @@ const MISSING = {
   script:
     'no <script type="tutuca/script"> block yet — add one in the raw view',
   views: "no <template> yet",
+  macros: "no <template id=\"macro:…\"> yet — a macro is markup this file can call by name",
 };
 
 /** Put the current part in the pane. */
 function drawPart() {
   const region = currentRegion();
-  els.viewTabs.hidden = ui.part !== "views";
+  els.viewTabs.hidden = ui.part !== "views" && ui.part !== "macros";
   if (!region) {
     els.partEdit.hidden = true;
     els.partEmpty.hidden = false;
@@ -464,28 +469,70 @@ function drawPart() {
   }
 }
 
-/** The view tabs, `main` first. */
+/**
+ * Which list the sub-tab bar is over, and the four things that differ between
+ * them: where the index lives, what a new one is called, and the two splices.
+ *
+ * Views and macros are the same tab bar over two lists — a card has as many of
+ * each as it likes, against one state block and one script block — so the only
+ * honest way to draw both is to name what differs and share the rest.
+ */
+function listOf(p) {
+  if (ui.part === "macros") {
+    return {
+      items: p.macros,
+      index: ui.macro,
+      select: (i) => {
+        ui.macro = i;
+      },
+      what: "macro",
+      // A macro's name is entirely the author's: nothing mounts a macro, so
+      // there is no `main` to protect.
+      fixed: () => false,
+      rename: (src, i, name) => renameMacro(src, p, i, name),
+      add: (src, name) => addMacro(src, name),
+      count: (src) => parts(src).macros.length,
+    };
+  }
+  return {
+    items: p.views,
+    index: ui.view,
+    select: (i) => {
+      ui.view = i;
+    },
+    what: "view",
+    // `main` is the view every card has and the one it mounts with, so it is
+    // the only name that is not the author's to change.
+    fixed: (v) => v.name === "main",
+    rename: (src, i, name) => renameView(src, p, i, name),
+    add: (src, name) => addView(src, name),
+    count: (src) => parts(src).views.length,
+  };
+}
+
+/** The sub-tabs of whichever list is showing, `main` first for views. */
 function drawTabs() {
   const p = parts(source());
-  if (ui.view >= p.views.length) ui.view = Math.max(0, p.views.length - 1);
+  const list = listOf(p);
+  if (list.index >= list.items.length) {
+    list.select(Math.max(0, list.items.length - 1));
+  }
   els.viewTabs.replaceChildren();
-  p.views.forEach((v, i) => {
+  list.items.forEach((v, i) => {
     const b = document.createElement("button");
-    b.className = i === ui.view ? "tab on" : "tab";
+    b.className = i === list.index ? "tab on" : "tab";
     b.textContent = v.name;
     b.role = "tab";
     b.addEventListener("click", () => {
-      ui.view = i;
+      list.select(i);
       drawTabs();
       drawPart();
     });
-    // `main` is the view every card has and the one it mounts with, so it is
-    // the only name that is not the author's to change.
     b.addEventListener("dblclick", () => {
-      if (v.name === "main") return;
-      const name = prompt("view name", v.name);
+      if (list.fixed(v)) return;
+      const name = prompt(`${list.what} name`, v.name);
       if (!name || name === v.name) return;
-      setSource(renameView(source(), p, i, name));
+      setSource(list.rename(source(), i, name));
       drawTabs();
       drawGutter(source());
       scheduleReload();
@@ -495,12 +542,15 @@ function drawTabs() {
   const add = document.createElement("button");
   add.className = "tab add";
   add.textContent = "+";
-  add.title = "add a view";
+  add.title = `add a ${list.what}`;
   add.addEventListener("click", () => {
-    const name = prompt("new view name", `view${p.views.length}`);
+    const name = prompt(
+      `new ${list.what} name`,
+      `${list.what}${list.items.length}`,
+    );
     if (!name) return;
-    setSource(addView(source(), name));
-    ui.view = parts(source()).views.length - 1;
+    setSource(list.add(source(), name));
+    list.select(list.count(source()) - 1);
     drawTabs();
     drawPart();
     drawGutter(source());
@@ -536,7 +586,7 @@ function setPart(part) {
   for (const b of els.structured.querySelectorAll(".tabs:not(.views) .tab")) {
     b.classList.toggle("on", b.dataset.part === part);
   }
-  if (part === "views") drawTabs();
+  if (part === "views" || part === "macros") drawTabs();
   drawPart();
 }
 

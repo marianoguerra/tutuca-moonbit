@@ -35,6 +35,14 @@ pub(all) struct Card {
   issues : Array[CardIssue]
   /// The schema the card declares, or None for a card with no state block.
   def : @statedef.StateDef?
+  /// The `<template id="macro:name">` declarations the file holds.
+  ///
+  /// Carried rather than expanded here: a macro is expanded when a view is
+  /// COMPILED, against the scope the component was registered in, so what the
+  /// loader can do is hand them to the host — which passes them to
+  /// `ModuleDef::new(macros~)` and lets the ordinary lookup find them. That is
+  /// the same path a module's macros take; a card's are not a second kind.
+  macros : Map[String, @anode.Macro]
 }
 
 ///|

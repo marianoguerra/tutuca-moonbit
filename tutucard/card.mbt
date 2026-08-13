@@ -115,6 +115,12 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
     callables: merge(by_kind(decls, DCompute), by_kind(decls, DPred)),
     alters: merge(by_kind(decls, DEnrich), by_kind(decls, DEnrichScope)),
     mutators: @component.schema_mutators(schema),
+    // A `new` resolves its type name against this card's own declarations, and
+    // against nothing else. A card with no state block declares none.
+    zero: match def {
+      Some(d) => Some(t => @info.zero_of_ref(d, t))
+      None => None
+    },
   }
 
   // -- the views -----------------------------------------------------------
@@ -146,7 +152,14 @@ pub fn load(source : String, name~ : String) -> Card raise CardError {
   // answer with it — so the deck learns it here rather than guessing. A Ref
   // because the make closure above captures the deck before the id exists.
   deck.comp_id.val = component.id
-  { component, issues, def }
+  // The file's macros, in the shape the parser looks one up in. `split_file`
+  // has been returning them all along and the loader dropped them, which made
+  // `<x:card>` in a card an unknown element that rendered as itself.
+  let macros : Map[String, @anode.Macro] = Map([])
+  for m in file.macros {
+    macros[m.name] = { defaults: m.defaults, raw_view: m.source }
+  }
+  { component, issues, def, macros }
 }
 
 ///|

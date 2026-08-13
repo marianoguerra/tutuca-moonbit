@@ -33,7 +33,7 @@ pub fn script_builtin(name : String) -> Int? {
     "clamp" => Some(3)
     "int" | "num" => Some(1)
     // Text
-    "str" | "lower" | "trim" => Some(1)
+    "str" | "lower" | "upper" | "trim" => Some(1)
     _ => None
   }
 }
@@ -44,7 +44,7 @@ pub fn script_builtin(name : String) -> Int? {
 pub fn script_builtin_names() -> Array[String] {
   let out = [
     "clamp", "contains", "empty?", "falsy?", "has", "int", "len", "lower", "max",
-    "min", "null?", "num", "str", "trim", "truthy?",
+    "min", "null?", "num", "str", "trim", "truthy?", "upper",
   ]
   out
 }

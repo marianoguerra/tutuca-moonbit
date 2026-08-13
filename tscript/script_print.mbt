@@ -42,10 +42,16 @@ fn quote_str(s : String) -> String {
   let b = StringBuilder::new()
   b.write_char('\'')
   for c in s {
-    if c is ('\'' | '\\') {
-      b.write_char('\\')
+    // A newline in a literal is printed as `\n` rather than as itself: the
+    // source round-trips either way, but a declaration that grew three lines
+    // because a seed carries a paragraph is a declaration nobody can read.
+    match escape_of(c) {
+      Some(e) => {
+        b.write_char('\\')
+        b.write_char(e)
+      }
+      None => b.write_char(c)
     }
-    b.write_char(c)
   }
   b.write_char('\'')
   b.to_string()
@@ -190,6 +196,15 @@ pub fn Expr::to_source(self : Expr) -> String {
 }
 
 ///|
+pub fn TyRef::to_source(self : TyRef) -> String {
+  if self.args.is_empty() {
+    self.name
+  } else {
+    self.name + "[" + self.args.map(a => a.to_source()).join(", ") + "]"
+  }
+}
+
+///|
 fn stmt_src(s : Stmt, indent : String) -> String {
   match s {
     SAssign(place~, op~, value~, ..) =>
@@ -208,6 +223,7 @@ fn stmt_src(s : Stmt, indent : String) -> String {
       } else {
         indent + name + " " + args.map(a => operand_src(a)).join(" ")
       }
+    SNew(ty~, ..) => indent + "new " + ty.to_source()
     SIf(cond~, then_~, else_~, ..) => {
       let b = StringBuilder::new()
       let inner = indent + "  "

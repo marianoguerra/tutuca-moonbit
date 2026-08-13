@@ -308,8 +308,14 @@ pub fn tokenize_script(source : String) -> Array[ScriptToken] raise ScriptError 
 /// Scan a `'…'` run from just past the opening quote. Returns the unescaped
 /// text and the index just past the closing quote.
 ///
-/// Only `\'` and `\\` are escapes, exactly as in a slot literal — a second
-/// escape vocabulary in the same file would be the thing §2.4 warns against.
+/// The escapes are `\'`, `\\`, `\n`, `\t` and `\r`, and they are exactly the
+/// slot literal's — a second escape vocabulary in the same file would be the
+/// thing §2.4 warns against, so the two lexers change together or not at all.
+///
+/// A literal may also span lines as it is: nothing here stops at a newline,
+/// and a markdown document typed into a card reads better that way than as
+/// one line of `\n`. The escapes are for the case where it does not — a
+/// seed that wants to stay on one line beside the statement above it.
 fn scan_string(
   chars : Array[Char],
   from : Int,
@@ -320,8 +326,8 @@ fn scan_string(
   let mut i = from
   while i < n {
     match chars[i] {
-      '\\' if i + 1 < n && chars[i + 1] is ('\'' | '\\') => {
-        buf.write_char(chars[i + 1])
+      '\\' if i + 1 < n && escaped_char(chars[i + 1]) is Some(c) => {
+        buf.write_char(c)
         i = i + 2
       }
       '\'' => return (buf.to_string(), i + 1)
@@ -335,4 +341,36 @@ fn scan_string(
     start: open,
     end_: n,
   })
+}
+
+///|
+/// What a backslash and this character stand for, or None when the pair is not
+/// an escape and the backslash stays literal.
+///
+/// The ONE table both lexers read, so the block and a slot cannot drift: a
+/// `'a\nb'` means the same in `@text="…"` and in a handler.
+pub fn escaped_char(c : Char) -> Char? {
+  match c {
+    '\'' => Some('\'')
+    '\\' => Some('\\')
+    'n' => Some('\n')
+    't' => Some('\t')
+    'r' => Some('\r')
+    _ => None
+  }
+}
+
+///|
+/// The inverse: `c` written back into a literal, or None when it needs no
+/// escape. Both printers read this, for the same reason both lexers read the
+/// table above.
+pub fn escape_of(c : Char) -> Char? {
+  match c {
+    '\'' => Some('\'')
+    '\\' => Some('\\')
+    '\n' => Some('n')
+    '\t' => Some('t')
+    '\r' => Some('r')
+    _ => None
+  }
 }

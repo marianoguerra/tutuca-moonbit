@@ -194,7 +194,9 @@
           The <code>$'…'</code> in <code>status</code> is a string template:
           single quotes with a leading <code>$</code>, and
           <code>{…}</code> holding any expression. A bare
-          <code>'…'</code> is a plain string literal. Nothing else in a view or
+          <code>'…'</code> is a plain string literal — it may span lines as it
+          is, and it carries five escapes: <code>\'</code>, <code>\\</code>,
+          <code>\n</code>, <code>\t</code> and <code>\r</code>. Nothing else in a view or
           a body interpolates — an unquoted <code>{.x}</code> in an attribute
           is not a template, it is text.
         </p>
@@ -220,6 +222,31 @@
           sequences and maps, and <code>add</code>,
           <code>remove</code>/<code>delete</code>, <code>toggle</code>,
           <code>set</code> for sets and maps.
+        </p>
+        <p>
+          A list of <em>records</em> needs one more thing, because the language
+          has no literals to write one with: <code>new &lt;Type&gt;</code>
+          builds a value at its type's zero and makes it the
+          <strong>active target</strong>, which the statements under it fill in
+          through <code>@cur</code>. Then it is pushed like anything else.
+        </p>
+        <pre><code>receive init {
+  new Song
+  @cur.title = 'Ramble On'
+  @cur.plays = 0
+  .songs.push @cur
+}</code></pre>
+        <p>
+          The type is spelled the way the state block spells it —
+          <code>new Song</code>, <code>new Array[String]</code>,
+          <code>new Map[String, Int]</code> — and has to be one that block
+          declares. A <code>new</code> resets the target, so building two rows
+          is two <code>new</code>s; a path into it works, so
+          <code>new Song</code> followed by <code>@cur.tags.push 'rock'</code>
+          fills a list <em>inside</em> the record. <code>@cur</code> belongs to
+          the handler that built it: it is gone when the handler ends, and it
+          never reaches a view, so a template that reads <code>@cur</code> reads
+          nothing.
         </p>
       </section>
 
@@ -465,10 +492,15 @@
         <h4>Statements</h4>
         <pre><code>.count = 0                  assign
 .count += d   .count -= d   add, subtract
+new Label                   build one, at @cur
+@cur.text = 'hi'            …and fill it in
 @tag = $'{@value}'          bind (in an enrich)
 .items.push v               a collection method,
 .items.deleteAt i           receiver first
 .byId.set k v
+new Label                   build a value at its zero,
+@cur.text = 'hi'            fill it in through `@cur`,
+.labels.push @cur           then put it somewhere
 send 'flash' .msg           an effect
 bubble 'picked' @key
 sendAt &amp;.rows[k] 'done' 1
@@ -516,7 +548,7 @@ if cond { … } else { … }    a branch, else optional</code></pre>
         <pre><code>empty? x    truthy? x   falsy? x    null? x
 len xs      has xs k    contains s sub
 min a b     max a b     clamp x lo hi     int x    num x
-str x       lower s     trim s</code></pre>
+str x       lower s     upper s     trim s</code></pre>
       </section>
 
       <section id="limits">
@@ -532,10 +564,11 @@ str x       lower s     trim s</code></pre>
             child is a handler the compiler was for.
           </li>
           <li>
-            <strong>No record literal.</strong> An <code>Array[Struct]</code>
-            can be read, indexed and written through, but never appended to
-            from a card — which is why the list here holds
-            <code>Array[String]</code>.
+            <strong>No record literal — but a record.</strong> There is no
+            syntax for one, because the language has no way to name a value it
+            is not building. <code>new Label</code> puts the type's zero at
+            <code>@cur</code> and the statements under it fill it in, so
+            <code>.labels.push @cur</code> is how a list of records grows.
           </li>
           <li>
             <strong>One component per file.</strong> A file declaring several

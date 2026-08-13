@@ -414,6 +414,160 @@ test "a place reifies a position, and when the key resolves is the point" {
   ])
 }
 
+// -- new, and the target ----------------------------------------------------
+
+///|
+/// Run one declaration with a `tutuca/state` block behind it, which is what a
+/// `new` needs: the block parses the type's NAME, and only a schema can say
+/// what it is.
+fn after_typed(
+  schema : String,
+  block : String,
+  state : Map[String, @tutuca.Value],
+  args? : Array[@tutuca.Value] = [],
+) -> @interp.Outcome raise {
+  let def = @statedef.parse_state(schema)[0]
+  let all = @tscript.parse_script(block)
+  let env = @interp.Env::of_state(state, schema=@info.schema_info(def), zero=t => {
+    @info.zero_of_ref(def, t)
+  })
+  @interp.dispatch(all[0], args, env)
+}
+
+///|
+const ROWS_SCHEMA : String =
+  #|struct Label { text : String, done : Bool }
+  #|state Card { labels : Array[Label], grid : Array[Array[String]] }
+  #|receive Card { Init }
+
+///|
+test "a record is built into the target and pushed" {
+  // The gap this closes: an `Array[Label]` could be READ into and written
+  // through, but never appended to, because a record had no spelling.
+  let s : Map[String, @tutuca.Value] = { "labels": List([]), "grid": List([]) }
+  assert_eq(
+    after_typed(
+      ROWS_SCHEMA,
+      (
+        #|receive init {
+        #|  new Label
+        #|  @cur.text = 'Buy milk'
+        #|  @cur.done = true
+        #|  .labels.push @cur
+        #|}
+      ),
+      s,
+    ).state,
+    Some({
+      "labels": List([Map({ "text": Str("Buy milk"), "done": Bool(true) })]),
+      "grid": List([]),
+    }),
+  )
+}
+
+///|
+test "a fresh list is built into the target and pushed" {
+  let s : Map[String, @tutuca.Value] = { "labels": List([]), "grid": List([]) }
+  assert_eq(
+    after_typed(
+      ROWS_SCHEMA,
+      (
+        #|receive init {
+        #|  new Array[String]
+        #|  @cur.push 'a'
+        #|  @cur.push 'b'
+        #|  .grid.push @cur
+        #|}
+      ),
+      s,
+    ).state,
+    Some({ "labels": List([]), "grid": List([List([Str("a"), Str("b")])]) }),
+  )
+}
+
+///|
+test "a new resets the target, and two of them do not alias" {
+  // The zero is handed out rather than copied, which is only safe because
+  // every write below is copy-on-write. Two rows built from one zero proves
+  // it: if they aliased, both would read 'second'.
+  let s : Map[String, @tutuca.Value] = { "labels": List([]), "grid": List([]) }
+  assert_eq(
+    after_typed(
+      ROWS_SCHEMA,
+      (
+        #|receive init {
+        #|  new Label
+        #|  @cur.text = 'first'
+        #|  .labels.push @cur
+        #|  new Label
+        #|  @cur.text = 'second'
+        #|  .labels.push @cur
+        #|}
+      ),
+      s,
+    ).state,
+    Some({
+      "labels": List([
+        Map({ "text": Str("first"), "done": Bool(false) }),
+        Map({ "text": Str("second"), "done": Bool(false) }),
+      ]),
+      "grid": List([]),
+    }),
+  )
+}
+
+///|
+test "the target does not exist until a new makes one" {
+  let s : Map[String, @tutuca.Value] = { "labels": List([]), "grid": List([]) }
+  // Reading it, and writing through it, are both the transition not happening
+  // rather than a Null landing in the state.
+  assert_eq(
+    after_typed(ROWS_SCHEMA, "receive init { .labels.push @cur }", s).state,
+    None,
+  )
+  assert_eq(
+    after_typed(ROWS_SCHEMA, "receive init { @cur.text = 'x' }", s).state,
+    None,
+  )
+}
+
+///|
+test "a new with no resolver behind it is a transition that does not happen" {
+  // A card with no state block cannot name a type, so it cannot build one.
+  let all = @tscript.parse_script("receive init { new Label }")
+  let env = @interp.Env::of_state({ "labels": List([]) })
+  assert_eq(@interp.dispatch(all[0], [], env).state, None)
+}
+
+///|
+test "the target never leaves the body that built it" {
+  // An `enrich`'s binds become a VIEW's scope — `@name` in a template, replayed
+  // on every rebuild. The target is a workbench, so it is withheld on the way
+  // out; and a `@cur` handed IN is dropped on the way in, so a body cannot
+  // read one it did not build.
+  let def = @statedef.parse_state(ROWS_SCHEMA)[0]
+  let all = @tscript.parse_script(
+    (
+      #|enrich row {
+      #|  new Label
+      #|  @cur.text = 'workbench'
+      #|  @tag = 'published'
+      #|}
+    ),
+  )
+  let env : @interp.Env = {
+    ..@interp.Env::of_state({ "labels": List([]) }, zero=t => {
+      @info.zero_of_ref(def, t)
+    }),
+    binds: { "cur": Str("handed in"), "key": Num(0) },
+  }
+  guard all[0].body is Stmts(ss) else { fail("an enrich holds statements") }
+  let out = @interp.run(ss, env)
+  // What the renderer would publish: the enrich's own binding and the loop's,
+  // and no target.
+  assert_eq(out.binds, { "tag": Str("published"), "key": Num(0) })
+}
+
 // -- the schema's one job ---------------------------------------------------
 
 ///|
@@ -443,4 +597,22 @@ test "with no schema in hand, nothing is coerced" {
     @interp.dispatch(all[0], [], env).state,
     Some({ "count": Num(2.7) }),
   )
+}
+
+///|
+test "the escapes a string literal carries, and the two case folds" {
+  let s : Map[String, @tutuca.Value] = { "name": Str("Ada Lovelace") }
+  // `\n`, `\t` and `\r` join `\'` and `\\`, so a seed can stay on one line.
+  assert_eq(value_of("compute v { 'a\\nb' }", s), Some(Str("a\nb")))
+  assert_eq(value_of("compute v { 'a\\tb' }", s), Some(Str("a\tb")))
+  assert_eq(value_of("compute v { 'it\\'s' }", s), Some(Str("it's")))
+  // …and a literal may still span lines as itself, which is what a markdown
+  // seed wants. Both spellings mean the same string.
+  assert_eq(value_of("compute v { 'a\nb' }", s), Some(Str("a\nb")))
+  // A backslash before anything else stays literal, as it always has.
+  assert_eq(value_of("compute v { 'a\\qb' }", s), Some(Str("a\\qb")))
+  // `upper` beside `lower`: one case fold each way, and the same guard.
+  assert_eq(value_of("compute v { upper .name }", s), Some(Str("ADA LOVELACE")))
+  assert_eq(value_of("compute v { lower .name }", s), Some(Str("ada lovelace")))
+  assert_eq(value_of("compute v { upper 3 }", s), None)
 }

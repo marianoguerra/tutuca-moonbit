@@ -178,6 +178,58 @@ test "the collection methods are receiver-first" {
 }
 
 ///|
+test "`new` builds a value into the target, and the target is a place" {
+  assert_eq(
+    trip(
+      (
+        #|receive init {
+        #|  new Label
+        #|  @cur.text = 'Buy milk'
+        #|  @cur.done = false
+        #|  .labels.push @cur
+        #|  new Array[String]
+        #|  @cur.push 'a'
+        #|  .grid.push @cur
+        #|}
+      ),
+    ),
+    (
+      #|receive init {
+      #|  new Label
+      #|  @cur.text = 'Buy milk'
+      #|  @cur.done = false
+      #|  .labels.push @cur
+      #|  new Array[String]
+      #|  @cur.push 'a'
+      #|  .grid.push @cur
+      #|}
+    ),
+  )
+}
+
+///|
+test "a type reference prints the way the state block spells it" {
+  assert_eq(
+    trip("on x { new Map[String, Int] }"),
+    "on x {\n  new Map[String, Int]\n}",
+  )
+  assert_eq(
+    trip("on x { new Array[Array[String]] }"),
+    "on x {\n  new Array[Array[String]]\n}",
+  )
+  // `Array [String]` is a name and then something else, exactly as a detached
+  // `[` is everywhere else in the language.
+  assert_eq(
+    script_err("on x { new Array [String] }"),
+    "expected the end of the statement — a newline or a `;`, found `[`",
+  )
+  assert_eq(
+    script_err("on x { new }"),
+    "expected a type name after `new`, found `}`",
+  )
+}
+
+///|
 test "a method arity that does not match is refused" {
   assert_eq(
     script_err("on x { .items.push }"),
@@ -458,4 +510,14 @@ test "a syntax error names its column" {
     err => err.span()
   }
   assert_eq(e, { start: 22, end_: 23 })
+}
+
+///|
+test "a literal with an escape round-trips through the printer" {
+  // The printer writes `\n` rather than the newline itself, so a declaration
+  // whose seed carries a paragraph stays one line long — and reparses to the
+  // same string either way.
+  assert_eq(trip("compute v { 'a\\nb' }"), "compute v { 'a\\nb' }")
+  assert_eq(trip("compute v { 'a\nb' }"), "compute v { 'a\\nb' }")
+  assert_eq(trip("compute v { 'it\\'s' }"), "compute v { 'it\\'s' }")
 }

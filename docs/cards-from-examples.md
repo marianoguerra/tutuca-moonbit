@@ -100,18 +100,19 @@ each is a perfectly good card on its own, and the tree above it is not.
 | what it needs | components | examples |
 | --- | --- | --- |
 | **child components** | 49 | `json` (the tree), `todo/Items`, `tree`, `composability`, `dynamic` (Panel, Workspace, EntryEditorAndSelector), `dynamic_selected_edit` (DseRoot, DseEditor), `personal_site` (Root, PsEntry), `filter_paginate` (NaivePeople, Shared, Coupled, Strategies), `pseudo_x/PseudoXDemo`, `render_child` (Page, MultipleViews), `rendering` (PushView, SeqItemAccess), `custom_collection/Playlist`, `communication` (TreeRoot, TreeItem), `styles/StylesExampleRoot`, `request` |
-| **a record literal** — `new` is landing in the tree as I write this | 4 | `nested_state` (its `Array[Label]` cannot be seeded), `todo/Item` when it is the list that grows it, `filter_paginate/Person`, `custom_collection` |
+| ~~a record literal~~ — **`new` landed; `nested-state` is migrated** | 0 | what is left of this group is the multi-component half of `todo` and `filter_paginate`, which is the row above |
 | **`@loop-with`** | 4 | `rendering/Pagination`, `svg_more/BarChart`, `collections/ListFilterEnrichWith`, `filter_paginate`'s three strategies |
-| **macros in a card** | 2 files | `macros`, `todo_macros` — both are macro libraries with no template of their own |
-| **calling a function a value carries** | 1 | `dnd`: the drop handler reads `dragInfo.lookupBind` and CALLS it, and the block language has no way to apply an `Fn` it did not name |
+| ~~macros in a card~~ — **landed; `macros` is migrated** | 0 | the loader carries `<template id="macro:…">` through to the module now |
+| **a narrower drag argument** | 1 | `dnd`: see the design below — the drop handler reads `dragInfo.lookupBind` and CALLS it, which no block can do |
 | **host-registered requests** | 1 | `request` — it loads today and shows the error path, which is honest but is not the demo |
 | **nothing; a card is the wrong shape** | 2 | `visual_wasm` builds its views at run time, `lint_errors` is a fixture of deliberately broken ones |
 
-Two small language gaps surfaced by the migration itself, neither blocking
-anything: **no `upper`** beside `lower` in the reading vocabulary, and **no
-`\n`** in a string literal (the two escapes are `\'` and `\\`, matching a slot
-literal — a multi-line spelling would be the thing to add rather than a third
-escape vocabulary).
+Two small language gaps surfaced by the migration itself, and both are fixed:
+`upper` joins `lower` in the reading vocabulary, and `\n` / `\t` / `\r` join
+`\'` and `\\` as escapes a string literal carries — in ONE table both the slot
+and the block lexer read, so the two cannot drift. (A literal could always span
+lines as itself; what was missing was the one-line spelling.) The `scope` and
+`markdown` cards say what they meant now rather than what they could.
 
 ## What each blocked group needs
 
@@ -178,15 +179,80 @@ loop handler that answers a slice and the shared per-loop data.
 whose return value is a STRUCTURE rather than a value, so it wants the record
 literal from (2) first — which is a good reason to do them in that order.
 
-### 4. Macros in a card
+### 4. Macros in a card — DONE
 
-Blocks `macros.html` and `todo_macros.html`, and would let a card factor
-repeated markup.
+`@viewfile.split_file` had been returning `file.macros` all along and
+`@tutucard.load` dropped them, so `<x:badge>` in a card rendered as an unknown
+element. The `Card` carries them now and the host hands them to
+`ModuleDef::new(macros~)` — the same path a generated module's macros take,
+rather than a second one for cards. Twenty lines, no language change, and the
+`macros` card in the selector is the four macro demos that had to live in
+MoonBit until it landed: a parameter with a default, a dynamic parameter, the
+default slot, and a named one.
 
-**Design.** `@viewfile.split_file` already returns `file.macros`;
-`@tutucard.load` drops them. `@anode.View::new` takes a macro scope. Wiring the
-two is the whole change — perhaps twenty lines — and the language gains
-nothing, which is the appeal.
+### 4b. A narrower drag argument — the design `dnd` wants
+
+`dnd` is the last example blocked by something small. Its drop handler reads
+the SOURCE row's key, and the only way to ask for it today is:
+
+```moonbit nocheck
+// nocheck: the arm as `playground/site/examples/dnd.mbt` writes it
+Some(OnDropOnItem(Num(t), Obj(di))) => {
+  let source = match di.obj_field("lookupBind") {
+    Some(Fn(lookup)) => match lookup([Null, Str("key")]) { … }
+```
+
+`dragInfo` is an `Obj` carrying `type`, `value`, and a `lookupBind(name)`
+FUNCTION (`app/drag.mbt`), because the source's binds only exist on the stack
+the drag captured. A block cannot apply a function it did not name, and it
+should not learn how to: "no way to name a MoonBit value" is the sentence the
+whole language rests on.
+
+**Design: ask for the narrowest argument, the way every other event already
+does.** `value` has `valueAsInt` and `valueAsFloat` beside it precisely so a
+handler never parses a string; the same move here adds three names to the
+closed table in `render/dom_event.mbt`:
+
+| name | answers |
+| --- | --- |
+| `dragKey` | the source row's `@key` — `lookup_bind(stack, "key")` |
+| `dragValue` | the dragged value itself (`dragInfo.value`) |
+| `dragType` | the `data-dragtype` the source declared |
+
+Then the card is the view plus four statements, with no new syntax anywhere:
+
+```html
+<div @each=".items" draggable="true"
+     data-dragtype="row" data-droptarget="row"
+     @on.drop="moveRow @key dragKey"></div>
+```
+
+```
+on moveRow(target, source) {
+  if source is not target {
+    if source < target {
+      .items.insertAt (target + 1) .items[source]
+      .items.deleteAt source
+    } else {
+      .items.insertAt target .items[source]
+      .items.deleteAt (source + 1)
+    }
+  }
+}
+```
+
+Both arms read `.items[source]` before they mutate, and the second index
+accounts for the shift the first one caused — which is the whole of what the
+MoonBit arm does after it has finished unwrapping the `Fn`.
+
+Cost: three lines in one table, and the same three in the generated backend's
+argument-type inference (`dragKey` is a `@tutuca.Value`, as `@key` is). It
+also improves the MoonBit side, where `di.obj_field("lookupBind")` is nobody's
+idea of a readable handler.
+
+`dragInfo` stays exactly as it is: a handler that needs the whole stack still
+has it, and this is the narrow answer beside it — which is what the events
+documentation already tells people to reach for.
 
 ### 5. Request handlers a page can register
 

@@ -124,5 +124,42 @@ check(
   "<p>hi</p>",
 );
 
+
+// --- macros ----------------------------------------------------------------
+// A `<template id="macro:…">` is a declaration of the FILE, not a view of the
+// component, so it belongs to its own list: collected with the views it would
+// show as a view called `field` of a component called `macro`.
+
+const WITH_MACRO = [
+  '<script type="tutuca/state">',
+  "  state Form { name : String }",
+  "</script>",
+  '<template id="macro:field" data-label="\'Field\'">',
+  "  <label><span @text=\"^label\"></span><x:slot></x:slot></label>",
+  "</template>",
+  '<template id="Form">',
+  '  <div><x:field label="Name"></x:field></div>',
+  "</template>",
+  "",
+].join("\n");
+
+const pm = R.parts(WITH_MACRO);
+check("one macro", pm.macros.length, 1);
+check("the macro's name is what follows `macro:`", pm.macros[0].name, "field");
+check("the macro is not counted as a view", pm.views.length, 1);
+check("…and the real view is still main", pm.views[0].name, "main");
+check("the macro region is its body", WITH_MACRO.slice(pm.macros[0].start, pm.macros[0].end).includes("x:slot"), true);
+
+const renamedMacro = R.renameMacro(WITH_MACRO, pm, 0, "row");
+check("renaming keeps the macro: prefix, which is what makes it a macro", renamedMacro.includes('<template id="macro:row"'), true);
+check("…and does not turn it into a view", R.parts(renamedMacro).views.length, 1);
+
+const addedMacro = R.addMacro(WITH_MACRO, "row");
+const pa = R.parts(addedMacro);
+check("an added macro joins the macro list", pa.macros.length, 2);
+check("…under the name it was given", pa.macros[1].name, "row");
+check("…with a slot, since a macro without one drops its children", pa.macros[1].text.includes("<x:slot>"), true);
+check("…and the views are untouched", pa.views.length, 1);
+
 console.log(failed === 0 ? "\nregions: all checks pass" : `\n${failed} region check(s) failed`);
 process.exit(failed === 0 ? 0 : 1);

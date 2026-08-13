@@ -24,6 +24,19 @@ priv struct C {
   /// True inside `enrich` / `enrich_scope`, the only kinds that may assign a
   /// binding.
   mut binds_assignable : Bool
+  /// What `new` last put in `@cur`, on this path through the body.
+  mut target : Target
+}
+
+///|
+/// The active target's type, as the walk knows it.
+///
+/// Two states rather than one optional, because "no `new` has run" and "a
+/// `new` ran and its type is opaque" are different answers: the first is a
+/// mistake to report, and the second is the usual opacity to stay quiet about.
+priv enum Target {
+  TUnset
+  TSet(@statedef.StateTy?)
 }
 
 ///|
@@ -63,6 +76,7 @@ pub fn check(
     params: Map([]),
     callable,
     binds_assignable: false,
+    target: TUnset,
   }
   for d in decls {
     c.decl(d)
@@ -77,6 +91,9 @@ pub fn check(
 fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   self.params = Map([])
   self.binds_assignable = d.kind is (DEnrich | DEnrichScope)
+  // A target belongs to the body that built it and to nothing else — the same
+  // rule the interpreter enforces by refusing to hand `@cur` back.
+  self.target = TUnset
   // Where the parameter types come from is the whole difference between the
   // two halves of the language. A message case is DECLARED, so its payload is
   // exact; an `@on` name is not declared anywhere, so its arguments are what
@@ -178,6 +195,22 @@ fn C::stmts(self : C, ss : Array[@tscript.Stmt]) -> Unit {
 ///|
 fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
   match s {
+    // `@cur = expr` names the WHOLE target, so it does not read one — it makes
+    // one, out of a value that is already built. Taking a copy of a row to
+    // edit and push back is what it is for.
+    SAssign(place~, op=ASet, value~, span~) if place.root is PBind(n) &&
+      n == @tscript.target_bind &&
+      place.steps.is_empty() => {
+      let got = self.expr(value)
+      if self.binds_assignable {
+        self.say(
+          "RESERVED_BIND",
+          "`@\{n}` is the target `new` builds into, not a binding this `enrich` can hand a view — bind another name",
+          span,
+        )
+      }
+      self.target = TSet(got)
+    }
     SAssign(place~, op~, value~, span~) => {
       let target = self.place(place, assigning=true)
       let got = self.expr(value)
@@ -231,8 +264,58 @@ fn C::stmt(self : C, s : @tscript.Stmt) -> Unit {
     }
     SIf(cond~, then_~, else_~, ..) => {
       self.condition(cond)
+      let before = self.target
       self.stmts(then_)
+      let after_then = self.target
+      self.target = before
       self.stmts(else_)
+      // What both arms agree on. Two arms that built different types leave a
+      // target whose type nothing here knows, and an arm that built nothing
+      // leaves no target at all — which is the answer that makes a `@cur`
+      // after the branch report rather than pass.
+      self.target = match (after_then, self.target) {
+        (TSet(a), TSet(b)) => if a == b { TSet(a) } else { TSet(None) }
+        (TUnset, _) | (_, TUnset) => TUnset
+      }
+    }
+    SNew(ty~, ..) => self.target = TSet(self.ty_ref(ty))
+  }
+}
+
+///|
+pub fn resolve_ty_ref(
+  def : @statedef.StateDef,
+  t : @tscript.TyRef,
+) -> @statedef.StateTy? {
+  let args : Array[@statedef.StateTy] = []
+  for a in t.args {
+    // An argument that does not resolve leaves the whole reference with
+    // nothing to be: `Array[Frobnicator]` is not a list of anything.
+    guard resolve_ty_ref(def, a) is Some(r) else { return None }
+    args.push(r)
+  }
+  def.resolve_ty(t.name, args)
+}
+
+///|
+/// Resolve the type a `new` names, reporting a name that resolves to nothing
+/// so that nothing below it reports again.
+fn C::ty_ref(self : C, t : @tscript.TyRef) -> @statedef.StateTy? {
+  match resolve_ty_ref(self.def, t) {
+    Some(r) => Some(r)
+    None => {
+      self.say(
+        "NO_TYPE",
+        "`\{t.to_source()}` is not a type the \{self.def.component} state declares" +
+        (match
+          @statedef.nearest(t.name, self.def.types.map(u => u.source_name)) {
+          Some(s) => " — did you mean `\{s}`?"
+          None =>
+            "; declare it in the <script type=\"tutuca/state\"> block, or write a built-in type"
+        }),
+        t.span,
+      )
+      None
     }
   }
 }
@@ -283,11 +366,25 @@ fn C::place(
           return None
         }
       }
+    // The target: the one binding this block makes for itself, so the one
+    // binding whose type is known here.
+    PBind(name) if name == @tscript.target_bind =>
+      match self.target {
+        TSet(t) => t
+        TUnset => {
+          self.say(
+            "NO_TARGET",
+            "`@\{name}` holds what a `new` built, and no `new` has run here — write `new <Type>` above this",
+            p.span,
+          )
+          return None
+        }
+      }
     PBind(name) => {
       if assigning && !self.binds_assignable {
         self.say(
           "BIND_ASSIGN",
-          "`@\{name}` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state",
+          "`@\{name}` is a binding, and only `enrich` and `enrichScope` produce bindings — a handler assigns state, and `new` builds a value in `@\{@tscript.target_bind}`",
           p.span,
         )
       }
@@ -616,7 +713,7 @@ fn builtin_result(name : String) -> @statedef.StateTy? {
       Some(TBool)
     "len" | "int" => Some(TInt(width=32, signed=true))
     "num" => Some(TFloat)
-    "str" | "lower" | "trim" => Some(TText)
+    "str" | "lower" | "upper" | "trim" => Some(TText)
     _ => None
   }
 }

@@ -74,8 +74,9 @@ pub fn tokenize(s : String) -> Array[Token] {
 }
 
 ///|
-/// Within a `'…'` literal only the delimiter and the escape char are
-/// escapable; every other backslash stays literal (JS unescapeStr).
+/// Within a `'…'` literal the escapable characters are the ones
+/// `escaped_char` names — the delimiter, the backslash, and `n` / `t` / `r`;
+/// every other backslash stays literal (JS unescapeStr).
 ///
 /// The inverse, `escape_str_literal`, stays in `core` beside the only thing
 /// that needs it — `impl Show for Val`, which has to live where `Val` does.
@@ -88,8 +89,8 @@ fn unescape_str(s : String) -> String {
   while i < chars.length() {
     if chars[i] == '\\' &&
       i + 1 < chars.length() &&
-      chars[i + 1] is ('\'' | '\\') {
-      buf.write_char(chars[i + 1])
+      escaped_char(chars[i + 1]) is Some(c) {
+      buf.write_char(c)
       i = i + 2
     } else {
       buf.write_char(chars[i])

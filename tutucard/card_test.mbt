@@ -58,7 +58,11 @@ fn mount_card(
 ) -> @harness.Harness raise {
   let card = @tutucard.load(source, name~)
   assert_eq(card.issues.map(i => i.message), [])
-  let m = @component.ModuleDef::new(name="card", components=[card.component])
+  let m = @component.ModuleDef::new(
+    name="card",
+    components=[card.component],
+    macros=card.macros,
+  )
   @harness.mount(m, name)
 }
 
@@ -260,3 +264,121 @@ test "a card with no state block is legal and unchecked" {
   assert_eq(h.text("#b"), "hello")
   h.destroy()
 }
+
+///|
+/// A card that builds its rows instead of being handed them.
+fn roster_card() -> String {
+  (
+    #|<script type="tutuca/state">
+    #|  struct Member { name : String, admin : Bool }
+    #|  state { members : Array[Member] }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init {
+    #|    new Member
+    #|    @cur.name = 'Ada'
+    #|    @cur.admin = true
+    #|    .members.push @cur
+    #|    new Member
+    #|    @cur.name = 'Grace'
+    #|    .members.push @cur
+    #|  }
+    #|  enrich row { @label = if @value.admin { $'{@value.name}*' } else { @value.name } }
+    #|</script>
+    #|
+    #|<template>
+    #|  <ul><li @each=".members" @enrich-with="row"><x text="@label"></x></li></ul>
+    #|</template>
+  )
+}
+
+///|
+test "a card builds a record and appends it to a list of them" {
+  // The gap this closes: `Array[Member]` could be read and written through,
+  // but never appended to, because a record had no spelling. Every row here
+  // was built by the block itself.
+  let h = mount_card(roster_card(), name="Roster")
+  h.send_at_root("init")
+  assert_eq(h.texts("li"), ["Ada*", "Grace"])
+  h.destroy()
+}
+
+///|
+/// The same card, with an enricher that builds a value of its own.
+fn workbench_card() -> String {
+  (
+    #|<script type="tutuca/state">
+    #|  struct Member { name : String, admin : Bool }
+    #|  state { members : Array[Member] }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init {
+    #|    new Member
+    #|    @cur.name = 'Ada'
+    #|    .members.push @cur
+    #|  }
+    #|  enrich row {
+    #|    new Member
+    #|    @cur.name = 'scratch'
+    #|    @label = @value.name
+    #|  }
+    #|</script>
+    #|
+    #|<template>
+    #|  <ul><li @each=".members" @enrich-with="row"><x text="@label"></x>|<x text="@cur"></x></li></ul>
+    #|</template>
+  )
+}
+
+///|
+test "the target an enricher builds never reaches the view" {
+  // An enricher's binds BECOME a view's scope — `@name` in a template, replayed
+  // on every rebuild. The target is a workbench, so `@cur` in a template reads
+  // nothing at all, and a card cannot publish a binding a compiled component
+  // could not.
+  let h = mount_card(workbench_card(), name="Workbench")
+  h.send_at_root("init")
+  assert_eq(h.texts("li"), ["Ada|"])
+  h.destroy()
+}
+
+///|
+test "a card expands the macros its own file declares" {
+  // `<template id="macro:field">` is a declaration the SPLITTER has always
+  // returned and the loader used to drop, so `<x:field>` in a card rendered as
+  // an unknown element with its attributes intact. It expands now, against the
+  // scope the module registers — the same path a generated module's macros
+  // take, rather than a second one for cards.
+  let src =
+    (
+      #|<script type="tutuca/state">
+      #|  state { name : String, city : String }
+      #|</script>
+      #|
+      #|<template id="macro:field" data-label="'Field'">
+      #|  <label class="field">
+      #|    <span class="lbl" @text="^label"></span>
+      #|    <x:slot></x:slot>
+      #|  </label>
+      #|</template>
+      #|
+      #|<template id="Form">
+      #|  <div>
+      #|    <x:field label="Name"><input id="name" :value=".name"></x:field>
+      #|    <x:field><input id="city" :value=".city"></x:field>
+      #|  </div>
+      #|</template>
+    )
+  let h = mount_card(src, name="Form")
+  // Two expansions: one that passed a label, one that took the declaration's
+  // default — and each keeping the child it wrapped.
+  assert_eq(h.texts(".lbl"), ["Name", "Field"])
+  assert_eq(h.find_all(".field").length(), 2)
+  assert_eq(h.find_all("#name").length(), 1)
+  h.destroy()
+}
+
