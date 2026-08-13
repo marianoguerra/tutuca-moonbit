@@ -132,7 +132,7 @@ binary inside the `_build` they delete.
 | `check-skill` | compile-check the MoonBit snippets in `skill/tutuca/` and check every one against the `.mbti` files for names that no longer exist; part of `ci` |
 | `css-bundle` | regenerate `css/{tailwind,margaui}_bundle_gen.mbt` from the pinned `tailwindcss` npm release + a margaui clone (needs network); see "Styling" below |
 | `npm-pack` | stage + `npm pack` the playground's two npm packages from an assembled `dist/` (manifests in `playground/npm/`); packs only — publishing is manual, see CONTRIBUTING.md |
-| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no compiler at all: a card is parsed and mounted, so the payload is the runtime and the page. Ends by loading every card through the real loader — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
+| `tutucard-playground` | assemble `dist/tutucard/` — the CARD playground, which ships no MoonBit compiler at all: a card is parsed and mounted, so the payload is the runtime and the page, plus `margaui.wasm` (the class compiler the starter cards' `btn`/`card`/`badge` need, fetched lazily and scoped to the preview — `web/margaui.js`). Ends by loading every card through the real loader — the starter cards, which are JS strings no MoonBit test can reach, and the landing site's `playground/site/cards/*.html`, which are in no moon package — and by holding `web/regions.js` — the offset arithmetic the structured view edits through — to its contract |
 
 While editing views, `tutuca watch [path…]` regenerates them on every save
 (mizchi/fswatch; native only, since the watcher is the shell's job). It
@@ -197,10 +197,12 @@ copied beside it as `app-loader.mjs`),
 gallery compiled to wasm-gc — the bundle `tutuca storybook` serves),
 `dist/playground/` + `dist/site/` + `dist/tutucard/` (the landing page embeds
 BOTH kinds of live example: `<mb-playground>`, which compiles MoonBit in the
-browser against `dist/playground/`, and `<mb-card>`, which compiles nothing —
-`assemble-site.mjs` copies `dist/tutucard/tutucard.js` beside the page, which
-is why `dist` assembles the card runtime before the site), and
-`dist/cli/tutuca` (the native CLI binary).
+browser against `dist/playground/`, and `<mb-card>`, which compiles no MoonBit
+— `assemble-site.mjs` copies `dist/tutucard/tutucard.js` beside the page,
+which is why `dist` assembles the card runtime before the site. It copies
+`margaui.wasm` from there too, for an `<mb-card margaui>`: that is the one
+thing a card DOES compile, its class names into CSS, and only when an element
+asks), and `dist/cli/tutuca` (the native CLI binary).
 
 The landing page also links `./universal/` and `./dyncomp-storybook/`, and
 `dist` builds **neither**: both need the component toolchain (wasm-tools + jco)

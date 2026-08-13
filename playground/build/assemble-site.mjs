@@ -17,6 +17,7 @@
 //   dist/site/examples/*.mbt  ← the editable example sources
 //   dist/site/card-embed.js   ← the <mb-card> custom element (+ regions.js)
 //   dist/site/tutucard.js     ← the card runtime, which is the whole payload
+//   dist/site/margaui.{js,wasm} ← the class compiler <mb-card margaui> fetches
 //   dist/site/cards/*.html    ← the editable card sources
 //
 // Prereq: assemble.mjs and tutucard/build/assemble.mjs have run. Run:
@@ -52,19 +53,27 @@ cpSync(join(SITE, "examples"), join(outSite, "examples"), { recursive: true });
 // cards themselves.
 cpSync(join(CARDWEB, "card-embed.js"), join(outSite, "card-embed.js"));
 cpSync(join(CARDWEB, "regions.js"), join(outSite, "regions.js"));
+cpSync(join(CARDWEB, "margaui.js"), join(outSite, "margaui.js"));
 cpSync(join(SITE, "cards"), join(outSite, "cards"), { recursive: true });
-const runtime = join(DIST, "tutucard", "tutucard.js");
-// Missing rather than fatal: `dist` builds the card runtime before it gets
-// here, but assembling the site alone is a thing people do while editing the
-// page, and failing that with a build error about a folder they did not ask
-// for helps nobody. The embeds say "runtime did not load" and the rest of the
-// page works.
-if (existsSync(runtime)) {
-  cpSync(runtime, join(outSite, "tutucard.js"));
-} else {
-  console.warn(
-    `  note: ${runtime} is missing — run the tutucard-playground task for the <mb-card> embeds`,
-  );
+// Two artifacts of the card build rather than of this one: the runtime every
+// embed needs, and the margaui compiler an `<mb-card margaui>` fetches when it
+// mounts. Missing rather than fatal — `dist` builds them before it gets here,
+// but assembling the site alone is a thing people do while editing the page,
+// and failing that with a build error about a folder they did not ask for
+// helps nobody. The embeds say "runtime did not load" and the rest of the page
+// works.
+for (const [name, why] of [
+  ["tutucard.js", "the <mb-card> embeds"],
+  ["margaui.wasm", "an <mb-card margaui> to have any CSS"],
+]) {
+  const from = join(DIST, "tutucard", name);
+  if (existsSync(from)) {
+    cpSync(from, join(outSite, name));
+  } else {
+    console.warn(
+      `  note: ${from} is missing — run the tutucard-playground task for ${why}`,
+    );
+  }
 }
 
 // The page links ./universal/ and ./dyncomp-storybook/, and neither is built by

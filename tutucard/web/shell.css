@@ -138,7 +138,11 @@ select {
   min-height: 0;
 }
 
-.pane h2 {
+/* The pane's OWN heading — a direct child, so a card that renders an `<h2>`
+ * into the preview keeps its own typography rather than being labelled like a
+ * pane. (It used to be `.pane h2`, and a margaui `card-title` came out
+ * uppercase and 0.75rem.) */
+.pane > h2 {
   margin: 0 0 0.5rem;
   font-size: 0.75rem;
   text-transform: uppercase;
@@ -147,7 +151,7 @@ select {
   font-weight: 600;
 }
 
-.pane h2 + * {
+.pane > h2 + * {
   margin-top: 0;
 }
 
@@ -276,57 +280,18 @@ textarea:focus {
   filter: grayscale(0.6);
 }
 
-/* The card's own markup. Enough that a starter looks deliberate; a card is
- * free to bring its own <style>, which the loader keeps. */
-.preview .card {
-  display: flex;
-  flex-direction: column;
-  gap: 0.6rem;
-}
-.preview h2 {
-  margin: 0;
-  font-size: 1rem;
-  text-transform: none;
-  letter-spacing: 0;
-  color: var(--ink);
-}
-.preview .row {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-  margin: 0;
-  flex-wrap: wrap;
-}
-.preview button {
-  background: var(--panel);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 0.25rem 0.6rem;
-  font: inherit;
-  cursor: pointer;
-}
-.preview button:hover {
-  border-color: var(--accent);
-}
-.preview input[type="text"],
-.preview input:not([type]) {
-  background: var(--bg);
-  color: var(--ink);
-  border: 1px solid var(--line);
-  border-radius: 4px;
-  padding: 0.25rem 0.4rem;
-  font: inherit;
-}
-.preview ul {
-  margin: 0;
-  padding-left: 1.1rem;
-}
-.preview li {
-  display: flex;
-  align-items: center;
-  gap: 0.4rem;
-}
+/* The card's own markup is NOT styled from here.
+ *
+ * It used to be — a hand-written set of `.preview button` / `.preview input`
+ * rules, "enough that a starter looks deliberate". They are gone because the
+ * page now compiles the card's own class names with margaui (shell.js →
+ * web/margaui.js), and the two cannot both be right: an unlayered rule here
+ * outranks every layered one in that sheet, so `.preview input` painted a
+ * margaui `input` in the shell's palette and nothing looked like either.
+ *
+ * A card that wants to look like something has two ways to say so, and both
+ * work: margaui classes, compiled here, or its own `<style>` block, which the
+ * loader keeps and the framework scopes to the view. */
 
 .issues,
 .activity {

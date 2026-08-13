@@ -7,6 +7,7 @@
 // mounted, and the runtime that does it is already on the page.
 
 import { EXAMPLES } from "./examples.js";
+import { addClasses } from "./margaui.js";
 import {
   addView,
   componentOf,
@@ -177,6 +178,39 @@ function reload() {
   drawGutter(source);
   drawState();
   drawActivity();
+  styleClasses();
+}
+
+/**
+ * Compile the mounted card's class names with margaui and inject the CSS.
+ *
+ * Unconditional here, unlike `<mb-card margaui>`: this is the tool, its
+ * starter cards are written in margaui's component classes, and a card that
+ * says `class="btn btn-primary"` and renders as an unstyled button is a
+ * playground lying about what a card can look like. The ~0.5 MB compiler is
+ * still fetched lazily — on the first mount that publishes a class name, which
+ * is the first mount.
+ *
+ * Scoped to the preview pane, because this page has a UI of its own: margaui's
+ * sheet carries Tailwind's preflight, and unscoped it would flatten the
+ * editor, the tabs and the panels around the card.
+ */
+function styleClasses() {
+  let classes = [];
+  try {
+    classes = JSON.parse(globalThis.__tutucard.classes());
+  } catch {
+    return;
+  }
+  if (classes.length) {
+    // Dark, always: margaui picks its theme off `data-theme`, and this shell
+    // has ONE palette rather than a light and a dark one. A preview that
+    // followed the reader's OS instead would be a white card sitting in a dark
+    // tool half the time. An `<mb-card>` embedded in a page that does have both
+    // follows the page (`followColorScheme` in web/margaui.js).
+    $("preview").dataset.theme = "dark";
+    addClasses(classes, { scope: "#preview", styleId: "card-margaui" });
+  }
 }
 
 let timer = null;

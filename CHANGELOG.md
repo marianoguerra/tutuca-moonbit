@@ -6,6 +6,37 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **Cards can be styled with margaui, and the starter cards now are.** The card
+  runtime always collected the class names a mounted card uses — nothing ever
+  compiled them, so a card saying `class="btn btn-primary"` rendered as an
+  unstyled button and the four starter cards, written for margaui from the
+  start, looked like markup. The card playground compiles them now, and an
+  embedded card opts in with `<mb-card src="…" margaui>`.
+
+  The compiler is the one that already existed: `margaui.wasm`, the wasm-gc
+  build of `@css.compile_margaui` the other playground ships, fetched lazily on
+  the first mount that publishes a class name. The new part is that a card
+  mounts in the PAGE's own DOM rather than in an iframe, so its CSS cannot be
+  injected as written — margaui's stylesheet carries Tailwind's preflight and a
+  `:root` theme, and unscoped it does not style the card, it flattens the page
+  around it. `tutucard/web/margaui.js` rewrites every rule to apply inside the
+  preview only, using the browser's own parser rather than a regex over 60 KB
+  of CSS, and flattens the cascade layers in declared order — an unlayered rule
+  in the host page's stylesheet outranks any layered one, so keeping the layers
+  would mean the page's `button {}` beating margaui's `.btn` inside the card.
+
+  `__tutucard.classesAt(id)` is the new host entry: the existing `classes()`
+  answers for the playground page's one card, which is not a thing an embed can
+  ask about.
+
+  The card playground's own `.preview button` / `.preview input` rules are gone
+  with this — hand-written stand-ins for the styling that now exists, and
+  unlayered, so they beat every margaui rule and painted a margaui input in the
+  shell's palette. Its `.pane h2` became `.pane > h2` for the same reason: a
+  card's `card-title` was being labelled like a pane header.
+
 ## [0.13.0] - 2026-08-13
 
 > **Why this section covers a range of releases, and why it was not split

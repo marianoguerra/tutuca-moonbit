@@ -1,0 +1,68 @@
+<!-- Styling, the other way: no <style> block, only class names.
+
+     Every other card here brings its own CSS. This one brings none and
+     names margaui's component classes instead — `card`, `btn`, `badge`,
+     `input`, plus Tailwind utilities. The page compiles them: it hands
+     the class names this card publishes to the margaui compiler and
+     injects the CSS, which is what `<mb-card margaui>` asks for.
+
+     Write them as LITERAL lists. The collector reads what the views
+     say, so a class name assembled at run time is one that never gets
+     compiled — which is why `@if.class` below switches between whole
+     literals rather than appending a word. -->
+
+<script type="tutuca/state">
+  state Ticket {
+    title : String
+    kind  : String
+    votes : Int
+  }
+
+  receive Ticket {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .title = 'Cards should be styleable'
+    .kind = 'feature'
+  }
+
+  on vote { .votes += 1 }
+
+  on pick(k) { .kind = k }
+
+  pred isFeature { .kind is 'feature' }
+</script>
+
+<template>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title">
+        <x text=".title"></x>
+        <span @if.class="$isFeature"
+              @then="'badge badge-sm badge-primary'"
+              @else="'badge badge-sm badge-warning'">
+          <x text=".kind"></x>
+        </span>
+      </h2>
+      <input class="input input-sm w-full" :value=".title"
+             @on.input="setTitle value" placeholder="what is it">
+      <div class="join">
+        <button class="btn btn-sm join-item" @on.click="pick 'feature'">
+          feature
+        </button>
+        <button class="btn btn-sm join-item" @on.click="pick 'bug'">
+          bug
+        </button>
+      </div>
+      <div class="card-actions items-center gap-2">
+        <button class="btn btn-sm btn-primary" @on.click="vote">
+          vote
+        </button>
+        <span class="badge badge-neutral"><x text=".votes"></x></span>
+      </div>
+    </div>
+  </div>
+</template>

@@ -26,6 +26,7 @@
 // which for an example embedded in a page is the behaviour you want.
 
 import { componentOf } from "./regions.js";
+import { addClasses, followColorScheme } from "./margaui.js";
 
 /** Debounce, so a fast typist re-mounts on pauses rather than per keystroke. */
 const DEBOUNCE_MS = 180;
@@ -303,6 +304,7 @@ class MbCard extends HTMLElement {
       return;
     }
     this.previewEl.classList.remove("stale");
+    this.styleClasses();
     this.nameEl.textContent = report.component;
     const n = report.issues.length;
     this.setStatus(
@@ -310,6 +312,41 @@ class MbCard extends HTMLElement {
       n === 0 ? "good" : "warn",
     );
     this.drawIssues(report.issues);
+  }
+
+  /**
+   * Compile this card's class names with margaui, for `<mb-card margaui>`.
+   *
+   * OPT-IN, because the compiler is ~0.5 MB of wasm and most cards do not need
+   * it: a card can carry its own `<style>`, which the framework scopes to the
+   * view and which costs a page nothing. An element that asks for margaui gets
+   * it for the whole page — one sheet, the union of every asking card's
+   * classes, scoped so it cannot reach the prose around them.
+   */
+  styleClasses() {
+    if (!this.hasAttribute("margaui")) return;
+    const classesAt = globalThis.__tutucard?.classesAt;
+    if (!classesAt) return;
+    let classes = [];
+    try {
+      classes = JSON.parse(classesAt(this.previewId));
+    } catch {
+      return;
+    }
+    if (!classes.length) return;
+    // The theme attribute belongs on the scope element, which is this preview:
+    // see followColorScheme. Set once, on the first mount that asks for CSS.
+    if (!this.previewEl.dataset.theme) followColorScheme(this.previewEl);
+    addClasses(classes, {
+      // Every ASKING card's preview. Not this one's alone — the sheet is
+      // shared, and scoping it to one id would style the first card that asked
+      // and no other. And not every card's, because the sheet carries
+      // Tailwind's preflight: a page that mixes one margaui card with eight
+      // that style themselves would have the eight quietly restyled by their
+      // neighbour.
+      scope: "mb-card[margaui] .mbc-preview",
+      styleId: "mb-card-margaui",
+    });
   }
 
   drawIssues(issues) {

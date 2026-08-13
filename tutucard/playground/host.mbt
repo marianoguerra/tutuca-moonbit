@@ -53,12 +53,15 @@ fn slot_of(id : String) -> Slot {
 ///
 /// `load` is the whole API for the playground page. Everything else is a
 /// getter the panels poll, in the same shape `playground/host` publishes — so
-/// the shell's inspector, activity and margaui panes work over a card without
-/// knowing it is one.
+/// the shell's inspector and activity panels work over a card without knowing
+/// it is one, and `classes` feeds the same margaui compiler the other
+/// playground hands `__tutuca.classes()` to.
 ///
 /// `mount` / `unmount` are the same loop addressed by mount point rather than
 /// by "the page's one card", which is what an embedded example needs: it
-/// arrives and leaves with its element, and several live side by side.
+/// arrives and leaves with its element, and several live side by side. So is
+/// `classesAt`: an embedded card is styled where it sits, and the page's one
+/// card is not a thing it can ask about.
 pub fn install() -> Unit {
   publish(
     (source, name) => load(source, name),
@@ -68,6 +71,7 @@ pub fn install() -> Unit {
     () => activity_json(),
     (id, source, name) => mount_at(id, source, name),
     id => unmount_at(id),
+    id => classes_at(id),
   )
 }
 
@@ -80,8 +84,9 @@ extern "js" fn publish(
   activity : () -> String,
   mount : (String, String, String) -> String,
   unmount : (String) -> Unit,
+  classes_at : (String) -> String,
 ) -> Unit =
-  #|(load, check, state, classes, activity, mount, unmount) => { globalThis.__tutucard = { load, check, state, classes, activity, mount, unmount } }
+  #|(load, check, state, classes, activity, mount, unmount, classesAt) => { globalThis.__tutucard = { load, check, state, classes, activity, mount, unmount, classesAt } }
 
 ///|
 /// Parse, check and mount a card into the element with this id.
@@ -269,9 +274,31 @@ fn page_app() -> @app.App[@bdom.BrowserNode]? {
 }
 
 ///|
-/// The margaui class set the mounted views can show, for the page to compile.
+/// The margaui class set the playground page's card can show, for the page to
+/// compile.
 pub fn classes_json() -> String {
-  match page_app() {
+  classes_of(page_app())
+}
+
+///|
+/// The same, for the card mounted at one element.
+///
+/// The class set is a property of a MOUNTED card, not of its source: a class
+/// name reaches it through a `:class` binding as easily as through a literal,
+/// and only the built views know which. So this is asked after the mount that
+/// produced it, exactly as `state` and `activity` are.
+pub fn classes_at(id : String) -> String {
+  classes_of(
+    match slots.get(id) {
+      Some(slot) => slot.app
+      None => None
+    },
+  )
+}
+
+///|
+fn classes_of(app : @app.App[@bdom.BrowserNode]?) -> String {
+  match app {
     Some(a) => {
       let arr = a.scope.comps.collect_classes()
       Json::array(arr.map(c => Json::string(c))).stringify()

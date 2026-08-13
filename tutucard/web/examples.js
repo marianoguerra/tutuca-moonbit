@@ -6,6 +6,20 @@
 // starter card that does not load is the worst possible first impression, and
 // it is exactly the kind of thing that rots as the language moves.
 //
+// The views are written in **margaui** component classes (`card`, `btn`,
+// `input`, `badge`, `join`) rather than in a per-card `<style>` block. The
+// shell compiles them: it hands the class names the mounted card publishes to
+// `margaui.wasm` and injects the CSS, scoped to the preview pane (see
+// `web/margaui.js`). Two reasons it is worth doing here rather than styling
+// each card by hand — a starter card is the first thing anyone sees, so it
+// should look like something someone would ship; and class lists are the one
+// styling route that a `<style>` block cannot demonstrate, since a card's own
+// styles are scoped to its view and a utility class is not.
+//
+// Write them as LITERAL lists. The collector reads what the views say, so a
+// class name assembled at runtime is a class name that never gets compiled —
+// which is also why `@if.class` switches between whole literals.
+//
 // Two limits are visible here and are the language's rather than the page's.
 // **There is no record literal**, so an `Array[Struct]` can be read, indexed and
 // written through, but never APPENDED to from a card — which is why `todo`
@@ -34,15 +48,22 @@ export const EXAMPLES = [
 </script>
 
 <template>
-  <div class="card">
-    <h2><x text="$summary"></x></h2>
-    <p class="row">
-      <button @on.click="add 1">+1</button>
-      <button @on.click="add -1">-1</button>
-      <button @on.click="resetCount">reset</button>
-    </p>
-    <label>label <input :value=".label" @on.input="setLabel value"></label>
-    <ul><li @each=".history"><x text="@value"></x></li></ul>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title"><x text="$summary"></x></h2>
+      <div class="join">
+        <button class="btn btn-sm join-item" @on.click="add 1">+1</button>
+        <button class="btn btn-sm join-item" @on.click="add -1">-1</button>
+        <button class="btn btn-sm join-item btn-ghost" @on.click="resetCount">reset</button>
+      </div>
+      <label class="flex gap-2 items-center">
+        <span class="opacity-70">label</span>
+        <input class="input input-sm w-full" :value=".label" @on.input="setLabel value">
+      </label>
+      <ul class="flex gap-1 flex-wrap">
+        <li class="badge badge-sm badge-neutral" @each=".history"><x text="@value"></x></li>
+      </ul>
+    </div>
   </div>
 </template>
 `,
@@ -73,22 +94,27 @@ export const EXAMPLES = [
 </script>
 
 <template>
-  <div class="card">
-    <p class="row">
-      <input placeholder="what needs doing"
-             :value=".draft" @on.input="setDraft value"
-             @on.keydown+send="addItem">
-      <button @on.click="addItem">add</button>
-    </p>
-    <ul @show="$anyItems">
-      <li @each=".items">
-        <input type="checkbox" @on.click="toggleInDone @value">
-        <x text="@value"></x>
-        <button @on.click="removeAt @key">&times;</button>
-      </li>
-    </ul>
-    <p @hide="$anyItems"><em>nothing yet</em></p>
-    <p><x text="$caption"></x></p>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title">Todos</h2>
+      <div class="flex gap-2 items-center">
+        <input class="input input-sm w-full" placeholder="what needs doing"
+               :value=".draft" @on.input="setDraft value"
+               @on.keydown+send="addItem">
+        <button class="btn btn-sm btn-primary" @on.click="addItem">add</button>
+      </div>
+      <ul class="flex flex-col gap-2" @show="$anyItems">
+        <li class="flex gap-3 items-center w-full" @each=".items">
+          <input type="checkbox" class="checkbox checkbox-sm"
+                 @on.click="toggleInDone @value">
+          <span class="w-full"><x text="@value"></x></span>
+          <button class="btn btn-xs btn-soft btn-error btn-circle"
+                  @on.click="removeAt @key">&times;</button>
+        </li>
+      </ul>
+      <p class="opacity-60 italic" @hide="$anyItems">nothing yet</p>
+      <span class="badge badge-sm badge-neutral"><x text="$caption"></x></span>
+    </div>
   </div>
 </template>
 `,
@@ -117,8 +143,8 @@ export const EXAMPLES = [
   /// A row survives when the query is empty or its text contains it.
   /// Case-folded on both sides, so the filter is not a spelling test.
   ///
-  /// @when takes this bare, because an iteration filter has always been a
-  /// name — which is why the predicates design could absorb "when" into
+  /// @when takes this bare, because an iteration filter has always been
+  /// a name — which is why the predicates design could absorb "when" into
   /// "pred" without changing a single call site.
   pred matches {
     (empty? .query) or (contains (lower @value) (lower .query))
@@ -127,15 +153,18 @@ export const EXAMPLES = [
 </script>
 
 <template>
-  <div class="card">
-    <p class="row">
-      <input placeholder="filter"
-             :value=".query" @on.input="setQuery value">
-      <x text="$caption"></x>
-    </p>
-    <ul>
-      <li @each=".names" @when="matches"><x text="@value"></x></li>
-    </ul>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <div class="flex gap-2 items-center">
+        <input class="input input-sm w-full" placeholder="filter"
+               :value=".query" @on.input="setQuery value">
+        <span class="badge badge-sm badge-neutral"><x text="$caption"></x></span>
+      </div>
+      <ul class="flex flex-col gap-1">
+        <li class="badge badge-ghost w-full justify-start"
+            @each=".names" @when="matches"><x text="@value"></x></li>
+      </ul>
+    </div>
   </div>
 </template>
 `,
@@ -169,14 +198,19 @@ export const EXAMPLES = [
 </script>
 
 <template>
-  <div class="card">
-    <h2><x text=".status"></x></h2>
-    <p>seen <x text=".seen"></x></p>
-    <p class="row">
-      <button @on.click="shout">shout</button>
-      <button @on.click="quiet">quiet</button>
-      <button @on.click="five">bump 5</button>
-    </p>
+  <div class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <h2 class="card-title"><x text=".status"></x></h2>
+      <p class="flex gap-2 items-center">
+        <span class="opacity-70">seen</span>
+        <span class="badge badge-sm badge-primary"><x text=".seen"></x></span>
+      </p>
+      <div class="join">
+        <button class="btn btn-sm join-item" @on.click="shout">shout</button>
+        <button class="btn btn-sm join-item" @on.click="quiet">quiet</button>
+        <button class="btn btn-sm join-item btn-primary" @on.click="five">bump 5</button>
+      </div>
+    </div>
   </div>
 </template>
 `,

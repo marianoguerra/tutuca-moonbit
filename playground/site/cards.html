@@ -6,7 +6,7 @@
     <title>Cards — the tutuca script tutorial</title>
     <meta
       name="description"
-      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Eight live, editable examples."
+      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Nine live, editable examples."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
@@ -44,6 +44,7 @@
       <a href="./">Home</a>
       <a href="#start">Start</a>
       <a href="#contracts">Contracts</a>
+      <a href="#styling">Styling</a>
       <a href="#reference">Reference</a>
       <a href="#limits">Where a card stops</a>
       <a href="./tutucard/">Card Playground</a>
@@ -53,7 +54,7 @@
       <h1>Cards</h1>
       <h2>A whole component in one file, with no compiler in the room</h2>
       <p class="hero-tagline">
-        Eight steps, eight live examples. Edit any of them and it re-mounts as
+        Eight steps, nine live examples. Edit any of them and it re-mounts as
         you type.
       </p>
     </header>
@@ -377,6 +378,41 @@
           would attach to if the language grows one. It has not; the badge is
           the state of the art, and the <em>cheat</em> button is there to show
           you the badge earning its place.
+        </p>
+      </section>
+
+      <section id="styling">
+        <h3>Two ways to make a card look like something</h3>
+        <p>
+          Every card above carries a <code>&lt;style&gt;</code> block inside
+          its <code>&lt;template&gt;</code>. That is one of the two ways, and
+          the cheap one: the framework scopes those rules to that view, the
+          page pays nothing, and bare declarations at the top of the block
+          style the view's own root element.
+        </p>
+        <p>
+          The other way is class names. A card can use
+          <a href="https://github.com/marianoguerra/margaui">margaui</a>'s
+          component classes — <code>card</code>, <code>btn</code>,
+          <code>input</code>, <code>badge</code>, <code>join</code> — and the
+          Tailwind utilities beside them, and this element compiles them in
+          your browser: the mounted card publishes the class names its views
+          used, and a ~0.5 MB wasm build of the same compiler the CLI's
+          <code>gen-margaui-css</code> uses turns them into CSS.
+        </p>
+        <mb-card src="./site/cards/tut-9-styles.html" margaui></mb-card>
+        <p>
+          It is opt-in — <code>&lt;mb-card src="…" margaui&gt;</code> — because
+          a card that styles itself should not make a page fetch a compiler.
+          Two consequences worth knowing if you embed one. The CSS is
+          <strong>scoped to the preview</strong>: margaui's stylesheet carries
+          Tailwind's preflight and a <code>:root</code> theme, so injected as
+          written it would not style the card, it would flatten the page around
+          it. And class names have to be <strong>literal</strong> in the views
+          — the collector reads what the templates say, so a name assembled at
+          run time is a name that never reaches the compiler. That is why
+          <code>@if.class</code> switches between whole class lists rather than
+          appending a word to one.
         </p>
       </section>
 

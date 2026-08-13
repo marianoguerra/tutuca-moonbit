@@ -338,11 +338,14 @@ pub fn tasks() -> Array[Task] {
     },
     {
       name: "tutucard-playground",
-      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host, copy the shell, then check every starter card loads",
+      about: "assemble dist/tutucard/ (the compiler-free card playground): build the js host and the margaui class compiler, copy the shell, then check every starter card loads",
       commands: [
-        // No compiler, no worker, no prebuilt .mi/.core closure and no
+        // No MoonBit compiler, no worker, no prebuilt .mi/.core closure and no
         // toolchain pin — a card is parsed and mounted, so what ships is the
-        // runtime and the page. assemble.mjs runs the build itself.
+        // runtime and the page, plus margaui.wasm: the starter cards are
+        // written in margaui classes and the page compiles them in the browser
+        // (fetched lazily, so a card with no classes never pays for it).
+        // assemble.mjs runs both builds itself.
         {
           label: "assemble dist/tutucard",
           prog: "node",
@@ -721,10 +724,11 @@ fn dist_steps() -> Array[Step] {
       args: ["playground/build/assemble.mjs"],
     }),
   )
-  // The card runtime, which the landing site's <mb-card> embeds load. Assembled
-  // BEFORE the site, because assemble-site.mjs copies dist/tutucard/tutucard.js
-  // beside the page — the card playground itself is a separate task, but its
-  // runtime is what makes an embedded card on the landing page work at all.
+  // The card runtime, which the landing site's <mb-card> embeds load, and the
+  // margaui class compiler an `<mb-card margaui>` fetches. Assembled BEFORE the
+  // site, because assemble-site.mjs copies both out of dist/tutucard/ — the
+  // card playground itself is a separate task, but its runtime is what makes an
+  // embedded card on the landing page work at all.
   steps.push(
     Run({
       label: "assemble dist/tutucard (the card runtime the site embeds)",
