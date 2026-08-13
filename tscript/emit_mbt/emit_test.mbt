@@ -102,6 +102,29 @@ fn whys(block : String) -> Array[String] raise {
 // -- what compiles ----------------------------------------------------------
 
 ///|
+test "negation is emitted as `!`, which is the spelling moonc does not deprecate" {
+  // `not(x)` warns — "Use !expr instead" — and a generated file must not be
+  // the thing that warns, let alone the thing that fails a --deny-warn build
+  // over a block whose author wrote nothing wrong. All three negating forms
+  // go through the same spelling.
+  assert_true(body("on x { if not .ok { .count = 1 } }").contains("(!s.ok)"))
+  assert_true(
+    body("on x { if .label is not 'hi' { .count = 1 } }").contains("(!("),
+  )
+  assert_true(
+    body("on x { if .ok implies .ok { .count = 1 } }").contains("((!s.ok) ||"),
+  )
+  // And nowhere does the old spelling survive.
+  for
+    block in [
+      "on x { if not .ok { .count = 1 } }", "on x { if .label is not 'hi' { .count = 1 } }",
+      "on x { if .ok implies .ok { .count = 1 } }",
+    ] {
+    assert_false(body(block).contains("not("))
+  }
+}
+
+///|
 test "an assignment is a copy-on-write rebinding of `s`" {
   // Rebinding rather than accumulating one struct literal is what lets a later
   // statement read what an earlier one wrote — the same thing a hand-written

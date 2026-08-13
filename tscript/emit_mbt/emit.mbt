@@ -755,7 +755,10 @@ fn E::expr(
     }
     EUnary(op~, operand~, ..) =>
       match op {
-        UNot => ("(not(\{self.at_bool(operand)}))", TBool)
+        // `!expr`, not `not(expr)`: moonc deprecates the second, so a block
+        // with a `not` in it made every generated module warn — and a strict
+        // build (--deny-warn) reject a file whose author wrote nothing wrong.
+        UNot => ("(!\{self.at_bool(operand)})", TBool)
         UNeg => ("(-\{self.at_num(operand)})", TFloat)
       }
     EChain(family~, ops~, operands~, ..) => self.chain(family, ops, operands)
@@ -836,7 +839,7 @@ fn E::chain(
     FImplies => {
       let a = self.at_bool(operands[0])
       let c = self.at_bool(operands[1])
-      ("((not(\{a})) || \{c})", TBool)
+      ("((!\{a}) || \{c})", TBool)
     }
     FCompare => {
       let (a, ta) = self.expr(operands[0])
@@ -846,9 +849,9 @@ fn E::chain(
         // compare equal here as they do in a card.
         "is" | "is not" => {
           let (bsrc, tb) = self.expr(operands[1])
-          let neg = if ops[0] == "is not" { "not" } else { "" }
           let cmp = "(\{self.value_of(a, ta)} == \{self.value_of(bsrc, tb)})"
-          (if neg == "" { cmp } else { "(not\{cmp})" }, TBool)
+          // `!(a == b)` rather than `not(a == b)`, for the reason above.
+          (if ops[0] == "is" { cmp } else { "(!\{cmp})" }, TBool)
         }
         op => {
           let x = self.to_ty(a, ta, TFloat)

@@ -6,6 +6,18 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **The MoonBit backend emitted `not(x)`, which moonc deprecates.** Every
+  negating form in a block — `not .ok`, `is not`, and the `(not a) or b` that
+  `implies` expands to — compiled to the spelling the compiler warns about, so
+  a view file whose author wrote nothing wrong produced a generated module that
+  warned, and a `--deny-warn` build rejected it outright. All three emit `!`
+  now, which is what the deprecation asks for and what the generated code has
+  to be: a generated file must never be the thing that warns. Reported from a
+  project that had worked around it by writing `(len .x) > 0` and
+  `.loading is false` instead.
+
 ### Added
 
 - **`<mb-card codemirror>` — the embeddable card can be a real editor.** The
