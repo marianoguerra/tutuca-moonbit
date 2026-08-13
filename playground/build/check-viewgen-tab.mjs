@@ -96,6 +96,56 @@ for (const file of readdirSync(SITE_EXAMPLES).filter((f) => f.endsWith(".mbt")).
   });
 }
 
+// A CONTRACT, which nothing in the corpus above has.
+//
+// This one is not an example anybody sees; it is here because a `requires` /
+// `ensures` / `invariant` is the one construct whose generated code calls a
+// FUNCTION on `@tutuca` rather than naming a type — and in this package
+// `@tutuca` is the module-root facade, not core/. A name the facade does not
+// re-export compiles everywhere else in the repo and fails only here, which is
+// exactly how `precondition_failed` shipped unreachable: the storybook example
+// with contracts is compiled by moon, against core/, where it resolves.
+//
+// Inline rather than a site example pair, because the landing page should not
+// grow a card nobody asked for to hold a regression test.
+cases.push({
+  label: "probe:contracts",
+  code: [
+    "fn build() -> @component.ModuleDef {",
+    "  let ledger = ledger_component(",
+    "    init=LedgerState::{ here: 2, there: 0, total: 2 },",
+    "  )",
+    "  @component.ModuleDef::new(",
+    "    name=\"probe\",",
+    "    components=[ledger],",
+    "    examples=[{ component: \"Ledger\", title: \"Two\", args: Map([]), view: None }],",
+    "  )",
+    "}",
+  ].join("\n"),
+  html: [
+    '<script type="tutuca/state">',
+    "  state Ledger { here : Int, there : Int, total : Int }",
+    "</script>",
+    "",
+    '<script type="tutuca/script" for="Ledger">',
+    "  pred canPush",
+    "    format $'nothing left here to push, and {.there} is already there'",
+    "  { .here > 0 }",
+    "",
+    "  invariant conserved",
+    "    format $'{.here} + {.there} is not {.total}'",
+    "  { (.here + .there) is .total }",
+    "",
+    "  on push requires canPush { .here -= 1; .there += 1 }",
+    "</script>",
+    "",
+    '<template id="Ledger">',
+    '  <div><span @text=".here"></span>',
+    '  <button @on.click="push">push</button></div>',
+    "</template>",
+  ].join("\n"),
+});
+
 // generate once — the same generated module is compiled for every backend
 for (const c of cases) c.gen = generate(c.html);
 

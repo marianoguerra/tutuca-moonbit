@@ -6,6 +6,26 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Fixed
+
+- **A contract compiled everywhere except in a browser.** `gen-views` turns a
+  `requires` / `ensures` / `invariant` into a guard that calls
+  `@tutuca.precondition_failed(…)`, and in the playground `@tutuca` is the
+  module-root facade rather than `core/` — which re-exported four types and no
+  functions. So a card with a rule compiled in the repo, in the CLI and in every
+  `moon` package, and failed in the one place an author writes one in a browser:
+  `Value precondition_failed not found in package tutuca`. The facade now
+  re-exports the three reporters, and the refusal channel with them, since a
+  page that can be told a rule refused something and cannot ask to hear it is
+  half a feature.
+
+  It shipped unreachable because nothing tested it: the storybook example with
+  contracts is compiled by `moon` against `core/`, where the name resolves, and
+  no landing-site example has a rule at all. `check-viewgen-tab.mjs` now carries
+  a `probe:contracts` case — inline, since the landing page should not grow a
+  card nobody asked for to hold a regression test — which generates, compiles
+  and links a block with a precondition and an invariant on both backends.
+
 ## [0.18.0] - 2026-08-13
 
 ### Added

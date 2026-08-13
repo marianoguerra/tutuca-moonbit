@@ -6,12 +6,27 @@ import {
 }
 
 // Values
+pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
+
+pub fn on_refusal((@core.Refusal) -> Unit) -> () -> Unit
+
+pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
+
+pub fn precondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : @core.Value) -> Unit
+
+pub fn refuse(@core.Refusal) -> Unit
+
+pub fn refusing() -> Bool
 
 // Errors
 
 // Types and methods
 
 // Type aliases
+pub using @core {type Refusal}
+
+pub using @core {type RefusalCode}
+
 pub using @core {type RequestOpts}
 
 pub using @core {type Value}
