@@ -203,6 +203,51 @@ fn on_case(
 /// Every case, in one list.
 pub fn cases() -> Array[Case] {
   [
+    // -- paths into arguments ----------------------------------------------
+    //
+    // The argument arrives as a `Value` and the steps pick through it, which
+    // both backends have to do the same way — including what a MISSING field
+    // reads as, since a handler that quietly wrote Null back is the failure
+    // this row exists to catch.
+    //
+    // Every one goes through `str`, and that is about the ARGUMENT rather than
+    // the path: an argument no call site types is refused at a typed field by
+    // the compiled backend — the reserved case below this one says so — so
+    // `str` is where the two backends meet and the path is what is left being
+    // tested.
+    on_case(
+      "a field of an argument",
+      "on pick(f) { .name = str f.name }",
+      "pick",
+      args=[Map({ "name": Str("report.pdf"), "size": Num(12) })],
+      after=Some(with_fields({ "name": Str("report.pdf") })),
+    ),
+    on_case(
+      "a field of a field of an argument",
+      "on pick(f) { .name = str f.meta.kind }",
+      "pick",
+      args=[Map({ "meta": Map({ "kind": Str("pdf") }) })],
+      after=Some(with_fields({ "name": Str("pdf") })),
+    ),
+    on_case(
+      "a field the argument does not carry reads null",
+      "on pick(f) { .name = str f.missing }",
+      "pick",
+      args=[Map({ "name": Str("x") })],
+      after=Some(with_fields({ "name": Str("null") })),
+    ),
+    on_case(
+      "a field of an argument that has no fields at all",
+      "on pick(f) { .name = str f.name }",
+      "pick",
+      // A list, so the projected call site leaves it off and the argument
+      // arrives raw. A NUMBER here would be typed by the call site instead,
+      // and a typed argument has no fields — which the checker reports and the
+      // compiled backend refuses, rather than answering Null the way a card
+      // with no call sites to read does.
+      args=[List([Str("a")])],
+      after=Some(with_fields({ "name": Str("null") })),
+    ),
     // -- assignment --------------------------------------------------------
     on_case(
       "a plain assignment",

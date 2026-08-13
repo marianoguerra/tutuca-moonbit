@@ -649,6 +649,11 @@ fn stmt_uses(s : @tscript.Stmt, name : String) -> Bool {
 
 ///|
 fn place_uses(p : @tscript.Place, name : String) -> Bool {
+  // A path ROOTED at a parameter reads it, which is what decides whether the
+  // generated arm binds the argument or underscores it.
+  if p.root is PParam(n) && n == name {
+    return true
+  }
   for st in p.steps {
     if st is PIndex(e) && expr_uses(e, name) {
       return true
@@ -1498,6 +1503,36 @@ fn E::read(
       at = inner
     }
     return (src, at)
+  }
+  // A path into an argument. `field_opt(…).unwrap_or(Null)` is exactly what
+  // the interpreter does for the same steps, which is what lets a card and a
+  // compiled component answer the same thing for `f.name`.
+  //
+  // It reads even when the call sites left the argument's type unstated, where
+  // the argument ITSELF is refused: picking a field off a `Value` needs no
+  // type, and the refusal below is about arithmetic and assignment.
+  if p.root is PParam(param) {
+    guard self.params.get(param) is Some(ty) else {
+      raise Cannot("`\{param}` is not a parameter of this handler")
+    }
+    // A typed argument arrives UNWRAPPED — `Str(name)` binds a String — and
+    // none of the types a call site can state has fields. The path is for the
+    // arguments that stay values: a bind, a drag, a message payload.
+    guard ty is None else {
+      raise Cannot(
+        "`\{param}` arrives as \{ty.unwrap().show_source()} from the call sites, and a \{ty.unwrap().show_source()} has no field `\{p.steps.map(s => if s is PField(n) { n } else { "?" }).join(".")}`",
+      )
+    }
+    let mut src = param
+    for st in p.steps {
+      guard st is PField(sub) else {
+        raise Cannot(
+          "reading through an index into `\{param}` needs a bounds check this backend does not emit yet — write the handler in MoonBit",
+        )
+      }
+      src = "\{src}.field_opt(\{quote(sub)}).unwrap_or(Null)"
+    }
+    return (src, TAny)
   }
   guard p.root is PState(name) else {
     guard p.root is PBind(bind) else {

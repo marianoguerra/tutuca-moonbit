@@ -526,6 +526,40 @@ test "a literal with an escape round-trips through the printer" {
   assert_eq(trip("compute v { 'it\\'s' }"), "compute v { 'it\\'s' }")
 }
 
+///|
+test "a path into an argument, and the attachment that tells it from application" {
+  // The one thing that separates the two is the space, and it is the rule the
+  // language already runs on: `min .a .b` is two arguments and `min .a.b` is
+  // one place (`pre_space` in script_lex.mbt). A parameter is the one kind of
+  // name that can never be applied, so nothing else could be meant.
+  assert_eq(
+    trip("on pick(f) { .name = f.name }"),
+    "on pick(f) {\n  .name = f.name\n}",
+  )
+  assert_eq(
+    trip("on pick(f) { .name = f.meta.name }"),
+    "on pick(f) {\n  .name = f.meta.name\n}",
+  )
+  assert_eq(
+    trip("on at(row) { .n = row[0] }"),
+    "on at(row) {\n  .n = row[0]\n}",
+  )
+  assert_eq(
+    trip("on at(row, k) { .n = row[k].size }"),
+    "on at(row, k) {\n  .n = row[k].size\n}",
+  )
+  // Detached, it is what it always was: an application of two arguments.
+  assert_eq(
+    trip("compute c(f) { contains f .query }"),
+    "compute c(f) { contains f .query }",
+  )
+  // ...and an argument's path binds tighter than the application around it.
+  assert_eq(
+    trip("compute c(f) { len f.items }"),
+    "compute c(f) { len f.items }",
+  )
+}
+
 // -- contracts --------------------------------------------------------------
 
 ///|

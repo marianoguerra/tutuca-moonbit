@@ -18,6 +18,8 @@ priv struct C {
   out : Array[Finding]
   /// The parameters of the declaration being checked.
   mut params : Map[String, @statedef.StateTy?]
+  /// The declaration being checked, for a message about one of its arguments.
+  mut decl_name : String
   /// Which declarations the block itself makes, by name: predicates and
   /// computes are callable, and everything else is not.
   callable : Map[String, Int]
@@ -84,6 +86,7 @@ pub fn check(
     surface,
     out: [],
     params: Map([]),
+    decl_name: "",
     callable,
     predicate,
     binds_assignable: false,
@@ -101,6 +104,7 @@ pub fn check(
 ///|
 fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   self.params = Map([])
+  self.decl_name = d.name
   self.binds_assignable = d.kind is (DEnrich | DEnrichScope)
   // A target belongs to the body that built it and to nothing else — the same
   // rule the interpreter enforces by refusing to hand `@cur` back.
@@ -456,6 +460,37 @@ fn C::place(
       // A binding comes from the SLOT that uses this declaration, which the
       // block cannot see. Opaque, and everything below it too.
       None
+    }
+    // A path into an argument. The root has to BE a parameter — a bare name
+    // followed by an attached `.` is a path and nothing else, so a name that
+    // is not one is a mistake rather than a call.
+    PParam(name) => {
+      // Unreachable through the parser, which refuses a statement that starts
+      // with a path into an argument and says why. Kept because `Place` is one
+      // type for reads and writes, and answering "not a place" is the only
+      // honest thing this can say if some other producer builds one.
+      if assigning {
+        self.say(
+          "PARAM_ASSIGN",
+          "`\{name}` is a parameter — an argument is a value the caller handed over, not a place this component owns; assign to a `.field` instead",
+          p.span,
+        )
+        return None
+      }
+      if !self.params.contains(name) {
+        self.say(
+          "NO_PARAM",
+          "`\{name}` is not a parameter of `\{self.decl_name}`" +
+          (match @statedef.nearest(name, self.params.keys().collect()) {
+            Some(s) => " — did you mean `\{s}`?"
+            None =>
+              "; a path is only written on an argument, and `.\{name}` is how a state field is read"
+          }),
+          p.span,
+        )
+        return None
+      }
+      self.params.get(name).unwrap_or(None)
     }
   }
   for st in p.steps {

@@ -239,12 +239,16 @@ pub(all) enum CorpusInput {
   Case40
   Case41
   Case42
+  Case43
   Case44
   Case45
   Case46
-  Case47
   Case48
+  Case49
   Case5
+  Case50
+  Case51
+  Case52
   Case6
   Case7
   Case8
@@ -292,12 +296,16 @@ pub fn CorpusInput::name(self : CorpusInput) -> String {
     Case40 => "case40"
     Case41 => "case41"
     Case42 => "case42"
+    Case43 => "case43"
     Case44 => "case44"
     Case45 => "case45"
     Case46 => "case46"
-    Case47 => "case47"
     Case48 => "case48"
+    Case49 => "case49"
     Case5 => "case5"
+    Case50 => "case50"
+    Case51 => "case51"
+    Case52 => "case52"
     Case6 => "case6"
     Case7 => "case7"
     Case8 => "case8"
@@ -346,12 +354,16 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
     "case40" => Some(Case40)
     "case41" => Some(Case41)
     "case42" => Some(Case42)
+    "case43" => Some(Case43)
     "case44" => Some(Case44)
     "case45" => Some(Case45)
     "case46" => Some(Case46)
-    "case47" => Some(Case47)
     "case48" => Some(Case48)
+    "case49" => Some(Case49)
     "case5" => Some(Case5)
+    "case50" => Some(Case50)
+    "case51" => Some(Case51)
+    "case52" => Some(Case52)
     "case6" => Some(Case6)
     "case7" => Some(Case7)
     "case8" => Some(Case8)
@@ -366,36 +378,36 @@ pub fn CorpusInput::parse(s : String) -> CorpusInput? {
 /// handler added to corpus.html breaks every `match` over this type
 /// until it is handled.
 ///
-/// Absent, because the script block answers them: case0, case1, case2, case4, case5, case6, case8, case11, case15, case16, case17, case18, case23, case24, case25, case26, case27, case28, case29, case30, case31, case32, case33, case35, case36, case37, case38, case39, case40, case41, case42, case45, case46, case47, case48.
+/// Absent, because the script block answers them: case0, case1, case2, case3, case4, case5, case6, case8, case9, case10, case12, case15, case19, case20, case21, case22, case27, case28, case29, case30, case31, case32, case33, case34, case35, case36, case37, case39, case40, case41, case42, case43, case44, case45, case46, case49, case50, case51, case52.
 /// `update` is consulted only for a dispatch the block did not claim, so
 /// an arm for one of these could never run.
 pub(all) enum CorpusMsg {
-  /// `@on.click="case10 …"`
-  Case10
-  /// `@on.click="case12 …"`
-  Case12(Double)
+  /// `@on.click="case11 …"`
+  Case11
   /// `@on.click="case13 …"`
-  Case13(Double)
+  Case13
   /// `@on.click="case14 …"`
   Case14
-  /// `@on.click="case19 …"`
-  Case19
-  /// `@on.click="case20 …"`
-  Case20
-  /// `@on.click="case21 …"`
-  Case21
-  /// `@on.click="case22 …"`
-  Case22
-  /// `@on.click="case3 …"`
-  Case3
-  /// `@on.click="case34 …"`
-  Case34
-  /// `@on.click="case44 …"`
-  Case44(Double)
+  /// `@on.click="case16 …"`
+  Case16(Double)
+  /// `@on.click="case17 …"`
+  Case17(Double)
+  /// `@on.click="case18 …"`
+  Case18
+  /// `@on.click="case23 …"`
+  Case23
+  /// `@on.click="case24 …"`
+  Case24
+  /// `@on.click="case25 …"`
+  Case25
+  /// `@on.click="case26 …"`
+  Case26
+  /// `@on.click="case38 …"`
+  Case38
+  /// `@on.click="case48 …"`
+  Case48(Double)
   /// `@on.click="case7 …"`
   Case7
-  /// `@on.click="case9 …"`
-  Case9
   /// An Input dispatch the views do not declare, or a declared name
   /// whose runtime arguments did not match the inferred shape.
   Unknown(String, Array[@tutuca.Value])
@@ -408,19 +420,19 @@ pub fn CorpusMsg::from_dispatch(d : @component.Dispatch) -> CorpusMsg? {
   guard d is Input(name, args) else { return None }
   Some(
     match (name, args) {
-      ("case10", []) => Case10
-      ("case12", [Num(a0)]) => Case12(a0)
-      ("case13", [Num(a0)]) => Case13(a0)
+      ("case11", []) => Case11
+      ("case13", []) => Case13
       ("case14", []) => Case14
-      ("case19", []) => Case19
-      ("case20", []) => Case20
-      ("case21", []) => Case21
-      ("case22", []) => Case22
-      ("case3", []) => Case3
-      ("case34", []) => Case34
-      ("case44", [Num(a0)]) => Case44(a0)
+      ("case16", [Num(a0)]) => Case16(a0)
+      ("case17", [Num(a0)]) => Case17(a0)
+      ("case18", []) => Case18
+      ("case23", []) => Case23
+      ("case24", []) => Case24
+      ("case25", []) => Case25
+      ("case26", []) => Case26
+      ("case38", []) => Case38
+      ("case48", [Num(a0)]) => Case48(a0)
       ("case7", []) => Case7
-      ("case9", []) => Case9
       _ => Unknown(name, args)
     },
   )
@@ -477,8 +489,9 @@ impl @component.Fields for CorpusState with fn schema() {
       "case16", "case17", "case18", "case19", "case2", "case20", "case21", "case22",
       "case23", "case24", "case25", "case26", "case27", "case28", "case29", "case3",
       "case30", "case31", "case32", "case33", "case34", "case35", "case36", "case37",
-      "case38", "case39", "case4", "case40", "case41", "case42", "case44", "case45",
-      "case46", "case47", "case48", "case5", "case6", "case7", "case8", "case9",
+      "case38", "case39", "case4", "case40", "case41", "case42", "case43", "case44",
+      "case45", "case46", "case48", "case49", "case5", "case50", "case51", "case52",
+      "case6", "case7", "case8", "case9",
     ],
     receives=["resetTo"],
     methods=[

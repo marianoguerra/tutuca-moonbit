@@ -142,6 +142,11 @@ fn read_place(p : @tscript.Place, env : Env, depth : Int) -> @tutuca.Value? {
         Some(v) => v
         None => if name == @tscript.target_bind { return None } else { Null }
       }
+    // An argument the caller did not send reads Null, the way a bind does: the
+    // checker names a root that is not a parameter at all, and a dispatch that
+    // carried fewer values than the handler takes is the caller's mistake, not
+    // a reason for this read to fail.
+    PParam(name) => env.params.get(name).unwrap_or(Null)
   }
   for st in p.steps {
     match st {

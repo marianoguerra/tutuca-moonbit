@@ -178,6 +178,16 @@ pub(all) enum PlaceRoot {
   /// `@name` — a binding. Assignable in `enrich` / `enrich-scope` only;
   /// readable anywhere the slot provides it.
   PBind(String)
+  /// `name.field` — a path into a PARAMETER. Never assignable: an argument is
+  /// a value the caller handed over, not a position this component owns.
+  ///
+  /// The root is a bare name and the steps are the same ones every other place
+  /// takes, so the only thing that tells `f.name` from `f .name` is
+  /// ATTACHMENT — which is the rule already in force for `min .a .b` versus
+  /// `min .a.b` (`pre_space` in script_lex.mbt). No new ambiguity: a bare name
+  /// followed by an attached `.` or `[` could not mean anything else, since a
+  /// parameter is the one kind of name that can never be applied.
+  PParam(String)
 } derive(Debug, Eq)
 
 ///|

@@ -211,13 +211,19 @@ fn exec_one(
 /// untouched subtree is the SAME object afterwards, which is what makes the
 /// render cache's identity check answer correctly.
 fn write_place(p : @tscript.Place, v : @tutuca.Value, env : Env) -> Bool {
+  // A parameter is a value the caller handed over, so there is nothing here to
+  // write THROUGH: the transition does not happen, which is what the checker
+  // reports as `PARAM_ASSIGN` before it ever runs.
+  guard !(p.root is PParam(_)) else { return false }
   let root_name = match p.root {
     PState(n) => n
     PBind(n) => n
+    PParam(n) => n
   }
   let target : Map[String, @tutuca.Value] = match p.root {
     PState(_) => env.state
     PBind(_) => env.binds
+    PParam(_) => env.params
   }
   if p.steps.is_empty() {
     // The one place the declared schema is consulted: an integer field

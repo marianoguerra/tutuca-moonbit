@@ -184,6 +184,7 @@ pub(all) struct Place {
 pub(all) enum PlaceRoot {
   PState(String)
   PBind(String)
+  PParam(String)
 } derive(Eq, @debug.Debug)
 
 pub(all) enum STok {

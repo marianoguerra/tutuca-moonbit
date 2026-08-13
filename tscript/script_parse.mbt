@@ -496,6 +496,17 @@ fn parse_stmt(p : P) -> Stmt raise ScriptError {
   }
   // Otherwise it is a place: an assignment, or a collection method on it.
   if !(p.peek() is (TDot | TAt)) {
+    // `f.name = 'x'` parses as far as the path and then stops here. Saying
+    // what a path into an argument IS beats listing what a statement may be:
+    // an argument is a value the caller handed over, and this component owns
+    // no position inside it.
+    if p.peek() is TIdent(n) && p.peek_at(1) is (TDot | TLBracket) {
+      raise Unexpected(
+        got="a path into `\{n}`",
+        want="a place this component owns — an argument is a value the caller handed over, so assign to a `.field` instead",
+        span=p.span(),
+      )
+    }
     p.fail(
       "a statement: an assignment, a collection method, an effect or an `if`",
     )
@@ -614,6 +625,17 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
     }
     _ => p.fail("a place: `.field` or `@binding`")
   }
+  let steps = parse_steps(p, for_ref~)
+  { root, steps, span: p.since(from) }
+}
+
+///|
+/// The steps below a root, for whichever root was just read.
+///
+/// Shared by `.field` / `@bind` and by a parameter path, because a step means
+/// the same thing under all three — and because the ATTACHMENT rule that ends
+/// the loop has to be one rule rather than two that could drift.
+fn parse_steps(p : P, for_ref~ : Bool) -> Array[PathStep] raise ScriptError {
   let steps : Array[PathStep] = []
   let mut prev_was_index = false
   for ;; {
@@ -651,7 +673,22 @@ fn parse_place(p : P, for_ref~ : Bool) -> Place raise ScriptError {
       _ => break
     }
   }
-  { root, steps, span: p.since(from) }
+  steps
+}
+
+///|
+/// Whether an attached step follows — the test that turns a bare name into a
+/// parameter path. Attached, because `f.name` and `f .name` are told apart by
+/// nothing else.
+fn starts_attached_step(p : P) -> Bool {
+  if p.gap() {
+    return false
+  }
+  match p.peek() {
+    TDot => p.peek_at(1) is TIdent(_)
+    TLBracket => true
+    _ => false
+  }
 }
 
 // ---------------------------------------------------------------------------
@@ -816,6 +853,14 @@ fn parse_value(p : P, apply~ : Bool) -> Expr raise ScriptError {
     }
     TIdent(n) => {
       p.bump() |> ignore
+      // `f.name`, `f[0]` — a path into a parameter. Attached only, and read
+      // before the application loop, so `len f.items` is `len` applied to one
+      // path rather than to two things.
+      if starts_attached_step(p) {
+        let steps = parse_steps(p, for_ref=false)
+        let place : Place = { root: PParam(n), steps, span: p.since(from) }
+        return ERead(place~, span=place.span)
+      }
       let args : Array[Expr] = []
       if apply {
         while starts_argument(p.peek()) {

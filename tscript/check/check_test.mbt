@@ -455,6 +455,50 @@ test "the target is not a binding an enrich can publish" {
   )
 }
 
+// -- paths into arguments ---------------------------------------------------
+
+///|
+test "a path is written on an argument, and only on one that exists" {
+  // An argument is opaque in a card (nothing declares what the views pass), so
+  // reading a field off one is quiet — "unknown is not wrong" all the way down.
+  assert_eq(codes("on pick(f) { .name = f.name }"), [])
+  assert_eq(codes("on pick(f) { .name = f.meta.name }"), [])
+  assert_eq(codes("receive resetTo(n) { .count = n }"), [])
+  // The root has to BE a parameter: a bare name with an attached `.` is a path
+  // and nothing else, so a name that is not one is a mistake rather than a call.
+  assert_eq(messages("on pick(file) { .name = payload.name }"), [
+    "`payload` is not a parameter of `pick`; a path is only written on an argument, and `.payload` is how a state field is read",
+  ])
+  assert_eq(messages("on pick(file) { .name = flie.name }"), [
+    "`flie` is not a parameter of `pick` — did you mean `file`?",
+  ])
+}
+
+///|
+test "an argument is a value, not a place, so it cannot be assigned" {
+  // Refused by the PARSER: a statement never starts with a bare name, so this
+  // never reaches the checker — and the message says what the path is rather
+  // than listing what a statement may be.
+  let e = try {
+    @tscript.parse_script("on pick(f) { f.name = 'x' }") |> ignore
+    ""
+  } catch {
+    err => err.message()
+  }
+  assert_eq(
+    e, "expected a place this component owns — an argument is a value the caller handed over, so assign to a `.field` instead, found a path into `f`",
+  )
+}
+
+///|
+test "a path is checked against a DECLARED payload, where there is one" {
+  // A `receive` case's payload types come from the schema, so unlike an `on`
+  // handler's arguments they are known — and a field of an Int is not.
+  assert_eq(messages("receive resetTo(n) { .count = n.whatever }"), [
+    "`Int` has no field `whatever`",
+  ])
+}
+
 // -- contracts --------------------------------------------------------------
 
 ///|

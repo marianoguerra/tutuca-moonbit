@@ -63,12 +63,16 @@ pub(all) enum CorpusInput {
   Case40
   Case41
   Case42
+  Case43
   Case44
   Case45
   Case46
-  Case47
   Case48
+  Case49
   Case5
+  Case50
+  Case51
+  Case52
   Case6
   Case7
   Case8
@@ -92,19 +96,19 @@ pub(all) enum CorpusMethod {
 pub fn CorpusMethod::name(Self) -> String
 
 pub(all) enum CorpusMsg {
-  Case10
-  Case12(Double)
-  Case13(Double)
+  Case11
+  Case13
   Case14
-  Case19
-  Case20
-  Case21
-  Case22
-  Case3
-  Case34
-  Case44(Double)
+  Case16(Double)
+  Case17(Double)
+  Case18
+  Case23
+  Case24
+  Case25
+  Case26
+  Case38
+  Case48(Double)
   Case7
-  Case9
   Unknown(String, Array[@core.Value])
 }
 pub fn CorpusMsg::from_dispatch(@component.Dispatch) -> Self?

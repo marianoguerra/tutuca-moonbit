@@ -91,6 +91,9 @@ fn place_src(p : Place) -> String {
       b.write_char('@')
       b.write_string(n)
     }
+    // No sigil: a parameter is written the way it was declared, and the steps
+    // below it print attached, which is the only spelling that reads back.
+    PParam(n) => b.write_string(n)
   }
   for st in p.steps {
     match st {
