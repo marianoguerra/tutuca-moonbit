@@ -136,7 +136,11 @@ fn bar_chart_inline_update(
   match msg {
     Input("addBar", _args) => {
       guard s.values.length().to_double() < 9.0 else {
-        @tutuca.precondition_failed(handler="addBar", pred="hasRoom")
+        @tutuca.precondition_failed(
+          handler="addBar",
+          pred="hasRoom",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       let d0 = 90.0
@@ -156,7 +160,11 @@ fn bar_chart_inline_update(
     }
     Input("removeBar", _args) => {
       guard s.values.length().to_double() > 1.0 else {
-        @tutuca.precondition_failed(handler="removeBar", pred="hasSpare")
+        @tutuca.precondition_failed(
+          handler="removeBar",
+          pred="hasSpare",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       let at = (s.values.length().to_double() - 1.0).to_int()

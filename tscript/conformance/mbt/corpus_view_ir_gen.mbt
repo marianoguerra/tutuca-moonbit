@@ -627,7 +627,11 @@ fn corpus_inline_update(
     }
     Input("case49", _args) => {
       guard s.count.to_double() >= 0.0 else {
-        @tutuca.precondition_failed(handler="case49", pred="enoughA")
+        @tutuca.precondition_failed(
+          handler="case49",
+          pred="enoughA",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
@@ -635,7 +639,11 @@ fn corpus_inline_update(
     }
     Input("case50", _args) => {
       guard s.count.to_double() > 0.0 else {
-        @tutuca.precondition_failed(handler="case50", pred="enoughB")
+        @tutuca.precondition_failed(
+          handler="case50",
+          pred="enoughB",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
@@ -648,7 +656,11 @@ fn corpus_inline_update(
         ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
       })
       guard s.count.to_double() > 5.0 else {
-        @tutuca.postcondition_failed(handler="case51", pred="smallA")
+        @tutuca.postcondition_failed(
+          handler="case51",
+          pred="smallA",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       for f in effects {
@@ -663,7 +675,11 @@ fn corpus_inline_update(
         ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)])
       })
       guard s.count.to_double() < 5.0 else {
-        @tutuca.postcondition_failed(handler="case52", pred="smallB")
+        @tutuca.postcondition_failed(
+          handler="case52",
+          pred="smallB",
+          state=(Map(@component.Fields::encode(s)) : @tutuca.Value),
+        )
         return Unchanged
       }
       for f in effects {

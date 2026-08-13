@@ -617,3 +617,54 @@ test "one clause of each kind, and two rules become one by being named" {
     "expected the `pred` `requires` names, found `(`",
   )
 }
+
+// -- formats ----------------------------------------------------------------
+
+///|
+test "a format sits in the same slot a contract does, and prints on its own line" {
+  // Canonical is the multi-line form: a sentence is long, and the body under
+  // it is the thing being read.
+  assert_eq(
+    trip("pred hasTitle format $'no title' { .title is not '' }"),
+    "pred hasTitle\n  format $'no title' { .title is not '' }",
+  )
+  // Written across three lines, which is the spelling the design shows, and
+  // the same declaration.
+  let multi =
+    #|pred publishedNeedsTitle
+    #|  format $'Cannot publish "{.slug}": the title is empty.'
+    #|{ .published implies (nonBlank .title) }
+  assert_eq(
+    trip(multi),
+    "pred publishedNeedsTitle\n  format $'Cannot publish \"{.slug}\": the title is empty.' { .published implies (nonBlank .title) }",
+  )
+  // An `invariant` is a `pred` with a role, so it takes one too.
+  assert_eq(
+    trip("invariant conserved format $'{.here} + {.there}' { .here is .there }"),
+    "invariant conserved\n  format $'{.here} + {.there}' { .here is .there }",
+  )
+  // A plain string is a sentence with nothing to interpolate.
+  assert_eq(
+    trip("pred ok format 'nothing doing' { .a }"),
+    "pred ok\n  format 'nothing doing' { .a }",
+  )
+}
+
+///|
+test "a format attaches to a rule and to nothing else" {
+  // A sentence describes a FALSE answer, so it needs the answer to be declared
+  // a yes or a no. A `compute` that might answer the string "ok" has no false
+  // case to describe, and a transition is not the thing that is true or false.
+  assert_eq(
+    script_err("on push format $'nope' { .here -= 1 }"),
+    "expected a `format` on a rule — `pred` or `invariant`, the two kinds whose answer is declared to be a yes or a no, found `format` on `on`",
+  )
+  assert_eq(
+    script_err("compute label format $'nope' { .name }"),
+    "expected a `format` on a rule — `pred` or `invariant`, the two kinds whose answer is declared to be a yes or a no, found `format` on `compute`",
+  )
+  assert_eq(
+    script_err("pred ok format 'a' format 'b' { .a }"),
+    "expected one `format` — a rule says one thing about the failure it describes, found a second `format`",
+  )
+}

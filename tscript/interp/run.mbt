@@ -30,7 +30,12 @@ pub fn dispatch(
   // so there is nothing to undo — which is the whole reason a guard is the
   // cheap half of a contract.
   if d.requires_ is Some(c) && !holds(c.name, env.state, env) {
-    @tutuca.precondition_failed(handler=d.name, pred=c.name)
+    @tutuca.precondition_failed(
+      handler=d.name,
+      pred=c.name,
+      sentence=sentence(c.name, env.state, env),
+      state=Map(env.state),
+    )
     return Outcome::nothing()
   }
   let out = run(ss, { ..env, params, })
@@ -43,12 +48,25 @@ pub fn dispatch(
   // the successor is a fresh map and the effects are still a queue: the caller
   // holds the state it passed in, and no `send` has gone out.
   if d.ensures_ is Some(c) && !holds(c.name, next, env) {
-    @tutuca.postcondition_failed(handler=d.name, pred=c.name)
+    // The SUCCESSOR, in the record and in the sentence: what a postcondition
+    // rejected is where the transition landed, and the state it started from is
+    // the one the caller still holds.
+    @tutuca.postcondition_failed(
+      handler=d.name,
+      pred=c.name,
+      sentence=sentence(c.name, next, env),
+      state=Map(next),
+    )
     return Outcome::nothing()
   }
   for inv in invariants(env) {
     if !holds(inv, next, env) {
-      @tutuca.invariant_failed(handler=d.name, pred=inv)
+      @tutuca.invariant_failed(
+        handler=d.name,
+        pred=inv,
+        sentence=sentence(inv, next, env),
+        state=Map(next),
+      )
       return Outcome::nothing()
     }
   }
@@ -89,6 +107,30 @@ fn holds(name : String, state : Map[String, @tutuca.Value], env : Env) -> Bool {
   let scope : Env = { ..env, state, params: Map([]), binds: Map([]) }
   guard call(d, scope) is Some(v) else { return false }
   v.is_truthy()
+}
+
+///|
+/// What a rule that did not hold SAYS about this failure.
+///
+/// Evaluated over the state that was rejected — the same state the rule was
+/// just asked about — so the values in the sentence are the ones that made it
+/// false. `""` for a rule with no `format`, and `""` for one whose sentence
+/// could not be evaluated: a refusal that cannot describe itself is still a
+/// refusal, and losing the record to save the sentence would be the wrong half
+/// to keep.
+fn sentence(
+  name : String,
+  state : Map[String, @tutuca.Value],
+  env : Env,
+) -> String {
+  guard env.callables.get(name) is Some(d) && d.format is Some(e) else {
+    return ""
+  }
+  let scope : Env = { ..env, state, params: Map([]), binds: Map([]) }
+  match eval(e, scope) {
+    Some(v) => v.to_display_string()
+    None => ""
+  }
 }
 
 ///|

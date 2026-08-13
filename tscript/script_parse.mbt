@@ -321,7 +321,12 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     }
     p.expect(TRParen, "`)` closing the parameter list")
   }
-  let (requires_, ensures_) = parse_contracts(p, kind)
+  let (requires_, ensures_, format) = parse_clauses(p, kind)
+  // A separator between the clauses and the body. A newline ends a STATEMENT,
+  // and a declaration's head is not one: `pred needsTitle` / `format $'…'` /
+  // `{ … }` on three lines is the spelling a rule with a sentence wants, and
+  // the one-line form is the same declaration.
+  p.skip_seps()
   let body = parse_body(p, stmts=kind_takes_stmts(kind))
   {
     kind,
@@ -329,6 +334,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
     params,
     requires_,
     ensures_,
+    format,
     body,
     doc,
     span: p.since(from),
@@ -337,7 +343,7 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
 }
 
 ///|
-/// The contract clauses between a transition's name and its body.
+/// The clauses between a declaration's name and its body.
 ///
 /// Unambiguous with no lookahead into anything: what follows a declaration's
 /// name is `(`, `{`, or a clause word, and a bare name could never have been
@@ -348,18 +354,51 @@ fn parse_decl(p : P) -> Decl raise ScriptError {
 /// the round-trip test mean something. At most one of each: two `requires` on
 /// one handler is two rules with no name for their conjunction, and `pred
 /// canMove { canPush and notBusy }` is the spelling that gives it one.
-fn parse_contracts(
+///
+/// `format` sits here rather than inside the braces for the same reason the
+/// contracts do: it is a fact about the declaration, and the braces hold the
+/// only thing that is a fact about VALUES. It never meets `requires` or
+/// `ensures` in one head — a contract is a transition's and a format is a
+/// rule's — but they are parsed by one loop so that writing one on the wrong
+/// kind is answered by the clause itself rather than by a puzzled `{`.
+fn parse_clauses(
   p : P,
   kind : DeclKind,
-) -> (Attach?, Attach?) raise ScriptError {
+) -> (Attach?, Attach?, Expr?) raise ScriptError {
   let mut requires_ : Attach? = None
   let mut ensures_ : Attach? = None
+  let mut format : Expr? = None
   for ;; {
-    guard p.peek() is TIdent(word) && (word == "requires" || word == "ensures") else {
+    // A clause may sit on its own line, which is what the multi-line spelling
+    // of a rule with a sentence needs. Skipping here is safe because the only
+    // thing that may follow the head is the body, and `parse_decl` skips again
+    // before it.
+    p.skip_seps()
+    guard p.peek() is TIdent(word) &&
+      (word == "requires" || word == "ensures" || word == "format") else {
       break
     }
     let at = p.span()
     p.bump() |> ignore
+    if word == "format" {
+      // A sentence about a false answer needs the answer to be a yes or a no.
+      guard is_predicate(kind) else {
+        raise Unexpected(
+          got="`format` on `\{kind_word(kind)}`",
+          want="a `format` on a rule — `pred` or `invariant`, the two kinds whose answer is declared to be a yes or a no",
+          span=at,
+        )
+      }
+      guard format is None else {
+        raise Unexpected(
+          got="a second `format`",
+          want="one `format` — a rule says one thing about the failure it describes",
+          span=at,
+        )
+      }
+      format = Some(parse_expr(p))
+      continue
+    }
     // A contract states when a TRANSITION may happen and where it may land.
     // The other kinds have no transition to state it about: an `enrich` writes
     // bindings, and a value body is not a moment.
@@ -392,7 +431,7 @@ fn parse_contracts(
       ensures_ = Some(clause)
     }
   }
-  (requires_, ensures_)
+  (requires_, ensures_, format)
 }
 
 ///|

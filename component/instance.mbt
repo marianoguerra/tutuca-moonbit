@@ -442,6 +442,23 @@ impl[S] @tutuca.Obj for TypedInstance[S] with fn obj_handler(self, bucket, name)
           None => ()
         }
       }
+      // Nothing claimed the name: no swap, no `update` arm — `Unhandled`
+      // rather than the `Unchanged` an arm answers when it decided nothing
+      // moves — and no generated mutator. That distinction is knowable only
+      // here, where all three lookups have missed, and it is invisible
+      // upstream: `Path::update` sees the same `None` a declining handler
+      // answers. Reporting it is the difference between a typo in a view and a
+      // button that correctly does nothing.
+      if @tutuca.refusing() {
+        @tutuca.refuse({
+          code: NoHandler,
+          asked: name,
+          rule: "",
+          sentence: "",
+          state: self.to_value(),
+          path: @tutuca.Path::new(),
+        })
+      }
       None
     }),
   )

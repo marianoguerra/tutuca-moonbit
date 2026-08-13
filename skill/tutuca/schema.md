@@ -336,17 +336,20 @@ which of the three kinds of rule it is, and the runtime keeps all three:
 
 A rule that does not hold **abandons the whole transition** — no successor
 state and no effects, which is the answer every other refusal in a body already
-gives — and **reports** through `@tutuca.warn`
-(`precondition_failed` / `postcondition_failed` / `invariant_failed`). The
-report is the point: "the transition did not happen" is invisible on its own,
-and a contract is where you say which stillness is a bug. Redirect
-`@tutuca.warn_hook` to collect them in a test or route them to an error pane.
+gives — and **reports**. The report is the point: "the transition did not
+happen" is invisible on its own, and a contract is where you say which stillness
+is a bug. There are two doors and exactly one of them fires: a host that
+switched on the refusal channel (below) gets a record, and one that did not gets
+the line `@tutuca.warn` has always printed
+(`precondition_failed` / `postcondition_failed` / `invariant_failed`) —
+redirect `@tutuca.warn_hook` to collect those in a test or route them to an
+error pane.
 
 Both backends keep them identically — the card interpreter evaluates the rule,
 `gen-views` compiles it into a `guard` in the generated arm, ahead of the
 effect queue's flush.
 
-Four things to know:
+Four things to know about the clauses themselves:
 
 - The clause takes a **name**, and the `pred` it names takes **no arguments**.
   A rule that needs one of the handler's arguments is about that dispatch
@@ -359,6 +362,63 @@ Four things to know:
   view and `@when="conserved"` still filters a row. It covers the transitions
   the **block** declares; the generated mutators a component answers by default
   are not among them.
+
+### `format` — what the rule says when it fails
+
+A rule may carry the sentence to say when it does **not** hold. It is an
+ordinary expression, almost always a `$'…'` template, evaluated against the
+state that was rejected — so the values in it are the ones that made the rule
+false:
+
+```html
+<script type="tutuca/script" for="Post">
+  /// A post needs a title before it can go out.
+  pred hasTitle
+    format $'Cannot publish "{.slug}": the title is empty.'
+  { (trim .title) is not '' }
+
+  on publish requires hasTitle { .published = true }
+</script>
+```
+
+- The `///` comment and the `format` do different jobs. The comment says what
+  the rule **is**, statically; the format says what went wrong **this time**.
+- Describe the FALSE case: a predicate is true when things are fine.
+- `pred` and `invariant` only — a `compute` has no false case to describe.
+- One per rule, and it answers a string (a bare number is refused with
+  `FORMAT_TYPE`; put it in a template).
+- A sentence that cannot be evaluated is dropped and the report still fires: a
+  refusal that cannot describe itself is still a refusal.
+
+### The refusal channel
+
+Every silent no-op the runtime decides — an unresolvable path, a name nothing
+answers, a rule that said no — looks from outside exactly like a handler that
+ran and had nothing to do. `@tutuca.on_refusal` is where that distinction goes:
+
+```moonbit nocheck
+// nocheck: `post_module` is the reader's own module
+let h = @harness.mount(post_module(), "Post")
+let refused = @harness.refusals_while(() => h.click(".publish"))
+assert_eq(refused[0].code, Precondition)
+assert_eq(refused[0].rule, "hasTitle")
+assert_eq(refused[0].sentence, "Cannot publish \"draft-2\": the title is empty.")
+// …and the state that was rejected, which nothing else can reach
+```
+
+- `@tutuca.on_refusal(f)` switches it on and answers the uninstall;
+  `@harness.refusals_while(body)` is that pair around one stretch of driving,
+  and `@harness.no_refusals(body)` **fails** the test if anything was refused —
+  which is what makes a test about a guarded button mean something.
+- A `Refusal` carries `code`, `asked`, `rule`, `sentence`, `state` and `path`,
+  and `to_line()` renders it. The codes are `PRECONDITION`, `POSTCONDITION`,
+  `INVARIANT` (a rule refused it), `NO_HANDLER` (nothing claimed the name) and
+  `PATH_UNRESOLVED` (nothing was there).
+- **A decline is not a refusal.** An `update` arm answering `None`, and the
+  generated mutator behind it, are the intended design and stay quiet.
+- One dispatch produces at most one record, and it is off until a host asks —
+  a record carries the rejected state, so nothing pays for it until somebody
+  wants it.
 
 ## Schema without templates
 

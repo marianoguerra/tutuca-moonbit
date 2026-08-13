@@ -623,14 +623,14 @@ test "a contract compiles into the arm, at the moment it is about" {
     src,
     content=(
       #|guard (s.count.to_double() > 0.0) else {
-      #|@tutuca.precondition_failed(handler="bump", pred="enough")
+      #|@tutuca.precondition_failed(handler="bump", pred="enough", state=(Map(@component.Fields::encode(s)) : @tutuca.Value))
       #|return Unchanged
       #|}
       #|let effects : Array[() -> Unit] = []
       #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
       #|effects.push(() => ctx.send("bumped", [(Num(s.count.to_double()) : @tutuca.Value)]))
       #|guard (s.count.to_double() < 10.0) else {
-      #|@tutuca.postcondition_failed(handler="bump", pred="small")
+      #|@tutuca.postcondition_failed(handler="bump", pred="small", state=(Map(@component.Fields::encode(s)) : @tutuca.Value))
       #|return Unchanged
       #|}
       #|for f in effects {
@@ -657,14 +657,16 @@ test "an invariant is written into every arm the block declares" {
     e.source.split("@tutuca.invariant_failed(handler=").collect().length() - 1,
     2,
   )
+  // Each one carries the state it rejected — the successor, encoded only here,
+  // inside the refusal, and never on the path where the rule holds.
   assert_true(
     e.source.contains(
-      "@tutuca.invariant_failed(handler=\"bump\", pred=\"sane\")",
+      "@tutuca.invariant_failed(handler=\"bump\", pred=\"sane\", state=(Map(@component.Fields::encode(s)) : @tutuca.Value))",
     ),
   )
   assert_true(
     e.source.contains(
-      "@tutuca.invariant_failed(handler=\"tag\", pred=\"sane\")",
+      "@tutuca.invariant_failed(handler=\"tag\", pred=\"sane\", state=(Map(@component.Fields::encode(s)) : @tutuca.Value))",
     ),
   )
   assert_eq(e.refusals.map(r => r.name), [])
@@ -694,4 +696,54 @@ test "a contract naming a rule the block does not declare refuses its arm" {
   assert_eq(whys("on bump requires enough { .count += 1 }"), [
     "`enough` is not a `pred` this block declares, so there is no rule to check",
   ])
+}
+
+///|
+test "a rule's format is compiled into the refusal, beside the rule" {
+  let src = body(
+    (
+      #|on bump requires enough {
+      #|  .count += 1
+      #|}
+      #|pred enough
+      #|  format $'{.label} is out of counts'
+      #|{ .count > 0 }
+    ),
+  )
+  // The sentence is compiled where the rule is, so it reads the state at the
+  // moment the rule was asked — and it is built inside the guard's `else`,
+  // which is the only path that pays for it.
+  inspect(
+    src,
+    content=(
+      #|guard (s.count.to_double() > 0.0) else {
+      #|@tutuca.precondition_failed(handler="bump", pred="enough", sentence=((Str(s.label) : @tutuca.Value).to_display_string() + " is out of counts"), state=(Map(@component.Fields::encode(s)) : @tutuca.Value))
+      #|return Unchanged
+      #|}
+      #|let s = { ..s, count: (s.count.to_double() + 1.0).to_int() }
+      #|Next(s)
+    ),
+  )
+}
+
+///|
+test "a sentence that would need a guard is dropped, and the record stands" {
+  // A guard stands in FRONT of the condition and leaves the arm when it does
+  // not hold, so a sentence that needed one would decide whether the transition
+  // happens. `.blob` is `Any`, and reading it as text is exactly that guard.
+  let e = out(
+    (
+      #|on bump requires enough {
+      #|  .count += 1
+      #|}
+      #|pred enough format (lower .blob) { .count > 0 }
+    ),
+  )
+  assert_eq(e.refusals.map(r => r.name), [])
+  assert_true(
+    e.source.contains(
+      "@tutuca.precondition_failed(handler=\"bump\", pred=\"enough\", state=",
+    ),
+  )
+  assert_false(e.source.contains("sentence="))
 }

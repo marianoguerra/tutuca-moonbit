@@ -1085,7 +1085,8 @@ its examples never reach the storybook or a harness test.
   spellings, the mutators each kind generates, slots, message buckets, and
   `tutuca/init` fixtures — plus what the `<script type="tutuca/script">` block
   beside it declares: `$`-callables, `new` / `@cur` value building, and the
-  `requires` / `ensures` / `invariant` contracts.
+  `requires` / `ensures` / `invariant` contracts, the `format` a rule says
+  when it fails, and the refusal channel that carries it.
 - [events.md](./events.md) — handler argument names, generated `<Comp>Msg`
   payload types, event modifiers, and custom-element events.
 - [iteration.md](./iteration.md) — `@each` / `render-each`, `@when`,

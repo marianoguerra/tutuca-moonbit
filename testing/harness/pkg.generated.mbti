@@ -15,6 +15,10 @@ pub fn mount(@component.ModuleDef, String, args? : Map[String, @core.Value]) -> 
 
 pub fn mount_example(@component.ModuleDef, String) -> Harness raise
 
+pub fn no_refusals(() -> Unit raise) -> Unit raise
+
+pub fn refusals_while(() -> Unit raise) -> Array[@core.Refusal] raise
+
 // Errors
 
 // Types and methods

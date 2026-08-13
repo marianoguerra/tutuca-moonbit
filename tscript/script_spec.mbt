@@ -96,6 +96,24 @@ pub(all) struct Decl {
   /// language with no `old` is one where a postcondition is a fact about where
   /// the transition landed, which is the half a reader can check by looking.
   ensures_ : Attach?
+  /// `pred publishedNeedsTitle format $'Cannot publish "{.slug}"…' { … }` — the
+  /// sentence to say when this rule does NOT hold, evaluated against the state
+  /// that was rejected and carried out on the refusal record.
+  ///
+  /// Predicates only. A `format` describes the FALSE case, because a predicate
+  /// is true when things are fine, and only a `pred` and an `invariant` declare
+  /// that their answer is a yes or a no — a `compute` whose answer might be the
+  /// string "ok" has no false case to describe.
+  ///
+  /// It is an ordinary expression, and almost always a `$'…'` template: the one
+  /// the views already interpolate with, so there is no second interpolation
+  /// syntax to learn.
+  ///
+  /// The `///` comment and this do different jobs, which is why a rule can want
+  /// both. The comment says what the rule IS, statically, and travels into the
+  /// schema and into what an agent is told before it acts; the format says what
+  /// went wrong THIS time, with the values that made it go wrong.
+  format : Expr?
   body : Body
   /// The `///` comment above it, or "".
   doc : String

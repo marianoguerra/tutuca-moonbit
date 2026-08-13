@@ -12,13 +12,19 @@ pub fn builtin(String) -> Builtin?
 
 pub fn builtin_names() -> Array[String]
 
-pub fn invariant_failed(handler~ : String, pred~ : String) -> Unit
+pub fn invariant_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
 
 pub fn mutator_name(String, String) -> String
 
-pub fn postcondition_failed(handler~ : String, pred~ : String) -> Unit
+pub fn on_refusal((Refusal) -> Unit) -> () -> Unit
 
-pub fn precondition_failed(handler~ : String, pred~ : String) -> Unit
+pub fn postcondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
+
+pub fn precondition_failed(handler~ : String, pred~ : String, sentence? : String, state? : Value) -> Unit
+
+pub fn refuse(Refusal) -> Unit
+
+pub fn refusing() -> Bool
 
 pub fn size_of(Value) -> Int?
 
@@ -149,6 +155,25 @@ pub(all) enum PathKey {
 } derive(Eq, @debug.Debug)
 pub fn PathKey::to_label(Self) -> String
 pub fn PathKey::to_value(Self) -> Value
+
+pub(all) struct Refusal {
+  code : RefusalCode
+  asked : String
+  rule : String
+  sentence : String
+  state : Value
+  path : Path
+} derive(Eq, @debug.Debug)
+pub fn Refusal::to_line(Self) -> String
+
+pub(all) enum RefusalCode {
+  PathUnresolved
+  NoHandler
+  Precondition
+  Postcondition
+  Invariant
+} derive(Eq, @debug.Debug)
+pub fn RefusalCode::word(Self) -> String
 
 pub(all) struct RequestOpts {
   on_ok_name : String?

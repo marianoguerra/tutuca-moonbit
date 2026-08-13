@@ -738,3 +738,154 @@ test "a rule nobody can evaluate has not been kept" {
   assert_eq(state, None)
   assert_eq(said.length(), 1)
 }
+
+// -- formats and the refusal channel -----------------------------------------
+
+///|
+/// Run a block with the refusal channel switched on, and answer what it
+/// produced. The `warn` line and the record are the same report through two
+/// doors, so a test that wants the record installs a listener and gets nothing
+/// on the other one.
+fn refusals(
+  block : String,
+  state : Map[String, @tutuca.Value],
+  args? : Array[@tutuca.Value] = [],
+) -> (Map[String, @tutuca.Value]?, Array[@tutuca.Refusal]) raise {
+  let out : Array[@tutuca.Refusal] = []
+  let off = @tutuca.on_refusal(r => out.push(r))
+  let ran = run_one(block, state, args~)
+  off()
+  (ran.state, out)
+}
+
+///|
+test "a rule's format says what went wrong, with the values that made it" {
+  let block =
+    #|on publish requires hasTitle {
+    #|  .published = true
+    #|}
+    #|/// A post needs a title before it can go out.
+    #|pred hasTitle
+    #|  format $'Cannot publish "{.slug}": the title is empty.'
+    #|{ (trim .title) is not '' }
+  let empty : Map[String, @tutuca.Value] = {
+    "slug": Str("draft-2"),
+    "title": Str("  "),
+    "published": Bool(false),
+  }
+  // The sentence is about THIS failure: the slug in it is the one that was
+  // rejected, which is the half a doc comment cannot say.
+  let (stood, records) = refusals(block, empty)
+  assert_eq(stood, None)
+  assert_eq(records.length(), 1)
+  let r = records[0]
+  assert_eq(r.code, Precondition)
+  assert_eq(r.rule, "hasTitle")
+  assert_eq(r.asked, "publish")
+  assert_eq(r.sentence, "Cannot publish \"draft-2\": the title is empty.")
+  // …and the state that was rejected, which is the thing nothing could reach
+  // before: a precondition rejected the state as it ARRIVED.
+  assert_eq(r.state, Map(empty))
+  // The rule holding is still silence.
+  let (moved, quiet) = refusals(block, {
+    "slug": Str("ok"),
+    "title": Str("A title"),
+    "published": Bool(false),
+  })
+  assert_eq(moved.unwrap().get("published"), Some(Bool(true)))
+  assert_eq(quiet, [])
+}
+
+///|
+test "with nothing listening, the sentence rides the warn line" {
+  // The channel is off by default, and a host that switched nothing on still
+  // gets the better message — the sentence is the author's, and it belongs in
+  // whichever door the report leaves by.
+  let block =
+    #|on publish requires hasTitle {
+    #|  .published = true
+    #|}
+    #|pred hasTitle format $'"{.slug}" has no title' { .title is not '' }
+  let (state, said) = contracted(block, {
+    "slug": Str("draft-2"),
+    "title": Str(""),
+  })
+  assert_eq(state, None)
+  assert_eq(said, [
+    "contract: `publish` declined — its precondition `hasTitle` does not hold: \"draft-2\" has no title",
+  ])
+}
+
+///|
+test "a postcondition and an invariant reject the SUCCESSOR, and say so" {
+  // Which state a record carries is decided by the moment, and the moment is
+  // the code: `.there` reads 4 in the sentence and in the record, and 4 is the
+  // number the framework is about to throw away.
+  let block =
+    #|on push ensures moved {
+    #|  .there += 1
+    #|}
+    #|pred moved
+    #|  format $'{.here} left here, {.there} there — that is not a move'
+    #|{ .here > .there }
+  let (state, records) = refusals(block, { "here": Num(1), "there": Num(3) })
+  assert_eq(state, None)
+  assert_eq(records.length(), 1)
+  assert_eq(records[0].code, Postcondition)
+  assert_eq(records[0].sentence, "1 left here, 4 there — that is not a move")
+  assert_eq(records[0].state, Map({ "here": Num(1), "there": Num(4) }))
+}
+
+///|
+test "an invariant carries its own sentence, on a handler that never named it" {
+  let block =
+    #|on cheat {
+    #|  .there += 1
+    #|}
+    #|invariant conserved
+    #|  format $'{.here} + {.there} is not {.total}'
+    #|{ (.here + .there) is .total }
+  let (state, records) = refusals(block, {
+    "here": Num(2),
+    "there": Num(0),
+    "total": Num(2),
+  })
+  assert_eq(state, None)
+  assert_eq(records.length(), 1)
+  assert_eq(records[0].code, Invariant)
+  assert_eq(records[0].rule, "conserved")
+  assert_eq(records[0].asked, "cheat")
+  assert_eq(records[0].sentence, "2 + 1 is not 2")
+}
+
+///|
+test "a rule with no format is a record with no sentence" {
+  // The record is the thing that has to survive; a sentence is what a rule adds
+  // to it. A refusal that cannot describe itself is still a refusal.
+  let block =
+    #|on push requires canPush {
+    #|  .here -= 1
+    #|}
+    #|pred canPush { .here > 0 }
+  let (_, records) = refusals(block, { "here": Num(0) })
+  assert_eq(records.length(), 1)
+  assert_eq(records[0].sentence, "")
+  assert_eq(records[0].to_line(), "PRECONDITION canPush at `push`")
+}
+
+///|
+test "a sentence that cannot be evaluated loses the sentence, not the record" {
+  // `trim` of a number answers nothing at all, the same way it does anywhere
+  // else. Losing the record to save the sentence would be the wrong half to
+  // keep — a refusal that cannot describe itself is still a refusal.
+  let block =
+    #|on push requires canPush {
+    #|  .here -= 1
+    #|}
+    #|pred canPush format (trim .here) { .here > 0 }
+  let (state, records) = refusals(block, { "here": Num(0) })
+  assert_eq(state, None)
+  assert_eq(records.length(), 1)
+  assert_eq(records[0].code, Precondition)
+  assert_eq(records[0].sentence, "")
+}

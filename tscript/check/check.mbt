@@ -143,6 +143,7 @@ fn C::decl(self : C, d : @tscript.Decl) -> Unit {
   }
   self.contract(d, d.requires_, "requires")
   self.contract(d, d.ensures_, "ensures")
+  self.format(d)
   // An invariant is asked after every transition, and no two transitions carry
   // the same arguments. There is nothing that could be passed.
   if d.kind is DInvariant && !d.params.is_empty() {
@@ -208,6 +209,29 @@ fn C::contract(
       "`\{c.name}` takes \{arity} parameter(s), and a contract is asked with none — a rule that needs an argument is about this dispatch rather than about the component, so guard it with `if` instead",
       c.span,
     )
+  }
+}
+
+///|
+/// A rule's `format`: the sentence a reader sees when the rule does not hold.
+///
+/// Walked like any other expression, so a field that is not there is reported
+/// where it is written rather than turning into an empty sentence at the moment
+/// somebody most wants to read one. Its TYPE is judged by the same rule the
+/// rest of this file follows — report only when the answer is known and it
+/// disagrees — and what it has to be is a string: a bare number is provenance,
+/// not a sentence, and the sigil that makes one out of the other (`$'…'`) is
+/// already in the language.
+fn C::format(self : C, d : @tscript.Decl) -> Unit {
+  guard d.format is Some(e) else { return }
+  match definite(self.expr(e)) {
+    Some(TText) | None => ()
+    Some(t) =>
+      self.say(
+        "FORMAT_TYPE",
+        "a `format` is the sentence a reader is shown, and this one answers \{t.show_source()} — write a string, or a `$'…'` template that puts it in one",
+        expr_span(e),
+      )
   }
 }
 

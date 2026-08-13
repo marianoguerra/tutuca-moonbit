@@ -92,6 +92,7 @@ pub(all) struct Decl {
   params : Array[Param]
   requires_ : Attach?
   ensures_ : Attach?
+  format : Expr?
   body : Body
   doc : String
   span : Span

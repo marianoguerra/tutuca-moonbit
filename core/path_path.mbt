@@ -221,18 +221,54 @@ pub fn Path::update(
   name : String,
   args : Array[Value],
 ) -> Value {
-  guard self.lookup(root) is Some(leaf) else { return root }
+  guard self.lookup(root) is Some(leaf) else {
+    // The two guards here are the whole reason the refusal channel exists: from
+    // outside, they are the same `root` a handler that ran and changed nothing
+    // hands back. They report OUTSIDE the dispatch scope opened below, because
+    // each one already is where the chain ends — there is no handler under them
+    // to have decided anything more specific.
+    if refusing() {
+      refuse({
+        code: PathUnresolved,
+        asked: name,
+        rule: "",
+        sentence: "",
+        state: root,
+        path: self,
+      })
+    }
+    return root
+  }
   // One lookup. There used to be a second, for the literal name `"$unknown"`,
   // as a catch-all a component could register — a JS-era sentinel that cost a
   // string lookup on every miss. A typed `update` is one pattern match whose
   // `_ => None` already IS the catch-all, and the generated `<C>Msg` hands the
   // unmatched name to an `Unknown(name, args)` arm.
-  guard leaf.handler(bucket, name) is Some(Handler(f)) else { return root }
-  match f(args, NullCtx::{  }) {
+  guard leaf.handler(bucket, name) is Some(Handler(f)) else {
+    if refusing() {
+      refuse({
+        code: NoHandler,
+        asked: name,
+        rule: "",
+        sentence: "",
+        state: leaf,
+        path: self,
+      })
+    }
+    return root
+  }
+  // From here down a handler exists and whatever happens is its answer, so this
+  // is the dispatch a record belongs to: a contract inside the body knows the
+  // rule it broke and not where it ran, and the scope is what supplies the rest.
+  // A handler that dispatches again nests into this same scope — one dispatch,
+  // one record, however many layers it walked.
+  let opened = begin_dispatch(self)
+  let out = match f(args, NullCtx::{  }) {
     Some(new_leaf) =>
       // JS `newLeaf !== curLeaf` parity: a handler that hands back the value
       // it was given skips the rebuild, whether it says so by answering None
-      // or by handing the same object back.
+      // or by handing the same object back. Neither is a refusal: an arm that
+      // answers `None` DECLINED, and the mutator behind it is the design.
       if physical_equal(new_leaf, leaf) {
         root
       } else {
@@ -240,4 +276,6 @@ pub fn Path::update(
       }
     None => root
   }
+  end_dispatch(opened)
+  out
 }

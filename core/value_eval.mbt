@@ -162,7 +162,22 @@ fn tpl_piece(v : Value) -> String {
 /// mistake worth reporting rather than a shape the engine has to tolerate.
 fn mk_404_handler(ns : HandlerNamespace, name : String) -> Value {
   Fn(args => {
-    warn("handler not found \{Repr((ns, name))}")
+    // The same silence `Path::update` reports for a dispatch, one layer out: a
+    // name a view wrote and no bucket answers. There is no state in hand here —
+    // a 404 is built where the name resolves, which is before anything is asked
+    // of a component — so the record says `Null` rather than inventing one.
+    if refusing() {
+      refuse({
+        code: NoHandler,
+        asked: name,
+        rule: "",
+        sentence: "",
+        state: Null,
+        path: Path::new(),
+      })
+    } else {
+      warn("handler not found \{Repr((ns, name))}")
+    }
     args.get(0).unwrap_or(Null)
   })
 }

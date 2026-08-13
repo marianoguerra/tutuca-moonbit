@@ -61,6 +61,10 @@ priv struct E {
   /// is. What a `requires` / `ensures` clause resolves to, and what an arm
   /// inlines at the two moments a contract is kept.
   rules : Map[String, @tscript.Expr]
+  /// The rules that declare a `format`, name -> the sentence expression.
+  /// Compiled INTO the refusal, beside the rule and at the same moment, so the
+  /// values it names are the ones that made the rule false.
+  formats : Map[String, @tscript.Expr]
   /// The `invariant` names, every one of them checked after every transition.
   /// Sorted, because WHICH rule broke is part of the answer and the
   /// interpreter — which reads them off a map and has no declaration order to
@@ -98,6 +102,7 @@ pub fn emit(
     tmp: 0,
     guards: Map([]),
     rules: Map([]),
+    formats: Map([]),
     invariants: [],
     callables: Map([]),
     target: None,
@@ -127,6 +132,9 @@ pub fn emit(
     // that function turned out not to compile.
     if @tscript.is_predicate(d.kind) && d.body is Value(rule) {
       e.rules[d.name] = rule
+      if d.format is Some(sentence) {
+        e.formats[d.name] = sentence
+      }
       if d.kind is DInvariant {
         e.invariants.push(d.name)
       }
@@ -536,11 +544,7 @@ fn E::arm(
   // reported as a rule that did not hold.
   if d.requires_ is Some(c) {
     b.write_string(
-      self.contract_guard(
-        c.name,
-        "      ",
-        "@tutuca.precondition_failed(handler=\{quote(d.name)}, pred=\{quote(c.name)})",
-      ),
+      self.contract_guard(c.name, "      ", "precondition_failed", d.name),
     )
   }
   let stmts = self.stmts(body, "      ")
@@ -552,20 +556,12 @@ fn E::arm(
   let after = StringBuilder::new()
   if d.ensures_ is Some(c) {
     after.write_string(
-      self.contract_guard(
-        c.name,
-        "      ",
-        "@tutuca.postcondition_failed(handler=\{quote(d.name)}, pred=\{quote(c.name)})",
-      ),
+      self.contract_guard(c.name, "      ", "postcondition_failed", d.name),
     )
   }
   for inv in self.invariants {
     after.write_string(
-      self.contract_guard(
-        inv,
-        "      ",
-        "@tutuca.invariant_failed(handler=\{quote(d.name)}, pred=\{quote(inv)})",
-      ),
+      self.contract_guard(inv, "      ", "invariant_failed", d.name),
     )
   }
   if stmts.contains("effects.push(") {
@@ -594,7 +590,8 @@ fn E::contract_guard(
   self : E,
   rule : String,
   pad : String,
-  report : String,
+  reporter : String,
+  handler : String,
 ) -> String raise NoWay {
   guard self.rules.get(rule) is Some(e) else {
     raise Cannot(
@@ -611,11 +608,55 @@ fn E::contract_guard(
   // a refused arm is not emitted, and the next declaration is handed fresh
   // parameters and no target before it starts.
   let cond = self.at_bool(e)
+  let sentence = self.compiled_sentence(rule)
   let prelude = self.flush(pad)
   self.params = params
   self.binds = binds
   self.target = target
+  // `s` is the state at THIS moment, which is the whole reason the rule is
+  // compiled in rather than called: before the body it names what arrived, and
+  // after it the successor the framework is about to throw away. Encoding it is
+  // paid for only here, inside the refusal.
+  let state = "state=(Map(@component.Fields::encode(s)) : @tutuca.Value)"
+  let says = match sentence {
+    Some(src) => "sentence=\{src}, "
+    None => ""
+  }
+  let report = "@tutuca.\{reporter}(handler=\{quote(handler)}, pred=\{quote(rule)}, \{says}\{state})"
   "\{prelude}\{pad}guard \{cond} else {\n\{pad}  \{report}\n\{pad}  return Unchanged\n\{pad}}\n"
+}
+
+///|
+/// A rule's `format`, compiled as a String expression — or None, which is a
+/// record with no sentence rather than an arm that does not compile.
+///
+/// Compiled into a SCRATCH prelude, and dropped if it needed a guard. A guard
+/// stands in front of the condition and leaves the arm when it does not hold,
+/// so a sentence that needed one would decide whether the transition happens —
+/// and a message about a failure that can cause one is worse than no message.
+/// The same reasoning refuses to let it refuse the arm: the interpreter answers
+/// `""` for a sentence it cannot evaluate and keeps the record, and two backends
+/// that disagree about that would disagree about whether a rule fires at all.
+fn E::compiled_sentence(self : E, rule : String) -> String? {
+  guard self.formats.get(rule) is Some(f) else { return None }
+  let kept_prelude = self.prelude
+  let kept_guards = self.guards
+  self.prelude = []
+  self.guards = Map([])
+  let src = self.at_text(f) catch {
+    // A sentence this backend cannot spell — `null`, an enum where a string is
+    // wanted — is one the interpreter would still print. Neither backend loses
+    // the RECORD over it, which is the half that has to agree.
+    _ => ""
+  }
+  let needed_guard = !self.prelude.is_empty()
+  self.prelude = kept_prelude
+  self.guards = kept_guards
+  if src == "" || needed_guard {
+    None
+  } else {
+    Some(src)
+  }
 }
 
 ///|
@@ -1304,6 +1345,20 @@ fn E::at_bool(self : E, e : @tscript.Expr) -> String raise NoWay {
     // rather than a MoonBit `!= 0`, or the two backends would disagree about
     // `@show=".count"`.
     _ => "\{self.value_of(src, got)}.is_truthy()"
+  }
+}
+
+///|
+/// Emit an expression as a String — a sentence, which is what a `format` is.
+///
+/// Anything that is not already text goes through `to_display_string`, the same
+/// conversion a `$'…'` template's interpolations take, so a number reads `3`
+/// rather than `3.0` and a card and a compiled component say the same thing.
+fn E::at_text(self : E, e : @tscript.Expr) -> String raise NoWay {
+  let (src, got) = self.expr(e)
+  match got {
+    TText => src
+    _ => "\{self.value_of(src, got)}.to_display_string()"
   }
 }
 

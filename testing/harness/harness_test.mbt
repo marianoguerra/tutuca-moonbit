@@ -131,3 +131,18 @@ impl @component.Fields for CounterState with fn schema() {
     view_names=["main"],
   )
 }
+
+///|
+test "the channel tells a refused click apart from one that did nothing" {
+  let h = @harness.mount(counter_module(), "Counter")
+  // A name the module answers refuses nothing, and `no_refusals` is how a test
+  // says so out loud.
+  @harness.no_refusals(() => h.click(".btn-success"))
+  inspect(h.text(".stat-value"), content="1")
+  // A name nothing claims — no `update` arm, no mutator — looks exactly like
+  // the click above from the DOM's side: nothing moved. This is the difference,
+  // and it is the shape a typo in a view takes.
+  let refused = @harness.refusals_while(() => h.send_at_root("nope"))
+  assert_eq(refused.map(r => r.to_line()), ["NO_HANDLER at `nope`"])
+  inspect(h.text(".stat-value"), content="1")
+}

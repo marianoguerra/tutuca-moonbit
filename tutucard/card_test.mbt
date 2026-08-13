@@ -535,3 +535,52 @@ test "a card asks and promises on the same handler" {
     "contract: `pushAll` declined — its precondition `canPush` does not hold",
   ])
 }
+
+///|
+test "a refused click is a record with a name, a path and a sentence" {
+  // The whole channel, end to end and through the real transactor: a rule with
+  // a `format`, a button that the rule declines, and a test that can tell that
+  // apart from a button that did nothing. Before this, the two were the same
+  // DOM and the same passing test.
+  let card =
+    #|<script type="tutuca/state">
+    #|  state { slug: String, title: String, published: Bool }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init { .slug = 'draft-2' }
+    #|  /// A post needs a title before it can go out.
+    #|  pred hasTitle
+    #|    format $'Cannot publish "{.slug}": the title is empty.'
+    #|  { (trim .title) is not '' }
+    #|  on publish requires hasTitle { .published = true }
+    #|</script>
+    #|
+    #|<template>
+    #|  <div>
+    #|    <span id="state"><x text=".published"></x></span>
+    #|    <button id="publish" @on.click="publish">publish</button>
+    #|  </div>
+    #|</template>
+  let h = mount_card(card, name="Post")
+  h.send_at_root("init")
+  let refused = @harness.refusals_while(() => h.click("#publish"))
+  // The DOM says exactly what it said before: nothing moved.
+  assert_eq(h.text("#state"), "false")
+  // …and the channel says which of the two silences this was.
+  assert_eq(refused.length(), 1)
+  assert_eq(refused[0].code, Precondition)
+  assert_eq(refused[0].rule, "hasTitle")
+  assert_eq(refused[0].asked, "publish")
+  assert_eq(
+    refused[0].sentence,
+    "Cannot publish \"draft-2\": the title is empty.",
+  )
+  // The state that was rejected, reachable at last: the slug that could not be
+  // published, read back off the record.
+  assert_eq(
+    @tutuca.Path::new(steps=[FieldStep("slug")]).lookup(refused[0].state),
+    Some(Str("draft-2")),
+  )
+}

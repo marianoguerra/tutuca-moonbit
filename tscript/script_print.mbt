@@ -271,6 +271,12 @@ pub fn Decl::to_source(self : Decl) -> String {
   if self.ensures_ is Some(c) {
     b.write_string(" ensures " + c.name)
   }
+  // On its own line, because a sentence is long and the body under it is the
+  // thing being read. The parser accepts either, and canonical is the one that
+  // stays readable at the width a real message has.
+  if self.format is Some(e) {
+    b.write_string("\n  format " + expr_src(e))
+  }
   match self.body {
     Value(e) => {
       b.write_string(" { ")

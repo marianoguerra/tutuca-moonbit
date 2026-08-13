@@ -459,3 +459,59 @@ pub fn Harness::send_at_root(
     self.app.drain_batched(max_per_batch=10000, () => ()) |> ignore
   }
 }
+
+///|
+/// Every refusal `body` produced — the channel `@tutuca.on_refusal` opens,
+/// scoped to one stretch of driving and switched off again afterwards.
+///
+/// A free function rather than a `Harness` method because it needs no harness:
+/// the channel is the runtime's, and a card mounted by some other harness
+/// reports through the same one. It is here because this is where a test author
+/// looks.
+///
+/// Not on by default, deliberately. A refusal replaces the line `warn` prints,
+/// so a harness that installed a listener for every mount would silently change
+/// what every other test sees — and a channel that a team never switches on is
+/// exactly where they were before it existed. Switching it on is one call:
+///
+/// ```moonbit nocheck
+/// // nocheck: `post_module` is the reader's own module
+/// let h = @harness.mount(post_module(), "Post")
+/// let refused = @harness.refusals_while(() => h.click(".publish"))
+/// inspect(
+///   refused.map(r => r.to_line()),
+///   content=(
+///     #|["PRECONDITION publishedNeedsTitle at `publish` — Cannot publish \"draft-2\": the title is empty."]
+///   ),
+/// )
+/// ```
+pub fn refusals_while(body : () -> Unit raise) -> Array[@tutuca.Refusal] raise {
+  let out : Array[@tutuca.Refusal] = []
+  let off = @tutuca.on_refusal(r => out.push(r))
+  // Switched off on the way out of a failure too: a driving call that raises —
+  // a selector matching nothing — must not leave the channel open for whatever
+  // test runs next.
+  body() catch {
+    e => {
+      off()
+      raise e
+    }
+  }
+  off()
+  out
+}
+
+///|
+/// Drive `body` and FAIL if anything was refused.
+///
+/// This is the half that makes a test about a guarded button mean something.
+/// `h.click(".publish")` on a component whose precondition declines passes
+/// today — the DOM does not move, which is exactly what a correct guard and a
+/// wrong selector both look like. Here the two are different: one is a failure
+/// naming the rule, the path and the sentence, and the other is silence.
+pub fn no_refusals(body : () -> Unit raise) -> Unit raise {
+  let refused = refusals_while(body)
+  guard refused.is_empty() else {
+    fail("refused: " + refused.map(r => r.to_line()).join("; "))
+  }
+}

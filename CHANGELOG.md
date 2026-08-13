@@ -8,6 +8,77 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
+- **A rule can say what went wrong, and the runtime can say that anything went
+  wrong at all.** Two halves of one silence. A `pred` may now carry a `format`,
+  and `@tutuca.on_refusal` is the channel the answer leaves by.
+
+  ```html
+  /// A post needs a title before it can go out.
+  pred hasTitle
+    format $'Cannot publish "{.slug}": the title is empty.'
+  { (trim .title) is not '' }
+
+  on publish requires hasTitle { .published = true }
+  ```
+
+  The doc comment and the format do different jobs, which is why a rule wants
+  both: the comment says what the rule IS, statically, and the format says what
+  went wrong THIS time, with the values that made it go wrong. It is an ordinary
+  expression — almost always the `$'…'` template the views already interpolate
+  with, so there is no second interpolation syntax — evaluated against the state
+  that was rejected, and it describes the FALSE case, because a predicate is true
+  when things are fine. `pred` and `invariant` only: a `compute` that might
+  answer the string "ok" has no false case to describe. The checker walks it like
+  any other expression (a typo in `{.slgu}` is reported where it is written, not
+  as an empty sentence at the moment somebody most wants to read one) and asks it
+  for a string, since a bare number is provenance rather than a sentence.
+
+  The channel is the other half, and it exists because `Path::update` decides
+  between four outcomes and hands back the same root for all four: an
+  unresolvable path, a name nothing answers, a handler that declined, and a
+  handler that ran and changed nothing. The success path and the failure path are
+  byte-identical, which is why this framework is hard to break and why a click
+  that did nothing has never been distinguishable from a click that was refused.
+  A `Refusal` carries the code, what was asked for, which rule said no, the
+  sentence that rule produced — and the state that was rejected, which is the
+  thing you actually want to look at and the thing nothing could reach before.
+
+  Four decisions worth stating, because each of them is a way this could have
+  become noise nobody reads:
+
+  - **A decline is not a refusal.** An `update` arm answering `None`, and the
+    generated mutator behind it, are the intended design and stay silent. What is
+    reported is a name nothing claimed (`NO_HANDLER`), a leaf that was not there
+    (`PATH_UNRESOLVED`) and a rule that said no (`PRECONDITION` /
+    `POSTCONDITION` / `INVARIANT`).
+  - **Five codes, not eighteen.** The design this comes from names
+    `NO_REQUEST_FN`, `DECODE_FAILED`, `COERCED_TO_DEFAULT`, `OUT_OF_RANGE`,
+    `TELEPORT_MISSING` and more. None of them is here, because a code nothing
+    raises is a promise the runtime does not keep — a host filtering on it would
+    conclude the failure never happens. A case arrives with the site that raises
+    it, in the same change.
+  - **One dispatch, one record.** A refusal is reported where the chain ends;
+    everything above it on the way out is the same failure being handed back.
+  - **Off until a host asks.** A record carries the rejected state, so building
+    one is not free. With nothing listening the report is the line `warn` has
+    always printed — now carrying the sentence too, since that half is the
+    author's and belongs in whichever door the report leaves by.
+
+  Both backends keep it identically, which is the property the corpus exists to
+  hold: the card interpreter evaluates the sentence over the state it rejected,
+  and the MoonBit backend compiles it into the guard beside the rule, with the
+  state encoded through `@component.Fields::encode` inside the refusal and
+  nowhere else. The one asymmetry is deliberate and one-directional: a sentence
+  that would need a GUARD is dropped by the compiled backend, because a guard
+  stands in front of the condition and a message about a failure must never be
+  able to cause one.
+
+  For tests, `@harness.refusals_while(body)` collects what a stretch of driving
+  refused and `@harness.no_refusals(body)` fails on it — which is what makes a
+  test about a guarded button mean something. `h.click(".publish")` on a
+  component whose precondition declines passes today, and a wrong selector passes
+  the same way.
+
 - **`guests/bluesky`, `guests/slack` and `guests/mastodon` say the things their
   prose was already saying.** The bundles drew cards that looked more complete
   than the text beside them, and in the same three ways.

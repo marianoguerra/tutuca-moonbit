@@ -585,3 +585,27 @@ test "an invariant is callable, exactly as a pred is" {
     [],
   )
 }
+
+// -- formats ----------------------------------------------------------------
+
+///|
+test "a format is walked like any other expression" {
+  // A field that is not there is reported where it is WRITTEN. The alternative
+  // is an empty sentence at the moment somebody most wants to read one, which
+  // is the worst place to discover a typo.
+  assert_eq(codes("pred ok format $'{.nope} is wrong' { .ok }"), ["NO_FIELD"])
+  assert_eq(codes("pred ok format $'{.name} is wrong' { .ok }"), [])
+  assert_eq(codes("invariant sane format 'nothing doing' { .ok }"), [])
+}
+
+///|
+test "a format answers a string, because it is a sentence" {
+  assert_eq(codes("pred ok format .count { .ok }"), ["FORMAT_TYPE"])
+  assert_eq(messages("pred ok format .count { .ok }"), [
+    "a `format` is the sentence a reader is shown, and this one answers Int — write a string, or a `$'…'` template that puts it in one",
+  ])
+  // The way to say the same thing: put the number in a template.
+  assert_eq(codes("pred ok format $'{.count} left' { .ok }"), [])
+  // Unknown is not wrong here either: an `any` field could be a string.
+  assert_eq(codes("pred ok format .blob { .ok }"), [])
+}
