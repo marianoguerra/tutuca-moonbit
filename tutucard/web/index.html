@@ -33,9 +33,11 @@
     <main class="grid">
       <section class="pane editor-pane">
         <h2>Card</h2>
-        <!-- A plain textarea with a gutter beside it. Deliberately not an
-             editor component: the point of this page is the CARD, and a
-             syntax-highlighting dependency would be the largest thing on it. -->
+        <!-- A textarea with a hand-drawn gutter beside it, which the shell
+             upgrades to CodeMirror once the bundle lands (shell.js). The
+             textarea is what the page loads WITH — the editor is the largest
+             thing on it, so it is fetched after the first card is already
+             editable — and what `?editor=plain` keeps. -->
         <div id="raw" class="editor">
           <pre id="gutter" class="gutter" aria-hidden="true"></pre>
           <textarea
@@ -59,14 +61,17 @@
                and one script block, and as many views as it likes. `main` is
                first because it is the one every card has. -->
           <div id="view-tabs" class="tabs views" role="tablist" hidden></div>
-          <textarea
-            id="part"
-            class="part"
-            spellcheck="false"
-            autocomplete="off"
-            autocapitalize="off"
-            autocorrect="off"
-          ></textarea>
+          <!-- The wrapper is the bordered box, so the textarea and the
+               CodeMirror that replaces it sit in the same one. -->
+          <div id="part-edit" class="part">
+            <textarea
+              id="part"
+              spellcheck="false"
+              autocomplete="off"
+              autocapitalize="off"
+              autocorrect="off"
+            ></textarea>
+          </div>
           <p id="part-empty" class="part-empty" hidden></p>
         </div>
       </section>

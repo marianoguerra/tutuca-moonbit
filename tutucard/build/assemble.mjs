@@ -10,8 +10,11 @@
 // new: `margaui.wasm` is the wasm-gc build of `@css.compile_margaui` the other
 // playground ships — what turns a card's `class="btn btn-primary"` into a
 // button — and `editor.bundle.js` is the shared CodeMirror the two playgrounds
-// already edit MoonBit and view files in. Both are fetched lazily by the page,
-// so a card that asks for neither pays for neither.
+// already edit MoonBit and view files in. Both are fetched lazily by the page:
+// margaui on the first mount that publishes a class name, the editor after the
+// first card is mounted and typeable — so neither is ever in front of the
+// page, and an `<mb-card>` without `codemirror` never asks for the editor at
+// all.
 
 import { execSync } from "node:child_process";
 import { build as esbuild } from "esbuild";
@@ -94,6 +97,10 @@ function buildMargaui(out) {
  * identical file: this directory is meant to stand on its own — a host that
  * has it has everything `<mb-card>` needs — and depending on the compiler
  * payload's build for a text editor would undo that for 330 KB.
+ *
+ * Two callers now: the playground page upgrades its own textareas to it (the
+ * default, `?editor=plain` opts out) and an `<mb-card codemirror>` upgrades
+ * its own.
  */
 async function buildEditor(out) {
   console.log("bundling editor (esbuild, esm) ...");
@@ -139,7 +146,7 @@ async function assemble() {
   // small: the other playground's compiler payload alone is ~5.5 MB.
   console.log(`  runtime: ${kb} KB (no compiler, no worker, no payload)`);
   console.log(`  margaui: ${css} KB (fetched only by a card with classes)`);
-  console.log(`  editor:  ${ed} KB (fetched only by an <mb-card codemirror>)`);
+  console.log(`  editor:  ${ed} KB (fetched after first mount; ?editor=plain skips it)`);
 }
 
 build();

@@ -6,6 +6,41 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+### Added
+
+- **The card playground edits in CodeMirror now, by default.** Both of its
+  editors — the raw card and the structured pane — were textareas with a
+  hand-drawn line gutter beside them, on the reasoning that the page's claim is
+  a card needs no build step and a highlighting dependency would be the largest
+  thing on it. The dependency is already in `dist/tutucard/`: `<mb-card
+  codemirror>` upgrades to it, and the page shipped it without using it. So the
+  page upgrades its own textareas to the same editor, and the reasoning survives
+  as the fetch order — the bundle is asked for AFTER the first card is mounted
+  and typeable, so the 330 KB is never in front of the page, and an import that
+  fails leaves a working textarea and a line in the console.
+
+  `?editor=plain` keeps the textareas: a page that fetches nothing extra, and
+  the first thing to try when the highlighting is what looks broken.
+
+  What the editor knows that the gutter could not. The raw pane reads a card as
+  what it is — a view file — so a directive is coloured apart from an attribute
+  and the tutuca blocks inside it are coloured as the language they hold, rather
+  than as a `<script>` element's grey text. The structured pane follows its own
+  tabs: the block language for `state` and `handlers`, the view language for a
+  view. And an issue is an underline on the exact characters with the message on
+  hover, where the gutter could only carry a dot on the line — the diagnostics
+  list beside the preview is unchanged, and clicking a line still selects the
+  span it names.
+
+  Four options on the shared `createEditor` seam, which the other two
+  playgrounds do not pass and are unaffected by: `lang: "tutuca"` for a pane
+  holding one block's body without the `<script>` tags around it, `dark` to pin
+  the palette for a host that has one (this shell is dark whatever the OS says,
+  and light highlighting on its panels would be unreadable), `wrap` because the
+  pane is a third of a page and the textarea soft-wrapped, and `setSpans` for
+  diagnostics whose positions the caller already holds — a card's loader answers
+  in character offsets, so there is nothing to parse.
+
 ## [0.14.0] - 2026-08-13
 
 ### Fixed

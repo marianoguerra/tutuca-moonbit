@@ -229,10 +229,30 @@ function viewHtml() {
   return new LanguageSupport(viewMode);
 }
 
-// exported for headless token tests; the editor uses moonbit() / viewHtml()
-export { moonbitMode, viewMode };
+// The block language on its own, for a pane holding ONE block's body rather
+// than a whole file: the card playground's structured view edits the state and
+// script regions WITHOUT the `<script>` tags around them, and the view mode
+// only ever reaches blockToken through a tag that pane cannot see.
+const blockMode = StreamLanguage.define({
+  name: "tutuca-block",
+  startState: () => ({ inTag: false, tokenize: null }),
+  token(stream, state) {
+    return (state.tokenize || blockToken)(stream, state);
+  },
+  languageData: { commentTokens: { line: "//" } },
+});
+
+// exported for headless token tests; the editor uses langFor()
+export { moonbitMode, viewMode, blockMode };
 function moonbit() {
   return new LanguageSupport(moonbitMode);
+}
+
+/** The mode a pane asks for by name. MoonBit unless it says otherwise. */
+function langFor(lang) {
+  if (lang === "html") return viewHtml();
+  if (lang === "tutuca") return new LanguageSupport(blockMode);
+  return moonbit();
 }
 
 // --- highlight themes -------------------------------------------------------
@@ -306,6 +326,28 @@ function posAt(doc, line, col) {
   return Math.min(l.from + Math.max(0, col - 1), l.to);
 }
 
+// Diagnostics from spans the caller already holds. A card's loader answers
+// with character offsets into the file it was handed, so there is nothing to
+// parse — and nothing to re-encode into moonc's text shape just to have
+// parseDiagnostics read it back out.
+function spanDiagnostics(spans, doc) {
+  const out = [];
+  for (const s of spans || []) {
+    const from = Math.min(Math.max(s.from | 0, 0), doc.length);
+    let to = Math.min(Math.max(s.to | 0, from), doc.length);
+    // A zero-width span underlines nothing, so widen it by a character where
+    // there is one — the card loader reports an empty range at end-of-file.
+    if (to <= from) to = Math.min(from + 1, doc.length);
+    out.push({
+      from,
+      to,
+      severity: s.severity || "warning",
+      message: s.message || "",
+    });
+  }
+  return out.sort((a, b) => a.from - b.from || a.to - b.to);
+}
+
 function parseDiagnostics(raw, doc) {
   const out = [];
   for (const entry of raw || []) {
@@ -323,14 +365,20 @@ function parseDiagnostics(raw, doc) {
 
 // --- factory ----------------------------------------------------------------
 
-// createEditor({ parent, doc?, onRun?, onChange?, root?, readOnly?, lang? })
-// → editor handle. `root` lets callers hosting the editor inside a shadow root
-// (the embeddable element) tell CodeMirror where to find its DOM. onRun fires
-// on Mod-Enter. `readOnly` is for panes the user reads but does not author —
-// the playground's generated-module tab. `lang: "html"` swaps the MoonBit mode
-// for the view-source tab; anything else keeps MoonBit.
-export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly = false, lang } = {}) {
+// createEditor({ parent, doc?, onRun?, onChange?, root?, readOnly?, lang?,
+// dark?, wrap? }) → editor handle. `root` lets callers hosting the editor inside a
+// shadow root (the embeddable element) tell CodeMirror where to find its DOM.
+// onRun fires on Mod-Enter. `readOnly` is for panes the user reads but does not
+// author — the playground's generated-module tab. `lang` picks the mode:
+// "html" for a view file, "tutuca" for one block's body, anything else
+// MoonBit. `dark` PINS the palette for a host that has only one — the card
+// playground's shell is dark whatever the OS says, and light highlighting on
+// its panels would be unreadable; left out, the theme follows the OS and keeps
+// following it. `wrap` soft-wraps long lines instead of scrolling sideways, for
+// a pane too narrow to read a class list in.
+export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly = false, lang, dark, wrap = false } = {}) {
   const theme = new Compartment();
+  const language = new Compartment();
   const extensions = [
     lineNumbers(),
     highlightActiveLineGutter(),
@@ -340,8 +388,8 @@ export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly
     indentUnit.of("  "),
     indentOnInput(),
     bracketMatching(),
-    lang === "html" ? viewHtml() : moonbit(),
-    theme.of(themeExtensions(prefersDark())),
+    language.of(langFor(lang)),
+    theme.of(themeExtensions(dark ?? prefersDark())),
     keymap.of([
       ...(onRun ? [{ key: "Mod-Enter", preventDefault: true, run: () => { onRun(); return true; } }] : []),
       indentWithTab,
@@ -349,6 +397,9 @@ export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly
       ...historyKeymap,
     ]),
   ];
+  if (wrap) {
+    extensions.push(EditorView.lineWrapping);
+  }
   if (readOnly) {
     extensions.push(EditorState.readOnly.of(true), EditorView.editable.of(false));
   }
@@ -360,9 +411,9 @@ export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly
 
   const view = new EditorView({ parent, root, doc, extensions });
 
-  // follow OS light/dark changes live
+  // follow OS light/dark changes live — unless the caller pinned a palette
   let mql = null, onScheme = null;
-  if (typeof matchMedia === "function") {
+  if (dark == null && typeof matchMedia === "function") {
     mql = matchMedia("(prefers-color-scheme: dark)");
     onScheme = (e) => view.dispatch({ effects: theme.reconfigure(themeExtensions(e.matches)) });
     mql.addEventListener("change", onScheme);
@@ -377,6 +428,14 @@ export function createEditor({ parent, doc = "", onRun, onChange, root, readOnly
     // human-format strings; call with [] (or nothing) to clear them.
     setDiagnostics: (raw) =>
       view.dispatch(setLintDiagnostics(view.state, parseDiagnostics(raw, view.state.doc))),
+    // The same underlines from spans the caller already has:
+    // [{ from, to, message, severity? }] in character offsets.
+    setSpans: (spans) =>
+      view.dispatch(setLintDiagnostics(view.state, spanDiagnostics(spans, view.state.doc))),
+    // Swap the mode — for a pane that holds a different language depending on
+    // which tab is showing.
+    setLang: (next) =>
+      view.dispatch({ effects: language.reconfigure(langFor(next)) }),
     focus: () => view.focus(),
     destroy: () => {
       if (mql && onScheme) mql.removeEventListener("change", onScheme);

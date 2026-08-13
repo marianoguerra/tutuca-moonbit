@@ -30,6 +30,7 @@ const els = {
   raw: $("raw"),
   structured: $("structured"),
   part: $("part"),
+  partEdit: $("part-edit"),
   partEmpty: $("part-empty"),
   viewTabs: $("view-tabs"),
 };
@@ -37,9 +38,9 @@ const els = {
 /**
  * Which pane is showing, and which part of the card it is showing.
  *
- * The RAW textarea holds the card; the structured panes are projections of the
+ * The RAW editor holds the card; the structured panes are projections of the
  * same string. So there is one source of truth and no diffing: a structured
- * edit splices into `els.source.value` and everything redraws from there.
+ * edit splices into `source()` and everything redraws from there.
  */
 const ui = { mode: "raw", part: "state", view: 0 };
 
@@ -48,6 +49,153 @@ const DEBOUNCE_MS = 180;
 
 /** Lines the last load complained about, for the gutter. */
 let markedLines = new Set();
+
+// ---------------------------------------------------------------------------
+// The editor
+// ---------------------------------------------------------------------------
+
+/**
+ * CodeMirror, or the textareas the page loads with.
+ *
+ * The editor is the DEFAULT and it is fetched LATE, which is one decision, not
+ * two: the bundle is ~330 KB — more than the runtime this page exists to be
+ * small about — so the page ships a textarea that is editable on first paint
+ * and upgrades it once the import lands. An import that fails leaves a working
+ * editor and a line in the console.
+ *
+ * `?editor=plain` keeps the textareas: a page that fetches nothing, and the
+ * first thing to try when the highlighting is what looks broken.
+ */
+const PLAIN = new URLSearchParams(location.search).get("editor") === "plain";
+
+/** The two upgraded editors, once they exist: the raw card and the part pane. */
+const cm = { source: null, part: null };
+
+/** The factory, from the bundle. Null until the import lands, or forever. */
+let createEditor = null;
+
+/**
+ * True while the shell is writing to an editor rather than the user.
+ *
+ * CodeMirror's change listener cannot tell the two apart, and every write here
+ * comes from code that already knows what to do next — so a `setValue` from
+ * `drawPart` must not read back as an edit and splice the pane's own text into
+ * the card on every tab click.
+ */
+let echoing = false;
+
+/**
+ * The card being edited, and the one place that knows where it lives.
+ *
+ * Everything below goes through these four, so the upgrade is a swap of one
+ * field rather than a second copy of the shell.
+ */
+function source() {
+  return cm.source ? cm.source.getValue() : els.source.value;
+}
+
+function setSource(text) {
+  echoing = true;
+  try {
+    if (cm.source) cm.source.setValue(text);
+    else els.source.value = text;
+  } finally {
+    echoing = false;
+  }
+}
+
+function partText() {
+  return cm.part ? cm.part.getValue() : els.part.value;
+}
+
+function setPartText(text) {
+  echoing = true;
+  try {
+    if (cm.part) cm.part.setValue(text);
+    else els.part.value = text;
+  } finally {
+    echoing = false;
+  }
+}
+
+/** Select the characters an issue is about, and show them. */
+function selectRange(from, to) {
+  if (cm.source) {
+    cm.source.view.dispatch({
+      selection: { anchor: from, head: to },
+      scrollIntoView: true,
+    });
+    cm.source.focus();
+    return;
+  }
+  els.source.focus();
+  els.source.setSelectionRange(from, to);
+}
+
+/** Which language the part pane is holding, by which tab is showing. */
+const partLang = () => (ui.part === "views" ? "html" : "tutuca");
+
+/** The mode the part editor was last reconfigured to. */
+let partLangNow = null;
+
+/**
+ * Swap the textareas for CodeMirror.
+ *
+ * The raw editor only; the part pane's is built the first time that pane is
+ * SHOWN (`ensurePartEditor`), because CodeMirror measures itself when it is
+ * constructed and one built inside a hidden pane comes up with no height.
+ */
+async function upgradeEditors() {
+  if (PLAIN) return;
+  try {
+    ({ createEditor } = await import("./editor.bundle.js"));
+  } catch (e) {
+    console.warn(`[tutucard] CodeMirror unavailable: ${e.message}`);
+    return;
+  }
+  cm.source = createEditor({
+    parent: els.raw,
+    doc: els.source.value,
+    // A card is a view file: `lang: "html"` is the mode that knows a
+    // directive from an attribute AND colours what the tutuca blocks hold.
+    lang: "html",
+    // This shell has ONE palette (see styleClasses), so the editor cannot be
+    // allowed to follow an OS that says light.
+    dark: true,
+    // The textarea soft-wrapped, and this pane is a third of the page: a card
+    // whose views carry class lists would otherwise be read sideways.
+    wrap: true,
+    onChange: () => {
+      if (!echoing) scheduleReload();
+    },
+  });
+  els.source.hidden = true;
+  // The editor draws its own line numbers, and two gutters is one too many.
+  // The dots move with them: an underline on the offending characters, which
+  // is what the gutter dot was standing in for.
+  els.gutter.hidden = true;
+  markIssues(lastIssues);
+  // The reader may have switched panes while the bundle was in flight, in
+  // which case the part pane is on screen and this is its first chance.
+  if (ui.mode === "structured") ensurePartEditor();
+}
+
+/** Build the part pane's editor, the first time that pane is shown. */
+function ensurePartEditor() {
+  if (cm.part || !createEditor) return;
+  partLangNow = partLang();
+  cm.part = createEditor({
+    parent: els.partEdit,
+    doc: els.part.value,
+    lang: partLangNow,
+    dark: true,
+    wrap: true,
+    onChange: () => {
+      if (!echoing) onPartInput();
+    },
+  });
+  els.part.hidden = true;
+}
 
 /**
  * The region text the structured pane last agreed with — what it was drawn
@@ -65,13 +213,47 @@ function componentName(source) {
   return componentOf(source) || "Card";
 }
 
-function drawGutter(source) {
-  const lines = source.split("\n").length;
+function drawGutter(text) {
+  // CodeMirror numbers its own lines and marks its own issues, so the callers
+  // that keep the count in step after an edit say so here rather than each
+  // asking which editor is on the page.
+  if (cm.source) return;
+  const lines = text.split("\n").length;
   const out = [];
   for (let i = 1; i <= lines; i++) {
     out.push(markedLines.has(i) ? `${i} ●` : `${i}`);
   }
   els.gutter.textContent = out.join("\n");
+}
+
+/** What the last load complained about, for an editor that arrives after it. */
+let lastIssues = [];
+
+/**
+ * Where the issues are, in the editor itself.
+ *
+ * Two channels for one fact, because the two editors can say it to different
+ * depths: the hand-drawn gutter carries a dot on the line, and CodeMirror
+ * underlines the exact characters and says why on hover. The list beside the
+ * preview is the same set either way.
+ */
+function markIssues(issues) {
+  lastIssues = issues;
+  if (cm.source) {
+    cm.source.setSpans(
+      issues.map((i) => ({
+        from: i.start,
+        to: i.end,
+        message: i.code ? `${i.code}: ${i.message}` : i.message,
+        // A card that does not split or does not parse is an error; everything
+        // the checker has to say about one that does is a warning.
+        severity: i.code === "SYNTAX" ? "error" : "warning",
+      })),
+    );
+    return;
+  }
+  markedLines = new Set(issues.map((i) => i.line));
+  drawGutter(source());
 }
 
 function drawIssues(issues) {
@@ -92,10 +274,7 @@ function drawIssues(issues) {
     // The span is in FILE coordinates, which is the whole reason the script
     // block records where it started: clicking a diagnostic selects the exact
     // characters it is about.
-    where.addEventListener("click", () => {
-      els.source.focus();
-      els.source.setSelectionRange(issue.start, issue.end);
-    });
+    where.addEventListener("click", () => selectRange(issue.start, issue.end));
     const code = document.createElement("code");
     code.textContent = issue.code ?? "";
     const msg = document.createElement("span");
@@ -141,21 +320,26 @@ function drawActivity() {
 
 /** Parse, check, mount, and draw everything that came back. */
 function reload() {
-  const source = els.source.value;
+  // A pending debounce would re-mount, half a beat later, the card this call
+  // is mounting now — and re-mounting resets the app the reader may already
+  // have clicked. Callers that mount immediately (a new example, a reset) do
+  // not have to remember to cancel it.
+  clearTimeout(timer);
+  const src = source();
   const report = JSON.parse(
-    globalThis.__tutucard.load(source, componentName(source)),
+    globalThis.__tutucard.load(src, componentName(src)),
   );
+  let issues;
   if (!report.ok) {
     // Nothing to mount: the file does not split, or the script does not parse.
     // The last render STAYS, dimmed, rather than blanking — a syntax error is
     // the ordinary state of a half-typed line, and a preview that goes empty
     // between two keystrokes is worse than one that is visibly behind. The
     // class is what says it is behind; the app itself is already torn down.
-    markedLines = new Set([report.line]);
     els.status.textContent = "cannot load";
     els.status.className = "status bad";
     $("preview").classList.add("stale");
-    drawIssues([
+    issues = [
       {
         line: report.line,
         code: "SYNTAX",
@@ -165,17 +349,17 @@ function reload() {
         start: report.start,
         end: report.end,
       },
-    ]);
+    ];
   } else {
     $("preview").classList.remove("stale");
-    markedLines = new Set(report.issues.map((i) => i.line));
+    issues = report.issues;
     const n = report.issues.length;
     els.status.textContent =
       n === 0 ? `${report.component} · ok` : `${report.component} · ${n} issue${n === 1 ? "" : "s"}`;
     els.status.className = n === 0 ? "status good" : "status warn";
-    drawIssues(report.issues);
   }
-  drawGutter(source);
+  drawIssues(issues);
+  markIssues(issues);
   drawState();
   drawActivity();
   styleClasses();
@@ -231,7 +415,7 @@ function scheduleReload() {
 
 /** The region the structured view is currently editing, or null. */
 function currentRegion() {
-  const p = parts(els.source.value);
+  const p = parts(source());
   if (ui.part === "state") return p.state;
   if (ui.part === "script") return p.script;
   return p.views[Math.min(ui.view, p.views.length - 1)] ?? null;
@@ -250,27 +434,39 @@ function drawPart() {
   const region = currentRegion();
   els.viewTabs.hidden = ui.part !== "views";
   if (!region) {
-    els.part.hidden = true;
+    els.partEdit.hidden = true;
     els.partEmpty.hidden = false;
     els.partEmpty.textContent = MISSING[ui.part];
     return;
   }
   els.partEmpty.hidden = true;
-  els.part.hidden = false;
-  // Only when it CHANGED: assigning `value` moves the caret to the end, and
+  const wasHidden = els.partEdit.hidden;
+  els.partEdit.hidden = false;
+  // The state and script blocks are one language and a view is another, so the
+  // pane's mode follows its tabs. Only on a change: this runs on the same
+  // debounce as the reload, and a reconfigure per keystroke would be work
+  // nobody asked for.
+  if (cm.part && partLangNow !== partLang()) {
+    partLangNow = partLang();
+    cm.part.setLang(partLangNow);
+  }
+  // CodeMirror sizes itself against a box it can see, and this one may have
+  // just come back from `display: none`.
+  if (wasHidden) cm.part?.view.requestMeasure();
+  // Only when it CHANGED: assigning the value moves the caret to the end, and
   // this runs on the same debounce as the reload — so a typist would be
   // fighting it. A raw edit, another tab or a new example changes the region
   // out from under the pane; an edit made HERE does not redraw the pane it
   // came from.
   if (region.text !== paneEcho) {
-    els.part.value = dedented(region.text);
+    setPartText(dedented(region.text));
     paneEcho = region.text;
   }
 }
 
 /** The view tabs, `main` first. */
 function drawTabs() {
-  const p = parts(els.source.value);
+  const p = parts(source());
   if (ui.view >= p.views.length) ui.view = Math.max(0, p.views.length - 1);
   els.viewTabs.replaceChildren();
   p.views.forEach((v, i) => {
@@ -289,9 +485,9 @@ function drawTabs() {
       if (v.name === "main") return;
       const name = prompt("view name", v.name);
       if (!name || name === v.name) return;
-      els.source.value = renameView(els.source.value, p, i, name);
+      setSource(renameView(source(), p, i, name));
       drawTabs();
-      drawGutter(els.source.value);
+      drawGutter(source());
       scheduleReload();
     });
     els.viewTabs.append(b);
@@ -303,11 +499,11 @@ function drawTabs() {
   add.addEventListener("click", () => {
     const name = prompt("new view name", `view${p.views.length}`);
     if (!name) return;
-    els.source.value = addView(els.source.value, name);
-    ui.view = parts(els.source.value).views.length - 1;
+    setSource(addView(source(), name));
+    ui.view = parts(source()).views.length - 1;
     drawTabs();
     drawPart();
-    drawGutter(els.source.value);
+    drawGutter(source());
     scheduleReload();
   });
   els.viewTabs.append(add);
@@ -325,8 +521,12 @@ function setMode(mode) {
   if (mode === "structured") {
     drawTabs();
     drawPart();
+    // After the pane is filled and visible, so the editor is built once with
+    // the text it is going to hold and a box it can measure.
+    ensurePartEditor();
   } else {
-    drawGutter(els.source.value);
+    drawGutter(source());
+    cm.source?.view.requestMeasure();
   }
 }
 
@@ -344,15 +544,15 @@ function setPart(part) {
 function onPartInput() {
   const region = currentRegion();
   if (!region) return;
-  const text = reindented(region.text, els.part.value);
+  const text = reindented(region.text, partText());
   paneEcho = text;
-  els.source.value = splice(els.source.value, region, text);
+  setSource(splice(source(), region, text));
   scheduleReload();
 }
 
 function pickExample(name) {
   const ex = EXAMPLES.find((e) => e.name === name) ?? EXAMPLES[0];
-  els.source.value = ex.source;
+  setSource(ex.source);
   ui.view = 0;
   reload();
   if (ui.mode === "structured") {
@@ -399,6 +599,10 @@ function boot() {
     true,
   );
   pickExample(EXAMPLES[0].name);
+  // Last, and not awaited: the page is a working playground by the time the
+  // editor is asked for, so the 330 KB lands on a card that is already mounted
+  // and typeable rather than in front of it.
+  upgradeEditors();
 }
 
 if (globalThis.__tutucard) {

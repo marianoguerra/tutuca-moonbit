@@ -345,8 +345,9 @@ pub fn tasks() -> Array[Task] {
         // runtime and the page, plus the two things a card can ask for:
         // margaui.wasm (the starter cards are written in margaui classes and
         // the page compiles them in the browser) and editor.bundle.js (the
-        // CodeMirror an `<mb-card codemirror>` upgrades to). Both are fetched
-        // lazily, so a card that asks for neither pays for neither.
+        // CodeMirror the page upgrades its textareas to, and an `<mb-card
+        // codemirror>` its own). Both are fetched lazily, after the first card
+        // is mounted, so neither is ever in front of the page.
         // assemble.mjs runs all three builds itself.
         {
           label: "assemble dist/tutucard",
