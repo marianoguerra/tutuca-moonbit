@@ -6,6 +6,8 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.16.0] - 2026-08-13
+
 ### Added
 
 - **`cap-external-urls`: a picture an untrusted bundle chose, from an origin
@@ -94,6 +96,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   Tutorial step 8 uses the syntax it introduces now, and its *cheat* button —
   which used to exist to show a badge going red — is refused by a rule it does
   not mention, with the reason in the console.
+
+- **`f.name`: a path into a handler's argument.** A `@on.change="pick file"`
+  hands the handler the whole file — an `Obj` with a name, a size and a type on
+  it — and the block had no way to say `file.name`. A bare name was a parameter
+  or an application and nothing else, so the way through was a `compute` per
+  field per handler.
+
+  A place can be rooted at a parameter now, and the steps below it are the same
+  steps every other place takes — so `read_place` walks them, the checker
+  resolves them against a DECLARED payload where the schema has one, and the
+  MoonBit backend emits the `field_opt(…)` chain the interpreter already walks.
+  What tells `f.name` from `f .name` is ATTACHMENT, which was already the rule
+  in force (`min .a .b` is two arguments, `min .a.b` is one place), and a
+  parameter is the one kind of name that can never be applied. An argument is a
+  value the caller handed over rather than a place this component owns, so
+  `f.name = 'x'` is refused by the parser, with a message that says what the
+  path is instead of listing what a statement may be.
 
 ### Changed
 
@@ -3241,5 +3260,5 @@ Initial public release: a MoonBit port of the
 - 32 ported examples, browser/CLI/wasm demos, an in-browser playground, and a
   compiled storybook gallery.
 
-[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.9.1...HEAD
+[Unreleased]: https://github.com/marianoguerra/tutuca-moonbit/compare/v0.16.0...HEAD
 [0.1.0]: https://github.com/marianoguerra/tutuca-moonbit/releases/tag/v0.1.0
