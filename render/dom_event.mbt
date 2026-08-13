@@ -36,6 +36,28 @@ fn value_as_num(v : @tutuca.Value, as_int : Bool) -> @tutuca.Value {
 }
 
 ///|
+/// A field of the active `DragInfo` (`app/drag.mbt` builds the Obj), or Null
+/// when no drag is in flight.
+fn drag_field(info : @tutuca.Value, name : String) -> @tutuca.Value {
+  match info {
+    Obj(o) => o.obj_field(name).unwrap_or(Null)
+    _ => Null
+  }
+}
+
+///|
+/// A bind of the SOURCE render, through the stack the drag captured — what a
+/// handler would otherwise reach by pulling `lookupBind` out of `dragInfo` and
+/// applying it, which no interpreted handler can do. (`Fn` convention: element
+/// 0 is the this-slot.)
+fn drag_bind(info : @tutuca.Value, name : String) -> @tutuca.Value {
+  match drag_field(info, "lookupBind") {
+    Fn(lookup) => lookup([Null, Str(name)])
+    _ => Null
+  }
+}
+
+///|
 fn event_field(e : DomEvent, name : String) -> @tutuca.Value {
   match name {
     "value" => e.value
@@ -52,6 +74,11 @@ fn event_field(e : DomEvent, name : String) -> @tutuca.Value {
     "isCancel" => Bool(e.key == "Escape")
     "isTabKey" => Bool(e.key == "Tab")
     "dragInfo" => e.drag_info
+    // The narrow three beside it, the way valueAsInt sits beside value: the
+    // source row's key, the dragged value, and the type it declared.
+    "dragKey" => drag_bind(e.drag_info, "key")
+    "dragValue" => drag_field(e.drag_info, "value")
+    "dragType" => drag_field(e.drag_info, "type")
     // target / event / ctx: not exposed (DOM objects are not Values)
     _ => Null
   }

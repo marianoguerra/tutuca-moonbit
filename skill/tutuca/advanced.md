@@ -14,7 +14,7 @@ everything else, `core.md` is the right place.
   draggable="true"
   data-dragtype="my-item"
   data-droptarget="my-item"
-  @on.drop="onDrop @key dragInfo"
+  @on.drop="onDrop @key dragKey"
 ></div>
 ```
 
@@ -26,26 +26,11 @@ priv struct DndState {
 
 // in the component spec:
 update=(s : DndState, msg, _ctx) => match msg {
-  // args = [@key (the TARGET row's key), dragInfo]
-  Input("onDrop", [Num(target), Obj(di), ..]) =>
-    // dragInfo is an Obj exposing type / value / lookupBind(name) — read
-    // the SOURCE row's loop key off the drag's captured stack (Fn
-    // convention: element 0 is the this-slot)
-    match di.obj_field("lookupBind") {
-      Some(Fn(lookup)) =>
-        match lookup([Null, Str("key")]) {
-          Num(source) =>
-            Some({
-              items: move_index_to_index(
-                s.items,
-                source.to_int(),
-                target.to_int(),
-              ),
-            })
-          _ => Unhandled
-        }
-      _ => Unhandled
-    }
+  // args = [@key (the TARGET row's key), dragKey (the SOURCE row's)]
+  Input("onDrop", [Num(target), Num(source), ..]) =>
+    Some({
+      items: move_index_to_index(s.items, source.to_int(), target.to_int()),
+    })
   _ => Unhandled
 },
 ```
@@ -54,8 +39,39 @@ update=(s : DndState, msg, _ctx) => match msg {
 draggable with where it may drop. `dragstart` captures a `DragInfo` from
 the **source** render — its `value`, its `type`, and `lookupBind(name)`
 over the source's `@each` binds — and every dispatch while the drag is
-active sees it as the `dragInfo` handler arg, even though `drop` fires
-on the target row.
+active can ask it for something, even though `drop` fires on the target
+row.
+
+Ask for the narrow name, the way `valueAsInt` sits beside `value`:
+`dragKey` is the source row's `@key`, `dragValue` the dragged value,
+`dragType` the type it declared. Each is `Null` when no drag is in
+flight, so a `Msg` case carries `@tutuca.Value` for it.
+
+`dragInfo` is the whole capture beside them, for a handler that needs a
+bind the three do not name — and it is a wider argument in every sense,
+since reading one off it means applying a function:
+
+```moonbit nocheck
+// nocheck: one bucket argument, not a whole component
+update=(s : DndState, msg, _ctx) => match msg {
+  Input("onDrop", [_, Obj(di), ..]) =>
+    // Fn convention: element 0 is the this-slot
+    match di.obj_field("lookupBind") {
+      Some(Fn(lookup)) =>
+        match lookup([Null, Str("row")]) {
+          Str(row) => Some({ items: [Str(row)] })
+          _ => Unhandled
+        }
+      _ => Unhandled
+    }
+  _ => Unhandled
+},
+```
+
+A **card** has only the narrow three: the block language has no way to
+name a MoonBit value, so it cannot apply the `Fn` that `lookupBind`
+answers with. The `drag-reorder` starter card is this page's example
+with its handler written in a `<script type="tutuca/script">` block.
 
 Tutuca auto-manages two attrs during a drag — style them with CSS:
 

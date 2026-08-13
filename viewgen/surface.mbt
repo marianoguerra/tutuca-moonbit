@@ -397,6 +397,10 @@ fn arg_type_of(val : @tutuca.Val, value_kind : ArgType) -> ArgType {
         | "isSend"
         | "isCancel"
         | "isTabKey" => VBool
+        // The drag names answer Null when no drag is in flight, so none of
+        // them is the unwrapped type it looks like — `dragKey` is a Value the
+        // way `@key` is, and `dragType` is only a String mid-drag.
+        "dragInfo" | "dragKey" | "dragValue" | "dragType" => VValue
         _ => VValue
       }
     _ => VValue

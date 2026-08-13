@@ -103,7 +103,7 @@ each is a perfectly good card on its own, and the tree above it is not.
 | ~~a record literal~~ — **`new` landed; `nested-state` is migrated** | 0 | what is left of this group is the multi-component half of `todo` and `filter_paginate`, which is the row above |
 | **`@loop-with`** | 4 | `rendering/Pagination`, `svg_more/BarChart`, `collections/ListFilterEnrichWith`, `filter_paginate`'s three strategies |
 | ~~macros in a card~~ — **landed; `macros` is migrated** | 0 | the loader carries `<template id="macro:…">` through to the module now |
-| **a narrower drag argument** | 1 | `dnd`: see the design below — the drop handler reads `dragInfo.lookupBind` and CALLS it, which no block can do |
+| ~~a narrower drag argument~~ — **landed; `drag-reorder` is migrated** | 0 | `dnd` was the one example blocked on it; the design below is what shipped |
 | **host-registered requests** | 1 | `request` — it loads today and shows the error path, which is honest but is not the demo |
 | **nothing; a card is the wrong shape** | 2 | `visual_wasm` builds its views at run time, `lint_errors` is a fixture of deliberately broken ones |
 
@@ -190,10 +190,10 @@ rather than a second one for cards. Twenty lines, no language change, and the
 MoonBit until it landed: a parameter with a default, a dynamic parameter, the
 default slot, and a named one.
 
-### 4b. A narrower drag argument — the design `dnd` wants
+### 4b. A narrower drag argument — DONE
 
-`dnd` is the last example blocked by something small. Its drop handler reads
-the SOURCE row's key, and the only way to ask for it today is:
+`dnd` was the last example blocked by something small. Its drop handler reads
+the SOURCE row's key, and the only way to ask for it used to be:
 
 ```moonbit nocheck
 // nocheck: the arm as `playground/site/examples/dnd.mbt` writes it
@@ -208,9 +208,9 @@ the drag captured. A block cannot apply a function it did not name, and it
 should not learn how to: "no way to name a MoonBit value" is the sentence the
 whole language rests on.
 
-**Design: ask for the narrowest argument, the way every other event already
-does.** `value` has `valueAsInt` and `valueAsFloat` beside it precisely so a
-handler never parses a string; the same move here adds three names to the
+**What shipped: ask for the narrowest argument, the way every other event
+already does.** `value` has `valueAsInt` and `valueAsFloat` beside it precisely
+so a handler never parses a string; the same move here adds three names to the
 closed table in `render/dom_event.mbt`:
 
 | name | answers |
@@ -219,7 +219,8 @@ closed table in `render/dom_event.mbt`:
 | `dragValue` | the dragged value itself (`dragInfo.value`) |
 | `dragType` | the `data-dragtype` the source declared |
 
-Then the card is the view plus four statements, with no new syntax anywhere:
+The card is then the view plus four statements, with no new syntax anywhere —
+`drag-reorder` in the selector, which is this and a filter:
 
 ```html
 <div @each=".items" draggable="true"
@@ -245,10 +246,12 @@ Both arms read `.items[source]` before they mutate, and the second index
 accounts for the shift the first one caused — which is the whole of what the
 MoonBit arm does after it has finished unwrapping the `Fn`.
 
-Cost: three lines in one table, and the same three in the generated backend's
-argument-type inference (`dragKey` is a `@tutuca.Value`, as `@key` is). It
-also improves the MoonBit side, where `di.obj_field("lookupBind")` is nobody's
-idea of a readable handler.
+Cost, as estimated and as spent: three lines in one table, and the same three
+in the generated backend's argument-type inference — where all three are
+`@tutuca.Value`, as `@key` is, because every one of them is `Null` when no drag
+is in flight. It improves the MoonBit side too, where
+`di.obj_field("lookupBind")` is nobody's idea of a readable handler; the skill's
+drag recipe leads with `dragKey` now and keeps the `Fn` as the wide fallback.
 
 `dragInfo` stays exactly as it is: a handler that needs the whole stack still
 has it, and this is the narrow answer beside it — which is what the events

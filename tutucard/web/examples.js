@@ -20,7 +20,7 @@
 // class name assembled at runtime is a class name that never gets compiled —
 // which is also why `@if.class` switches between whole literals.
 //
-// Nine of these are MIGRATED from `storybook/examples/` and
+// Most of these are MIGRATED from `storybook/examples/` and
 // `playground/site/examples/` — the same demos the compiled gallery shows,
 // with their `update` arms moved into the block and their MoonBit `compute`
 // entries into `compute` declarations. What each migration cost, and which of
@@ -885,6 +885,89 @@ export const EXAMPLES = [
       <p>Count: <x text=".count"></x></p>
     </div>
   </div>
+</template>
+`,
+  },
+  {
+    name: "drag-reorder",
+    source: `<script type="tutuca/state">
+  state Reorder {
+    items : Array[String]
+    query : String
+  }
+
+  receive Reorder { Init }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .items.push 'write the ones'
+    .items.push 'read the twos'
+    .items.push 'review the threes'
+    .items.push 'ship the fours'
+    .items.push 'plan the fives'
+  }
+
+  /// Filtering keeps the keys it hides: a row's @key is its index in .items,
+  /// not its position on screen, which is why the two indices a drop names
+  /// still address the list.
+  pred filterItem {
+    contains (lower @value) (lower .query)
+  }
+
+  /// A drop fires on the TARGET row, and \`dragKey\` answers the SOURCE row's
+  /// @key — the one thing the target cannot see for itself, since the source's
+  /// binds only exist on the stack the drag captured. Asking for it by name is
+  /// what makes this a card at all: \`dragInfo\` carries a lookupBind FUNCTION,
+  /// and a block cannot apply a function it did not name.
+  ///
+  /// Both arms read the row before they move it, and the second index accounts
+  /// for the shift the insert just caused.
+  on moveRow(target, source) {
+    if source is not target {
+      if source < target {
+        .items.insertAt (target + 1) .items[source]
+        .items.deleteAt source
+      } else {
+        .items.insertAt target .items[source]
+        .items.deleteAt (source + 1)
+      }
+    }
+  }
+</script>
+
+<template>
+  <section class="card bg-base-200 max-w-md">
+    <div class="card-body gap-3">
+      <input type="search" class="input input-sm" :value=".query"
+             @on.input="setQuery value" @on.keydown+cancel="resetQuery"
+             placeholder="Filter entries">
+      <!-- data-dragtype on the source and data-droptarget on the target pair
+           a draggable with where it may land; both are on the same row here,
+           since every row is both. -->
+      <ul class="flex flex-col gap-1">
+        <li class="badge badge-ghost w-full justify-start gap-2 cursor-grab"
+            @each=".items" @when="filterItem"
+            draggable="true"
+            data-dragtype="reorder-row"
+            data-droptarget="reorder-row"
+            @on.drop="moveRow @key dragKey">
+          <span class="opacity-60" @text="@key"></span>
+          <x text="@value"></x>
+        </li>
+      </ul>
+    </div>
+  </section>
+  <style>
+    /* The two attributes tutuca manages during a drag. No class route exists
+       for either — they are set on the live nodes — so this is the one card
+       that has to say something a utility class cannot. */
+    [data-dragging="1"] { opacity: .5; }
+    [data-draggingover="reorder-row"] {
+      outline: 1px dashed currentColor;
+      outline-offset: 2px;
+    }
+  </style>
 </template>
 `,
   },

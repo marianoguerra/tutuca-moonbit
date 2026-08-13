@@ -183,6 +183,61 @@ test "a @when predicate and an @enrich-with both see the row" {
   h.destroy()
 }
 
+///|
+/// Drag to reorder — the `drag-reorder` starter card, with the styling and the
+/// filter taken out.
+fn reorder_card() -> String {
+  (
+    #|<script type="tutuca/state">
+    #|  state { items : Array[String] }
+    #|  receive { Init }
+    #|</script>
+    #|
+    #|<script type="tutuca/script">
+    #|  receive init { .items.push 'a'; .items.push 'b'; .items.push 'c'; .items.push 'd' }
+    #|
+    #|  on moveRow(target, source) {
+    #|    if source is not target {
+    #|      if source < target {
+    #|        .items.insertAt (target + 1) .items[source]
+    #|        .items.deleteAt source
+    #|      } else {
+    #|        .items.insertAt target .items[source]
+    #|        .items.deleteAt (source + 1)
+    #|      }
+    #|    }
+    #|  }
+    #|</script>
+    #|
+    #|<template>
+    #|  <ul><li @each=".items" draggable="true"
+    #|      data-dragtype="row" data-droptarget="row"
+    #|      @on.drop="moveRow @key dragKey"><x text="@value"></x></li></ul>
+    #|</template>
+  )
+}
+
+///|
+test "a card reorders a list from a drop, because it can ask for dragKey" {
+  // The drop fires on the TARGET row; the SOURCE row's key lives only on the
+  // stack the drag captured, and `dragInfo` hands it over as a FUNCTION to
+  // apply — which a block cannot do and should not learn to. `dragKey` is that
+  // same answer as a name, and it is the whole of what this card needed.
+  let h = mount_card(reorder_card(), name="Reorder")
+  h.send_at_root("init")
+  assert_eq(h.texts("li"), ["a", "b", "c", "d"])
+  // forward: the row lands AT the target, and the ones it passed shift back
+  h.drag("li", 0, 2)
+  assert_eq(h.texts("li"), ["b", "c", "a", "d"])
+  // backward: the same, from the other side of the list
+  h.drag("li", 3, 1)
+  assert_eq(h.texts("li"), ["b", "d", "c", "a"])
+  // a row dropped on itself is not a move
+  h.drag("li", 2, 2)
+  assert_eq(h.texts("li"), ["b", "d", "c", "a"])
+  h.destroy()
+}
+
 // -- what a card refuses ----------------------------------------------------
 
 ///|

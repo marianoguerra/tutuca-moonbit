@@ -24,7 +24,7 @@ dispatched as `Input(name, args)`; `$name` belongs in a VALUE position and is
 a generation error here. Later slots
 are built-in arg names — `value`, `valueAsInt`/`valueAsFloat`, `key`,
 `keyCode`, `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isSend`, `isCancel`,
-`dragInfo`, … `value` resolves to the input's value (or the checked state for a
+`dragKey`/`dragValue`/`dragType`, `dragInfo`, … `value` resolves to the input's value (or the checked state for a
 checkbox, the metadata `Map` for a file input, or the `detail` for a
 `CustomEvent`). There is no `event` / `target` / `ctx` arg: a DOM object is not
 a `Value`, so asking for one silently yields `Null`.

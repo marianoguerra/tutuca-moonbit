@@ -55,7 +55,8 @@ pub(all) struct DomEvent {
   ctrl_or_cmd : Bool
   meta : Bool
   /// The active DragInfo (an Obj exposing type/value/lookupBind), injected
-  /// by the app while a drag is in flight; the `dragInfo` handler arg.
+  /// by the app while a drag is in flight; the `dragInfo` handler arg, and
+  /// the three narrow ones read off it (`dragKey`/`dragValue`/`dragType`).
   drag_info : @tutuca.Value
 } derive(Debug)
 

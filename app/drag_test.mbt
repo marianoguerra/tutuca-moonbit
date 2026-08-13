@@ -1,6 +1,10 @@
 // Drag flow on the in-memory DOM: dragstart captures the teleport-resolved
 // value + the source render's binds; dragover/drop manage droptarget attrs;
 // the drop handler reads dragInfo (type/value/lookupBind); dragend cleans up.
+//
+// The second zone asks for the same three things by NAME — dragKey/dragValue/
+// dragType — which is the whole of what a handler that does not want to apply
+// an Fn needs, and the only way an interpreted card can ask at all.
 
 ///|
 priv struct BoardState {
@@ -19,6 +23,7 @@ fn board_comp() -> @component.Component {
         raw_view="<div>" +
           "<ul><li @each=\".cards\" draggable=\"true\" data-dragtype=\"card\"><x text=\"@value\"></x></li></ul>" +
           "<div id=\"zone\" data-droptarget=\"\" @on.drop=\"dropped dragInfo\">zone</div>" +
+          "<div id=\"nzone\" data-droptarget=\"\" @on.drop=\"narrow dragKey dragValue dragType\">narrow</div>" +
           "</div>",
       ),
     },
@@ -56,6 +61,17 @@ fn board_comp() -> @component.Component {
             from: bind("key"),
           })
         }
+        // The same three, asked for by name. No Fn is applied and no Obj is
+        // opened, which is what makes this shape available to a card.
+        Input("narrow", [key, value, ty]) =>
+          Next({
+            ..s,
+            received: key.to_display_string() +
+            "/" +
+            (if value is Obj(_) { "obj" } else { "?" }),
+            kind: ty.to_display_string(),
+            from: key.to_display_string(),
+          })
         _ => Unhandled
       }
     },
@@ -90,6 +106,38 @@ test "drag lifecycle: capture, dragover attrs, drop with dragInfo, cleanup" {
   assert_true(li.get_attribute("data-dragging") is None)
   // after dragend, dragInfo is gone for later dispatches
   assert_true(a.drag is None)
+}
+
+///|
+test "dragKey / dragValue / dragType answer what dragInfo would have to be opened for" {
+  let (a, container) = mk_app(board_comp(), {
+    "cards": Map({ "x": Str("first"), "y": Str("second") }),
+  })
+  guard find_el(container, "LI", nth=1) is Some(li) else { fail("no li") }
+  guard find_el(container, "DIV", nth=3) is Some(nzone) else {
+    fail("no narrow zone")
+  }
+  assert_true(a.dispatch(li, @render.DomEvent::new(name="dragstart")))
+  assert_true(a.dispatch(nzone, @render.DomEvent::new(name="drop")))
+  // the source row's key, and the teleported value beside it
+  assert_true(field_v(a, "received") == Str("y/obj"))
+  assert_true(field_v(a, "from") == Str("y"))
+  assert_true(field_v(a, "kind") == Str("card"))
+}
+
+///|
+test "the drag names are Null when no drag is in flight" {
+  let (a, container) = mk_app(board_comp(), {
+    "cards": Map({ "x": Str("first") }),
+  })
+  guard find_el(container, "DIV", nth=3) is Some(nzone) else {
+    fail("no narrow zone")
+  }
+  // an external drag carries no DragInfo: asking narrowly is as empty as
+  // asking widely, rather than an error
+  assert_true(a.dispatch(nzone, @render.DomEvent::new(name="drop")))
+  assert_true(field_v(a, "from") == Str("null"))
+  assert_true(field_v(a, "kind") == Str("null"))
 }
 
 ///|

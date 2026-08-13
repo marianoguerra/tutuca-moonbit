@@ -6,7 +6,38 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ## [Unreleased]
 
+## [0.15.0] - 2026-08-13
+
+> This section covers 0.14.0's entries too: the `## [0.14.0]` heading was
+> folded back into `[Unreleased]` while the card work was landing under it, and
+> splitting it retroactively would guess at which entry went out in which
+> tarball. Every version is tagged and dated in git.
+
 ### Added
+
+- **`dragKey`, `dragValue` and `dragType`: the drag arguments a handler can ask
+  for by name.** A drop fires on the TARGET row, so the SOURCE row's key is the
+  one thing it cannot see for itself — it lives only on the render stack the
+  drag captured. The only way to ask was `dragInfo`, an `Obj` carrying a
+  `lookupBind(name)` FUNCTION, so every drop handler in the repo opened the
+  `Obj`, matched an `Fn` out of it and applied it before it could start doing
+  its job.
+
+  The three names sit beside `dragInfo` the way `valueAsInt` sits beside
+  `value`: `dragKey` is `lookupBind("key")`, `dragValue` the dragged value,
+  `dragType` the `data-dragtype` the source declared. All three are `Null` when
+  no drag is in flight, which is why all three — and `dragInfo` — carry
+  `@tutuca.Value` in a generated `Msg` rather than the type they look like.
+  Three lines in the closed table in `render/dom_event.mbt`, and the same three
+  named in `viewgen`'s argument-type inference so the two tables cannot drift.
+
+  This is what a **card** was missing: a block cannot apply a function it did
+  not name, and it should not learn how to, so `dnd` was the one example in the
+  corpus blocked on something small. `drag-reorder` is in the card selector now
+  — a filter, a `pred`, and one `on moveRow(target, source)` whose two arms
+  read `.items[source]` before they mutate and account for the shift the insert
+  just caused. `dragInfo` is unchanged beside them, for a handler that needs a
+  bind the three do not name.
 
 - **The card playground edits in CodeMirror now, by default.** Both of its
   editors — the raw card and the structured pane — were textareas with a

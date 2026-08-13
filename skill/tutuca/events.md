@@ -35,7 +35,7 @@ Every argument is a **name the glue resolves to a `Value`**:
 
 `value`, `valueAsInt`, `valueAsFloat`, `key`, `keyCode`, `isAlt`, `isShift`,
 `isCtrl`/`isCmd`, `isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey`,
-`dragInfo`.
+`dragInfo`, `dragKey`, `dragValue`, `dragType`.
 
 > **There is no `event`, `target` or `ctx` argument.** A DOM object is not a
 > `Value`, so the port exposes none: `@on.input="setCount event"` resolves to
@@ -64,6 +64,23 @@ ordinary handler.
 For numeric inputs, prefer `valueAsInt` / `valueAsFloat` to skip the string
 parse.
 
+While a drag is in flight, four names answer from it. `dragInfo` is the whole
+capture (an `Obj` exposing `type` / `value` / `lookupBind(name)`); the other
+three are the answers a drop usually wants, so the handler neither opens the
+`Obj` nor applies the `Fn` inside it:
+
+| name | answers |
+| ---- | ------- |
+| `dragKey` | the SOURCE row's `@key` — `lookupBind("key")`, as a value |
+| `dragValue` | the dragged value itself (`dragInfo.value`) |
+| `dragType` | the `data-dragtype` the source declared |
+
+All four are `Null` when no drag is in flight, which is why all four carry
+`@tutuca.Value` in a generated `Msg` rather than the type they look like. The
+narrow three are also the ONLY way an interpreted card can read the source row:
+a block cannot apply a function it did not name. Worked example:
+[advanced.md](./advanced.md#drag-and-drop).
+
 Because file inputs and custom events already arrive as plain `Map` metadata,
 there is no case left where a handler would need the raw event — which is why
 the port drops it rather than mapping DOM objects into the value layer. An arm
@@ -83,7 +100,7 @@ When the views are generated (`gen-views`), each `@on` name becomes a case of th
 | `key` | `String` |
 | `valueAsInt`, `valueAsFloat`, `keyCode` | `Double` |
 | `isAlt`, `isShift`, `isCtrl`/`isCmd`, `isUpKey`, `isDownKey`, `isSend`, `isCancel`, `isTabKey` | `Bool` |
-| a binding (`@key`, `@value.x`), `dragInfo`, a drop's files, anything else | `@tutuca.Value` |
+| a binding (`@key`, `@value.x`), `dragInfo`/`dragKey`/`dragValue`/`dragType`, a drop's files, anything else | `@tutuca.Value` |
 
 So `@on.click="setTab 'edit'"` generates `SetTab(String)` (unwrapped — match
 `Some(SetTab(tab))`, not `Some(SetTab(Str(tab)))`), `@on.input="setCompleted
