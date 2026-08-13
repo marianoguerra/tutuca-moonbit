@@ -22,7 +22,7 @@ fn printed(e : @interp.Effect) -> String {
   match e {
     ESend(name~, args~) => @conformance.show_effect("send " + name, args)
     EBubble(name~, args~) => @conformance.show_effect("bubble " + name, args)
-    ERequest(name~) => @conformance.show_effect("request " + name, [])
+    ERequest(name~, args~) => @conformance.show_effect("request " + name, args)
     ESendAt(name~, args~, ..) =>
       @conformance.show_effect("sendAt " + name, args)
     EStop => "stop"

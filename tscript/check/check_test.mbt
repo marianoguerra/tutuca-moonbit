@@ -4,8 +4,13 @@
 // The quiet ones carry as much weight as the loud ones. "Unknown is not wrong"
 // is the rule the whole design turns on, and a checker that gets it wrong is
 // not merely noisy — it is a build nobody can fix without an opt-out. So every
-// opaque source (`$method`, `*dyn`, a bind, an `any` field, an `on` handler no
-// view calls) has a test asserting SILENCE.
+// opaque source (a bind, an `any` field, an `on` handler no view calls) has a
+// test asserting SILENCE.
+//
+// `$method` and `*dyn` are the exception, and the distinction is worth
+// keeping straight: their TYPE is unknown, which is never wrong, but their
+// VALUE in a body is Null, which almost always is. So the type stays opaque
+// and the sigil is reported — see RENDER_ONLY below.
 
 ///|
 fn def_of(src : String) -> @statedef.StateDef raise {
@@ -250,14 +255,55 @@ test "a binding is assignable only where bindings are produced" {
   ])
 }
 
+// -- the render stack's sigils ----------------------------------------------
+
+///|
+test "a `$name` in a body is reported, and the message names the spelling that works" {
+  // The trap this rule exists for: `$over` in a body is not a call, it is
+  // Null — so the condition is false every time and nothing says so. The
+  // ahead-of-time backend refuses it by name; this is the same refusal for a
+  // card, which has no compiler to do it.
+  assert_eq(
+    messages(
+      (
+        #|pred over { .count > 10 }
+        #|on x { if $over { .count = 0 } }
+      ),
+    ),
+    [
+      "`$over` is answered by the render stack, and a body runs after one, so it reads Null here — this block declares `over`, so call it bare: `over`",
+    ],
+  )
+  // The bare spelling is the one that works, and stays silent.
+  assert_eq(
+    codes(
+      (
+        #|pred over { .count > 10 }
+        #|on x { if over { .count = 0 } }
+      ),
+    ),
+    [],
+  )
+  // A name nothing declares still reads Null, and the message says what a
+  // body can call instead.
+  assert_eq(messages("compute a { $summary }"), [
+    "`$summary` is answered by the render stack, and a body runs after one, so it reads Null here; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name",
+  ])
+  // A dynamic binding has no spelling that works from a body.
+  assert_eq(messages("on x { .name = *theme }"), [
+    "`*theme` is answered by the render stack, and a body runs after one, so it reads Null here; a body cannot read a dynamic binding at all",
+  ])
+}
+
 // -- unknown is not wrong ---------------------------------------------------
 
 ///|
 test "every opaque source silences the checks below it" {
-  // A `$method` result and a `*dyn` are exactly what the rule was written
-  // for: this generator cannot see either.
-  assert_eq(codes("on x { .count = $whatever }"), [])
-  assert_eq(codes("on x { .count = *theme }"), [])
+  // A `$method` result and a `*dyn` are opaque, and the assignment they feed
+  // is therefore unchecked — RENDER_ONLY is the finding about the sigil
+  // itself, and nothing follows it about `.count`.
+  assert_eq(codes("on x { .count = $whatever }"), ["RENDER_ONLY"])
+  assert_eq(codes("on x { .count = *theme }"), ["RENDER_ONLY"])
   // A binding comes from the slot that uses the declaration, which the block
   // cannot see — and so does everything under it.
   assert_eq(codes("pred p { @value.completed }"), [])

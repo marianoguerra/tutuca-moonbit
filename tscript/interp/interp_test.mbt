@@ -354,10 +354,21 @@ test "the effects are collected in order, with the state" {
   )
   assert_eq(o.state, Some({ "msg": Str("hi"), "loading": Bool(true) }))
   assert_eq(o.effects, [
-    ERequest(name="loadData"),
+    ERequest(name="loadData", args=[]),
     ESend(name="flash", args=[Str("hi")]),
     EStop,
   ])
+}
+
+///|
+test "a request carries its arguments, the way the compiled backend emits them" {
+  // `emit_mbt` writes `ctx.request(name, [payload], RequestOpts::new())`, and
+  // a `RequestFn` has no component instance to read state from — arguments
+  // are the only channel a request has. Dropping them here made the two
+  // backends of one language disagree about it.
+  let s : Map[String, @tutuca.Value] = { "draft": Str("hi"), "id": Num(7) }
+  let o = run_one("on save {\n  request 'persist' .id (trim .draft)\n}", s)
+  assert_eq(o.effects, [ERequest(name="persist", args=[Num(7), Str("hi")])])
 }
 
 ///|

@@ -337,7 +337,7 @@ fn effect(
   match name {
     "send" => effects.push(ESend(name=msg, args=rest))
     "bubble" => effects.push(EBubble(name=msg, args=rest))
-    "request" => effects.push(ERequest(name=msg))
+    "request" => effects.push(ERequest(name=msg, args=rest))
     _ => return false
   }
   let _ = depth

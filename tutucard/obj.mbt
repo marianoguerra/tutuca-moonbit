@@ -307,7 +307,8 @@ pub impl @tutuca.Obj for CardObj with fn obj_handler(self, bucket, name) {
         match e {
           ESend(name~, args~) => ctx.send(name, args)
           EBubble(name~, args~) => ctx.bubble(name, args)
-          ERequest(name~) => ctx.request(name, [], @tutuca.RequestOpts::new())
+          ERequest(name~, args~) =>
+            ctx.request(name, args, @tutuca.RequestOpts::new())
           // Relative to this component, exactly as the MoonBit idiom is:
           // `ctx.send_at_path(ctx.path().concat([...]), …)`.
           ESendAt(steps~, name~, args~) =>

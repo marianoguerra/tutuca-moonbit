@@ -177,10 +177,14 @@ pub(all) enum Expr {
   ETpl(parts~ : Array[TplPart], span~ : Span)
   /// Reading what is AT a place.
   ERead(place~ : Place, span~ : Span)
-  /// `$name` — a `compute` result. Opaque to the checker: "unknown is not
-  /// wrong", so an opaque scope silences every check inside it.
+  /// `$name` — a `compute` result. Its TYPE is opaque to the checker
+  /// ("unknown is not wrong", so nothing under it is judged), and written
+  /// inside a BODY it is additionally REPORTED: this sigil is answered by the
+  /// render stack, a body runs after one, so it reads Null. A body calls a
+  /// `compute` or a `pred` bare — `EName` with no arguments.
   EMethod(name~ : String, span~ : Span)
-  /// `*name` — a dynamic binding. Opaque for the same reason.
+  /// `*name` — a dynamic binding. Opaque for the same reason, and reported in
+  /// a body for the same reason, with no bare spelling to fall back on.
   EDyn(name~ : String, span~ : Span)
   /// A bare name. In a declaration body it is a parameter; in a handler slot
   /// it is an event argument, resolved against the closed table in

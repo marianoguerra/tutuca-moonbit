@@ -13,8 +13,15 @@ pub(all) enum Effect {
   ESend(name~ : String, args~ : Array[@tutuca.Value])
   /// `bubble 'rowPicked' @key` — up the path it was raised on.
   EBubble(name~ : String, args~ : Array[@tutuca.Value])
-  /// `request 'loadData'` — resolved through the registry, not a position.
-  ERequest(name~ : String)
+  /// `request 'save' .draft` — resolved through the registry, not a position.
+  ///
+  /// The arguments are here because the ahead-of-time backend already emits
+  /// them (`ctx.request(name, payload, RequestOpts::new())`) and a
+  /// `RequestFn` has no component instance to read state from, so they are
+  /// the only channel a request has. What stays out of the block is
+  /// `RequestOpts` — response-name overrides and path pinning are the parts a
+  /// small language would model badly.
+  ERequest(name~ : String, args~ : Array[@tutuca.Value])
   /// `sendAt &.status 'flash' 'Saved'` — at a POSITION, relative to this
   /// component. The steps are what `&` reified; the host concatenates its own
   /// path in front, exactly as the MoonBit idiom does by hand.

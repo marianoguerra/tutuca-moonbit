@@ -360,9 +360,23 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
       Some(TText)
     }
     ERead(place~, ..) => self.place(place, assigning=false)
-    // Opaque by design: a `compute` result and a dynamic binding are exactly
-    // the two things "unknown is not wrong" was written for.
-    EMethod(..) | EDyn(..) => None
+    // Opaque, and REPORTED — the two are not the same thing.
+    //
+    // Their TYPE is unknown, which is never wrong; their value in a body is
+    // Null, which almost always is. Both sigils are answered by the render
+    // stack, and a body runs after one — so `if $over { … }` takes the else
+    // arm every time and says nothing, which is the worst way for a rule to be
+    // false. The ahead-of-time backend refuses both by name
+    // (`tscript/emit_mbt/emit.mbt`); this is the same refusal for the path
+    // that has no compiler to do it.
+    EMethod(name~, span~) => {
+      self.render_only(name, sigil="$", span)
+      None
+    }
+    EDyn(name~, span~) => {
+      self.render_only(name, sigil="*", span)
+      None
+    }
     EName(name~, span~) => self.name(name, [], span)
     EApp(name~, args~, span~) => self.name(name, args, span)
     EUnary(op~, operand~, span~) =>
@@ -411,6 +425,45 @@ fn C::expr(self : C, e : @tscript.Expr) -> @statedef.StateTy? {
     // A place is not a value, and the parser has already confined it to
     // `sendAt`'s first argument. Reaching here means an AST built by hand.
     ERef(..) => None
+  }
+}
+
+///|
+/// A `$name` or a `*name` written inside a body.
+///
+/// One rule with two messages, because the fixes differ. A `compute` or a
+/// `pred` IS callable from a body — bare, the way a condition slot spells one
+/// — so the finding names the spelling that works. A dynamic binding has no
+/// spelling that works: it belongs to the render stack, and a body has none.
+fn C::render_only(
+  self : C,
+  name : String,
+  sigil~ : String,
+  span : @tscript.Span,
+) -> Unit {
+  let head = "`\{sigil}\{name}` is answered by the render stack, and a body runs after one, so it reads Null here"
+  if sigil == "$" {
+    self.say(
+      "RENDER_ONLY",
+      head +
+      (if self.callable.contains(name) {
+        " — this block declares `\{name}`, so call it bare: `\{name}`"
+      } else {
+        match @statedef.nearest(name, self.callable.keys().collect()) {
+          Some(s) =>
+            " — did you mean the `pred` or `compute` `\{s}`, called bare?"
+          None =>
+            "; a `pred` or a `compute` is called bare from a body, and nothing here declares one by that name"
+        }
+      }),
+      span,
+    )
+  } else {
+    self.say(
+      "RENDER_ONLY",
+      head + "; a body cannot read a dynamic binding at all",
+      span,
+    )
   }
 }
 

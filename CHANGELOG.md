@@ -59,6 +59,23 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Fixed
 
+- **A `$name` written inside a body read Null, and nothing said so.** The
+  sigil is answered by the render stack and a body runs after one, so
+  `if $over { … }` took the else arm every time — the worst way for a rule to
+  be false. The ahead-of-time backend refuses both `$name` and `*name` in a
+  body by name; the checker now reports them too (`RENDER_ONLY`), and where
+  the block declares the callable the message names the spelling that works:
+  a body calls a `compute` or a `pred` **bare**. Their TYPE stays opaque, as
+  "unknown is not wrong" requires — the value being Null is the separate fact,
+  and it is the reportable one.
+
+- **A card's `request` dropped its arguments.** `emit_mbt` emits
+  `ctx.request(name, payload, RequestOpts::new())` and the interpreter emitted
+  `ctx.request(name, [], …)`, so the two backends of one language disagreed
+  about the only channel a request has — a `RequestFn` has no component
+  instance and cannot read state. `@interp.Effect::ERequest` carries `args`
+  now. `RequestOpts` still stays out of the block, deliberately.
+
 - **A card's `@when` filter never saw the row it was judging.** A `pred` reached
   through the Alter namespace was built as a plain callable, which binds a
   declaration's PARAMETERS and nothing else — and a filter is written
@@ -160,13 +177,16 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
 
 ### Added
 
-- **A card tutorial on the landing site (`dist/cards.html`).** Six steps, six
-  live `<mb-card>` examples, each a whole file the page parses and mounts:
-  the schema on its own and the mutators it generates, the `tutuca/script`
-  block, `compute` / `pred`, lists, what a loop asks the block (`@when` and
-  `@enrich-with`), and messages. It ends with the grammar on one screen — the
-  eight declaration keywords, the statements, the five operator families and
-  the closed reading vocabulary — and with the line past which a card is a
+- **A card tutorial on the landing site (`dist/cards.html`).** Eight steps,
+  eight live `<mb-card>` examples, each a whole file the page parses and
+  mounts: the schema on its own and the mutators it generates, the
+  `tutuca/script` block, `compute` / `pred`, lists, what a loop asks the block
+  (`@when` and `@enrich-with`), messages, `request` / `response` — including
+  the error path, which the page shows live by registering no handler at all —
+  and invariants, pre- and postconditions, which are one construct (`pred`)
+  used at three moments. It ends with the grammar on one screen — the eight
+  declaration keywords, the statements, the five operator families and the
+  closed reading vocabulary — and with the line past which a card is a
   component: it cannot name a MoonBit value.
 
   The cards live in `playground/site/cards/`, so

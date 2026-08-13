@@ -67,10 +67,12 @@ fn eval_at(e : @tscript.Expr, env : Env, depth : Int) -> @tutuca.Value? {
     }
     ERead(place~, ..) => read_place(place, env, depth)
     // A `$method` and a `*dyn` are resolved by the RENDER stack, which a body
-    // does not have — a handler runs after the render that raised it. The
-    // checker calls both opaque for the same reason, so a body that reads one
-    // does not fail: it reads Null, which is what a slot reading an
-    // unanswered name gets.
+    // does not have — a handler runs after the render that raised it. Reading
+    // one is not a failure: it is Null, which is what a slot reading an
+    // unanswered name gets. The CHECKER reports it (`RENDER_ONLY`), because a
+    // silent Null in a condition is a rule that is false every time and says
+    // nothing; a body calls a `compute` or a `pred` bare, which `EName` below
+    // resolves.
     EMethod(..) | EDyn(..) => Some(Null)
     EName(name~, ..) => {
       if env.params.get(name) is Some(v) {

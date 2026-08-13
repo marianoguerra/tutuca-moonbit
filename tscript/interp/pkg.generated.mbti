@@ -22,7 +22,7 @@ pub fn run(Array[@tscript.Stmt], Env) -> Outcome
 pub(all) enum Effect {
   ESend(name~ : String, args~ : Array[@core.Value])
   EBubble(name~ : String, args~ : Array[@core.Value])
-  ERequest(name~ : String)
+  ERequest(name~ : String, args~ : Array[@core.Value])
   ESendAt(steps~ : Array[@core.Step], name~ : String, args~ : Array[@core.Value])
   EStop
 } derive(Eq, @debug.Debug)

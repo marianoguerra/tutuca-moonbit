@@ -1,0 +1,79 @@
+<!-- Step 7 — asking for something the component does not have.
+
+     `request` hands a NAME to the host, which answers whenever it can.
+     The answer arrives at a `response` arm as a pair: a result and an
+     error, exactly one of which is Null. -->
+
+<script type="tutuca/state">
+  state Quote {
+    text  : String
+    error : String
+    busy  : Bool
+    tries : Int
+  }
+
+  receive Quote {
+    Init
+  }
+
+  /// The pair every request answers with. `Any` on both halves, because
+  /// what a host produces is the host's business, not the schema's.
+  response Quote {
+    LoadQuote(Any, Any)
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    request 'loadQuote'
+    .busy = true
+  }
+
+  on retry {
+    request 'loadQuote'
+    .busy = true
+    .error = ''
+    .tries += 1
+  }
+
+  /// Exactly one of the two is Null, so the branch is the whole arm.
+  ///
+  /// This page registers NO handler for `loadQuote`, and an unanswered
+  /// name is not a crash: the runtime answers it with an error, which
+  /// lands here exactly as a failed fetch would. That is what you are
+  /// looking at below — the error path, live, with nothing mocked.
+  response loadQuote(res, err) {
+    .busy = false
+    if (null? err) {
+      .text = str res
+    } else {
+      .error = str err
+    }
+  }
+
+  pred failed { not (empty? .error) }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .quote { margin: 0; font-size: 1.1rem; }
+    .err { margin: 0; padding: .4rem .6rem; border-radius: .3rem;
+           background: #fdecea; color: #b3261e;
+           font: .85rem ui-monospace, monospace; }
+    .tries { font: .75rem ui-monospace, monospace; opacity: .7; }
+  </style>
+  <div>
+    <p @show=".busy"><em>asking…</em></p>
+    <p class="quote" @hide="$failed"><x text=".text"></x></p>
+    <p class="err" @show="$failed"><x text=".error"></x></p>
+    <p class="row">
+      <button @on.click="retry">try again</button>
+      <span class="tries">tries: <x text=".tries"></x></span>
+    </p>
+  </div>
+</template>

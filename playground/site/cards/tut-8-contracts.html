@@ -1,0 +1,114 @@
+<!-- Step 8 — rules with names.
+
+     One construct covers all three: a `pred` guarding a body is a
+     PRECONDITION, a `pred` that must hold after every handler is an
+     INVARIANT, and a `pred` about one transition is a POSTCONDITION.
+     The badges below read the same two predicates the handlers do. -->
+
+<script type="tutuca/state">
+  state Ledger {
+    total : Int
+    here  : Int
+    there : Int
+    moves : Int
+  }
+
+  receive Ledger {
+    Init
+  }
+</script>
+
+<script type="tutuca/script">
+  receive init {
+    .total = 8
+    .here = 8
+  }
+
+  /// PRECONDITIONS — what each handler asks before it moves anything.
+  pred canPush { .here > 0 }
+  pred canPull { .there > 0 }
+
+  /// The guard IS the precondition, and it needs no rollback: a body
+  /// that declines leaves the state exactly as it found it, effects
+  /// included. There is no half-move to clean up.
+  on push {
+    if canPush {
+      .here -= 1
+      .there += 1
+      .moves += 1
+    }
+  }
+
+  on pull {
+    if canPull {
+      .there -= 1
+      .here += 1
+      .moves += 1
+    }
+  }
+
+  /// INVARIANT — true before every handler and after every handler.
+  /// Nothing checks it for you; the badge below is what checks it, and
+  /// a test would assert the same name after every dispatch.
+  pred conserved {
+    (.here + .there) is .total
+  }
+
+  /// A cross-field rule, in the shape `implies` is here for: exactly
+  /// two operands, so there is no precedence to get wrong.
+  pred emptyMeansMoved {
+    (.here is 0) implies (.moves > 0)
+  }
+
+  /// The button that breaks the invariant, on purpose. Nothing in the
+  /// language stops it — which is precisely why the badge is worth
+  /// having.
+  on cheat {
+    .there += 1
+  }
+</script>
+
+<template>
+  <style>
+    font-family: system-ui;
+    display: grid;
+    gap: .6rem;
+
+    .row { display: flex; gap: .4rem; align-items: center; }
+    .cols { display: flex; gap: 1.5rem; font-variant-numeric: tabular-nums; }
+    .cols b { font-size: 1.6rem; display: block; }
+    .rules { list-style: none; margin: 0; padding: 0; display: grid; gap: .3rem; }
+    .rule { display: flex; gap: .5rem; align-items: baseline;
+            font: .8rem ui-monospace, monospace; }
+    .rule .holds { padding: 0 .4rem; border-radius: .3rem;
+                   background: #e7f6ee; color: #1b7f4f; }
+    .rule .broken { padding: 0 .4rem; border-radius: .3rem;
+                    background: #fdecea; color: #b3261e; }
+  </style>
+  <div>
+    <p class="cols">
+      <span>here<b @text=".here"></b></span>
+      <span>there<b @text=".there"></b></span>
+      <span>moves<b @text=".moves"></b></span>
+    </p>
+    <p class="row">
+      <button @on.click="push">here → there</button>
+      <button @on.click="pull">there → here</button>
+      <button @on.click="cheat" title="mint one out of nothing">cheat</button>
+    </p>
+    <ul class="rules">
+      <li class="rule">
+        <span @if.class="$conserved" @then="'holds'" @else="'broken'">
+          <x text="$conserved"></x>
+        </span>
+        conserved: here + there is total
+      </li>
+      <li class="rule">
+        <span @if.class="$emptyMeansMoved" @then="'holds'" @else="'broken'">
+          <x text="$emptyMeansMoved"></x>
+        </span>
+        emptyMeansMoved: here is 0 implies moves &gt; 0
+      </li>
+    </ul>
+  </div>
+</template>

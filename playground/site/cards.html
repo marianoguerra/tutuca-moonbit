@@ -6,14 +6,12 @@
     <title>Cards — the tutuca script tutorial</title>
     <meta
       name="description"
-      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Every example on the page is live and editable."
+      content="Build a tutuca component one file at a time, with no compiler: the state block, the tutuca/script block, and the views. Eight live, editable examples."
     />
     <meta name="author" content="Mariano Guerra" />
     <meta name="theme-color" content="#0d47a1" />
     <link rel="stylesheet" href="./styles/site.css" />
     <style>
-      /* Same cap as the landing page's embeds, so a card lines up with the
-         prose that introduces it rather than with the window. */
       /* Wider than the landing page's, where a card sits beside the
          playgrounds and has to line up with them. Here the source IS the
          page, so it gets the room. */
@@ -45,6 +43,7 @@
     <nav>
       <a href="./">Home</a>
       <a href="#start">Start</a>
+      <a href="#contracts">Contracts</a>
       <a href="#reference">Reference</a>
       <a href="#limits">Where a card stops</a>
       <a href="./tutucard/">Card Playground</a>
@@ -54,8 +53,8 @@
       <h1>Cards</h1>
       <h2>A whole component in one file, with no compiler in the room</h2>
       <p class="hero-tagline">
-        Six steps, six live examples. Edit any of them and it re-mounts as you
-        type.
+        Eight steps, eight live examples. Edit any of them and it re-mounts as
+        you type.
       </p>
     </header>
     <main>
@@ -280,6 +279,104 @@
           — a missing key, an index past the end, a value of the wrong shape —
           drops the whole transition, effects included, because half a
           transition is the one outcome nobody can reason about afterwards.
+        </p>
+      </section>
+
+      <section id="requests">
+        <h3><span class="step">Step 7</span> Asking for what you do not have</h3>
+        <p>
+          <code>request</code> is the fourth channel and the only asynchronous
+          one. A handler names a piece of work — <code>request 'loadQuote'</code>
+          — and the <strong>host</strong> answers: the name resolves to a
+          handler registered on the module, not to anything the component can
+          see, which is what lets the same component run against a real fetch
+          in production and a fixture in a test.
+        </p>
+        <p>
+          The answer comes back as a <code>response</code> arm, and it carries
+          <em>two</em> values: the result and the error, exactly one of which
+          is <code>Null</code>. There is no exception to catch and no rejected
+          promise — <strong>a failure is a value</strong>, arriving on the same
+          path as a success, at the component that asked.
+        </p>
+        <mb-card src="./site/cards/tut-7-response.html"></mb-card>
+        <p>
+          That card is showing you its error path, live, with nothing mocked:
+          this page registers no handler for <code>loadQuote</code>, and an
+          unanswered name is not a crash. The runtime replies
+          <code>Err("Request not found: loadQuote")</code> down the ordinary
+          error path, so a typo in a request name and a network failure arrive
+          in the same place, in the same shape. Give the card a
+          <code>response</code> arm and it handles both.
+        </p>
+        <p>
+          Two things the block deliberately does not carry.
+          <code>RequestOpts</code> — per-call response names, and whether a
+          path is pinned at request time or re-resolved on arrival — stays in
+          MoonBit, because it is the part a small language would model badly.
+          And <code>bubble</code>, the third channel, needs an ancestor to
+          reach: a card mounted on its own <em>is</em> the root, so a bubble
+          from one has nowhere to go. Both are the same rule as everywhere else
+          on this page — a card is one component, and what needs a tree needs a
+          module.
+        </p>
+      </section>
+
+      <section id="contracts">
+        <h3><span class="step">Step 8</span> Invariants, pre- and postconditions</h3>
+        <p>
+          A <code>pred</code> is where a rule about the state gets a
+          <strong>name</strong>. That is the whole mechanism, and all three
+          kinds of rule are the same construct used at a different moment:
+        </p>
+        <ul>
+          <li>
+            <strong>Precondition</strong> — asked <em>before</em> a transition.
+            It is the <code>if</code> at the top of the handler:
+            <code>on push { if canPush { … } }</code>.
+          </li>
+          <li>
+            <strong>Postcondition</strong> — asserted <em>after</em> one, about
+            what that particular handler was supposed to achieve.
+          </li>
+          <li>
+            <strong>Invariant</strong> — true before <em>and</em> after every
+            handler, which is what makes it worth naming once instead of
+            restating per handler.
+          </li>
+        </ul>
+        <mb-card src="./site/cards/tut-8-contracts.html"></mb-card>
+        <p>
+          The precondition needs no rollback, and that is the framework's doing
+          rather than the handler's: a body either finishes or changes nothing.
+          A statement that cannot run abandons the whole transition — the state
+          the caller passed in is still the state, and the queued effects are
+          dropped with it. So a guard that declines is indistinguishable from a
+          guard that never ran, and there is no half-move for the next handler
+          to find.
+        </p>
+        <p>
+          <code>implies</code> is in the language for the shape these rules
+          take. <code>a implies b</code> is <code>(not a) or b</code>, it takes
+          exactly two operands, and a chain of them is refused — because
+          "<code>a implies b implies c</code>" is a sentence people write and
+          nobody reads the same way twice.
+        </p>
+        <p>
+          <strong>Be clear about what enforces them: nothing does, yet.</strong>
+          A <code>pred</code> is a name and an expression; the runtime never
+          calls one on your behalf. What you get today is that the rule is
+          written once, in the state's own vocabulary, and can be read from
+          three places — a view (the badges above are the invariant, checked on
+          every render), a handler's guard, and a test, where a card mounts on
+          the in-memory DOM through the same harness a compiled component uses
+          and the assertion after each dispatch is an ordinary
+          <code>assert_eq</code>. A <code>pred</code> is deliberately the
+          subset of <code>compute</code> whose answer is declared a boolean —
+          which is what lets a condition slot be checked, and what an invariant
+          would attach to if the language grows one. It has not; the badge is
+          the state of the art, and the <em>cheat</em> button is there to show
+          you the badge earning its place.
         </p>
       </section>
 
