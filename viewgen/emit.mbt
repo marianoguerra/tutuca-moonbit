@@ -462,10 +462,11 @@ fn emit_component(
   }
 
   // -- $-callables ---------------------------------------------------------
-  // The views' `$name` calls PLUS the `func` declarations in the state block.
-  // A method a parent calls on this component appears in neither its views nor
-  // its update, so the schema is the only place it can be named — and without a
-  // case for it, the match the author writes could not answer it.
+  // The views' `$name` calls PLUS the `pred` / `compute` declarations in the
+  // script block. A method a parent calls on this component appears in neither
+  // its views nor its update, so the block is the only place it can be named —
+  // and without a case for it, the match the author writes could not answer it.
+  // `unanswered` then drops the names the block itself handles.
   let all_methods = unanswered(declared_methods(surface), answered.methods)
   if !all_methods.is_empty() {
     let method_variants = variants_for(all_methods)

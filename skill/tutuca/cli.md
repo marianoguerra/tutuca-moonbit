@@ -102,8 +102,13 @@ inferred from the argument shapes at the `@on` call sites: `add 1` ->
 `Add(Double)`, `setLabel value` -> `SetLabel(String)` — `value` becomes
 `Bool` on a checkbox and `@tutuca.Value` on a file input, per the host
 element's static `type` — anything unresolvable
--> `@tutuca.Value`), and `CounterMethod`, the closed set of `$`-callables the
-views name (plus any `func` the schema declares). A file that also carries
+-> `@tutuca.Value`), and `CounterMethod`, the `$`-callables the views name
+that the script block has NOT already answered. A `pred` or a `compute` in
+`<script type="tutuca/script">` is merged into the bucket ahead of your match,
+so an arm for it could never run and its name is dropped from the enum, with a
+note on the enum saying which names went; a bucket the block answers entirely
+emits no enum at all. The same holds for `CounterWhen`, `CounterEnrich` and
+`CounterEnrichScope`. A file that also carries
 a `<script type="tutuca/state">` block gets the state half: `CounterState`
 (a plain struct — no derives), `CounterState::zero()`, an
 `impl @component.Fields for CounterState` carrying the whole contract as
