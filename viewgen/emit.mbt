@@ -40,6 +40,85 @@ fn emit_string_let(
 }
 
 ///|
+/// The names the script block ANSWERS, by bucket — what the author-facing
+/// enums are trimmed against.
+///
+/// A name answered here is routed BEFORE the author's match is consulted:
+/// `update` is composed behind the block's transition, and each bucket's
+/// generated router is asked before the author's function. So a variant for an
+/// answered name could not be reached. Leaving it in would cost twice — the
+/// author writes an arm that cannot run, and an author who writes a REAL
+/// handler there gets one that silently never fires, which is the failure the
+/// enums exist to prevent.
+///
+/// Refusals are not in here. `Emitted` lists what actually compiled, so a
+/// declaration the backend turned down keeps its variant — which is the only
+/// place left to answer it.
+priv struct Answered {
+  inputs : Array[String]
+  methods : Array[String]
+  whens : Array[String]
+  enriches : Array[String]
+  enrich_scopes : Array[String]
+}
+
+///|
+/// What a file with no script block answers: nothing, in every bucket.
+fn Answered::none() -> Answered {
+  { inputs: [], methods: [], whens: [], enriches: [], enrich_scopes: [] }
+}
+
+///|
+/// What the compiled block answers. `None` — no block, or a component with no
+/// schema to compile one against — answers nothing.
+fn Answered::of(e : @emit_mbt.Emitted?) -> Answered {
+  guard e is Some(e) else { return Answered::none() }
+  {
+    inputs: e.answers_input,
+    methods: e.answers_methods,
+    whens: e.answers_whens,
+    enriches: e.answers_enriches,
+    enrich_scopes: e.answers_enrich_scopes,
+  }
+}
+
+///|
+/// The doc lines an author-facing enum carries when the block already answered
+/// some of its names: which ones are absent, and why an arm for one could
+/// never run.
+///
+/// Every enum the author writes a match over gets this, because it is one
+/// rule — what the block answers is routed before the author is consulted.
+/// Only the MECHANISM differs between them, and the caller passes that; the
+/// lines come back already `///`-prefixed, to be spliced under a headline.
+fn absent_note(answered : Array[String], mechanism : String) -> String {
+  if answered.is_empty() {
+    return ""
+  }
+  let out = StringBuilder::new()
+  out.write_string(
+    "///\n/// Absent, because the script block answers them: \{answered.join(", ")}.\n",
+  )
+  for line in mechanism.split("\n") {
+    out.write_string("/// \{line}\n")
+  }
+  out.to_string()
+}
+
+///|
+/// The mechanism half of `absent_note` for a handler bucket. One wording for
+/// all four, because it is one composition: `emit_comp.mbt` merges the block's
+/// generated map over the bucket the author's match builds.
+let bucket_mechanism : String = "The block's own handlers are merged into this bucket, so an arm for one of\nthese could never run."
+
+///|
+/// The subset of `names` the block did not answer — the ones an author still
+/// has to write. Order is preserved, so the enum's variants stay sorted.
+fn unanswered(names : Array[String], answered : Array[String]) -> Array[String] {
+  names.filter(n => !answered.contains(n))
+}
+
+///|
 /// `pub enum <Type> { … }` plus a `name()` giving the source spelling back.
 fn emit_name_enum(
   out : StringBuilder,
@@ -48,8 +127,11 @@ fn emit_name_enum(
   accessor : String,
   variants : Array[(String, String)],
   derives : String,
+  /// Already-`///`-prefixed lines spliced under the headline — `absent_note`
+  /// is the only thing that writes any.
+  note? : String = "",
 ) -> Unit {
-  out.write_string("///|\n/// \{doc}\npub(all) enum \{type_name} {\n")
+  out.write_string("///|\n/// \{doc}\n\{note}pub(all) enum \{type_name} {\n")
   for pair in variants {
     out.write_string("  \{pair.1}\n")
   }
@@ -230,14 +312,21 @@ fn variant_of(pairs : Array[(String, String)], name : String) -> String {
 /// which the generated wrapper calls with the case list — one generic function
 /// instead of the identical 14-line loop this used to write out per component
 /// per bucket, 143 times across the corpus.
+///
+/// `answered` drops the names the block handles, on the rule `Answered` states.
+/// A bucket the block answers ENTIRELY loses its enum along with its wrapper
+/// parameter, by the same emptiness test a bucket the views never name does —
+/// there is nothing left for an author to write.
 fn emit_alter_bucket(
   out : StringBuilder,
   t : String,
   names : Array[String],
+  answered : Array[String],
   suffix : String,
   doc : String,
   derives : String,
 ) -> Unit raise GenError {
+  let names = unanswered(names, answered)
   if names.is_empty() {
     return
   }
@@ -248,6 +337,7 @@ fn emit_alter_bucket(
     "name",
     variants_for(names),
     derives,
+    note=absent_note(answered, bucket_mechanism),
   )
 }
 
@@ -261,15 +351,15 @@ fn emit_component(
   state : @statedef.StateDef?,
   inits : Array[@statedef.InitState],
   debug_derive : Bool,
-  /// The `@on` names the file's script block ANSWERS. They are dropped from
-  /// the `Msg` enum, because the author's `update` is only ever consulted for
-  /// a name the block did not answer — so an arm for one is unreachable, and
-  /// making the author write it would move the noise rather than remove it.
+  /// What the file's script block answers, per bucket. Every enum an author
+  /// writes a match over is trimmed against it, on the rule `Answered` states:
+  /// `Msg`, `Method`, `When`, `Enrich` and `EnrichScope`.
   ///
-  /// The `Input` enum keeps them: it keys `swap`, which wins over `update`
-  /// and replaces the NODE rather than the state — something the block cannot
-  /// say, so answering a name in the block must not take swapping it away.
-  answered_inputs : Array[String],
+  /// The `Input` enum is the one exception, and keeps them all. It keys `swap`,
+  /// which wins over `update` and replaces the NODE rather than the state —
+  /// something the block cannot say, so answering a name in the block must not
+  /// take swapping it away.
+  answered : Answered,
   out : StringBuilder,
 ) -> Unit raise GenError {
   let t = type_prefix(name)
@@ -311,7 +401,7 @@ fn emit_component(
   // -- inputs --------------------------------------------------------------
   if !surface.inputs.is_empty() {
     let unanswered = surface.inputs.filter(i => {
-      !answered_inputs.contains(i.name)
+      !answered.inputs.contains(i.name)
     })
     let input_variants = variants_for(surface.inputs.map(i => i.name))
     emit_name_enum(
@@ -331,14 +421,10 @@ fn emit_component(
     out.write_string("    _ => None\n  }\n}\n\n")
 
     // The typed decode: this is the point of the whole generator.
-    let answered_note = if answered_inputs.is_empty() {
-      ""
-    } else {
-      "///\n" +
-      "/// Absent, because the script block answers them: \{answered_inputs.join(", ")}.\n" +
-      "/// `update` is consulted only for a dispatch the block did not claim, so\n" +
-      "/// an arm for one of these could never run.\n"
-    }
+    let answered_note = absent_note(
+      answered.inputs,
+      "`update` is consulted only for a dispatch the block did not claim, so\nan arm for one of these could never run.",
+    )
     out.write_string(
       "///|\n" +
       "/// The Input arm of @component.Dispatch, decoded. Payload types are\n" +
@@ -380,7 +466,7 @@ fn emit_component(
   // A method a parent calls on this component appears in neither its views nor
   // its update, so the schema is the only place it can be named — and without a
   // case for it, the match the author writes could not answer it.
-  let all_methods = declared_methods(surface)
+  let all_methods = unanswered(declared_methods(surface), answered.methods)
   if !all_methods.is_empty() {
     let method_variants = variants_for(all_methods)
     emit_name_enum(
@@ -390,6 +476,7 @@ fn emit_component(
       "name",
       method_variants,
       derives,
+      note=absent_note(answered.methods, bucket_mechanism),
     )
     // No `<v>_mutate`: the bucket is gone. A `$name` only ever appears in a
     // value position now, where `compute` and `swap` are what answer it —
@@ -403,6 +490,7 @@ fn emit_component(
     out,
     t,
     surface.whens,
+    answered.whens,
     "When",
     "Every `@when` handler the views name.",
     derives,
@@ -411,6 +499,7 @@ fn emit_component(
     out,
     t,
     surface.enriches,
+    answered.enriches,
     "Enrich",
     "Every `@enrich-with` handler named INSIDE an `@each`.",
     derives,
@@ -419,14 +508,18 @@ fn emit_component(
     out,
     t,
     surface.enrich_scopes,
+    answered.enrich_scopes,
     "EnrichScope",
     "Every `@enrich-with` handler named with no `@each` around it.",
     derives,
   )
+  // `@loop-with` has no declaration in the block language, so there is nothing
+  // for it to answer and nothing to trim.
   emit_alter_bucket(
     out,
     t,
     surface.loop_withs,
+    [],
     "LoopWith",
     "Every `@loop-with` handler the views name.",
     derives,
@@ -554,9 +647,12 @@ fn emit_module_compiled(
     // Checked before emitting: a view that reads a field the schema does not
     // declare would otherwise emit a module that compiles and renders null.
     let surface = with_script(compiled_comp.surface, file, cname)
-    let answered : Array[String] = []
+    let mut answered = Answered::none()
     if state is Some(def) {
       check_views(compiled_comp.views, def, prog, hints)
+      // The same compile the IR module runs, for the same block — this path
+      // wants two things out of it: the refusals, which are a diagnostic, and
+      // what it answers, which is what the enums below are trimmed against.
       if inline_emit(
           file,
           cname,
@@ -575,9 +671,7 @@ fn emit_module_compiled(
             "\{cname}: `\{r.name}` stays in MoonBit — \{r.why} (script-refusal)",
           )
         }
-        for n in e.answers_input {
-          answered.push(n)
-        }
+        answered = Answered::of(Some(e))
       }
     }
     emit_component(

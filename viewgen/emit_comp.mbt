@@ -57,12 +57,13 @@ fn emit_wrapper(
 ) -> Unit raise GenError {
   let methods = declared_methods(surface)
   let s = "\{t}State"
+  let answered = Answered::of(values)
   // The routers first. A wrapper is one `component()` call, and the functions
   // it names have to exist before it — so they are written here rather than
   // interleaved into the middle of the call being built below.
   let routers : Map[String, String] = Map([])
-  for b in wrapper_buckets(t, s, surface, methods) {
-    if bucket_router(v, b, values, out) is Some(fn_name) {
+  for b in wrapper_buckets(t, s, surface, methods, answered) {
+    if bucket_router(v, b, answered, out) is Some(fn_name) {
       routers[b.param] = fn_name
     }
   }
@@ -96,11 +97,16 @@ fn emit_wrapper(
   out.write_string(
     "  update? : (\{s}, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[\{s}],\n",
   )
-  for b in wrapper_buckets(t, s, surface, methods) {
+  for b in wrapper_buckets(t, s, surface, methods, answered) {
     // No default: an absent bucket is `None`, and the call below turns that
     // into the empty map. Giving it `_ => None` instead would read as "answer
     // nothing", which is a different statement from "there is nothing here".
-    out.write_string("  \{b.param}? : (\{b.enum_}) -> (\{b.handler})?,\n")
+    //
+    // A bucket the block answers whole gets no parameter at all — there is no
+    // enum left to key it by, and nothing an author could add.
+    if b.asks_author() {
+      out.write_string("  \{b.param}? : (\{b.enum_}) -> (\{b.handler})?,\n")
+    }
   }
   // What is left of `specs~`, split into the two things it actually did. The
   // component a slot holds is part of the field's TYPE now — a sibling
@@ -143,27 +149,31 @@ fn emit_wrapper(
     "    global_style~,\n" +
     update_arg,
   )
-  for b in wrapper_buckets(t, s, surface, methods) {
-    // The block first, the author second — the same precedence `update~` has,
-    // for the same reason: what the file states is what runs, and the MoonBit
-    // beside it answers what the file could not.
-    match routers.get(b.param) {
-      Some(router) =>
+  for b in wrapper_buckets(t, s, surface, methods, answered) {
+    // The two halves are disjoint by construction — the author's enum holds
+    // exactly the names the router does not — so this is a merge and not a
+    // precedence. The block's map goes in last anyway, on the rule `update~`
+    // follows: what the file states is what runs, and the MoonBit beside it
+    // answers what the file could not.
+    let author = "match \{b.param} {\n" +
+      "        Some(f) =>\n" +
+      "          @component.build_bucket((\{b.all} : Array[\{b.enum_}]), \{b.enum_}::name, f)\n" +
+      "        None => Map([])\n" +
+      "      }"
+    match (routers.get(b.param), b.asks_author()) {
+      (Some(router), true) =>
         out.write_string(
-          "    \{b.param}=@component.build_bucket(\n" +
-          "      (\{b.all} : Array[\{b.enum_}]),\n" +
-          "      \{b.enum_}::name,\n" +
-          "      k => match \{router}(k) {\n" +
-          "        Some(f) => Some(f)\n" +
-          "        None =>\n" +
-          "          match \{b.param} {\n" +
-          "            Some(g) => g(k)\n" +
-          "            None => None\n" +
-          "          }\n" +
-          "      },\n" +
-          "    ),\n",
+          "    \{b.param}={\n" +
+          "      let bucket = \{author}\n" +
+          "      for k, h in \{router}() {\n" +
+          "        bucket[k] = h\n" +
+          "      }\n" +
+          "      bucket\n" +
+          "    },\n",
         )
-      None =>
+      // Answered whole: the map the block built IS the bucket.
+      (Some(router), false) => out.write_string("    \{b.param}=\{router}(),\n")
+      (None, _) =>
         out.write_string(
           "    \{b.param}=match \{b.param} {\n" +
           "      Some(f) =>\n" +
@@ -180,30 +190,54 @@ fn emit_wrapper(
 }
 
 ///|
+/// What the block answers in one bucket, and the role its bodies were compiled
+/// in — None for a bucket the block language cannot declare into.
+///
+/// `swap` has no declaration in the block language (a `swap` replaces the node,
+/// which the block cannot say) and neither does `loop_with`, so there is
+/// nothing to route to either.
+fn bucket_role(
+  param : String,
+  answered : Answered,
+) -> (@emit_mbt.Role, Array[String])? {
+  match param {
+    "compute" => Some((RMethod, answered.methods))
+    "when" => Some((RWhen, answered.whens))
+    "enrich" => Some((REnrich, answered.enriches))
+    "enrich_scope" => Some((REnrichScope, answered.enrich_scopes))
+    _ => None
+  }
+}
+
+///|
+/// The names the block answers in this bucket — empty for a bucket it cannot
+/// declare into, and for a file with no block at all.
+fn bucket_answers(param : String, answered : Answered) -> Array[String] {
+  match bucket_role(param, answered) {
+    Some((_, names)) => names
+    None => []
+  }
+}
+
+///|
 /// The generated router for one bucket, and the name it is emitted under —
 /// None when the block compiled nothing this bucket routes to.
 ///
-/// It is a `match` over the bucket's own enum, which is why it is written here
-/// rather than by the backend: the enum and its variant spellings are this
-/// file's, and the functions it names are `emit_mbt`'s. `value_fn_name` is the
-/// one thing both sides agree on.
+/// It is the bucket's own `Map[String, H]`, already built. It is keyed by the
+/// SOURCE name rather than by the bucket enum because the enum no longer
+/// carries these names: they are exactly the ones trimmed out of it, so the
+/// author is never asked about them. Both halves land in the same map at the
+/// wrapper, which is where the two are merged.
 fn bucket_router(
   v : String,
   b : WrapperBucket,
-  values : @emit_mbt.Emitted?,
+  answered : Answered,
   into : StringBuilder,
-) -> String? raise GenError {
-  guard values is Some(e) else { return None }
-  let (role, answered) = match b.param {
-    "compute" => (@emit_mbt.Role::RMethod, e.answers_methods)
-    "when" => (RWhen, e.answers_whens)
-    "enrich" => (REnrich, e.answers_enriches)
-    "enrich_scope" => (REnrichScope, e.answers_enrich_scopes)
-    // `swap` and `loop_with` have no declaration in the block language, so
-    // there is nothing here to route to them.
-    _ => return None
+) -> String? {
+  guard bucket_role(b.param, answered) is Some((role, names)) else {
+    return None
   }
-  if answered.is_empty() {
+  if names.is_empty() {
     return None
   }
   let name = "\{v}_inline_\{b.param}"
@@ -213,39 +247,15 @@ fn bucket_router(
     "/// The `\{b.param}` names the `<script type=\"tutuca/script\">` block answers.\n",
   )
   out.write_string("/// GENERATED — edit the block, not this.\n")
-  out.write_string("fn \{name}(k : \{b.enum_}) -> (\{b.handler})? {\n")
-  out.write_string("  match k {\n")
-  let all = variants_for(answered)
-  for pair in all {
+  out.write_string("fn \{name}() -> Map[String, \{b.handler}] {\n  {\n")
+  for n in names {
     out.write_string(
-      "    \{pair.1} => Some(\{@emit_mbt.value_fn_name(v, role, pair.0)})\n",
+      "    \{quote(n)}: \{@emit_mbt.value_fn_name(v, role, n)},\n",
     )
-  }
-  // A wildcard only when one is reachable: the enum carries every name the
-  // views use, and a `match` that already covers them all would be warned
-  // about for the arm it cannot reach.
-  if all.length() < variants_count(b.all) {
-    out.write_string("    _ => None\n")
   }
   out.write_string("  }\n}\n\n")
   into.write_string(out.to_string())
   Some(name)
-}
-
-///|
-/// How many variants a bucket's `all` list holds — it is the array literal
-/// this file wrote, so counting its separators is exact.
-fn variants_count(all : String) -> Int {
-  if all == "[]" {
-    return 0
-  }
-  let mut n = 1
-  for c in all {
-    if c == ',' {
-      n = n + 1
-    }
-  }
-  n
 }
 
 ///|
@@ -260,7 +270,18 @@ priv struct WrapperBucket {
   /// to `@component.build_bucket`. The bucket used to be built by a generated
   /// function per component that closed over this list; the list is the only
   /// part that varied, so it is passed instead.
+  ///
+  /// TRIMMED of what the block answers, exactly as `enum_` is — the two have to
+  /// agree, since one is the case list of the other. `[]` means the block
+  /// answered the whole bucket, so there is no enum and nothing to ask for.
   all : String
+}
+
+///|
+/// Whether the author gets a parameter for this bucket: only when something is
+/// left for them to answer.
+fn WrapperBucket::asks_author(self : WrapperBucket) -> Bool {
+  self.all != "[]"
 }
 
 ///|
@@ -275,20 +296,29 @@ priv struct WrapperBucket {
 /// generated enum rather than by a string, so the author writes a match the
 /// compiler checks — which is what makes a `$name` or an `@when` added to a
 /// view a build error instead of a handler silently never called.
+///
+/// The buckets are listed on the FULL name sets — a bucket the block answers
+/// entirely is still passed to `component()`, it just has no parameter — while
+/// `all` is trimmed to what is left for the author. `asks_author` is the split.
 fn wrapper_buckets(
   t : String,
   s : String,
   surface : Surface,
   methods : Array[String],
+  answered : Answered,
 ) -> Array[WrapperBucket] raise GenError {
   let out : Array[WrapperBucket] = []
+  fn cases(param : String, names : Array[String]) -> String raise GenError {
+    variant_list(unanswered(names, bucket_answers(param, answered)))
+  }
+
   // `compute` answers `$name` in a VALUE position, so it is keyed by Method.
   if !methods.is_empty() {
     out.push({
       param: "compute",
       enum_: "\{t}Method",
       handler: "(\{s}, Array[@tutuca.Value]) -> @tutuca.Value",
-      all: variant_list(methods),
+      all: cases("compute", methods),
     })
   }
   // `swap` does NOT share that enum, though it reads like it should. A swap
@@ -309,7 +339,7 @@ fn wrapper_buckets(
       param: "when",
       enum_: "\{t}When",
       handler: "(\{s}, @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Bool",
-      all: variant_list(surface.whens),
+      all: cases("when", surface.whens),
     })
   }
   if !surface.enriches.is_empty() {
@@ -317,7 +347,7 @@ fn wrapper_buckets(
       param: "enrich",
       enum_: "\{t}Enrich",
       handler: "(\{s}, Map[String, @tutuca.Value], @tutuca.Value, @tutuca.Value, @tutuca.Value) -> Unit",
-      all: variant_list(surface.enriches),
+      all: cases("enrich", surface.enriches),
     })
   }
   if !surface.enrich_scopes.is_empty() {
@@ -325,7 +355,7 @@ fn wrapper_buckets(
       param: "enrich_scope",
       enum_: "\{t}EnrichScope",
       handler: "(\{s}) -> Map[String, @tutuca.Value]",
-      all: variant_list(surface.enrich_scopes),
+      all: cases("enrich_scope", surface.enrich_scopes),
     })
   }
   if !surface.loop_withs.is_empty() {

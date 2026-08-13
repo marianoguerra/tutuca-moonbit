@@ -119,6 +119,35 @@ adheres to [Semantic Versioning](https://semver.org/spec/v2.0.0.html).
   `storybook/examples/render_child.mbt` loses the hand-written `compute~` it
   carried with a note saying it would go away when this landed.
 
+- **A handler bucket asked the author for names the block had already
+  answered.** The `Msg` enum has always been trimmed of what the script block
+  answers — `update` is composed behind the block's transition, so an arm for a
+  claimed name could not run — but the four HANDLER enums were not, though the
+  wrapper composes them the same way. A file whose block declared `compute
+  hasAttachments` and whose views also called `$rowLabel` got a `Method` enum
+  carrying both, so the `compute~` match had to name `HasAttachments` to be
+  exhaustive, in an arm the generated router makes unreachable. The corpus
+  component was the worst of it: 16 cases to reach the 5 a MoonBit `compute`
+  could still answer, and three buckets whose parameter could do nothing at all.
+
+  The cost was never only the typing. `HasAttachments => Some(myHandler)`
+  compiled and silently never fired — the exact failure the bucket enums exist
+  to prevent, arrived at through the enum that was meant to prevent it. The
+  alternative, a `_ => None` catch-all, trades it for the other loss: a genuinely
+  new `$name` stops being a compile error.
+
+  `Method`, `When`, `Enrich` and `EnrichScope` are trimmed now, each carrying the
+  same note `Msg` carries saying which names went and why. A bucket the block
+  answers ENTIRELY loses its enum and its wrapper parameter, and is passed as the
+  map the block built. `Input` is still whole — it keys `swap`, which replaces
+  the node rather than the state, and answering a name in the block must not take
+  swapping it away — and a declaration the backend REFUSES is still not counted
+  as answered, since the enum is the only place left to answer it.
+
+  The generated router falls out simpler: keyed by source name into a
+  `Map[String, H]` rather than matched over an enum that no longer carries those
+  names, which retires the partial-wildcard arm it used to need.
+
 - **The MoonBit backend emitted `not(x)`, which moonc deprecates.** Every
   negating form in a block — `not .ok`, `is not`, and the `(not a) or b` that
   `implies` expands to — compiled to the spelling the compiler warns about, so

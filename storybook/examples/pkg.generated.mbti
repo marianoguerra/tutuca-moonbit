@@ -135,7 +135,7 @@ pub fn emoji_picker_views() -> Map[String, @anode.View]
 
 pub let entry_common_style : String
 
-pub fn entry_component(name? : String, views? : Map[String, @anode.View], init? : EntryState, common_style? : String, global_style? : String, update? : (EntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[EntryState], compute? : (EntryMethod) -> ((EntryState, Array[@core.Value]) -> @core.Value)?, swap? : (EntryInput) -> ((EntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
+pub fn entry_component(name? : String, views? : Map[String, @anode.View], init? : EntryState, common_style? : String, global_style? : String, update? : (EntryState, @component.Dispatch, &@core.Ctx) -> @component.Update[EntryState], swap? : (EntryInput) -> ((EntryState, Array[@core.Value], &@core.Ctx) -> @core.Value?)?, slots? : Map[String, String], slot_args? : Map[String, Map[String, @core.Value]], provide? : Map[String, String], lookup? : Map[String, @component.LookupSpec]) -> @component.Component
 
 pub let entry_editor_and_selector_common_style : String
 
@@ -973,11 +973,6 @@ pub(all) enum EntryInput {
 } derive(Eq, @debug.Debug)
 pub fn EntryInput::name(Self) -> String
 pub fn EntryInput::parse(String) -> Self?
-
-pub(all) enum EntryMethod {
-  ContainsText
-} derive(Eq, @debug.Debug)
-pub fn EntryMethod::name(Self) -> String
 
 pub(all) enum EntryMsg {
   SetDescription(String)

@@ -242,19 +242,6 @@ pub fn EntryMsg::from_dispatch(d : @component.Dispatch) -> EntryMsg? {
 }
 
 ///|
-/// Every `$name` the views call.
-pub(all) enum EntryMethod {
-  ContainsText
-} derive(Eq, @debug.Debug)
-
-///|
-pub fn EntryMethod::name(self : EntryMethod) -> String {
-  match self {
-    ContainsText => "containsText"
-  }
-}
-
-///|
 /// What this component's schema declares, for `schema~`.
 ///
 /// This is the only thing consulted for a field's KIND — there is no

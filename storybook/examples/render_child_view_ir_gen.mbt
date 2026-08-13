@@ -231,12 +231,11 @@ fn entry_compute_containsText(
 ///|
 /// The `compute` names the `<script type="tutuca/script">` block answers.
 /// GENERATED — edit the block, not this.
-fn entry_inline_compute(
-  k : EntryMethod,
-) -> ((EntryState, Array[@tutuca.Value]) -> @tutuca.Value)? {
-  match k {
-    ContainsText => Some(entry_compute_containsText)
-  }
+fn entry_inline_compute() -> Map[
+  String,
+  (EntryState, Array[@tutuca.Value]) -> @tutuca.Value,
+] {
+  { "containsText": entry_compute_containsText }
 }
 
 ///|
@@ -258,7 +257,6 @@ pub fn entry_component(
   update? : (EntryState, @component.Dispatch, &@tutuca.Ctx) -> @component.Update[
     EntryState,
   ],
-  compute? : (EntryMethod) -> ((EntryState, Array[@tutuca.Value]) -> @tutuca.Value)?,
   swap? : (EntryInput) -> ((EntryState, Array[@tutuca.Value], &@tutuca.Ctx) -> @tutuca.Value?)?,
   slots? : Map[String, String] = Map([]),
   slot_args? : Map[String, Map[String, @tutuca.Value]] = Map([]),
@@ -272,20 +270,7 @@ pub fn entry_component(
     common_style~,
     global_style~,
     update?,
-    compute=@component.build_bucket(
-      ([ContainsText] : Array[EntryMethod]),
-      EntryMethod::name,
-      k => {
-        match entry_inline_compute(k) {
-          Some(f) => Some(f)
-          None =>
-            match compute {
-              Some(g) => g(k)
-              None => None
-            }
-        }
-      },
-    ),
+    compute=entry_inline_compute(),
     swap=match swap {
       Some(f) =>
         @component.build_bucket(
